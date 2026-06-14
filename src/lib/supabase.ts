@@ -6,7 +6,11 @@ const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 if (!url || !key) throw new Error('Missing Supabase env variables')
 
 export const supabase = createClient(url, key, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  }
 })
 
 export async function signUp(email: string, password: string, fullName: string) {
@@ -18,6 +22,19 @@ export async function signUp(email: string, password: string, fullName: string) 
 
 export async function signIn(email: string, password: string) {
   return supabase.auth.signInWithPassword({ email, password })
+}
+
+export async function signInWithGoogle() {
+  return supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/dashboard`,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
+      }
+    }
+  })
 }
 
 export async function signOut() {

@@ -24,7 +24,7 @@ import { CompanionHome } from '@/pages/companion/Home'
 import { CompanionVisit } from '@/pages/companion/Visit'
 
 const PAGE_TITLES: Record<string, string> = {
-  '/': 'Close Eye — When you can\'t be there, Close Eye can.',
+  '/': "Close Eye — When you can't be there, Close Eye can.",
   '/services': 'Services — Close Eye',
   '/about': 'About Us — Close Eye',
   '/faq': 'FAQ — Close Eye',
@@ -91,7 +91,6 @@ export default function App() {
           <Route path="/privacy-policy" element={<PublicLayout><PrivacyPage /></PublicLayout>} />
           <Route path="/terms" element={<PublicLayout><TermsPage /></PublicLayout>} />
           <Route path="/auth" element={<AuthPage />} />
-
           <Route path="/dashboard" element={<ProtectedRoute role="family"><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<DashboardHome />} />
             <Route path="bookings" element={<DashboardBookings />} />
@@ -99,12 +98,10 @@ export default function App() {
             <Route path="reports" element={<DashboardReports />} />
             <Route path="notifications" element={<DashboardNotifications />} />
           </Route>
-
           <Route path="/companion" element={<ProtectedRoute role="companion"><CompanionLayout /></ProtectedRoute>}>
             <Route index element={<CompanionHome />} />
             <Route path="visit/:bookingId" element={<CompanionVisit />} />
           </Route>
-
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

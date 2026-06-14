@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { signIn, signUp, supabase } from '@/lib/supabase'
+import { signIn, signUp, signInWithGoogle, supabase } from '@/lib/supabase'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -24,10 +24,23 @@ type SignupData = z.infer<typeof signupSchema>
 type ResetData = z.infer<typeof resetSchema>
 type Mode = 'login' | 'signup' | 'reset'
 
+// Google Icon SVG
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+  )
+}
+
 export function AuthPage() {
   const [mode, setMode] = useState<Mode>('login')
   const [error, setError] = useState('')
   const [resetSent, setResetSent] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const navigate = useNavigate()
 
   const loginForm = useForm<LoginData>({ resolver: zodResolver(loginSchema) })
@@ -51,10 +64,21 @@ export function AuthPage() {
   async function handleReset(data: ResetData) {
     setError('')
     const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/auth?mode=update-password`,
+      redirectTo: `${window.location.origin}/auth`,
     })
     if (error) { setError(error.message); return }
     setResetSent(true)
+  }
+
+  async function handleGoogleLogin() {
+    setGoogleLoading(true)
+    setError('')
+    const { error } = await signInWithGoogle()
+    if (error) {
+      setError(error.message)
+      setGoogleLoading(false)
+    }
+    // On success, Supabase redirects automatically
   }
 
   const InputClass = "w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-600 transition-colors"
@@ -62,9 +86,21 @@ export function AuthPage() {
   return (
     <div className="min-h-screen bg-green-50 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
+
+        {/* Logo */}
         <div className="text-center mb-8">
-          <Link to="/" className="font-serif text-2xl text-green-900">
-            close <span className="text-green-600">eye</span>
+          <Link to="/" className="inline-flex items-center gap-3">
+            <svg viewBox="0 0 100 100" className="w-10 h-10" fill="none">
+              <defs>
+                <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#a8ff3e"/>
+                  <stop offset="100%" stopColor="#1a6b3a"/>
+                </linearGradient>
+              </defs>
+              <path d="M50 10 C50 10, 55 35, 70 35 C55 35, 90 40, 90 50 C90 50, 65 55, 65 70 C65 70, 55 45, 50 90 C50 90, 45 65, 35 70 C35 70, 10 60, 10 50 C10 50, 35 45, 30 30 C30 30, 45 35, 50 10Z" fill="url(#lg)" opacity="0.9"/>
+              <circle cx="50" cy="82" r="6" fill="url(#lg)"/>
+            </svg>
+            <span className="font-serif text-2xl text-green-900">close <span className="text-green-600">eye</span></span>
           </Link>
           <p className="text-gray-500 text-sm mt-2">Your trusted presence in India</p>
         </div>
@@ -73,31 +109,49 @@ export function AuthPage() {
 
           {/* Mode tabs */}
           {mode !== 'reset' && (
-            <div className="flex rounded-xl bg-gray-100 p-1 mb-7">
+            <div className="flex rounded-xl bg-gray-100 p-1 mb-6">
               {(['login', 'signup'] as const).map(m => (
-                <button
-                  key={m}
-                  onClick={() => { setMode(m); setError('') }}
-                  className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === m ? 'bg-white text-green-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                >
+                <button key={m} onClick={() => { setMode(m); setError('') }}
+                  className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === m ? 'bg-white text-green-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
                   {m === 'login' ? 'Sign in' : 'Create account'}
                 </button>
               ))}
             </div>
           )}
 
-          {/* Reset password mode */}
+          {/* Google Login Button */}
+          {mode !== 'reset' && (
+            <>
+              <button
+                onClick={handleGoogleLogin}
+                disabled={googleLoading}
+                className="w-full flex items-center justify-center gap-3 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+              >
+                {googleLoading ? (
+                  <div className="w-5 h-5 border-2 border-gray-300 border-t-green-600 rounded-full animate-spin" />
+                ) : (
+                  <GoogleIcon />
+                )}
+                {googleLoading ? 'Connecting...' : `Continue with Google`}
+              </button>
+
+              <div className="flex items-center gap-3 mb-5">
+                <div className="flex-1 h-px bg-gray-100" />
+                <span className="text-xs text-gray-400 font-medium">or</span>
+                <div className="flex-1 h-px bg-gray-100" />
+              </div>
+            </>
+          )}
+
+          {/* Reset password */}
           {mode === 'reset' && (
             <div>
-              <button
-                onClick={() => { setMode('login'); setError(''); setResetSent(false) }}
-                className="text-sm text-gray-400 hover:text-green-800 mb-5 flex items-center gap-1"
-              >
+              <button onClick={() => { setMode('login'); setError(''); setResetSent(false) }}
+                className="text-sm text-gray-400 hover:text-green-800 mb-5 flex items-center gap-1">
                 ← Back to sign in
               </button>
               <h2 className="font-serif text-xl text-green-900 mb-2">Reset your password</h2>
               <p className="text-sm text-gray-500 mb-5">Enter your email and we'll send a reset link.</p>
-
               {resetSent ? (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
                   <p className="text-2xl mb-2">✉️</p>
@@ -132,11 +186,8 @@ export function AuthPage() {
               <div>
                 <div className="flex justify-between items-center mb-1.5">
                   <label className="text-sm font-semibold text-green-900">Password</label>
-                  <button
-                    type="button"
-                    onClick={() => { setMode('reset'); setError('') }}
-                    className="text-xs text-green-600 hover:text-green-800 transition-colors"
-                  >
+                  <button type="button" onClick={() => { setMode('reset'); setError('') }}
+                    className="text-xs text-green-600 hover:text-green-800 transition-colors">
                     Forgot password?
                   </button>
                 </div>
@@ -167,7 +218,6 @@ export function AuthPage() {
               <div>
                 <label className="block text-sm font-semibold text-green-900 mb-1.5">Password</label>
                 <input {...signupForm.register('password')} type="password" placeholder="••••••••" className={InputClass} />
-                {signupForm.formState.errors.password && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.password.message}</p>}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-green-900 mb-1.5">Confirm password</label>
@@ -182,7 +232,6 @@ export function AuthPage() {
             </form>
           )}
         </div>
-
         <p className="text-center text-xs text-gray-400 mt-6">
           <Link to="/" className="hover:text-green-700 transition-colors">← Back to closeeye.in</Link>
         </p>

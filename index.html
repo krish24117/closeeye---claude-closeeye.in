@@ -2,15 +2,149 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Trusted Family Wellbeing Visits & Support for loved ones in India. Real visits, real photos, real reports." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- Primary Meta -->
+    <title>Close Eye — Your trusted presence in India</title>
+    <meta name="description" content="Verified wellbeing visits and trusted local support for your loved ones in India. Real visits. Real photos. Real reports." />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#1a3a2a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Close Eye" />
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144.png" />
+
+    <!-- Apple Splash Screens -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-2048x2732.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1668x2388.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
     <meta property="og:title" content="Close Eye — When you can't be there, Close Eye can." />
     <meta property="og:description" content="Verified wellbeing visits and trusted local support for your loved ones in India." />
-    <meta name="theme-color" content="#1a3a2a" />
-    <title>Close Eye — Your trusted presence in India</title>
+    <meta property="og:url" content="https://www.closeeye.in" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Splash screen style shown before React loads -->
+    <style>
+      #splash {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(135deg, #0E2A1F 0%, #1a3a2a 60%, #1f4a32 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease;
+      }
+      #splash.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #splash svg {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 20px;
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+      #splash h1 {
+        font-family: Georgia, serif;
+        font-size: 1.5rem;
+        color: white;
+        letter-spacing: -0.5px;
+        margin: 0;
+      }
+      #splash p {
+        font-family: system-ui, sans-serif;
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.5);
+        margin: 8px 0 0;
+        letter-spacing: 0.05em;
+      }
+      #splash .dot {
+        width: 6px;
+        height: 6px;
+        background: #4ade80;
+        border-radius: 50%;
+        margin-top: 24px;
+        animation: blink 1s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.85; }
+      }
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+      }
+      body { margin: 0; background: #0E2A1F; }
+    </style>
   </head>
   <body>
+    <!-- Splash Screen -->
+    <div id="splash">
+      <!-- Close Eye Logo SVG -->
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#a8ff3e;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#1a6b3a;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <!-- Star/compass shape -->
+        <path d="M50 10 C50 10, 55 35, 70 35 C55 35, 90 40, 90 50 C90 50, 65 55, 65 70 C65 70, 55 45, 50 90 C50 90, 45 65, 35 70 C35 70, 10 60, 10 50 C10 50, 35 45, 30 30 C30 30, 45 35, 50 10Z" fill="url(#logoGrad)" opacity="0.9"/>
+        <!-- Plus sign -->
+        <rect x="46" y="5" width="8" height="20" rx="4" fill="url(#logoGrad)"/>
+        <rect x="38" y="13" width="24" height="8" rx="4" fill="url(#logoGrad)"/>
+        <!-- Circle dot bottom -->
+        <circle cx="50" cy="82" r="6" fill="url(#logoGrad)"/>
+        <!-- Curve detail -->
+        <path d="M25 65 Q35 55 50 60 Q65 65 75 55" stroke="url(#logoGrad)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+      <h1>close eye</h1>
+      <p>YOUR TRUSTED PRESENCE IN INDIA</p>
+      <div class="dot"></div>
+    </div>
+
     <div id="root"></div>
+
     <script type="module" src="/src/main.tsx"></script>
+
+    <script>
+      // Hide splash when app loads
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var splash = document.getElementById('splash')
+          if (splash) {
+            splash.classList.add('hidden')
+            setTimeout(function() { splash.remove() }, 600)
+          }
+        }, 1500)
+      })
+
+      // Register Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').then(function(reg) {
+            console.log('SW registered:', reg.scope)
+          }).catch(function(err) {
+            console.log('SW registration failed:', err)
+          })
+        })
+      }
+    </script>
   </body>
 </html>
