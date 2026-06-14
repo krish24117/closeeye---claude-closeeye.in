@@ -1,5 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { AuthProvider, useAuth } from '@/lib/auth-context'
+import { ScrollToTop } from '@/components/ScrollToTop'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { HomePage } from '@/pages/Home'
@@ -19,18 +21,46 @@ import { CompanionLayout } from '@/pages/companion/Layout'
 import { CompanionHome } from '@/pages/companion/Home'
 import { CompanionVisit } from '@/pages/companion/Visit'
 
+// Page titles per route
+const PAGE_TITLES: Record<string, string> = {
+  '/': 'Close Eye — When you can\'t be there, Close Eye can.',
+  '/services': 'Services — Close Eye',
+  '/about': 'About Us — Close Eye',
+  '/faq': 'FAQ — Close Eye',
+  '/contact': 'Contact — Close Eye',
+  '/waitlist': 'Join Waitlist — Close Eye',
+  '/auth': 'Sign In — Close Eye',
+  '/dashboard': 'Dashboard — Close Eye',
+  '/dashboard/bookings': 'My Bookings — Close Eye',
+  '/dashboard/loved-ones': 'Loved Ones — Close Eye',
+  '/dashboard/reports': 'Visit Reports — Close Eye',
+  '/dashboard/notifications': 'Notifications — Close Eye',
+  '/companion': 'Companion Portal — Close Eye',
+}
+
+// Updates page title on route change
+function PageTitleManager() {
+  const location = useLocation()
+  useEffect(() => {
+    const title = PAGE_TITLES[location.pathname] || 'Close Eye — Your trusted presence in India'
+    document.title = title
+  }, [location.pathname])
+  return null
+}
+
 function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: string }) {
   const { user, profile, loading } = useAuth()
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Spinner /></div>
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-green-50">
+      <div className="text-center">
+        <div className="w-10 h-10 border-2 border-green-800 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-sm text-gray-400">Loading...</p>
+      </div>
+    </div>
+  )
   if (!user) return <Navigate to="/auth" replace />
   if (role && profile?.role !== role) return <Navigate to="/" replace />
   return <>{children}</>
-}
-
-function Spinner() {
-  return (
-    <div className="w-8 h-8 border-2 border-green-800 border-t-transparent rounded-full animate-spin" />
-  )
 }
 
 function PublicLayout({ children }: { children: React.ReactNode }) {
@@ -47,6 +77,9 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        {/* ScrollToTop must be inside BrowserRouter */}
+        <ScrollToTop />
+        <PageTitleManager />
         <Routes>
           {/* Public pages */}
           <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
