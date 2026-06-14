@@ -28,10 +28,11 @@ export async function signInWithGoogle() {
   return supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/dashboard`,
+      // Land back on /auth so it can route by role (family/companion) and
+      // surface any error/cancellation Google or Supabase append as query params.
+      redirectTo: `${window.location.origin}/auth`,
       queryParams: {
-        access_type: 'offline',
-        prompt: 'consent',
+        prompt: 'select_account',
       }
     }
   })

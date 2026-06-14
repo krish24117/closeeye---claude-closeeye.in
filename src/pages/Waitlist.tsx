@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -14,6 +14,7 @@ const schema = z.object({
     required_error: 'Please select when you need support',
   }),
   support_needed: z.string().optional(),
+  website: z.string().optional(), // honeypot - real users never see or fill this
 })
 type FormData = z.infer<typeof schema>
 
@@ -27,6 +28,7 @@ const URGENCY_OPTIONS = [
 export function WaitlistPage() {
   const [success, setSuccess] = useState(false)
   const [serverError, setServerError] = useState('')
+  const mountedAt = useRef(Date.now())
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -35,6 +37,14 @@ export function WaitlistPage() {
 
   async function onSubmit(data: FormData) {
     setServerError('')
+
+    // Bot check: honeypot field filled, or form submitted too fast to be human.
+    // Pretend success so bots don't learn to avoid these signals.
+    if (data.website || Date.now() - mountedAt.current < 3000) {
+      setSuccess(true)
+      return
+    }
+
     const { error } = await supabase.from('waitlist').insert({
       full_name: data.full_name,
       email: data.email,
@@ -84,6 +94,12 @@ export function WaitlistPage() {
 
       <section className="max-w-xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+
+          {/* Honeypot - hidden from real users, often filled in by bots */}
+          <div className="absolute -left-[9999px]" aria-hidden="true">
+            <label htmlFor="website">Leave this field blank</label>
+            <input type="text" id="website" tabIndex={-1} autoComplete="off" {...register('website')} />
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>

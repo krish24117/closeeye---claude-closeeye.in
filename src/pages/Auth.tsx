@@ -1,9 +1,10 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { signIn, signUp, signInWithGoogle, supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth-context'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -42,6 +43,31 @@ export function AuthPage() {
   const [resetSent, setResetSent] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
+  const { user, profile, loading } = useAuth()
+
+  // Google redirects back here - surface a cancellation/error, or strip a
+  // leftover ?code=... once Supabase has exchanged it for a session.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.has('error')) {
+      setError(
+        params.get('error') === 'access_denied'
+          ? 'Google sign-in was cancelled.'
+          : params.get('error_description') || 'Google sign-in failed. Please try again.'
+      )
+      setGoogleLoading(false)
+      navigate('/auth', { replace: true })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Once a session exists (incl. right after a Google redirect), go to the
+  // correct dashboard for this user's role.
+  useEffect(() => {
+    if (!loading && user) {
+      navigate(profile?.role === 'companion' ? '/companion' : '/dashboard', { replace: true })
+    }
+  }, [loading, user, profile, navigate])
 
   const loginForm = useForm<LoginData>({ resolver: zodResolver(loginSchema) })
   const signupForm = useForm<SignupData>({ resolver: zodResolver(signupSchema) })
@@ -75,10 +101,10 @@ export function AuthPage() {
     setError('')
     const { error } = await signInWithGoogle()
     if (error) {
-      setError(error.message)
+      setError('Unable to start Google sign-in. Please try again or use email instead.')
       setGoogleLoading(false)
     }
-    // On success, Supabase redirects automatically
+    // On success, Supabase redirects to Google and back to /auth automatically
   }
 
   const InputClass = "w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-600 transition-colors"
@@ -218,6 +244,7 @@ export function AuthPage() {
               <div>
                 <label className="block text-sm font-semibold text-green-900 mb-1.5">Password</label>
                 <input {...signupForm.register('password')} type="password" placeholder="••••••••" className={InputClass} />
+                {signupForm.formState.errors.password && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.password.message}</p>}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-green-900 mb-1.5">Confirm password</label>
