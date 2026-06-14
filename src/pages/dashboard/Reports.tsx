@@ -63,7 +63,7 @@ export function DashboardReports() {
               <div className="flex justify-between items-start flex-wrap gap-3 mb-4">
                 <div>
                   <p className="font-semibold text-green-900">{r.loved_ones?.full_name}</p>
-                  <p className="text-xs text-gray-400">by {r.companions?.full_name} · {format(new Date(r.report_submitted_at),'dd MMM yyyy')}</p>
+                  <p className="text-xs text-gray-400">by {r.companions?.full_name} · {format(new Date(r.created_at),'dd MMM yyyy')}</p>
                 </div>
                 <div className="flex gap-2">
                   {[['😊',r.mood_score,'Mood'],['💊',r.health_score,'Health'],['🏠',r.home_safety_score,'Safety']].map(([e,s,l])=>s&&(

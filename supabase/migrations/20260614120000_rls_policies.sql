@@ -36,7 +36,8 @@ stable
 security definer
 set search_path = public
 as $$
-  select id from public.companions where user_id = auth.uid();
+  -- companions.id is the same uuid as auth.users.id / profiles.id (1:1 extension table)
+  select id from public.companions where id = auth.uid();
 $$;
 
 grant execute on function public.is_admin() to authenticated, anon;
@@ -72,7 +73,7 @@ drop policy if exists "Companions: read own, assigned family, or admin" on publi
 create policy "Companions: read own, assigned family, or admin"
   on public.companions for select
   using (
-    user_id = auth.uid()
+    id = auth.uid()
     or public.is_admin()
     or exists (
       select 1 from public.bookings b
@@ -161,8 +162,10 @@ create policy "Visit reports: read own family, own companion, or admin"
     public.is_admin()
     or companion_id = public.current_companion_id()
     or exists (
-      select 1 from public.loved_ones lo
-      where lo.id = visit_reports.loved_one_id
+      -- visit_reports has no loved_one_id column - join through bookings
+      select 1 from public.bookings b
+      join public.loved_ones lo on lo.id = b.loved_one_id
+      where b.id = visit_reports.booking_id
         and lo.family_user_id = auth.uid()
     )
   );

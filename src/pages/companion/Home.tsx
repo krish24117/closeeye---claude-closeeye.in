@@ -18,12 +18,9 @@ export function CompanionHome() {
     setLoading(true)
     setError(null)
     try {
-      const { data: comp, error: compError } = await supabase.from('companions').select('id').eq('user_id',user.id).single()
-      if (compError) throw compError
-      if (!comp) { setLoading(false); return }
       const { data, error: bookingsError } = await supabase.from('bookings')
         .select('*, loved_ones(full_name,city,address,medical_notes,doctor_name,nearest_hospital,emergency_contact_name,emergency_contact_phone), visit_reports(id)')
-        .eq('companion_id',comp.id)
+        .eq('companion_id',user.id)
         .in('status',['companion_assigned','in_progress','completed'])
         .order('scheduled_at',{ascending:true})
       if (bookingsError) throw bookingsError

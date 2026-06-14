@@ -14,7 +14,6 @@ export function CompanionVisit() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [booking, setBooking] = useState<any>(null)
-  const [companion, setCompanion] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -66,14 +65,10 @@ export function CompanionVisit() {
     setLoading(true)
     setLoadError(null)
     try {
-      const { data: c, error: compError } = await supabase.from('companions').select('id').eq('user_id',user.id).single()
-      if (compError) throw compError
-      setCompanion(c)
-      if (!c) { setLoading(false); return }
       // Scope to this companion's own booking — prevents viewing/reporting on visits assigned to others
       const { data, error: bookingError } = await supabase.from('bookings').select('*,loved_ones(*)')
         .eq('id',bookingId)
-        .eq('companion_id',c.id)
+        .eq('companion_id',user.id)
         .single()
       if (bookingError) throw bookingError
       setBooking(data)
@@ -86,7 +81,7 @@ export function CompanionVisit() {
   }
 
   async function onSubmit(data: any) {
-    if (!booking || !companion) return
+    if (!booking || !user) return
     setSaving(true); setError('')
 
     const photoPaths: string[] = []
@@ -99,7 +94,7 @@ export function CompanionVisit() {
 
     const { error: err } = await supabase.from('visit_reports').insert({
       booking_id: booking.id,
-      companion_id: companion.id,
+      companion_id: user.id,
       loved_one_id: booking.loved_one_id,
       mood_score: parseInt(data.mood_score),
       health_score: parseInt(data.health_score),
