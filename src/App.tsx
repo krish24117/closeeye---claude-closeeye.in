@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { AuthProvider, useAuth } from '@/lib/auth-context'
-import { ScrollToTop } from '@/components/ScrollToTop'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { HomePage } from '@/pages/Home'
@@ -21,7 +20,7 @@ import { CompanionLayout } from '@/pages/companion/Layout'
 import { CompanionHome } from '@/pages/companion/Home'
 import { CompanionVisit } from '@/pages/companion/Visit'
 
-// Page titles per route
+// Page titles map
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Close Eye — When you can\'t be there, Close Eye can.',
   '/services': 'Services — Close Eye',
@@ -38,10 +37,11 @@ const PAGE_TITLES: Record<string, string> = {
   '/companion': 'Companion Portal — Close Eye',
 }
 
-// Updates page title on route change
-function PageTitleManager() {
+// Scroll to top + set page title on route change
+function RouteManager() {
   const location = useLocation()
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     const title = PAGE_TITLES[location.pathname] || 'Close Eye — Your trusted presence in India'
     document.title = title
   }, [location.pathname])
@@ -77,9 +77,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        {/* ScrollToTop must be inside BrowserRouter */}
-        <ScrollToTop />
-        <PageTitleManager />
+        <RouteManager />
         <Routes>
           {/* Public pages */}
           <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
