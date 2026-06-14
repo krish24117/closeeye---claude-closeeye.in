@@ -69,6 +69,24 @@ export function AuthPage() {
     }
   }, [loading, user, profile, navigate])
 
+  // Google redirects back with ?code=... (PKCE). detectSessionInUrl normally
+  // exchanges this for a session automatically, but if that silently fails
+  // (e.g. missing code verifier) the code stays in the URL and the page is
+  // stuck forever with no feedback - so exchange it ourselves and surface
+  // any error.
+  useEffect(() => {
+    if (loading || user) return
+    const code = new URLSearchParams(window.location.search).get('code')
+    if (!code) return
+    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+      if (error) {
+        setError(error.message || 'Google sign-in failed. Please try again.')
+        setGoogleLoading(false)
+        navigate('/auth', { replace: true })
+      }
+    })
+  }, [loading, user, navigate])
+
   const loginForm = useForm<LoginData>({ resolver: zodResolver(loginSchema) })
   const signupForm = useForm<SignupData>({ resolver: zodResolver(signupSchema) })
   const resetForm = useForm<ResetData>({ resolver: zodResolver(resetSchema) })
