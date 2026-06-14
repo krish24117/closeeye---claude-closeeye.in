@@ -10,7 +10,6 @@ export function Footer() {
             <p className="text-sm leading-relaxed max-w-xs">
               Verified wellbeing visits and trusted local support for your loved ones in India. When you can't be there, Close Eye can.
             </p>
-            {/* WhatsApp CTA on mobile */}
             <a
               href="https://wa.me/919000221261"
               target="_blank"
@@ -27,20 +26,20 @@ export function Footer() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Company</p>
             <ul className="space-y-2.5 text-sm">
-              {[['About', '/about'], ['Services', '/services'], ['Contact', '/contact'], ['FAQ', '/faq']].map(([l, h]) => (
-                <li key={h}>
-                  <Link to={h} className="hover:text-white transition-colors">{l}</Link>
-                </li>
-              ))}
+              <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
+              <li><Link to="/services" className="hover:text-white transition-colors">Services</Link></li>
+              <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
+              <li><Link to="/faq" className="hover:text-white transition-colors">FAQ</Link></li>
             </ul>
           </div>
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Legal</p>
             <ul className="space-y-2.5 text-sm">
-              <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Refund Policy</a></li>
+              {/* ✅ Fixed - these now point to real pages */}
+              <li><Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
+              <li><Link to="/faq#cancellation" className="hover:text-white transition-colors">Refund Policy</Link></li>
             </ul>
           </div>
 
@@ -55,18 +54,18 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row justify-between items-center text-xs gap-2 text-center">
+        <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row justify-between items-center text-xs gap-2 text-center sm:text-left">
           <span>Made with care in India · Stexa Products & Services Pvt. Ltd.</span>
           <span>© 2026 Close Eye. All rights reserved.</span>
         </div>
       </div>
 
-      {/* WhatsApp float — repositioned to avoid overlap */}
+      {/* WhatsApp float */}
       <a
         href="https://wa.me/919000221261?text=Hi%20Close%20Eye%2C%20I'd%20like%20to%20know%20more."
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-4 sm:right-6 w-13 h-13 bg-[#25D366] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform z-50"
+        className="fixed bottom-6 right-4 sm:right-6 bg-[#25D366] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform z-50"
         style={{ width: '52px', height: '52px' }}
         title="Chat on WhatsApp"
       >

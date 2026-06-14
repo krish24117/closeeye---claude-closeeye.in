@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { AuthProvider, useAuth } from '@/lib/auth-context'
+import { ScrollToTop } from '@/components/ScrollToTop'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { HomePage } from '@/pages/Home'
@@ -10,6 +11,8 @@ import { FAQPage } from '@/pages/FAQ'
 import { ContactPage } from '@/pages/Contact'
 import { WaitlistPage } from '@/pages/Waitlist'
 import { AuthPage } from '@/pages/Auth'
+import { PrivacyPage } from '@/pages/Privacy'
+import { TermsPage } from '@/pages/Terms'
 import { DashboardLayout } from '@/pages/dashboard/Layout'
 import { DashboardHome } from '@/pages/dashboard/Home'
 import { DashboardBookings } from '@/pages/dashboard/Bookings'
@@ -20,7 +23,6 @@ import { CompanionLayout } from '@/pages/companion/Layout'
 import { CompanionHome } from '@/pages/companion/Home'
 import { CompanionVisit } from '@/pages/companion/Visit'
 
-// Page titles map
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Close Eye — When you can\'t be there, Close Eye can.',
   '/services': 'Services — Close Eye',
@@ -29,6 +31,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/contact': 'Contact — Close Eye',
   '/waitlist': 'Join Waitlist — Close Eye',
   '/auth': 'Sign In — Close Eye',
+  '/privacy-policy': 'Privacy Policy — Close Eye',
+  '/terms': 'Terms of Service — Close Eye',
   '/dashboard': 'Dashboard — Close Eye',
   '/dashboard/bookings': 'My Bookings — Close Eye',
   '/dashboard/loved-ones': 'Loved Ones — Close Eye',
@@ -37,11 +41,9 @@ const PAGE_TITLES: Record<string, string> = {
   '/companion': 'Companion Portal — Close Eye',
 }
 
-// Scroll to top + set page title on route change
-function RouteManager() {
+function PageTitleManager() {
   const location = useLocation()
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
     const title = PAGE_TITLES[location.pathname] || 'Close Eye — Your trusted presence in India'
     document.title = title
   }, [location.pathname])
@@ -77,18 +79,19 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <RouteManager />
+        <ScrollToTop />
+        <PageTitleManager />
         <Routes>
-          {/* Public pages */}
           <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
           <Route path="/services" element={<PublicLayout><ServicesPage /></PublicLayout>} />
           <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
           <Route path="/faq" element={<PublicLayout><FAQPage /></PublicLayout>} />
           <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
           <Route path="/waitlist" element={<PublicLayout><WaitlistPage /></PublicLayout>} />
+          <Route path="/privacy-policy" element={<PublicLayout><PrivacyPage /></PublicLayout>} />
+          <Route path="/terms" element={<PublicLayout><TermsPage /></PublicLayout>} />
           <Route path="/auth" element={<AuthPage />} />
 
-          {/* Family dashboard */}
           <Route path="/dashboard" element={<ProtectedRoute role="family"><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<DashboardHome />} />
             <Route path="bookings" element={<DashboardBookings />} />
@@ -97,7 +100,6 @@ export default function App() {
             <Route path="notifications" element={<DashboardNotifications />} />
           </Route>
 
-          {/* Companion portal */}
           <Route path="/companion" element={<ProtectedRoute role="companion"><CompanionLayout /></ProtectedRoute>}>
             <Route index element={<CompanionHome />} />
             <Route path="visit/:bookingId" element={<CompanionVisit />} />
