@@ -1,28 +1,69 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { User, Session } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 
-@layer base {
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body {
-    font-family: 'Inter', sans-serif;
-    color: #1a1a1a;
-    background: #ffffff;
-    -webkit-font-smoothing: antialiased;
-  }
-  h1,h2,h3 { font-family: 'DM Serif Display', serif; }
+interface Profile {
+  id: string
+  full_name: string | null
+  whatsapp_number: string | null
+  country: string | null
+  role: 'family' | 'companion' | 'admin'
+  avatar_url: string | null
 }
 
-@layer utilities {
-  .font-serif { font-family: 'DM Serif Display', serif; }
-  .text-balance { text-wrap: balance; }
-  .animate-fade-in {
-    animation: fadeIn .4s ease both;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+interface AuthCtx {
+  user: User | null
+  profile: Profile | null
+  session: Session | null
+  loading: boolean
+  signOut: () => Promise<void>
 }
+
+const AuthContext = createContext<AuthCtx>({
+  user: null, profile: null, session: null, loading: true,
+  signOut: async () => {}
+})
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setUser(session?.user ?? null)
+      if (session?.user) fetchProfile(session.user.id)
+      else setLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setSession(session)
+      setUser(session?.user ?? null)
+      if (session?.user) fetchProfile(session.user.id)
+      else { setProfile(null); setLoading(false) }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  async function fetchProfile(userId: string) {
+    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
+    setProfile(data)
+    setLoading(false)
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut()
+    setUser(null); setProfile(null); setSession(null)
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, profile, session, loading, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export const useAuth = () => useContext(AuthContext)
