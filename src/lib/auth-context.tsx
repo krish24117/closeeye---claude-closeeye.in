@@ -36,6 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id)
       else setLoading(false)
+    }).catch((err) => {
+      console.error('Failed to get session:', err)
+      setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
@@ -49,14 +52,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function fetchProfile(userId: string) {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-    setProfile(data)
-    setLoading(false)
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
+      if (error) throw error
+      setProfile(data)
+    } catch (err) {
+      console.error('Failed to fetch profile:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function signOut() {
     await supabase.auth.signOut()
     setUser(null); setProfile(null); setSession(null)
+    // Clear any cached responses so the next user on this device sees no stale data
+    if ('caches' in window) {
+      const keys = await caches.keys()
+      await Promise.all(keys.map((k) => caches.delete(k)))
+    }
   }
 
   return (

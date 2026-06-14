@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Plus, Minus } from 'lucide-react'
 import clsx from 'clsx'
 
-const FAQS = [
+const FAQS: { id?: string; q: string; a: string }[] = [
   {
     q: 'What is a Close Eye visit?',
     a: 'A Close Eye visit is a friendly, in-person home call by a verified local companion. They spend 60–90 minutes with your loved one — sharing tea, checking on their mood and health, doing a basic home-safety walk-through, and making sure medications are in order. Within an hour you receive a detailed report with time-stamped photos on your dashboard and WhatsApp. It is not a medical service — it is a warm human presence, with professional accountability built in.'
@@ -36,17 +37,34 @@ const FAQS = [
     a: 'Yes. On monthly and quarterly plans, you are introduced to your dedicated companion via a brief WhatsApp call before their first visit. For one-time visits, you can request this introduction and we will arrange it. We want you to feel confident before anyone meets your family.'
   },
   {
+    id: 'cancellation',
     q: 'What is your cancellation policy?',
-    a: 'Cancel at least 24 hours before a scheduled visit for a full refund. Cancellations within 24 hours are eligible for a credit toward a future visit. Emergency visits, once dispatched, are non-refundable. Monthly and quarterly plans can be paused for up to 30 days per billing cycle — contact us on WhatsApp to arrange this.'
+    a: 'Cancel at least 24 hours before a scheduled visit for a full refund. Cancellations within 24 hours are eligible for a credit toward a future visit. Emergency visits, once dispatched, are non-refundable. Monthly and quarterly plans can be paused for up to 30 days per billing cycle — contact us on WhatsApp to arrange this. Refunds are processed within 5–7 business days to the original payment method.'
   },
 ]
 
 export function FAQPage() {
+  const location = useLocation()
   const [openIndex, setOpenIndex] = useState<number | null>(0) // First one open by default
 
   function toggle(i: number) {
     setOpenIndex(openIndex === i ? null : i)
   }
+
+  // Open and scroll to the FAQ item matching the URL hash (e.g. /faq#cancellation)
+  useEffect(() => {
+    const hash = location.hash.replace('#', '')
+    if (!hash) return
+
+    const index = FAQS.findIndex((f) => f.id === hash)
+    if (index === -1) return
+
+    setOpenIndex(index)
+    const el = document.getElementById(hash)
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+    }
+  }, [location.hash])
 
   return (
     <main>
@@ -59,9 +77,12 @@ export function FAQPage() {
       <section className="max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <div className="divide-y divide-gray-100">
           {FAQS.map((f, i) => (
-            <div key={i} className="py-1">
+            <div key={i} id={f.id} className="py-1 scroll-mt-24">
               <button
+                id={`faq-q-${i}`}
                 onClick={() => toggle(i)}
+                aria-expanded={openIndex === i}
+                aria-controls={`faq-a-${i}`}
                 className="w-full flex justify-between items-center py-4 sm:py-5 text-left gap-4 group"
               >
                 <span className={clsx(
@@ -82,10 +103,14 @@ export function FAQPage() {
               </button>
 
               {/* Answer — always rendered but hidden with CSS for smooth animation */}
-              <div className={clsx(
-                'overflow-hidden transition-all duration-300 ease-in-out',
-                openIndex === i ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-              )}>
+              <div
+                id={`faq-a-${i}`}
+                role="region"
+                aria-labelledby={`faq-q-${i}`}
+                className={clsx(
+                  'overflow-hidden transition-all duration-300 ease-in-out',
+                  openIndex === i ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                )}>
                 <p className="pb-5 text-sm sm:text-base text-gray-500 leading-relaxed">
                   {f.a}
                 </p>

@@ -9,20 +9,32 @@ export function CompanionHome() {
   const { user } = useAuth()
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(()=>{
+  useEffect(()=>{ load() },[user])
+
+  async function load() {
     if (!user) return
-    supabase.from('companions').select('id').eq('user_id',user.id).single()
-      .then(({data:comp})=>{
-        if (!comp) { setLoading(false); return }
-        supabase.from('bookings')
-          .select('*, loved_ones(full_name,city,address,medical_notes,doctor_name,nearest_hospital,emergency_contact_name,emergency_contact_phone), visit_reports(id)')
-          .eq('companion_id',comp.id)
-          .in('status',['companion_assigned','in_progress','completed'])
-          .order('scheduled_at',{ascending:true})
-          .then(({data})=>{ setBookings(data||[]); setLoading(false) })
-      })
-  },[user])
+    setLoading(true)
+    setError(null)
+    try {
+      const { data: comp, error: compError } = await supabase.from('companions').select('id').eq('user_id',user.id).single()
+      if (compError) throw compError
+      if (!comp) { setLoading(false); return }
+      const { data, error: bookingsError } = await supabase.from('bookings')
+        .select('*, loved_ones(full_name,city,address,medical_notes,doctor_name,nearest_hospital,emergency_contact_name,emergency_contact_phone), visit_reports(id)')
+        .eq('companion_id',comp.id)
+        .in('status',['companion_assigned','in_progress','completed'])
+        .order('scheduled_at',{ascending:true})
+      if (bookingsError) throw bookingsError
+      setBookings(data||[])
+    } catch (err) {
+      console.error('Failed to load visits:', err)
+      setError('Something went wrong — please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const STATUS_COLORS: Record<string,string> = {
     companion_assigned:'bg-blue-100 text-blue-700',
@@ -41,6 +53,12 @@ export function CompanionHome() {
   return (
     <div className="space-y-6 animate-fade-in">
       <h1 className="font-serif text-2xl text-green-900">My Visits</h1>
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
+          {error}
+          <button onClick={load} className="font-semibold underline whitespace-nowrap">Retry</button>
+        </div>
+      )}
       {bookings.length === 0 ? (
         <div className="text-center py-20 bg-green-50 rounded-2xl">
           <p className="text-4xl mb-3">📅</p>

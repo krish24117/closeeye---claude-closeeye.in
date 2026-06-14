@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { useToast } from '@/components/ui/Toast'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 
@@ -13,23 +14,49 @@ const TYPE_ICONS: Record<string,string> = {
 
 export function DashboardNotifications() {
   const { user } = useAuth()
+  const { showToast } = useToast()
   const [notes, setNotes] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(()=>{
+  useEffect(()=>{ load() },[user])
+
+  async function load() {
     if (!user) return
-    supabase.from('notifications').select('*').eq('user_id',user.id).order('created_at',{ascending:false})
-      .then(({data})=>setNotes(data||[]))
-  },[user])
+    setLoading(true)
+    setError(null)
+    try {
+      const { data, error } = await supabase.from('notifications').select('*').eq('user_id',user.id).order('created_at',{ascending:false})
+      if (error) throw error
+      setNotes(data||[])
+    } catch (err) {
+      console.error('Failed to load notifications:', err)
+      setError('Something went wrong — please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   async function markRead(id: string) {
-    await supabase.from('notifications').update({read:true}).eq('id',id)
     setNotes(n=>n.map(x=>x.id===id?{...x,read:true}:x))
+    const { error } = await supabase.from('notifications').update({read:true}).eq('id',id)
+    if (error) {
+      console.error('Failed to mark notification as read:', error)
+      setNotes(n=>n.map(x=>x.id===id?{...x,read:false}:x))
+      showToast('Could not update notification — try again', 'error')
+    }
   }
 
   async function markAllRead() {
     if (!user) return
-    await supabase.from('notifications').update({read:true}).eq('user_id',user.id).eq('read',false)
+    const previous = notes
     setNotes(n=>n.map(x=>({...x,read:true})))
+    const { error } = await supabase.from('notifications').update({read:true}).eq('user_id',user.id).eq('read',false)
+    if (error) {
+      console.error('Failed to mark all notifications as read:', error)
+      setNotes(previous)
+      showToast('Could not update notifications — try again', 'error')
+    }
   }
 
   return (
@@ -40,7 +67,16 @@ export function DashboardNotifications() {
           <button onClick={markAllRead} className="text-sm text-green-600 font-medium hover:text-green-800">Mark all read</button>
         )}
       </div>
-      {notes.length === 0 ? (
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
+          {error}
+          <button onClick={load} className="font-semibold underline whitespace-nowrap">Retry</button>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-center py-20 text-gray-400">Loading notifications...</div>
+      ) : notes.length === 0 ? (
         <div className="text-center py-20 bg-green-50 rounded-2xl">
           <p className="text-4xl mb-3">🔔</p>
           <p className="font-semibold text-green-900">No notifications yet</p>
@@ -49,6 +85,9 @@ export function DashboardNotifications() {
         <div className="space-y-2">
           {notes.map(n=>(
             <div key={n.id} onClick={()=>!n.read&&markRead(n.id)}
+              role="button"
+              tabIndex={n.read?-1:0}
+              onKeyDown={(e)=>{ if((e.key==='Enter'||e.key===' ') && !n.read) { e.preventDefault(); markRead(n.id) } }}
               className={clsx('flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-colors',
                 n.read?'bg-white border-gray-100':'bg-green-50 border-green-100'
               )}>

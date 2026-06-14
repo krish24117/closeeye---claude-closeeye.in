@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { AuthProvider, useAuth } from '@/lib/auth-context'
+import { ToastProvider } from '@/components/ui/Toast'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
@@ -41,11 +42,57 @@ const PAGE_TITLES: Record<string, string> = {
   '/companion': 'Companion Portal — Close Eye',
 }
 
-function PageTitleManager() {
+const PAGE_DESCRIPTIONS: Record<string, string> = {
+  '/': 'Verified wellbeing visits and trusted local support for your loved ones in India. Real visits. Real photos. Real reports.',
+  '/services': 'Companion visits, hospital companions, emergency visits, and monthly care plans — choose the right support for your loved one in India.',
+  '/about': 'Meet Close Eye — verified local companions providing trusted, in-person wellbeing visits for elderly parents and loved ones across India.',
+  '/faq': 'Answers to common questions about Close Eye visits, companion verification, pricing, cancellations, and coverage areas.',
+  '/contact': 'Get in touch with the Close Eye team on WhatsApp or email — we reply within a few hours.',
+  '/waitlist': 'Join the Close Eye waitlist to be notified the moment we launch verified companion visits in your city.',
+  '/auth': 'Sign in or create a Close Eye account to book and manage companion visits for your loved ones.',
+  '/privacy-policy': "How Close Eye collects, uses, and protects your family's data.",
+  '/terms': 'Terms of service for booking and using Close Eye companion visits.',
+  '/dashboard': 'Manage your bookings, loved ones, visit reports, and notifications.',
+  '/dashboard/bookings': 'View and manage your Close Eye companion visit bookings.',
+  '/dashboard/loved-ones': 'Manage the profiles of the family members Close Eye visits.',
+  '/dashboard/reports': 'Read visit reports and photos from your loved one’s companion visits.',
+  '/dashboard/notifications': 'Your Close Eye notifications and alerts.',
+  '/companion': 'Manage your assigned visits and submit visit reports.',
+}
+
+const SITE_URL = 'https://www.closeeye.in'
+
+function SEOManager() {
   const location = useLocation()
   useEffect(() => {
-    const title = PAGE_TITLES[location.pathname] || 'Close Eye — Your trusted presence in India'
-    document.title = title
+    const { pathname } = location
+
+    document.title = PAGE_TITLES[pathname] || 'Close Eye — Your trusted presence in India'
+
+    const description = PAGE_DESCRIPTIONS[pathname] || PAGE_DESCRIPTIONS['/']
+    document.querySelector('meta[name="description"]')?.setAttribute('content', description)
+
+    const canonicalUrl = pathname === '/' ? `${SITE_URL}/` : `${SITE_URL}${pathname}`
+    let canonicalTag = document.querySelector('link[rel="canonical"]')
+    if (!canonicalTag) {
+      canonicalTag = document.createElement('link')
+      canonicalTag.setAttribute('rel', 'canonical')
+      document.head.appendChild(canonicalTag)
+    }
+    canonicalTag.setAttribute('href', canonicalUrl)
+
+    const isPrivate = pathname.startsWith('/dashboard') || pathname.startsWith('/companion')
+    let robotsTag = document.querySelector('meta[name="robots"]')
+    if (isPrivate) {
+      if (!robotsTag) {
+        robotsTag = document.createElement('meta')
+        robotsTag.setAttribute('name', 'robots')
+        document.head.appendChild(robotsTag)
+      }
+      robotsTag.setAttribute('content', 'noindex, nofollow')
+    } else {
+      robotsTag?.remove()
+    }
   }, [location.pathname])
   return null
 }
@@ -78,9 +125,10 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <AuthProvider>
+      <ToastProvider>
       <BrowserRouter>
         <ScrollToTop />
-        <PageTitleManager />
+        <SEOManager />
         <Routes>
           <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
           <Route path="/services" element={<PublicLayout><ServicesPage /></PublicLayout>} />
@@ -105,6 +153,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      </ToastProvider>
     </AuthProvider>
   )
 }

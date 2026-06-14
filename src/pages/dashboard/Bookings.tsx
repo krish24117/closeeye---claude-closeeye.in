@@ -1,6 +1,7 @@
 // src/pages/dashboard/Bookings.tsx
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useToast } from '@/components/ui/Toast'
 import { format } from 'date-fns'
 
 const STATUS_COLORS: Record<string,string> = {
@@ -22,15 +23,46 @@ const SERVICE_NAMES: Record<string,string> = {
 }
 
 export function DashboardBookings() {
+  const { showToast } = useToast()
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
 
-  useEffect(()=>{
-    supabase.from('bookings')
-      .select('*, loved_ones(full_name,city), companions(full_name,phone)')
-      .order('created_at',{ascending:false})
-      .then(({data})=>{ setBookings(data||[]); setLoading(false) })
-  },[])
+  useEffect(()=>{ load() },[])
+
+  async function load() {
+    setLoading(true)
+    setError(null)
+    try {
+      const { data, error } = await supabase.from('bookings')
+        .select('*, loved_ones(full_name,city), companions(full_name,phone)')
+        .order('created_at',{ascending:false})
+      if (error) throw error
+      setBookings(data||[])
+    } catch (err) {
+      console.error('Failed to load bookings:', err)
+      setError('Something went wrong — please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function cancelBooking(b: any) {
+    if (!window.confirm('Cancel this booking? This cannot be undone.')) return
+    setCancellingId(b.id)
+    try {
+      const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', b.id)
+      if (error) throw error
+      setBookings(prev => prev.map(x => x.id === b.id ? { ...x, status: 'cancelled' } : x))
+      showToast('Booking cancelled', 'success')
+    } catch (err) {
+      console.error('Failed to cancel booking:', err)
+      showToast('Could not cancel booking — try again', 'error')
+    } finally {
+      setCancellingId(null)
+    }
+  }
 
   if (loading) return <div className="text-center py-20 text-gray-400">Loading bookings...</div>
 
@@ -40,6 +72,13 @@ export function DashboardBookings() {
         <h1 className="font-serif text-2xl text-green-900">Bookings</h1>
         <a href="/waitlist" className="bg-green-800 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-green-700 transition-colors">+ New booking</a>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
+          {error}
+          <button onClick={load} className="font-semibold underline whitespace-nowrap">Retry</button>
+        </div>
+      )}
 
       {bookings.length === 0 ? (
         <div className="text-center py-20 bg-green-50 rounded-2xl">
@@ -70,6 +109,17 @@ export function DashboardBookings() {
                 <div className="mt-3 pt-3 border-t border-gray-50 flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-700">{b.companions.full_name?.[0]}</div>
                   <p className="text-xs text-gray-500">Companion: {b.companions.full_name} · {b.companions.phone}</p>
+                </div>
+              )}
+              {(b.status === 'pending' || b.status === 'confirmed') && (
+                <div className="mt-3 pt-3 border-t border-gray-50">
+                  <button
+                    onClick={()=>cancelBooking(b)}
+                    disabled={cancellingId === b.id}
+                    className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    {cancellingId === b.id ? 'Cancelling...' : 'Cancel booking'}
+                  </button>
                 </div>
               )}
             </div>

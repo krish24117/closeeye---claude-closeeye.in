@@ -6,19 +6,50 @@ import { format } from 'date-fns'
 export function DashboardReports() {
   const [reports, setReports] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [signedUrls, setSignedUrls] = useState<Record<string,string>>({})
+
+  useEffect(()=>{ load() },[])
 
   useEffect(()=>{
-    supabase.from('visit_reports')
-      .select('*, loved_ones(full_name), companions(full_name), bookings(service_type)')
-      .order('created_at',{ascending:false})
-      .then(({data})=>{ setReports(data||[]); setLoading(false) })
-  },[])
+    const paths = Array.from(new Set(reports.flatMap(r => (r.photo_urls || []) as string[])))
+    if (paths.length === 0) return
+    supabase.storage.from('visit-photos').createSignedUrls(paths, 3600).then(({ data, error }) => {
+      if (error) { console.error('Failed to load photo URLs:', error); return }
+      const map: Record<string,string> = {}
+      data?.forEach(d => { if (d.signedUrl && d.path) map[d.path] = d.signedUrl })
+      setSignedUrls(map)
+    })
+  },[reports])
+
+  async function load() {
+    setLoading(true)
+    setError(null)
+    try {
+      const { data, error } = await supabase.from('visit_reports')
+        .select('*, loved_ones(full_name), companions(full_name), bookings(service_type)')
+        .order('created_at',{ascending:false})
+      if (error) throw error
+      setReports(data||[])
+    } catch (err) {
+      console.error('Failed to load reports:', err)
+      setError('Something went wrong — please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (loading) return <div className="text-center py-20 text-gray-400">Loading reports...</div>
 
   return (
     <div className="space-y-6 animate-fade-in">
       <h1 className="font-serif text-2xl text-green-900">Visit Reports</h1>
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
+          {error}
+          <button onClick={load} className="font-semibold underline whitespace-nowrap">Retry</button>
+        </div>
+      )}
       {reports.length === 0 ? (
         <div className="text-center py-20 bg-green-50 rounded-2xl">
           <p className="text-4xl mb-3">📋</p>
@@ -56,8 +87,10 @@ export function DashboardReports() {
               )}
               {r.photo_urls?.length > 0 && (
                 <div className="flex gap-2 mt-3 flex-wrap">
-                  {r.photo_urls.map((url: string, i: number)=>(
-                    <img key={i} src={url} alt="Visit photo" className="w-16 h-16 object-cover rounded-lg border border-gray-100" />
+                  {r.photo_urls.map((path: string, i: number)=>(
+                    signedUrls[path]
+                      ? <img key={i} src={signedUrls[path]} alt="Visit photo" className="w-16 h-16 object-cover rounded-lg border border-gray-100" />
+                      : <div key={i} className="w-16 h-16 rounded-lg bg-gray-100 animate-pulse" />
                   ))}
                 </div>
               )}

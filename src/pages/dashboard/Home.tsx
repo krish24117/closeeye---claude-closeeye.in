@@ -9,20 +9,30 @@ export function DashboardHome() {
   const { profile } = useAuth()
   const [stats, setStats] = useState({ bookings: 0, lovedOnes: 0, reports: 0, unread: 0 })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function load() {
+  useEffect(() => { load() }, [])
+
+  async function load() {
+    setLoading(true)
+    setError(null)
+    try {
       const [b, l, r, n] = await Promise.all([
         supabase.from('bookings').select('id', { count: 'exact', head: true }),
         supabase.from('loved_ones').select('id', { count: 'exact', head: true }),
         supabase.from('visit_reports').select('id', { count: 'exact', head: true }),
         supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('read', false),
       ])
+      const firstError = b.error || l.error || r.error || n.error
+      if (firstError) throw firstError
       setStats({ bookings: b.count || 0, lovedOnes: l.count || 0, reports: r.count || 0, unread: n.count || 0 })
+    } catch (err) {
+      console.error('Failed to load dashboard stats:', err)
+      setError('Something went wrong — please try again.')
+    } finally {
       setLoading(false)
     }
-    load()
-  }, [])
+  }
 
   const cards = [
     { icon: Calendar, label: 'Total Bookings', value: stats.bookings, href: '/dashboard/bookings', color: 'bg-blue-50 text-blue-700' },
@@ -43,6 +53,14 @@ export function DashboardHome() {
         <h1 className="font-serif text-xl sm:text-2xl text-green-900">{greeting}, {firstName} 👋</h1>
         <p className="text-gray-400 text-sm mt-1">Here's how your family is doing.</p>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
+          {error}
+          <button onClick={load} className="font-semibold underline whitespace-nowrap">Retry</button>
+        </div>
+      )}
 
       {/* Stats */}
       {loading ? <StatsSkeleton /> : (

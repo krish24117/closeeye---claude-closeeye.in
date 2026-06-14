@@ -65,6 +65,7 @@ export function Footer() {
         href="https://wa.me/919000221261?text=Hi%20Close%20Eye%2C%20I'd%20like%20to%20know%20more."
         target="_blank"
         rel="noopener noreferrer"
+        aria-label="Chat with Close Eye on WhatsApp"
         className="fixed bottom-6 right-4 sm:right-6 bg-[#25D366] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform z-50"
         style={{ width: '52px', height: '52px' }}
         title="Chat on WhatsApp"
