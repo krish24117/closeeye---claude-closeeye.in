@@ -25,15 +25,21 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url)
+
+  // Never cache Supabase API calls (auth, profiles, bookings, etc.) - always go to network
+  if (url.hostname.endsWith('.supabase.co')) return
+
+  // Only handle same-origin GET requests for the app shell
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin) return
+
   // Network first, fall back to cache
   event.respondWith(
     fetch(event.request)
       .then((response) => {
         const clone = response.clone()
         caches.open(CACHE_NAME).then((cache) => {
-          if (event.request.method === 'GET') {
-            cache.put(event.request, clone)
-          }
+          cache.put(event.request, clone)
         })
         return response
       })
