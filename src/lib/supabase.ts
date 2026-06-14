@@ -1,16 +1,19 @@
-import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 
 const url = import.meta.env.VITE_SUPABASE_URL
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
 if (!url || !key) throw new Error('Missing Supabase env variables')
 
-export const supabase = createClient(url, key, {
+// createBrowserClient (PKCE flow) stores the OAuth code verifier and session
+// in cookies instead of localStorage, which survives the full-page redirect
+// to Google and back - localStorage can be partitioned/cleared across that
+// redirect in some browsers, causing "PKCE code verifier not found in storage".
+export const supabase = createBrowserClient(url, key, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce',
   }
 })
 
