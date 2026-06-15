@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { Home, Calendar, Users, Heart, Wallet, FileText, MapPin, LogOut, Menu, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { Logo } from '@/components/ui/Logo'
 import clsx from 'clsx'
 
 const NAV = [
@@ -51,9 +52,12 @@ export function AdminLayout() {
         'md:translate-x-0',
         open ? 'translate-x-0' : '-translate-x-full'
       )}>
-        <div className="p-6 border-b border-white/10">
-          <p className="font-serif text-xl">close <span className="text-green-300">eye</span></p>
-          <p className="text-xs text-white/50 mt-1">Admin Portal</p>
+        <div className="p-6 border-b border-white/10 flex items-center gap-2.5">
+          <Logo className="w-8 h-8 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="font-serif text-xl leading-tight">close <span className="text-green-300">eye</span></p>
+            <p className="text-xs text-white/50">Admin Portal</p>
+          </div>
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -65,8 +69,8 @@ export function AdminLayout() {
               className={({ isActive }) => clsx(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-white/15 text-white'
-                  : 'text-white/60 hover:text-white hover:bg-white/10'
+                  ? 'bg-white text-green-900 font-semibold shadow-sm'
+                  : 'text-white/55 hover:text-white hover:bg-white/10'
               )}
             >
               <n.icon size={17} />
@@ -113,6 +117,7 @@ export function AdminLayout() {
           >
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
+          <Logo className="w-6 h-6" />
           <p className="font-serif text-lg text-green-900">close eye</p>
         </header>
 

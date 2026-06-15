@@ -70,7 +70,7 @@ export function AdminHome() {
   return (
     <div className="space-y-6 sm:space-y-8 animate-fade-in">
       <div>
-        <h1 className="font-serif text-xl sm:text-2xl text-green-900">Admin Overview</h1>
+        <h1 className="font-serif text-2xl text-green-900">Overview</h1>
         <p className="text-gray-400 text-sm mt-1">A snapshot of bookings, companions, and families.</p>
       </div>
 
