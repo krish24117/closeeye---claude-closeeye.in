@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { signIn, signUp, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { Logo } from '@/components/ui/Logo'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -104,16 +105,7 @@ export function AuthPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-3">
-            <svg viewBox="0 0 100 100" className="w-10 h-10" fill="none">
-              <defs>
-                <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#a8ff3e"/>
-                  <stop offset="100%" stopColor="#1a6b3a"/>
-                </linearGradient>
-              </defs>
-              <path d="M50 10 C50 10, 55 35, 70 35 C55 35, 90 40, 90 50 C90 50, 65 55, 65 70 C65 70, 55 45, 50 90 C50 90, 45 65, 35 70 C35 70, 10 60, 10 50 C10 50, 35 45, 30 30 C30 30, 45 35, 50 10Z" fill="url(#lg)" opacity="0.9"/>
-              <circle cx="50" cy="82" r="6" fill="url(#lg)"/>
-            </svg>
+            <Logo className="w-10 h-10" />
             <span className="font-serif text-2xl text-green-900">close <span className="text-green-600">eye</span></span>
           </Link>
           <p className="text-gray-500 text-sm mt-2">Your trusted presence in India</p>
