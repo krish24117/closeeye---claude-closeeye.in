@@ -4,9 +4,10 @@ import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/components/ui/Toast'
-import { format } from 'date-fns'
+import { format, isToday } from 'date-fns'
 import { MapPin, Stethoscope, Building2, Phone } from 'lucide-react'
 import { STATUS_COLORS, SERVICE_NAMES } from '@/lib/booking-labels'
+import { getCurrentPosition } from '@/lib/useGeolocation'
 
 export function CompanionHome() {
   const { user } = useAuth()
@@ -14,9 +15,17 @@ export function CompanionHome() {
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [startingId, setStartingId] = useState<string | null>(null)
+  const [actionId, setActionId] = useState<string | null>(null)
 
   useEffect(()=>{ load() },[user])
+
+  useEffect(() => {
+    if (!user) return
+    const channel = supabase.channel(`companion-bookings-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `companion_id=eq.${user.id}` }, () => load())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [user])
 
   async function load() {
     if (!user) return
@@ -38,27 +47,58 @@ export function CompanionHome() {
     }
   }
 
-  async function startVisit(b: any) {
-    setStartingId(b.id)
+  async function checkIn(b: any) {
+    setActionId(b.id)
     try {
-      const { error } = await supabase.from('bookings').update({ status: 'in_progress' }).eq('id', b.id)
+      const pos = await getCurrentPosition()
+      const checked_in_at = new Date().toISOString()
+      const { error } = await supabase.from('bookings').update({
+        status: 'in_progress',
+        checked_in_at,
+        check_in_lat: pos?.lat ?? null,
+        check_in_lng: pos?.lng ?? null,
+      }).eq('id', b.id)
       if (error) throw error
-      setBookings(prev => prev.map(x => x.id === b.id ? { ...x, status: 'in_progress' } : x))
-      showToast('Visit started — your location is now shared with the family', 'success')
+      setBookings(prev => prev.map(x => x.id === b.id ? { ...x, status: 'in_progress', checked_in_at, check_in_lat: pos?.lat ?? null, check_in_lng: pos?.lng ?? null } : x))
+      showToast(pos ? 'Checked in — your location is now shared with the family' : 'Checked in — your location will share once GPS is available', 'success')
       window.dispatchEvent(new Event('closeeye:active-booking-changed'))
     } catch (err) {
-      console.error('Failed to start visit:', err)
-      showToast('Could not start visit — try again', 'error')
+      console.error('Failed to check in:', err)
+      showToast('Could not check in — try again', 'error')
     } finally {
-      setStartingId(null)
+      setActionId(null)
+    }
+  }
+
+  async function checkOut(b: any) {
+    setActionId(b.id)
+    try {
+      const pos = await getCurrentPosition()
+      const checked_out_at = new Date().toISOString()
+      const { error } = await supabase.from('bookings').update({
+        checked_out_at,
+        check_out_lat: pos?.lat ?? null,
+        check_out_lng: pos?.lng ?? null,
+      }).eq('id', b.id)
+      if (error) throw error
+      setBookings(prev => prev.map(x => x.id === b.id ? { ...x, checked_out_at, check_out_lat: pos?.lat ?? null, check_out_lng: pos?.lng ?? null } : x))
+      showToast('Checked out — submit your visit report to finish', 'success')
+      window.dispatchEvent(new Event('closeeye:active-booking-changed'))
+    } catch (err) {
+      console.error('Failed to check out:', err)
+      showToast('Could not check out — try again', 'error')
+    } finally {
+      setActionId(null)
     }
   }
 
   if (loading) return <div className="text-center py-20 text-gray-400">Loading your visits...</div>
 
+  const todayBookings = bookings.filter(b => b.scheduled_at && isToday(new Date(b.scheduled_at)))
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="font-serif text-2xl text-green-900">My Visits</h1>
+      <h1 className="font-serif text-2xl text-green-900">Today</h1>
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
           {error}
@@ -72,71 +112,116 @@ export function CompanionHome() {
           <p className="text-sm text-gray-400 mt-1">Your upcoming visits will appear here</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {bookings.map(b=>(
-            <div key={b.id} className="bg-white rounded-2xl border border-gray-100 p-5">
-              <div className="flex justify-between items-start flex-wrap gap-3 mb-3">
-                <div>
-                  <p className="font-semibold text-green-900">{b.loved_ones?.full_name}</p>
-                  <p className="text-xs text-gray-400">{b.loved_ones?.city}</p>
-                  {b.scheduled_at && <p className="text-xs text-green-600 font-medium mt-1">{format(new Date(b.scheduled_at),'EEEE, dd MMM · h:mm a')}</p>}
-                </div>
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[b.status]||'bg-gray-100 text-gray-500'}`}>
-                  {b.status.replace('_',' ')}
-                </span>
+        <>
+          {/* Today's Schedule */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
+            <h2 className="font-semibold text-green-900">Today's Schedule</h2>
+            {todayBookings.length === 0 ? (
+              <p className="text-sm text-gray-400">No visits scheduled for today.</p>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {todayBookings.map(b => (
+                  <div key={b.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-green-900">
+                        {format(new Date(b.scheduled_at), 'h:mm a')} · {b.loved_ones?.full_name}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate">{b.loved_ones?.address || b.loved_ones?.city}</p>
+                    </div>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${STATUS_COLORS[b.status]||'bg-gray-100 text-gray-500'}`}>
+                      {b.status.replace('_',' ')}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-1.5 mb-3">{SERVICE_NAMES[b.service_type]||b.service_type}</p>
-              {b.loved_ones?.medical_notes && (
-                <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-1.5 mb-3">⚕️ {b.loved_ones.medical_notes}</p>
-              )}
+            )}
+          </div>
 
-              {/* Visit prep */}
-              {(b.loved_ones?.address || b.loved_ones?.doctor_name || b.loved_ones?.nearest_hospital || b.loved_ones?.emergency_contact_name) && (
-                <div className="mb-3 pb-3 border-b border-gray-50 space-y-1.5">
-                  <p className="text-xs font-semibold text-green-900">Visit prep</p>
-                  {b.loved_ones?.address && (
-                    <p className="text-xs text-gray-500 flex items-start gap-1.5"><MapPin size={12} className="mt-0.5 flex-shrink-0 text-gray-400" /> {b.loved_ones.address}</p>
+          {/* Active & upcoming visits */}
+          <div className="space-y-3">
+            <h2 className="font-semibold text-green-900">Active & Upcoming Visits</h2>
+            {bookings.map(b=>(
+              <div key={b.id} className="bg-white rounded-2xl border border-gray-100 p-5">
+                <div className="flex justify-between items-start flex-wrap gap-3 mb-3">
+                  <div>
+                    <p className="font-semibold text-green-900">{b.loved_ones?.full_name}</p>
+                    <p className="text-xs text-gray-400">{b.loved_ones?.city}</p>
+                    {b.scheduled_at && <p className="text-xs text-green-600 font-medium mt-1">{format(new Date(b.scheduled_at),'EEEE, dd MMM · h:mm a')}</p>}
+                  </div>
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[b.status]||'bg-gray-100 text-gray-500'}`}>
+                    {b.status.replace('_',' ')}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-1.5 mb-3">{SERVICE_NAMES[b.service_type]||b.service_type}</p>
+                {b.loved_ones?.medical_notes && (
+                  <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-1.5 mb-3">⚕️ {b.loved_ones.medical_notes}</p>
+                )}
+
+                {/* Visit prep */}
+                {(b.loved_ones?.address || b.loved_ones?.doctor_name || b.loved_ones?.nearest_hospital || b.loved_ones?.emergency_contact_name) && (
+                  <div className="mb-3 pb-3 border-b border-gray-50 space-y-1.5">
+                    <p className="text-xs font-semibold text-green-900">Visit prep</p>
+                    {b.loved_ones?.address && (
+                      <p className="text-xs text-gray-500 flex items-start gap-1.5"><MapPin size={12} className="mt-0.5 flex-shrink-0 text-gray-400" /> {b.loved_ones.address}</p>
+                    )}
+                    {b.loved_ones?.doctor_name && (
+                      <p className="text-xs text-gray-500 flex items-start gap-1.5"><Stethoscope size={12} className="mt-0.5 flex-shrink-0 text-gray-400" /> Dr. {b.loved_ones.doctor_name}</p>
+                    )}
+                    {b.loved_ones?.nearest_hospital && (
+                      <p className="text-xs text-gray-500 flex items-start gap-1.5"><Building2 size={12} className="mt-0.5 flex-shrink-0 text-gray-400" /> {b.loved_ones.nearest_hospital}</p>
+                    )}
+                    {b.loved_ones?.emergency_contact_name && (
+                      <p className="text-xs text-gray-500 flex items-start gap-1.5">
+                        <Phone size={12} className="mt-0.5 flex-shrink-0 text-gray-400" />
+                        {b.loved_ones.emergency_contact_name}{b.loved_ones?.emergency_contact_phone ? ` · ${b.loved_ones.emergency_contact_phone}` : ''}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  {b.status === 'companion_assigned' && (
+                    <button
+                      onClick={()=>checkIn(b)}
+                      disabled={actionId===b.id}
+                      className="block w-full text-center bg-green-800 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors"
+                    >
+                      {actionId===b.id ? 'Checking in...' : 'Check In'}
+                    </button>
                   )}
-                  {b.loved_ones?.doctor_name && (
-                    <p className="text-xs text-gray-500 flex items-start gap-1.5"><Stethoscope size={12} className="mt-0.5 flex-shrink-0 text-gray-400" /> Dr. {b.loved_ones.doctor_name}</p>
+                  {b.status === 'in_progress' && !b.checked_out_at && (
+                    <>
+                      <p className="text-center text-xs font-semibold text-orange-600 bg-orange-50 rounded-xl py-2">
+                        📍 Sharing live location with the family
+                        {b.checked_in_at && ` · Checked in at ${format(new Date(b.checked_in_at),'h:mm a')}`}
+                      </p>
+                      <button
+                        onClick={()=>checkOut(b)}
+                        disabled={actionId===b.id}
+                        className="block w-full text-center bg-green-800 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors"
+                      >
+                        {actionId===b.id ? 'Checking out...' : 'Check Out'}
+                      </button>
+                    </>
                   )}
-                  {b.loved_ones?.nearest_hospital && (
-                    <p className="text-xs text-gray-500 flex items-start gap-1.5"><Building2 size={12} className="mt-0.5 flex-shrink-0 text-gray-400" /> {b.loved_ones.nearest_hospital}</p>
-                  )}
-                  {b.loved_ones?.emergency_contact_name && (
-                    <p className="text-xs text-gray-500 flex items-start gap-1.5">
-                      <Phone size={12} className="mt-0.5 flex-shrink-0 text-gray-400" />
-                      {b.loved_ones.emergency_contact_name}{b.loved_ones?.emergency_contact_phone ? ` · ${b.loved_ones.emergency_contact_phone}` : ''}
+                  {b.status === 'in_progress' && b.checked_out_at && (
+                    <p className="text-center text-xs font-semibold text-green-700 bg-green-50 rounded-xl py-2">
+                      ✓ Checked out at {format(new Date(b.checked_out_at),'h:mm a')} — submit your report below
                     </p>
                   )}
+                  {b.visit_reports?.length === 0 && b.status !== 'companion_assigned' && b.status !== 'completed' && (
+                    <Link to={`/companion/visit/${b.id}`} className="block text-center bg-green-800 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-green-700 transition-colors">
+                      Submit Visit Report
+                    </Link>
+                  )}
+                  {b.visit_reports?.length > 0 && (
+                    <p className="text-center text-sm text-green-600 font-medium">✓ Report submitted</p>
+                  )}
                 </div>
-              )}
-
-              <div className="space-y-2">
-                {b.status === 'companion_assigned' && (
-                  <button
-                    onClick={()=>startVisit(b)}
-                    disabled={startingId===b.id}
-                    className="block w-full text-center bg-green-800 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors"
-                  >
-                    {startingId===b.id ? 'Starting visit...' : 'Start Visit'}
-                  </button>
-                )}
-                {b.status === 'in_progress' && (
-                  <p className="text-center text-xs font-semibold text-orange-600 bg-orange-50 rounded-xl py-2">📍 Sharing live location with the family</p>
-                )}
-                {b.visit_reports?.length === 0 && b.status !== 'companion_assigned' && b.status !== 'completed' && (
-                  <Link to={`/companion/visit/${b.id}`} className="block text-center bg-green-800 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-green-700 transition-colors">
-                    Submit Visit Report
-                  </Link>
-                )}
-                {b.visit_reports?.length > 0 && (
-                  <p className="text-center text-sm text-green-600 font-medium">✓ Report submitted</p>
-                )}
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

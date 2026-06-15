@@ -25,6 +25,7 @@ import { CompanionHome } from '@/pages/companion/Home'
 import { CompanionVisit } from '@/pages/companion/Visit'
 import { CompanionSchedule } from '@/pages/companion/Schedule'
 import { CompanionEarnings } from '@/pages/companion/Earnings'
+import { CompanionProfile } from '@/pages/companion/Profile'
 import { AdminLayout } from '@/pages/admin/Layout'
 import { AdminHome } from '@/pages/admin/Home'
 import { AdminBookings } from '@/pages/admin/Bookings'
@@ -52,6 +53,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/companion': 'Companion Portal — Close Eye',
   '/companion/schedule': 'My Schedule — Close Eye',
   '/companion/earnings': 'Earnings — Close Eye',
+  '/companion/profile': 'My Profile — Close Eye',
   '/admin': 'Admin Portal — Close Eye',
   '/admin/bookings': 'Manage Bookings — Close Eye',
   '/admin/companions': 'Manage Companions — Close Eye',
@@ -79,6 +81,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/companion': 'Manage your assigned visits and submit visit reports.',
   '/companion/schedule': 'View your upcoming and past Close Eye visit schedule.',
   '/companion/earnings': 'Track your Close Eye visit earnings.',
+  '/companion/profile': 'Manage your companion profile, documents, and visit alert settings.',
   '/admin': 'Admin overview of bookings, companions, and families.',
   '/admin/bookings': 'Manage all Close Eye bookings and assign companions.',
   '/admin/companions': 'Manage companion accounts.',
@@ -179,6 +182,8 @@ export default function App() {
             <Route path="visit/:bookingId" element={<CompanionVisit />} />
             <Route path="schedule" element={<CompanionSchedule />} />
             <Route path="earnings" element={<CompanionEarnings />} />
+            <Route path="profile" element={<CompanionProfile />} />
+            <Route path="dashboard" element={<Navigate to="/companion" replace />} />
           </Route>
           <Route path="/admin" element={<ProtectedRoute role="admin"><AdminLayout /></ProtectedRoute>}>
             <Route index element={<AdminHome />} />

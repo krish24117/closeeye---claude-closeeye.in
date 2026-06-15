@@ -3,18 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/Toast'
 import { UserPlus, UserMinus, Plus, FileText } from 'lucide-react'
 import { AddCompanionModal } from './AddCompanionModal'
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-50 text-yellow-700',
-  approved: 'bg-green-50 text-green-700',
-  rejected: 'bg-red-50 text-red-700',
-}
-
-const AVAILABILITY_LABELS: Record<string, string> = {
-  full_time: 'Full time',
-  part_time: 'Part time',
-  weekends: 'Weekends',
-}
+import { AVAILABILITY_LABELS, COMPANION_STATUS_COLORS as STATUS_COLORS } from '@/lib/companion-options'
 
 export function AdminCompanions() {
   const { showToast } = useToast()

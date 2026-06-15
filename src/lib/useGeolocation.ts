@@ -49,3 +49,17 @@ export function useGeolocation(active: boolean, onUpdate: (pos: Position) => voi
 
   return { error }
 }
+
+// One-shot location capture for GPS check-in/check-out. Never rejects -
+// resolves null on any error or if geolocation is unsupported, so
+// check-in/out can always proceed even without a location fix.
+export function getCurrentPosition(): Promise<Position | null> {
+  return new Promise((resolve) => {
+    if (!('geolocation' in navigator)) { resolve(null); return }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => resolve(null),
+      { enableHighAccuracy: true, timeout: 15000 }
+    )
+  })
+}

@@ -24,9 +24,9 @@ export function AdminLiveMap() {
     setError(null)
     try {
       const { data, error } = await supabase.from('companion_locations')
-        .select('companion_id,booking_id,lat,lng,updated_at,companions(full_name),bookings(status,loved_ones(full_name))')
+        .select('companion_id,booking_id,lat,lng,updated_at,companions(full_name),bookings(status,checked_out_at,loved_ones(full_name))')
       if (error) throw error
-      const active = (data || []).filter((l: any) => l.bookings?.status === 'in_progress')
+      const active = (data || []).filter((l: any) => l.bookings?.status === 'in_progress' && !l.bookings?.checked_out_at)
       setLocations(active)
     } catch (err) {
       console.error('Failed to load live locations:', err)

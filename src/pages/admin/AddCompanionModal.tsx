@@ -1,14 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { LANGUAGES, SKILLS, AVAILABILITY_OPTIONS } from '@/lib/companion-options'
 
-const LANGUAGES = ['Telugu', 'Hindi', 'English']
-const SKILLS = ['Medical assistance', 'Companionship', 'Mobility support', 'Errands']
-const AVAILABILITY_OPTIONS = [
-  { value: 'full_time', label: 'Full time' },
-  { value: 'part_time', label: 'Part time' },
-  { value: 'weekends', label: 'Weekends' },
-]
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB, matches storage bucket limit
 
 export function AddCompanionModal({ onClose, onAdded }: { onClose: () => void, onAdded: (row: any) => void }) {

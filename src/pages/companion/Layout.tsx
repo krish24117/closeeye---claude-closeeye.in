@@ -1,6 +1,6 @@
 // src/pages/companion/Layout.tsx
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Home, Calendar, Wallet, LogOut, Menu, X } from 'lucide-react'
+import { Home, Calendar, Wallet, User, LogOut } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -8,30 +8,18 @@ import { useGeolocation } from '@/lib/useGeolocation'
 import clsx from 'clsx'
 
 const NAV = [
-  { to: '/companion', icon: Home, label: 'My Visits', end: true },
+  { to: '/companion', icon: Home, label: 'Today', end: true },
   { to: '/companion/schedule', icon: Calendar, label: 'Schedule' },
   { to: '/companion/earnings', icon: Wallet, label: 'Earnings' },
+  { to: '/companion/profile', icon: User, label: 'Profile' },
 ]
 
 export function CompanionLayout() {
   const { user, profile, signOut } = useAuth()
-  const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const [activeBookingId, setActiveBookingId] = useState<string | null>(null)
   const [bannerDismissed, setBannerDismissed] = useState(false)
-
-  // Close sidebar on route change (mobile)
-  useEffect(() => {
-    setOpen(false)
-  }, [location.pathname])
-
-  // Prevent body scroll when sidebar open on mobile
-  useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden'
-    else document.body.style.overflow = ''
-    return () => { document.body.style.overflow = '' }
-  }, [open])
 
   const checkActiveBooking = useCallback(async () => {
     if (!user) { setActiveBookingId(null); return }
@@ -39,6 +27,7 @@ export function CompanionLayout() {
       .select('id')
       .eq('companion_id', user.id)
       .eq('status', 'in_progress')
+      .is('checked_out_at', null)
       .limit(1)
       .maybeSingle()
     if (error) { console.error('Failed to check active visit:', error); return }
@@ -74,12 +63,8 @@ export function CompanionLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className={clsx(
-        'fixed inset-y-0 left-0 z-50 w-56 bg-green-900 text-white flex flex-col transition-transform duration-200 ease-in-out',
-        'md:translate-x-0',
-        open ? 'translate-x-0' : '-translate-x-full'
-      )}>
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex md:flex-col fixed inset-y-0 left-0 z-30 w-56 bg-green-900 text-white">
         <div className="p-5 border-b border-white/10">
           <p className="font-serif text-lg">close <span className="text-green-300">eye</span></p>
           <p className="text-xs text-white/40 mt-0.5">Companion Portal</p>
@@ -107,29 +92,21 @@ export function CompanionLayout() {
         </div>
       </aside>
 
-      {/* Mobile overlay */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/40 z-40 md:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
-
       {/* Main content */}
-      <div className="flex-1 md:ml-56 min-w-0">
+      <div className="flex-1 md:ml-56 min-w-0 flex flex-col">
         {/* Mobile header */}
-        <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3 md:hidden sticky top-0 z-30">
-          <button
-            onClick={() => setOpen(!open)}
-            className="text-green-800 p-1 rounded-lg hover:bg-green-50 transition-colors"
-            aria-label="Toggle menu"
-          >
-            {open ? <X size={22} /> : <Menu size={22} />}
-          </button>
+        <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between md:hidden sticky top-0 z-20">
           <p className="font-serif text-lg text-green-900">close eye</p>
+          <button
+            onClick={handleSignOut}
+            className="text-gray-400 hover:text-green-800 p-1 rounded-lg transition-colors"
+            aria-label="Sign out"
+          >
+            <LogOut size={18} />
+          </button>
         </header>
 
-        <main className="p-4 sm:p-6 max-w-3xl mx-auto space-y-4">
+        <main className="flex-1 p-4 sm:p-6 max-w-3xl mx-auto space-y-4 w-full pb-24 md:pb-6">
           {activeBookingId !== null && geoError && !bannerDismissed && (
             <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl p-3 flex items-center justify-between gap-3">
               <span>{geoError}</span>
@@ -139,6 +116,24 @@ export function CompanionLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile bottom nav */}
+      <nav className="fixed bottom-0 inset-x-0 z-30 bg-white border-t border-gray-100 grid grid-cols-4 md:hidden pb-[env(safe-area-inset-bottom)]">
+        {NAV.map(n => (
+          <NavLink
+            key={n.to}
+            to={n.to}
+            end={n.end}
+            className={({ isActive }) => clsx(
+              'flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium transition-colors',
+              isActive ? 'text-green-800' : 'text-gray-400'
+            )}
+          >
+            <n.icon size={20} />
+            {n.label}
+          </NavLink>
+        ))}
+      </nav>
     </div>
   )
 }
