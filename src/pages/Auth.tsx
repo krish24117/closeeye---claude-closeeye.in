@@ -104,7 +104,7 @@ export function AuthPage() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-3">
+          <Link to="/" className="inline-flex items-center gap-1.5">
             <Logo className="w-10 h-10" />
             <span className="font-serif text-2xl text-green-900">close <span className="text-green-600">eye</span></span>
           </Link>

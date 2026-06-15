@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X, Bell, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import { Logo } from '@/components/ui/Logo'
 import clsx from 'clsx'
 
 const NAV_LINKS = [
@@ -48,9 +49,10 @@ export function Navbar() {
           {/* Logo */}
           <Link
             to="/"
-            className="font-serif text-xl text-green-900 tracking-tight flex-shrink-0"
+            className="inline-flex items-center gap-1.5 font-serif text-xl text-green-900 tracking-tight flex-shrink-0"
             onClick={() => setOpen(false)}
           >
+            <Logo className="w-8 h-8" />
             close <span className="text-green-600">eye</span>
           </Link>
 
