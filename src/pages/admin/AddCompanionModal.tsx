@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -23,6 +23,20 @@ export function AddCompanionModal({ onClose, onAdded }: { onClose: () => void, o
   const [idProof, setIdProof] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const firstFieldRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    firstFieldRef.current?.focus()
+    document.body.style.overflow = 'hidden'
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [onClose])
 
   function toggle(list: string[], setList: (v: string[]) => void, value: string) {
     setList(list.includes(value) ? list.filter(v => v !== value) : [...list, value])
@@ -94,9 +108,15 @@ export function AddCompanionModal({ onClose, onAdded }: { onClose: () => void, o
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
-      <div className="bg-white rounded-2xl max-w-lg w-full my-8 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-companion-title"
+        className="bg-white rounded-2xl max-w-lg w-full my-8 max-h-[90vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-          <h2 className="font-serif text-xl text-green-900">Add Companion</h2>
+          <h2 id="add-companion-title" className="font-serif text-xl text-green-900">Add Companion</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-green-800 transition-colors" aria-label="Close">
             <X size={20} />
           </button>
@@ -111,6 +131,7 @@ export function AddCompanionModal({ onClose, onAdded }: { onClose: () => void, o
             <div>
               <label className="block text-xs font-semibold text-green-900 mb-1.5">Full name *</label>
               <input
+                ref={firstFieldRef}
                 required
                 value={form.full_name}
                 onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
