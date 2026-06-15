@@ -76,14 +76,12 @@ export function AuthPage() {
     setError('')
     const { error } = await signIn(data.email, data.password)
     if (error) { setError(error.message); return }
-    navigate('/dashboard')
   }
 
   async function handleSignup(data: SignupData) {
     setError('')
     const { error } = await signUp(data.email, data.password, data.full_name)
     if (error) { setError(error.message); return }
-    navigate('/dashboard')
   }
 
   async function handleReset(data: ResetData) {
