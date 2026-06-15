@@ -52,7 +52,7 @@ export function AdminLayout() {
         'md:translate-x-0',
         open ? 'translate-x-0' : '-translate-x-full'
       )}>
-        <div className="p-6 border-b border-white/10 flex items-center gap-2.5">
+        <div className="px-7 py-6 border-b border-white/10 flex items-center gap-2.5">
           <Logo className="w-8 h-8 flex-shrink-0" />
           <div className="min-w-0">
             <p className="font-serif text-xl leading-tight">close <span className="text-green-300">eye</span></p>
@@ -67,10 +67,10 @@ export function AdminLayout() {
               to={n.to}
               end={n.end}
               className={({ isActive }) => clsx(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-white',
                 isActive
-                  ? 'bg-white text-green-900 font-semibold shadow-sm'
-                  : 'text-white/55 hover:text-white hover:bg-white/10'
+                  ? 'bg-white/15 font-semibold'
+                  : 'hover:bg-white/10'
               )}
             >
               <n.icon size={17} />

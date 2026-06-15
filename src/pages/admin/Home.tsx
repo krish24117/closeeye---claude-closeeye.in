@@ -56,15 +56,16 @@ export function AdminHome() {
     }
   }
 
+  const cardColor = 'bg-[#e8f5e9] text-[#2d6a4f]'
   const cards = [
-    { icon: Calendar, label: 'Total Bookings', value: stats.totalBookings, href: '/admin/bookings', color: 'bg-blue-50 text-blue-700' },
-    { icon: Clock, label: 'Pending Bookings', value: stats.pendingBookings, href: '/admin/bookings', color: 'bg-yellow-50 text-yellow-700' },
-    { icon: Activity, label: 'Active Visits', value: stats.activeVisits, href: '/admin/live-map', color: 'bg-orange-50 text-orange-700' },
-    { icon: CheckCircle, label: 'Completed Visits', value: stats.completedVisits, href: '/admin/bookings', color: 'bg-green-50 text-green-700' },
-    { icon: Users, label: 'Companions', value: stats.companions, href: '/admin/companions', color: 'bg-purple-50 text-purple-700' },
-    { icon: Heart, label: 'Families', value: stats.families, href: '/admin/families', color: 'bg-pink-50 text-pink-700' },
-    { icon: FileText, label: 'Visit Reports', value: stats.reports, href: '/admin/reports', color: 'bg-amber-50 text-amber-700' },
-    { icon: Wallet, label: 'Total Revenue', value: `₹${(stats.revenuePaise / 100).toLocaleString('en-IN')}`, href: '/admin/payments', color: 'bg-teal-50 text-teal-700' },
+    { icon: Calendar, label: 'Total Bookings', value: stats.totalBookings, href: '/admin/bookings', color: cardColor },
+    { icon: Clock, label: 'Pending Bookings', value: stats.pendingBookings, href: '/admin/bookings', color: cardColor },
+    { icon: Activity, label: 'Active Visits', value: stats.activeVisits, href: '/admin/live-map', color: cardColor },
+    { icon: CheckCircle, label: 'Completed Visits', value: stats.completedVisits, href: '/admin/bookings', color: cardColor },
+    { icon: Users, label: 'Companions', value: stats.companions, href: '/admin/companions', color: cardColor },
+    { icon: Heart, label: 'Families', value: stats.families, href: '/admin/families', color: cardColor },
+    { icon: FileText, label: 'Visit Reports', value: stats.reports, href: '/admin/reports', color: cardColor },
+    { icon: Wallet, label: 'Total Revenue', value: `₹${(stats.revenuePaise / 100).toLocaleString('en-IN')}`, href: '/admin/payments', color: cardColor },
   ]
 
   return (
