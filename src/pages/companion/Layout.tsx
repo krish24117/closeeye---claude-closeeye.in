@@ -1,15 +1,25 @@
 // src/pages/companion/Layout.tsx
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Home, LogOut, Menu, X } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Home, Calendar, Wallet, LogOut, Menu, X } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { supabase } from '@/lib/supabase'
+import { useGeolocation } from '@/lib/useGeolocation'
 import clsx from 'clsx'
 
+const NAV = [
+  { to: '/companion', icon: Home, label: 'My Visits', end: true },
+  { to: '/companion/schedule', icon: Calendar, label: 'Schedule' },
+  { to: '/companion/earnings', icon: Wallet, label: 'Earnings' },
+]
+
 export function CompanionLayout() {
-  const { profile, signOut } = useAuth()
+  const { user, profile, signOut } = useAuth()
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const [activeBookingId, setActiveBookingId] = useState<string | null>(null)
+  const [bannerDismissed, setBannerDismissed] = useState(false)
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -22,6 +32,40 @@ export function CompanionLayout() {
     else document.body.style.overflow = ''
     return () => { document.body.style.overflow = '' }
   }, [open])
+
+  const checkActiveBooking = useCallback(async () => {
+    if (!user) { setActiveBookingId(null); return }
+    const { data, error } = await supabase.from('bookings')
+      .select('id')
+      .eq('companion_id', user.id)
+      .eq('status', 'in_progress')
+      .limit(1)
+      .maybeSingle()
+    if (error) { console.error('Failed to check active visit:', error); return }
+    setActiveBookingId(data?.id ?? null)
+    setBannerDismissed(false)
+  }, [user])
+
+  useEffect(() => { checkActiveBooking() }, [checkActiveBooking, location.pathname])
+
+  useEffect(() => {
+    window.addEventListener('closeeye:active-booking-changed', checkActiveBooking)
+    return () => window.removeEventListener('closeeye:active-booking-changed', checkActiveBooking)
+  }, [checkActiveBooking])
+
+  const handleLocationUpdate = useCallback(async (pos: { lat: number; lng: number }) => {
+    if (!user || !activeBookingId) return
+    const { error } = await supabase.from('companion_locations').upsert({
+      companion_id: user.id,
+      booking_id: activeBookingId,
+      lat: pos.lat,
+      lng: pos.lng,
+      updated_at: new Date().toISOString(),
+    })
+    if (error) console.error('Failed to update location:', error)
+  }, [user, activeBookingId])
+
+  const { error: geoError } = useGeolocation(activeBookingId !== null, handleLocationUpdate, 12000)
 
   async function handleSignOut() {
     await signOut()
@@ -41,9 +85,19 @@ export function CompanionLayout() {
           <p className="text-xs text-white/40 mt-0.5">Companion Portal</p>
         </div>
         <nav className="flex-1 p-3 space-y-1">
-          <NavLink to="/companion" end className={({isActive})=>clsx('flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',isActive?'bg-white/15 text-white':'text-white/60 hover:text-white hover:bg-white/10')}>
-            <Home size={16}/> My Visits
-          </NavLink>
+          {NAV.map(n => (
+            <NavLink
+              key={n.to}
+              to={n.to}
+              end={n.end}
+              className={({ isActive }) => clsx(
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                isActive ? 'bg-white/15 text-white' : 'text-white/60 hover:text-white hover:bg-white/10'
+              )}
+            >
+              <n.icon size={16} /> {n.label}
+            </NavLink>
+          ))}
         </nav>
         <div className="p-4 border-t border-white/10">
           <p className="text-sm font-medium text-white mb-3 truncate">{profile?.full_name}</p>
@@ -75,7 +129,15 @@ export function CompanionLayout() {
           <p className="font-serif text-lg text-green-900">close eye</p>
         </header>
 
-        <main className="p-4 sm:p-6 max-w-3xl mx-auto"><Outlet /></main>
+        <main className="p-4 sm:p-6 max-w-3xl mx-auto space-y-4">
+          {activeBookingId !== null && geoError && !bannerDismissed && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl p-3 flex items-center justify-between gap-3">
+              <span>{geoError}</span>
+              <button onClick={() => setBannerDismissed(true)} className="font-semibold underline whitespace-nowrap flex-shrink-0">Dismiss</button>
+            </div>
+          )}
+          <Outlet />
+        </main>
       </div>
     </div>
   )

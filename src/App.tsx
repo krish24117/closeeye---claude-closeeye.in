@@ -23,6 +23,16 @@ import { DashboardNotifications } from '@/pages/dashboard/Notifications'
 import { CompanionLayout } from '@/pages/companion/Layout'
 import { CompanionHome } from '@/pages/companion/Home'
 import { CompanionVisit } from '@/pages/companion/Visit'
+import { CompanionSchedule } from '@/pages/companion/Schedule'
+import { CompanionEarnings } from '@/pages/companion/Earnings'
+import { AdminLayout } from '@/pages/admin/Layout'
+import { AdminHome } from '@/pages/admin/Home'
+import { AdminBookings } from '@/pages/admin/Bookings'
+import { AdminCompanions } from '@/pages/admin/Companions'
+import { AdminFamilies } from '@/pages/admin/Families'
+import { AdminPayments } from '@/pages/admin/Payments'
+import { AdminReports } from '@/pages/admin/Reports'
+import { AdminLiveMap } from '@/pages/admin/LiveMap'
 
 const PAGE_TITLES: Record<string, string> = {
   '/': "Close Eye — When you can't be there, Close Eye can.",
@@ -40,6 +50,15 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/reports': 'Visit Reports — Close Eye',
   '/dashboard/notifications': 'Notifications — Close Eye',
   '/companion': 'Companion Portal — Close Eye',
+  '/companion/schedule': 'My Schedule — Close Eye',
+  '/companion/earnings': 'Earnings — Close Eye',
+  '/admin': 'Admin Portal — Close Eye',
+  '/admin/bookings': 'Manage Bookings — Close Eye',
+  '/admin/companions': 'Manage Companions — Close Eye',
+  '/admin/families': 'Families — Close Eye',
+  '/admin/payments': 'Payments — Close Eye',
+  '/admin/reports': 'Visit Reports — Close Eye',
+  '/admin/live-map': 'Live Map — Close Eye',
 }
 
 const PAGE_DESCRIPTIONS: Record<string, string> = {
@@ -58,6 +77,15 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/dashboard/reports': 'Read visit reports and photos from your loved one’s companion visits.',
   '/dashboard/notifications': 'Your Close Eye notifications and alerts.',
   '/companion': 'Manage your assigned visits and submit visit reports.',
+  '/companion/schedule': 'View your upcoming and past Close Eye visit schedule.',
+  '/companion/earnings': 'Track your Close Eye visit earnings.',
+  '/admin': 'Admin overview of bookings, companions, and families.',
+  '/admin/bookings': 'Manage all Close Eye bookings and assign companions.',
+  '/admin/companions': 'Manage companion accounts.',
+  '/admin/families': 'View all registered families and their loved ones.',
+  '/admin/payments': 'Revenue, payouts, and platform margin overview.',
+  '/admin/reports': 'All visit reports and media submitted by companions.',
+  '/admin/live-map': 'Live map of companions on active visits.',
 }
 
 const SITE_URL = 'https://www.closeeye.in'
@@ -81,7 +109,7 @@ function SEOManager() {
     }
     canonicalTag.setAttribute('href', canonicalUrl)
 
-    const isPrivate = pathname.startsWith('/dashboard') || pathname.startsWith('/companion')
+    const isPrivate = pathname.startsWith('/dashboard') || pathname.startsWith('/companion') || pathname.startsWith('/admin')
     let robotsTag = document.querySelector('meta[name="robots"]')
     if (isPrivate) {
       if (!robotsTag) {
@@ -149,6 +177,17 @@ export default function App() {
           <Route path="/companion" element={<ProtectedRoute role="companion"><CompanionLayout /></ProtectedRoute>}>
             <Route index element={<CompanionHome />} />
             <Route path="visit/:bookingId" element={<CompanionVisit />} />
+            <Route path="schedule" element={<CompanionSchedule />} />
+            <Route path="earnings" element={<CompanionEarnings />} />
+          </Route>
+          <Route path="/admin" element={<ProtectedRoute role="admin"><AdminLayout /></ProtectedRoute>}>
+            <Route index element={<AdminHome />} />
+            <Route path="bookings" element={<AdminBookings />} />
+            <Route path="companions" element={<AdminCompanions />} />
+            <Route path="families" element={<AdminFamilies />} />
+            <Route path="payments" element={<AdminPayments />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="live-map" element={<AdminLiveMap />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

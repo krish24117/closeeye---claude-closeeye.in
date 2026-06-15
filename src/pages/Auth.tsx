@@ -33,6 +33,12 @@ type ResetData = z.infer<typeof resetSchema>
 type UpdatePasswordData = z.infer<typeof updatePasswordSchema>
 type Mode = 'login' | 'signup' | 'reset' | 'update-password'
 
+function getRoleHome(profile: { role?: string } | null | undefined) {
+  if (profile?.role === 'admin') return '/admin'
+  if (profile?.role === 'companion') return '/companion'
+  return '/dashboard'
+}
+
 export function AuthPage() {
   const [mode, setMode] = useState<Mode>('login')
   const [error, setError] = useState('')
@@ -57,7 +63,7 @@ export function AuthPage() {
   // unless we're in the middle of a password recovery flow.
   useEffect(() => {
     if (!loading && user && mode !== 'update-password') {
-      navigate(profile?.role === 'companion' ? '/companion' : '/dashboard', { replace: true })
+      navigate(getRoleHome(profile), { replace: true })
     }
   }, [loading, user, profile, navigate, mode])
 
@@ -93,7 +99,7 @@ export function AuthPage() {
     setError('')
     const { error } = await supabase.auth.updateUser({ password: data.password })
     if (error) { setError(error.message); return }
-    navigate(profile?.role === 'companion' ? '/companion' : '/dashboard', { replace: true })
+    navigate(getRoleHome(profile), { replace: true })
   }
 
   const InputClass = "w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-600 transition-colors"

@@ -4,10 +4,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
-import { Camera, X } from 'lucide-react'
+import { Camera, Video, X } from 'lucide-react'
 
 const MAX_PHOTOS = 6
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_VIDEOS = 2
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
 
 export function CompanionVisit() {
   const { bookingId } = useParams()
@@ -20,6 +22,8 @@ export function CompanionVisit() {
   const [error, setError] = useState('')
   const [photos, setPhotos] = useState<{ file: File; url: string }[]>([])
   const [photoError, setPhotoError] = useState('')
+  const [videos, setVideos] = useState<{ file: File; url: string }[]>([])
+  const [videoError, setVideoError] = useState('')
   const { register, handleSubmit, formState:{errors} } = useForm()
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -53,6 +57,42 @@ export function CompanionVisit() {
 
   function removePhoto(index: number) {
     setPhotos(prev => {
+      URL.revokeObjectURL(prev[index].url)
+      return prev.filter((_, i) => i !== index)
+    })
+  }
+
+  function handleVideoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    e.target.value = ''
+    if (files.length === 0) return
+
+    setVideoError('')
+    const valid: { file: File; url: string }[] = []
+    for (const file of files) {
+      if (file.type !== 'video/mp4' && file.type !== 'video/quicktime') {
+        setVideoError('Only mp4 or mov videos are allowed.')
+        continue
+      }
+      if (file.size > MAX_VIDEO_SIZE) {
+        setVideoError('Each video must be under 50MB.')
+        continue
+      }
+      valid.push({ file, url: URL.createObjectURL(file) })
+    }
+
+    setVideos(prev => {
+      const combined = [...prev, ...valid]
+      if (combined.length > MAX_VIDEOS) {
+        setVideoError(`You can upload up to ${MAX_VIDEOS} videos.`)
+        return combined.slice(0, MAX_VIDEOS)
+      }
+      return combined
+    })
+  }
+
+  function removeVideo(index: number) {
+    setVideos(prev => {
       URL.revokeObjectURL(prev[index].url)
       return prev.filter((_, i) => i !== index)
     })
@@ -92,6 +132,14 @@ export function CompanionVisit() {
       photoPaths.push(path)
     }
 
+    const videoPaths: string[] = []
+    for (const { file } of videos) {
+      const path = `${booking.id}/${Date.now()}-${file.name}`
+      const { error: uploadErr } = await supabase.storage.from('visit-videos').upload(path, file)
+      if (uploadErr) { setError(`Failed to upload video "${file.name}": ${uploadErr.message}`); setSaving(false); return }
+      videoPaths.push(path)
+    }
+
     const { error: err } = await supabase.from('visit_reports').insert({
       booking_id: booking.id,
       companion_id: user.id,
@@ -111,10 +159,12 @@ export function CompanionVisit() {
       visit_started_at: data.visit_started_at || null,
       visit_ended_at: data.visit_ended_at || null,
       photo_urls: photoPaths,
+      video_urls: videoPaths,
     })
     if (err) { setError(err.message); setSaving(false); return }
     const { error: statusErr } = await supabase.from('bookings').update({status:'completed',completed_at:new Date().toISOString()}).eq('id',booking.id)
     if (statusErr) { setError('Report saved, but the booking status could not be updated. Please contact support.'); setSaving(false); return }
+    window.dispatchEvent(new Event('closeeye:active-booking-changed'))
     navigate('/companion')
   }
 
@@ -247,6 +297,36 @@ export function CompanionVisit() {
             </label>
           )}
           {photoError && <p className="text-red-500 text-xs">{photoError}</p>}
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 space-y-4">
+          <h2 className="font-semibold text-green-900">Videos</h2>
+          <p className="text-xs text-gray-400">Add up to {MAX_VIDEOS} videos from the visit (mp4 or mov, max 50MB each) — these are shared with the family on their report.</p>
+          {videos.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {videos.map((v, i) => (
+                <div key={v.url} className="relative w-28 h-20">
+                  <video src={v.url} muted className="w-28 h-20 object-cover rounded-xl border border-gray-100 bg-black" />
+                  <button
+                    type="button"
+                    onClick={() => removeVideo(i)}
+                    aria-label={`Remove video ${i + 1}`}
+                    className="absolute -top-2 -right-2 bg-white border border-gray-200 rounded-full p-1 text-gray-500 hover:text-red-600 shadow-sm"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {videos.length < MAX_VIDEOS && (
+            <label className="inline-flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-500 cursor-pointer hover:border-green-300 hover:text-green-700 transition-colors">
+              <Video size={16} />
+              Add videos
+              <input type="file" accept="video/mp4,video/quicktime" multiple capture="environment" onChange={handleVideoChange} className="sr-only" />
+            </label>
+          )}
+          {videoError && <p className="text-red-500 text-xs">{videoError}</p>}
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 space-y-5">

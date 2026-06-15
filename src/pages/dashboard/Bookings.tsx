@@ -3,23 +3,47 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/Toast'
 import { format } from 'date-fns'
+import { STATUS_COLORS, SERVICE_NAMES } from '@/lib/booking-labels'
+import { LiveMap } from '@/components/ui/LiveMap'
 
-const STATUS_COLORS: Record<string,string> = {
-  pending:'bg-yellow-100 text-yellow-700',
-  confirmed:'bg-blue-100 text-blue-700',
-  companion_assigned:'bg-purple-100 text-purple-700',
-  in_progress:'bg-orange-100 text-orange-700',
-  completed:'bg-green-100 text-green-700',
-  cancelled:'bg-red-100 text-red-700',
-}
+function ActiveVisitMap({ booking }: { booking: any }) {
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
 
-const SERVICE_NAMES: Record<string,string> = {
-  companion_visit_single:'Companion Visit',
-  hospital_companion_single:'Hospital Companion',
-  emergency_visit:'Emergency Visit',
-  care_plan_4_monthly:'Monthly Plan (4 visits)',
-  care_plan_8_monthly:'Monthly Plan (8 visits)',
-  care_plan_quarterly:'Quarterly Plan',
+  useEffect(() => {
+    let active = true
+    supabase.from('companion_locations').select('lat,lng').eq('booking_id', booking.id).maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return
+        if (error) { console.error('Failed to load companion location:', error); return }
+        if (data) setLocation(data as any)
+      })
+
+    const channel = supabase.channel(`family-location-${booking.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'companion_locations', filter: `booking_id=eq.${booking.id}` }, (payload) => {
+        if (payload.eventType === 'DELETE') { setLocation(null); return }
+        setLocation(payload.new as any)
+      })
+      .subscribe()
+
+    return () => { active = false; supabase.removeChannel(channel) }
+  }, [booking.id])
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-50">
+      <p className="text-xs font-semibold text-green-900 mb-2">📍 Live location</p>
+      {location ? (
+        <LiveMap
+          markers={[{ id: booking.companion_id, lat: location.lat, lng: location.lng, label: booking.companions?.full_name }]}
+          center={{ lat: location.lat, lng: location.lng }}
+          height="220px"
+        />
+      ) : (
+        <div className="bg-gray-100 rounded-2xl flex items-center justify-center text-sm text-gray-400 text-center px-4" style={{ height: '220px' }}>
+          Waiting for companion's live location...
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function DashboardBookings() {
@@ -110,6 +134,9 @@ export function DashboardBookings() {
                   <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-700">{b.companions.full_name?.[0]}</div>
                   <p className="text-xs text-gray-500">Companion: {b.companions.full_name} · {b.companions.phone}</p>
                 </div>
+              )}
+              {b.status === 'in_progress' && b.companion_id && (
+                <ActiveVisitMap booking={b} />
               )}
               {(b.status === 'pending' || b.status === 'confirmed') && (
                 <div className="mt-3 pt-3 border-t border-gray-50">
