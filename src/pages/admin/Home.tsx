@@ -26,7 +26,7 @@ export function AdminHome() {
     try {
       const [bookingsRes, companionsRes, familiesRes, reportsRes] = await Promise.all([
         supabase.from('bookings').select('status,payment_status,amount_paise'),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'companion'),
+        supabase.from('companions').select('id', { count: 'exact', head: true }),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'family'),
         supabase.from('visit_reports').select('id', { count: 'exact', head: true }),
       ])

@@ -66,9 +66,9 @@ begin
   alter table public.profiles enable trigger prevent_role_self_escalation;
 
   -- 3. companions row for the seed companion.
-  insert into public.companions (id, full_name, phone)
-  values (v_companion_id, 'Seed Companion', '+919900000002')
-  on conflict (id) do update set full_name = excluded.full_name, phone = excluded.phone;
+  insert into public.companions (id, full_name, phone, city, status)
+  values (v_companion_id, 'Seed Companion', '+919900000002', 'Hyderabad', 'approved')
+  on conflict (id) do update set full_name = excluded.full_name, phone = excluded.phone, city = excluded.city, status = excluded.status;
 
   -- 4. loved_ones row for the seed family.
   select id into v_loved_one_id from public.loved_ones where family_user_id = v_family_id;
