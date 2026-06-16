@@ -40,7 +40,26 @@ export function DashboardReports() {
     }
   }
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading reports...</div>
+  if (loading) return (
+    <div className="space-y-5 animate-pulse">
+      <div className="h-7 bg-gray-200 rounded-lg w-32" />
+      {[1,2].map(i => (
+        <div key={i} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-3">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-36" />
+              <div className="h-3 bg-gray-100 rounded w-48" />
+            </div>
+            <div className="flex gap-3">
+              {[1,2,3].map(j => <div key={j} className="w-10 h-12 bg-gray-100 rounded-xl" />)}
+            </div>
+          </div>
+          <div className="h-3 bg-gray-100 rounded w-full" />
+          <div className="h-8 bg-gray-100 rounded-xl w-36" />
+        </div>
+      ))}
+    </div>
+  )
 
   return (
     <div className="space-y-6 animate-fade-in">

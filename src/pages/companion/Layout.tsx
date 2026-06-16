@@ -15,6 +15,13 @@ const NAV = [
   { to: '/companion/profile', icon: User, label: 'Profile' },
 ]
 
+const PAGE_LABELS: Record<string, string> = {
+  '/companion': 'Today',
+  '/companion/schedule': 'Schedule',
+  '/companion/earnings': 'Earnings',
+  '/companion/profile': 'Profile',
+}
+
 export function CompanionLayout() {
   const { user, profile, signOut } = useAuth()
   const navigate = useNavigate()
@@ -62,6 +69,9 @@ export function CompanionLayout() {
     navigate('/')
   }
 
+  const initials = profile?.full_name?.split(' ').map(n => n[0]).slice(0, 2).join('') || '?'
+  const currentPageLabel = PAGE_LABELS[location.pathname] || 'Visit'
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Desktop sidebar */}
@@ -73,6 +83,7 @@ export function CompanionLayout() {
             <p className="text-xs text-white/40">Companion Portal</p>
           </div>
         </div>
+
         <nav className="flex-1 p-3 space-y-1">
           {NAV.map(n => (
             <NavLink
@@ -84,14 +95,34 @@ export function CompanionLayout() {
                 isActive ? 'bg-white/15 text-white' : 'text-white/60 hover:text-white hover:bg-white/10'
               )}
             >
-              <n.icon size={16} /> {n.label}
+              <div className="relative">
+                <n.icon size={16} />
+                {n.to === '/companion' && activeBookingId && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full ring-2 ring-green-900" />
+                )}
+              </div>
+              {n.label}
             </NavLink>
           ))}
         </nav>
+
+        {/* Active visit strip in sidebar */}
+        {activeBookingId && (
+          <div className="mx-3 mb-2 bg-green-700/60 rounded-xl px-3 py-2.5 flex items-center gap-2">
+            <span className="w-2 h-2 bg-green-300 rounded-full animate-pulse flex-shrink-0" />
+            <p className="text-xs text-green-100 font-medium">Visit in progress</p>
+          </div>
+        )}
+
         <div className="p-4 border-t border-white/10">
-          <p className="text-sm font-medium text-white mb-3 truncate">{profile?.full_name}</p>
-          <button onClick={handleSignOut} className="flex items-center gap-2 text-xs text-white/50 hover:text-white">
-            <LogOut size={14}/> Sign out
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="w-8 h-8 rounded-full bg-green-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+              {initials}
+            </div>
+            <p className="text-sm font-medium text-white truncate">{profile?.full_name}</p>
+          </div>
+          <button onClick={handleSignOut} className="flex items-center gap-2 text-xs text-white/50 hover:text-white transition-colors">
+            <LogOut size={14} /> Sign out
           </button>
         </div>
       </aside>
@@ -99,14 +130,20 @@ export function CompanionLayout() {
       {/* Main content */}
       <div className="flex-1 md:ml-56 min-w-0 flex flex-col">
         {/* Mobile header */}
-        <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between md:hidden sticky top-0 z-20 pt-[env(safe-area-inset-top)]">
-          <div className="flex items-center gap-2">
-            <Logo className="w-6 h-6" />
-            <p className="font-serif text-lg text-green-900">close <span className="text-green-600">eye</span></p>
+        <header className="bg-white border-b border-gray-100 flex items-center justify-between md:hidden sticky top-0 z-20 pt-[env(safe-area-inset-top)]">
+          <div className="flex items-center gap-3 px-4 py-3.5">
+            <Logo className="w-6 h-6 flex-shrink-0" />
+            <p className="font-semibold text-green-900">{currentPageLabel}</p>
+            {activeBookingId && (
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                Live
+              </span>
+            )}
           </div>
           <button
             onClick={handleSignOut}
-            className="text-gray-400 hover:text-green-800 p-1 rounded-lg transition-colors"
+            className="text-gray-400 hover:text-green-800 p-3 transition-colors"
             aria-label="Sign out"
           >
             <LogOut size={18} />
@@ -132,12 +169,24 @@ export function CompanionLayout() {
             to={n.to}
             end={n.end}
             className={({ isActive }) => clsx(
-              'flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium transition-colors',
+              'flex flex-col items-center justify-center gap-1 py-3 text-xs font-medium transition-colors',
               isActive ? 'text-green-800' : 'text-gray-400'
             )}
           >
-            <n.icon size={20} />
-            {n.label}
+            {({ isActive }) => (
+              <>
+                <div className="relative">
+                  <n.icon size={21} />
+                  {n.to === '/companion' && activeBookingId && (
+                    <span className={clsx(
+                      'absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full ring-2',
+                      isActive ? 'ring-white' : 'ring-white'
+                    )} />
+                  )}
+                </div>
+                <span className="text-[10px] leading-none">{n.label}</span>
+              </>
+            )}
           </NavLink>
         ))}
       </nav>

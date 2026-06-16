@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import {
   Camera, Video, X, MapPin, CheckCircle2, Clock,
-  Loader2, AlertTriangle, FileText,
+  Loader2, AlertTriangle, FileText, ArrowLeft,
 } from 'lucide-react'
 import type { VisitPdfData } from '@/lib/visitPdf'
 
@@ -203,6 +203,28 @@ function PdfProgress({ step }: { step: PdfStep }) {
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// ─── Step progress indicator ──────────────────────────────────────────────────
+
+function StepIndicator({ current }: { current: 1 | 2 }) {
+  return (
+    <div className="flex items-center gap-2 text-xs font-semibold">
+      <span className={`flex items-center gap-1.5 ${current === 1 ? 'text-green-700' : 'text-green-500'}`}>
+        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${current === 1 ? 'bg-green-800 text-white' : 'bg-green-100 text-green-600'}`}>
+          {current > 1 ? '✓' : '1'}
+        </span>
+        Check In
+      </span>
+      <span className="text-gray-200">—</span>
+      <span className={`flex items-center gap-1.5 ${current === 2 ? 'text-green-700' : 'text-gray-300'}`}>
+        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${current === 2 ? 'bg-green-800 text-white' : 'bg-gray-100 text-gray-400'}`}>
+          2
+        </span>
+        Report
+      </span>
     </div>
   )
 }
@@ -539,8 +561,16 @@ export function CompanionVisit() {
   // ─── Loading / error states ───────────────────────────────────────────────
 
   if (loading) return (
-    <div className="flex items-center justify-center py-24 text-gray-400">
-      <Loader2 size={20} className="animate-spin mr-2" />Loading visit…
+    <div className="max-w-lg mx-auto space-y-5 animate-pulse">
+      <div className="h-4 bg-gray-100 rounded w-24" />
+      <div className="h-8 bg-gray-200 rounded-xl w-48" />
+      <div className="h-4 bg-gray-100 rounded w-36" />
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
+        <div className="h-4 bg-gray-200 rounded w-32" />
+        <div className="h-12 bg-gray-100 rounded-xl" />
+      </div>
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 h-32" />
+      <div className="h-12 bg-gray-200 rounded-xl" />
     </div>
   )
 
@@ -555,7 +585,9 @@ export function CompanionVisit() {
     <div className="text-center py-20">
       <p className="text-green-900 font-semibold mb-1">Visit not found</p>
       <p className="text-gray-400 text-sm mb-4">This visit doesn't exist or isn't assigned to you.</p>
-      <button onClick={() => navigate('/companion')} className="text-sm text-green-700 font-medium">← Back</button>
+      <button onClick={() => navigate('/companion')} className="flex items-center gap-1.5 text-sm text-green-700 font-medium mx-auto">
+        <ArrowLeft size={15} /> Back
+      </button>
     </div>
   )
 
@@ -566,16 +598,30 @@ export function CompanionVisit() {
   // ═══════════════════════════════════════════════════════════════════════════
   if (phase === 'checkin') return (
     <div className="max-w-lg mx-auto space-y-5 animate-fade-in">
-      <div>
-        <button onClick={() => navigate('/companion')} className="text-sm text-gray-400 hover:text-green-800 mb-3">← Back</button>
+      {/* Nav + step indicator */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => navigate('/companion')}
+          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-green-800 transition-colors"
+        >
+          <ArrowLeft size={16} /> Back
+        </button>
+        <StepIndicator current={1} />
+      </div>
+
+      {/* Header */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-4">
         <div className="flex items-center gap-2 mb-1">
-          <Clock size={16} className="text-green-600" />
-          <p className="text-xs font-semibold uppercase tracking-widest text-green-600">Check In</p>
+          <Clock size={14} className="text-green-600" />
+          <p className="text-xs font-bold uppercase tracking-widest text-green-600">Check In</p>
         </div>
-        <h1 className="font-serif text-2xl text-green-900">Starting your visit</h1>
-        <p className="text-gray-400 text-sm mt-1">
-          {booking.loved_ones?.full_name} · {booking.loved_ones?.city}
-        </p>
+        <p className="font-serif text-xl text-green-900 mb-0.5">{booking.loved_ones?.full_name}</p>
+        <p className="text-sm text-gray-400">{booking.loved_ones?.city}</p>
+        {booking.scheduled_at && (
+          <p className="text-xs text-green-600 font-semibold mt-2">
+            Scheduled {new Date(booking.scheduled_at).toLocaleString('en-IN', { timeStyle: 'short', dateStyle: 'medium' })}
+          </p>
+        )}
       </div>
 
       {/* Booking notes for companion */}
@@ -648,16 +694,25 @@ export function CompanionVisit() {
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <div className="space-y-5 animate-fade-in">
-      <div>
-        <button onClick={() => navigate('/companion')} className="text-sm text-gray-400 hover:text-green-800 mb-3">← Back</button>
+      {/* Nav + step indicator */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => navigate('/companion')}
+          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-green-800 transition-colors"
+        >
+          <ArrowLeft size={16} /> Back
+        </button>
+        <StepIndicator current={2} />
+      </div>
+
+      {/* Header */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-4">
         <div className="flex items-center gap-2 mb-1">
-          <FileText size={16} className="text-green-600" />
-          <p className="text-xs font-semibold uppercase tracking-widest text-green-600">Visit Report</p>
+          <FileText size={14} className="text-green-600" />
+          <p className="text-xs font-bold uppercase tracking-widest text-green-600">Visit Report</p>
         </div>
-        <h1 className="font-serif text-2xl text-green-900">Submit your report</h1>
-        <p className="text-gray-400 text-sm mt-1">
-          {booking.loved_ones?.full_name} · {booking.loved_ones?.city}
-        </p>
+        <p className="font-serif text-xl text-green-900 mb-0.5">{booking.loved_ones?.full_name}</p>
+        <p className="text-sm text-gray-400">{booking.loved_ones?.city}</p>
       </div>
 
       {/* Check-in summary strip */}

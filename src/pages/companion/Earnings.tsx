@@ -44,7 +44,7 @@ export function CompanionEarnings() {
     }
   }
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading your earnings...</div>
+  if (loading) return <EarningsSkeleton />
 
   const now = new Date()
   const monthStart = startOfMonth(now)
@@ -76,7 +76,7 @@ export function CompanionEarnings() {
   const monthRows = Object.entries(monthGroups).sort((a, b) => b[0].localeCompare(a[0])).map(([, v]) => v)
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
       <h1 className="font-serif text-2xl text-green-900">Earnings</h1>
 
       {error && (
@@ -176,6 +176,33 @@ export function CompanionEarnings() {
           )}
         </>
       )}
+    </div>
+  )
+}
+
+function EarningsSkeleton() {
+  return (
+    <div className="space-y-5 animate-pulse">
+      <div className="h-7 bg-gray-200 rounded-lg w-24" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[1,2,3,4].map(i => (
+          <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-2">
+            <div className="h-3 bg-gray-100 rounded w-20" />
+            <div className="h-8 bg-gray-200 rounded w-24" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-3">
+        {[1,2,3].map(i => (
+          <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 flex justify-between">
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-32" />
+              <div className="h-3 bg-gray-100 rounded w-20" />
+            </div>
+            <div className="h-4 bg-gray-200 rounded w-16" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

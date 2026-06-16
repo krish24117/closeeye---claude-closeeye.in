@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import {
@@ -6,25 +7,47 @@ import {
   startOfMonth, endOfMonth, subMonths, addMonths,
   eachDayOfInterval, isSameDay, isSameMonth, isToday,
 } from 'date-fns'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronRight as ArrowRight } from 'lucide-react'
 import { STATUS_COLORS, SERVICE_NAMES } from '@/lib/booking-labels'
 
 type ViewMode = 'week' | 'month' | 'all'
 
+const STATUS_LABELS: Record<string, string> = {
+  companion_assigned: 'Upcoming',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  cancelled: 'Cancelled',
+}
+
 function BookingCard({ b }: { b: any }) {
+  const isActionable = b.status === 'companion_assigned' || b.status === 'in_progress'
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5">
-      <div className="flex justify-between items-start flex-wrap gap-3 mb-2">
-        <div>
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="flex justify-between items-start gap-3 p-4 pb-3">
+        <div className="min-w-0">
           <p className="font-semibold text-green-900">{b.loved_ones?.full_name}</p>
-          <p className="text-xs text-gray-400">{b.loved_ones?.city} · {b.loved_ones?.address}</p>
-          {b.scheduled_at && <p className="text-xs text-green-600 font-medium mt-1">{format(new Date(b.scheduled_at), 'h:mm a')}</p>}
+          {b.loved_ones?.city && <p className="text-xs text-gray-400 mt-0.5">{b.loved_ones.city}</p>}
+          {b.scheduled_at && <p className="text-xs text-green-600 font-semibold mt-1">{format(new Date(b.scheduled_at), 'h:mm a')}</p>}
         </div>
-        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[b.status] || 'bg-gray-100 text-gray-500'}`}>
-          {b.status.replace('_', ' ')}
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${STATUS_COLORS[b.status] || 'bg-gray-100 text-gray-500'}`}>
+          {STATUS_LABELS[b.status] || b.status}
         </span>
       </div>
-      <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-1.5 inline-block">{SERVICE_NAMES[b.service_type] || b.service_type}</p>
+      <div className="px-4 pb-4 flex items-center justify-between gap-3">
+        <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-2.5 py-1.5 inline-block">
+          {SERVICE_NAMES[b.service_type] || b.service_type}
+        </p>
+        {isActionable && (
+          <Link
+            to={`/companion/visit/${b.id}`}
+            className="flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-900 transition-colors"
+          >
+            {b.status === 'in_progress' ? 'Continue' : 'Start'} <ArrowRight size={12} />
+          </Link>
+        )}
+      </div>
     </div>
   )
 }
@@ -60,7 +83,7 @@ export function CompanionSchedule() {
     }
   }
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading your schedule...</div>
+  if (loading) return <ScheduleSkeleton />
 
   const bookingsOnDay = (day: Date) => bookings.filter(b => b.scheduled_at && isSameDay(new Date(b.scheduled_at), day))
 
@@ -103,38 +126,54 @@ export function CompanionSchedule() {
         </div>
       )}
 
-      {view === 'week' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <button onClick={() => setWeekAnchor(subWeeks(weekAnchor, 1))} className="p-2 rounded-xl text-gray-400 hover:text-green-800 hover:bg-gray-50 transition-colors" aria-label="Previous week">
-              <ChevronLeft size={18} />
-            </button>
-            <p className="text-sm font-semibold text-green-900">{format(weekStart, 'dd MMM')} – {format(weekEnd, 'dd MMM yyyy')}</p>
-            <button onClick={() => setWeekAnchor(addWeeks(weekAnchor, 1))} className="p-2 rounded-xl text-gray-400 hover:text-green-800 hover:bg-gray-50 transition-colors" aria-label="Next week">
-              <ChevronRight size={18} />
-            </button>
-          </div>
-          <div className="space-y-6">
-            {weekDays.map(day => {
-              const items = bookingsOnDay(day)
-              return (
-                <div key={day.toISOString()}>
-                  <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${isToday(day) ? 'text-green-700' : 'text-gray-400'}`}>
-                    {format(day, 'EEEE, dd MMM')}{isToday(day) ? ' · Today' : ''}
-                  </p>
-                  {items.length === 0 ? (
-                    <p className="text-sm text-gray-300 italic px-1">No visits</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {items.map(b => <BookingCard key={b.id} b={b} />)}
+      {view === 'week' && (() => {
+        const activeDays = weekDays.filter(d => bookingsOnDay(d).length > 0 || isToday(d))
+        return (
+          <div className="space-y-5">
+            <div className="flex items-center justify-between">
+              <button onClick={() => setWeekAnchor(subWeeks(weekAnchor, 1))} className="p-2 rounded-xl text-gray-400 hover:text-green-800 hover:bg-gray-50 transition-colors" aria-label="Previous week">
+                <ChevronLeft size={18} />
+              </button>
+              <p className="text-sm font-semibold text-green-900">{format(weekStart, 'dd MMM')} – {format(weekEnd, 'dd MMM yyyy')}</p>
+              <button onClick={() => setWeekAnchor(addWeeks(weekAnchor, 1))} className="p-2 rounded-xl text-gray-400 hover:text-green-800 hover:bg-gray-50 transition-colors" aria-label="Next week">
+                <ChevronRight size={18} />
+              </button>
+            </div>
+            {activeDays.length === 0 ? (
+              <div className="text-center py-12 bg-green-50 rounded-2xl">
+                <p className="text-3xl mb-3">📅</p>
+                <p className="font-semibold text-green-900">Free week</p>
+                <p className="text-sm text-gray-400 mt-1">No visits scheduled for this week</p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {activeDays.map(day => {
+                  const items = bookingsOnDay(day)
+                  return (
+                    <div key={day.toISOString()}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className={`text-xs font-bold uppercase tracking-widest ${isToday(day) ? 'text-green-700' : 'text-gray-400'}`}>
+                          {format(day, 'EEEE, d MMM')}
+                        </p>
+                        {isToday(day) && (
+                          <span className="text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Today</span>
+                        )}
+                      </div>
+                      {items.length === 0 ? (
+                        <p className="text-sm text-gray-300 italic px-1">No visits today</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {items.map(b => <BookingCard key={b.id} b={b} />)}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )
-            })}
+                  )
+                })}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {view === 'month' && (
         <div className="space-y-6">
@@ -193,15 +232,44 @@ export function CompanionSchedule() {
           <div className="space-y-6">
             {Object.entries(allGroups).map(([date, items]) => (
               <div key={date}>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{date}</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{date}</p>
                 <div className="space-y-3">
-                  {items.map(b => <BookingCard key={b.id} b={b} />)}
+                  {(items as any[]).map((b: any) => <BookingCard key={b.id} b={b} />)}
                 </div>
               </div>
             ))}
           </div>
         )
       )}
+    </div>
+  )
+}
+
+function ScheduleSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div className="h-7 bg-gray-200 rounded-lg w-24" />
+        <div className="h-8 bg-gray-100 rounded-xl w-40" />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="h-8 w-8 bg-gray-100 rounded-xl" />
+        <div className="h-4 bg-gray-200 rounded w-40" />
+        <div className="h-8 w-8 bg-gray-100 rounded-xl" />
+      </div>
+      {[1, 2].map(i => (
+        <div key={i} className="space-y-2">
+          <div className="h-3 bg-gray-100 rounded w-32" />
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-2">
+            <div className="flex justify-between">
+              <div className="h-4 bg-gray-200 rounded w-32" />
+              <div className="h-5 bg-gray-100 rounded-full w-20" />
+            </div>
+            <div className="h-3 bg-gray-100 rounded w-20" />
+            <div className="h-6 bg-gray-100 rounded-lg w-28" />
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

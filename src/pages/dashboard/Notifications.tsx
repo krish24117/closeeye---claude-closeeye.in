@@ -75,7 +75,18 @@ export function DashboardNotifications() {
       )}
 
       {loading ? (
-        <div className="text-center py-20 text-gray-400">Loading notifications...</div>
+        <div className="space-y-2 animate-pulse">
+          {[1,2,3].map(i => (
+            <div key={i} className="flex items-start gap-4 p-4 rounded-2xl border border-gray-100 bg-white">
+              <div className="w-8 h-8 bg-gray-200 rounded-xl flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-2/3" />
+                <div className="h-3 bg-gray-100 rounded w-full" />
+                <div className="h-3 bg-gray-100 rounded w-1/4" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : notes.length === 0 ? (
         <div className="text-center py-20 bg-green-50 rounded-2xl">
           <p className="text-4xl mb-3">🔔</p>
