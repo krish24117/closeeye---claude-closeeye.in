@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
       status: "pending",
       payment_status: "pending",
       scheduled_at,
-      notes: notes?.trim() || null,
+      special_instructions: notes?.trim() || null,
     })
     .select("id")
     .single();
