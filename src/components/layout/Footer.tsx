@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Logo } from '@/components/ui/Logo'
 
 export function Footer() {
   return (
@@ -6,7 +7,10 @@ export function Footer() {
       <div className="max-w-6xl mx-auto px-6 py-14">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 mb-10">
           <div className="sm:col-span-2 md:col-span-1">
-            <p className="font-serif text-xl text-white mb-3">close eye</p>
+            <div className="flex items-center gap-2 mb-3">
+              <Logo className="w-8 h-8 flex-shrink-0" />
+              <p className="font-serif text-xl text-white">close <span className="text-green-300">eye</span></p>
+            </div>
             <p className="text-sm leading-relaxed max-w-xs">
               Verified wellbeing visits and trusted local support for your loved ones in India. When you can't be there, Close Eye can.
             </p>
