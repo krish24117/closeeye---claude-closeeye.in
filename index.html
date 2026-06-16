@@ -214,6 +214,10 @@
         var root = document.getElementById('root');
         var hero = document.getElementById('static-hero');
         if (!root || !hero) return;
+        if (window.location.pathname !== '/') {
+          hero.style.display = 'none';
+          return;
+        }
         var mo = new MutationObserver(function () {
           if (root.children.length > 0) {
             mo.disconnect();
