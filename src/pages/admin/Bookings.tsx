@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Spinner } from '@/components/ui/Skeleton'
 import { useToast } from '@/components/ui/Toast'
 import { format } from 'date-fns'
 import { STATUS_COLORS, SERVICE_NAMES } from '@/lib/booking-labels'
@@ -122,7 +123,7 @@ export function AdminBookings() {
     return true
   })
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading bookings...</div>
+  if (loading) return <Spinner />
 
   return (
     <div className="space-y-6 animate-fade-in">

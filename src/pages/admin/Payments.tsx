@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Spinner } from '@/components/ui/Skeleton'
 import { format } from 'date-fns'
+import { TrendingUp, Banknote, PieChart, Clock } from 'lucide-react'
 import { STATUS_COLORS } from '@/lib/booking-labels'
 
 export function AdminPayments() {
@@ -32,7 +34,7 @@ export function AdminPayments() {
   const margin = totalRevenue - totalPayouts
   const pendingPaymentCount = bookings.filter(b => b.payment_status !== 'paid').length
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading payments...</div>
+  if (loading) return <Spinner />
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -49,22 +51,20 @@ export function AdminPayments() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-400 mb-1">Total Revenue</p>
-          <p className="font-serif text-2xl text-green-900">₹{(totalRevenue / 100).toLocaleString('en-IN')}</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-400 mb-1">Companion Payouts</p>
-          <p className="font-serif text-2xl text-green-900">₹{(totalPayouts / 100).toLocaleString('en-IN')}</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-400 mb-1">Platform Margin</p>
-          <p className="font-serif text-2xl text-green-900">₹{(margin / 100).toLocaleString('en-IN')}</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
-          <p className="text-xs text-gray-400 mb-1">Pending Payments</p>
-          <p className="font-serif text-2xl text-green-900">{pendingPaymentCount}</p>
-        </div>
+        {([
+          { icon: TrendingUp, label: 'Total Revenue', value: `₹${(totalRevenue / 100).toLocaleString('en-IN')}` },
+          { icon: Banknote, label: 'Companion Payouts', value: `₹${(totalPayouts / 100).toLocaleString('en-IN')}` },
+          { icon: PieChart, label: 'Platform Margin', value: `₹${(margin / 100).toLocaleString('en-IN')}` },
+          { icon: Clock, label: 'Pending Payments', value: pendingPaymentCount },
+        ] as const).map(c => (
+          <div key={c.label} className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#e8f5e9] text-[#2d6a4f] flex items-center justify-center mb-3">
+              <c.icon size={17} />
+            </div>
+            <p className="font-serif text-2xl text-green-900">{c.value}</p>
+            <p className="text-xs text-gray-400 mt-1">{c.label}</p>
+          </div>
+        ))}
       </div>
 
       {bookings.length === 0 ? (

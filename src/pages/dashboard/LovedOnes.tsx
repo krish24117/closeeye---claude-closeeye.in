@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/components/ui/Toast'
-import { Plus, X, Pencil, Trash2 } from 'lucide-react'
+import { Plus, X, Pencil, Trash2, Phone } from 'lucide-react'
+import { Spinner } from '@/components/ui/Skeleton'
 
 export function DashboardLovedOnes() {
   const { user } = useAuth()
@@ -15,7 +16,7 @@ export function DashboardLovedOnes() {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const { register, handleSubmit, reset } = useForm()
+  const { register, handleSubmit, reset, formState: { errors } } = useForm()
 
   useEffect(()=>{ load() },[])
 
@@ -104,10 +105,23 @@ export function DashboardLovedOnes() {
         <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4 animate-fade-in">
           <h2 className="font-semibold text-green-900">{editingId ? 'Edit loved one' : 'Add a loved one'}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[['full_name','Full name','e.g. Sunita Reddy',true],['age','Age','65',false],['phone','Phone number','+91 98765 43210',false],['city','City','Hyderabad',true],['address','Home address','EIPL Rivera A-405...',true]].map(([n,l,p,req])=>(
-              <div key={n as string} className={n==='address'?'sm:col-span-2':''}>
-                <label className="block text-xs font-semibold text-green-900 mb-1">{l as string}{req?' *':''}</label>
-                <input {...register(n as string,{required:!!req})} placeholder={p as string} className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600" />
+            {([
+              ['full_name','Full name','e.g. Sunita Reddy',true],
+              ['age','Age','65',false],
+              ['phone','Phone number','+91 98765 43210',false],
+              ['city','City','Hyderabad',true],
+              ['address','Home address','EIPL Rivera A-405...',true],
+            ] as [string,string,string,boolean][]).map(([n,l,p,req])=>(
+              <div key={n} className={n==='address'?'sm:col-span-2':''}>
+                <label className="block text-xs font-semibold text-green-900 mb-1">{l}{req?' *':''}</label>
+                <input
+                  {...register(n, { required: req ? 'This field is required' : false })}
+                  placeholder={p}
+                  className={`w-full border-2 rounded-xl px-3 py-2.5 text-sm focus:outline-none ${(errors as any)[n] ? 'border-red-400 focus:border-red-500' : 'border-gray-200 focus:border-green-600'}`}
+                />
+                {(errors as any)[n] && (
+                  <p className="text-red-500 text-xs mt-1">{(errors as any)[n]?.message || 'Required'}</p>
+                )}
               </div>
             ))}
             <div>
@@ -117,6 +131,14 @@ export function DashboardLovedOnes() {
             <div>
               <label className="block text-xs font-semibold text-green-900 mb-1">Nearest hospital</label>
               <input {...register('nearest_hospital')} placeholder="Apollo Jubilee Hills" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-green-900 mb-1">Emergency contact name</label>
+              <input {...register('emergency_contact_name')} placeholder="Suresh (son)" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-green-900 mb-1">Emergency contact phone</label>
+              <input {...register('emergency_contact_phone')} placeholder="+91 98765 43210" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600" />
             </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-semibold text-green-900 mb-1">Medical notes</label>
@@ -130,7 +152,7 @@ export function DashboardLovedOnes() {
       )}
 
       {loading ? (
-        <div className="text-center py-20 text-gray-400">Loading...</div>
+        <Spinner />
       ) : list.length === 0 && !showForm ? (
         <div className="text-center py-20 bg-green-50 rounded-2xl">
           <p className="text-4xl mb-3">❤️</p>
@@ -158,8 +180,19 @@ export function DashboardLovedOnes() {
                   </button>
                 </div>
               </div>
-              <p className="text-xs text-gray-400">{p.address}</p>
-              {p.medical_notes && <p className="text-xs text-gray-500 mt-1 bg-amber-50 p-2 rounded-lg">📋 {p.medical_notes}</p>}
+              {p.address && <p className="text-xs text-gray-400">{p.address}</p>}
+              {p.medical_notes && <p className="text-xs text-gray-500 mt-2 bg-amber-50 p-2 rounded-lg">📋 {p.medical_notes}</p>}
+              {p.emergency_contact_name && (
+                <div className="mt-3 pt-3 border-t border-red-100 flex items-center gap-2 bg-red-50 rounded-xl p-2.5">
+                  <Phone size={13} className="text-red-500 shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-red-700">Emergency contact</p>
+                    <p className="text-xs text-red-600">
+                      {p.emergency_contact_name}{p.emergency_contact_phone ? ` · ${p.emergency_contact_phone}` : ''}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

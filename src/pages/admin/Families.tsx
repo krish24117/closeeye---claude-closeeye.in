@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Spinner } from '@/components/ui/Skeleton'
 import { Heart } from 'lucide-react'
 
 export function AdminFamilies() {
@@ -33,7 +34,7 @@ export function AdminFamilies() {
 
   const filtered = families.filter(f => !search || f.full_name?.toLowerCase().includes(search.toLowerCase()))
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading families...</div>
+  if (loading) return <Spinner />
 
   return (
     <div className="space-y-6 animate-fade-in">

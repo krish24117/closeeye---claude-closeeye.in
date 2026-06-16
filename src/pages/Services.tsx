@@ -11,16 +11,16 @@ const SERVICES = [
 export function ServicesPage() {
   return (
     <main>
-      <div className="bg-gradient-to-br from-green-900 to-green-800 text-white px-6 py-20 text-center">
+      <div className="bg-gradient-to-br from-green-900 to-green-800 text-white px-4 sm:px-6 py-16 sm:py-20 text-center">
         <p className="text-green-300 text-xs font-semibold uppercase tracking-widest mb-3">Services</p>
-        <h1 className="font-serif text-4xl mb-4">A trusted presence, on the days you cannot be there.</h1>
-        <p className="text-white/65 max-w-lg mx-auto">Every service includes a verified local companion, photos and a full report.</p>
+        <h1 className="font-serif text-3xl sm:text-4xl mb-4">A trusted presence, on the days you cannot be there.</h1>
+        <p className="text-white/65 max-w-lg mx-auto text-sm sm:text-base">Every service includes a verified local companion, photos and a full report.</p>
         <p className="mt-4 text-sm text-green-300">Currently serving <strong>Hyderabad</strong> — expanding soon.</p>
       </div>
-      <section className="max-w-6xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {SERVICES.map(s=>(
-          <div key={s.type} className="border-2 border-gray-100 rounded-2xl p-8 hover:shadow-card transition-shadow">
-            <p className="font-serif text-3xl text-green-900 mb-1">{s.price}</p>
+          <div key={s.type} className="border-2 border-gray-100 rounded-2xl p-6 sm:p-8 hover:shadow-card transition-shadow">
+            <p className="font-serif text-2xl sm:text-3xl text-green-900 mb-1">{s.price}</p>
             <h2 className="font-semibold text-lg text-green-900 mb-3">{s.name}</h2>
             <p className="text-sm text-gray-500 leading-relaxed mb-5">{s.desc}</p>
             <ul className="space-y-2 mb-7">
@@ -30,9 +30,9 @@ export function ServicesPage() {
           </div>
         ))}
       </section>
-      <div className="bg-green-50 text-center px-6 py-14">
+      <div className="bg-green-50 text-center px-4 sm:px-6 py-12 sm:py-14">
         <h2 className="font-serif text-2xl text-green-900 mb-3">Not sure where to start?</h2>
-        <p className="text-gray-500 mb-6">Tell us about your family and we'll recommend the right plan.</p>
+        <p className="text-gray-500 mb-6 text-sm sm:text-base">Tell us about your family and we'll recommend the right plan.</p>
         <div className="flex gap-3 justify-center flex-wrap">
           <Link to="/waitlist" className="bg-green-800 text-white font-semibold px-7 py-3 rounded-xl hover:bg-green-700 transition-colors text-sm">Join Waitlist</Link>
           <Link to="/contact" className="border-2 border-green-200 text-green-800 font-medium px-7 py-3 rounded-xl hover:bg-green-50 transition-colors text-sm">Book a call</Link>

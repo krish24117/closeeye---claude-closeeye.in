@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Shield, Camera, Clock, RefreshCw, AlertCircle, Banknote, ChevronRight } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 const TRUST = [
   { icon: Shield, title: '5-Layer Background Verification', desc: 'Police clearance, address verification, identity checks, employment history and two personal references.', tag: 'Verified before Day 1' },
@@ -11,13 +13,20 @@ const TRUST = [
 ]
 
 const PRICING = [
-  { type: 'companion_visit_single', name: 'One-Time Visit', price: '₹999', note: 'single visit', items: ['1 home visit', 'Photo report', 'WhatsApp updates'], popular: false },
+  { type: 'companion_visit_single', name: 'Companion Visit', price: '₹999', note: 'single visit', items: ['1 home visit', 'Photo report', 'WhatsApp updates'], popular: false },
   { type: 'care_plan_4_monthly', name: 'Monthly Plan', price: '₹2,999', note: 'per month · 4 visits', items: ['4 visits per month', 'Dedicated companion', 'Priority support'], popular: true },
   { type: 'care_plan_quarterly', name: 'Quarterly Plan', price: '₹7,999', note: 'per quarter · best value', items: ['12 visits / quarter', '1 free emergency visit', 'Dedicated companion'], popular: false },
   { type: 'emergency_visit', name: 'Emergency Visit', price: '₹1,999', note: 'same-day dispatch', items: ['Same-day dispatch', 'Live family updates', '24/7 hotline'], popular: false },
 ]
 
 export function HomePage() {
+  const [waitlistCount, setWaitlistCount] = useState(47)
+
+  useEffect(() => {
+    supabase.from('waitlist').select('*', { count: 'exact', head: true })
+      .then(({ count }) => { if (count !== null) setWaitlistCount(count) })
+  }, [])
+
   return (
     <main>
       {/* Hero */}
@@ -48,7 +57,7 @@ export function HomePage() {
 
           {/* Stats — 2 cols on mobile, 4 on desktop */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-px mt-10 sm:mt-14 bg-white/10 rounded-2xl overflow-hidden border border-white/10">
-            {[['47+', 'families on waitlist'], ['Hyderabad', 'live city'], ['4.9★', 'satisfaction'], ['<1hr', 'report delivery']].map(([v, l]) => (
+            {[[`${waitlistCount}+`, 'families on waitlist'], ['Hyderabad', 'live city'], ['4.9★', 'satisfaction'], ['<1hr', 'report delivery']].map(([v, l]) => (
               <div key={l} className="py-4 sm:py-5 px-3 sm:px-4 bg-white/5 text-center">
                 <strong className="block font-serif text-xl sm:text-2xl text-white">{v}</strong>
                 <span className="text-white/50 text-xs">{l}</span>
@@ -104,7 +113,7 @@ export function HomePage() {
             ))}
           </div>
           <div className="grid grid-cols-3 gap-px mt-8 sm:mt-10 bg-green-100 rounded-2xl overflow-hidden border border-green-100">
-            {[['47+', 'Families on waitlist'], ['100%', 'Background-checked'], ['<1hr', 'Report delivery']].map(([v, l]) => (
+            {[[`${waitlistCount}+`, 'Families on waitlist'], ['100%', 'Background-checked'], ['<1hr', 'Report delivery']].map(([v, l]) => (
               <div key={l} className="py-5 sm:py-7 text-center bg-white">
                 <strong className="block font-serif text-2xl sm:text-3xl text-green-800">{v}</strong>
                 <span className="text-gray-400 text-xs">{l}</span>
@@ -164,11 +173,14 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* Sample report */}
+      {/* What every visit looks like */}
       <section className="bg-green-900 text-white px-4 sm:px-6 py-16 sm:py-20">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10 sm:gap-16 items-center">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-7">
-            <p className="text-xs text-green-300 font-semibold uppercase tracking-widest mb-5">✓ Visit completed</p>
+            <div className="flex items-center gap-2 mb-5">
+              <span className="text-xs text-green-300 font-semibold uppercase tracking-widest">✓ Visit completed</span>
+              <span className="ml-auto text-xs font-semibold bg-amber-400/20 text-amber-300 px-2.5 py-0.5 rounded-full">Sample Report</span>
+            </div>
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center font-bold text-sm flex-shrink-0">PS</div>
               <div>
@@ -188,6 +200,7 @@ export function HomePage() {
             </ul>
           </div>
           <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-green-400 mb-4">What every visit looks like</p>
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl mb-5">"Mom is doing great."</h2>
             <p className="text-white/65 leading-relaxed mb-8 text-sm sm:text-base">
               Every visit generates a detailed, time-stamped report delivered to your WhatsApp and dashboard within the hour. Real photos. Real notes. Real peace of mind from 10,000 km away.
@@ -202,7 +215,7 @@ export function HomePage() {
       {/* CTA */}
       <section className="bg-gradient-to-br from-green-800 to-green-700 text-white px-4 sm:px-6 py-16 sm:py-20 text-center">
         <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl mb-4">Join the families we look after across India.</h2>
-        <p className="text-white/65 mb-8 text-sm sm:text-base">47 families are already on the waitlist. Be first in your city.</p>
+        <p className="text-white/65 mb-8 text-sm sm:text-base">{waitlistCount} families are already on the waitlist. Be first in your city.</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link to="/waitlist" className="bg-white text-green-900 font-semibold px-8 py-3.5 rounded-xl hover:bg-green-50 transition-colors text-sm">Join Waitlist</Link>
           <Link to="/contact" className="border border-white/30 text-white font-medium px-8 py-3.5 rounded-xl hover:bg-white/10 transition-colors text-sm">Book a call</Link>

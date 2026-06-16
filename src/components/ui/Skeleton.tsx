@@ -31,6 +31,14 @@ export function StatsSkeleton() {
   )
 }
 
+export function Spinner() {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <div className="w-8 h-8 border-2 border-green-700 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+}
+
 export function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-green-50">

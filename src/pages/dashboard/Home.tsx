@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Calendar, Heart, FileText, Bell, Plus, ArrowRight } from 'lucide-react'
+import { format } from 'date-fns'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { StatsSkeleton } from '@/components/ui/Skeleton'
@@ -8,6 +9,8 @@ import { StatsSkeleton } from '@/components/ui/Skeleton'
 export function DashboardHome() {
   const { profile } = useAuth()
   const [stats, setStats] = useState({ bookings: 0, lovedOnes: 0, reports: 0, unread: 0 })
+  const [nextVisit, setNextVisit] = useState<any>(null)
+  const [lastVisit, setLastVisit] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -17,15 +20,30 @@ export function DashboardHome() {
     setLoading(true)
     setError(null)
     try {
-      const [b, l, r, n] = await Promise.all([
+      const [b, l, r, n, nv, lv] = await Promise.all([
         supabase.from('bookings').select('id', { count: 'exact', head: true }),
         supabase.from('loved_ones').select('id', { count: 'exact', head: true }),
         supabase.from('visit_reports').select('id', { count: 'exact', head: true }),
         supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('read', false),
+        supabase.from('bookings')
+          .select('id,scheduled_at,loved_ones(full_name)')
+          .in('status', ['companion_assigned', 'in_progress'])
+          .gte('scheduled_at', new Date().toISOString())
+          .order('scheduled_at', { ascending: true })
+          .limit(1)
+          .maybeSingle(),
+        supabase.from('bookings')
+          .select('id,completed_at,loved_ones(full_name)')
+          .eq('status', 'completed')
+          .order('completed_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ])
       const firstError = b.error || l.error || r.error || n.error
       if (firstError) throw firstError
       setStats({ bookings: b.count || 0, lovedOnes: l.count || 0, reports: r.count || 0, unread: n.count || 0 })
+      setNextVisit(nv.data || null)
+      setLastVisit(lv.data || null)
     } catch (err) {
       console.error('Failed to load dashboard stats:', err)
       setError('Something went wrong — please try again.')
@@ -59,6 +77,34 @@ export function DashboardHome() {
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
           {error}
           <button onClick={load} className="font-semibold underline whitespace-nowrap">Retry</button>
+        </div>
+      )}
+
+      {/* At a glance — next & last visit */}
+      {!loading && (nextVisit || lastVisit) && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Next visit</p>
+            {nextVisit ? (
+              <>
+                <p className="font-semibold text-green-900 text-sm">{(nextVisit.loved_ones as any)?.full_name}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{format(new Date(nextVisit.scheduled_at), 'EEE d MMM · h:mm a')}</p>
+              </>
+            ) : (
+              <p className="text-xs text-gray-400">No upcoming visits</p>
+            )}
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Last visit</p>
+            {lastVisit ? (
+              <>
+                <p className="font-semibold text-green-900 text-sm">{(lastVisit.loved_ones as any)?.full_name}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{lastVisit.completed_at ? format(new Date(lastVisit.completed_at), 'd MMM yyyy') : '—'}</p>
+              </>
+            ) : (
+              <p className="text-xs text-gray-400">No visits yet</p>
+            )}
+          </div>
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Spinner } from '@/components/ui/Skeleton'
 import { format } from 'date-fns'
 import { SERVICE_NAMES } from '@/lib/booking-labels'
 
@@ -50,7 +51,7 @@ export function AdminReports() {
     }
   }
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading reports...</div>
+  if (loading) return <Spinner />
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -75,7 +76,7 @@ export function AdminReports() {
       ) : (
         <div className="space-y-4">
           {reports.map(r => (
-            <div key={r.id} className="bg-white rounded-2xl border border-gray-100 p-6">
+            <div key={r.id} className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
               <div className="flex justify-between items-start flex-wrap gap-3 mb-4">
                 <div>
                   <p className="font-semibold text-green-900">{r.loved_ones?.full_name}</p>

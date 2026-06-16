@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Spinner } from '@/components/ui/Skeleton'
 import { formatDistanceToNow } from 'date-fns'
 import { LiveMap, LiveMapMarker } from '@/components/ui/LiveMap'
 
@@ -43,7 +44,7 @@ export function AdminLiveMap() {
     label: l.companions?.full_name,
   }))
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading live map...</div>
+  if (loading) return <Spinner />
 
   return (
     <div className="space-y-6 animate-fade-in">

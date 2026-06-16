@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Spinner } from '@/components/ui/Skeleton'
 import { useToast } from '@/components/ui/Toast'
 import { UserPlus, UserMinus, Plus, FileText } from 'lucide-react'
 import { AddCompanionModal } from './AddCompanionModal'
@@ -151,7 +152,7 @@ export function AdminCompanions() {
     !search || p.full_name?.toLowerCase().includes(search.toLowerCase())
   )
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading companions...</div>
+  if (loading) return <Spinner />
 
   return (
     <div className="space-y-8 animate-fade-in">
