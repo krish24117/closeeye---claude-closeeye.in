@@ -139,7 +139,8 @@ function SEOManager() {
 
 function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: string }) {
   const { user, profile, loading } = useAuth()
-  if (loading) return (
+  // Show spinner while auth is loading, or while user is known but profile hasn't arrived yet
+  if (loading || (user && !profile)) return (
     <div className="min-h-screen flex items-center justify-center bg-green-50">
       <div className="text-center">
         <div className="w-10 h-10 border-2 border-green-800 border-t-transparent rounded-full animate-spin mx-auto mb-3" />

@@ -62,7 +62,7 @@ export function AuthPage() {
   // Once a session exists, go to the correct dashboard for this user's role -
   // unless we're in the middle of a password recovery flow.
   useEffect(() => {
-    if (!loading && user && mode !== 'update-password') {
+    if (!loading && user && profile && mode !== 'update-password') {
       navigate(getRoleHome(profile), { replace: true })
     }
   }, [loading, user, profile, navigate, mode])
