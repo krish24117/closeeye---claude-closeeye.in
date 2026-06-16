@@ -126,6 +126,7 @@
     </script>
 
     <!-- Pre-render overlay styles -->
+    <script>if(location.pathname!=='/')document.documentElement.classList.add('not-home');</script>
     <style>
       body { margin: 0; background: #14532d; }
       #static-hero {
@@ -136,6 +137,7 @@
         background: #fff;
         transition: opacity 0.35s ease;
       }
+      html.not-home #static-hero { display: none; }
       #static-hero.fade-out {
         opacity: 0;
         pointer-events: none;
@@ -213,11 +215,7 @@
       (function () {
         var root = document.getElementById('root');
         var hero = document.getElementById('static-hero');
-        if (!root || !hero) return;
-        if (window.location.pathname !== '/') {
-          hero.style.display = 'none';
-          return;
-        }
+        if (!root || !hero || document.documentElement.classList.contains('not-home')) return;
         var mo = new MutationObserver(function () {
           if (root.children.length > 0) {
             mo.disconnect();
