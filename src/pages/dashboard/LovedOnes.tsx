@@ -1,11 +1,313 @@
-// src/pages/dashboard/LovedOnes.tsx
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/components/ui/Toast'
-import { Plus, X, Pencil, Trash2, Phone } from 'lucide-react'
+import { Plus, X, Pencil, Trash2, Phone, MapPin, Stethoscope, AlertTriangle, User } from 'lucide-react'
 import { Spinner } from '@/components/ui/Skeleton'
+
+// ── Form field helper ─────────────────────────────────────────────────────────
+
+function Field({
+  label, placeholder, required, error, span, textarea,
+  ...rest
+}: {
+  label: string
+  placeholder?: string
+  required?: boolean
+  error?: string
+  span?: boolean
+  textarea?: boolean
+} & React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>) {
+  const base = `w-full border-2 rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-colors ${
+    error ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-green-600'
+  }`
+  return (
+    <div className={span ? 'sm:col-span-2' : ''}>
+      <label className="block text-xs font-semibold text-green-900 mb-1.5">
+        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      </label>
+      {textarea ? (
+        <textarea
+          {...(rest as any)}
+          placeholder={placeholder}
+          rows={2}
+          className={`${base} resize-none`}
+        />
+      ) : (
+        <input
+          {...(rest as any)}
+          placeholder={placeholder}
+          className={base}
+        />
+      )}
+      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+    </div>
+  )
+}
+
+// ── Add / edit form ───────────────────────────────────────────────────────────
+
+function LovedOneForm({
+  editing,
+  onSave,
+  onCancel,
+  saving,
+}: {
+  editing: any | null
+  onSave: (data: any) => Promise<void>
+  onCancel: () => void
+  saving: boolean
+}) {
+  const { register, handleSubmit, formState: { errors } } = useForm({ defaultValues: editing || {} })
+
+  return (
+    <form
+      onSubmit={handleSubmit(onSave)}
+      className="bg-white rounded-2xl border border-gray-100 overflow-hidden animate-fade-in"
+    >
+      {/* Form header */}
+      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 className="font-semibold text-green-900">{editing ? 'Edit profile' : 'Add a loved one'}</h2>
+        <button type="button" onClick={onCancel} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+          <X size={16} />
+        </button>
+      </div>
+
+      <div className="p-6 space-y-6">
+        {/* Section: Basic info */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <User size={14} className="text-green-600" />
+            <p className="text-xs font-bold text-green-800 uppercase tracking-wider">Basic information</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field
+              label="Full name" placeholder="e.g. Sunita Reddy"
+              required
+              error={(errors as any).full_name?.message}
+              {...register('full_name', { required: 'Full name is required' })}
+            />
+            <Field
+              label="Age" placeholder="72"
+              type="number"
+              error={(errors as any).age?.message}
+              {...register('age')}
+            />
+            <Field
+              label="Phone number" placeholder="+91 98765 43210"
+              error={(errors as any).phone?.message}
+              {...register('phone')}
+            />
+            <Field
+              label="City" placeholder="Hyderabad"
+              required
+              error={(errors as any).city?.message}
+              {...register('city', { required: 'City is required' })}
+            />
+            <Field
+              label="Home address" placeholder="EIPL Rivera A-405, Gachibowli…"
+              required span
+              error={(errors as any).address?.message}
+              {...register('address', { required: 'Address is required' })}
+            />
+          </div>
+        </div>
+
+        {/* Section: Medical */}
+        <div className="pt-5 border-t border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
+            <Stethoscope size={14} className="text-amber-500" />
+            <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">Medical details</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field
+              label="Medical notes" placeholder="Diabetes, blood pressure medication…"
+              textarea span
+              {...register('medical_notes')}
+            />
+            <Field
+              label="Doctor's name" placeholder="Dr. Sharma"
+              {...register('doctor_name')}
+            />
+            <Field
+              label="Nearest hospital" placeholder="Apollo Jubilee Hills"
+              {...register('nearest_hospital')}
+            />
+          </div>
+        </div>
+
+        {/* Section: Emergency contact */}
+        <div className="pt-5 border-t border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle size={14} className="text-red-500" />
+            <p className="text-xs font-bold text-red-600 uppercase tracking-wider">Emergency contact</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field
+              label="Name" placeholder="Suresh (son)"
+              {...register('emergency_contact_name')}
+            />
+            <Field
+              label="Phone" placeholder="+91 98765 43210"
+              {...register('emergency_contact_phone')}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Form footer */}
+      <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={saving}
+          className="bg-green-800 hover:bg-green-700 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition-colors"
+        >
+          {saving ? 'Saving…' : editing ? 'Save changes' : 'Add to my family'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  )
+}
+
+// ── Loved one profile card ────────────────────────────────────────────────────
+
+function LovedOneCard({
+  person,
+  onEdit,
+  onDelete,
+}: {
+  person: any
+  onEdit: (p: any) => void
+  onDelete: (p: any) => void
+}) {
+  const initials = person.full_name
+    ?.split(' ')
+    .slice(0, 2)
+    .map((n: string) => n[0])
+    .join('') || '?'
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      {/* Card header */}
+      <div className="p-5">
+        <div className="flex items-start gap-4">
+          {/* Avatar */}
+          <div className="w-14 h-14 rounded-2xl bg-green-100 flex items-center justify-center flex-shrink-0">
+            <span className="text-green-700 font-bold text-xl">{initials}</span>
+          </div>
+
+          {/* Name + meta */}
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-green-900 text-base leading-tight">{person.full_name}</p>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              {person.age && (
+                <span className="text-xs text-gray-500">Age {person.age}</span>
+              )}
+              {person.city && (
+                <span className="text-xs text-gray-400 flex items-center gap-0.5">
+                  <MapPin size={10} />{person.city}
+                </span>
+              )}
+            </div>
+            {person.phone && (
+              <a
+                href={`tel:${person.phone}`}
+                className="inline-flex items-center gap-1 text-xs text-green-700 font-medium mt-1.5 hover:underline"
+              >
+                <Phone size={11} />{person.phone}
+              </a>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-0.5 flex-shrink-0 -mt-1 -mr-1">
+            <button
+              onClick={() => onEdit(person)}
+              aria-label={`Edit ${person.full_name}`}
+              className="p-2 rounded-xl text-gray-400 hover:text-green-700 hover:bg-green-50 transition-colors"
+            >
+              <Pencil size={15} />
+            </button>
+            <button
+              onClick={() => onDelete(person)}
+              aria-label={`Remove ${person.full_name}`}
+              className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        </div>
+
+        {/* Address */}
+        {person.address && (
+          <div className="mt-4 flex items-start gap-2 text-xs text-gray-500">
+            <MapPin size={12} className="text-gray-400 mt-0.5 flex-shrink-0" />
+            <span className="leading-relaxed">{person.address}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Medical notes */}
+      {(person.medical_notes || person.doctor_name || person.nearest_hospital) && (
+        <div className="mx-5 mb-4 bg-amber-50 rounded-xl p-3.5 space-y-1.5">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Stethoscope size={12} className="text-amber-600" />
+            <p className="text-xs font-semibold text-amber-800">Medical</p>
+          </div>
+          {person.medical_notes && (
+            <p className="text-xs text-amber-900 leading-relaxed">{person.medical_notes}</p>
+          )}
+          {(person.doctor_name || person.nearest_hospital) && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+              {person.doctor_name && (
+                <p className="text-xs text-amber-700">
+                  <span className="font-medium">Dr:</span> {person.doctor_name}
+                </p>
+              )}
+              {person.nearest_hospital && (
+                <p className="text-xs text-amber-700">
+                  <span className="font-medium">Hospital:</span> {person.nearest_hospital}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Emergency contact */}
+      {person.emergency_contact_name && (
+        <div className="mx-5 mb-5 bg-red-50 rounded-xl p-3.5 flex items-center gap-3">
+          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <AlertTriangle size={14} className="text-red-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-red-700">Emergency contact</p>
+            <p className="text-xs text-red-600 mt-0.5">{person.emergency_contact_name}</p>
+          </div>
+          {person.emergency_contact_phone && (
+            <a
+              href={`tel:${person.emergency_contact_phone}`}
+              className="w-9 h-9 bg-red-100 hover:bg-red-200 rounded-xl flex items-center justify-center text-red-600 transition-colors flex-shrink-0"
+              title={`Call ${person.emergency_contact_name}`}
+            >
+              <Phone size={15} />
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 
 export function DashboardLovedOnes() {
   const { user } = useAuth()
@@ -15,85 +317,95 @@ export function DashboardLovedOnes() {
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const { register, handleSubmit, reset, formState: { errors } } = useForm()
+  const [editingPerson, setEditingPerson] = useState<any | null>(null)
 
-  useEffect(()=>{ load() },[])
+  useEffect(() => { load() }, [])
 
   async function load() {
     setLoading(true)
     setError(null)
     try {
-      const { data, error } = await supabase.from('loved_ones').select('*').order('created_at',{ascending:false})
+      const { data, error } = await supabase.from('loved_ones').select('*').order('created_at', { ascending: false })
       if (error) throw error
-      setList(data||[])
-    } catch (err) {
-      console.error('Failed to load loved ones:', err)
+      setList(data || [])
+    } catch {
       setError('Something went wrong — please try again.')
     } finally {
       setLoading(false)
     }
   }
 
-  function startEdit(person: any) {
-    reset(person)
-    setEditingId(person.id)
+  function openAdd() {
+    setEditingPerson(null)
     setShowForm(true)
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50)
   }
 
-  function toggleForm() {
-    if (showForm) {
-      reset({})
-      setEditingId(null)
-    }
-    setShowForm(!showForm)
+  function openEdit(person: any) {
+    setEditingPerson(person)
+    setShowForm(true)
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50)
   }
 
-  async function onSubmit(data: any) {
+  function closeForm() {
+    setShowForm(false)
+    setEditingPerson(null)
+  }
+
+  async function handleSave(data: any) {
     if (!user) return
     setSaving(true)
     try {
-      if (editingId) {
-        const { error } = await supabase.from('loved_ones').update(data).eq('id', editingId)
+      if (editingPerson) {
+        const { error } = await supabase.from('loved_ones').update(data).eq('id', editingPerson.id)
         if (error) throw error
-        showToast('Loved one updated', 'success')
+        showToast('Profile updated', 'success')
       } else {
         const { error } = await supabase.from('loved_ones').insert({ ...data, family_user_id: user.id })
         if (error) throw error
         showToast('Loved one added', 'success')
       }
       await load()
-      reset(); setShowForm(false); setEditingId(null)
-    } catch (err) {
-      console.error('Failed to save loved one:', err)
-      showToast('Could not save — try again', 'error')
+      closeForm()
+    } catch {
+      showToast('Could not save — please try again', 'error')
     } finally {
       setSaving(false)
     }
   }
 
-  async function handleDelete(p: any) {
-    if (!window.confirm(`Remove ${p.full_name} from your loved ones? This can't be undone.`)) return
+  async function handleDelete(person: any) {
+    if (!window.confirm(`Remove ${person.full_name} from your loved ones? This cannot be undone.`)) return
     try {
-      const { error } = await supabase.from('loved_ones').delete().eq('id', p.id)
+      const { error } = await supabase.from('loved_ones').delete().eq('id', person.id)
       if (error) throw error
-      await load()
-      showToast('Loved one removed', 'success')
-    } catch (err) {
-      console.error('Failed to delete loved one:', err)
-      showToast('Could not remove — try again', 'error')
+      setList(prev => prev.filter(p => p.id !== person.id))
+      showToast('Profile removed', 'success')
+    } catch {
+      showToast('Could not remove — please try again', 'error')
     }
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="font-serif text-2xl text-green-900">Loved Ones</h1>
-        <button onClick={toggleForm} className="flex items-center gap-2 bg-green-800 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-green-700 transition-colors">
-          {showForm ? <><X size={14}/>Cancel</> : <><Plus size={14}/>Add person</>}
-        </button>
+    <div className="space-y-5 animate-fade-in">
+
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-2xl text-green-900">Loved Ones</h1>
+          <p className="text-gray-400 text-sm mt-0.5">Care profiles for your family members in India.</p>
+        </div>
+        {!showForm && (
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-1.5 bg-green-800 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors flex-shrink-0"
+          >
+            <Plus size={15} /> Add person
+          </button>
+        )}
       </div>
 
+      {/* Error */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
           {error}
@@ -101,100 +413,60 @@ export function DashboardLovedOnes() {
         </div>
       )}
 
+      {/* Add / Edit form */}
       {showForm && (
-        <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4 animate-fade-in">
-          <h2 className="font-semibold text-green-900">{editingId ? 'Edit loved one' : 'Add a loved one'}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {([
-              ['full_name','Full name','e.g. Sunita Reddy',true],
-              ['age','Age','65',false],
-              ['phone','Phone number','+91 98765 43210',false],
-              ['city','City','Hyderabad',true],
-              ['address','Home address','EIPL Rivera A-405...',true],
-            ] as [string,string,string,boolean][]).map(([n,l,p,req])=>(
-              <div key={n} className={n==='address'?'sm:col-span-2':''}>
-                <label className="block text-xs font-semibold text-green-900 mb-1">{l}{req?' *':''}</label>
-                <input
-                  {...register(n, { required: req ? 'This field is required' : false })}
-                  placeholder={p}
-                  className={`w-full border-2 rounded-xl px-3 py-2.5 text-sm focus:outline-none ${(errors as any)[n] ? 'border-red-400 focus:border-red-500' : 'border-gray-200 focus:border-green-600'}`}
-                />
-                {(errors as any)[n] && (
-                  <p className="text-red-500 text-xs mt-1">{(errors as any)[n]?.message || 'Required'}</p>
-                )}
-              </div>
-            ))}
-            <div>
-              <label className="block text-xs font-semibold text-green-900 mb-1">Doctor name</label>
-              <input {...register('doctor_name')} placeholder="Dr. Sharma" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-green-900 mb-1">Nearest hospital</label>
-              <input {...register('nearest_hospital')} placeholder="Apollo Jubilee Hills" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-green-900 mb-1">Emergency contact name</label>
-              <input {...register('emergency_contact_name')} placeholder="Suresh (son)" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-green-900 mb-1">Emergency contact phone</label>
-              <input {...register('emergency_contact_phone')} placeholder="+91 98765 43210" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-green-900 mb-1">Medical notes</label>
-              <textarea {...register('medical_notes')} rows={2} placeholder="Diabetes, blood pressure medication..." className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 resize-none" />
-            </div>
-          </div>
-          <button type="submit" disabled={saving} className="bg-green-800 text-white font-semibold px-6 py-2.5 rounded-xl text-sm hover:bg-green-700 disabled:bg-gray-300 transition-colors">
-            {saving?'Saving...':editingId?'Update':'Save'}
-          </button>
-        </form>
+        <LovedOneForm
+          editing={editingPerson}
+          onSave={handleSave}
+          onCancel={closeForm}
+          saving={saving}
+        />
       )}
 
-      {loading ? (
-        <Spinner />
-      ) : list.length === 0 && !showForm ? (
-        <div className="text-center py-20 bg-green-50 rounded-2xl">
-          <p className="text-4xl mb-3">❤️</p>
-          <p className="font-semibold text-green-900 mb-1">No loved ones added yet</p>
-          <p className="text-sm text-gray-400 mb-5">Add your parent or family member to get started</p>
+      {/* Loading */}
+      {loading && <Spinner />}
+
+      {/* Empty state */}
+      {!loading && list.length === 0 && !showForm && (
+        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+          <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <User size={26} className="text-green-600" />
+          </div>
+          <p className="font-semibold text-green-900 mb-1">No profiles yet</p>
+          <p className="text-sm text-gray-400 mb-6 max-w-xs mx-auto leading-relaxed">
+            Add your parent or family member's profile so we can match the right companion for them.
+          </p>
+          <button
+            onClick={openAdd}
+            className="inline-flex items-center gap-2 bg-green-800 hover:bg-green-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-colors"
+          >
+            <Plus size={15} /> Add your first loved one
+          </button>
         </div>
-      ) : (
+      )}
+
+      {/* Profile cards */}
+      {!loading && list.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {list.map(p=>(
-            <div key={p.id} className="bg-white rounded-2xl border border-gray-100 p-5">
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center font-bold text-green-700">{p.full_name?.[0]}</div>
-                  <div>
-                    <p className="font-semibold text-green-900 text-sm">{p.full_name}</p>
-                    <p className="text-xs text-gray-400">{p.city}{p.age ? ` · Age ${p.age}` : ''}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button onClick={()=>startEdit(p)} aria-label={`Edit ${p.full_name}`} className="p-2 rounded-lg text-gray-400 hover:text-green-700 hover:bg-green-50 transition-colors">
-                    <Pencil size={15} />
-                  </button>
-                  <button onClick={()=>handleDelete(p)} aria-label={`Remove ${p.full_name}`} className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              </div>
-              {p.address && <p className="text-xs text-gray-400">{p.address}</p>}
-              {p.medical_notes && <p className="text-xs text-gray-500 mt-2 bg-amber-50 p-2 rounded-lg">📋 {p.medical_notes}</p>}
-              {p.emergency_contact_name && (
-                <div className="mt-3 pt-3 border-t border-red-100 flex items-center gap-2 bg-red-50 rounded-xl p-2.5">
-                  <Phone size={13} className="text-red-500 shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold text-red-700">Emergency contact</p>
-                    <p className="text-xs text-red-600">
-                      {p.emergency_contact_name}{p.emergency_contact_phone ? ` · ${p.emergency_contact_phone}` : ''}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+          {list.map(p => (
+            <LovedOneCard
+              key={p.id}
+              person={p}
+              onEdit={openEdit}
+              onDelete={handleDelete}
+            />
           ))}
+
+          {/* Add another card */}
+          {!showForm && (
+            <button
+              onClick={openAdd}
+              className="bg-gray-50 hover:bg-gray-100 border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-gray-500 transition-colors min-h-[120px]"
+            >
+              <Plus size={22} />
+              <span className="text-sm font-medium">Add another person</span>
+            </button>
+          )}
         </div>
       )}
     </div>
