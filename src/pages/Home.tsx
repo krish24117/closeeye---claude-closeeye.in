@@ -1,63 +1,170 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Shield, Camera, Clock, RefreshCw, AlertCircle, Banknote, ChevronRight } from 'lucide-react'
+import {
+  Shield, Camera, Clock, RefreshCw, AlertCircle, Banknote, ChevronRight,
+  UserPlus, CalendarCheck, FileText, BadgeCheck, Users, Star,
+  ChevronLeft,
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
+/* ------------------------------------------------------------------ */
+/*  Data                                                                */
+/* ------------------------------------------------------------------ */
+
 const TRUST = [
-  { icon: Shield, title: '5-Layer Background Verification', desc: 'Police clearance, address verification, identity checks, employment history and two personal references.', tag: 'Verified before Day 1' },
-  { icon: Camera, title: 'Photo-Verified Visit Reports', desc: 'Every visit generates a time-stamped report with photos and a wellbeing summary — sent within the hour.', tag: 'Real-time accountability' },
-  { icon: Clock, title: 'Trained for Elder Companionship', desc: 'Companions are trained in first-response basics, medication reminders and emotional engagement.', tag: 'Certified & supervised' },
-  { icon: RefreshCw, title: 'Guaranteed Replacement in 24hrs', desc: 'If your companion is ever unavailable, we arrange a briefed replacement. Your parents never experience a gap.', tag: 'Zero-gap guarantee' },
-  { icon: AlertCircle, title: 'Emergency Protocol Built In', desc: 'Every companion knows your family\'s doctor, nearest hospital and your emergency contact.', tag: 'Pre-briefed always' },
-  { icon: Banknote, title: 'No Cash, No Keys — Ever', desc: 'Companions never handle cash or hold property keys unsupervised. All payments flow through the platform.', tag: 'Structural safeguard' },
+  { icon: Shield,       title: '5-Layer Background Verification',  desc: 'Police clearance, address verification, identity checks, employment history and two personal references.', tag: 'Verified before Day 1' },
+  { icon: Camera,       title: 'Photo-Verified Visit Reports',      desc: 'Every visit generates a time-stamped report with photos and a wellbeing summary — sent within the hour.',   tag: 'Real-time accountability' },
+  { icon: Clock,        title: 'Trained for Elder Companionship',   desc: 'Companions are trained in first-response basics, medication reminders and emotional engagement.',           tag: 'Certified & supervised' },
+  { icon: RefreshCw,    title: 'Guaranteed Replacement in 24 hrs', desc: "If your companion is ever unavailable, we arrange a briefed replacement. Your parents never experience a gap.", tag: 'Zero-gap guarantee' },
+  { icon: AlertCircle,  title: 'Emergency Protocol Built In',       desc: "Every companion knows your family's doctor, nearest hospital and your emergency contact.",                  tag: 'Pre-briefed always' },
+  { icon: Banknote,     title: 'No Cash, No Keys — Ever',           desc: 'Companions never handle cash or hold property keys unsupervised. All payments flow through the platform.',  tag: 'Structural safeguard' },
 ]
 
 const PRICING = [
-  { type: 'companion_visit_single', name: 'Companion Visit', price: '₹999', note: 'single visit', items: ['1 home visit', 'Photo report', 'WhatsApp updates'], popular: false },
-  { type: 'care_plan_4_monthly', name: 'Monthly Plan', price: '₹2,999', note: 'per month · 4 visits', items: ['4 visits per month', 'Dedicated companion', 'Priority support'], popular: true },
-  { type: 'care_plan_quarterly', name: 'Quarterly Plan', price: '₹7,999', note: 'per quarter · best value', items: ['12 visits / quarter', '1 free emergency visit', 'Dedicated companion'], popular: false },
-  { type: 'emergency_visit', name: 'Emergency Visit', price: '₹1,999', note: 'same-day dispatch', items: ['Same-day dispatch', 'Live family updates', '24/7 hotline'], popular: false },
+  { type: 'companion_visit_single', name: 'Companion Visit',  price: '₹999',    note: 'single visit',         items: ['1 home visit', 'Photo report', 'WhatsApp updates'],                       popular: false },
+  { type: 'care_plan_4_monthly',   name: 'Monthly Plan',      price: '₹2,999',  note: 'per month · 4 visits', items: ['4 visits per month', 'Dedicated companion', 'Priority support'],          popular: true  },
+  { type: 'care_plan_quarterly',   name: 'Quarterly Plan',    price: '₹7,999',  note: 'per quarter · best value', items: ['12 visits / quarter', '1 free emergency visit', 'Dedicated companion'], popular: false },
+  { type: 'emergency_visit',       name: 'Emergency Visit',   price: '₹1,999',  note: 'same-day dispatch',    items: ['Same-day dispatch', 'Live family updates', '24/7 hotline'],                popular: false },
 ]
+
+const HOW_STEPS = [
+  {
+    icon: UserPlus,
+    n: '1',
+    title: "Create your loved one's profile",
+    desc: 'Share their address, preferences, health notes and emergency contacts. Takes 5 minutes.',
+  },
+  {
+    icon: CalendarCheck,
+    n: '2',
+    title: 'Request a visit',
+    desc: 'Choose a visit type and time. We match a verified local companion in their city.',
+  },
+  {
+    icon: FileText,
+    n: '3',
+    title: 'Receive a verified report',
+    desc: 'Photos, notes and a wellbeing summary land in your dashboard and WhatsApp — within the hour.',
+  },
+]
+
+const VERIFICATION = [
+  {
+    icon: Shield,
+    label: 'Background Check',
+    sublabel: 'Before we say yes',
+    detail: 'Police clearance · address verification · employment history · 2 personal references',
+    color: 'text-blue-700',
+    ring: 'ring-blue-200',
+    bg: 'bg-blue-50',
+    dot: 'bg-blue-500',
+  },
+  {
+    icon: BadgeCheck,
+    label: 'ID Verified',
+    sublabel: 'Before the first visit',
+    detail: 'Aadhaar + face-match confirmed. No companion is dispatched until identity is locked.',
+    color: 'text-amber-700',
+    ring: 'ring-amber-200',
+    bg: 'bg-amber-50',
+    dot: 'bg-amber-500',
+  },
+  {
+    icon: Users,
+    label: 'Family Approved',
+    sublabel: 'Before every assignment',
+    detail: "You review the companion's profile and give the go-ahead. No surprises at the door.",
+    color: 'text-green-700',
+    ring: 'ring-green-200',
+    bg: 'bg-green-50',
+    dot: 'bg-green-500',
+  },
+]
+
+const TESTIMONIALS = [
+  {
+    initials: 'AR',
+    name: 'Ananya R.',
+    location: 'Toronto, Canada',
+    stars: 5,
+    text: "My mother is alone in Hyderabad and I hadn't slept properly in months. Close Eye sent a companion, and within 2 hours I had photos and a full report. I actually cried reading it — in the best way.",
+  },
+  {
+    initials: 'RM',
+    name: 'Rahul M.',
+    location: 'London, UK',
+    stars: 5,
+    text: "The companion remembered my dad's name, his favourite tea, and followed up the next day on her own. This isn't a service — it's a relationship. Exactly what we needed from 7,000 km away.",
+  },
+]
+
+const WA_HREF = 'https://wa.me/919000221261?text=Hi%2C+I+want+to+know+more+about+Close+Eye+please'
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                           */
+/* ------------------------------------------------------------------ */
 
 export function HomePage() {
   const [waitlistCount, setWaitlistCount] = useState(50)
+  const [tIdx, setTIdx] = useState(0)
+  const trackRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    supabase.from('waitlist').select('*', { count: 'exact', head: true })
-      .then(({ count }) => { if (count !== null && count > 50) setWaitlistCount(count) })
+    supabase
+      .from('waitlist')
+      .select('*', { count: 'exact', head: true })
+      .then(({ count }) => {
+        if (count !== null && count > 50) setWaitlistCount(count)
+      })
   }, [])
 
+  const prevT = () => setTIdx(i => (i - 1 + TESTIMONIALS.length) % TESTIMONIALS.length)
+  const nextT = () => setTIdx(i => (i + 1) % TESTIMONIALS.length)
+
   return (
-    <main>
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-green-900 via-green-800 to-green-700 text-white px-4 sm:px-6 py-20 md:py-32 text-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_50%,rgba(74,155,106,.15),transparent_70%)] pointer-events-none" />
+    <main className="overflow-x-hidden">
+
+      {/* ── Hero ──────────────────────────────────────────────────── */}
+      <section className="relative bg-gradient-to-br from-green-900 via-green-800 to-green-700 text-white px-4 sm:px-6 py-20 md:py-32 text-center overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_50%,rgba(74,155,106,.18),transparent_70%)] pointer-events-none" />
         <div className="relative max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-green-200 text-xs font-medium px-4 py-1.5 rounded-full mb-6 sm:mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
             Trusted by NRI families across 5 countries
           </div>
-          <p className="text-green-300 text-sm mb-3 font-medium">A Support System, Not A Replacement</p>
+          <p className="text-green-300 text-sm mb-3 font-medium tracking-wide">A Support System, Not A Replacement</p>
           <h1 className="text-3xl sm:text-4xl md:text-6xl font-serif leading-tight mb-5">
             When you can't be there,<br />
             <em className="text-green-200 not-italic">Close Eye</em> can.
           </h1>
           <p className="text-white/75 text-base sm:text-lg leading-relaxed max-w-xl mx-auto mb-8 sm:mb-10">
-            Verified wellbeing visits and trusted local support for your loved ones in India. Real visits. Real photos. Real reports.
+            Verified wellbeing visits and trusted local support for your loved ones in India.
+            Real visits. Real photos. Real reports.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/waitlist" className="bg-white text-green-900 font-semibold px-8 py-3.5 rounded-xl hover:bg-green-50 transition-colors text-sm sm:text-base">
+            <Link
+              to="/waitlist"
+              className="bg-white text-green-900 font-semibold px-8 py-3.5 rounded-xl hover:bg-green-50 transition-colors text-sm sm:text-base shadow-sm"
+            >
               Join Waitlist
             </Link>
-            <Link to="/contact" className="border border-white/30 text-white font-medium px-8 py-3.5 rounded-xl hover:bg-white/10 transition-colors text-sm sm:text-base">
+            <Link
+              to="/contact"
+              className="border border-white/30 text-white font-medium px-8 py-3.5 rounded-xl hover:bg-white/10 transition-colors text-sm sm:text-base"
+            >
               Book a call
             </Link>
           </div>
           <p className="mt-6 text-white/40 text-xs tracking-widest">USA · UK · UAE · CA · AU</p>
 
-          {/* Stats — 2 cols on mobile, 4 on desktop */}
+          {/* Hero stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-px mt-10 sm:mt-14 bg-white/10 rounded-2xl overflow-hidden border border-white/10">
-            {[[`${waitlistCount}+`, 'families on waitlist'], ['Hyderabad', 'live city'], ['4.9★', 'satisfaction'], ['<1hr', 'report delivery']].map(([v, l]) => (
+            {[
+              [`${waitlistCount}+`, 'families on waitlist'],
+              ['Hyderabad', 'live city'],
+              ['4.9★', 'satisfaction'],
+              ['<1hr', 'report delivery'],
+            ].map(([v, l]) => (
               <div key={l} className="py-4 sm:py-5 px-3 sm:px-4 bg-white/5 text-center">
                 <strong className="block font-serif text-xl sm:text-2xl text-white">{v}</strong>
                 <span className="text-white/50 text-xs">{l}</span>
@@ -67,7 +174,30 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* Services */}
+      {/* ── 1. Waitlist counter strip ─────────────────────────────── */}
+      <section className="bg-green-900 border-b border-green-800/60 py-3.5 px-4">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
+          <span className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-400" />
+            </span>
+            <span className="text-green-400 text-xs font-semibold uppercase tracking-widest">Live</span>
+          </span>
+          <p className="text-white/80 text-sm">
+            <strong className="font-serif text-base text-white">{waitlistCount}+</strong>
+            {' '}families from the USA, UK, UAE, Canada and Australia are waiting.
+          </p>
+          <Link
+            to="/waitlist"
+            className="text-xs font-semibold text-green-300 hover:text-green-200 underline underline-offset-2 whitespace-nowrap transition-colors"
+          >
+            Reserve your spot →
+          </Link>
+        </div>
+      </section>
+
+      {/* ── Services ──────────────────────────────────────────────── */}
       <section className="px-4 sm:px-6 py-16 sm:py-20 max-w-6xl mx-auto">
         <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">Our Services</p>
         <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900 mb-10 sm:mb-12">
@@ -75,12 +205,16 @@ export function HomePage() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {[
-            { price: '₹999', name: 'Companion Visit', desc: 'Friendly home visit with wellbeing check, photos and a full report.' },
-            { price: '₹1,499', name: 'Hospital Companion', desc: 'A companion accompanies your loved one to appointments and updates you.' },
-            { price: '₹1,999', name: 'Emergency Visit', desc: 'Same-day dispatch when something feels off — a verified person within hours.' },
-            { price: 'from ₹2,999/mo', name: 'Monthly Plan', desc: 'Recurring visits with the same companion and priority emergency support.' },
+            { price: '₹999',          name: 'Companion Visit',    desc: 'Friendly home visit with wellbeing check, photos and a full report.' },
+            { price: '₹1,499',        name: 'Hospital Companion', desc: 'A companion accompanies your loved one to appointments and updates you.' },
+            { price: '₹1,999',        name: 'Emergency Visit',    desc: 'Same-day dispatch when something feels off — a verified person within hours.' },
+            { price: 'from ₹2,999/mo', name: 'Monthly Plan',      desc: 'Recurring visits with the same companion and priority emergency support.' },
           ].map(s => (
-            <Link key={s.name} to="/services" className="group border border-gray-100 rounded-2xl p-5 sm:p-6 hover:shadow-card-hover hover:-translate-y-0.5 transition-all">
+            <Link
+              key={s.name}
+              to="/services"
+              className="group border border-gray-100 rounded-2xl p-5 sm:p-6 hover:shadow-card-hover hover:-translate-y-0.5 transition-all bg-white"
+            >
               <span className="inline-block text-xs font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full mb-4">{s.price}</span>
               <h3 className="font-serif text-lg text-green-900 mb-2">{s.name}</h3>
               <p className="text-sm text-gray-500 leading-relaxed mb-4">{s.desc}</p>
@@ -92,7 +226,92 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* Trust */}
+      {/* ── 2. How It Works ──────────────────────────────────────── */}
+      <section className="bg-green-50 px-4 sm:px-6 py-16 sm:py-20">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
+            <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">How it works</p>
+            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900">
+              Three steps to real peace of mind.
+            </h2>
+          </div>
+
+          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            {/* Connector line — desktop only */}
+            <div className="hidden md:block absolute top-10 left-[calc(16.66%+1.5rem)] right-[calc(16.66%+1.5rem)] h-px bg-green-200 z-0" />
+
+            {HOW_STEPS.map(s => (
+              <div key={s.n} className="relative z-10 flex flex-col items-center text-center">
+                {/* Icon circle */}
+                <div className="w-20 h-20 rounded-full bg-white shadow-card border border-green-100 flex flex-col items-center justify-center mb-5 group-hover:shadow-card-hover">
+                  <s.icon size={26} className="text-green-700 mb-0.5" />
+                  <span className="text-[10px] font-bold text-green-400 leading-none">STEP {s.n}</span>
+                </div>
+                <h3 className="font-semibold text-green-900 mb-2 text-sm sm:text-base leading-snug">{s.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 sm:mt-12 text-center">
+            <Link
+              to="/waitlist"
+              className="inline-flex items-center gap-2 bg-green-800 hover:bg-green-700 text-white font-semibold px-7 py-3 rounded-xl transition-colors text-sm"
+            >
+              Get started <ChevronRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 3. Companion Verification Pipeline ───────────────────── */}
+      <section className="px-4 sm:px-6 py-16 sm:py-20 max-w-6xl mx-auto">
+        <div className="text-center mb-12">
+          <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">Our vetting process</p>
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900 mb-4">
+            Every companion earns your trust<br className="hidden sm:block" /> before they knock on the door.
+          </h2>
+          <p className="text-gray-500 text-sm sm:text-base max-w-xl mx-auto">
+            We run three layers of verification before any companion is matched to a family.
+            No shortcuts. No exceptions.
+          </p>
+        </div>
+
+        {/* Pipeline */}
+        <div className="relative flex flex-col md:flex-row items-stretch gap-4 md:gap-0">
+          {VERIFICATION.map((v, i) => (
+            <div key={v.label} className="flex flex-col md:flex-row flex-1 items-stretch">
+              {/* Card */}
+              <div className={`flex-1 rounded-2xl p-6 sm:p-7 border border-gray-100 shadow-card bg-white flex flex-col gap-4`}>
+                <div className={`w-12 h-12 rounded-xl ${v.bg} ring-1 ${v.ring} flex items-center justify-center`}>
+                  <v.icon size={22} className={v.color} />
+                </div>
+                <div>
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${v.color} mb-1.5`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${v.dot}`} />
+                    {v.sublabel}
+                  </span>
+                  <h3 className="font-semibold text-green-900 text-base mb-1.5">{v.label}</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">{v.detail}</p>
+                </div>
+              </div>
+
+              {/* Arrow connector — hidden on last item */}
+              {i < VERIFICATION.length - 1 && (
+                <div className="flex items-center justify-center py-2 md:py-0 md:px-3">
+                  <ChevronRight size={18} className="text-green-300 rotate-90 md:rotate-0" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-8 text-center text-xs text-gray-400 tracking-wide">
+          Companions are re-verified every 6 months and can be removed by a family at any time.
+        </p>
+      </section>
+
+      {/* ── Trust signals ─────────────────────────────────────────── */}
       <section className="bg-green-50 px-4 sm:px-6 py-16 sm:py-20">
         <div className="max-w-6xl mx-auto">
           <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">Why families trust us</p>
@@ -102,7 +321,7 @@ export function HomePage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {TRUST.map(t => (
-              <div key={t.title} className="bg-white rounded-2xl p-5 sm:p-6 border border-green-100">
+              <div key={t.title} className="bg-white rounded-2xl p-5 sm:p-6 border border-green-100 hover:shadow-card transition-shadow">
                 <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center mb-4">
                   <t.icon size={20} className="text-green-700" />
                 </div>
@@ -112,8 +331,14 @@ export function HomePage() {
               </div>
             ))}
           </div>
+
+          {/* Trust stats bar */}
           <div className="grid grid-cols-3 gap-px mt-8 sm:mt-10 bg-green-100 rounded-2xl overflow-hidden border border-green-100">
-            {[[`${waitlistCount}+`, 'Families on waitlist'], ['100%', 'Background-checked'], ['<1hr', 'Report delivery']].map(([v, l]) => (
+            {[
+              [`${waitlistCount}+`, 'Families on waitlist'],
+              ['100%', 'Background-checked'],
+              ['<1hr', 'Report delivery'],
+            ].map(([v, l]) => (
               <div key={l} className="py-5 sm:py-7 text-center bg-white">
                 <strong className="block font-serif text-2xl sm:text-3xl text-green-800">{v}</strong>
                 <span className="text-gray-400 text-xs">{l}</span>
@@ -123,36 +348,100 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="px-4 sm:px-6 py-16 sm:py-20 max-w-6xl mx-auto">
-        <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3 text-center">How it works</p>
-        <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900 mb-12 sm:mb-14 text-center">Three steps to real peace of mind.</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10">
-          {[
-            { n: '1', title: 'Tell us about your loved one', desc: 'Create a profile with their address, preferences and emergency contacts.' },
-            { n: '2', title: 'Request a visit', desc: 'Choose a visit type and time. We match a verified local companion in their city.' },
-            { n: '3', title: 'Receive a real report', desc: 'Photos, notes and a wellbeing summary land in your dashboard and on WhatsApp.' },
-          ].map(s => (
-            <div key={s.n} className="text-center">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-green-800 text-white font-serif text-xl sm:text-2xl flex items-center justify-center mx-auto mb-5">{s.n}</div>
-              <h3 className="font-semibold text-green-900 mb-2 text-sm sm:text-base">{s.title}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">{s.desc}</p>
+      {/* ── 4. Testimonials carousel ──────────────────────────────── */}
+      <section className="px-4 sm:px-6 py-16 sm:py-20 max-w-4xl mx-auto">
+        <div className="text-center mb-10">
+          <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">What families say</p>
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900">
+            Real words from real families.
+          </h2>
+        </div>
+
+        <div className="relative">
+          {/* Track */}
+          <div className="overflow-hidden rounded-2xl">
+            <div
+              ref={trackRef}
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(-${tIdx * 100}%)` }}
+            >
+              {TESTIMONIALS.map(t => (
+                <div
+                  key={t.name}
+                  className="min-w-full px-1"
+                >
+                  <div className="bg-green-50 border border-green-100 rounded-2xl p-7 sm:p-10">
+                    {/* Stars */}
+                    <div className="flex gap-1 mb-5">
+                      {Array.from({ length: t.stars }).map((_, i) => (
+                        <Star key={i} size={16} className="fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+                    <blockquote className="font-serif text-lg sm:text-xl text-green-900 leading-relaxed mb-7 italic">
+                      "{t.text}"
+                    </blockquote>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-green-700 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                        {t.initials}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-green-900 text-sm">{t.name}</p>
+                        <p className="text-xs text-gray-400">{t.location}</p>
+                      </div>
+                      <span className="ml-auto text-[10px] font-semibold uppercase tracking-widest text-green-500 bg-green-100 px-2 py-0.5 rounded-full">Beta user</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center justify-center gap-4 mt-6">
+            <button
+              onClick={prevT}
+              aria-label="Previous testimonial"
+              className="w-9 h-9 rounded-full border border-green-200 hover:border-green-400 flex items-center justify-center text-green-600 hover:text-green-800 transition-colors"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            {TESTIMONIALS.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setTIdx(i)}
+                aria-label={`Testimonial ${i + 1}`}
+                className={`h-2 rounded-full transition-all ${i === tIdx ? 'w-6 bg-green-700' : 'w-2 bg-green-200 hover:bg-green-300'}`}
+              />
+            ))}
+            <button
+              onClick={nextT}
+              aria-label="Next testimonial"
+              className="w-9 h-9 rounded-full border border-green-200 hover:border-green-400 flex items-center justify-center text-green-600 hover:text-green-800 transition-colors"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* ── Pricing ───────────────────────────────────────────────── */}
       <section className="bg-green-50 px-4 sm:px-6 py-16 sm:py-20">
         <div className="max-w-6xl mx-auto">
           <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">Pricing</p>
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900 mb-4">Simple, transparent plans.</h2>
-          <p className="text-gray-500 mb-10 sm:mb-12 text-sm sm:text-base">Every plan includes verified companions, a detailed report, and 24/7 WhatsApp support.</p>
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900 mb-3">Simple, transparent plans.</h2>
+          <p className="text-gray-500 mb-10 sm:mb-12 text-sm sm:text-base">
+            Every plan includes verified companions, a detailed report, and 24/7 WhatsApp support.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {PRICING.map(p => (
-              <div key={p.type} className={`relative bg-white rounded-2xl p-5 sm:p-6 border-2 transition-shadow hover:shadow-card ${p.popular ? 'border-green-600 shadow-card' : 'border-gray-100'}`}>
+              <div
+                key={p.type}
+                className={`relative bg-white rounded-2xl p-5 sm:p-6 border-2 transition-shadow hover:shadow-card ${p.popular ? 'border-green-600 shadow-card' : 'border-gray-100'}`}
+              >
                 {p.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-700 text-white text-xs font-bold px-3 py-1 rounded-full">Popular</span>
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-700 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    Popular
+                  </span>
                 )}
                 <h3 className="font-semibold text-green-900 mb-1 text-sm">{p.name}</h3>
                 <p className="font-serif text-2xl sm:text-3xl text-green-900 mt-3 mb-1">{p.price}</p>
@@ -164,7 +453,10 @@ export function HomePage() {
                     </li>
                   ))}
                 </ul>
-                <Link to="/waitlist" className="block text-center bg-green-800 hover:bg-green-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors">
+                <Link
+                  to="/waitlist"
+                  className="block text-center bg-green-800 hover:bg-green-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+                >
                   Get started
                 </Link>
               </div>
@@ -173,9 +465,10 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* What every visit looks like */}
+      {/* ── What every visit looks like ────────────────────────────── */}
       <section className="bg-green-900 text-white px-4 sm:px-6 py-16 sm:py-20">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10 sm:gap-16 items-center">
+          {/* Sample report card */}
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-7">
             <div className="flex items-center gap-2 mb-5">
               <span className="text-xs text-green-300 font-semibold uppercase tracking-widest">✓ Visit completed</span>
@@ -192,35 +485,76 @@ export function HomePage() {
               "Had a lovely tea with auntie today. She's looking forward to your call tonight. Medication taken on time."
             </p>
             <ul className="space-y-2">
-              {['Mood & general wellbeing', 'Health & medication check', 'Home & safety observations', 'Photos from the visit', 'Notes for the family'].map(i => (
-                <li key={i} className="flex items-center gap-2 text-xs sm:text-sm text-white/60">
-                  <span className="text-green-400 flex-shrink-0">📋</span> {i}
+              {[
+                'Mood & general wellbeing',
+                'Health & medication check',
+                'Home & safety observations',
+                'Photos from the visit',
+                'Notes for the family',
+              ].map(item => (
+                <li key={item} className="flex items-center gap-2 text-xs sm:text-sm text-white/60">
+                  <span className="text-green-400 flex-shrink-0">📋</span> {item}
                 </li>
               ))}
             </ul>
           </div>
+
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-green-400 mb-4">What every visit looks like</p>
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl mb-5">"Mom is doing great."</h2>
             <p className="text-white/65 leading-relaxed mb-8 text-sm sm:text-base">
-              Every visit generates a detailed, time-stamped report delivered to your WhatsApp and dashboard within the hour. Real photos. Real notes. Real peace of mind from 10,000 km away.
+              Every visit generates a detailed, time-stamped report delivered to your WhatsApp and dashboard
+              within the hour. Real photos. Real notes. Real peace of mind from 10,000 km away.
             </p>
-            <Link to="/waitlist" className="inline-block border border-white/30 text-white font-medium px-7 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm">
+            <Link
+              to="/waitlist"
+              className="inline-block border border-white/30 text-white font-medium px-7 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm"
+            >
               Join Waitlist →
             </Link>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
+      {/* ── CTA ───────────────────────────────────────────────────── */}
       <section className="bg-gradient-to-br from-green-800 to-green-700 text-white px-4 sm:px-6 py-16 sm:py-20 text-center">
-        <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl mb-4">Join the families we look after across India.</h2>
-        <p className="text-white/65 mb-8 text-sm sm:text-base">{waitlistCount} families are already on the waitlist. Be first in your city.</p>
+        <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl mb-4">
+          Join the families we look after across India.
+        </h2>
+        <p className="text-white/65 mb-8 text-sm sm:text-base">
+          {waitlistCount} families are already on the waitlist. Be first in your city.
+        </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link to="/waitlist" className="bg-white text-green-900 font-semibold px-8 py-3.5 rounded-xl hover:bg-green-50 transition-colors text-sm">Join Waitlist</Link>
-          <Link to="/contact" className="border border-white/30 text-white font-medium px-8 py-3.5 rounded-xl hover:bg-white/10 transition-colors text-sm">Book a call</Link>
+          <Link
+            to="/waitlist"
+            className="bg-white text-green-900 font-semibold px-8 py-3.5 rounded-xl hover:bg-green-50 transition-colors text-sm"
+          >
+            Join Waitlist
+          </Link>
+          <Link
+            to="/contact"
+            className="border border-white/30 text-white font-medium px-8 py-3.5 rounded-xl hover:bg-white/10 transition-colors text-sm"
+          >
+            Book a call
+          </Link>
         </div>
       </section>
+
+      {/* ── 5. Floating WhatsApp button ───────────────────────────── */}
+      <a
+        href={WA_HREF}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Chat with us on WhatsApp"
+        className="fixed bottom-5 right-5 sm:bottom-7 sm:right-7 z-50 flex items-center gap-2.5 bg-[#25D366] hover:bg-[#20c05a] text-white rounded-full shadow-[0_4px_24px_rgba(37,211,102,.45)] hover:shadow-[0_6px_32px_rgba(37,211,102,.55)] hover:scale-105 active:scale-95 transition-all px-4 py-3 group"
+      >
+        {/* WhatsApp SVG */}
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 flex-shrink-0" aria-hidden="true">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+        </svg>
+        <span className="text-sm font-semibold">WhatsApp us</span>
+      </a>
+
     </main>
   )
 }
