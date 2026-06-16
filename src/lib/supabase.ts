@@ -7,6 +7,7 @@ if (!url || !key) throw new Error('Missing Supabase env variables')
 
 export const supabase = createClient(url, key, {
   auth: {
+    flowType: 'implicit',   // avoids PKCE code-verifier loss across Google redirect
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,

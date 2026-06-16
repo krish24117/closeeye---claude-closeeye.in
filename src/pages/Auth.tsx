@@ -100,6 +100,15 @@ export function AuthPage() {
     navigate(getRoleHome(profile), { replace: true })
   }
 
+  async function handleGoogleSignIn() {
+    setError('')
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth` },
+    })
+    if (error) setError(error.message)
+  }
+
   const InputClass = "w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-600 transition-colors"
 
   return (
@@ -188,66 +197,105 @@ export function AuthPage() {
 
           {/* Login form */}
           {mode === 'login' && (
-            <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-green-900 mb-1.5">Email</label>
-                <input {...loginForm.register('email')} type="email" placeholder="you@email.com" className={InputClass} />
-                {loginForm.formState.errors.email && <p className="text-red-500 text-xs mt-1">{loginForm.formState.errors.email.message}</p>}
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-1.5">
-                  <label className="text-sm font-semibold text-green-900">Password</label>
-                  <button type="button" onClick={() => { setMode('reset'); setError('') }}
-                    className="text-xs text-green-600 hover:text-green-800 transition-colors">
-                    Forgot password?
-                  </button>
+            <div className="space-y-4">
+              <GoogleButton onClick={handleGoogleSignIn} />
+              <Divider />
+              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-green-900 mb-1.5">Email</label>
+                  <input {...loginForm.register('email')} type="email" placeholder="you@email.com" className={InputClass} />
+                  {loginForm.formState.errors.email && <p className="text-red-500 text-xs mt-1">{loginForm.formState.errors.email.message}</p>}
                 </div>
-                <input {...loginForm.register('password')} type="password" placeholder="••••••••" className={InputClass} />
-                {loginForm.formState.errors.password && <p className="text-red-500 text-xs mt-1">{loginForm.formState.errors.password.message}</p>}
-              </div>
-              {error && <p className="text-red-500 text-sm p-3 bg-red-50 rounded-xl">{error}</p>}
-              <button type="submit" disabled={loginForm.formState.isSubmitting}
-                className="w-full bg-green-800 text-white font-semibold py-3.5 rounded-xl hover:bg-green-700 transition-colors disabled:bg-gray-300 text-sm">
-                {loginForm.formState.isSubmitting ? 'Signing in...' : 'Sign in'}
-              </button>
-            </form>
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-sm font-semibold text-green-900">Password</label>
+                    <button type="button" onClick={() => { setMode('reset'); setError('') }}
+                      className="text-xs text-green-600 hover:text-green-800 transition-colors">
+                      Forgot password?
+                    </button>
+                  </div>
+                  <input {...loginForm.register('password')} type="password" placeholder="••••••••" className={InputClass} />
+                  {loginForm.formState.errors.password && <p className="text-red-500 text-xs mt-1">{loginForm.formState.errors.password.message}</p>}
+                </div>
+                {error && <p className="text-red-500 text-sm p-3 bg-red-50 rounded-xl">{error}</p>}
+                <button type="submit" disabled={loginForm.formState.isSubmitting}
+                  className="w-full bg-green-800 text-white font-semibold py-3.5 rounded-xl hover:bg-green-700 transition-colors disabled:bg-gray-300 text-sm">
+                  {loginForm.formState.isSubmitting ? 'Signing in...' : 'Sign in'}
+                </button>
+              </form>
+            </div>
           )}
 
           {/* Signup form */}
           {mode === 'signup' && (
-            <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-green-900 mb-1.5">Full name</label>
-                <input {...signupForm.register('full_name')} placeholder="Rahul Mehta" className={InputClass} />
-                {signupForm.formState.errors.full_name && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.full_name.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-green-900 mb-1.5">Email</label>
-                <input {...signupForm.register('email')} type="email" placeholder="you@email.com" className={InputClass} />
-                {signupForm.formState.errors.email && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.email.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-green-900 mb-1.5">Password</label>
-                <input {...signupForm.register('password')} type="password" placeholder="••••••••" className={InputClass} />
-                {signupForm.formState.errors.password && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.password.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-green-900 mb-1.5">Confirm password</label>
-                <input {...signupForm.register('confirm_password')} type="password" placeholder="••••••••" className={InputClass} />
-                {signupForm.formState.errors.confirm_password && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.confirm_password.message}</p>}
-              </div>
-              {error && <p className="text-red-500 text-sm p-3 bg-red-50 rounded-xl">{error}</p>}
-              <button type="submit" disabled={signupForm.formState.isSubmitting}
-                className="w-full bg-green-800 text-white font-semibold py-3.5 rounded-xl hover:bg-green-700 transition-colors disabled:bg-gray-300 text-sm">
-                {signupForm.formState.isSubmitting ? 'Creating account...' : 'Create account'}
-              </button>
-            </form>
+            <div className="space-y-4">
+              <GoogleButton onClick={handleGoogleSignIn} label="Sign up with Google" />
+              <Divider />
+              <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-green-900 mb-1.5">Full name</label>
+                  <input {...signupForm.register('full_name')} placeholder="Rahul Mehta" className={InputClass} />
+                  {signupForm.formState.errors.full_name && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.full_name.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-green-900 mb-1.5">Email</label>
+                  <input {...signupForm.register('email')} type="email" placeholder="you@email.com" className={InputClass} />
+                  {signupForm.formState.errors.email && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.email.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-green-900 mb-1.5">Password</label>
+                  <input {...signupForm.register('password')} type="password" placeholder="••••••••" className={InputClass} />
+                  {signupForm.formState.errors.password && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.password.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-green-900 mb-1.5">Confirm password</label>
+                  <input {...signupForm.register('confirm_password')} type="password" placeholder="••••••••" className={InputClass} />
+                  {signupForm.formState.errors.confirm_password && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.confirm_password.message}</p>}
+                </div>
+                {error && <p className="text-red-500 text-sm p-3 bg-red-50 rounded-xl">{error}</p>}
+                <button type="submit" disabled={signupForm.formState.isSubmitting}
+                  className="w-full bg-green-800 text-white font-semibold py-3.5 rounded-xl hover:bg-green-700 transition-colors disabled:bg-gray-300 text-sm">
+                  {signupForm.formState.isSubmitting ? 'Creating account...' : 'Create account'}
+                </button>
+              </form>
+            </div>
           )}
         </div>
         <p className="text-center text-xs text-gray-400 mt-6">
           <Link to="/" className="hover:text-green-700 transition-colors">← Back to closeeye.in</Link>
         </p>
       </div>
+    </div>
+  )
+}
+
+function GoogleButton({ onClick, label = 'Continue with Google' }: { onClick: () => void; label?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full flex items-center justify-center gap-3 bg-[#1a3a2a] hover:bg-[#15301f] active:scale-[0.98] rounded-xl py-3.5 text-sm font-semibold text-white transition-all"
+    >
+      {/* Google G mark on a white pill so it stays legible on the dark background */}
+      <span className="w-5 h-5 bg-white rounded-full flex items-center justify-center flex-shrink-0">
+        <svg width="12" height="12" viewBox="0 0 18 18" aria-hidden="true">
+          <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+          <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.039l3.007-2.332z"/>
+          <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
+        </svg>
+      </span>
+      {label}
+    </button>
+  )
+}
+
+function Divider() {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex-1 h-px bg-gray-200" />
+      <span className="text-xs text-gray-400 font-medium">or</span>
+      <div className="flex-1 h-px bg-gray-200" />
     </div>
   )
 }

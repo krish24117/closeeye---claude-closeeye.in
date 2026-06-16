@@ -61,11 +61,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function fetchProfile(userId: string) {
     try {
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
+      // Use maybeSingle so we can distinguish "no row" from a real error
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
+
       if (error) throw error
-      setProfile(data)
+
+      if (data) {
+        setProfile(data)
+        return
+      }
+
+      // No profile row yet — happens on first Google OAuth login before the
+      // DB trigger has committed, or if the trigger somehow missed the row.
+      // Create one with role 'family' using the OAuth user metadata.
+      const { data: { user } } = await supabase.auth.getUser()
+      const meta = user?.user_metadata ?? {}
+
+      const { data: created, error: insertErr } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          full_name: meta.full_name || meta.name || null,
+          avatar_url: meta.avatar_url || meta.picture || null,
+          role: 'family',
+        })
+        .select()
+        .single()
+
+      if (insertErr) {
+        // Trigger beat us to it — fetch the row it already created
+        const { data: refetched } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle()
+        setProfile(refetched)
+      } else {
+        setProfile(created)
+      }
     } catch (err) {
-      console.error('Failed to fetch profile:', err)
+      console.error('Failed to fetch/create profile:', err)
     } finally {
       setLoading(false)
     }
