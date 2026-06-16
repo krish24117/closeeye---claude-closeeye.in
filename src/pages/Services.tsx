@@ -20,7 +20,8 @@ export function ServicesPage() {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {SERVICES.map(s=>(
           <div key={s.type} className="border-2 border-gray-100 rounded-2xl p-6 sm:p-8 hover:shadow-card transition-shadow">
-            <p className="font-serif text-2xl sm:text-3xl text-green-900 mb-1">{s.price}</p>
+            <p className="font-serif text-2xl sm:text-3xl text-green-900 mb-0.5">{s.price}</p>
+            <p className="text-xs text-gray-400 mb-3">Payment via UPI · Bank Transfer · Cash</p>
             <h2 className="font-semibold text-lg text-green-900 mb-3">{s.name}</h2>
             <p className="text-sm text-gray-500 leading-relaxed mb-5">{s.desc}</p>
             <ul className="space-y-2 mb-7">

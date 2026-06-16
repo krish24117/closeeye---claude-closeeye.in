@@ -29,10 +29,10 @@ export function AdminPayments() {
     }
   }
 
-  const totalRevenue = bookings.filter(b => b.payment_status === 'paid').reduce((sum, b) => sum + (b.amount_paise || 0), 0)
+  const totalRevenue = bookings.filter(b => b.payment_status === 'paid' || b.payment_status === 'received').reduce((sum, b) => sum + (b.amount_paise || 0), 0)
   const totalPayouts = bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + (b.companion_payout_paise || 0), 0)
   const margin = totalRevenue - totalPayouts
-  const pendingPaymentCount = bookings.filter(b => b.payment_status !== 'paid').length
+  const pendingPaymentCount = bookings.filter(b => b.payment_status === 'pending').length
 
   if (loading) return <Spinner />
 
@@ -105,7 +105,9 @@ export function AdminPayments() {
                     {b.companion_payout_paise != null ? `₹${((b.amount_paise - b.companion_payout_paise) / 100).toLocaleString('en-IN')}` : <span className="text-gray-300">—</span>}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs font-medium ${b.payment_status === 'paid' ? 'text-green-600' : 'text-orange-500'}`}>{b.payment_status}</span>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${b.payment_status === 'paid' || b.payment_status === 'received' ? 'bg-green-100 text-green-700' : 'bg-orange-50 text-orange-700'}`}>
+                      {b.payment_status === 'received' ? 'Received' : b.payment_status === 'paid' ? 'Paid' : 'Pending'}
+                    </span>
                   </td>
                 </tr>
               ))}

@@ -143,7 +143,7 @@ export function DashboardHome() {
         <p className="text-white/65 text-sm mb-5">Schedule a companion visit, hospital trip, or emergency support.</p>
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
-            to="/services"
+            to="/dashboard/new-booking"
             className="inline-flex items-center justify-center gap-2 bg-white text-green-900 font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-green-50 transition-colors"
           >
             <Plus size={16} /> New booking

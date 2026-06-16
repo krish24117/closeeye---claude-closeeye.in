@@ -1,10 +1,12 @@
 // src/pages/dashboard/Bookings.tsx
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/Toast'
 import { format } from 'date-fns'
 import { STATUS_COLORS, SERVICE_NAMES } from '@/lib/booking-labels'
 import { LiveMap } from '@/components/ui/LiveMap'
+import { Spinner } from '@/components/ui/Skeleton'
 
 function ActiveVisitMap({ booking }: { booking: any }) {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
@@ -88,13 +90,13 @@ export function DashboardBookings() {
     }
   }
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading bookings...</div>
+  if (loading) return <Spinner />
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl text-green-900">Bookings</h1>
-        <a href="/waitlist" className="bg-green-800 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-green-700 transition-colors">+ New booking</a>
+        <Link to="/dashboard/new-booking" className="bg-green-800 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-green-700 transition-colors">+ New booking</Link>
       </div>
 
       {error && (
@@ -109,7 +111,7 @@ export function DashboardBookings() {
           <p className="text-4xl mb-3">📅</p>
           <p className="font-semibold text-green-900 mb-1">No bookings yet</p>
           <p className="text-sm text-gray-400 mb-5">Book your first companion visit</p>
-          <a href="/services" className="bg-green-800 text-white text-sm font-semibold px-6 py-2.5 rounded-xl">View Services</a>
+          <Link to="/dashboard/new-booking" className="bg-green-800 text-white text-sm font-semibold px-6 py-2.5 rounded-xl">Book a visit</Link>
         </div>
       ) : (
         <div className="space-y-3">
@@ -126,9 +128,28 @@ export function DashboardBookings() {
                     {b.status.replace('_',' ')}
                   </span>
                   <p className="text-sm font-semibold text-green-800 mt-2">₹{(b.amount_paise/100).toLocaleString('en-IN')}</p>
-                  <p className={`text-xs mt-0.5 ${b.payment_status==='paid'?'text-green-600':'text-orange-500'}`}>{b.payment_status}</p>
+                  <span className={`text-xs font-medium mt-1 inline-block ${b.payment_status === 'pending' ? 'text-orange-600' : 'text-green-600'}`}>
+                    {b.payment_status === 'pending' ? 'Awaiting payment' : b.payment_status === 'received' ? 'Payment confirmed' : 'Paid'}
+                  </span>
                 </div>
               </div>
+              {b.payment_status === 'pending' && b.status !== 'cancelled' && (
+                <div className="mt-3 pt-3 border-t border-amber-100 bg-amber-50 rounded-xl p-3 flex items-start gap-2.5">
+                  <span className="text-base shrink-0 leading-none">⏳</span>
+                  <div>
+                    <p className="text-xs font-semibold text-amber-800">Awaiting payment confirmation</p>
+                    <p className="text-xs text-amber-700 mt-0.5">Our coordinator will call within 24 hours to confirm and arrange payment via UPI, bank transfer, or cash.</p>
+                  </div>
+                </div>
+              )}
+              {(b.payment_status === 'received' || b.payment_status === 'paid') && (
+                <div className="mt-3 pt-3 border-t border-green-100 flex items-center gap-2">
+                  <span className="text-green-600 text-sm font-bold">✓</span>
+                  <p className="text-xs font-semibold text-green-700">
+                    Payment confirmed{b.status === 'companion_assigned' ? ' — Companion assigned' : b.status === 'confirmed' ? ' — Companion will be assigned soon' : ''}
+                  </p>
+                </div>
+              )}
               {b.companions && (
                 <div className="mt-3 pt-3 border-t border-gray-50 flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-700">{b.companions.full_name?.[0]}</div>

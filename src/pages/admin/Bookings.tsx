@@ -7,6 +7,19 @@ import { STATUS_COLORS, SERVICE_NAMES } from '@/lib/booking-labels'
 
 const ALL_STATUSES = ['pending', 'confirmed', 'companion_assigned', 'in_progress', 'completed', 'cancelled']
 
+const PAYMENT_BADGES: Record<string, string> = {
+  pending: 'bg-orange-50 text-orange-700',
+  received: 'bg-green-100 text-green-700',
+  paid: 'bg-green-100 text-green-700',
+  failed: 'bg-red-100 text-red-700',
+}
+const PAYMENT_LABELS: Record<string, string> = {
+  pending: 'Payment pending',
+  received: 'Payment received',
+  paid: 'Paid',
+  failed: 'Payment failed',
+}
+
 export function AdminBookings() {
   const { showToast } = useToast()
   const [bookings, setBookings] = useState<any[]>([])
@@ -81,6 +94,23 @@ export function AdminBookings() {
     } catch (err) {
       console.error('Failed to update status:', err)
       showToast('Could not update status — try again', 'error')
+    } finally {
+      setSavingId(null)
+    }
+  }
+
+  async function markPaymentReceived(b: any) {
+    setSavingId(b.id)
+    try {
+      const { error } = await supabase.from('bookings')
+        .update({ payment_status: 'received', status: 'confirmed' })
+        .eq('id', b.id)
+      if (error) throw error
+      setBookings(prev => prev.map(x => x.id === b.id ? { ...x, payment_status: 'received', status: 'confirmed' } : x))
+      showToast('Payment marked as received — booking confirmed', 'success')
+    } catch (err) {
+      console.error('Failed to update payment:', err)
+      showToast('Could not update payment — try again', 'error')
     } finally {
       setSavingId(null)
     }
@@ -177,7 +207,18 @@ export function AdminBookings() {
                     {b.status.replace('_', ' ')}
                   </span>
                   <p className="text-sm font-semibold text-green-800 mt-2">₹{(b.amount_paise / 100).toLocaleString('en-IN')}</p>
-                  <p className={`text-xs mt-0.5 ${b.payment_status === 'paid' ? 'text-green-600' : 'text-orange-500'}`}>{b.payment_status}</p>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full mt-1 inline-block ${PAYMENT_BADGES[b.payment_status] || 'bg-gray-100 text-gray-500'}`}>
+                    {PAYMENT_LABELS[b.payment_status] || b.payment_status}
+                  </span>
+                  {b.payment_status === 'pending' && (
+                    <button
+                      onClick={() => markPaymentReceived(b)}
+                      disabled={savingId === b.id}
+                      className="block text-xs font-semibold text-green-700 hover:text-green-800 disabled:opacity-50 mt-1.5"
+                    >
+                      ✓ Mark received
+                    </button>
+                  )}
                 </div>
               </div>
 
