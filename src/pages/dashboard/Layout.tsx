@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Home, Calendar, Heart, FileText, Bell, LogOut, Menu, X } from 'lucide-react'
+import { Home, Calendar, Heart, FileText, Bell, LogOut, Menu, X, Users, CreditCard } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { Logo } from '@/components/ui/Logo'
@@ -11,6 +11,8 @@ const NAV = [
   { to: '/dashboard/loved-ones', icon: Heart, label: 'Loved Ones' },
   { to: '/dashboard/reports', icon: FileText, label: 'Visit Reports' },
   { to: '/dashboard/notifications', icon: Bell, label: 'Notifications' },
+  { to: '/dashboard/members', icon: Users, label: 'Family Members' },
+  { to: '/dashboard/subscription', icon: CreditCard, label: 'Subscription' },
 ]
 
 export function DashboardLayout() {

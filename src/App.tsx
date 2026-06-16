@@ -21,6 +21,8 @@ import { DashboardLovedOnes } from '@/pages/dashboard/LovedOnes'
 import { DashboardReports } from '@/pages/dashboard/Reports'
 import { DashboardNotifications } from '@/pages/dashboard/Notifications'
 import { DashboardNewBooking } from '@/pages/dashboard/NewBooking'
+import { DashboardMembers } from '@/pages/dashboard/Members'
+import { DashboardSubscription } from '@/pages/dashboard/Subscription'
 import { CompanionLayout } from '@/pages/companion/Layout'
 import { CompanionHome } from '@/pages/companion/Home'
 import { CompanionVisit } from '@/pages/companion/Visit'
@@ -52,6 +54,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/reports': 'Visit Reports — Close Eye',
   '/dashboard/notifications': 'Notifications — Close Eye',
   '/dashboard/new-booking': 'Book a Visit — Close Eye',
+  '/dashboard/members': 'Family Members — Close Eye',
+  '/dashboard/subscription': 'Subscription — Close Eye',
   '/companion': 'Companion Portal — Close Eye',
   '/companion/schedule': 'My Schedule — Close Eye',
   '/companion/earnings': 'Earnings — Close Eye',
@@ -81,6 +85,8 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/dashboard/reports': 'Read visit reports and photos from your loved one’s companion visits.',
   '/dashboard/notifications': 'Your Close Eye notifications and alerts.',
   '/dashboard/new-booking': 'Book a companion visit, hospital companion, or care plan for your loved one in India.',
+  '/dashboard/members': 'Add family members who receive visit notifications and SOS alerts.',
+  '/dashboard/subscription': 'Manage your Close Eye subscription plan and billing.',
   '/companion': 'Manage your assigned visits and submit visit reports.',
   '/companion/schedule': 'View your upcoming and past Close Eye visit schedule.',
   '/companion/earnings': 'Track your Close Eye visit earnings.',
@@ -180,6 +186,8 @@ export default function App() {
             <Route path="reports" element={<DashboardReports />} />
             <Route path="notifications" element={<DashboardNotifications />} />
             <Route path="new-booking" element={<DashboardNewBooking />} />
+            <Route path="members" element={<DashboardMembers />} />
+            <Route path="subscription" element={<DashboardSubscription />} />
           </Route>
           <Route path="/companion" element={<ProtectedRoute role="companion"><CompanionLayout /></ProtectedRoute>}>
             <Route index element={<CompanionHome />} />

@@ -1,5 +1,6 @@
 // src/pages/dashboard/Reports.tsx
 import { useEffect, useState } from 'react'
+import { Download } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { format } from 'date-fns'
 
@@ -84,6 +85,16 @@ export function DashboardReports() {
                 <p className={`text-xs font-medium px-2.5 py-1 rounded-full inline-block ${r.medication_taken?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}`}>
                   Medication {r.medication_taken?'taken ✓':'not taken ✗'}
                 </p>
+              )}
+              {r.pdf_url && (
+                <a
+                  href={r.pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  <Download size={13} /> Download PDF Report
+                </a>
               )}
               {r.photo_urls?.length > 0 && (
                 <div className="flex gap-2 mt-3 flex-wrap">
