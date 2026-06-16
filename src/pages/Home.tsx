@@ -160,7 +160,7 @@ export function HomePage() {
             {[
               [`${waitlistCount}+`, 'families on waitlist'],
               ['Hyderabad', 'live city'],
-              ['4.9★', 'satisfaction'],
+              ['Zero ads', '100% word of mouth'],
               ['<1hr', 'report delivery'],
             ].map(([v, l]) => (
               <div key={l} className="py-4 sm:py-5 px-3 sm:px-4 bg-white/5 text-center">
