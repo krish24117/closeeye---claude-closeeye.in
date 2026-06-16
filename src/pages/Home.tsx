@@ -20,11 +20,11 @@ const PRICING = [
 ]
 
 export function HomePage() {
-  const [waitlistCount, setWaitlistCount] = useState(47)
+  const [waitlistCount, setWaitlistCount] = useState(50)
 
   useEffect(() => {
     supabase.from('waitlist').select('*', { count: 'exact', head: true })
-      .then(({ count }) => { if (count !== null) setWaitlistCount(count) })
+      .then(({ count }) => { if (count !== null && count > 50) setWaitlistCount(count) })
   }, [])
 
   return (
