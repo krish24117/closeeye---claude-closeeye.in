@@ -1,5 +1,9 @@
 import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api'
 
+export const MAPS_LIBRARIES: ('places')[] = ['places']
+export const MAPS_SCRIPT_ID = 'closeeye-google-map-script'
+export const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
+
 export interface LiveMapMarker {
   id: string
   lat: number
@@ -15,7 +19,6 @@ interface LiveMapProps {
 }
 
 const INDIA_CENTER = { lat: 20.5937, lng: 78.9629 }
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
 
 function MapPlaceholder({ height, message }: { height: string; message: string }) {
   return (
@@ -30,11 +33,12 @@ function MapPlaceholder({ height, message }: { height: string; message: string }
 
 export function LiveMap({ markers, center, zoom = 14, height = '300px' }: LiveMapProps) {
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY || '',
-    id: 'closeeye-google-map-script',
+    googleMapsApiKey: MAPS_KEY || '',
+    id: MAPS_SCRIPT_ID,
+    libraries: MAPS_LIBRARIES,
   })
 
-  if (!GOOGLE_MAPS_API_KEY) {
+  if (!MAPS_KEY) {
     return <MapPlaceholder height={height} message="Map unavailable — Google Maps is not configured." />
   }
 

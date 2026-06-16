@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect, useRef, useState } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { useJsApiLoader } from '@react-google-maps/api'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/components/ui/Toast'
-import { Plus, X, Pencil, Trash2, Phone, MapPin, Stethoscope, AlertTriangle, User } from 'lucide-react'
+import { Plus, X, Pencil, Trash2, Phone, MapPin, Stethoscope, AlertTriangle, User, Navigation } from 'lucide-react'
 import { Spinner } from '@/components/ui/Skeleton'
+import { MAPS_LIBRARIES, MAPS_SCRIPT_ID, MAPS_KEY } from '@/components/ui/LiveMap'
 
 // ── Form field helper ─────────────────────────────────────────────────────────
 
@@ -46,6 +48,120 @@ function Field({
   )
 }
 
+// ── Address field with Places Autocomplete + GPS detect ───────────────────────
+
+function AddressField({
+  value,
+  onChange,
+  error,
+}: {
+  value: string
+  onChange: (v: string) => void
+  error?: string
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [gpsLoading, setGpsLoading] = useState(false)
+  const [hint, setHint] = useState<string | null>(null)
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: MAPS_KEY || '',
+    id: MAPS_SCRIPT_ID,
+    libraries: MAPS_LIBRARIES,
+  })
+
+  // Attach Places Autocomplete once Maps JS is ready
+  useEffect(() => {
+    if (!isLoaded || !inputRef.current || !MAPS_KEY) return
+    const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
+      componentRestrictions: { country: 'in' },
+      fields: ['formatted_address'],
+      types: ['address'],
+    })
+    const listener = ac.addListener('place_changed', () => {
+      const place = ac.getPlace()
+      if (place.formatted_address) {
+        onChange(place.formatted_address)
+        setHint(null)
+      }
+    })
+    return () => window.google.maps.event.removeListener(listener)
+  }, [isLoaded, onChange])
+
+  async function detectGps() {
+    if (!navigator.geolocation) {
+      setHint('Location not supported by this browser.')
+      return
+    }
+    setGpsLoading(true)
+    setHint(null)
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
+      )
+      const { latitude: lat, longitude: lng } = pos.coords
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${MAPS_KEY}`
+      )
+      const json = await res.json()
+      const addr = json.results?.[0]?.formatted_address
+      if (addr) {
+        onChange(addr)
+        setHint('Location detected — please verify or edit below.')
+      } else {
+        setHint('Could not determine address. Please type it manually.')
+      }
+    } catch {
+      setHint('Location access denied or timed out.')
+    } finally {
+      setGpsLoading(false)
+    }
+  }
+
+  const inputCls = `w-full border-2 rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-colors ${
+    error ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-green-600'
+  }`
+
+  return (
+    <div className="sm:col-span-2">
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="text-xs font-semibold text-green-900">
+          Home address<span className="text-red-400 ml-0.5">*</span>
+        </label>
+        <button
+          type="button"
+          onClick={detectGps}
+          disabled={gpsLoading}
+          className="flex items-center gap-1 text-xs text-green-700 font-semibold hover:underline disabled:opacity-50 transition-opacity"
+        >
+          {gpsLoading ? (
+            <><span className="w-3 h-3 border border-green-600 border-t-transparent rounded-full animate-spin inline-block" /> Detecting…</>
+          ) : (
+            <><Navigation size={11} /> Use current location</>
+          )}
+        </button>
+      </div>
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder="Start typing an address in India…"
+        autoComplete="off"
+        className={inputCls}
+      />
+      {hint && (
+        <p className={`text-xs mt-1 ${hint.startsWith('Location detected') ? 'text-green-600' : 'text-amber-600'}`}>
+          {hint}
+        </p>
+      )}
+      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      {isLoaded && !hint && (
+        <p className="text-xs text-gray-400 mt-1">Type to see suggestions, or tap "Use current location" if you're at their home.</p>
+      )}
+    </div>
+  )
+}
+
 // ── Add / edit form ───────────────────────────────────────────────────────────
 
 function LovedOneForm({
@@ -59,7 +175,7 @@ function LovedOneForm({
   onCancel: () => void
   saving: boolean
 }) {
-  const { register, handleSubmit, formState: { errors } } = useForm({ defaultValues: editing || {} })
+  const { register, handleSubmit, control, formState: { errors } } = useForm({ defaultValues: editing || {} })
 
   return (
     <form
@@ -105,11 +221,17 @@ function LovedOneForm({
               error={(errors as any).city?.message}
               {...register('city', { required: 'City is required' })}
             />
-            <Field
-              label="Home address" placeholder="EIPL Rivera A-405, Gachibowli…"
-              required span
-              error={(errors as any).address?.message}
-              {...register('address', { required: 'Address is required' })}
+            <Controller
+              name="address"
+              control={control}
+              rules={{ required: 'Address is required' }}
+              render={({ field }) => (
+                <AddressField
+                  value={field.value || ''}
+                  onChange={field.onChange}
+                  error={(errors as any).address?.message}
+                />
+              )}
             />
           </div>
         </div>
