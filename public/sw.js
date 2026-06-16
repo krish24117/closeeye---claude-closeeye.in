@@ -1,5 +1,5 @@
 // public/sw.js - Close Eye Service Worker
-const CACHE_NAME = 'closeeye-v1'
+const CACHE_NAME = 'closeeye-v2'
 const STATIC_ASSETS = [
   '/',
   '/index.html',
