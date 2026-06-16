@@ -65,7 +65,7 @@ export function CompanionLayout() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:flex-col fixed inset-y-0 left-0 z-30 w-56 bg-green-900 text-white">
+      <aside className="hidden md:flex md:flex-col fixed inset-y-0 left-0 z-30 w-56 bg-green-900 text-white pt-[env(safe-area-inset-top)]">
         <div className="px-5 py-4 border-b border-white/10 flex items-center gap-2.5">
           <Logo className="w-8 h-8 flex-shrink-0" />
           <div className="min-w-0">
@@ -99,7 +99,7 @@ export function CompanionLayout() {
       {/* Main content */}
       <div className="flex-1 md:ml-56 min-w-0 flex flex-col">
         {/* Mobile header */}
-        <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between md:hidden sticky top-0 z-20">
+        <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between md:hidden sticky top-0 z-20 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center gap-2">
             <Logo className="w-6 h-6" />
             <p className="font-serif text-lg text-green-900">close <span className="text-green-600">eye</span></p>

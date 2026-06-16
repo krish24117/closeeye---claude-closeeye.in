@@ -48,7 +48,7 @@ export function AdminLayout() {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <aside className={clsx(
-        'fixed inset-y-0 left-0 z-50 w-64 bg-green-900 text-white flex flex-col transition-transform duration-200 ease-in-out',
+        'fixed inset-y-0 left-0 z-50 w-64 bg-green-900 text-white flex flex-col transition-transform duration-200 ease-in-out pt-[env(safe-area-inset-top)]',
         'md:translate-x-0',
         open ? 'translate-x-0' : '-translate-x-full'
       )}>
@@ -109,7 +109,7 @@ export function AdminLayout() {
       {/* Main content */}
       <div className="flex-1 md:ml-64 min-w-0">
         {/* Mobile header */}
-        <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3 md:hidden sticky top-0 z-30">
+        <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3 md:hidden sticky top-0 z-30 pt-[env(safe-area-inset-top)]">
           <button
             onClick={() => setOpen(!open)}
             className="text-green-800 p-1 rounded-lg hover:bg-green-50 transition-colors"

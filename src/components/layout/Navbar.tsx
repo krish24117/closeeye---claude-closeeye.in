@@ -43,7 +43,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-green-100">
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-green-100 pt-[env(safe-area-inset-top)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
 
           {/* Logo */}
