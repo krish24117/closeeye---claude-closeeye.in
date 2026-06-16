@@ -92,6 +92,10 @@ function AddressField({
       setHint('Location not supported by this browser.')
       return
     }
+    if (!isLoaded) {
+      setHint('Maps not ready yet — please wait a moment and try again.')
+      return
+    }
     setGpsLoading(true)
     setHint(null)
     try {
@@ -99,19 +103,23 @@ function AddressField({
         navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
       )
       const { latitude: lat, longitude: lng } = pos.coords
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${MAPS_KEY}`
-      )
-      const json = await res.json()
-      const addr = json.results?.[0]?.formatted_address
+
+      // Use the Maps JS Geocoder (already loaded, no separate API to enable)
+      const geocoder = new window.google.maps.Geocoder()
+      const addr = await new Promise<string | null>((resolve) => {
+        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+          resolve(status === 'OK' && results?.[0] ? results[0].formatted_address : null)
+        })
+      })
+
       if (addr) {
         onChange(addr)
-        setHint('Location detected — please verify or edit below.')
+        setHint('Location detected — please verify or edit the address below.')
       } else {
-        setHint('Could not determine address. Please type it manually.')
+        setHint('Could not resolve address from your location. Please type it manually.')
       }
     } catch {
-      setHint('Location access denied or timed out.')
+      setHint('Location access was denied or timed out.')
     } finally {
       setGpsLoading(false)
     }
