@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
   // ── Mark booking paid ─────────────────────────────────────────────────────
   const sb = createClient(supabaseUrl, supabaseServiceKey);
 
-  const { error: updateErr } = await sb
+  const { data: booking, error: updateErr } = await sb
     .from("bookings")
     .update({
       payment_status: "paid",
@@ -88,12 +88,24 @@ Deno.serve(async (req: Request) => {
       razorpay_payment_id,
     })
     .eq("id", booking_id)
-    .eq("family_user_id", user.id);
+    .eq("family_user_id", user.id)
+    .select("service_type, amount_paise")
+    .single();
 
-  if (updateErr) {
+  if (updateErr || !booking) {
     console.error("Booking update error:", updateErr);
     return json({ error: "Failed to record payment" }, 500);
   }
+
+  // ── Create in-app notification ────────────────────────────────────────────
+  const amountInr = `₹${(booking.amount_paise / 100).toLocaleString("en-IN")}`;
+  await sb.from("notifications").insert({
+    user_id: user.id,
+    type: "payment_confirmed",
+    title: "Payment confirmed — booking received",
+    message: `Your ${amountInr} payment was received. A companion will be assigned within 24 hours.`,
+    read: false,
+  });
 
   return json({ success: true });
 });
