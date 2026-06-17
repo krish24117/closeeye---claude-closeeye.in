@@ -36,7 +36,7 @@ export function TermsPage() {
 
           <div>
             <h2 className="font-serif text-xl text-green-900 mb-3">4. Payments</h2>
-            <p>All payments are processed through Stripe. Prices are listed in Indian Rupees (INR) inclusive of applicable taxes. GST invoices are provided for every transaction. Close Eye reserves the right to update pricing with 30 days' notice.</p>
+            <p>All payments are processed through <strong>Razorpay</strong> (UPI, credit/debit card, net banking). Prices are listed in Indian Rupees (INR) inclusive of applicable taxes. GST invoices are provided for every transaction. Close Eye reserves the right to update pricing with 30 days' notice.</p>
           </div>
 
           <div>
@@ -65,7 +65,7 @@ export function TermsPage() {
             <p>
               <strong>Stexa Products & Services Pvt. Ltd.</strong><br />
               Hyderabad, Telangana, India<br />
-              <a href="mailto:hello@closeeye.in" className="text-green-700 underline">hello@closeeye.in</a>
+              <a href="mailto:tech.closeeye@gmail.com" className="text-green-700 underline">tech.closeeye@gmail.com</a>
             </p>
           </div>
         </div>

@@ -14,6 +14,7 @@ import { WaitlistPage } from '@/pages/Waitlist'
 import { AuthPage } from '@/pages/Auth'
 import { PrivacyPage } from '@/pages/Privacy'
 import { TermsPage } from '@/pages/Terms'
+import { RefundPage } from '@/pages/Refund'
 import { DashboardLayout } from '@/pages/dashboard/Layout'
 import { DashboardHome } from '@/pages/dashboard/Home'
 import { DashboardBookings } from '@/pages/dashboard/Bookings'
@@ -48,6 +49,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/auth': 'Sign In — Close Eye',
   '/privacy-policy': 'Privacy Policy — Close Eye',
   '/terms': 'Terms of Service — Close Eye',
+  '/refund-policy': 'Refund & Cancellation Policy — Close Eye',
   '/dashboard': 'Dashboard — Close Eye',
   '/dashboard/bookings': 'My Bookings — Close Eye',
   '/dashboard/loved-ones': 'Loved Ones — Close Eye',
@@ -79,6 +81,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/auth': 'Sign in or create a Close Eye account to book and manage companion visits for your loved ones.',
   '/privacy-policy': "How Close Eye collects, uses, and protects your family's data.",
   '/terms': 'Terms of service for booking and using Close Eye companion visits.',
+  '/refund-policy': 'Cancellation and refund policy for Close Eye companion visits and monthly plans.',
   '/dashboard': 'Manage your bookings, loved ones, visit reports, and notifications.',
   '/dashboard/bookings': 'View and manage your Close Eye companion visit bookings.',
   '/dashboard/loved-ones': 'Manage the profiles of the family members Close Eye visits.',
@@ -179,6 +182,7 @@ export default function App() {
           <Route path="/waitlist" element={<PublicLayout><WaitlistPage /></PublicLayout>} />
           <Route path="/privacy-policy" element={<PublicLayout><PrivacyPage /></PublicLayout>} />
           <Route path="/terms" element={<PublicLayout><TermsPage /></PublicLayout>} />
+          <Route path="/refund-policy" element={<PublicLayout><RefundPage /></PublicLayout>} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/dashboard" element={<ProtectedRoute role="family"><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<DashboardHome />} />
