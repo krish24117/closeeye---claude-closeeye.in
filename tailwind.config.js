@@ -21,7 +21,7 @@ export default {
       },
       fontFamily: {
         serif: ['"DM Serif Display"', 'Georgia', 'serif'],
-        sans:  ['Inter', 'system-ui', 'sans-serif'],
+        sans:  ['Manrope', 'system-ui', 'sans-serif'],
       },
       borderRadius: { xl: '12px', '2xl': '16px', '3xl': '24px' },
       boxShadow: {

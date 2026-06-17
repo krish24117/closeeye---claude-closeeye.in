@@ -1,43 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Heart, Building2, Zap, CalendarDays, CheckCircle, Loader2, ShieldCheck } from 'lucide-react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Heart, Building2, Zap, Stethoscope, ShoppingBag, Wrench, AlertTriangle, CheckCircle, Loader2, ShieldCheck } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { ON_DEMAND_SERVICES } from '@/lib/one-time-services'
+import { loadRazorpayScript } from '@/lib/razorpay'
 
-const SERVICES = [
-  {
-    type: 'companion_visit_single',
-    icon: Heart,
-    name: 'Companion Visit',
-    price: '₹999',
-    paise: 99900,
-    desc: 'Home visit with wellbeing check, photos and a full report sent to you.',
-  },
-  {
-    type: 'hospital_companion_single',
-    icon: Building2,
-    name: 'Hospital Companion',
-    price: '₹1,499',
-    paise: 149900,
-    desc: 'Companion accompanies to the appointment and keeps you updated throughout.',
-  },
-  {
-    type: 'emergency_visit',
-    icon: Zap,
-    name: 'Emergency Visit',
-    price: '₹1,999',
-    paise: 199900,
-    desc: 'Same-day priority dispatch when something feels urgent.',
-  },
-  {
-    type: 'care_plan_4_monthly',
-    icon: CalendarDays,
-    name: 'Monthly Care Plan',
-    price: '₹2,999/mo',
-    paise: 299900,
-    desc: '4 recurring visits per month with the same companion.',
-  },
-]
+const SERVICE_ICONS: Record<string, typeof Heart> = {
+  home_visit: Heart,
+  doctor_visit_assistance: Stethoscope,
+  hospital_assistance_half_day: Building2,
+  hospital_assistance_full_day: Building2,
+  emergency_support_visit: Zap,
+  grocery_medicine_assistance: ShoppingBag,
+  home_maintenance_coordination: Wrench,
+}
+
+const SERVICES = ON_DEMAND_SERVICES.map(s => ({
+  ...s,
+  icon: SERVICE_ICONS[s.type] ?? AlertTriangle,
+}))
 
 const TIME_SLOTS = [
   '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
@@ -53,32 +35,19 @@ function formatTimeLabel(t: string) {
   return `${hour}:${String(m).padStart(2, '0')} ${ampm}`
 }
 
-function loadRazorpayScript(): Promise<boolean> {
-  return new Promise(resolve => {
-    if (window.Razorpay) { resolve(true); return }
-    const s = document.createElement('script')
-    s.src = 'https://checkout.razorpay.com/v1/checkout.js'
-    s.onload = () => resolve(true)
-    s.onerror = () => resolve(false)
-    document.head.appendChild(s)
-  })
-}
-
-declare global {
-  interface Window {
-    Razorpay: new (options: Record<string, unknown>) => { open(): void }
-  }
-}
-
 export function DashboardNewBooking() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const paymentSucceeded = useRef(false)
 
   const [lovedOnes, setLovedOnes] = useState<{ id: string; full_name: string; city: string | null }[]>([])
   const [loadingLO, setLoadingLO] = useState(true)
 
-  const [serviceType, setServiceType] = useState('')
+  const preselectedService = searchParams.get('service')
+  const [serviceType, setServiceType] = useState(
+    preselectedService && SERVICES.some(s => s.type === preselectedService) ? preselectedService : ''
+  )
   const [lovedOneId, setLovedOneId] = useState('')
   const [visitDate, setVisitDate] = useState('')
   const [visitTime, setVisitTime] = useState('')

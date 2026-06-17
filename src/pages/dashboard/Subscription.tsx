@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CreditCard, CheckCircle, AlertTriangle, Crown, Pause, XCircle, RotateCcw, Loader2, CheckCheck } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { PLANS, PLAN_NAMES, type PlanId } from '@/lib/subscription-plans'
+import { loadRazorpayScript } from '@/lib/razorpay'
 
 interface Subscription {
   id: string
@@ -15,23 +17,6 @@ interface Subscription {
   next_billing_at: string | null
   total_paid_paise: number
   invoice_count: number
-}
-
-declare global {
-  interface Window {
-    Razorpay: new (options: Record<string, unknown>) => { open(): void }
-  }
-}
-
-function loadRazorpayScript(): Promise<boolean> {
-  return new Promise(resolve => {
-    if (window.Razorpay) { resolve(true); return }
-    const s = document.createElement('script')
-    s.src = 'https://checkout.razorpay.com/v1/checkout.js'
-    s.onload = () => resolve(true)
-    s.onerror = () => resolve(false)
-    document.head.appendChild(s)
-  })
 }
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
@@ -54,6 +39,8 @@ export function DashboardSubscription() {
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [confirmCancel, setConfirmCancel] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const autoTriggered = useRef(false)
 
   const loadSub = useCallback(async () => {
     setLoading(true)
@@ -63,6 +50,18 @@ export function DashboardSubscription() {
   }, [])
 
   useEffect(() => { loadSub() }, [loadSub])
+
+  const autoplan = searchParams.get('autoplan') as PlanId | null
+
+  useEffect(() => {
+    if (autoTriggered.current || loading) return
+    if (!autoplan || !PLANS.some(p => p.id === autoplan)) return
+    if (sub && ['active', 'authenticated', 'paused', 'halted'].includes(sub.status)) return
+    autoTriggered.current = true
+    setSearchParams(prev => { prev.delete('autoplan'); return prev }, { replace: true })
+    handleSubscribe(autoplan)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoplan, loading, sub])
 
   async function handleSubscribe(planId: PlanId) {
     setSubscribing(planId)
@@ -259,27 +258,11 @@ export function DashboardSubscription() {
             </div>
           )}
 
-          <p className="text-sm text-gray-500">Choose the plan that's right for your family.</p>
+          <p className="text-sm text-gray-500">Subscribe to start your monthly plan.</p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="max-w-sm mx-auto">
             {PLANS.map(plan => (
-              <div
-                key={plan.id}
-                className={`relative bg-white rounded-2xl border-2 p-5 flex flex-col ${
-                  plan.popular ? 'border-green-600' : plan.best ? 'border-green-800' : 'border-gray-100'
-                }`}
-              >
-                {plan.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
-                    Most Popular
-                  </span>
-                )}
-                {plan.best && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-800 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
-                    Best Value
-                  </span>
-                )}
-
+              <div key={plan.id} className="relative bg-white rounded-2xl border-2 border-green-800 p-5 flex flex-col">
                 <div className="mb-4">
                   <p className="font-serif text-lg text-green-900">{plan.name}</p>
                   <p className="text-2xl font-bold text-green-900 mt-1">{plan.priceLabel}</p>
@@ -297,18 +280,12 @@ export function DashboardSubscription() {
                 <button
                   onClick={() => handleSubscribe(plan.id)}
                   disabled={subscribing !== null}
-                  className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2 ${
-                    plan.popular
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : plan.best
-                        ? 'bg-green-800 text-white hover:bg-green-900'
-                        : 'bg-green-50 text-green-800 hover:bg-green-100'
-                  }`}
+                  className="w-full py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2 bg-green-800 text-white hover:bg-green-900"
                 >
                   {subscribing === plan.id ? (
                     <><Loader2 size={15} className="animate-spin" /> Setting up…</>
                   ) : (
-                    <><CreditCard size={14} /> Get started</>
+                    <><CreditCard size={14} /> Subscribe Now</>
                   )}
                 </button>
               </div>

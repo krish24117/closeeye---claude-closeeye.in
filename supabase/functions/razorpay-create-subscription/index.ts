@@ -6,12 +6,10 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type PlanId = "companion" | "trust" | "family_os";
+type PlanId = "companion";
 
 const PLAN_ID_ENV_MAP: Record<PlanId, string> = {
   companion: "RAZORPAY_PLAN_ID_COMPANION",
-  trust: "RAZORPAY_PLAN_ID_TRUST",
-  family_os: "RAZORPAY_PLAN_ID_FAMILY_OS",
 };
 
 function json(body: unknown, status = 200): Response {
@@ -56,7 +54,7 @@ Deno.serve(async (req: Request) => {
 
   const planId = body.plan_id as PlanId | undefined;
   if (!planId || !PLAN_ID_ENV_MAP[planId]) {
-    return json({ error: "plan_id must be one of: companion, trust, family_os" }, 400);
+    return json({ error: "plan_id must be: companion" }, 400);
   }
 
   const razorpayPlanId = Deno.env.get(PLAN_ID_ENV_MAP[planId]);

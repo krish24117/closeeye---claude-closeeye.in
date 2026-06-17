@@ -60,9 +60,28 @@ export function AuthPage() {
   }, [])
 
   // Once a session exists, go to the correct dashboard for this user's role -
-  // unless we're in the middle of a password recovery flow.
+  // unless we're in the middle of a password recovery flow. If the visitor
+  // clicked Subscribe/Book on the public pricing page before signing up, resume
+  // that checkout instead of landing on the plain dashboard.
   useEffect(() => {
     if (!loading && user && profile && mode !== 'update-password') {
+      const pendingRaw = sessionStorage.getItem('pendingCheckout')
+      if (pendingRaw) {
+        sessionStorage.removeItem('pendingCheckout')
+        try {
+          const pending = JSON.parse(pendingRaw) as { type: 'subscription'; planId: string } | { type: 'booking'; serviceType: string }
+          if (pending.type === 'subscription') {
+            navigate(`/dashboard/subscription?autoplan=${pending.planId}`, { replace: true })
+            return
+          }
+          if (pending.type === 'booking') {
+            navigate(`/dashboard/new-booking?service=${pending.serviceType}`, { replace: true })
+            return
+          }
+        } catch {
+          // malformed value - fall through to default redirect
+        }
+      }
       navigate(getRoleHome(profile), { replace: true })
     }
   }, [loading, user, profile, navigate, mode])

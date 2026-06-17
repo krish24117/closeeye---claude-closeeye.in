@@ -14,9 +14,7 @@ function json(body: unknown, status = 200): Response {
 }
 
 const PLAN_DISPLAY: Record<string, string> = {
-  companion: "Companion",
-  trust: "Trust",
-  family_os: "Family OS",
+  companion: "CloseEye Companion",
 };
 
 // ── Razorpay signature verification ──────────────────────────────────────────
