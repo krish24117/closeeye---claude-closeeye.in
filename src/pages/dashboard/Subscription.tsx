@@ -178,7 +178,7 @@ export function DashboardSubscription() {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl mb-5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl mb-5">
               {[
                 ['Next billing', sub!.next_billing_at ? format(new Date(sub!.next_billing_at), 'd MMM yyyy') : '—'],
                 ['Total paid', `₹${Math.round(sub!.total_paid_paise / 100).toLocaleString('en-IN')}`],

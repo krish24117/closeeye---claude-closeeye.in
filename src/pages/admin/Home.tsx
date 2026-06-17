@@ -298,7 +298,7 @@ export function AdminHome() {
             <div className="h-36 bg-gray-100 rounded-2xl" />
             <div className="h-36 bg-gray-100 rounded-2xl" />
           </div>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[...Array(4)].map((_, i) => <div key={i} className="h-24 bg-gray-100 rounded-2xl" />)}
           </div>
           <div className="h-48 bg-gray-100 rounded-2xl" />
