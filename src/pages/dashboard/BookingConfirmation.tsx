@@ -18,7 +18,7 @@ interface Booking {
   scheduled_at: string
   razorpay_payment_id: string | null
   paid_at: string | null
-  loved_ones: { full_name: string } | null
+  loved_ones: { full_name: string }[] | null
 }
 
 export function BookingConfirmationPage() {
@@ -64,7 +64,9 @@ export function BookingConfirmationPage() {
   const shortRef = booking.id.slice(0, 8).toUpperCase()
   const serviceName = SERVICE_NAMES[booking.service_type] ?? booking.service_type
   const amountDisplay = `₹${(booking.amount_paise / 100).toLocaleString('en-IN')}`
-  const lovedOneName = booking.loved_ones?.full_name ?? '—'
+  const lovedOneName = Array.isArray(booking.loved_ones)
+    ? booking.loved_ones[0]?.full_name ?? '—'
+    : (booking.loved_ones as { full_name: string } | null)?.full_name ?? '—'
   const scheduledDisplay = booking.scheduled_at
     ? format(new Date(booking.scheduled_at), 'd MMM yyyy, h:mm a')
     : '—'
