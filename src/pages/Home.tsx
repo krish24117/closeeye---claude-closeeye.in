@@ -6,6 +6,8 @@ import {
   ChevronLeft,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { PLANS } from '@/lib/subscription-plans'
+import { ON_DEMAND_SERVICES } from '@/lib/one-time-services'
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                                */
@@ -20,11 +22,12 @@ const TRUST = [
   { icon: Banknote,     title: 'No Cash, No Keys — Ever',           desc: 'Companions never handle cash or hold property keys unsupervised. All payments flow through the platform.',  tag: 'Structural safeguard' },
 ]
 
-const PRICING = [
-  { type: 'companion_visit_single', name: 'Companion Visit',  price: '₹999',    note: 'single visit',         items: ['1 home visit', 'Photo report', 'WhatsApp updates'],                       popular: false },
-  { type: 'care_plan_4_monthly',   name: 'Monthly Plan',      price: '₹2,999',  note: 'per month · 4 visits', items: ['4 visits per month', 'Dedicated companion', 'Priority support'],          popular: true  },
-  { type: 'care_plan_quarterly',   name: 'Quarterly Plan',    price: '₹7,999',  note: 'per quarter · best value', items: ['12 visits / quarter', '1 free emergency visit', 'Dedicated companion'], popular: false },
-  { type: 'emergency_visit',       name: 'Emergency Visit',   price: '₹1,999',  note: 'same-day dispatch',    items: ['Same-day dispatch', 'Live family updates', '24/7 hotline'],                popular: false },
+const PLAN = PLANS[0]
+const CHEAPEST_ON_DEMAND_PRICE = Math.min(...ON_DEMAND_SERVICES.map(s => s.paise)) / 100
+
+const SERVICE_TEASERS = [
+  { price: PLAN.priceLabel, name: PLAN.name, desc: PLAN.tagline },
+  ...ON_DEMAND_SERVICES.slice(0, 3).map(s => ({ price: s.price, name: s.name, desc: s.desc })),
 ]
 
 const HOW_STEPS = [
@@ -202,12 +205,7 @@ export function HomePage() {
           A trusted presence, on the days<br className="hidden md:block" /> you cannot be there.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-          {[
-            { price: '₹999',          name: 'Companion Visit',    desc: 'Friendly home visit with wellbeing check, photos and a full report.' },
-            { price: '₹1,499',        name: 'Hospital Companion', desc: 'A companion accompanies your loved one to appointments and updates you.' },
-            { price: '₹1,999',        name: 'Emergency Visit',    desc: 'Same-day dispatch when something feels off — a verified person within hours.' },
-            { price: 'from ₹2,999/mo', name: 'Monthly Plan',      desc: 'Recurring visits with the same companion and priority emergency support.' },
-          ].map(s => (
+          {SERVICE_TEASERS.map(s => (
             <Link
               key={s.name}
               to="/services"
@@ -424,43 +422,36 @@ export function HomePage() {
 
       {/* ── Pricing ───────────────────────────────────────────────── */}
       <section className="bg-green-50 px-4 sm:px-6 py-16 sm:py-20">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-12">
           <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">Pricing</p>
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900 mb-3">Simple, transparent plans.</h2>
-          <p className="text-gray-500 mb-10 sm:mb-12 text-sm sm:text-base">
-            Every plan includes verified companions, a detailed report, and 24/7 WhatsApp support.
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900 mb-3">Simple, transparent pricing.</h2>
+          <p className="text-gray-500 text-sm sm:text-base">
+            One monthly plan, plus on-demand help whenever you need it.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-            {PRICING.map(p => (
-              <div
-                key={p.type}
-                className={`relative bg-white rounded-2xl p-5 sm:p-6 border-2 transition-shadow hover:shadow-card ${p.popular ? 'border-green-600 shadow-card' : 'border-gray-100'}`}
-              >
-                {p.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-700 text-white text-xs font-bold px-3 py-1 rounded-full">
-                    Popular
-                  </span>
-                )}
-                <h3 className="font-semibold text-green-900 mb-1 text-sm">{p.name}</h3>
-                <p className="font-serif text-2xl sm:text-3xl text-green-900 mt-3 mb-1">{p.price}</p>
-                <p className="text-xs text-gray-400 mb-5">{p.note}</p>
-                <ul className="space-y-2 mb-6">
-                  {p.items.map(i => (
-                    <li key={i} className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
-                      <span className="text-green-600 font-bold flex-shrink-0">✓</span> {i}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  to="/waitlist"
-                  className="block text-center bg-green-800 hover:bg-green-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
-                >
-                  Get started
-                </Link>
-              </div>
-            ))}
-          </div>
         </div>
+
+        <div className="max-w-sm mx-auto bg-white rounded-2xl border-2 border-green-800 p-6 sm:p-7">
+          <h3 className="font-serif text-xl text-green-900 mb-1">{PLAN.name}</h3>
+          <p className="text-xs text-gray-400 mb-4">{PLAN.tagline}</p>
+          <p className="font-serif text-3xl text-green-900 mb-5">{PLAN.priceLabel}</p>
+          <ul className="space-y-2 mb-6">
+            {PLAN.features.slice(0, 4).map(f => (
+              <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
+                <span className="text-green-600 font-bold flex-shrink-0">✓</span> {f}
+              </li>
+            ))}
+          </ul>
+          <Link
+            to="/services"
+            className="block text-center bg-green-800 hover:bg-green-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+          >
+            See full pricing
+          </Link>
+        </div>
+
+        <p className="text-center text-xs text-gray-400 mt-6">
+          Plus on-demand services from ₹{CHEAPEST_ON_DEMAND_PRICE.toLocaleString('en-IN')} — no subscription needed.
+        </p>
       </section>
 
       {/* ── What every visit looks like ────────────────────────────── */}

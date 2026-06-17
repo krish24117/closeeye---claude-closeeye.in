@@ -3,13 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { CheckCircle, Calendar, User, MessageCircle, Loader2, ArrowRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { supabase } from '@/lib/supabase'
-
-const SERVICE_NAMES: Record<string, string> = {
-  companion_visit_single:    'Companion Visit',
-  hospital_companion_single: 'Hospital Companion',
-  emergency_visit:           'Emergency Visit',
-  care_plan_4_monthly:       'Monthly Care Plan',
-}
+import { SERVICE_NAMES } from '@/lib/booking-labels'
 
 interface Booking {
   id: string
