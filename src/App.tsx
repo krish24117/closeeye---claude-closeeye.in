@@ -24,6 +24,7 @@ import { DashboardNotifications } from '@/pages/dashboard/Notifications'
 import { DashboardNewBooking } from '@/pages/dashboard/NewBooking'
 import { DashboardMembers } from '@/pages/dashboard/Members'
 import { DashboardSubscription } from '@/pages/dashboard/Subscription'
+import { BookingConfirmationPage } from '@/pages/dashboard/BookingConfirmation'
 import { CompanionLayout } from '@/pages/companion/Layout'
 import { CompanionHome } from '@/pages/companion/Home'
 import { CompanionVisit } from '@/pages/companion/Visit'
@@ -58,6 +59,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/new-booking': 'Book a Visit — Close Eye',
   '/dashboard/members': 'Family Members — Close Eye',
   '/dashboard/subscription': 'Subscription — Close Eye',
+  '/dashboard/booking-confirmation': 'Booking Confirmed — Close Eye',
   '/companion': 'Companion Portal — Close Eye',
   '/companion/schedule': 'My Schedule — Close Eye',
   '/companion/earnings': 'Earnings — Close Eye',
@@ -193,6 +195,7 @@ export default function App() {
             <Route path="new-booking" element={<DashboardNewBooking />} />
             <Route path="members" element={<DashboardMembers />} />
             <Route path="subscription" element={<DashboardSubscription />} />
+            <Route path="booking-confirmation" element={<BookingConfirmationPage />} />
           </Route>
           <Route path="/companion" element={<ProtectedRoute role="companion"><CompanionLayout /></ProtectedRoute>}>
             <Route index element={<CompanionHome />} />

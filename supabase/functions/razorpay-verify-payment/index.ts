@@ -86,6 +86,7 @@ Deno.serve(async (req: Request) => {
       payment_status: "paid",
       status: "confirmed",
       razorpay_payment_id,
+      paid_at: new Date().toISOString(),
     })
     .eq("id", booking_id)
     .eq("family_user_id", user.id)

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Heart, Building2, Zap, CalendarDays, CheckCircle, Loader2, ShieldCheck } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
@@ -72,6 +72,9 @@ declare global {
 
 export function DashboardNewBooking() {
   const { user, profile } = useAuth()
+  const navigate = useNavigate()
+  const paymentSucceeded = useRef(false)
+
   const [lovedOnes, setLovedOnes] = useState<{ id: string; full_name: string; city: string | null }[]>([])
   const [loadingLO, setLoadingLO] = useState(true)
 
@@ -83,8 +86,6 @@ export function DashboardNewBooking() {
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [paidAmount, setPaidAmount] = useState('')
 
   const todayStr = new Date().toISOString().slice(0, 10)
 
@@ -160,14 +161,15 @@ export function DashboardNewBooking() {
           })
           if (ve || !vd?.success) {
             setError('Payment received but verification failed — contact support with payment ID: ' + response.razorpay_payment_id)
+            setSubmitting(false)
           } else {
-            setPaidAmount(selectedService?.price || '')
-            setSuccess(true)
+            paymentSucceeded.current = true
+            navigate(`/dashboard/booking-confirmation?id=${data.booking_id}`, { replace: true })
           }
-          setSubmitting(false)
         },
         modal: {
           ondismiss: () => {
+            if (paymentSucceeded.current) return
             setError('Payment cancelled. Your booking has been saved — contact us on WhatsApp to complete it.')
             setSubmitting(false)
           },
@@ -179,29 +181,6 @@ export function DashboardNewBooking() {
       setError(err instanceof Error ? err.message : 'Something went wrong — please try again.')
       setSubmitting(false)
     }
-  }
-
-  if (success) {
-    return (
-      <div className="animate-fade-in max-w-md mx-auto text-center py-12 space-y-5">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-          <CheckCircle size={32} className="text-green-600" />
-        </div>
-        <div>
-          <h1 className="font-serif text-2xl text-green-900 mb-2">Booking confirmed</h1>
-          <p className="text-sm text-gray-500 leading-relaxed">
-            Your {paidAmount && <strong className="text-green-800">{paidAmount} </strong>}payment was received.
-            Our coordinator will call within <strong>24 hours</strong> to confirm the visit and assign your companion.
-          </p>
-        </div>
-        <Link
-          to="/dashboard/bookings"
-          className="inline-flex items-center gap-2 bg-green-800 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm"
-        >
-          View my bookings →
-        </Link>
-      </div>
-    )
   }
 
   return (
