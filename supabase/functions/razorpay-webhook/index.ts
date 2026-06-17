@@ -96,7 +96,7 @@ function buildInvoiceHtml(opts: {
                 </tr>
               </table>
 
-              <p style="margin:28px 0 0;color:#777;font-size:12px;">If you have questions, contact us at tech.closeeye@gmail.com</p>
+              <p style="margin:28px 0 0;color:#777;font-size:12px;">If you have questions, contact us at hello@closeeye.in</p>
             </td>
           </tr>
           <!-- Footer -->

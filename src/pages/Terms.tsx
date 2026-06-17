@@ -65,7 +65,7 @@ export function TermsPage() {
             <p>
               <strong>Stexa Products & Services Pvt. Ltd.</strong><br />
               Hyderabad, Telangana, India<br />
-              <a href="mailto:tech.closeeye@gmail.com" className="text-green-700 underline">tech.closeeye@gmail.com</a>
+              <a href="mailto:hello@closeeye.in" className="text-green-700 underline">hello@closeeye.in</a>
             </p>
           </div>
         </div>

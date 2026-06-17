@@ -17,7 +17,7 @@ export function ContactPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
 
           <a
-            href="mailto:tech.closeeye@gmail.com"
+            href="mailto:hello@closeeye.in"
             className="flex items-start gap-4 p-6 bg-green-50 rounded-2xl hover:shadow-md transition-shadow group"
           >
             <div className="w-11 h-11 bg-green-800 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -25,7 +25,7 @@ export function ContactPage() {
             </div>
             <div>
               <p className="font-semibold text-green-900 text-sm mb-0.5">Email us</p>
-              <p className="text-sm font-medium text-green-700 break-all">tech.closeeye@gmail.com</p>
+              <p className="text-sm font-medium text-green-700 break-all">hello@closeeye.in</p>
               <p className="text-xs text-gray-400 mt-1">We reply within one business day.</p>
             </div>
           </a>
@@ -79,7 +79,7 @@ export function ContactPage() {
             <div className="flex gap-2"><dt className="font-medium text-gray-700 w-36 flex-shrink-0">Legal name:</dt><dd>Stexa Products &amp; Services Pvt. Ltd.</dd></div>
             <div className="flex gap-2"><dt className="font-medium text-gray-700 w-36 flex-shrink-0">Brand:</dt><dd>Close Eye</dd></div>
             <div className="flex gap-2"><dt className="font-medium text-gray-700 w-36 flex-shrink-0">Website:</dt><dd>www.closeeye.in</dd></div>
-            <div className="flex gap-2"><dt className="font-medium text-gray-700 w-36 flex-shrink-0">Email:</dt><dd><a href="mailto:tech.closeeye@gmail.com" className="text-green-700 hover:underline">tech.closeeye@gmail.com</a></dd></div>
+            <div className="flex gap-2"><dt className="font-medium text-gray-700 w-36 flex-shrink-0">Email:</dt><dd><a href="mailto:hello@closeeye.in" className="text-green-700 hover:underline">hello@closeeye.in</a></dd></div>
             <div className="flex gap-2"><dt className="font-medium text-gray-700 w-36 flex-shrink-0">Phone:</dt><dd><a href="tel:+919000221261" className="text-green-700 hover:underline">+91 90002 21261</a></dd></div>
             <div className="flex gap-2"><dt className="font-medium text-gray-700 w-36 flex-shrink-0">Location:</dt><dd>Hyderabad, Telangana, India</dd></div>
             <div className="flex gap-2"><dt className="font-medium text-gray-700 w-36 flex-shrink-0">Service area:</dt><dd>Hyderabad (expanding across India)</dd></div>

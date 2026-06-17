@@ -54,7 +54,7 @@ export function RefundPage() {
             <h2 className="font-serif text-xl text-green-900 mb-3">5. How to request a refund</h2>
             <p>To request a refund or cancellation, contact us via:</p>
             <ul className="list-disc pl-5 mt-2 space-y-1">
-              <li>Email: <a href="mailto:tech.closeeye@gmail.com" className="text-green-700 underline">tech.closeeye@gmail.com</a></li>
+              <li>Email: <a href="mailto:hello@closeeye.in" className="text-green-700 underline">hello@closeeye.in</a></li>
               <li>WhatsApp: <a href="https://wa.me/919000221261" className="text-green-700 underline">+91 90002 21261</a></li>
             </ul>
             <p className="mt-3">Please include your booking ID (found in your dashboard), the name of the loved one, and the reason for cancellation. We will acknowledge within 24 hours.</p>
@@ -70,7 +70,7 @@ export function RefundPage() {
             <p>
               <strong>Stexa Products &amp; Services Pvt. Ltd.</strong><br />
               Hyderabad, Telangana, India<br />
-              <a href="mailto:tech.closeeye@gmail.com" className="text-green-700 underline">tech.closeeye@gmail.com</a><br />
+              <a href="mailto:hello@closeeye.in" className="text-green-700 underline">hello@closeeye.in</a><br />
               <a href="tel:+919000221261" className="text-green-700 underline">+91 90002 21261</a>
             </p>
           </div>

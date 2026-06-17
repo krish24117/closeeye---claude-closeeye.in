@@ -62,7 +62,7 @@ export function PrivacyPage() {
 
           <div>
             <h2 className="font-serif text-xl text-green-900 mb-3">6. Your rights</h2>
-            <p>You can request to view, update, or delete your data at any time by emailing us at <a href="mailto:tech.closeeye@gmail.com" className="text-green-700 underline">tech.closeeye@gmail.com</a>. We will respond within 7 business days.</p>
+            <p>You can request to view, update, or delete your data at any time by emailing us at <a href="mailto:hello@closeeye.in" className="text-green-700 underline">hello@closeeye.in</a>. We will respond within 7 business days.</p>
           </div>
 
           <div>
@@ -75,7 +75,7 @@ export function PrivacyPage() {
             <p>For any privacy-related queries, contact us at:<br />
               <strong>Stexa Products & Services Pvt. Ltd.</strong><br />
               Hyderabad, Telangana, India<br />
-              <a href="mailto:tech.closeeye@gmail.com" className="text-green-700 underline">tech.closeeye@gmail.com</a>
+              <a href="mailto:hello@closeeye.in" className="text-green-700 underline">hello@closeeye.in</a>
             </p>
           </div>
         </div>
