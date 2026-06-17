@@ -107,7 +107,7 @@ export function AdminLayout() {
       )}
 
       {/* Main content */}
-      <div className="flex-1 md:ml-64 min-w-0">
+      <div className="flex-1 md:ml-64 min-w-0 overflow-x-hidden">
         {/* Mobile header */}
         <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3 md:hidden sticky top-0 z-30 pt-[env(safe-area-inset-top)]">
           <button

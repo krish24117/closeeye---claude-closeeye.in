@@ -127,7 +127,8 @@
 
     <!-- App shell loading styles -->
     <style>
-      body { margin: 0; background: #fff; }
+      html, body { margin: 0; overflow-x: hidden; }
+      body { background: #fff; }
       #app-loader {
         position: fixed; inset: 0; z-index: 50;
         background: #fff;
@@ -135,6 +136,7 @@
         transition: opacity 0.25s ease;
       }
       #app-loader.fade-out { opacity: 0; pointer-events: none; }
+      #app-loader nav { padding-top: env(safe-area-inset-top, 0px); }
       @keyframes ce-spin { to { transform: rotate(360deg); } }
     </style>
   </head>

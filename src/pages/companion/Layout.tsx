@@ -128,7 +128,7 @@ export function CompanionLayout() {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 md:ml-56 min-w-0 flex flex-col">
+      <div className="flex-1 md:ml-56 min-w-0 overflow-x-hidden flex flex-col">
         {/* Mobile header */}
         <header className="bg-white border-b border-gray-100 flex items-center justify-between md:hidden sticky top-0 z-20 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center gap-3 px-4 py-3.5">

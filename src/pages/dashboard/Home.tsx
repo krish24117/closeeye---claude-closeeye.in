@@ -108,7 +108,7 @@ export function DashboardHome() {
   const isNewUser = !loading && lovedOnes.length === 0
 
   return (
-    <div className="space-y-4 animate-fade-in pb-24">
+    <div className="space-y-4 animate-fade-in" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6rem)' }}>
 
       {/* ── Greeting ───────────────────────────────────────── */}
       <div className="pt-1">
@@ -433,7 +433,8 @@ export function DashboardHome() {
       {/* ── SOS button ──────────────────────────────────────── */}
       <button
         onClick={() => setSosOpen(true)}
-        className="fixed bottom-6 right-5 sm:bottom-8 sm:right-7 z-40 w-14 h-14 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-full shadow-lg flex items-center justify-center transition-all"
+        className="fixed z-40 w-14 h-14 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-full shadow-lg flex items-center justify-center transition-all"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)', right: '1.25rem' }}
         title="Emergency SOS"
         aria-label="Emergency SOS"
       >
@@ -443,7 +444,8 @@ export function DashboardHome() {
       {/* ── SOS modal ───────────────────────────────────────── */}
       {sosOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center"
+          style={{ padding: '1rem 1rem calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
           onClick={() => setSosOpen(false)}
         >
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
