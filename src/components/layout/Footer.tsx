@@ -1,5 +1,13 @@
 import { Link } from 'react-router-dom'
 import { Logo } from '@/components/ui/Logo'
+import { FaInstagram, FaLinkedin, FaFacebook, FaWhatsapp } from 'react-icons/fa'
+
+const SOCIAL = [
+  { icon: FaInstagram, href: 'https://www.instagram.com/closeeyeglobal/',          label: 'Instagram' },
+  { icon: FaLinkedin,  href: 'https://www.linkedin.com/company/closeeye/',         label: 'LinkedIn'  },
+  { icon: FaFacebook,  href: 'https://www.facebook.com/closeeyeglobal',            label: 'Facebook'  },
+  { icon: FaWhatsapp,  href: 'https://wa.me/919980624117',                         label: 'WhatsApp'  },
+]
 
 export function Footer() {
   return (
@@ -25,6 +33,22 @@ export function Footer() {
               </svg>
               +91 90002 21261
             </a>
+
+            {/* Social icons */}
+            <div className="flex items-center gap-4 mt-5">
+              {SOCIAL.map(({ icon: Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="text-white/70 hover:text-white transition-opacity"
+                >
+                  <Icon size={24} />
+                </a>
+              ))}
+            </div>
           </div>
 
           <div>
