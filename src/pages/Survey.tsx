@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { ChevronLeft, Check, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { Logo } from '@/components/ui/Logo'
 
 // ── Question definitions ─────────────────────────────────────────────────────
 
@@ -197,8 +198,9 @@ export function SurveyPage() {
           ) : (
             <div className="w-9" />
           )}
-          <Link to="/" className="font-serif text-base text-green-900">
-            close <span className="text-green-600">eye</span>
+          <Link to="/" className="flex items-center gap-2">
+            <Logo className="w-7 h-7" />
+            <span className="font-serif text-base text-green-900">close <span className="text-green-600">eye</span></span>
           </Link>
           {step < 5 ? (
             <span className="text-xs text-gray-400 font-medium">{step + 1} / 5</span>
