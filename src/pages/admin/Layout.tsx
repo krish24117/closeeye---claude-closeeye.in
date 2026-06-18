@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Home, Calendar, Users, Heart, Wallet, FileText, MapPin, LogOut, Menu, X } from 'lucide-react'
+import { Home, Calendar, Users, Heart, Wallet, FileText, MapPin, LogOut, Menu, X, ClipboardList } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { Logo } from '@/components/ui/Logo'
@@ -13,6 +13,7 @@ const NAV = [
   { to: '/admin/payments', icon: Wallet, label: 'Payments' },
   { to: '/admin/reports', icon: FileText, label: 'Visit Reports' },
   { to: '/admin/live-map', icon: MapPin, label: 'Live Map' },
+  { to: '/admin/survey-leads', icon: ClipboardList, label: 'Survey Leads' },
 ]
 
 export function AdminLayout() {

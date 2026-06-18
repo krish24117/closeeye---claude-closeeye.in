@@ -47,6 +47,9 @@ const AdminFamilies = lazy(() => import('@/pages/admin/Families').then(m => ({ d
 const AdminPayments = lazy(() => import('@/pages/admin/Payments').then(m => ({ default: m.AdminPayments })))
 const AdminReports = lazy(() => import('@/pages/admin/Reports').then(m => ({ default: m.AdminReports })))
 const AdminLiveMap = lazy(() => import('@/pages/admin/LiveMap').then(m => ({ default: m.AdminLiveMap })))
+const AdminSurveyLeads = lazy(() => import('@/pages/admin/SurveyLeads').then(m => ({ default: m.AdminSurveyLeads })))
+
+const SurveyPage = lazy(() => import('@/pages/Survey').then(m => ({ default: m.SurveyPage })))
 
 const PAGE_TITLES: Record<string, string> = {
   '/': "Close Eye — When you can't be there, Close Eye can.",
@@ -79,6 +82,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/payments': 'Payments — Close Eye',
   '/admin/reports': 'Visit Reports — Close Eye',
   '/admin/live-map': 'Live Map — Close Eye',
+  '/admin/survey-leads': 'Survey Leads — Close Eye',
+  '/survey': 'Survey — Close Eye',
 }
 
 const PAGE_DESCRIPTIONS: Record<string, string> = {
@@ -134,7 +139,7 @@ function SEOManager() {
     }
     canonicalTag.setAttribute('href', canonicalUrl)
 
-    const isPrivate = pathname.startsWith('/dashboard') || pathname.startsWith('/companion') || pathname.startsWith('/admin')
+    const isPrivate = pathname.startsWith('/dashboard') || pathname.startsWith('/companion') || pathname.startsWith('/admin') || pathname === '/survey'
     let robotsTag = document.querySelector('meta[name="robots"]')
     if (isPrivate) {
       if (!robotsTag) {
@@ -203,6 +208,7 @@ export default function App() {
             <Route path="/terms" element={<PublicLayout><TermsPage /></PublicLayout>} />
             <Route path="/refund-policy" element={<PublicLayout><RefundPage /></PublicLayout>} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/survey" element={<SurveyPage />} />
             <Route path="/dashboard" element={<ProtectedRoute role="family"><DashboardLayout /></ProtectedRoute>}>
               <Route index element={<DashboardHome />} />
               <Route path="bookings" element={<DashboardBookings />} />
@@ -230,6 +236,7 @@ export default function App() {
               <Route path="payments" element={<AdminPayments />} />
               <Route path="reports" element={<AdminReports />} />
               <Route path="live-map" element={<AdminLiveMap />} />
+              <Route path="survey-leads" element={<AdminSurveyLeads />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
