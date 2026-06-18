@@ -1,45 +1,52 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from '@/lib/auth-context'
 import { ToastProvider } from '@/components/ui/Toast'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { IOSInstallBanner } from '@/components/IOSInstallBanner'
+
+// Public pages — eagerly bundled (landing page must render without waiting for chunks)
 import { HomePage } from '@/pages/Home'
 import { ServicesPage } from '@/pages/Services'
 import { AboutPage } from '@/pages/About'
 import { FAQPage } from '@/pages/FAQ'
 import { ContactPage } from '@/pages/Contact'
 import { WaitlistPage } from '@/pages/Waitlist'
-import { AuthPage } from '@/pages/Auth'
 import { PrivacyPage } from '@/pages/Privacy'
 import { TermsPage } from '@/pages/Terms'
 import { RefundPage } from '@/pages/Refund'
-import { DashboardLayout } from '@/pages/dashboard/Layout'
-import { DashboardHome } from '@/pages/dashboard/Home'
-import { DashboardBookings } from '@/pages/dashboard/Bookings'
-import { DashboardLovedOnes } from '@/pages/dashboard/LovedOnes'
-import { DashboardReports } from '@/pages/dashboard/Reports'
-import { DashboardNotifications } from '@/pages/dashboard/Notifications'
-import { DashboardNewBooking } from '@/pages/dashboard/NewBooking'
-import { DashboardMembers } from '@/pages/dashboard/Members'
-import { DashboardSubscription } from '@/pages/dashboard/Subscription'
-import { BookingConfirmationPage } from '@/pages/dashboard/BookingConfirmation'
-import { CompanionLayout } from '@/pages/companion/Layout'
-import { CompanionHome } from '@/pages/companion/Home'
-import { CompanionVisit } from '@/pages/companion/Visit'
-import { CompanionSchedule } from '@/pages/companion/Schedule'
-import { CompanionEarnings } from '@/pages/companion/Earnings'
-import { CompanionProfile } from '@/pages/companion/Profile'
-import { AdminLayout } from '@/pages/admin/Layout'
-import { AdminHome } from '@/pages/admin/Home'
-import { AdminBookings } from '@/pages/admin/Bookings'
-import { AdminCompanions } from '@/pages/admin/Companions'
-import { AdminFamilies } from '@/pages/admin/Families'
-import { AdminPayments } from '@/pages/admin/Payments'
-import { AdminReports } from '@/pages/admin/Reports'
-import { AdminLiveMap } from '@/pages/admin/LiveMap'
+
+// Auth + app sections — lazy-loaded to keep initial bundle lean
+const AuthPage = lazy(() => import('@/pages/Auth').then(m => ({ default: m.AuthPage })))
+
+const DashboardLayout = lazy(() => import('@/pages/dashboard/Layout').then(m => ({ default: m.DashboardLayout })))
+const DashboardHome = lazy(() => import('@/pages/dashboard/Home').then(m => ({ default: m.DashboardHome })))
+const DashboardBookings = lazy(() => import('@/pages/dashboard/Bookings').then(m => ({ default: m.DashboardBookings })))
+const DashboardLovedOnes = lazy(() => import('@/pages/dashboard/LovedOnes').then(m => ({ default: m.DashboardLovedOnes })))
+const DashboardReports = lazy(() => import('@/pages/dashboard/Reports').then(m => ({ default: m.DashboardReports })))
+const DashboardNotifications = lazy(() => import('@/pages/dashboard/Notifications').then(m => ({ default: m.DashboardNotifications })))
+const DashboardNewBooking = lazy(() => import('@/pages/dashboard/NewBooking').then(m => ({ default: m.DashboardNewBooking })))
+const DashboardMembers = lazy(() => import('@/pages/dashboard/Members').then(m => ({ default: m.DashboardMembers })))
+const DashboardSubscription = lazy(() => import('@/pages/dashboard/Subscription').then(m => ({ default: m.DashboardSubscription })))
+const BookingConfirmationPage = lazy(() => import('@/pages/dashboard/BookingConfirmation').then(m => ({ default: m.BookingConfirmationPage })))
+
+const CompanionLayout = lazy(() => import('@/pages/companion/Layout').then(m => ({ default: m.CompanionLayout })))
+const CompanionHome = lazy(() => import('@/pages/companion/Home').then(m => ({ default: m.CompanionHome })))
+const CompanionVisit = lazy(() => import('@/pages/companion/Visit').then(m => ({ default: m.CompanionVisit })))
+const CompanionSchedule = lazy(() => import('@/pages/companion/Schedule').then(m => ({ default: m.CompanionSchedule })))
+const CompanionEarnings = lazy(() => import('@/pages/companion/Earnings').then(m => ({ default: m.CompanionEarnings })))
+const CompanionProfile = lazy(() => import('@/pages/companion/Profile').then(m => ({ default: m.CompanionProfile })))
+
+const AdminLayout = lazy(() => import('@/pages/admin/Layout').then(m => ({ default: m.AdminLayout })))
+const AdminHome = lazy(() => import('@/pages/admin/Home').then(m => ({ default: m.AdminHome })))
+const AdminBookings = lazy(() => import('@/pages/admin/Bookings').then(m => ({ default: m.AdminBookings })))
+const AdminCompanions = lazy(() => import('@/pages/admin/Companions').then(m => ({ default: m.AdminCompanions })))
+const AdminFamilies = lazy(() => import('@/pages/admin/Families').then(m => ({ default: m.AdminFamilies })))
+const AdminPayments = lazy(() => import('@/pages/admin/Payments').then(m => ({ default: m.AdminPayments })))
+const AdminReports = lazy(() => import('@/pages/admin/Reports').then(m => ({ default: m.AdminReports })))
+const AdminLiveMap = lazy(() => import('@/pages/admin/LiveMap').then(m => ({ default: m.AdminLiveMap })))
 
 const PAGE_TITLES: Record<string, string> = {
   '/': "Close Eye — When you can't be there, Close Eye can.",
@@ -88,7 +95,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/dashboard': 'Manage your bookings, loved ones, visit reports, and notifications.',
   '/dashboard/bookings': 'View and manage your Close Eye companion visit bookings.',
   '/dashboard/loved-ones': 'Manage the profiles of the family members Close Eye visits.',
-  '/dashboard/reports': 'Read visit reports and photos from your loved one’s companion visits.',
+  '/dashboard/reports': "Read visit reports and photos from your loved one's companion visits.",
   '/dashboard/notifications': 'Your Close Eye notifications and alerts.',
   '/dashboard/new-booking': 'Book a companion visit, hospital companion, or care plan for your loved one in India.',
   '/dashboard/members': 'Add family members who receive visit notifications and SOS alerts.',
@@ -145,7 +152,6 @@ function SEOManager() {
 
 function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: string }) {
   const { user, profile, loading } = useAuth()
-  // Show spinner while auth is loading, or while user is known but profile hasn't arrived yet
   if (loading || (user && !profile)) return (
     <div className="min-h-screen flex items-center justify-center bg-green-50">
       <div className="text-center">
@@ -170,6 +176,14 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
   )
 }
 
+function RouteSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-green-50">
+      <div className="w-10 h-10 border-2 border-green-800 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -177,47 +191,49 @@ export default function App() {
       <BrowserRouter>
         <ScrollToTop />
         <SEOManager />
-        <Routes>
-          <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
-          <Route path="/services" element={<PublicLayout><ServicesPage /></PublicLayout>} />
-          <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
-          <Route path="/faq" element={<PublicLayout><FAQPage /></PublicLayout>} />
-          <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
-          <Route path="/waitlist" element={<PublicLayout><WaitlistPage /></PublicLayout>} />
-          <Route path="/privacy-policy" element={<PublicLayout><PrivacyPage /></PublicLayout>} />
-          <Route path="/terms" element={<PublicLayout><TermsPage /></PublicLayout>} />
-          <Route path="/refund-policy" element={<PublicLayout><RefundPage /></PublicLayout>} />
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/dashboard" element={<ProtectedRoute role="family"><DashboardLayout /></ProtectedRoute>}>
-            <Route index element={<DashboardHome />} />
-            <Route path="bookings" element={<DashboardBookings />} />
-            <Route path="loved-ones" element={<DashboardLovedOnes />} />
-            <Route path="reports" element={<DashboardReports />} />
-            <Route path="notifications" element={<DashboardNotifications />} />
-            <Route path="new-booking" element={<DashboardNewBooking />} />
-            <Route path="members" element={<DashboardMembers />} />
-            <Route path="subscription" element={<DashboardSubscription />} />
-            <Route path="booking-confirmation" element={<BookingConfirmationPage />} />
-          </Route>
-          <Route path="/companion" element={<ProtectedRoute role="companion"><CompanionLayout /></ProtectedRoute>}>
-            <Route index element={<CompanionHome />} />
-            <Route path="visit/:bookingId" element={<CompanionVisit />} />
-            <Route path="schedule" element={<CompanionSchedule />} />
-            <Route path="earnings" element={<CompanionEarnings />} />
-            <Route path="profile" element={<CompanionProfile />} />
-            <Route path="dashboard" element={<Navigate to="/companion" replace />} />
-          </Route>
-          <Route path="/admin" element={<ProtectedRoute role="admin"><AdminLayout /></ProtectedRoute>}>
-            <Route index element={<AdminHome />} />
-            <Route path="bookings" element={<AdminBookings />} />
-            <Route path="companions" element={<AdminCompanions />} />
-            <Route path="families" element={<AdminFamilies />} />
-            <Route path="payments" element={<AdminPayments />} />
-            <Route path="reports" element={<AdminReports />} />
-            <Route path="live-map" element={<AdminLiveMap />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={<RouteSpinner />}>
+          <Routes>
+            <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
+            <Route path="/services" element={<PublicLayout><ServicesPage /></PublicLayout>} />
+            <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
+            <Route path="/faq" element={<PublicLayout><FAQPage /></PublicLayout>} />
+            <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
+            <Route path="/waitlist" element={<PublicLayout><WaitlistPage /></PublicLayout>} />
+            <Route path="/privacy-policy" element={<PublicLayout><PrivacyPage /></PublicLayout>} />
+            <Route path="/terms" element={<PublicLayout><TermsPage /></PublicLayout>} />
+            <Route path="/refund-policy" element={<PublicLayout><RefundPage /></PublicLayout>} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/dashboard" element={<ProtectedRoute role="family"><DashboardLayout /></ProtectedRoute>}>
+              <Route index element={<DashboardHome />} />
+              <Route path="bookings" element={<DashboardBookings />} />
+              <Route path="loved-ones" element={<DashboardLovedOnes />} />
+              <Route path="reports" element={<DashboardReports />} />
+              <Route path="notifications" element={<DashboardNotifications />} />
+              <Route path="new-booking" element={<DashboardNewBooking />} />
+              <Route path="members" element={<DashboardMembers />} />
+              <Route path="subscription" element={<DashboardSubscription />} />
+              <Route path="booking-confirmation" element={<BookingConfirmationPage />} />
+            </Route>
+            <Route path="/companion" element={<ProtectedRoute role="companion"><CompanionLayout /></ProtectedRoute>}>
+              <Route index element={<CompanionHome />} />
+              <Route path="visit/:bookingId" element={<CompanionVisit />} />
+              <Route path="schedule" element={<CompanionSchedule />} />
+              <Route path="earnings" element={<CompanionEarnings />} />
+              <Route path="profile" element={<CompanionProfile />} />
+              <Route path="dashboard" element={<Navigate to="/companion" replace />} />
+            </Route>
+            <Route path="/admin" element={<ProtectedRoute role="admin"><AdminLayout /></ProtectedRoute>}>
+              <Route index element={<AdminHome />} />
+              <Route path="bookings" element={<AdminBookings />} />
+              <Route path="companions" element={<AdminCompanions />} />
+              <Route path="families" element={<AdminFamilies />} />
+              <Route path="payments" element={<AdminPayments />} />
+              <Route path="reports" element={<AdminReports />} />
+              <Route path="live-map" element={<AdminLiveMap />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
       </ToastProvider>
     </AuthProvider>

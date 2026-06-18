@@ -300,7 +300,7 @@ export function HomePage() {
                 {/* Icon circle */}
                 <div className="w-20 h-20 rounded-full bg-white shadow-card border border-green-100 flex flex-col items-center justify-center mb-5 group-hover:shadow-card-hover">
                   <s.icon size={26} className="text-green-700 mb-0.5" />
-                  <span className="text-[10px] font-bold text-green-400 leading-none">STEP {s.n}</span>
+                  <span className="text-[10px] font-bold text-green-700 leading-none">STEP {s.n}</span>
                 </div>
                 <h3 className="font-semibold text-green-900 mb-2 text-sm sm:text-base leading-snug">{s.title}</h3>
                 <p className="text-sm text-gray-500 leading-relaxed">{s.desc}</p>
@@ -361,7 +361,7 @@ export function HomePage() {
           ))}
         </div>
 
-        <p className="mt-8 text-center text-xs text-gray-400 tracking-wide">
+        <p className="mt-8 text-center text-xs text-gray-500 tracking-wide">
           Companions are re-verified every 6 months and can be removed by a family at any time.
         </p>
       </section>
@@ -396,7 +396,7 @@ export function HomePage() {
             ].map(([v, l]) => (
               <div key={l} className="py-5 sm:py-7 text-center bg-white">
                 <strong className="block font-serif text-2xl sm:text-3xl text-green-800">{v}</strong>
-                <span className="text-gray-400 text-xs">{l}</span>
+                <span className="text-gray-500 text-xs">{l}</span>
               </div>
             ))}
           </div>
@@ -441,7 +441,7 @@ export function HomePage() {
                       </div>
                       <div>
                         <p className="font-semibold text-green-900 text-sm">{t.name}</p>
-                        <p className="text-xs text-gray-400">{t.location}</p>
+                        <p className="text-xs text-gray-500">{t.location}</p>
                       </div>
                       <span className="ml-auto text-[10px] font-semibold uppercase tracking-widest text-green-500 bg-green-100 px-2 py-0.5 rounded-full">Early Adopter Feedback</span>
                     </div>
@@ -491,7 +491,7 @@ export function HomePage() {
 
         <div className="max-w-sm mx-auto bg-white rounded-2xl border-2 border-green-800 p-6 sm:p-7">
           <h3 className="font-serif text-xl text-green-900 mb-1">{PLAN.name}</h3>
-          <p className="text-xs text-gray-400 mb-4">{PLAN.tagline}</p>
+          <p className="text-xs text-gray-500 mb-4">{PLAN.tagline}</p>
           <p className="font-serif text-3xl text-green-900 mb-5">{PLAN.priceLabel}</p>
           <ul className="space-y-2 mb-6">
             {PLAN.features.slice(0, 4).map(f => (
@@ -508,7 +508,7 @@ export function HomePage() {
           </Link>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
+        <p className="text-center text-xs text-gray-500 mt-6">
           Plus on-demand services from ₹{CHEAPEST_ON_DEMAND_PRICE.toLocaleString('en-IN')} — no subscription needed.
         </p>
       </section>

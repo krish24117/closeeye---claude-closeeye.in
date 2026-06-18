@@ -55,7 +55,7 @@ export function Footer() {
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Company</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/60 mb-4">Company</p>
             <ul className="space-y-2.5 text-sm">
               <li><Link to="/" className="hover:text-white transition-colors">Home</Link></li>
               <li><Link to="/#how-it-works" className="hover:text-white transition-colors">How It Works</Link></li>
@@ -67,7 +67,7 @@ export function Footer() {
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Legal</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/60 mb-4">Legal</p>
             <ul className="space-y-2.5 text-sm">
               <li><Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
@@ -76,7 +76,7 @@ export function Footer() {
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Get started</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/60 mb-4">Get started</p>
             <ul className="space-y-2.5 text-sm">
               <li><Link to="/waitlist" className="hover:text-white transition-colors">Join Waitlist</Link></li>
               <li><Link to="/auth" className="hover:text-white transition-colors">Sign in</Link></li>
