@@ -5,6 +5,7 @@ import { ToastProvider } from '@/components/ui/Toast'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
+import { IOSInstallBanner } from '@/components/IOSInstallBanner'
 import { HomePage } from '@/pages/Home'
 import { ServicesPage } from '@/pages/Services'
 import { AboutPage } from '@/pages/About'
@@ -161,6 +162,7 @@ function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: 
 function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
+      <IOSInstallBanner />
       <Navbar />
       {children}
       <Footer />

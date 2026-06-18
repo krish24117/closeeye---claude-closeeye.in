@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import {
   Shield, Camera, Clock, RefreshCw, AlertCircle, Banknote, ChevronRight,
   UserPlus, CalendarCheck, FileText, BadgeCheck, Users, Star,
-  ChevronLeft,
+  ChevronLeft, Plus, Minus, Mail, Loader2,
 } from 'lucide-react'
+import clsx from 'clsx'
 import { supabase } from '@/lib/supabase'
 import { PLANS } from '@/lib/subscription-plans'
 import { ON_DEMAND_SERVICES } from '@/lib/one-time-services'
@@ -86,18 +87,56 @@ const VERIFICATION = [
 
 const TESTIMONIALS = [
   {
-    initials: 'AR',
-    name: 'Ananya R.',
-    location: 'Toronto, Canada',
+    initials: 'PS',
+    name: 'Priya S.',
+    location: 'Houston, TX',
     stars: 5,
-    text: "My mother is alone in Hyderabad and I hadn't slept properly in months. Close Eye sent a companion, and within 2 hours I had photos and a full report. I actually cried reading it — in the best way.",
+    text: "My mother lives alone in Hyderabad, and I used to call her three times a day just to feel okay. With Close Eye, I get a real report with photos after every visit. It's the closest I've felt to actually being there.",
   },
   {
     initials: 'RM',
-    name: 'Rahul M.',
+    name: 'Rajesh M.',
+    location: 'Dubai, UAE',
+    stars: 5,
+    text: "Coordinating care for my father in Bengaluru from Dubai felt impossible until Close Eye. The companion checks his medications and sends a quick WhatsApp update after every visit. It's given my whole family real peace of mind.",
+  },
+  {
+    initials: 'AK',
+    name: 'Anita K.',
     location: 'London, UK',
     stars: 5,
-    text: "The companion remembered my dad's name, his favourite tea, and followed up the next day on her own. This isn't a service — it's a relationship. Exactly what we needed from 7,000 km away.",
+    text: "My dad in Chennai is stubborn about asking for help, but the companion built a genuine rapport with him within two visits. I finally feel like someone is actually keeping an eye on him, not just checking a box.",
+  },
+]
+
+const HOME_FAQS = [
+  {
+    q: 'How are companions verified?',
+    a: 'Every companion completes a 5-layer verification — police clearance, identity verification, address confirmation, employment history, and two personal references — before their first visit.',
+  },
+  {
+    q: 'What cities do you currently serve?',
+    a: 'We currently serve families in Hyderabad and are actively expanding to Bengaluru, Chennai, Mumbai, and Delhi. Join the waitlist to be notified the moment we launch near your loved one.',
+  },
+  {
+    q: 'How does a visit work step by step?',
+    a: 'You tell us about your parents, we match a verified companion, and you receive a detailed visit report with photos on your dashboard and WhatsApp — usually within an hour.',
+  },
+  {
+    q: 'Can I speak with the companion before the first visit?',
+    a: 'Yes. On monthly plans, we introduce you to your dedicated companion over WhatsApp before their first visit. For one-time visits, you can request this introduction too.',
+  },
+  {
+    q: "What if I'm not satisfied with a visit?",
+    a: "Let us know within 24 hours and we'll address it directly — including a free follow-up visit or a refund, depending on the situation.",
+  },
+  {
+    q: 'How do I pay from abroad?',
+    a: "All payments are processed securely via Razorpay (UPI, cards, net banking). International card support is rolling out — WhatsApp us if you're paying from outside India.",
+  },
+  {
+    q: "Is my parents' information kept private?",
+    a: "Visit reports and your loved one's information are shared only with the family contacts you register — never with anyone else. Companions sign a strict confidentiality agreement.",
   },
 ]
 
@@ -109,6 +148,26 @@ export function HomePage() {
   const [waitlistCount, setWaitlistCount] = useState(50)
   const [tIdx, setTIdx] = useState(0)
   const trackRef = useRef<HTMLDivElement>(null)
+  const [faqOpen, setFaqOpen] = useState<number | null>(0)
+
+  const [checklistEmail, setChecklistEmail] = useState('')
+  const [checklistStatus, setChecklistStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [checklistError, setChecklistError] = useState('')
+
+  async function handleChecklistSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setChecklistStatus('submitting')
+    setChecklistError('')
+    const { error } = await supabase
+      .from('waitlist_emails')
+      .insert({ email: checklistEmail.trim().toLowerCase(), source: 'nri_checklist' })
+    if (error && error.code !== '23505') {
+      setChecklistStatus('error')
+      setChecklistError('Something went wrong. Please try again.')
+      return
+    }
+    setChecklistStatus('success')
+  }
 
   useEffect(() => {
     supabase
@@ -223,7 +282,7 @@ export function HomePage() {
       </section>
 
       {/* ── 2. How It Works ──────────────────────────────────────── */}
-      <section className="bg-green-50 px-4 sm:px-6 py-16 sm:py-20">
+      <section id="how-it-works" className="bg-green-50 px-4 sm:px-6 py-16 sm:py-20 scroll-mt-16">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
             <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">How it works</p>
@@ -384,7 +443,7 @@ export function HomePage() {
                         <p className="font-semibold text-green-900 text-sm">{t.name}</p>
                         <p className="text-xs text-gray-400">{t.location}</p>
                       </div>
-                      <span className="ml-auto text-[10px] font-semibold uppercase tracking-widest text-green-500 bg-green-100 px-2 py-0.5 rounded-full">Beta user</span>
+                      <span className="ml-auto text-[10px] font-semibold uppercase tracking-widest text-green-500 bg-green-100 px-2 py-0.5 rounded-full">Early Adopter Feedback</span>
                     </div>
                   </div>
                 </div>
@@ -445,13 +504,103 @@ export function HomePage() {
             to="/services"
             className="block text-center bg-green-800 hover:bg-green-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
           >
-            See full pricing
+            View all services →
           </Link>
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">
           Plus on-demand services from ₹{CHEAPEST_ON_DEMAND_PRICE.toLocaleString('en-IN')} — no subscription needed.
         </p>
+      </section>
+
+      {/* ── FAQ ───────────────────────────────────────────────────── */}
+      <section className="px-4 sm:px-6 py-16 sm:py-20 max-w-2xl mx-auto">
+        <div className="text-center mb-10">
+          <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">Questions</p>
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900">
+            Things families ask us first.
+          </h2>
+        </div>
+        <div className="divide-y divide-gray-100">
+          {HOME_FAQS.map((f, i) => (
+            <div key={f.q} className="py-1">
+              <button
+                onClick={() => setFaqOpen(faqOpen === i ? null : i)}
+                aria-expanded={faqOpen === i}
+                aria-controls={`home-faq-a-${i}`}
+                className="w-full min-h-[44px] flex justify-between items-center py-4 text-left gap-4 group"
+              >
+                <span className={clsx(
+                  'font-semibold text-base transition-colors',
+                  faqOpen === i ? 'text-green-700' : 'text-green-900 group-hover:text-green-700'
+                )}>
+                  {f.q}
+                </span>
+                <span className={clsx(
+                  'flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors',
+                  faqOpen === i ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400 group-hover:bg-green-50 group-hover:text-green-600'
+                )}>
+                  {faqOpen === i ? <Minus size={14} /> : <Plus size={14} />}
+                </span>
+              </button>
+              <div
+                id={`home-faq-a-${i}`}
+                className={clsx(
+                  'overflow-hidden transition-all duration-300 ease-in-out',
+                  faqOpen === i ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                )}
+              >
+                <p className="pb-4 text-base text-gray-500 leading-relaxed">{f.a}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-center mt-8">
+          <Link to="/faq" className="text-sm font-semibold text-green-700 hover:text-green-900 underline underline-offset-2">
+            See all FAQs →
+          </Link>
+        </p>
+      </section>
+
+      {/* ── Email capture ────────────────────────────────────────── */}
+      <section className="bg-green-50 px-4 sm:px-6 py-16 sm:py-20">
+        <div className="max-w-lg mx-auto text-center">
+          <Mail size={28} className="text-green-700 mx-auto mb-4" />
+          <h2 className="font-serif text-2xl sm:text-3xl text-green-900 mb-3">
+            Get the Free NRI Family Care Checklist
+          </h2>
+          <p className="text-gray-500 text-sm sm:text-base mb-7">
+            10 signs your elderly parent may need extra support — and what to do about it.
+          </p>
+
+          {checklistStatus === 'success' ? (
+            <p className="bg-white border border-green-200 rounded-xl p-5 text-green-800 text-sm font-medium">
+              You're in! Check your inbox for the checklist shortly.
+            </p>
+          ) : (
+            <form onSubmit={handleChecklistSubmit} className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="email"
+                required
+                value={checklistEmail}
+                onChange={e => setChecklistEmail(e.target.value)}
+                placeholder="you@email.com"
+                className="flex-1 min-h-[44px] border-2 border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:border-green-600 transition-colors bg-white"
+              />
+              <button
+                type="submit"
+                disabled={checklistStatus === 'submitting'}
+                className="min-h-[44px] bg-green-800 hover:bg-green-700 disabled:opacity-60 text-white font-semibold px-6 rounded-xl transition-colors text-base whitespace-nowrap flex items-center justify-center gap-2"
+              >
+                {checklistStatus === 'submitting' ? <Loader2 size={15} className="animate-spin" /> : null}
+                Send Me the Checklist
+              </button>
+            </form>
+          )}
+          {checklistStatus === 'error' && (
+            <p className="text-red-600 text-xs mt-3">{checklistError}</p>
+          )}
+        </div>
       </section>
 
       {/* ── What every visit looks like ────────────────────────────── */}
