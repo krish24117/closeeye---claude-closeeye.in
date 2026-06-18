@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Heart, Building2, Zap, Stethoscope, ShoppingBag, Wrench, AlertTriangle, CheckCircle, Loader2, ShieldCheck } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Heart, Building2, Zap, Stethoscope, ShoppingBag, Wrench, AlertTriangle, CheckCircle, Loader2, ShieldCheck, Plus, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { ON_DEMAND_SERVICES } from '@/lib/one-time-services'
 import { loadRazorpayScript } from '@/lib/razorpay'
+
+const RELATIONSHIPS = ['Mother', 'Father', 'Grandmother', 'Grandfather', 'Other']
 
 const SERVICE_ICONS: Record<string, typeof Heart> = {
   home_visit: Heart,
@@ -44,6 +46,14 @@ export function DashboardNewBooking() {
   const [lovedOnes, setLovedOnes] = useState<{ id: string; full_name: string; city: string | null }[]>([])
   const [loadingLO, setLoadingLO] = useState(true)
 
+  const [showAddMember, setShowAddMember] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newCity, setNewCity] = useState('')
+  const [newRelationship, setNewRelationship] = useState('')
+  const [newPhone, setNewPhone] = useState('')
+  const [savingMember, setSavingMember] = useState(false)
+  const [addMemberError, setAddMemberError] = useState<string | null>(null)
+
   const preselectedService = searchParams.get('service')
   const [serviceType, setServiceType] = useState(
     preselectedService && SERVICES.some(s => s.type === preselectedService) ? preselectedService : ''
@@ -68,6 +78,43 @@ export function DashboardNewBooking() {
   }, [])
 
   const selectedService = SERVICES.find(s => s.type === serviceType)
+
+  async function handleAddMember() {
+    if (!user) return
+    if (!newName.trim()) { setAddMemberError('Full name is required.'); return }
+    if (!newCity.trim()) { setAddMemberError('City is required.'); return }
+
+    setSavingMember(true)
+    setAddMemberError(null)
+    try {
+      const { data, error: insertErr } = await supabase
+        .from('loved_ones')
+        .insert({
+          full_name: newName.trim(),
+          city: newCity.trim(),
+          relationship: newRelationship || null,
+          phone: newPhone.trim() || null,
+          address: '',
+          family_user_id: user.id,
+        })
+        .select('id,full_name,city')
+        .single()
+
+      if (insertErr || !data) throw insertErr
+
+      setLovedOnes(prev => [...prev, data].sort((a, b) => a.full_name.localeCompare(b.full_name)))
+      setLovedOneId(data.id)
+      setShowAddMember(false)
+      setNewName('')
+      setNewCity('')
+      setNewRelationship('')
+      setNewPhone('')
+    } catch {
+      setAddMemberError('Could not add family member — please try again.')
+    } finally {
+      setSavingMember(false)
+    }
+  }
 
   async function handlePay(e: React.FormEvent) {
     e.preventDefault()
@@ -164,15 +211,6 @@ export function DashboardNewBooking() {
         <div className="flex items-center gap-2 text-sm text-gray-400 py-8">
           <Loader2 size={16} className="animate-spin" /> Loading…
         </div>
-      ) : lovedOnes.length === 0 ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
-          <p className="font-semibold text-amber-900 mb-2">Add a loved one first</p>
-          <p className="text-sm text-amber-700 mb-4">Add your parent or family member's profile before booking.</p>
-          <Link to="/dashboard/loved-ones"
-            className="inline-block bg-amber-600 text-white font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-amber-700 transition-colors">
-            Add loved one
-          </Link>
-        </div>
       ) : (
         <form onSubmit={handlePay} className="space-y-5">
 
@@ -239,6 +277,91 @@ export function DashboardNewBooking() {
                   {lovedOneId === lo.id && <CheckCircle size={16} className="text-green-600 flex-shrink-0" />}
                 </button>
               ))}
+
+              {!showAddMember && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddMember(true)}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-gray-200 px-4 py-3 text-sm font-medium text-gray-500 hover:border-green-300 hover:text-green-700 hover:bg-green-50/50 transition-colors"
+                >
+                  <Plus size={15} /> Add a new family member
+                </button>
+              )}
+
+              {showAddMember && (
+                <div className="rounded-xl border-2 border-green-200 bg-green-50/50 p-4 space-y-3 animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-green-900">New family member</p>
+                    <button
+                      type="button"
+                      onClick={() => { setShowAddMember(false); setAddMemberError(null) }}
+                      aria-label="Cancel"
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-white transition-colors"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+
+                  {addMemberError && (
+                    <p className="text-red-600 text-xs">{addMemberError}</p>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1.5 block">Full name *</label>
+                      <input
+                        type="text"
+                        value={newName}
+                        onChange={e => setNewName(e.target.value)}
+                        placeholder="e.g. Sunita Reddy"
+                        className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1.5 block">City *</label>
+                      <input
+                        type="text"
+                        value={newCity}
+                        onChange={e => setNewCity(e.target.value)}
+                        placeholder="Hyderabad"
+                        className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1.5 block">Relationship</label>
+                      <select
+                        value={newRelationship}
+                        onChange={e => setNewRelationship(e.target.value)}
+                        className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 bg-white"
+                      >
+                        <option value="">— Select —</option>
+                        {RELATIONSHIPS.map(r => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1.5 block">Phone number <span className="text-gray-400">(optional)</span></label>
+                      <input
+                        type="tel"
+                        value={newPhone}
+                        onChange={e => setNewPhone(e.target.value)}
+                        placeholder="+91 98765 43210"
+                        className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAddMember}
+                    disabled={savingMember}
+                    className="w-full bg-green-800 hover:bg-green-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                  >
+                    {savingMember ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : 'Save & select'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
