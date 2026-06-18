@@ -13,13 +13,13 @@ export const STATUS_COLORS: Record<string, string> = {
 export const SERVICE_NAMES: Record<string, string> = {
   // Current on-demand services
   home_visit: 'Home Visit',
-  doctor_visit_assistance: 'Doctor Visit Assistance',
   hospital_assistance_half_day: 'Hospital Assistance (Half Day)',
   hospital_assistance_full_day: 'Hospital Assistance (Full Day)',
   emergency_support_visit: 'Emergency Support Visit',
   grocery_medicine_assistance: 'Grocery or Medicine Assistance',
   home_maintenance_coordination: 'Home Maintenance Coordination',
   // Legacy service types — kept so historical bookings still display a label
+  doctor_visit_assistance: 'Doctor Visit Assistance',
   companion_visit_single: 'Companion Visit',
   hospital_companion_single: 'Hospital Companion',
   emergency_visit: 'Emergency Visit',

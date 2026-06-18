@@ -132,7 +132,7 @@ export function DashboardMembers() {
                     </div>
                     <button
                       onClick={() => removeMember(m.id)}
-                      className="p-2 text-gray-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+                      className="w-10 h-10 flex items-center justify-center text-gray-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0"
                       title="Remove"
                     >
                       <Trash2 size={15} />

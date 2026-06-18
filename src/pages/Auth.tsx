@@ -47,6 +47,9 @@ export function AuthPage() {
   const [signupConfirmSent, setSignupConfirmSent] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showLoginPassword, setShowLoginPassword] = useState(false)
+  const [showUpdatePassword, setShowUpdatePassword] = useState(false)
+  const [showUpdateConfirmPassword, setShowUpdateConfirmPassword] = useState(false)
   const navigate = useNavigate()
   const { user, profile, loading } = useAuth()
 
@@ -97,6 +100,9 @@ export function AuthPage() {
   const passwordsMismatch = !!signupConfirmPassword && signupPassword !== signupConfirmPassword
   const resetForm = useForm<ResetData>({ resolver: zodResolver(resetSchema) })
   const updatePasswordForm = useForm<UpdatePasswordData>({ resolver: zodResolver(updatePasswordSchema) })
+  const updatePassword = updatePasswordForm.watch('password')
+  const updateConfirmPassword = updatePasswordForm.watch('confirm_password')
+  const updatePasswordsMismatch = !!updateConfirmPassword && updatePassword !== updateConfirmPassword
 
   async function handleLogin(data: LoginData) {
     setError('')
@@ -178,16 +184,32 @@ export function AuthPage() {
               <form onSubmit={updatePasswordForm.handleSubmit(handleUpdatePassword)} className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-green-900 mb-1.5">New password</label>
-                  <input {...updatePasswordForm.register('password')} type="password" placeholder="••••••••" className={InputClass} />
+                  <div className="relative">
+                    <input {...updatePasswordForm.register('password')} type={showUpdatePassword ? 'text' : 'password'} placeholder="••••••••" className={`${InputClass} pr-11`} />
+                    <button type="button" onClick={() => setShowUpdatePassword(v => !v)} aria-label={showUpdatePassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-0 top-0 h-full w-11 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+                      {showUpdatePassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                   {updatePasswordForm.formState.errors.password && <p className="text-red-500 text-xs mt-1">{updatePasswordForm.formState.errors.password.message}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-green-900 mb-1.5">Confirm new password</label>
-                  <input {...updatePasswordForm.register('confirm_password')} type="password" placeholder="••••••••" className={InputClass} />
-                  {updatePasswordForm.formState.errors.confirm_password && <p className="text-red-500 text-xs mt-1">{updatePasswordForm.formState.errors.confirm_password.message}</p>}
+                  <div className="relative">
+                    <input {...updatePasswordForm.register('confirm_password')} type={showUpdateConfirmPassword ? 'text' : 'password'} placeholder="••••••••" className={`${InputClass} pr-11`} />
+                    <button type="button" onClick={() => setShowUpdateConfirmPassword(v => !v)} aria-label={showUpdateConfirmPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-0 top-0 h-full w-11 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+                      {showUpdateConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {updatePasswordsMismatch ? (
+                    <p className="text-red-500 text-xs mt-1">Passwords do not match</p>
+                  ) : updatePasswordForm.formState.errors.confirm_password && (
+                    <p className="text-red-500 text-xs mt-1">{updatePasswordForm.formState.errors.confirm_password.message}</p>
+                  )}
                 </div>
                 {error && <p className="text-red-500 text-sm p-3 bg-red-50 rounded-xl">{error}</p>}
-                <button type="submit" disabled={updatePasswordForm.formState.isSubmitting}
+                <button type="submit" disabled={updatePasswordForm.formState.isSubmitting || updatePasswordsMismatch}
                   className="w-full bg-green-800 text-white font-semibold py-3.5 rounded-xl hover:bg-green-700 transition-colors disabled:bg-gray-300 text-sm">
                   {updatePasswordForm.formState.isSubmitting ? 'Updating...' : 'Update password'}
                 </button>
@@ -246,7 +268,13 @@ export function AuthPage() {
                       Forgot password?
                     </button>
                   </div>
-                  <input {...loginForm.register('password')} type="password" placeholder="••••••••" className={InputClass} />
+                  <div className="relative">
+                    <input {...loginForm.register('password')} type={showLoginPassword ? 'text' : 'password'} placeholder="••••••••" className={`${InputClass} pr-11`} />
+                    <button type="button" onClick={() => setShowLoginPassword(v => !v)} aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-0 top-0 h-full w-11 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+                      {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                   {loginForm.formState.errors.password && <p className="text-red-500 text-xs mt-1">{loginForm.formState.errors.password.message}</p>}
                 </div>
                 {error && <p className="text-red-500 text-sm p-3 bg-red-50 rounded-xl">{error}</p>}

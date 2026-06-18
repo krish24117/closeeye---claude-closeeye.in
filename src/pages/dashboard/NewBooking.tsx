@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Heart, Building2, Zap, Stethoscope, ShoppingBag, Wrench, AlertTriangle, CheckCircle, Loader2, ShieldCheck, Plus, X } from 'lucide-react'
+import { Heart, Building2, Zap, ShoppingBag, Wrench, AlertTriangle, CheckCircle, Loader2, ShieldCheck, Plus, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { ON_DEMAND_SERVICES } from '@/lib/one-time-services'
@@ -10,7 +10,6 @@ const RELATIONSHIPS = ['Mother', 'Father', 'Grandmother', 'Grandfather', 'Other'
 
 const SERVICE_ICONS: Record<string, typeof Heart> = {
   home_visit: Heart,
-  doctor_visit_assistance: Stethoscope,
   hospital_assistance_half_day: Building2,
   hospital_assistance_full_day: Building2,
   emergency_support_visit: Zap,

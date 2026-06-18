@@ -15,13 +15,6 @@ export const ON_DEMAND_SERVICES: OnDemandService[] = [
     desc: 'In-person wellbeing check, home safety observation, and a family update.',
   },
   {
-    type: 'doctor_visit_assistance',
-    name: 'Doctor Visit Assistance',
-    price: '₹1,500',
-    paise: 150000,
-    desc: 'Appointment coordination, accompaniment, and a family update.',
-  },
-  {
     type: 'hospital_assistance_half_day',
     name: 'Hospital Assistance (Half Day)',
     price: '₹2,000',

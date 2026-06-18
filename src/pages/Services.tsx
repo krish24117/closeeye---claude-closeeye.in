@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Check, Loader2, Sparkles, Lightbulb,
-  Home as HomeIcon, Stethoscope, Building2, BedDouble, Siren, ShoppingBasket, Wrench,
+  Home as HomeIcon, Building2, BedDouble, Siren, ShoppingBasket, Wrench,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -16,7 +16,6 @@ const PLAN = PLANS[0]
 
 const SERVICE_ICONS: Record<string, typeof HomeIcon> = {
   home_visit: HomeIcon,
-  doctor_visit_assistance: Stethoscope,
   hospital_assistance_half_day: Building2,
   hospital_assistance_full_day: BedDouble,
   emergency_support_visit: Siren,

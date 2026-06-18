@@ -90,7 +90,7 @@ Deno.serve(async (req: Request) => {
     })
     .eq("id", booking_id)
     .eq("family_user_id", user.id)
-    .select("service_type, amount_paise")
+    .select("service_type, amount_paise, scheduled_at, loved_one_id")
     .single();
 
   if (updateErr || !booking) {
@@ -107,6 +107,76 @@ Deno.serve(async (req: Request) => {
     message: `Your ${amountInr} payment was received. A companion will be assigned within 24 hours.`,
     read: false,
   });
+
+  // ── WhatsApp alert to admin/founder ──────────────────────────────────────
+  // Fire-and-forget — never let an alert failure block the booking confirmation.
+  try {
+    const accountSid  = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const authToken   = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const fromNumber  = Deno.env.get("TWILIO_WHATSAPP_FROM") ?? "whatsapp:+14155238886";
+    const adminNumber = "whatsapp:+919980624117";
+
+    if (accountSid && authToken) {
+      const [profileRes, lovedOneRes] = await Promise.all([
+        sb.from("profiles").select("full_name, whatsapp_number").eq("id", user.id).single(),
+        booking.loved_one_id
+          ? sb.from("loved_ones").select("full_name").eq("id", booking.loved_one_id).single()
+          : Promise.resolve({ data: null }),
+      ]);
+
+      const familyName  = profileRes.data?.full_name      ?? "Unknown customer";
+      const familyPhone = profileRes.data?.whatsapp_number ?? "Not provided";
+      const lovedOne    = (lovedOneRes as any).data?.full_name ?? "Unknown";
+
+      const SERVICE_LABELS: Record<string, string> = {
+        home_visit:                    "Home Visit",
+        hospital_assistance_half_day:  "Hospital Assistance (Half Day)",
+        hospital_assistance_full_day:  "Hospital Assistance (Full Day)",
+        emergency_support_visit:       "Emergency Support Visit",
+        grocery_medicine_assistance:   "Grocery / Medicine Assistance",
+        home_maintenance_coordination: "Home Maintenance Coordination",
+      };
+      const serviceName = SERVICE_LABELS[booking.service_type] ?? booking.service_type;
+
+      const scheduledDate = booking.scheduled_at
+        ? new Date(booking.scheduled_at).toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            dateStyle: "medium",
+            timeStyle: "short",
+          })
+        : "Not specified";
+
+      const body = [
+        `🔔 *New Booking — Close Eye*`,
+        ``,
+        `*Service:* ${serviceName}`,
+        `*For:* ${lovedOne}`,
+        `*Customer:* ${familyName}`,
+        `*Contact:* ${familyPhone}`,
+        `*Date & Time:* ${scheduledDate}`,
+        `*Amount:* ${amountInr}`,
+        ``,
+        `_Open the admin dashboard to assign a companion._`,
+      ].join("\n");
+
+      const to   = adminNumber.startsWith("whatsapp:") ? adminNumber : `whatsapp:${adminNumber}`;
+      const from = fromNumber.startsWith("whatsapp:") ? fromNumber : `whatsapp:${fromNumber}`;
+
+      await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({ From: from, To: to, Body: body }),
+        },
+      );
+    }
+  } catch (alertErr) {
+    console.error("Admin WhatsApp alert failed (non-fatal):", alertErr);
+  }
 
   return json({ success: true });
 });
