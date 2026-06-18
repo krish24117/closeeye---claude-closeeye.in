@@ -151,7 +151,23 @@ function SEOManager() {
     } else {
       robotsTag?.remove()
     }
-  }, [location.pathname])
+
+    // GA4 page_view — fires on every route change (including back/forward)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const gtagFn = (window as any).gtag
+    if (typeof gtagFn === 'function') {
+      const params: Record<string, string> = {
+        page_path: pathname + location.search,
+        page_title: PAGE_TITLES[pathname] || 'Close Eye',
+      }
+      // Capture ?source= on /survey so it appears as a custom dimension in GA4
+      if (pathname === '/survey') {
+        const source = new URLSearchParams(location.search).get('source')
+        if (source) params.survey_source = source
+      }
+      gtagFn('event', 'page_view', params)
+    }
+  }, [location.pathname, location.search])
   return null
 }
 
