@@ -1,12 +1,15 @@
 {
+  "id": "/",
   "name": "Close Eye — Your trusted presence in India",
   "short_name": "Close Eye",
   "description": "Verified wellbeing visits for your loved ones in India",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#0E2A1F",
   "theme_color": "#1a3a2a",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/favicon.svg",
@@ -31,14 +34,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/home.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow"
     }
   ],
   "categories": ["health", "lifestyle"],

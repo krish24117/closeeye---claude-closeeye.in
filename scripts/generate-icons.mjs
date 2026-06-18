@@ -88,10 +88,25 @@ async function main() {
   // --- Splash screens (apple-touch-startup-image sources) ---------------
   console.log('Splash screens')
   const splashSizes = [
+    // iPad Pro 12.9" (1024×1366 @2x)
     [2048, 2732],
+    // iPad Pro 11" (834×1194 @2x)
     [1668, 2388],
+    // iPhone 16 Pro Max (440×956 @3x)
+    [1320, 2868],
+    // iPhone 16 Plus / 15 Pro Max / 14 Pro Max / 15 Plus (430×932 @3x)
+    [1290, 2796],
+    // iPhone 16 Pro (402×874 @3x)
+    [1206, 2622],
+    // iPhone 12/13/14 Pro Max / 14 Plus (428×926 @3x)
+    [1284, 2778],
+    // iPhone 16 / 15 / 14 / 13 Pro / 12 Pro (390×844 @3x)
     [1170, 2532],
+    // iPhone 16 Pro / 15 Pro / 14 Pro (393×852 @3x)
+    [1179, 2556],
+    // iPhone 12 mini / 13 mini / X / XS / 11 Pro (375×812 @3x)
     [1125, 2436],
+    // iPhone SE 2nd/3rd gen (375×667 @2x)
     [750, 1334],
   ]
   for (const [w, h] of splashSizes) {
