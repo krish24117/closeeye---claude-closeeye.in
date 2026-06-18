@@ -5,8 +5,8 @@ import { useToast } from '@/components/ui/Toast'
 import { format, differenceInDays, isFuture } from 'date-fns'
 import { SERVICE_NAMES } from '@/lib/booking-labels'
 import { LiveMap } from '@/components/ui/LiveMap'
-import { Spinner } from '@/components/ui/Skeleton'
-import { Calendar, Phone, MapPin, Plus, CheckCircle, Clock, AlertCircle, XCircle } from 'lucide-react'
+import { Skeleton } from '@/components/ui/Skeleton'
+import { Calendar, Phone, MapPin, Plus, CheckCircle, Clock, AlertCircle, XCircle, ChevronRight } from 'lucide-react'
 
 // ── Status config ─────────────────────────────────────────────────────────────
 
@@ -19,7 +19,7 @@ const STATUS_CONFIG: Record<string, { label: string; pill: string; icon: React.R
   cancelled:          { label: 'Cancelled',            pill: 'bg-red-100 text-red-600',       icon: <XCircle size={12} /> },
 }
 
-// ── Progress steps (upcoming bookings only) ───────────────────────────────────
+// ── Progress steps ────────────────────────────────────────────────────────────
 
 const STEPS = [
   { key: 'paid',     label: 'Paid' },
@@ -47,10 +47,10 @@ function ProgressTrack({ status }: { status: string }) {
             <div className="flex flex-col items-center">
               <div className={[
                 'w-6 h-6 rounded-full flex items-center justify-center text-xs transition-colors',
-                done  ? 'bg-green-600 text-white' :
+                done    ? 'bg-green-600 text-white' :
                 current ? 'bg-green-100 ring-2 ring-green-400 text-green-700' :
-                pulse ? 'bg-green-600 text-white animate-pulse' :
-                'bg-gray-100 text-gray-400',
+                pulse   ? 'bg-green-600 text-white animate-pulse' :
+                          'bg-gray-100 text-gray-400',
               ].join(' ')}>
                 {done ? <CheckCircle size={13} /> : <span className="font-bold">{i + 1}</span>}
               </div>
@@ -81,14 +81,12 @@ function ActiveVisitMap({ booking }: { booking: any }) {
         if (error) { console.error('Failed to load companion location:', error); return }
         if (data) setLocation(data as any)
       })
-
     const channel = supabase.channel(`family-location-${booking.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'companion_locations', filter: `booking_id=eq.${booking.id}` }, (payload) => {
         if (payload.eventType === 'DELETE') { setLocation(null); return }
         setLocation(payload.new as any)
       })
       .subscribe()
-
     return () => { active = false; supabase.removeChannel(channel) }
   }, [booking.id])
 
@@ -112,34 +110,19 @@ function ActiveVisitMap({ booking }: { booking: any }) {
   )
 }
 
-// ── Booking card ──────────────────────────────────────────────────────────────
+// ── Full booking card (upcoming) ──────────────────────────────────────────────
 
-function BookingCard({
-  booking,
-  onCancel,
-  cancelling,
-}: {
-  booking: any
-  onCancel: (b: any) => void
-  cancelling: boolean
-}) {
+function BookingCard({ booking, onCancel, cancelling }: { booking: any; onCancel: (b: any) => void; cancelling: boolean }) {
   const cfg = STATUS_CONFIG[booking.status] ?? { label: booking.status, pill: 'bg-gray-100 text-gray-500', icon: null }
-  const isPast = ['completed', 'cancelled'].includes(booking.status)
   const canCancel = ['pending', 'confirmed'].includes(booking.status)
   const paid = ['paid', 'received'].includes(booking.payment_status)
-
   const daysUntil = booking.scheduled_at && isFuture(new Date(booking.scheduled_at))
-    ? differenceInDays(new Date(booking.scheduled_at), new Date())
-    : null
+    ? differenceInDays(new Date(booking.scheduled_at), new Date()) : null
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-      {/* Card header strip */}
       <div className={`px-4 py-2.5 flex items-center justify-between gap-2 ${
-        booking.status === 'in_progress' ? 'bg-green-600' :
-        booking.status === 'completed'   ? 'bg-green-50' :
-        booking.status === 'cancelled'   ? 'bg-gray-50' :
-        'bg-gray-50'
+        booking.status === 'in_progress' ? 'bg-green-600' : 'bg-gray-50'
       }`}>
         <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.pill}`}>
           {cfg.icon}{cfg.label}
@@ -149,14 +132,8 @@ function BookingCard({
             {daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : `In ${daysUntil} days`}
           </span>
         )}
-        {booking.status === 'cancelled' && (
-          <span className="text-xs text-gray-400">Cancelled</span>
-        )}
       </div>
-
-      {/* Card body */}
       <div className="p-5">
-        {/* Service + date */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-green-900">{SERVICE_NAMES[booking.service_type] || booking.service_type}</p>
@@ -175,21 +152,14 @@ function BookingCard({
               )}
             </div>
           </div>
-          {/* Amount */}
           <div className="text-right flex-shrink-0">
-            <p className="font-serif text-lg text-green-900 leading-tight">
-              ₹{(booking.amount_paise / 100).toLocaleString('en-IN')}
-            </p>
+            <p className="font-serif text-lg text-green-900 leading-tight">₹{(booking.amount_paise / 100).toLocaleString('en-IN')}</p>
             <span className={`text-xs font-medium ${paid ? 'text-green-600' : 'text-amber-600'}`}>
               {paid ? '✓ Paid' : 'Unpaid'}
             </span>
           </div>
         </div>
-
-        {/* Progress track (upcoming only) */}
-        {!isPast && <ProgressTrack status={booking.status} />}
-
-        {/* Companion row */}
+        <ProgressTrack status={booking.status} />
         {booking.companions && (
           <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
@@ -203,44 +173,31 @@ function BookingCard({
               <a
                 href={`tel:${booking.companions.phone}`}
                 className="w-9 h-9 bg-green-50 hover:bg-green-100 rounded-xl flex items-center justify-center text-green-600 transition-colors flex-shrink-0"
-                title={`Call ${booking.companions.full_name}`}
               >
                 <Phone size={16} />
               </a>
             )}
           </div>
         )}
-
-        {/* Live map */}
-        {booking.status === 'in_progress' && booking.companion_id && (
-          <ActiveVisitMap booking={booking} />
-        )}
-
-        {/* Footer actions */}
-        {(canCancel || booking.status === 'completed') && (
-          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
-            {booking.status === 'completed' && (
-              <Link
-                to="/dashboard/reports"
-                className="text-xs font-semibold text-green-700 hover:underline"
-              >
-                View visit report →
-              </Link>
-            )}
-            {canCancel && (
-              <button
-                onClick={() => onCancel(booking)}
-                disabled={cancelling}
-                className="text-xs font-semibold text-red-500 hover:text-red-700 disabled:opacity-50 transition-colors ml-auto flex items-center gap-1"
-              >
-                <XCircle size={13} />
-                {cancelling ? 'Cancelling…' : 'Cancel booking'}
-              </button>
-            )}
+        {booking.status === 'in_progress' && booking.companion_id && <ActiveVisitMap booking={booking} />}
+        {canCancel && (
+          <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end">
+            <button
+              onClick={() => onCancel(booking)}
+              disabled={cancelling}
+              className="text-xs font-semibold text-red-500 hover:text-red-700 disabled:opacity-50 transition-colors flex items-center gap-1"
+            >
+              <XCircle size={13} /> {cancelling ? 'Cancelling…' : 'Cancel booking'}
+            </button>
           </div>
         )}
-
-        {/* Special instructions */}
+        {booking.status === 'completed' && (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <Link to="/dashboard/reports" className="text-xs font-semibold text-green-700 hover:underline">
+              View visit report →
+            </Link>
+          </div>
+        )}
         {booking.special_instructions && (
           <div className="mt-4 pt-4 border-t border-gray-100">
             <p className="text-xs font-semibold text-gray-400 mb-1">Notes for companion</p>
@@ -252,15 +209,74 @@ function BookingCard({
   )
 }
 
+// ── Compact card (past bookings) ──────────────────────────────────────────────
+
+function CompactBookingCard({ booking, onCancel, cancelling }: { booking: any; onCancel: (b: any) => void; cancelling: boolean }) {
+  const cfg  = STATUS_CONFIG[booking.status] ?? { label: booking.status, pill: 'bg-gray-100 text-gray-500', icon: null }
+  const paid = ['paid', 'received'].includes(booking.payment_status)
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 px-4 py-3 flex items-center gap-3">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-green-900 truncate">{SERVICE_NAMES[booking.service_type] || booking.service_type}</p>
+        <p className="text-xs text-gray-400 mt-0.5 truncate">
+          {booking.loved_ones?.full_name}
+          {booking.scheduled_at ? ` · ${format(new Date(booking.scheduled_at), 'd MMM yyyy')}` : ''}
+          {booking.companions?.full_name ? ` · ${booking.companions.full_name}` : ''}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${cfg.pill}`}>
+          {cfg.icon}{cfg.label}
+        </span>
+        {booking.amount_paise && (
+          <p className="text-sm font-semibold text-green-800 whitespace-nowrap">
+            ₹{(booking.amount_paise / 100).toLocaleString('en-IN')}
+          </p>
+        )}
+        {booking.status === 'completed' && (
+          <Link to="/dashboard/reports" className="text-green-600 hover:text-green-800 transition-colors" title="View report">
+            <ChevronRight size={15} />
+          </Link>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+
+function BookingsSkeleton() {
+  return (
+    <div className="space-y-5 animate-pulse">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-7 w-24" />
+        <Skeleton className="h-9 w-28 rounded-xl" />
+      </div>
+      <Skeleton className="h-10 rounded-xl" />
+      {[1, 2, 3].map(i => (
+        <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <Skeleton className="h-10 rounded-none" />
+          <div className="p-5 space-y-3">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-3 w-36" />
+            <Skeleton className="h-3 w-52" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function DashboardBookings() {
   const { showToast } = useToast()
-  const [bookings, setBookings] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [bookings, setBookings]         = useState<any[]>([])
+  const [loading, setLoading]           = useState(true)
+  const [error, setError]               = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
-  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming')
+  const [tab, setTab]                   = useState<'upcoming' | 'past'>('upcoming')
 
   useEffect(() => { load() }, [])
 
@@ -301,23 +317,25 @@ export function DashboardBookings() {
   const past     = bookings.filter(b => ['completed', 'cancelled'].includes(b.status))
   const shown    = tab === 'upcoming' ? upcoming : past
 
-  if (loading) return <Spinner />
+  if (loading) return <BookingsSkeleton />
 
   return (
     <div className="space-y-5 animate-fade-in">
 
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
-        <h1 className="font-serif text-2xl text-green-900">Bookings</h1>
+        <div>
+          <h1 className="font-serif text-2xl text-green-900">Bookings</h1>
+          <p className="text-gray-400 text-sm mt-0.5">{bookings.length} total · {upcoming.length} upcoming</p>
+        </div>
         <Link
           to="/dashboard/new-booking"
-          className="flex items-center gap-1.5 bg-green-800 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
+          className="flex items-center gap-1.5 bg-green-800 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
         >
           <Plus size={15} /> New booking
         </Link>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
           {error}
@@ -337,9 +355,7 @@ export function DashboardBookings() {
               onClick={() => setTab(t.key)}
               className={[
                 'flex-1 flex items-center justify-center gap-2 text-sm font-semibold py-2 rounded-lg transition-all',
-                tab === t.key
-                  ? 'bg-white text-green-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700',
+                tab === t.key ? 'bg-white text-green-900 shadow-sm' : 'text-gray-500 hover:text-gray-700',
               ].join(' ')}
             >
               {t.label}
@@ -355,7 +371,7 @@ export function DashboardBookings() {
         </div>
       )}
 
-      {/* No bookings ever */}
+      {/* Empty — no bookings at all */}
       {bookings.length === 0 && (
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
           <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -399,17 +415,27 @@ export function DashboardBookings() {
         )
       )}
 
-      {/* Booking cards */}
+      {/* Booking list */}
       {shown.length > 0 && (
         <div className="space-y-3">
-          {shown.map(b => (
-            <BookingCard
-              key={b.id}
-              booking={b}
-              onCancel={cancelBooking}
-              cancelling={cancellingId === b.id}
-            />
-          ))}
+          {tab === 'upcoming'
+            ? shown.map(b => (
+                <BookingCard
+                  key={b.id}
+                  booking={b}
+                  onCancel={cancelBooking}
+                  cancelling={cancellingId === b.id}
+                />
+              ))
+            : shown.map(b => (
+                <CompactBookingCard
+                  key={b.id}
+                  booking={b}
+                  onCancel={cancelBooking}
+                  cancelling={cancellingId === b.id}
+                />
+              ))
+          }
         </div>
       )}
     </div>
