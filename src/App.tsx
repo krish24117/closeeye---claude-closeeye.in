@@ -48,6 +48,7 @@ const AdminPayments = lazy(() => import('@/pages/admin/Payments').then(m => ({ d
 const AdminReports = lazy(() => import('@/pages/admin/Reports').then(m => ({ default: m.AdminReports })))
 const AdminLiveMap = lazy(() => import('@/pages/admin/LiveMap').then(m => ({ default: m.AdminLiveMap })))
 const AdminSurveyLeads = lazy(() => import('@/pages/admin/SurveyLeads').then(m => ({ default: m.AdminSurveyLeads })))
+const AdminLeadsCRM = lazy(() => import('@/pages/admin/LeadsCRM').then(m => ({ default: m.AdminLeadsCRM })))
 
 const SurveyPage = lazy(() => import('@/pages/Survey').then(m => ({ default: m.SurveyPage })))
 
@@ -253,6 +254,7 @@ export default function App() {
               <Route path="reports" element={<AdminReports />} />
               <Route path="live-map" element={<AdminLiveMap />} />
               <Route path="survey-leads" element={<AdminSurveyLeads />} />
+              <Route path="leads" element={<AdminLeadsCRM />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
