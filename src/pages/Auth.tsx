@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { Eye, EyeOff } from 'lucide-react'
 import { signIn, signUp, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { Logo } from '@/components/ui/Logo'
@@ -15,7 +16,7 @@ const signupSchema = loginSchema.extend({
   full_name: z.string().min(2, 'Enter your full name'),
   confirm_password: z.string(),
 }).refine(d => d.password === d.confirm_password, {
-  message: "Passwords don't match", path: ['confirm_password']
+  message: 'Passwords do not match', path: ['confirm_password']
 })
 const resetSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -43,6 +44,9 @@ export function AuthPage() {
   const [mode, setMode] = useState<Mode>('login')
   const [error, setError] = useState('')
   const [resetSent, setResetSent] = useState(false)
+  const [signupConfirmSent, setSignupConfirmSent] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const navigate = useNavigate()
   const { user, profile, loading } = useAuth()
 
@@ -88,6 +92,9 @@ export function AuthPage() {
 
   const loginForm = useForm<LoginData>({ resolver: zodResolver(loginSchema) })
   const signupForm = useForm<SignupData>({ resolver: zodResolver(signupSchema) })
+  const signupPassword = signupForm.watch('password')
+  const signupConfirmPassword = signupForm.watch('confirm_password')
+  const passwordsMismatch = !!signupConfirmPassword && signupPassword !== signupConfirmPassword
   const resetForm = useForm<ResetData>({ resolver: zodResolver(resetSchema) })
   const updatePasswordForm = useForm<UpdatePasswordData>({ resolver: zodResolver(updatePasswordSchema) })
 
@@ -99,8 +106,14 @@ export function AuthPage() {
 
   async function handleSignup(data: SignupData) {
     setError('')
-    const { error } = await signUp(data.email, data.password, data.full_name)
+    const { data: signUpData, error } = await signUp(data.email, data.password, data.full_name)
     if (error) { setError(error.message); return }
+    // If Supabase email confirmation is enabled, no session comes back yet —
+    // the user must click the link in their email before they can sign in.
+    // Without this, the user is left on the form with no feedback at all.
+    if (!signUpData.session) {
+      setSignupConfirmSent(true)
+    }
   }
 
   async function handleReset(data: ResetData) {
@@ -149,7 +162,7 @@ export function AuthPage() {
           {(mode === 'login' || mode === 'signup') && (
             <div className="flex rounded-xl bg-gray-100 p-1 mb-6">
               {(['login', 'signup'] as const).map(m => (
-                <button key={m} onClick={() => { setMode(m); setError('') }}
+                <button key={m} onClick={() => { setMode(m); setError(''); setSignupConfirmSent(false) }}
                   className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === m ? 'bg-white text-green-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
                   {m === 'login' ? 'Sign in' : 'Create account'}
                 </button>
@@ -248,35 +261,76 @@ export function AuthPage() {
           {/* Signup form */}
           {mode === 'signup' && (
             <div className="space-y-4">
-              <GoogleButton onClick={handleGoogleSignIn} label="Sign up with Google" />
-              <Divider />
-              <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-green-900 mb-1.5">Full name</label>
-                  <input {...signupForm.register('full_name')} placeholder="Rahul Mehta" className={InputClass} />
-                  {signupForm.formState.errors.full_name && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.full_name.message}</p>}
+              {signupConfirmSent ? (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                  <p className="text-2xl mb-2">✉️</p>
+                  <p className="text-sm font-semibold text-green-800">Check your email to confirm your account</p>
+                  <p className="text-xs text-green-600 mt-1">We've sent a confirmation link to {signupForm.getValues('email')}. Click it to finish setting up your account.</p>
+                  <button
+                    type="button"
+                    onClick={() => { setSignupConfirmSent(false); signupForm.reset() }}
+                    className="text-xs text-green-700 font-semibold hover:underline mt-3"
+                  >
+                    Use a different email
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-green-900 mb-1.5">Email</label>
-                  <input {...signupForm.register('email')} type="email" placeholder="you@email.com" className={InputClass} />
-                  {signupForm.formState.errors.email && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.email.message}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-green-900 mb-1.5">Password</label>
-                  <input {...signupForm.register('password')} type="password" placeholder="••••••••" className={InputClass} />
-                  {signupForm.formState.errors.password && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.password.message}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-green-900 mb-1.5">Confirm password</label>
-                  <input {...signupForm.register('confirm_password')} type="password" placeholder="••••••••" className={InputClass} />
-                  {signupForm.formState.errors.confirm_password && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.confirm_password.message}</p>}
-                </div>
-                {error && <p className="text-red-500 text-sm p-3 bg-red-50 rounded-xl">{error}</p>}
-                <button type="submit" disabled={signupForm.formState.isSubmitting}
-                  className="w-full bg-green-800 text-white font-semibold py-3.5 rounded-xl hover:bg-green-700 transition-colors disabled:bg-gray-300 text-sm">
-                  {signupForm.formState.isSubmitting ? 'Creating account...' : 'Create account'}
-                </button>
-              </form>
+              ) : (
+                <>
+                  <GoogleButton onClick={handleGoogleSignIn} label="Sign up with Google" />
+                  <Divider />
+                  <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-green-900 mb-1.5">Full name</label>
+                      <input {...signupForm.register('full_name')} placeholder="Rahul Mehta" className={InputClass} />
+                      {signupForm.formState.errors.full_name && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.full_name.message}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-green-900 mb-1.5">Email</label>
+                      <input {...signupForm.register('email')} type="email" placeholder="you@email.com" className={InputClass} />
+                      {signupForm.formState.errors.email && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.email.message}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-green-900 mb-1.5">Password</label>
+                      <div className="relative">
+                        <input {...signupForm.register('password')} type={showPassword ? 'text' : 'password'} placeholder="••••••••" className={`${InputClass} pr-11`} />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(v => !v)}
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          className="absolute right-0 top-0 h-full w-11 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      {signupForm.formState.errors.password && <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.password.message}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-green-900 mb-1.5">Confirm password</label>
+                      <div className="relative">
+                        <input {...signupForm.register('confirm_password')} type={showConfirmPassword ? 'text' : 'password'} placeholder="••••••••" className={`${InputClass} pr-11`} />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(v => !v)}
+                          aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                          className="absolute right-0 top-0 h-full w-11 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      {passwordsMismatch ? (
+                        <p className="text-red-500 text-xs mt-1">Passwords do not match</p>
+                      ) : signupForm.formState.errors.confirm_password && (
+                        <p className="text-red-500 text-xs mt-1">{signupForm.formState.errors.confirm_password.message}</p>
+                      )}
+                    </div>
+                    {error && <p className="text-red-500 text-sm p-3 bg-red-50 rounded-xl">{error}</p>}
+                    <button type="submit" disabled={signupForm.formState.isSubmitting || passwordsMismatch}
+                      className="w-full bg-green-800 text-white font-semibold py-3.5 rounded-xl hover:bg-green-700 transition-colors disabled:bg-gray-300 text-sm">
+                      {signupForm.formState.isSubmitting ? 'Creating account...' : 'Create account'}
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
           )}
         </div>
