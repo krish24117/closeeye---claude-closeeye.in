@@ -1,22 +1,62 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import {
-  Camera, Video, X, MapPin, CheckCircle2, Clock,
-  Loader2, AlertTriangle, FileText, ArrowLeft,
+  Camera, X, MapPin, CheckCircle2, Clock, Loader2, AlertTriangle,
+  ArrowLeft, Heart, Utensils, Pill, Home, AlertCircle,
+  Calendar, Send, Check,
 } from 'lucide-react'
-import type { VisitPdfData } from '@/lib/visitPdf'
+import { format, differenceInMinutes, startOfMonth, endOfMonth } from 'date-fns'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const MAX_PHOTOS    = 6
-const MAX_PHOTO_MB  = 5
-const MAX_VIDEOS    = 2
-const MAX_VIDEO_MB  = 50
+type Screen = 'briefing' | 'tier1' | 'tier2' | 'tier3_prompt' | 'tier3' | 'post_update' | 'report'
 
-// ─── GPS helper ───────────────────────────────────────────────────────────────
+interface Tier1 {
+  mood:       boolean | null
+  eating:     boolean | null
+  medicines:  boolean | null
+  home:       boolean | null
+  concerns:   boolean | null
+  one_moment: string
+}
+
+interface Tier2 {
+  mood_loneliness?:  boolean
+  mood_confusion?:   boolean
+  mood_repetitive?:  boolean
+  mood_refused?:     boolean
+  eating_last_meal?: string
+  eating_fridge?:    boolean
+  eating_dehydration?: boolean
+  eating_nausea?:    boolean
+  med_which_missed?: string
+  med_stock_low?:    boolean
+  med_doctor_overdue?: boolean
+  med_new_symptoms?: boolean
+  home_safety_issue?: string
+  home_cleanliness?: boolean
+  home_maintenance?: boolean
+  home_fraud?:       boolean
+  concerns_text?:    string
+  concerns_urgency?: 'monitor' | 'urgent'
+}
+
+interface Tier3 {
+  bp_reading?:       string
+  weight_change?:    boolean | null
+  wounds?:           boolean | null
+  mental_sharpness?: boolean | null
+  social_active?:    boolean | null
+  assessment?:       string
+  _photos?:          { file: File; url: string }[]
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const MAX_PHOTO_MB   = 5
+const MIN_VISIT_MINS = 30
 
 function getGPS(): Promise<{ lat: number; lng: number } | null> {
   return new Promise(resolve => {
@@ -29,53 +69,96 @@ function getGPS(): Promise<{ lat: number; lng: number } | null> {
   })
 }
 
-// ─── PDF generation + upload (dynamically imported) ──────────────────────────
-
-async function buildAndUploadPDF(
-  data: VisitPdfData,
-  bookingId: string,
-): Promise<string | null> {
-  try {
-    // Lazy-load to keep initial bundle light & avoid Vite pre-bundle issues
-    const { pdf }             = await import('@react-pdf/renderer')
-    const { VisitReportPDF }  = await import('@/lib/visitPdf')
-
-    // Cast needed: pdf() expects DocumentProps but we're constructing via dynamic import
-    const element = React.createElement(VisitReportPDF, { data }) as any
-    const blob = await pdf(element).toBlob()
-
-    const path = `${bookingId}/${Date.now()}-report.pdf`
-    const { error: upErr } = await supabase.storage
-      .from('visit-pdfs')
-      .upload(path, blob, { contentType: 'application/pdf' })
-
-    if (upErr) { console.error('PDF upload:', upErr); return null }
-
-    const { data: signed, error: signErr } = await supabase.storage
-      .from('visit-pdfs')
-      .createSignedUrl(path, 60 * 60 * 24 * 7) // 7-day link
-
-    if (signErr) { console.error('Signed URL:', signErr); return null }
-    return signed.signedUrl
-  } catch (err) {
-    console.error('PDF generation failed:', err)
-    return null
-  }
+function deriveMoodScore(t1: Tier1): number {
+  const no = [t1.mood, t1.eating, t1.medicines, t1.home].filter(v => v === false).length
+  return Math.max(1, 5 - no)
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+function deriveFlags(t1: Tier1, t2: Tier2): 'none' | 'monitor' | 'urgent' {
+  if (t2.concerns_urgency === 'urgent') return 'urgent'
+  const anyNo = [t1.mood, t1.eating, t1.medicines, t1.home].some(v => v === false)
+  if (t1.concerns === true || anyNo) return 'monitor'
+  return 'none'
+}
+
+function buildFlagSummary(t1: Tier1, t2: Tier2): string {
+  const lines: string[] = []
+  if (t1.mood === false) {
+    if (t2.mood_loneliness) lines.push('Expressed loneliness or sadness')
+    if (t2.mood_confusion)  lines.push('Confusion or memory issues observed')
+    if (t2.mood_repetitive) lines.push('Repetitive questions / disorientation')
+    if (t2.mood_refused)    lines.push('Refused company or conversation')
+  }
+  if (t1.eating === false) {
+    if (t2.eating_last_meal)     lines.push(`Last meal: ${t2.eating_last_meal}`)
+    if (t2.eating_dehydration)   lines.push('Signs of dehydration')
+    if (t2.eating_nausea)        lines.push('Nausea or appetite loss mentioned')
+    if (t2.eating_fridge)        lines.push('Fridge not stocked')
+  }
+  if (t1.medicines === false) {
+    if (t2.med_which_missed)     lines.push(`Medicines missed: ${t2.med_which_missed}`)
+    if (t2.med_stock_low)        lines.push('Medicine stock running low')
+    if (t2.med_doctor_overdue)   lines.push('Doctor visit overdue')
+    if (t2.med_new_symptoms)     lines.push('New symptoms since last visit')
+  }
+  if (t1.home === false) {
+    if (t2.home_safety_issue)    lines.push(`Safety issue: ${t2.home_safety_issue}`)
+    if (t2.home_cleanliness)     lines.push('Cleanliness needs attention')
+    if (t2.home_maintenance)     lines.push('Maintenance required')
+    if (t2.home_fraud)           lines.push('Elder fraud concern — someone asking for money')
+  }
+  return lines.join('\n') || 'See companion notes.'
+}
+
+function generateWhatsAppReport(params: {
+  elderName:     string
+  companionName: string
+  startTime:     Date
+  endTime:       Date
+  t1:            Tier1
+  t2:            Tier2 | null
+  flags:         'none' | 'monitor' | 'urgent'
+}): string {
+  const { elderName, companionName, startTime, endTime, t1, t2, flags } = params
+  const date     = format(startTime, 'dd MMM yyyy')
+  const dur      = differenceInMinutes(endTime, startTime)
+  const durLabel = dur >= 60 ? `${Math.floor(dur / 60)}h ${dur % 60}m` : `${dur}m`
+  const e = (v: boolean | null) => v === true ? '✅' : v === false ? '❌' : '—'
+  const w = (v: boolean | null, good: string, bad: string) => v === true ? good : v === false ? bad : '—'
+
+  const summary =
+    flags === 'none'   ? `${elderName} was in good spirits today. The visit went smoothly — comfortable, well-fed, and at ease.` :
+    flags === 'urgent' ? `⚠️ A concern that needs your immediate attention came up during today's visit. Please read below.` :
+                         `Today's visit went mostly well. A couple of things worth keeping an eye on — details below.`
+
+  const flagSection = flags !== 'none' && t2
+    ? `\n*⚠️ Needs your attention:*\n${t2.concerns_text || buildFlagSummary(t1, t2)}\n`
+    : ''
+
+  return `*Close Eye Visit Report — ${elderName}*
+📅 ${date} | ⏱ ${durLabel}
+
+*How they are today:*
+${summary}
+
+*Health snapshot:*
+Mood: ${e(t1.mood)} ${w(t1.mood, 'Good', 'Low')}
+Eating: ${e(t1.eating)} ${w(t1.eating, 'Well', 'Concern')}
+Medicines: ${e(t1.medicines)} ${w(t1.medicines, 'Taken', 'Missed')}
+Home: ${e(t1.home)} ${w(t1.home, 'Safe & clean', 'Check needed')}
+${flagSection}
+*From today's visit:*
+${t1.one_moment}
+
+Questions? Reply here.
+— Close Eye 🌿 | Visited by ${companionName}`
+}
+
+// ─── Reusable UI pieces ───────────────────────────────────────────────────────
 
 function GpsCapture({
-  gps,
-  loading,
-  error,
-  onCapture,
-}: {
-  gps: { lat: number; lng: number } | null
-  loading: boolean
-  error: string
-  onCapture: () => void
-}) {
+  gps, loading, error, onCapture,
+}: { gps: { lat: number; lng: number } | null; loading: boolean; error: string; onCapture: () => void }) {
   return (
     <div className="bg-green-50 border border-green-100 rounded-2xl p-4 flex items-start gap-3">
       <MapPin size={18} className={`mt-0.5 flex-shrink-0 ${gps ? 'text-green-600' : 'text-gray-400'}`} />
@@ -83,26 +166,18 @@ function GpsCapture({
         {gps ? (
           <>
             <p className="text-xs font-semibold text-green-700 mb-0.5">GPS captured</p>
-            <p className="text-xs text-gray-500 font-mono truncate">
-              {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)}
-            </p>
+            <p className="text-xs text-gray-500 font-mono truncate">{gps.lat.toFixed(5)}, {gps.lng.toFixed(5)}</p>
           </>
         ) : (
           <>
-            <p className="text-xs font-semibold text-gray-600 mb-0.5">
-              {loading ? 'Capturing location…' : 'Location not yet captured'}
-            </p>
+            <p className="text-xs font-semibold text-gray-600 mb-0.5">{loading ? 'Capturing location…' : 'Location not captured'}</p>
             {error && <p className="text-xs text-amber-600">{error}</p>}
           </>
         )}
       </div>
       {!gps && (
-        <button
-          type="button"
-          onClick={onCapture}
-          disabled={loading}
-          className="text-xs font-semibold text-green-700 hover:text-green-900 disabled:text-gray-400 transition-colors whitespace-nowrap"
-        >
+        <button type="button" onClick={onCapture} disabled={loading}
+          className="text-xs font-semibold text-green-700 disabled:text-gray-400 whitespace-nowrap">
           {loading ? 'Capturing…' : 'Capture GPS'}
         </button>
       )}
@@ -111,40 +186,22 @@ function GpsCapture({
 }
 
 function PhotoPicker({
-  label,
-  hint,
-  photos,
-  onAdd,
-  onRemove,
-  max,
-  error,
-  single = false,
+  label, photos, onAdd, onRemove, max, error, single = false,
 }: {
-  label: string
-  hint?: string
-  photos: { file: File; url: string }[]
-  onAdd: (files: FileList) => void
-  onRemove: (i: number) => void
-  max: number
-  error: string
-  single?: boolean
+  label: string; photos: { file: File; url: string }[];
+  onAdd: (f: FileList) => void; onRemove: (i: number) => void;
+  max: number; error: string; single?: boolean
 }) {
   return (
     <div className="space-y-3">
-      <div>
-        <p className="text-xs font-semibold text-green-900">{label}</p>
-        {hint && <p className="text-xs text-gray-400 mt-0.5">{hint}</p>}
-      </div>
+      {label && <p className="text-xs font-semibold text-green-900">{label}</p>}
       {photos.length > 0 && (
         <div className="flex flex-wrap gap-3">
           {photos.map((p, i) => (
             <div key={p.url} className="relative w-20 h-20">
               <img src={p.url} alt="" className="w-20 h-20 object-cover rounded-xl border border-gray-100" />
-              <button
-                type="button"
-                onClick={() => onRemove(i)}
-                className="absolute -top-2 -right-2 bg-white border border-gray-200 rounded-full p-1 text-gray-500 hover:text-red-600 shadow-sm"
-              >
+              <button type="button" onClick={() => onRemove(i)}
+                className="absolute -top-2 -right-2 bg-white border border-gray-200 rounded-full p-1 shadow-sm">
                 <X size={12} />
               </button>
             </div>
@@ -152,17 +209,11 @@ function PhotoPicker({
         </div>
       )}
       {photos.length < max && (
-        <label className="inline-flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-500 cursor-pointer hover:border-green-300 hover:text-green-700 transition-colors">
+        <label className="inline-flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-500 cursor-pointer hover:border-green-300 hover:text-green-700 transition-colors min-h-[44px]">
           <Camera size={16} />
           {photos.length === 0 ? 'Add photo' : 'Add more'}
-          <input
-            type="file"
-            accept="image/*"
-            multiple={!single}
-            capture="environment"
-            className="sr-only"
-            onChange={e => { if (e.target.files?.length) onAdd(e.target.files); e.target.value = '' }}
-          />
+          <input type="file" accept="image/*" multiple={!single} capture="environment" className="sr-only"
+            onChange={e => { if (e.target.files?.length) onAdd(e.target.files); e.target.value = '' }} />
         </label>
       )}
       {error && <p className="text-red-500 text-xs">{error}</p>}
@@ -170,61 +221,440 @@ function PhotoPicker({
   )
 }
 
-type PdfStep = 'idle' | 'generating' | 'sending' | 'done'
-
-function PdfProgress({ step }: { step: PdfStep }) {
-  if (step === 'idle') return null
-
-  const steps: { id: PdfStep; label: string }[] = [
-    { id: 'generating', label: 'Generating PDF report…' },
-    { id: 'sending',    label: 'Sending WhatsApp to family…' },
-    { id: 'done',       label: 'Report delivered!' },
-  ]
-
+function BoolRow({ label, value, onChange }: {
+  label: string; value: boolean | undefined; onChange: (v: boolean) => void
+}) {
   return (
-    <div className="bg-green-50 border border-green-100 rounded-2xl p-4 space-y-2">
-      {steps.map(s => {
-        const idx   = steps.findIndex(x => x.id === step)
-        const cur   = steps.findIndex(x => x.id === s.id)
-        const done  = cur < idx || step === 'done'
-        const active= s.id === step && step !== 'done'
-        return (
-          <div key={s.id} className="flex items-center gap-2.5">
-            {done ? (
-              <CheckCircle2 size={15} className="text-green-600 flex-shrink-0" />
-            ) : active ? (
-              <Loader2 size={15} className="text-green-600 animate-spin flex-shrink-0" />
-            ) : (
-              <div className="w-[15px] h-[15px] rounded-full border-2 border-gray-200 flex-shrink-0" />
-            )}
-            <span className={`text-xs ${done || active ? 'text-green-800 font-medium' : 'text-gray-400'}`}>
-              {s.label}
-            </span>
-          </div>
-        )
-      })}
+    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-50 last:border-0">
+      <span className="text-sm text-gray-700 flex-1 leading-snug">{label}</span>
+      <div className="flex gap-2 flex-shrink-0">
+        <button type="button" onClick={() => onChange(true)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors min-h-[36px] min-w-[44px] ${
+            value === true ? 'bg-amber-50 border-amber-400 text-amber-700' : 'border-gray-200 text-gray-400'}`}>
+          Yes
+        </button>
+        <button type="button" onClick={() => onChange(false)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors min-h-[36px] min-w-[44px] ${
+            value === false ? 'bg-green-50 border-green-500 text-green-700' : 'border-gray-200 text-gray-400'}`}>
+          No
+        </button>
+      </div>
     </div>
   )
 }
 
-// ─── Step progress indicator ──────────────────────────────────────────────────
+// ─── Tier 1 ───────────────────────────────────────────────────────────────────
 
-function StepIndicator({ current }: { current: 1 | 2 }) {
+const T1_QUESTIONS: { key: keyof Omit<Tier1, 'one_moment'>; label: string; icon: React.ReactNode }[] = [
+  { key: 'mood',      label: 'Mood & spirits good?',        icon: <Heart size={20} />        },
+  { key: 'eating',    label: 'Eating and hydrated well?',   icon: <Utensils size={20} />     },
+  { key: 'medicines', label: 'Medicines taken on schedule?', icon: <Pill size={20} />        },
+  { key: 'home',      label: 'Home safe and clean?',        icon: <Home size={20} />         },
+  { key: 'concerns',  label: 'Any concerns to flag?',       icon: <AlertCircle size={20} />  },
+]
+
+function Tier1Screen({ onNext }: { onNext: (t1: Tier1) => void }) {
+  const [ans, setAns] = useState<Tier1>({ mood: null, eating: null, medicines: null, home: null, concerns: null, one_moment: '' })
+  const [err, setErr] = useState('')
+
+  function toggle(key: keyof Omit<Tier1, 'one_moment'>, val: boolean) {
+    setAns(p => ({ ...p, [key]: p[key] === val ? null : val }))
+  }
+
+  function submit() {
+    if (T1_QUESTIONS.some(q => ans[q.key] === null)) { setErr('Please answer all questions.'); return }
+    if (!ans.one_moment.trim()) { setErr("Please share one moment from today's visit."); return }
+    setErr(''); onNext(ans)
+  }
+
   return (
-    <div className="flex items-center gap-2 text-xs font-semibold">
-      <span className={`flex items-center gap-1.5 ${current === 1 ? 'text-green-700' : 'text-green-500'}`}>
-        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${current === 1 ? 'bg-green-800 text-white' : 'bg-green-100 text-green-600'}`}>
-          {current > 1 ? '✓' : '1'}
-        </span>
-        Check In
-      </span>
-      <span className="text-gray-200">—</span>
-      <span className={`flex items-center gap-1.5 ${current === 2 ? 'text-green-700' : 'text-gray-300'}`}>
-        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${current === 2 ? 'bg-green-800 text-white' : 'bg-gray-100 text-gray-400'}`}>
-          2
-        </span>
-        Report
-      </span>
+    <div className="space-y-4 animate-fade-in">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-widest text-green-600 mb-1">Quick Check</p>
+        <h2 className="font-serif text-xl text-green-900">How was today's visit?</h2>
+        <p className="text-xs text-gray-400 mt-0.5">Tap Yes or No for each — takes 2 minutes</p>
+      </div>
+
+      <div className="space-y-3">
+        {T1_QUESTIONS.map(({ key, label, icon }) => {
+          const val         = ans[key]
+          const isConcerns  = key === 'concerns'
+          return (
+            <div key={key} className="bg-white rounded-2xl border border-gray-100 p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-green-600">{icon}</span>
+                <p className="font-semibold text-green-900 text-sm flex-1 leading-snug">{label}</p>
+              </div>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => toggle(key, true)}
+                  className={`flex-1 py-3 rounded-xl font-bold text-sm border-2 transition-colors min-h-[48px] ${
+                    val === true
+                      ? isConcerns ? 'bg-amber-50 border-amber-400 text-amber-700' : 'bg-green-50 border-green-500 text-green-700'
+                      : 'border-gray-200 text-gray-400'}`}>
+                  {isConcerns ? '⚠️ Yes' : '✓ Yes'}
+                </button>
+                <button type="button" onClick={() => toggle(key, false)}
+                  className={`flex-1 py-3 rounded-xl font-bold text-sm border-2 transition-colors min-h-[48px] ${
+                    val === false
+                      ? isConcerns ? 'bg-green-50 border-green-500 text-green-700' : 'bg-red-50 border-red-400 text-red-600'
+                      : 'border-gray-200 text-gray-400'}`}>
+                  {isConcerns ? '✓ No' : '✗ No'}
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <label className="block text-sm font-semibold text-green-900 mb-1">One Moment *</label>
+        <p className="text-xs text-gray-400 mb-3">Share one thing from today's visit</p>
+        <textarea
+          value={ans.one_moment}
+          onChange={e => setAns(p => ({ ...p, one_moment: e.target.value }))}
+          rows={2}
+          placeholder="e.g. She showed me photos of her grandchildren and lit up talking about them."
+          className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 resize-none"
+        />
+      </div>
+
+      {err && (
+        <div className="flex items-center gap-2 text-red-600 bg-red-50 rounded-xl p-3 text-sm">
+          <AlertTriangle size={15} className="flex-shrink-0" /> {err}
+        </div>
+      )}
+
+      <button onClick={submit}
+        className="w-full bg-green-800 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition-colors min-h-[52px]">
+        Next →
+      </button>
+    </div>
+  )
+}
+
+// ─── Tier 2 ───────────────────────────────────────────────────────────────────
+
+function Tier2Screen({ t1, onNext }: { t1: Tier1; onNext: (t2: Tier2) => void }) {
+  const [t2, setT2] = useState<Tier2>({})
+  const set = <K extends keyof Tier2>(k: K, v: Tier2[K]) => setT2(p => ({ ...p, [k]: v }))
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-widest text-amber-600 mb-1">Expanded Detail</p>
+        <h2 className="font-serif text-xl text-green-900">Tell us more</h2>
+        <p className="text-xs text-gray-400 mt-0.5">Only the flagged sections are shown</p>
+      </div>
+
+      {t1.mood === false && (
+        <div className="bg-white rounded-2xl border border-amber-100 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Heart size={16} className="text-amber-600" />
+            <p className="font-semibold text-green-900 text-sm">Mood — what did you notice?</p>
+          </div>
+          <BoolRow label="Expressed loneliness / sadness / anxiety" value={t2.mood_loneliness} onChange={v => set('mood_loneliness', v)} />
+          <BoolRow label="Confusion or memory issues observed"       value={t2.mood_confusion}  onChange={v => set('mood_confusion', v)} />
+          <BoolRow label="Repetitive questions or disorientation"    value={t2.mood_repetitive} onChange={v => set('mood_repetitive', v)} />
+          <BoolRow label="Refused company or conversation"           value={t2.mood_refused}    onChange={v => set('mood_refused', v)} />
+        </div>
+      )}
+
+      {t1.eating === false && (
+        <div className="bg-white rounded-2xl border border-amber-100 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Utensils size={16} className="text-amber-600" />
+            <p className="font-semibold text-green-900 text-sm">Eating & hydration details</p>
+          </div>
+          <div className="py-2.5 border-b border-gray-50">
+            <label className="text-sm text-gray-700 block mb-1.5">Last meal time</label>
+            <input value={t2.eating_last_meal || ''} onChange={e => set('eating_last_meal', e.target.value)}
+              placeholder="e.g. Yesterday evening, 7pm"
+              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-600" />
+          </div>
+          <BoolRow label="Fridge not stocked / no food at home" value={t2.eating_fridge}      onChange={v => set('eating_fridge', v)} />
+          <BoolRow label="Signs of dehydration"                  value={t2.eating_dehydration} onChange={v => set('eating_dehydration', v)} />
+          <BoolRow label="Nausea or appetite loss mentioned"     value={t2.eating_nausea}      onChange={v => set('eating_nausea', v)} />
+        </div>
+      )}
+
+      {t1.medicines === false && (
+        <div className="bg-white rounded-2xl border border-amber-100 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Pill size={16} className="text-amber-600" />
+            <p className="font-semibold text-green-900 text-sm">Medicine details</p>
+          </div>
+          <div className="py-2.5 border-b border-gray-50">
+            <label className="text-sm text-gray-700 block mb-1.5">Which medicines missed?</label>
+            <input value={t2.med_which_missed || ''} onChange={e => set('med_which_missed', e.target.value)}
+              placeholder="e.g. Morning BP tablet"
+              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-600" />
+          </div>
+          <BoolRow label="Stock running low"             value={t2.med_stock_low}       onChange={v => set('med_stock_low', v)} />
+          <BoolRow label="Doctor visit overdue"          value={t2.med_doctor_overdue}  onChange={v => set('med_doctor_overdue', v)} />
+          <BoolRow label="New symptoms since last visit" value={t2.med_new_symptoms}    onChange={v => set('med_new_symptoms', v)} />
+        </div>
+      )}
+
+      {t1.home === false && (
+        <div className="bg-white rounded-2xl border border-amber-100 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Home size={16} className="text-amber-600" />
+            <p className="font-semibold text-green-900 text-sm">Home & safety details</p>
+          </div>
+          <div className="py-2.5 border-b border-gray-50">
+            <label className="text-sm text-gray-700 block mb-1.5">Specific safety issue (bathroom / gas / lighting)</label>
+            <input value={t2.home_safety_issue || ''} onChange={e => set('home_safety_issue', e.target.value)}
+              placeholder="Describe the issue"
+              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-600" />
+          </div>
+          <BoolRow label="Cleanliness needs attention"                        value={t2.home_cleanliness} onChange={v => set('home_cleanliness', v)} />
+          <BoolRow label="Maintenance required"                               value={t2.home_maintenance} onChange={v => set('home_maintenance', v)} />
+          <BoolRow label="Elder fraud concern (someone asking for money)"     value={t2.home_fraud}       onChange={v => set('home_fraud', v)} />
+        </div>
+      )}
+
+      {t1.concerns === true && (
+        <div className="bg-white rounded-2xl border border-red-100 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle size={16} className="text-red-500" />
+            <p className="font-semibold text-green-900 text-sm">Concern details</p>
+          </div>
+          <label className="text-sm text-gray-700 block mb-1.5">What is the concern?</label>
+          <textarea value={t2.concerns_text || ''} onChange={e => set('concerns_text', e.target.value)}
+            rows={3} placeholder="Describe what you observed or heard..."
+            className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 resize-none mb-3" />
+          <label className="text-sm font-semibold text-gray-700 block mb-2">Urgency</label>
+          <div className="flex gap-3">
+            <button type="button" onClick={() => set('concerns_urgency', 'monitor')}
+              className={`flex-1 py-3 rounded-xl font-bold text-sm border-2 transition-colors min-h-[48px] ${
+                t2.concerns_urgency === 'monitor' ? 'bg-amber-50 border-amber-400 text-amber-700' : 'border-gray-200 text-gray-400'}`}>
+              🟡 Monitor
+            </button>
+            <button type="button" onClick={() => set('concerns_urgency', 'urgent')}
+              className={`flex-1 py-3 rounded-xl font-bold text-sm border-2 transition-colors min-h-[48px] ${
+                t2.concerns_urgency === 'urgent' ? 'bg-red-50 border-red-400 text-red-600' : 'border-gray-200 text-gray-400'}`}>
+              🔴 Urgent
+            </button>
+          </div>
+        </div>
+      )}
+
+      <button onClick={() => onNext(t2)}
+        className="w-full bg-green-800 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition-colors min-h-[52px]">
+        Continue →
+      </button>
+    </div>
+  )
+}
+
+// ─── Tier 3 ───────────────────────────────────────────────────────────────────
+
+function Tier3Screen({ onNext, onDefer }: { onNext: (t3: Tier3) => void; onDefer: () => void }) {
+  const [t3,      setT3]      = useState<Tier3>({})
+  const [photos,  setPhotos]  = useState<{ file: File; url: string }[]>([])
+  const [photoErr,setPhotoErr]= useState('')
+  const set = <K extends keyof Tier3>(k: K, v: Tier3[K]) => setT3(p => ({ ...p, [k]: v }))
+
+  function addPhoto(files: FileList) {
+    setPhotoErr('')
+    for (const f of Array.from(files)) {
+      if (!f.type.startsWith('image/')) { setPhotoErr('Images only.'); continue }
+      if (f.size > MAX_PHOTO_MB * 1024 * 1024) { setPhotoErr(`Max ${MAX_PHOTO_MB} MB.`); continue }
+      setPhotos(prev => prev.length < 2 ? [...prev, { file: f, url: URL.createObjectURL(f) }] : prev)
+    }
+  }
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-widest text-green-600 mb-1">Monthly Deep Check</p>
+        <h2 className="font-serif text-xl text-green-900">Health indicators</h2>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-1">
+        <div className="pb-2.5 border-b border-gray-50">
+          <label className="text-sm text-gray-700 block mb-1.5">BP reading (if device available)</label>
+          <input value={t3.bp_reading || ''} onChange={e => set('bp_reading', e.target.value)}
+            placeholder="e.g. 130/80"
+            className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-600" />
+        </div>
+        <BoolRow label="Weight change noted"                                value={t3.weight_change ?? undefined}    onChange={v => set('weight_change', v)} />
+        <BoolRow label="Wounds, bruises, or skin conditions"               value={t3.wounds ?? undefined}           onChange={v => set('wounds', v)} />
+        <BoolRow label="Mental sharpness — remembers your name and day"    value={t3.mental_sharpness ?? undefined} onChange={v => set('mental_sharpness', v)} />
+        <BoolRow label="Social — leaving house, receiving visitors"        value={t3.social_active ?? undefined}    onChange={v => set('social_active', v)} />
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <label className="block text-sm font-semibold text-green-900 mb-1.5">Overall assessment this month</label>
+        <textarea value={t3.assessment || ''} onChange={e => set('assessment', e.target.value)}
+          rows={3} placeholder="Your honest overall impression — any changes, trends, things family should know..."
+          className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 resize-none" />
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <p className="text-sm font-semibold text-green-900 mb-1">Photos (optional, 1–2)</p>
+        <PhotoPicker label="" photos={photos} onAdd={addPhoto}
+          onRemove={i => { URL.revokeObjectURL(photos[i].url); setPhotos(p => p.filter((_, j) => j !== i)) }}
+          max={2} error={photoErr} />
+      </div>
+
+      <div className="flex gap-3">
+        <button onClick={onDefer}
+          className="flex-1 py-4 rounded-xl font-semibold text-sm border-2 border-gray-200 text-gray-500 min-h-[52px]">
+          Defer once
+        </button>
+        <button onClick={() => onNext({ ...t3, _photos: photos })}
+          className="flex-1 bg-green-800 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition-colors min-h-[52px]">
+          Save & continue →
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Post-visit update ────────────────────────────────────────────────────────
+
+function PostVisitUpdateScreen({ elderName, onNext }: { elderName: string; onNext: (note: string | null) => void }) {
+  const [note, setNote] = useState('')
+  return (
+    <div className="space-y-4 animate-fade-in">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-widest text-green-600 mb-1">Profile Update</p>
+        <h2 className="font-serif text-xl text-green-900">Anything new to note?</h2>
+        <p className="text-xs text-gray-400 mt-0.5">About {elderName} — helps future companions be prepared</p>
+      </div>
+      <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <label className="block text-sm font-semibold text-green-900 mb-1.5">New preference, habit, or thing to know</label>
+        <textarea value={note} onChange={e => setNote(e.target.value)} rows={4}
+          placeholder="e.g. She mentioned she now wakes at 5am for prayers. Prefers no visitors before 9am."
+          className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 resize-none" />
+        <p className="text-xs text-gray-400 mt-2">Appended to continuity notes with today's date and your name.</p>
+      </div>
+      <div className="flex gap-3">
+        <button onClick={() => onNext(null)}
+          className="flex-1 py-4 rounded-xl font-semibold text-sm border-2 border-gray-200 text-gray-500 min-h-[52px]">
+          Nothing new — skip
+        </button>
+        <button onClick={() => onNext(note.trim() || null)}
+          className="flex-1 bg-green-800 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition-colors min-h-[52px]">
+          Save & continue →
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Briefing screen ──────────────────────────────────────────────────────────
+
+function BriefingScreen({
+  booking, profile, lastFlags, moodTrend, onStart,
+}: {
+  booking: any; profile: any | null; lastFlags: string | null;
+  moodTrend: (boolean | null)[]; onStart: () => void
+}) {
+  const lo         = booking.loved_ones
+  const name       = profile?.name || lo?.full_name || 'your loved one'
+  const age        = profile?.age
+  const conditions = profile?.medical_conditions || lo?.medical_notes
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+      <div className="bg-gradient-to-br from-green-900 to-green-700 rounded-2xl p-5 text-white">
+        <p className="text-xs font-bold uppercase tracking-widest text-green-300 mb-2">You are visiting</p>
+        <p className="font-serif text-2xl leading-tight mb-1">{name}{age ? `, ${age}` : ''}</p>
+        {conditions && <p className="text-green-200 text-sm mt-2 leading-relaxed">{conditions}</p>}
+      </div>
+
+      {lastFlags && lastFlags !== 'none' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+          <AlertTriangle size={16} className="text-amber-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-xs font-bold text-amber-800 mb-0.5">Last visit had a flag</p>
+            <p className="text-sm text-amber-700">
+              {lastFlags === 'urgent' ? '🔴 Urgent concern was noted' : '🟡 A concern was being monitored'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {moodTrend.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <p className="text-xs font-semibold text-green-900 mb-2">Mood — last {moodTrend.length} visits</p>
+          <div className="flex gap-2">
+            {moodTrend.map((good, i) => (
+              <span key={i} className="text-xl">{good === null ? '⬜' : good ? '😊' : '😔'}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {profile?.pinned_note && (
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
+          <p className="text-xs font-bold text-green-800 mb-1">📌 Pinned note</p>
+          <p className="text-sm text-green-800 leading-relaxed">{profile.pinned_note}</p>
+        </div>
+      )}
+
+      {profile?.continuity_notes && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <p className="text-xs font-bold text-green-900 mb-1">Continuity notes</p>
+          <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{profile.continuity_notes}</p>
+        </div>
+      )}
+
+      {profile?.things_to_avoid && (
+        <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
+          <p className="text-xs font-bold text-red-700 mb-1">⚠️ Things to avoid</p>
+          <p className="text-sm text-red-700 leading-relaxed">{profile.things_to_avoid}</p>
+        </div>
+      )}
+
+      <button onClick={onStart}
+        className="w-full bg-green-800 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition-colors min-h-[52px] text-base">
+        Start Visit →
+      </button>
+    </div>
+  )
+}
+
+// ─── Report screen ────────────────────────────────────────────────────────────
+
+function ReportScreen({
+  report, flags, onSend, sending, sent,
+}: { report: string; flags: 'none' | 'monitor' | 'urgent'; onSend: () => void; sending: boolean; sent: boolean }) {
+  return (
+    <div className="space-y-4 animate-fade-in">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-widest text-green-600 mb-1">Report Ready</p>
+        <h2 className="font-serif text-xl text-green-900">Send to family</h2>
+      </div>
+
+      {flags === 'urgent' && (
+        <div className="bg-red-50 border border-red-300 rounded-2xl p-4 flex items-start gap-3">
+          <AlertTriangle size={16} className="text-red-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-bold text-red-700 text-sm mb-1">🔴 Urgent flag — call family first</p>
+            <p className="text-sm text-red-600">Please call the family before sending this WhatsApp report.</p>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">{report}</pre>
+      </div>
+
+      <button onClick={onSend} disabled={sending || sent}
+        className={`w-full font-bold py-4 rounded-xl transition-colors flex items-center justify-center gap-2 min-h-[52px] ${
+          sent
+            ? 'bg-green-100 text-green-700'
+            : 'bg-green-800 text-white hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400'
+        }`}>
+        {sent
+          ? <><Check size={18} /> Report sent!</>
+          : sending
+          ? <><Loader2 size={18} className="animate-spin" /> Sending…</>
+          : <><Send size={18} /> Send WhatsApp to family</>}
+      </button>
     </div>
   )
 }
@@ -233,50 +663,83 @@ function StepIndicator({ current }: { current: 1 | 2 }) {
 
 export function CompanionVisit() {
   const { bookingId } = useParams<{ bookingId: string }>()
-  const { user }      = useAuth()
+  const { user, profile: authProfile } = useAuth()
   const navigate      = useNavigate()
 
-  // ── Booking ──────────────────────────────────────────────────────────
-  const [booking,   setBooking]   = useState<any>(null)
-  const [loading,   setLoading]   = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  const [booking,        setBooking]        = useState<any>(null)
+  const [elderProfile,   setElderProfile]   = useState<any>(null)
+  const [lastFlags,      setLastFlags]      = useState<string | null>(null)
+  const [moodTrend,      setMoodTrend]      = useState<(boolean | null)[]>([])
+  const [isFirstOfMonth, setIsFirstOfMonth] = useState(false)
+  const [loading,        setLoading]        = useState(true)
+  const [loadError,      setLoadError]      = useState<string | null>(null)
 
-  // ── GPS ──────────────────────────────────────────────────────────────
-  const [gps,       setGps]       = useState<{ lat: number; lng: number } | null>(null)
-  const [gpsLoading,setGpsLoading]= useState(false)
-  const [gpsError,  setGpsError]  = useState('')
+  // Check-in state
+  const [gps,        setGps]        = useState<{ lat: number; lng: number } | null>(null)
+  const [gpsLoading, setGpsLoading] = useState(false)
+  const [gpsError,   setGpsError]   = useState('')
+  const [ciPhotos,   setCiPhotos]   = useState<{ file: File; url: string }[]>([])
+  const [ciPhotoErr, setCiPhotoErr] = useState('')
+  const [checkingIn, setCheckingIn] = useState(false)
+  const [ciError,    setCiError]    = useState('')
 
-  // ── Check-in ─────────────────────────────────────────────────────────
-  const [ciPhotos,  setCiPhotos]  = useState<{ file: File; url: string }[]>([])
-  const [ciPhotoErr,setCiPhotoErr]= useState('')
-  const [checkingIn,setCheckingIn]= useState(false)
-  const [ciError,   setCiError]   = useState('')
+  // Post-checkin state
+  const [screen,     setScreen]     = useState<Screen>('briefing')
+  const [t1Data,     setT1Data]     = useState<Tier1 | null>(null)
+  const [t2Data,     setT2Data]     = useState<Tier2 | null>(null)
+  const [t3Data,     setT3Data]     = useState<Tier3 | null>(null)
+  const startTimeRef = useRef<Date>(new Date())
 
-  // ── Report form ──────────────────────────────────────────────────────
-  const { register, handleSubmit, formState: { errors } } = useForm()
-  const [photos,    setPhotos]    = useState<{ file: File; url: string }[]>([])
-  const [photoErr,  setPhotoErr]  = useState('')
-  const [videos,    setVideos]    = useState<{ file: File; url: string }[]>([])
-  const [videoErr,  setVideoErr]  = useState('')
+  const [reportText, setReportText] = useState('')
+  const [saving,     setSaving]     = useState(false)
+  const [saveError,  setSaveError]  = useState('')
+  const [reportSent, setReportSent] = useState(false)
 
-  // ── Submit state ─────────────────────────────────────────────────────
-  const [saving,    setSaving]    = useState(false)
-  const [saveError, setSaveError] = useState('')
-  const [pdfStep,   setPdfStep]   = useState<PdfStep>('idle')
+  // ── Load ──────────────────────────────────────────────────────────────
 
-  // ── Load booking ─────────────────────────────────────────────────────
   const load = useCallback(async () => {
     if (!user || !bookingId) return
     setLoading(true); setLoadError(null)
     try {
-      const { data, error } = await supabase
+      const { data: b, error: bErr } = await supabase
         .from('bookings')
         .select('*, loved_ones(*)')
         .eq('id', bookingId)
         .eq('companion_id', user.id)
         .single()
-      if (error) throw error
-      setBooking(data)
+      if (bErr) throw bErr
+      setBooking(b)
+
+      if (b.loved_one_id) {
+        const { data: ep } = await supabase
+          .from('elder_profiles')
+          .select('*')
+          .eq('loved_one_id', b.loved_one_id)
+          .maybeSingle()
+        setElderProfile(ep || null)
+
+        if (ep?.id) {
+          const { data: recentVisits } = await supabase
+            .from('visits')
+            .select('mood_score, flags')
+            .eq('elder_id', ep.id)
+            .order('created_at', { ascending: false })
+            .limit(4)
+
+          if (recentVisits?.length) {
+            setLastFlags(recentVisits[0].flags || null)
+            setMoodTrend(recentVisits.map(v => v.mood_score != null ? v.mood_score >= 4 : null))
+          }
+
+          const { count } = await supabase
+            .from('visits')
+            .select('id', { count: 'exact', head: true })
+            .eq('elder_id', ep.id)
+            .gte('created_at', startOfMonth(new Date()).toISOString())
+            .lte('created_at', endOfMonth(new Date()).toISOString())
+          setIsFirstOfMonth((count ?? 0) === 0)
+        }
+      }
     } catch {
       setLoadError('Could not load visit — please try again.')
     } finally {
@@ -286,290 +749,168 @@ export function CompanionVisit() {
 
   useEffect(() => { load() }, [load])
 
-  // ── GPS capture ──────────────────────────────────────────────────────
   const captureGPS = useCallback(async () => {
     setGpsLoading(true); setGpsError('')
     const coords = await getGPS()
-    if (coords) {
-      setGps(coords)
-    } else {
-      setGpsError('Could not get location. GPS will be skipped — you can still check in.')
-    }
+    if (coords) setGps(coords)
+    else setGpsError('Could not get location. You can still check in without GPS.')
     setGpsLoading(false)
     return coords
   }, [])
 
-  // Auto-capture GPS when check-in screen appears
   useEffect(() => {
     if (booking && !booking.checked_in_at && !gps) captureGPS()
-  }, [booking]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [booking]) // eslint-disable-line
 
-  // ── Photo handlers (check-in) ────────────────────────────────────────
-  function addCiPhoto(files: FileList) {
-    setCiPhotoErr('')
-    for (const f of Array.from(files)) {
-      if (!f.type.startsWith('image/')) { setCiPhotoErr('Images only.'); continue }
-      if (f.size > MAX_PHOTO_MB * 1024 * 1024) { setCiPhotoErr(`Max ${MAX_PHOTO_MB} MB.`); continue }
-      setCiPhotos(prev => prev.length < 1 ? [{ file: f, url: URL.createObjectURL(f) }] : prev)
-    }
-  }
-  function removeCiPhoto(i: number) {
-    setCiPhotos(prev => { URL.revokeObjectURL(prev[i].url); return prev.filter((_, j) => j !== i) })
-  }
+  // ── Check-in ──────────────────────────────────────────────────────────
 
-  // ── Photo handlers (visit) ───────────────────────────────────────────
-  function addPhoto(files: FileList) {
-    setPhotoErr('')
-    const valid: typeof photos = []
-    for (const f of Array.from(files)) {
-      if (!f.type.startsWith('image/')) { setPhotoErr('Images only.'); continue }
-      if (f.size > MAX_PHOTO_MB * 1024 * 1024) { setPhotoErr(`Max ${MAX_PHOTO_MB} MB each.`); continue }
-      valid.push({ file: f, url: URL.createObjectURL(f) })
-    }
-    setPhotos(prev => {
-      const next = [...prev, ...valid].slice(0, MAX_PHOTOS)
-      if (prev.length + valid.length > MAX_PHOTOS) setPhotoErr(`Max ${MAX_PHOTOS} photos.`)
-      return next
-    })
-  }
-  function removePhoto(i: number) {
-    setPhotos(prev => { URL.revokeObjectURL(prev[i].url); return prev.filter((_, j) => j !== i) })
-  }
-
-  // ── Video handlers ───────────────────────────────────────────────────
-  function addVideo(files: FileList) {
-    setVideoErr('')
-    const valid: typeof videos = []
-    for (const f of Array.from(files)) {
-      if (f.type !== 'video/mp4' && f.type !== 'video/quicktime') { setVideoErr('MP4 or MOV only.'); continue }
-      if (f.size > MAX_VIDEO_MB * 1024 * 1024) { setVideoErr(`Max ${MAX_VIDEO_MB} MB each.`); continue }
-      valid.push({ file: f, url: URL.createObjectURL(f) })
-    }
-    setVideos(prev => {
-      const next = [...prev, ...valid].slice(0, MAX_VIDEOS)
-      if (prev.length + valid.length > MAX_VIDEOS) setVideoErr(`Max ${MAX_VIDEOS} videos.`)
-      return next
-    })
-  }
-  function removeVideo(i: number) {
-    setVideos(prev => { URL.revokeObjectURL(prev[i].url); return prev.filter((_, j) => j !== i) })
-  }
-
-  // ────────────────────────────────────────────────────────────────────
-  // CHECK-IN submit
-  // ────────────────────────────────────────────────────────────────────
   async function handleCheckIn() {
     if (!booking || !user) return
     setCheckingIn(true); setCiError('')
-
-    // Re-capture GPS if not yet captured
     let coords = gps
     if (!coords) coords = await captureGPS()
 
-    // Upload arrival photo (optional)
     let ciPhotoPath: string | null = null
     if (ciPhotos[0]) {
       const { file } = ciPhotos[0]
       const path = `${booking.id}/checkin-${Date.now()}-${file.name}`
       const { error } = await supabase.storage.from('visit-photos').upload(path, file)
-      if (error) {
-        setCiError(`Photo upload failed: ${error.message}`)
-        setCheckingIn(false)
-        return
-      }
+      if (error) { setCiError(`Photo upload failed: ${error.message}`); setCheckingIn(false); return }
       ciPhotoPath = path
     }
 
-    const { error } = await supabase
-      .from('bookings')
-      .update({
-        checked_in_at:     new Date().toISOString(),
-        check_in_lat:      coords?.lat ?? null,
-        check_in_lng:      coords?.lng ?? null,
-        check_in_photo_path: ciPhotoPath,
-        status:            'in_progress',
-      })
-      .eq('id', booking.id)
+    const { error } = await supabase.from('bookings').update({
+      checked_in_at:       new Date().toISOString(),
+      check_in_lat:        coords?.lat ?? null,
+      check_in_lng:        coords?.lng ?? null,
+      check_in_photo_path: ciPhotoPath,
+      status:              'in_progress',
+    }).eq('id', booking.id)
 
     if (error) { setCiError(error.message); setCheckingIn(false); return }
-
+    startTimeRef.current = new Date()
     window.dispatchEvent(new Event('closeeye:active-booking-changed'))
-    await load()   // reload to switch to Phase 2
+    await load()
+    setScreen('briefing')
     setCheckingIn(false)
   }
 
-  // ────────────────────────────────────────────────────────────────────
-  // REPORT + CHECK-OUT submit
-  // ────────────────────────────────────────────────────────────────────
-  const onSubmit = async (formData: any) => {
-    if (!booking || !user) return
-    setSaving(true); setSaveError(''); setPdfStep('idle')
+  // ── Checklist flow ────────────────────────────────────────────────────
 
-    // 1. Auto-capture check-out GPS
-    const checkOutGps = await getGPS()
-
-    // 2. Upload visit photos (include check-in photo if exists)
-    const photoPaths: string[] = []
-    if (booking.check_in_photo_path) photoPaths.push(booking.check_in_photo_path)
-    for (const { file } of photos) {
-      const path = `${booking.id}/${Date.now()}-${file.name}`
-      const { error } = await supabase.storage.from('visit-photos').upload(path, file)
-      if (error) { setSaveError(`Photo upload failed: ${error.message}`); setSaving(false); return }
-      photoPaths.push(path)
-    }
-
-    // 3. Upload videos
-    const videoPaths: string[] = []
-    for (const { file } of videos) {
-      const path = `${booking.id}/${Date.now()}-${file.name}`
-      const { error } = await supabase.storage.from('visit-videos').upload(path, file)
-      if (error) { setSaveError(`Video upload failed: ${error.message}`); setSaving(false); return }
-      videoPaths.push(path)
-    }
-
-    // 4. Update booking — check-out + completed
-    const checkOutAt = new Date().toISOString()
-    const { error: boErr } = await supabase
-      .from('bookings')
-      .update({
-        checked_out_at: checkOutAt,
-        check_out_lat:  checkOutGps?.lat ?? null,
-        check_out_lng:  checkOutGps?.lng ?? null,
-        status:         'completed',
-        completed_at:   checkOutAt,
-      })
-      .eq('id', booking.id)
-
-    if (boErr) { setSaveError(`Booking update failed: ${boErr.message}`); setSaving(false); return }
-
-    // 5. Insert visit report
-    const { data: report, error: repErr } = await supabase
-      .from('visit_reports')
-      .insert({
-        booking_id:            booking.id,
-        companion_id:          user.id,
-        loved_one_id:          booking.loved_one_id,
-        mood_score:            parseInt(formData.mood_score),
-        health_score:          parseInt(formData.health_score),
-        home_safety_score:     parseInt(formData.home_safety_score),
-        mood_notes:            formData.mood_notes   || null,
-        health_notes:          formData.health_notes || null,
-        medication_taken:      formData.medication_taken === 'true',
-        medication_notes:      formData.medication_notes || null,
-        home_safety_notes:     formData.home_safety_notes || null,
-        activity_during_visit: formData.activity_during_visit || null,
-        family_message:        formData.family_message,
-        follow_up_needed:      formData.follow_up_needed === 'true',
-        follow_up_notes:       formData.follow_up_notes || null,
-        visit_started_at:      booking.checked_in_at,
-        visit_ended_at:        checkOutAt,
-        photo_urls:            photoPaths,
-        video_urls:            videoPaths,
-      })
-      .select('id')
-      .single()
-
-    if (repErr) { setSaveError(repErr.message); setSaving(false); return }
-
-    // 6. Generate PDF ─────────────────────────────────────────────────
-    setPdfStep('generating')
-
-    // Companion name
-    const { data: companion } = await supabase
-      .from('companions')
-      .select('full_name')
-      .eq('id', user.id)
-      .single()
-
-    // Signed URLs for photos so @react-pdf/renderer can embed them
-    const signedPhotoUrls: string[] = []
-    for (const path of photoPaths) {
-      const { data: su } = await supabase.storage
-        .from('visit-photos')
-        .createSignedUrl(path, 3600)
-      if (su?.signedUrl) signedPhotoUrls.push(su.signedUrl)
-    }
-
-    const pdfData: VisitPdfData = {
-      companionName:      companion?.full_name ?? 'Companion',
-      lovedOneName:       booking.loved_ones?.full_name ?? '',
-      lovedOneCity:       booking.loved_ones?.city ?? '',
-      checkInAt:          booking.checked_in_at!,
-      checkOutAt,
-      checkInLat:         booking.check_in_lat  ?? null,
-      checkInLng:         booking.check_in_lng  ?? null,
-      checkOutLat:        checkOutGps?.lat ?? null,
-      checkOutLng:        checkOutGps?.lng ?? null,
-      moodScore:          parseInt(formData.mood_score),
-      healthScore:        parseInt(formData.health_score),
-      homeSafetyScore:    parseInt(formData.home_safety_score),
-      medicationTaken:    formData.medication_taken === 'true',
-      medicationNotes:    formData.medication_notes   ?? '',
-      moodNotes:          formData.mood_notes         ?? '',
-      healthNotes:        formData.health_notes       ?? '',
-      homeSafetyNotes:    formData.home_safety_notes  ?? '',
-      activityDuringVisit:formData.activity_during_visit ?? '',
-      familyMessage:      formData.family_message,
-      followUpNeeded:     formData.follow_up_needed === 'true',
-      followUpNotes:      formData.follow_up_notes    ?? '',
-      photoUrls:          signedPhotoUrls,
-      generatedAt:        new Date().toISOString(),
-    }
-
-    const pdfUrl = await buildAndUploadPDF(pdfData, booking.id)
-
-    if (pdfUrl && report?.id) {
-      // Save PDF URL on the report
-      await supabase.from('visit_reports').update({ pdf_url: pdfUrl }).eq('id', report.id)
-
-      // 7. Send WhatsApp via Edge Function ──────────────────────────────
-      setPdfStep('sending')
-      try {
-        await supabase.functions.invoke('send-visit-whatsapp', {
-          body: { booking_id: booking.id, pdf_url: pdfUrl },
-        })
-      } catch (e) {
-        // Non-fatal: visit is already saved, WhatsApp is best-effort
-        console.warn('WhatsApp send failed (non-fatal):', e)
-      }
-    }
-
-    setPdfStep('done')
-    window.dispatchEvent(new Event('closeeye:active-booking-changed'))
-    navigate('/companion')
+  function onTier1Done(t1: Tier1) {
+    setT1Data(t1)
+    const anyNo = [t1.mood, t1.eating, t1.medicines, t1.home].some(v => v === false) || t1.concerns === true
+    if (anyNo)           setScreen('tier2')
+    else if (isFirstOfMonth) setScreen('tier3_prompt')
+    else                 setScreen('post_update')
   }
 
-  // ─── Render helpers ───────────────────────────────────────────────────────
+  function onTier2Done(t2: Tier2) {
+    setT2Data(t2)
+    if (isFirstOfMonth) setScreen('tier3_prompt')
+    else setScreen('post_update')
+  }
 
-  const ScoreField = ({ name, label }: { name: string; label: string }) => (
-    <div>
-      <label className="block text-sm font-semibold text-green-900 mb-2">{label} (1–5) *</label>
-      <div className="flex gap-2">
-        {[1, 2, 3, 4, 5].map(n => (
-          <label key={n} className="flex-1">
-            <input type="radio" value={n} {...register(name, { required: true })} className="sr-only peer" />
-            <div className="text-center py-2 border-2 border-gray-200 rounded-xl text-sm font-semibold cursor-pointer peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-700 hover:border-green-300 transition-colors">
-              {n}
-            </div>
-          </label>
-        ))}
-      </div>
-      {errors[name] && <p className="text-red-500 text-xs mt-1">Required</p>}
-    </div>
-  )
+  function onTier3Done(t3: Tier3) { setT3Data(t3); setScreen('post_update') }
+  function onTier3Defer()          { setScreen('post_update') }
 
-  // ─── Loading / error states ───────────────────────────────────────────────
+  async function onPostUpdateDone(note: string | null) {
+    if (!t1Data) return
+    if (note && elderProfile?.id) {
+      const companion = authProfile?.full_name || 'Companion'
+      const datePart  = format(new Date(), 'dd MMM yyyy')
+      const existing  = elderProfile.continuity_notes || ''
+      await supabase
+        .from('elder_profiles')
+        .update({ continuity_notes: `${existing}\n${datePart} — ${companion}: ${note}` })
+        .eq('id', elderProfile.id)
+    }
+    await finaliseVisit()
+  }
+
+  async function finaliseVisit() {
+    if (!booking || !user || !t1Data) return
+    setSaving(true); setSaveError('')
+
+    const endTime   = new Date()
+    const startTime = startTimeRef.current
+    const flags     = deriveFlags(t1Data, t2Data || {})
+    const moodScore = deriveMoodScore(t1Data)
+
+    // Upload tier-3 photos
+    const tier3PhotoUrls: string[] = []
+    const t3Photos: { file: File; url: string }[] = (t3Data as any)?._photos || []
+    for (const { file } of t3Photos) {
+      const path = `${booking.id}/monthly-${Date.now()}-${file.name}`
+      const { error } = await supabase.storage.from('visit-photos').upload(path, file)
+      if (!error) tier3PhotoUrls.push(path)
+    }
+
+    const checkOutGps = await getGPS()
+    const checkOutAt  = endTime.toISOString()
+
+    await supabase.from('bookings').update({
+      checked_out_at: checkOutAt,
+      check_out_lat:  checkOutGps?.lat ?? null,
+      check_out_lng:  checkOutGps?.lng ?? null,
+      status:         'completed',
+      completed_at:   checkOutAt,
+    }).eq('id', booking.id)
+
+    const { error: visErr } = await supabase.from('visits').insert({
+      booking_id:     booking.id,
+      elder_id:       elderProfile?.id ?? null,
+      companion_id:   user.id,
+      start_time:     startTime.toISOString(),
+      end_time:       checkOutAt,
+      tier_completed: t3Data ? 3 : t2Data ? 2 : 1,
+      checklist_data: { tier1: t1Data, tier2: t2Data ?? null, tier3: t3Data ?? null },
+      flags,
+      flag_notes:     t2Data?.concerns_text || null,
+      one_moment:     t1Data.one_moment,
+      photo_urls:     tier3PhotoUrls,
+      mood_score:     moodScore,
+    })
+
+    if (visErr) { setSaveError(visErr.message); setSaving(false); return }
+
+    const elderName     = elderProfile?.name || booking.loved_ones?.full_name || 'Aunty/Uncle'
+    const companionName = authProfile?.full_name || 'Companion'
+    const text = generateWhatsAppReport({
+      elderName, companionName, startTime, endTime: new Date(checkOutAt),
+      t1: t1Data, t2: t2Data, flags,
+    })
+    setReportText(text)
+    setSaving(false)
+    setScreen('report')
+    window.dispatchEvent(new Event('closeeye:active-booking-changed'))
+  }
+
+  async function sendReport() {
+    if (!booking) return
+    setSaving(true)
+    try {
+      await supabase.functions.invoke('send-visit-whatsapp', {
+        body: { booking_id: booking.id, message: reportText },
+      })
+      await supabase.from('visits')
+        .update({ report_sent: true, report_sent_at: new Date().toISOString() })
+        .eq('booking_id', booking.id)
+    } catch (e) {
+      console.warn('WhatsApp send (non-fatal):', e)
+    } finally {
+      setReportSent(true)
+      setSaving(false)
+      setTimeout(() => navigate('/companion'), 1500)
+    }
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   if (loading) return (
     <div className="max-w-lg mx-auto space-y-5 animate-pulse">
       <div className="h-4 bg-gray-100 rounded w-24" />
-      <div className="h-8 bg-gray-200 rounded-xl w-48" />
-      <div className="h-4 bg-gray-100 rounded w-36" />
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
-        <div className="h-4 bg-gray-200 rounded w-32" />
-        <div className="h-12 bg-gray-100 rounded-xl" />
-      </div>
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 h-32" />
+      <div className="h-48 bg-gray-200 rounded-2xl" />
       <div className="h-12 bg-gray-200 rounded-xl" />
     </div>
   )
@@ -584,32 +925,24 @@ export function CompanionVisit() {
   if (!booking) return (
     <div className="text-center py-20">
       <p className="text-green-900 font-semibold mb-1">Visit not found</p>
-      <p className="text-gray-400 text-sm mb-4">This visit doesn't exist or isn't assigned to you.</p>
-      <button onClick={() => navigate('/companion')} className="flex items-center gap-1.5 text-sm text-green-700 font-medium mx-auto">
-        <ArrowLeft size={15} /> Back
-      </button>
+      <button onClick={() => navigate('/companion')} className="text-sm text-green-700 font-medium">← Back</button>
     </div>
   )
 
-  const phase: 'checkin' | 'report' = booking.checked_in_at ? 'report' : 'checkin'
+  const isCheckIn = !booking.checked_in_at
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PHASE 1 — CHECK-IN
-  // ═══════════════════════════════════════════════════════════════════════════
-  if (phase === 'checkin') return (
+  // ─── CHECK-IN ─────────────────────────────────────────────────────────────
+
+  if (isCheckIn) return (
     <div className="max-w-lg mx-auto space-y-5 animate-fade-in">
-      {/* Nav + step indicator */}
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => navigate('/companion')}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-green-800 transition-colors"
-        >
+        <button onClick={() => navigate('/companion')}
+          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-green-800 transition-colors">
           <ArrowLeft size={16} /> Back
         </button>
-        <StepIndicator current={1} />
+        <p className="text-xs font-semibold text-gray-400">Step 1 of 6</p>
       </div>
 
-      {/* Header */}
       <div className="bg-white rounded-2xl border border-gray-100 p-4">
         <div className="flex items-center gap-2 mb-1">
           <Clock size={14} className="text-green-600" />
@@ -619,12 +952,11 @@ export function CompanionVisit() {
         <p className="text-sm text-gray-400">{booking.loved_ones?.city}</p>
         {booking.scheduled_at && (
           <p className="text-xs text-green-600 font-semibold mt-2">
-            Scheduled {new Date(booking.scheduled_at).toLocaleString('en-IN', { timeStyle: 'short', dateStyle: 'medium' })}
+            Scheduled {format(new Date(booking.scheduled_at), 'd MMM, h:mm a')}
           </p>
         )}
       </div>
 
-      {/* Booking notes for companion */}
       {booking.notes && (
         <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
           <p className="text-xs font-semibold text-amber-700 mb-1">Instructions from the family</p>
@@ -632,43 +964,35 @@ export function CompanionVisit() {
         </div>
       )}
 
-      {/* GPS */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 space-y-3">
+      <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
         <h2 className="font-semibold text-green-900 text-sm">Your location</h2>
-        <GpsCapture
-          gps={gps}
-          loading={gpsLoading}
-          error={gpsError}
-          onCapture={captureGPS}
-        />
-        <p className="text-xs text-gray-400">
-          GPS is recorded at check-in to verify the visit location. You can still check in without GPS.
-        </p>
+        <GpsCapture gps={gps} loading={gpsLoading} error={gpsError} onCapture={captureGPS} />
+        <p className="text-xs text-gray-400">GPS is recorded at check-in to verify the visit location. You can still check in without it.</p>
       </div>
 
-      {/* Arrival photo */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
-        <h2 className="font-semibold text-green-900 text-sm mb-3">Arrival photo</h2>
+      <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <h2 className="font-semibold text-green-900 text-sm mb-3">Arrival photo (optional)</h2>
         <PhotoPicker
           label="Take a photo on arrival"
-          hint="Helps confirm you've arrived. Optional but recommended."
           photos={ciPhotos}
-          onAdd={addCiPhoto}
-          onRemove={removeCiPhoto}
-          max={1}
-          error={ciPhotoErr}
-          single
+          onAdd={files => {
+            setCiPhotoErr('')
+            for (const f of Array.from(files)) {
+              if (!f.type.startsWith('image/')) { setCiPhotoErr('Images only.'); continue }
+              if (f.size > MAX_PHOTO_MB * 1024 * 1024) { setCiPhotoErr(`Max ${MAX_PHOTO_MB} MB.`); continue }
+              setCiPhotos(prev => prev.length < 1 ? [{ file: f, url: URL.createObjectURL(f) }] : prev)
+            }
+          }}
+          onRemove={i => { URL.revokeObjectURL(ciPhotos[i].url); setCiPhotos(p => p.filter((_, j) => j !== i)) }}
+          max={1} error={ciPhotoErr} single
         />
       </div>
 
-      {/* Timestamp preview */}
       <div className="bg-green-50 border border-green-100 rounded-2xl p-4 flex items-center gap-3">
         <CheckCircle2 size={18} className="text-green-600 flex-shrink-0" />
         <div>
           <p className="text-xs font-semibold text-green-800">Check-in timestamp</p>
-          <p className="text-xs text-gray-500">
-            Will be recorded as: {new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-          </p>
+          <p className="text-xs text-gray-500">Will be recorded as: {new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>
         </div>
       </div>
 
@@ -679,209 +1003,94 @@ export function CompanionVisit() {
         </div>
       )}
 
-      <button
-        onClick={handleCheckIn}
-        disabled={checkingIn}
-        className="w-full bg-green-800 text-white font-semibold py-4 rounded-xl hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 transition-colors flex items-center justify-center gap-2"
-      >
+      <button onClick={handleCheckIn} disabled={checkingIn}
+        className="w-full bg-green-800 text-white font-bold py-4 rounded-xl hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 transition-colors flex items-center justify-center gap-2 min-h-[52px]">
         {checkingIn ? <><Loader2 size={16} className="animate-spin" /> Checking in…</> : 'Confirm Check-In →'}
       </button>
     </div>
   )
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PHASE 2 — VISIT REPORT + CHECK-OUT
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ─── POST CHECK-IN ────────────────────────────────────────────────────────
+
+  const stepNum: Record<Screen, number> = {
+    briefing: 2, tier1: 3, tier2: 3, tier3_prompt: 4, tier3: 4, post_update: 5, report: 6,
+  }
+
   return (
-    <div className="space-y-5 animate-fade-in">
-      {/* Nav + step indicator */}
+    <div className="max-w-lg mx-auto space-y-5">
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => navigate('/companion')}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-green-800 transition-colors"
-        >
+        <button onClick={() => navigate('/companion')}
+          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-green-800 transition-colors">
           <ArrowLeft size={16} /> Back
         </button>
-        <StepIndicator current={2} />
+        <p className="text-xs font-semibold text-gray-400">Step {stepNum[screen]} of 6</p>
       </div>
 
-      {/* Header */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4">
-        <div className="flex items-center gap-2 mb-1">
-          <FileText size={14} className="text-green-600" />
-          <p className="text-xs font-bold uppercase tracking-widest text-green-600">Visit Report</p>
-        </div>
-        <p className="font-serif text-xl text-green-900 mb-0.5">{booking.loved_ones?.full_name}</p>
-        <p className="text-sm text-gray-400">{booking.loved_ones?.city}</p>
+      <div className="flex items-center gap-2">
+        <div className="w-1.5 h-6 bg-green-700 rounded-full" />
+        <p className="font-semibold text-green-900">{booking.loved_ones?.full_name}</p>
+        {booking.loved_ones?.city && <>
+          <span className="text-gray-300">·</span>
+          <p className="text-sm text-gray-400">{booking.loved_ones.city}</p>
+        </>}
       </div>
 
-      {/* Check-in summary strip */}
-      <div className="bg-green-50 border border-green-100 rounded-2xl p-3.5 flex items-center gap-3">
-        <CheckCircle2 size={16} className="text-green-600 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-green-800">Checked in</p>
-          <p className="text-xs text-gray-500">
-            {new Date(booking.checked_in_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-            {booking.check_in_lat != null && (
-              <span className="ml-2 font-mono">· {booking.check_in_lat.toFixed(4)}, {booking.check_in_lng.toFixed(4)}</span>
-            )}
-          </p>
+      {saveError && (
+        <div className="flex items-start gap-2 text-red-600 bg-red-50 rounded-xl p-3">
+          <AlertTriangle size={15} className="mt-0.5 flex-shrink-0" />
+          <p className="text-sm">{saveError}</p>
         </div>
-      </div>
+      )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-
-        {/* ── Wellbeing scores ──────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 space-y-5">
-          <h2 className="font-semibold text-green-900">Wellbeing assessment</h2>
-          <ScoreField name="mood_score"        label="Mood & emotional state" />
-          <ScoreField name="health_score"      label="Physical health" />
-          <ScoreField name="home_safety_score" label="Home & safety" />
-          <div>
-            <label className="block text-xs font-semibold text-green-900 mb-1.5">Mood notes</label>
-            <textarea {...register('mood_notes')} rows={2} placeholder="Energy, mood, spirits…" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 resize-none" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-green-900 mb-1.5">Health notes</label>
-            <textarea {...register('health_notes')} rows={2} placeholder="Any complaints, symptoms, concerns…" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 resize-none" />
-          </div>
+      {saving && screen !== 'report' && (
+        <div className="bg-green-50 border border-green-100 rounded-xl p-3 flex items-center gap-2 text-green-700 text-sm">
+          <Loader2 size={15} className="animate-spin" /> Saving…
         </div>
+      )}
 
-        {/* ── Medication ────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 space-y-5">
-          <h2 className="font-semibold text-green-900">Medication</h2>
-          <div>
-            <label className="block text-xs font-semibold text-green-900 mb-2">Was medication taken? *</label>
-            <div className="flex gap-3">
-              {[['true', 'Yes ✓'], ['false', 'No ✗']].map(([v, l]) => (
-                <label key={v} className="flex-1">
-                  <input type="radio" value={v} {...register('medication_taken', { required: true })} className="sr-only peer" />
-                  <div className="text-center py-2.5 border-2 border-gray-200 rounded-xl text-sm font-semibold cursor-pointer peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-700 transition-colors">{l}</div>
-                </label>
-              ))}
-            </div>
-            {errors.medication_taken && <p className="text-red-500 text-xs mt-1">Required</p>}
+      {screen === 'briefing' && (
+        <BriefingScreen booking={booking} profile={elderProfile} lastFlags={lastFlags}
+          moodTrend={moodTrend} onStart={() => setScreen('tier1')} />
+      )}
+
+      {screen === 'tier1' && <Tier1Screen onNext={onTier1Done} />}
+
+      {screen === 'tier2' && t1Data && <Tier2Screen t1={t1Data} onNext={onTier2Done} />}
+
+      {screen === 'tier3_prompt' && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-center">
+            <p className="text-3xl mb-3">📅</p>
+            <p className="font-semibold text-amber-900 text-lg mb-2">Monthly check due</p>
+            <p className="text-sm text-amber-700">This is your first visit this month. A 3-minute health check helps track long-term trends.</p>
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-green-900 mb-1.5">Medication notes</label>
-            <input {...register('medication_notes')} placeholder="Which medications, any concerns?" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600" />
+          <div className="flex gap-3">
+            <button onClick={onTier3Defer}
+              className="flex-1 py-4 rounded-xl font-semibold text-sm border-2 border-gray-200 text-gray-500 hover:border-green-300 hover:text-green-700 transition-colors min-h-[52px]">
+              Defer once
+            </button>
+            <button onClick={() => setScreen('tier3')}
+              className="flex-1 bg-green-800 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition-colors min-h-[52px]">
+              Do it now →
+            </button>
           </div>
         </div>
+      )}
 
-        {/* ── Activity & home ───────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 space-y-5">
-          <h2 className="font-semibold text-green-900">Activity & home</h2>
-          <div>
-            <label className="block text-xs font-semibold text-green-900 mb-1.5">What did you do during the visit?</label>
-            <textarea {...register('activity_during_visit')} rows={2} placeholder="Had tea, watched TV, helped with lunch…" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 resize-none" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-green-900 mb-1.5">Home & safety notes</label>
-            <textarea {...register('home_safety_notes')} rows={2} placeholder="Cleanliness, hazards, appliances…" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 resize-none" />
-          </div>
-        </div>
+      {screen === 'tier3' && <Tier3Screen onNext={onTier3Done} onDefer={onTier3Defer} />}
 
-        {/* ── Visit photos ──────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6">
-          <h2 className="font-semibold text-green-900 mb-3">Photos</h2>
-          <PhotoPicker
-            label={`Add up to ${MAX_PHOTOS} photos from the visit`}
-            hint="These are shared with the family in the report."
-            photos={photos}
-            onAdd={addPhoto}
-            onRemove={removePhoto}
-            max={MAX_PHOTOS}
-            error={photoErr}
-          />
-        </div>
+      {screen === 'post_update' && (
+        <PostVisitUpdateScreen
+          elderName={elderProfile?.name || booking.loved_ones?.full_name || 'them'}
+          onNext={onPostUpdateDone}
+        />
+      )}
 
-        {/* ── Visit videos ──────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 space-y-3">
-          <h2 className="font-semibold text-green-900">Videos</h2>
-          <p className="text-xs text-gray-400">Up to {MAX_VIDEOS} videos (MP4 or MOV, max {MAX_VIDEO_MB} MB each).</p>
-          {videos.length > 0 && (
-            <div className="flex flex-wrap gap-3">
-              {videos.map((v, i) => (
-                <div key={v.url} className="relative w-28 h-20">
-                  <video src={v.url} muted className="w-28 h-20 object-cover rounded-xl border border-gray-100 bg-black" />
-                  <button type="button" onClick={() => removeVideo(i)} className="absolute -top-2 -right-2 bg-white border border-gray-200 rounded-full p-1 text-gray-500 hover:text-red-600 shadow-sm">
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          {videos.length < MAX_VIDEOS && (
-            <label className="inline-flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-500 cursor-pointer hover:border-green-300 hover:text-green-700 transition-colors">
-              <Video size={16} /> Add video
-              <input type="file" accept="video/mp4,video/quicktime" multiple capture="environment" className="sr-only"
-                onChange={e => { if (e.target.files?.length) addVideo(e.target.files); e.target.value = '' }} />
-            </label>
-          )}
-          {videoErr && <p className="text-red-500 text-xs">{videoErr}</p>}
-        </div>
-
-        {/* ── Message for the family ────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 space-y-5">
-          <h2 className="font-semibold text-green-900">Message for the family</h2>
-          <div>
-            <label className="block text-xs font-semibold text-green-900 mb-1.5">Warm message to share *</label>
-            <textarea {...register('family_message', { required: true })} rows={3}
-              placeholder="Had a lovely visit with aunty. She's in good spirits and…"
-              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 resize-none" />
-            {errors.family_message && <p className="text-red-500 text-xs mt-1">Required — the family sees this first.</p>}
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-green-900 mb-2">Follow-up needed?</label>
-            <div className="flex gap-3">
-              {[['false', 'No'], ['true', 'Yes']].map(([v, l]) => (
-                <label key={v} className="flex-1">
-                  <input type="radio" value={v} {...register('follow_up_needed')} defaultChecked={v === 'false'} className="sr-only peer" />
-                  <div className="text-center py-2.5 border-2 border-gray-200 rounded-xl text-sm font-semibold cursor-pointer peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-700 transition-colors">{l}</div>
-                </label>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-green-900 mb-1.5">Follow-up notes</label>
-            <input {...register('follow_up_notes')} placeholder="If yes, what needs attention?" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600" />
-          </div>
-        </div>
-
-        {/* ── Check-out info ────────────────────────────────────────── */}
-        <div className="bg-green-50 border border-green-100 rounded-2xl p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <MapPin size={15} className="text-green-600" />
-            <p className="text-xs font-semibold text-green-800">Check-out on submit</p>
-          </div>
-          <p className="text-xs text-gray-500 leading-relaxed">
-            When you tap <strong>Complete Visit</strong>, your GPS location and timestamp will be
-            recorded as the check-out, and a PDF report will be generated and sent to the family
-            via WhatsApp.
-          </p>
-        </div>
-
-        {/* PDF progress */}
-        <PdfProgress step={pdfStep} />
-
-        {saveError && (
-          <div className="flex items-start gap-2 text-red-600 bg-red-50 rounded-xl p-3">
-            <AlertTriangle size={15} className="mt-0.5 flex-shrink-0" />
-            <p className="text-sm">{saveError}</p>
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full bg-green-800 text-white font-semibold py-4 rounded-xl hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 transition-colors flex items-center justify-center gap-2"
-        >
-          {saving
-            ? <><Loader2 size={16} className="animate-spin" /> {pdfStep === 'generating' ? 'Generating PDF…' : pdfStep === 'sending' ? 'Sending to family…' : 'Completing visit…'}</>
-            : 'Complete Visit & Send Report →'}
-        </button>
-
-      </form>
+      {screen === 'report' && (
+        <ReportScreen report={reportText}
+          flags={t1Data ? deriveFlags(t1Data, t2Data || {}) : 'none'}
+          onSend={sendReport} sending={saving} sent={reportSent} />
+      )}
     </div>
   )
 }
