@@ -49,7 +49,7 @@ create policy "family_read_elder_profiles"
     exists (
       select 1 from public.loved_ones lo
       where lo.id = elder_profiles.loved_one_id
-        and lo.user_id = auth.uid()
+        and lo.family_user_id = auth.uid()
     )
   );
 
@@ -115,7 +115,7 @@ create policy "family_read_visits"
       select 1 from public.elder_profiles ep
       join public.loved_ones lo on lo.id = ep.loved_one_id
       where ep.id = visits.elder_id
-        and lo.user_id = auth.uid()
+        and lo.family_user_id = auth.uid()
     )
   );
 
