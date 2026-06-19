@@ -102,20 +102,23 @@ function svgWordmark(style, c1, c2) {
 </svg>`
 }
 
-// 5 & 6. full logo — icon left, wordmark right
-// Canvas 1200×300: icon 210×210 at (44, 45), text centred in remaining space
+// 5 & 6. full logo — icon left, wordmark right, tight gap
+// Icon: 200×200 at (0, 20). Gap: 52px (≈ one letter-width at this font size).
+// Text: text-anchor="start" at x=252. Canvas is over-wide (1000px); sharp
+// will .trim() the transparent right/top/bottom edge, then re-add even padding.
 function svgLogoFull(style, c1, c2, iconSnippet) {
-  const iX = 44, iY = 45, iW = 210
-  const tf      = iconTransform(iX, iY, iW)
-  // Text horizontal centre: icon right + gap + half of remaining width
-  const textX   = Math.round(iX + iW + 32 + (1200 - iX - iW - 32 - 40) / 2)  // ≈ 722
+  const iX = 0, iY = 20, iW = 200
+  const tf    = iconTransform(iX, iY, iW)
+  // Icon optical centre: iY + iW/2 = 120. Text optical centre ≈ baseline − 50.
+  const textX = iX + iW + 52   // 252 — tight gap
+  const textY = 170             // baseline, optical centre ≈ 120
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 240">
   ${style}
   ${iconSnippet(tf)}
-  <text text-anchor="middle" x="${textX}" y="190"
+  <text text-anchor="start" x="${textX}" y="${textY}"
         font-family="${FONT}"
-        font-size="138" letter-spacing="-3">
+        font-size="140" letter-spacing="-3">
     <tspan fill="${c1}">close </tspan><tspan fill="${c2}">eye</tspan>
   </text>
 </svg>`
@@ -144,23 +147,34 @@ async function main() {
   const fontB64 = await fetchFont()
   const style   = styleTag(fontB64)
 
+  // Logo-full assets: rendered on a generous canvas then auto-trimmed + re-padded
+  // so there's no extra whitespace — the output width/height is content-driven.
+  const PAD = 28  // even padding on all four sides after trim
+  const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 }
+
   const assets = [
-    { name: 'icon-only',       svg: svgIconOnly(),                                   w: 500,  h: 500  },
-    { name: 'icon-white',      svg: svgIconWhite(),                                  w: 500,  h: 500  },
-    { name: 'wordmark-only',   svg: svgWordmark(style, GREEN_900, GREEN_600),        w: 1000, h: 220  },
-    { name: 'wordmark-white',  svg: svgWordmark(style, WHITE,     WHITE),            w: 1000, h: 220  },
-    { name: 'logo-full',       svg: svgLogoFull(style, GREEN_900, GREEN_600, iconGreenSnippet), w: 1200, h: 300 },
-    { name: 'logo-full-white', svg: svgLogoFull(style, WHITE,     WHITE,     iconWhiteSnippet), w: 1200, h: 300 },
+    { name: 'icon-only',       svg: svgIconOnly(),                                              w: 500,  h: 500,  trim: false },
+    { name: 'icon-white',      svg: svgIconWhite(),                                             w: 500,  h: 500,  trim: false },
+    { name: 'wordmark-only',   svg: svgWordmark(style, GREEN_900, GREEN_600),                   w: 1000, h: 220,  trim: false },
+    { name: 'wordmark-white',  svg: svgWordmark(style, WHITE,     WHITE),                       w: 1000, h: 220,  trim: false },
+    { name: 'logo-full',       svg: svgLogoFull(style, GREEN_900, GREEN_600, iconGreenSnippet), w: 1000, h: 240,  trim: true  },
+    { name: 'logo-full-white', svg: svgLogoFull(style, WHITE,     WHITE,     iconWhiteSnippet), w: 1000, h: 240,  trim: true  },
   ]
 
   console.log('\nGenerating PNGs...')
-  for (const { name, svg, w, h } of assets) {
+  for (const { name, svg, w, h, trim } of assets) {
     const out = `${ROOT}/public/${name}.png`
-    await sharp(Buffer.from(svg), { density: 300 })
-      .resize(w, h, { fit: 'fill' })
-      .png({ compressionLevel: 9, adaptiveFiltering: true })
-      .toFile(out)
-    console.log(`  ✓ public/${name}.png  (${w}×${h})`)
+    let pipeline = sharp(Buffer.from(svg), { density: 300 }).resize(w, h, { fit: 'fill' })
+
+    if (trim) {
+      // Remove transparent edges, then restore even padding
+      pipeline = pipeline
+        .trim({ background: TRANSPARENT, threshold: 0 })
+        .extend({ top: PAD, right: PAD, bottom: PAD, left: PAD, background: TRANSPARENT })
+    }
+
+    const info = await pipeline.png({ compressionLevel: 9, adaptiveFiltering: true }).toFile(out)
+    console.log(`  ✓ public/${name}.png  (${info.width}×${info.height})`)
   }
 
   console.log('\nDone! URLs after deploy:')
