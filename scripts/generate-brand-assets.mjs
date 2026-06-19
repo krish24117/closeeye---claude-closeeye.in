@@ -5,6 +5,7 @@
 //         public/logo-full.png, public/logo-full-white.png
 
 import sharp from 'sharp'
+import { readFileSync } from 'node:fs'
 import { VIEWBOX, RIBBON_D, PLUS_D, RING_D, GRADIENT_FROM, GRADIENT_TO, ACCENT }
   from './icons/traced-paths.mjs'
 
@@ -12,40 +13,29 @@ const ROOT = process.cwd()
 const { x: VX, y: VY, size: VS } = VIEWBOX   // 6.20, 27.95, 229.60
 
 // Brand colors
-const GREEN_900 = '#0E2A1F'   // "close"
-const GREEN_600 = '#2d6b48'   // "eye"
+const GREEN_900 = '#0E2A1F'   // "close"  ← text-green-900
+const GREEN_600 = '#2d6b48'   // "eye"    ← text-green-600
 const WHITE     = '#ffffff'
-const FONT      = "'DM Serif Display', Georgia, 'Times New Roman', serif"
+const FONT      = "'DM Serif Display', Georgia, serif"
 
-// ── Font ─────────────────────────────────────────────────────────────────────
-// Fetch DM Serif Display from Google Fonts as TTF, embed as base64 in SVG so
-// librsvg (sharp's renderer) uses the exact brand font.
-async function fetchFont() {
-  try {
-    // Old UA makes Google Fonts return TTF instead of WOFF2 — better librsvg compat
-    const res = await fetch(
-      'https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap',
-      { headers: { 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0' } }
-    )
-    const css = await res.text()
-    const m   = css.match(/url\((https:\/\/fonts\.gstatic\.com[^)]+)\)/)
-    if (!m) throw new Error('No font URL in CSS response')
-    const fontRes = await fetch(m[1])
-    const buf     = Buffer.from(await fontRes.arrayBuffer())
-    console.log(`  Font: ${Math.round(buf.length / 1024)}KB`)
-    return buf.toString('base64')
-  } catch (e) {
-    console.warn(`  Font fetch failed (${e.message}) — will use Georgia fallback`)
-    return null
-  }
+// ── Font ──────────────────────────────────────────────────────────────────────
+// Load DM Serif Display from local @fontsource package (latin subset, 400
+// normal, WOFF2). This is reliable and matches what the browser loads exactly.
+function loadFont() {
+  const fontPath = new URL(
+    '../node_modules/@fontsource/dm-serif-display/files/dm-serif-display-latin-400-normal.woff2',
+    import.meta.url
+  )
+  const buf = readFileSync(fontPath)
+  console.log(`  Font: ${Math.round(buf.length / 1024)}KB (WOFF2 local)`)
+  return buf.toString('base64')
 }
 
 function styleTag(b64) {
-  if (!b64) return ''
   return `<style>
     @font-face {
       font-family: 'DM Serif Display';
-      src: url('data:font/truetype;charset=utf-8;base64,${b64}') format('truetype');
+      src: url('data:font/woff2;base64,${b64}') format('woff2');
       font-weight: 400;
       font-style: normal;
     }
@@ -60,7 +50,7 @@ function gradDef(id = 'g') {
     </linearGradient>`
 }
 
-// Compute transform to place the icon's native viewBox rect into (x, y, w, h)
+// Compute transform to place the icon's native viewBox into (x, y, w, w)
 function iconTransform(x, y, w) {
   const s  = w / VS
   const tx = (x - VX * s).toFixed(4)
@@ -70,7 +60,7 @@ function iconTransform(x, y, w) {
 
 // ── SVG builders ──────────────────────────────────────────────────────────────
 
-// 1. icon-only — transparent bg, gradient colours
+// 1. icon-only — gradient colours, transparent bg
 function svgIconOnly() {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VX} ${VY} ${VS} ${VS}">
   <defs>${gradDef()}</defs>
@@ -80,7 +70,7 @@ function svgIconOnly() {
 </svg>`
 }
 
-// 2. icon-white — transparent bg, all white
+// 2. icon-white — all white, transparent bg
 function svgIconWhite() {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VX} ${VY} ${VS} ${VS}">
   <path d="${RIBBON_D}" fill="${WHITE}" fill-rule="evenodd"/>
@@ -89,36 +79,45 @@ function svgIconWhite() {
 </svg>`
 }
 
-// 3 & 4. wordmark — "close " dark, "eye" light (or both white)
-// Canvas 1000×220, font 150px, baseline y=162 (top padding ~50, bottom ~30)
+// 3 & 4. wordmark-only / wordmark-white
+// Render on a wide canvas, then auto-trim + re-pad so width = content.
+// Navbar reference: font-serif text-xl tracking-tight = DM Serif Display 20px.
+// For the export we use a large font, same typeface + two-tone color pattern.
 function svgWordmark(style, c1, c2) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 220">
+  // Over-wide canvas; transparent right/top/bottom trimmed by sharp
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 240">
   ${style}
-  <text text-anchor="middle" x="500" y="162"
+  <text x="24" y="185"
+        text-anchor="start"
         font-family="${FONT}"
-        font-size="150" letter-spacing="-3">
+        font-size="160"
+        letter-spacing="-4">
     <tspan fill="${c1}">close </tspan><tspan fill="${c2}">eye</tspan>
   </text>
 </svg>`
 }
 
-// 5 & 6. full logo — icon left, wordmark right, tight gap
-// Icon: 200×200 at (0, 20). Gap: 52px (≈ one letter-width at this font size).
-// Text: text-anchor="start" at x=252. Canvas is over-wide (1000px); sharp
-// will .trim() the transparent right/top/bottom edge, then re-add even padding.
+// 5 & 6. logo-full / logo-full-white
+// Navbar reference: <Logo w-8 h-8 /> + "close eye" text-xl tracking-tight.
+//   • icon = 200px  → same 200px square in our export
+//   • font-size so cap-height ≈ icon × 0.65 → 130px cap → 130/0.72 ≈ 180px font
+//     (DM Serif Display cap-height-to-em ratio ≈ 0.72)
+// Gap between icon right edge and text start: 44px (tight, ~one letter-width)
+// Canvas is deliberately over-wide; sharp trims transparent edges + re-pads.
 function svgLogoFull(style, c1, c2, iconSnippet) {
-  const iX = 0, iY = 20, iW = 200
+  const iX = 0, iY = 0, iW = 200
   const tf    = iconTransform(iX, iY, iW)
-  // Icon optical centre: iY + iW/2 = 120. Text optical centre ≈ baseline − 50.
-  const textX = iX + iW + 52   // 252 — tight gap
-  const textY = 170             // baseline, optical centre ≈ 120
+  const textX = iW + 44          // 244 — tight gap
+  const textY = 154              // baseline: cap top ≈ 154 - 130 = 24 (flush with icon top)
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 240">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 200">
   ${style}
   ${iconSnippet(tf)}
-  <text text-anchor="start" x="${textX}" y="${textY}"
+  <text x="${textX}" y="${textY}"
+        text-anchor="start"
         font-family="${FONT}"
-        font-size="140" letter-spacing="-3">
+        font-size="180"
+        letter-spacing="-4">
     <tspan fill="${c1}">close </tspan><tspan fill="${c2}">eye</tspan>
   </text>
 </svg>`
@@ -141,43 +140,41 @@ function iconWhiteSnippet(tf) {
   </g>`
 }
 
+// ── Render pipeline ───────────────────────────────────────────────────────────
+const PAD         = 28
+const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 }
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
-  console.log('Fetching DM Serif Display font...')
-  const fontB64 = await fetchFont()
+  console.log('Loading DM Serif Display font...')
+  const fontB64 = loadFont()
   const style   = styleTag(fontB64)
 
-  // Logo-full assets: rendered on a generous canvas then auto-trimmed + re-padded
-  // so there's no extra whitespace — the output width/height is content-driven.
-  const PAD = 28  // even padding on all four sides after trim
-  const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 }
-
   const assets = [
-    { name: 'icon-only',       svg: svgIconOnly(),                                              w: 500,  h: 500,  trim: false },
-    { name: 'icon-white',      svg: svgIconWhite(),                                             w: 500,  h: 500,  trim: false },
-    { name: 'wordmark-only',   svg: svgWordmark(style, GREEN_900, GREEN_600),                   w: 1000, h: 220,  trim: false },
-    { name: 'wordmark-white',  svg: svgWordmark(style, WHITE,     WHITE),                       w: 1000, h: 220,  trim: false },
-    { name: 'logo-full',       svg: svgLogoFull(style, GREEN_900, GREEN_600, iconGreenSnippet), w: 1000, h: 240,  trim: true  },
-    { name: 'logo-full-white', svg: svgLogoFull(style, WHITE,     WHITE,     iconWhiteSnippet), w: 1000, h: 240,  trim: true  },
+    // Icons: render exactly at target size — viewBox already tight, no trim/pad
+    { name: 'icon-only',      svg: svgIconOnly(),  w: 500,  h: 500,  trimPad: false },
+    { name: 'icon-white',     svg: svgIconWhite(), w: 500,  h: 500,  trimPad: false },
+    // Text assets: render on an over-wide canvas, trim transparent edges, re-add even padding
+    { name: 'wordmark-only',  svg: svgWordmark(style, GREEN_900, GREEN_600), w: 1200, h: 240, trimPad: true },
+    { name: 'wordmark-white', svg: svgWordmark(style, WHITE,     WHITE),     w: 1200, h: 240, trimPad: true },
+    { name: 'logo-full',       svg: svgLogoFull(style, GREEN_900, GREEN_600, iconGreenSnippet), w: 1100, h: 200, trimPad: true },
+    { name: 'logo-full-white', svg: svgLogoFull(style, WHITE,     WHITE,     iconWhiteSnippet), w: 1100, h: 200, trimPad: true },
   ]
 
   console.log('\nGenerating PNGs...')
-  for (const { name, svg, w, h, trim } of assets) {
+  for (const { name, svg, w, h, trimPad } of assets) {
     const out = `${ROOT}/public/${name}.png`
-    let pipeline = sharp(Buffer.from(svg), { density: 300 }).resize(w, h, { fit: 'fill' })
-
-    if (trim) {
-      // Remove transparent edges, then restore even padding
-      pipeline = pipeline
+    let pipe = sharp(Buffer.from(svg), { density: 288 }).resize(w, h, { fit: 'fill' })
+    if (trimPad) {
+      pipe = pipe
         .trim({ background: TRANSPARENT, threshold: 0 })
         .extend({ top: PAD, right: PAD, bottom: PAD, left: PAD, background: TRANSPARENT })
     }
-
-    const info = await pipeline.png({ compressionLevel: 9, adaptiveFiltering: true }).toFile(out)
+    const info = await pipe.png({ compressionLevel: 9, adaptiveFiltering: true }).toFile(out)
     console.log(`  ✓ public/${name}.png  (${info.width}×${info.height})`)
   }
 
-  console.log('\nDone! URLs after deploy:')
+  console.log('\nDone. URLs after deploy:')
   assets.forEach(({ name }) =>
     console.log(`  https://closeeye.in/${name}.png`)
   )
