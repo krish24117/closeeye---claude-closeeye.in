@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { format } from 'date-fns'
-import { ChevronDown, AlertTriangle, MessageSquare } from 'lucide-react'
+import { ChevronDown, AlertTriangle, MessageSquare, Download } from 'lucide-react'
 import { Skeleton } from '@/components/ui/Skeleton'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ function ChecklistDetail({ data }: { data: any }) {
 
 // ─── Visit row ──────────────────────────────────────────────────────────────
 
-function VisitRow({ v, photoUrls }: { v: any; photoUrls: Record<string, string> }) {
+function VisitRow({ v, photoUrls, pdfUrl }: { v: any; photoUrls: Record<string, string>; pdfUrl?: string }) {
   const [open, setOpen] = useState(false)
   const elderName = v.elder_profiles?.name || v.bookings?.loved_ones?.full_name || 'Elder'
   const when      = v.end_time || v.created_at
@@ -164,6 +164,12 @@ function VisitRow({ v, photoUrls }: { v: any; photoUrls: Record<string, string> 
             ) : (
               <p className="text-sm text-gray-400">Report text was not recorded for this visit.</p>
             )}
+            {pdfUrl && (
+              <a href={pdfUrl} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1.5 mt-2 text-xs font-semibold text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors">
+                <Download size={12} /> Download PDF
+              </a>
+            )}
           </div>
         </div>
       )}
@@ -177,6 +183,7 @@ export function CompanionVisits() {
   const { user } = useAuth()
   const [visits, setVisits]       = useState<any[]>([])
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({})
+  const [pdfUrls, setPdfUrls]     = useState<Record<string, string>>({})
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState<string | null>(null)
 
@@ -209,6 +216,17 @@ export function CompanionVisits() {
       const map: Record<string, string> = {}
       data?.forEach(d => { if (d.signedUrl && d.path) map[d.path] = d.signedUrl })
       setPhotoUrls(map)
+    })
+  }, [visits])
+
+  // Resolve signed URLs for the generated PDFs
+  useEffect(() => {
+    const paths = visits.map(v => v.pdf_path).filter(Boolean) as string[]
+    if (paths.length === 0) return
+    supabase.storage.from('visit-pdfs').createSignedUrls(paths, 3600).then(({ data }) => {
+      const map: Record<string, string> = {}
+      data?.forEach(d => { if (d.signedUrl && d.path) map[d.path] = d.signedUrl })
+      setPdfUrls(map)
     })
   }, [visits])
 
@@ -248,7 +266,7 @@ export function CompanionVisits() {
         </div>
       ) : (
         <div className="space-y-2">
-          {visits.map(v => <VisitRow key={v.id} v={v} photoUrls={photoUrls} />)}
+          {visits.map(v => <VisitRow key={v.id} v={v} photoUrls={photoUrls} pdfUrl={v.pdf_path ? pdfUrls[v.pdf_path] : undefined} />)}
         </div>
       )}
     </div>

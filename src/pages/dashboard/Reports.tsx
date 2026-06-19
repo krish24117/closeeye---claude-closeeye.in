@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { format } from 'date-fns'
-import { ChevronDown, AlertTriangle, CalendarHeart, Sparkles } from 'lucide-react'
+import { ChevronDown, AlertTriangle, CalendarHeart, Sparkles, Download } from 'lucide-react'
 import { Skeleton } from '@/components/ui/Skeleton'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ function durationLabel(start?: string | null, end?: string | null): string {
 
 // ─── Visit card ─────────────────────────────────────────────────────────────
 
-function VisitCard({ v, companionName }: { v: any; companionName: string }) {
+function VisitCard({ v, companionName, pdfUrl }: { v: any; companionName: string; pdfUrl?: string }) {
   const [open, setOpen] = useState(false)
   const t1   = v.checklist_data?.tier1
   const when = v.end_time || v.created_at
@@ -86,6 +86,14 @@ function VisitCard({ v, companionName }: { v: any; companionName: string }) {
               <p className="text-sm text-amber-800">{v.flag_notes}</p>
             </div>
           )}
+
+          {/* Full PDF report */}
+          {pdfUrl && (
+            <a href={pdfUrl} target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors">
+              <Download size={12} /> Download full report (PDF)
+            </a>
+          )}
         </div>
       )}
     </div>
@@ -97,10 +105,22 @@ function VisitCard({ v, companionName }: { v: any; companionName: string }) {
 export function DashboardReports() {
   const [visits, setVisits]               = useState<any[]>([])
   const [companionNames, setCompanionNames] = useState<Record<string, string>>({})
+  const [pdfUrls, setPdfUrls]             = useState<Record<string, string>>({})
   const [loading, setLoading]             = useState(true)
   const [error, setError]                 = useState<string | null>(null)
 
   useEffect(() => { load() }, [])
+
+  // Resolve signed URLs for the generated PDF reports
+  useEffect(() => {
+    const paths = visits.map(v => v.pdf_path).filter(Boolean) as string[]
+    if (paths.length === 0) return
+    supabase.storage.from('visit-pdfs').createSignedUrls(paths, 3600).then(({ data }) => {
+      const map: Record<string, string> = {}
+      data?.forEach(d => { if (d.signedUrl && d.path) map[d.path] = d.signedUrl })
+      setPdfUrls(map)
+    })
+  }, [visits])
 
   async function load() {
     setLoading(true)
@@ -184,7 +204,9 @@ export function DashboardReports() {
           {/* Visit list */}
           <div className="space-y-2">
             {visits.map(v => (
-              <VisitCard key={v.id} v={v} companionName={companionNames[v.companion_id] || 'Your companion'} />
+              <VisitCard key={v.id} v={v}
+                companionName={companionNames[v.companion_id] || 'Your companion'}
+                pdfUrl={v.pdf_path ? pdfUrls[v.pdf_path] : undefined} />
             ))}
           </div>
         </>

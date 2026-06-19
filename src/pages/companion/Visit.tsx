@@ -8,6 +8,8 @@ import {
   Calendar, Send, Check,
 } from 'lucide-react'
 import { format, differenceInMinutes, startOfMonth, endOfMonth } from 'date-fns'
+import { pdf } from '@react-pdf/renderer'
+import { VisitReportPDF, type VisitPdfData } from '@/lib/visitPdf'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -152,6 +154,45 @@ ${t1.one_moment}
 
 Questions? Reply here.
 — Close Eye 🌿 | Visited by ${companionName}`
+}
+
+// Map the checklist visit data onto the @react-pdf VisitReportPDF shape.
+function buildPdfData(args: {
+  t1: Tier1; t2: Tier2 | null; companionName: string; lovedOneName: string; lovedOneCity: string
+  checkInAt: string; checkOutAt: string
+  checkInLat: number | null; checkInLng: number | null; checkOutLat: number | null; checkOutLng: number | null
+  moodScore: number; flags: 'none' | 'monitor' | 'urgent'; photoUrls: string[]
+}): VisitPdfData {
+  const { t1 } = args
+  const t2 = args.t2 || {}
+  const healthScore     = Math.max(1, 5 - [t1.eating, t1.medicines].filter(v => v === false).length * 2)
+  const homeSafetyScore = t1.home === false ? 2 : 5
+  const flagSummary     = buildFlagSummary(t1, t2)
+  return {
+    companionName:       args.companionName,
+    lovedOneName:        args.lovedOneName,
+    lovedOneCity:        args.lovedOneCity,
+    checkInAt:           args.checkInAt,
+    checkOutAt:          args.checkOutAt,
+    checkInLat:          args.checkInLat,
+    checkInLng:          args.checkInLng,
+    checkOutLat:         args.checkOutLat,
+    checkOutLng:         args.checkOutLng,
+    moodScore:           args.moodScore,
+    healthScore,
+    homeSafetyScore,
+    medicationTaken:     t1.medicines === true,
+    medicationNotes:     t2.med_which_missed || '',
+    moodNotes:           t1.mood === false ? 'Low mood observed — see follow-up notes.' : '',
+    healthNotes:         t1.eating === false && t2.eating_last_meal ? `Last meal: ${t2.eating_last_meal}` : '',
+    homeSafetyNotes:     t2.home_safety_issue || '',
+    activityDuringVisit: t1.one_moment,
+    familyMessage:       t1.one_moment,
+    followUpNeeded:      args.flags !== 'none',
+    followUpNotes:       t2.concerns_text || flagSummary,
+    photoUrls:           args.photoUrls,
+    generatedAt:         new Date().toISOString(),
+  }
 }
 
 // ─── Reusable UI pieces ───────────────────────────────────────────────────────
@@ -745,6 +786,8 @@ export function CompanionVisit() {
   const [saving,     setSaving]     = useState(false)
   const [saveError,  setSaveError]  = useState('')
   const [reportSent, setReportSent] = useState(false)
+  const [pdfUrl,     setPdfUrl]     = useState<string | null>(null)
+  const [visitId,    setVisitId]    = useState<string | null>(null)
 
   // Minimum-duration warning
   const [showDurationWarning, setShowDurationWarning] = useState(false)
@@ -944,7 +987,7 @@ export function CompanionVisit() {
       t1: t1Data, t2: t2Data, flags,
     })
 
-    const { error: visErr } = await supabase.from('visits').insert({
+    const { data: visRow, error: visErr } = await supabase.from('visits').insert({
       booking_id:         booking.id,
       elder_id:           elderProfile?.id ?? null,
       companion_id:       user.id,
@@ -959,11 +1002,43 @@ export function CompanionVisit() {
       mood_score:         moodScore,
       report_text:        text,
       short_visit_reason: shortVisitReason,
-    })
+    }).select('id').single()
 
     if (visErr) { setSaveError(visErr.message); setSaving(false); return }
-
+    setVisitId(visRow?.id ?? null)
     setReportText(text)
+
+    // Render the visit PDF, upload it to visit-pdfs, and stash a signed URL
+    // for WhatsApp delivery. Non-fatal: a failure here must not block the
+    // visit from completing.
+    try {
+      let signedPhotoUrls: string[] = []
+      if (tier3PhotoUrls.length) {
+        const { data: signed } = await supabase.storage.from('visit-photos').createSignedUrls(tier3PhotoUrls, 3600)
+        signedPhotoUrls = (signed || []).map(s => s.signedUrl).filter(Boolean) as string[]
+      }
+      const pdfData = buildPdfData({
+        t1: t1Data, t2: t2Data, companionName, lovedOneName: elderName,
+        lovedOneCity: booking.loved_ones?.city || '',
+        checkInAt:  booking.checked_in_at || startTime.toISOString(),
+        checkOutAt,
+        checkInLat:  booking.check_in_lat ?? null, checkInLng: booking.check_in_lng ?? null,
+        checkOutLat: checkOutGps?.lat ?? null,     checkOutLng: checkOutGps?.lng ?? null,
+        moodScore, flags, photoUrls: signedPhotoUrls,
+      })
+      const blob = await pdf(<VisitReportPDF data={pdfData} />).toBlob()
+      const pdfPath = `${booking.id}/visit-${Date.now()}.pdf`
+      const { error: upErr } = await supabase.storage.from('visit-pdfs')
+        .upload(pdfPath, blob, { contentType: 'application/pdf', upsert: true })
+      if (!upErr) {
+        if (visRow?.id) await supabase.from('visits').update({ pdf_path: pdfPath }).eq('id', visRow.id)
+        const { data: signedPdf } = await supabase.storage.from('visit-pdfs').createSignedUrl(pdfPath, 60 * 60 * 24 * 7)
+        setPdfUrl(signedPdf?.signedUrl ?? null)
+      }
+    } catch (e) {
+      console.warn('PDF generation failed (non-fatal):', e)
+    }
+
     setSaving(false)
     setScreen('report')
     window.dispatchEvent(new Event('closeeye:active-booking-changed'))
@@ -973,12 +1048,15 @@ export function CompanionVisit() {
     if (!booking) return
     setSaving(true)
     try {
-      await supabase.functions.invoke('send-visit-whatsapp', {
-        body: { booking_id: booking.id, message: reportText },
-      })
-      await supabase.from('visits')
-        .update({ report_sent: true, report_sent_at: new Date().toISOString() })
-        .eq('booking_id', booking.id)
+      if (pdfUrl) {
+        await supabase.functions.invoke('send-visit-whatsapp', {
+          body: { booking_id: booking.id, pdf_url: pdfUrl },
+        })
+      } else {
+        console.warn('No PDF URL available — skipping WhatsApp send')
+      }
+      const upd = supabase.from('visits').update({ report_sent: true, report_sent_at: new Date().toISOString() })
+      await (visitId ? upd.eq('id', visitId) : upd.eq('booking_id', booking.id))
     } catch (e) {
       console.warn('WhatsApp send (non-fatal):', e)
     } finally {
