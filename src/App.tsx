@@ -35,6 +35,7 @@ const BookingConfirmationPage = lazy(() => import('@/pages/dashboard/BookingConf
 const CompanionLayout = lazy(() => import('@/pages/companion/Layout').then(m => ({ default: m.CompanionLayout })))
 const CompanionHome = lazy(() => import('@/pages/companion/Home').then(m => ({ default: m.CompanionHome })))
 const CompanionVisit = lazy(() => import('@/pages/companion/Visit').then(m => ({ default: m.CompanionVisit })))
+const CompanionVisits = lazy(() => import('@/pages/companion/Visits').then(m => ({ default: m.CompanionVisits })))
 const CompanionSchedule = lazy(() => import('@/pages/companion/Schedule').then(m => ({ default: m.CompanionSchedule })))
 const CompanionEarnings = lazy(() => import('@/pages/companion/Earnings').then(m => ({ default: m.CompanionEarnings })))
 const CompanionProfile = lazy(() => import('@/pages/companion/Profile').then(m => ({ default: m.CompanionProfile })))
@@ -49,6 +50,7 @@ const AdminReports = lazy(() => import('@/pages/admin/Reports').then(m => ({ def
 const AdminLiveMap = lazy(() => import('@/pages/admin/LiveMap').then(m => ({ default: m.AdminLiveMap })))
 const AdminSurveyLeads = lazy(() => import('@/pages/admin/SurveyLeads').then(m => ({ default: m.AdminSurveyLeads })))
 const AdminLeadsCRM = lazy(() => import('@/pages/admin/LeadsCRM').then(m => ({ default: m.AdminLeadsCRM })))
+const AdminElders = lazy(() => import('@/pages/admin/Elders').then(m => ({ default: m.AdminElders })))
 
 const SurveyPage = lazy(() => import('@/pages/Survey').then(m => ({ default: m.SurveyPage })))
 
@@ -73,6 +75,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/subscription': 'Subscription — Close Eye',
   '/dashboard/booking-confirmation': 'Booking Confirmed — Close Eye',
   '/companion': 'Companion Portal — Close Eye',
+  '/companion/visits': 'Visit History — Close Eye',
   '/companion/schedule': 'My Schedule — Close Eye',
   '/companion/earnings': 'Earnings — Close Eye',
   '/companion/profile': 'My Profile — Close Eye',
@@ -84,6 +87,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/reports': 'Visit Reports — Close Eye',
   '/admin/live-map': 'Live Map — Close Eye',
   '/admin/survey-leads': 'Survey Leads — Close Eye',
+  '/admin/elders': 'Elders — Close Eye',
   '/survey': 'Survey — Close Eye',
 }
 
@@ -107,6 +111,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/dashboard/members': 'Add family members who receive visit notifications and SOS alerts.',
   '/dashboard/subscription': 'Manage your Close Eye subscription plan and billing.',
   '/companion': 'Manage your assigned visits and submit visit reports.',
+  '/companion/visits': 'Your completed Close Eye visit history and reports.',
   '/companion/schedule': 'View your upcoming and past Close Eye visit schedule.',
   '/companion/earnings': 'Track your Close Eye visit earnings.',
   '/companion/profile': 'Manage your companion profile, documents, and visit alert settings.',
@@ -240,6 +245,7 @@ export default function App() {
             <Route path="/companion" element={<ProtectedRoute role="companion"><CompanionLayout /></ProtectedRoute>}>
               <Route index element={<CompanionHome />} />
               <Route path="visit/:bookingId" element={<CompanionVisit />} />
+              <Route path="visits" element={<CompanionVisits />} />
               <Route path="schedule" element={<CompanionSchedule />} />
               <Route path="earnings" element={<CompanionEarnings />} />
               <Route path="profile" element={<CompanionProfile />} />
@@ -255,6 +261,7 @@ export default function App() {
               <Route path="live-map" element={<AdminLiveMap />} />
               <Route path="survey-leads" element={<AdminSurveyLeads />} />
               <Route path="leads" element={<AdminLeadsCRM />} />
+              <Route path="elders" element={<AdminElders />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

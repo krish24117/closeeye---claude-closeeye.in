@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Home, Calendar, Users, Heart, Wallet, FileText, MapPin, LogOut, Menu, X, ClipboardList, ListChecks } from 'lucide-react'
+import { Home, Calendar, Users, Heart, Wallet, FileText, MapPin, LogOut, Menu, X, ClipboardList, ListChecks, UserCog } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { Logo } from '@/components/ui/Logo'
@@ -10,6 +10,7 @@ const NAV = [
   { to: '/admin/bookings', icon: Calendar, label: 'Bookings' },
   { to: '/admin/companions', icon: Users, label: 'Companions' },
   { to: '/admin/families', icon: Heart, label: 'Families' },
+  { to: '/admin/elders', icon: UserCog, label: 'Elders' },
   { to: '/admin/payments', icon: Wallet, label: 'Payments' },
   { to: '/admin/reports', icon: FileText, label: 'Visit Reports' },
   { to: '/admin/live-map', icon: MapPin, label: 'Live Map' },

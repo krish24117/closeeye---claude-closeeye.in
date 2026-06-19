@@ -1,63 +1,126 @@
 import { useEffect, useState } from 'react'
-import { Download, FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { format } from 'date-fns'
+import { ChevronDown, AlertTriangle, CalendarHeart, Sparkles } from 'lucide-react'
 import { Skeleton } from '@/components/ui/Skeleton'
 
-function ReportsSkeleton() {
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const FLAG_EMOJI: Record<string, string> = { none: '✅', monitor: '🟡', urgent: '🔴' }
+const FLAG_LABEL: Record<string, string> = { none: 'All good', monitor: 'Monitoring', urgent: 'Needs attention' }
+
+const SNAPSHOT: { key: string; label: string; good: string; bad: string }[] = [
+  { key: 'mood',      label: 'Mood',      good: 'Good',         bad: 'Low' },
+  { key: 'eating',    label: 'Eating',    good: 'Well',         bad: 'Concern' },
+  { key: 'medicines', label: 'Medicines', good: 'Taken',        bad: 'Missed' },
+  { key: 'home',      label: 'Home',      good: 'Safe & clean', bad: 'Check needed' },
+]
+
+function durationLabel(start?: string | null, end?: string | null): string {
+  if (!start || !end) return '—'
+  const mins = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000)
+  if (mins < 0) return '—'
+  if (mins < 60) return `${mins} min`
+  const h = Math.floor(mins / 60), m = mins % 60
+  return m > 0 ? `${h}h ${m}m` : `${h}h`
+}
+
+// ─── Visit card ─────────────────────────────────────────────────────────────
+
+function VisitCard({ v, companionName }: { v: any; companionName: string }) {
+  const [open, setOpen] = useState(false)
+  const t1   = v.checklist_data?.tier1
+  const when = v.end_time || v.created_at
+  const flag = v.flags || 'none'
+
   return (
-    <div className="space-y-5 animate-pulse">
-      <div>
-        <Skeleton className="h-7 w-32 mb-1" />
-        <Skeleton className="h-4 w-48" />
-      </div>
-      {[1, 2].map(i => (
-        <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
-          <div className="flex justify-between items-start">
-            <div className="space-y-1.5">
-              <Skeleton className="h-4 w-36" />
-              <Skeleton className="h-3 w-48" />
-            </div>
-            <div className="flex gap-3">
-              {[1, 2, 3].map(j => <Skeleton key={j} className="w-10 h-12 rounded-xl" />)}
-            </div>
-          </div>
-          <Skeleton className="h-3 w-full" />
-          <Skeleton className="h-8 w-36 rounded-lg" />
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <button onClick={() => setOpen(o => !o)} className="w-full text-left px-4 py-3.5 flex items-start gap-3">
+        <span className="text-lg leading-none mt-0.5">{FLAG_EMOJI[flag] || '✅'}</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-green-900 text-sm">{format(new Date(when), 'EEEE, dd MMM yyyy')}</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            by {companionName} · {durationLabel(v.start_time, v.end_time)} · {FLAG_LABEL[flag]}
+          </p>
         </div>
-      ))}
+        <ChevronDown size={15} className={`text-gray-300 flex-shrink-0 mt-0.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="border-t border-gray-50 px-4 py-4 space-y-4">
+          {/* Health snapshot */}
+          {t1 && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Health snapshot</p>
+              <div className="grid grid-cols-2 gap-2">
+                {SNAPSHOT.map(s => {
+                  const val = t1[s.key]
+                  return (
+                    <div key={s.key} className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
+                      <span>{val === true ? '✅' : val === false ? '❌' : '—'}</span>
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-gray-400 leading-none">{s.label}</p>
+                        <p className="text-xs font-semibold text-green-900 mt-0.5">{val === true ? s.good : val === false ? s.bad : '—'}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* One moment */}
+          {v.one_moment && (
+            <div className="bg-green-50 border-l-4 border-green-500 px-3 py-2.5 rounded-r-xl">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-green-700 mb-1">A moment from the visit</p>
+              <p className="text-sm text-green-800 italic">"{v.one_moment}"</p>
+            </div>
+          )}
+
+          {/* Flag notes */}
+          {flag !== 'none' && v.flag_notes && (
+            <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700 mb-1 flex items-center gap-1">
+                <AlertTriangle size={11} /> Flagged for your attention
+              </p>
+              <p className="text-sm text-amber-800">{v.flag_notes}</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
+// ─── Main ───────────────────────────────────────────────────────────────────
+
 export function DashboardReports() {
-  const [reports, setReports]         = useState<any[]>([])
-  const [loading, setLoading]         = useState(true)
-  const [error, setError]             = useState<string | null>(null)
-  const [signedUrls, setSignedUrls]   = useState<Record<string, string>>({})
+  const [visits, setVisits]               = useState<any[]>([])
+  const [companionNames, setCompanionNames] = useState<Record<string, string>>({})
+  const [loading, setLoading]             = useState(true)
+  const [error, setError]                 = useState<string | null>(null)
 
   useEffect(() => { load() }, [])
-
-  useEffect(() => {
-    const paths = Array.from(new Set(reports.flatMap(r => (r.photo_urls || []) as string[])))
-    if (paths.length === 0) return
-    supabase.storage.from('visit-photos').createSignedUrls(paths, 3600).then(({ data, error }) => {
-      if (error) { console.error('Failed to load photo URLs:', error); return }
-      const map: Record<string, string> = {}
-      data?.forEach(d => { if (d.signedUrl && d.path) map[d.path] = d.signedUrl })
-      setSignedUrls(map)
-    })
-  }, [reports])
 
   async function load() {
     setLoading(true)
     setError(null)
     try {
-      const { data, error } = await supabase.from('visit_reports')
-        .select('*, loved_ones(full_name), companions(full_name), bookings(service_type)')
+      const { data, error } = await supabase.from('visits')
+        .select('*, bookings(loved_ones(full_name)), elder_profiles(name)')
         .order('created_at', { ascending: false })
       if (error) throw error
-      setReports(data || [])
+      const rows = data || []
+      setVisits(rows)
+
+      // Resolve companion names (visits.companion_id → companions table)
+      const ids = Array.from(new Set(rows.map(r => r.companion_id).filter(Boolean)))
+      if (ids.length) {
+        const { data: comps } = await supabase.from('companions').select('id, full_name').in('id', ids)
+        const map: Record<string, string> = {}
+        comps?.forEach(c => { map[c.id] = c.full_name })
+        setCompanionNames(map)
+      }
     } catch (err) {
       console.error('Failed to load reports:', err)
       setError('Something went wrong — please try again.')
@@ -66,15 +129,23 @@ export function DashboardReports() {
     }
   }
 
-  if (loading) return <ReportsSkeleton />
+  if (loading) return (
+    <div className="space-y-5 animate-pulse">
+      <div><Skeleton className="h-7 w-32 mb-1" /><Skeleton className="h-4 w-48" /></div>
+      <Skeleton className="h-20 w-full rounded-2xl" />
+      {[1, 2].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
+    </div>
+  )
+
+  const lastVisit = visits[0]
+  const lastWhen  = lastVisit ? (lastVisit.end_time || lastVisit.created_at) : null
 
   return (
     <div className="space-y-5 animate-fade-in">
-
       {/* Header */}
       <div>
-        <h1 className="font-serif text-2xl text-green-900">Visit Reports</h1>
-        <p className="text-gray-400 text-sm mt-0.5">{reports.length} report{reports.length === 1 ? '' : 's'} from your family's visits.</p>
+        <h1 className="font-serif text-2xl text-green-900">Reports</h1>
+        <p className="text-gray-400 text-sm mt-0.5">Visit reports from your loved one's Close Eye visits.</p>
       </div>
 
       {error && (
@@ -84,81 +155,39 @@ export function DashboardReports() {
         </div>
       )}
 
-      {reports.length === 0 ? (
+      {visits.length === 0 ? (
         <div className="text-center py-16 bg-green-50 rounded-2xl">
           <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 border border-green-100">
-            <FileText size={22} className="text-green-600" />
+            <CalendarHeart size={22} className="text-green-600" />
           </div>
-          <p className="font-semibold text-green-900">No reports yet</p>
-          <p className="text-sm text-gray-400 mt-1">Reports appear here after each visit is completed.</p>
+          <p className="font-semibold text-green-900">Your first visit is being scheduled</p>
+          <p className="text-sm text-gray-400 mt-1 max-w-xs mx-auto">We'll notify you on WhatsApp the moment your loved one's first visit is complete.</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {reports.map(r => (
-            <div key={r.id} className="bg-white rounded-2xl border border-gray-100 p-4">
-
-              {/* Header row */}
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                  <p className="font-semibold text-green-900">{r.loved_ones?.full_name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    by {r.companions?.full_name} · {format(new Date(r.created_at), 'dd MMM yyyy')}
-                  </p>
-                </div>
-                {/* Score chips */}
-                <div className="flex gap-2 flex-shrink-0">
-                  {([['😊', r.mood_score, 'Mood'], ['💊', r.health_score, 'Health'], ['🏠', r.home_safety_score, 'Safety']] as [string, number | null, string][])
-                    .filter(([, s]) => s != null)
-                    .map(([e, s, l]) => (
-                      <div key={l} className="text-center bg-gray-50 rounded-xl px-2 py-1.5">
-                        <p className="text-base leading-none">{e}</p>
-                        <p className="text-xs font-bold text-green-700 mt-0.5">{s}/5</p>
-                        <p className="text-[10px] text-gray-400">{l}</p>
-                      </div>
-                    ))
-                  }
-                </div>
-              </div>
-
-              {/* Family message */}
-              {r.family_message && (
-                <div className="bg-green-50 border-l-4 border-green-500 px-3 py-2.5 rounded-r-xl mb-3">
-                  <p className="text-sm text-green-800 italic">"{r.family_message}"</p>
-                </div>
-              )}
-
-              {/* Medication + PDF row */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {r.medication_taken !== null && (
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${r.medication_taken ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    Medication {r.medication_taken ? 'taken ✓' : 'not taken ✗'}
-                  </span>
-                )}
-                {r.pdf_url && (
-                  <a
-                    href={r.pdf_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    <Download size={12} /> Download PDF
-                  </a>
-                )}
-              </div>
-
-              {/* Photos */}
-              {r.photo_urls?.length > 0 && (
-                <div className="flex gap-2 mt-3 flex-wrap">
-                  {r.photo_urls.map((path: string, i: number) => (
-                    signedUrls[path]
-                      ? <img key={i} src={signedUrls[path]} alt="Visit photo" className="w-16 h-16 object-cover rounded-xl border border-gray-100" />
-                      : <div key={i} className="w-16 h-16 rounded-xl bg-gray-100 animate-pulse" />
-                  ))}
-                </div>
-              )}
+        <>
+          {/* Streak + last visit */}
+          <div className="bg-gradient-to-br from-green-900 to-green-700 rounded-2xl p-5 text-white">
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles size={15} className="text-green-300" />
+              <p className="text-xs font-bold uppercase tracking-widest text-green-300">Close Eye care</p>
             </div>
-          ))}
-        </div>
+            <p className="font-serif text-2xl leading-tight">
+              Visited {visits.length} time{visits.length === 1 ? '' : 's'} by Close Eye
+            </p>
+            {lastWhen && (
+              <p className="text-green-200 text-sm mt-1.5">
+                Last visit: <span className="font-semibold text-white">{format(new Date(lastWhen), 'EEEE, dd MMM yyyy')}</span>
+              </p>
+            )}
+          </div>
+
+          {/* Visit list */}
+          <div className="space-y-2">
+            {visits.map(v => (
+              <VisitCard key={v.id} v={v} companionName={companionNames[v.companion_id] || 'Your companion'} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

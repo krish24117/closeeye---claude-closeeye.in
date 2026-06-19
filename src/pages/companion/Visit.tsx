@@ -546,25 +546,59 @@ function PostVisitUpdateScreen({ elderName, onNext }: { elderName: string; onNex
 
 // ─── Briefing screen ──────────────────────────────────────────────────────────
 
+// Flag → coloured dot used in trend + history rows
+const FLAG_DOT: Record<string, string> = { none: '🟢', monitor: '🟡', urgent: '🔴' }
+
+// Continuity notes are stored as one blob, one entry per line
+// ("12 Jun 2025 — Companion: note"). Return the last N entries, newest first.
+function continuityEntries(notes: string | null | undefined, n = 3): string[] {
+  if (!notes) return []
+  return notes.split('\n').map(l => l.trim()).filter(Boolean).slice(-n).reverse()
+}
+
 function BriefingScreen({
-  booking, profile, lastFlags, moodTrend, onStart,
+  booking, profile, hasElderProfile, lastFlags, flagTrend, previousVisits, onStart,
 }: {
-  booking: any; profile: any | null; lastFlags: string | null;
-  moodTrend: (boolean | null)[]; onStart: () => void
+  booking: any; profile: any | null; hasElderProfile: boolean; lastFlags: string | null;
+  flagTrend: string[]; previousVisits: any[]; onStart: () => void
 }) {
   const lo         = booking.loved_ones
   const name       = profile?.name || lo?.full_name || 'your loved one'
-  const age        = profile?.age
+  const age        = profile?.age ?? lo?.age
   const conditions = profile?.medical_conditions || lo?.medical_notes
+  const entries    = continuityEntries(profile?.continuity_notes)
 
   return (
     <div className="space-y-4 animate-fade-in">
+      {/* Pinned note — most prominent, pinned to the very top */}
+      {profile?.pinned_note && (
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 flex items-start gap-3">
+          <span className="text-lg leading-none mt-0.5">📌</span>
+          <div>
+            <p className="text-xs font-bold text-amber-800 mb-0.5 uppercase tracking-wide">Pinned note</p>
+            <p className="text-sm text-amber-900 leading-relaxed font-medium">{profile.pinned_note}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Visiting hero */}
       <div className="bg-gradient-to-br from-green-900 to-green-700 rounded-2xl p-5 text-white">
         <p className="text-xs font-bold uppercase tracking-widest text-green-300 mb-2">You are visiting</p>
         <p className="font-serif text-2xl leading-tight mb-1">{name}{age ? `, ${age}` : ''}</p>
         {conditions && <p className="text-green-200 text-sm mt-2 leading-relaxed">{conditions}</p>}
       </div>
 
+      {/* Fallback notice when no full elder profile exists yet */}
+      {!hasElderProfile && (
+        <div className="bg-yellow-50 border border-yellow-300 rounded-2xl p-4 flex items-start gap-3">
+          <AlertTriangle size={16} className="text-yellow-600 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-yellow-800">
+            Full elder profile not set up yet — contact admin. Showing basic details only.
+          </p>
+        </div>
+      )}
+
+      {/* Last visit flag */}
       {lastFlags && lastFlags !== 'none' && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
           <AlertTriangle size={16} className="text-amber-600 mt-0.5 flex-shrink-0" />
@@ -577,35 +611,51 @@ function BriefingScreen({
         </div>
       )}
 
-      {moodTrend.length > 0 && (
+      {/* Flag trend — last up-to-4 visits as coloured dots */}
+      {flagTrend.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
-          <p className="text-xs font-semibold text-green-900 mb-2">Mood — last {moodTrend.length} visits</p>
+          <p className="text-xs font-semibold text-green-900 mb-2">Last {flagTrend.length} visit{flagTrend.length > 1 ? 's' : ''}</p>
           <div className="flex gap-2">
-            {moodTrend.map((good, i) => (
-              <span key={i} className="text-xl">{good === null ? '⬜' : good ? '😊' : '😔'}</span>
+            {flagTrend.map((f, i) => <span key={i} className="text-xl">{FLAG_DOT[f] || '🟢'}</span>)}
+          </div>
+        </div>
+      )}
+
+      {/* Continuity notes — last 3 entries, newest first */}
+      {entries.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <p className="text-xs font-bold text-green-900 mb-2">Continuity notes</p>
+          <div className="space-y-2">
+            {entries.map((e, i) => (
+              <p key={i} className="text-sm text-gray-600 leading-relaxed border-l-2 border-green-200 pl-3">{e}</p>
             ))}
           </div>
         </div>
       )}
 
-      {profile?.pinned_note && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
-          <p className="text-xs font-bold text-green-800 mb-1">📌 Pinned note</p>
-          <p className="text-sm text-green-800 leading-relaxed">{profile.pinned_note}</p>
-        </div>
-      )}
-
-      {profile?.continuity_notes && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-4">
-          <p className="text-xs font-bold text-green-900 mb-1">Continuity notes</p>
-          <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{profile.continuity_notes}</p>
-        </div>
-      )}
-
+      {/* Things to avoid */}
       {profile?.things_to_avoid && (
         <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
           <p className="text-xs font-bold text-red-700 mb-1">⚠️ Things to avoid</p>
           <p className="text-sm text-red-700 leading-relaxed">{profile.things_to_avoid}</p>
+        </div>
+      )}
+
+      {/* Previous visits with this elder — last 5, by any companion */}
+      {previousVisits.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <p className="text-xs font-bold text-green-900 mb-2">Previous visits with {profile?.name || lo?.full_name || 'them'}</p>
+          <div className="space-y-2.5">
+            {previousVisits.map(v => (
+              <div key={v.id} className="flex items-start gap-2 text-sm">
+                <span className="leading-none mt-0.5">{FLAG_DOT[v.flags] || '🟢'}</span>
+                <p className="text-gray-700 min-w-0">
+                  <span className="font-medium">{format(new Date(v.end_time || v.created_at), 'dd MMM yyyy')}</span>
+                  {v.one_moment && <span className="text-gray-500"> — {v.one_moment}</span>}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -669,7 +719,8 @@ export function CompanionVisit() {
   const [booking,        setBooking]        = useState<any>(null)
   const [elderProfile,   setElderProfile]   = useState<any>(null)
   const [lastFlags,      setLastFlags]      = useState<string | null>(null)
-  const [moodTrend,      setMoodTrend]      = useState<(boolean | null)[]>([])
+  const [flagTrend,      setFlagTrend]      = useState<string[]>([])
+  const [previousVisits, setPreviousVisits] = useState<any[]>([])
   const [isFirstOfMonth, setIsFirstOfMonth] = useState(false)
   const [loading,        setLoading]        = useState(true)
   const [loadError,      setLoadError]      = useState<string | null>(null)
@@ -695,6 +746,12 @@ export function CompanionVisit() {
   const [saveError,  setSaveError]  = useState('')
   const [reportSent, setReportSent] = useState(false)
 
+  // Minimum-duration warning
+  const [showDurationWarning, setShowDurationWarning] = useState(false)
+  const [shortReason,         setShortReason]         = useState('')
+  const [warningMins,         setWarningMins]         = useState(0)
+  const [pendingNote,         setPendingNote]         = useState<string | null>(null)
+
   // ── Load ──────────────────────────────────────────────────────────────
 
   const load = useCallback(async () => {
@@ -719,16 +776,19 @@ export function CompanionVisit() {
         setElderProfile(ep || null)
 
         if (ep?.id) {
+          // Last 5 visits for this elder (by ANY companion). Powers the flag
+          // trend dots and the "Previous visits with <Name>" briefing list.
           const { data: recentVisits } = await supabase
             .from('visits')
-            .select('mood_score, flags')
+            .select('id, flags, one_moment, tier_completed, start_time, end_time, created_at')
             .eq('elder_id', ep.id)
             .order('created_at', { ascending: false })
-            .limit(4)
+            .limit(5)
 
           if (recentVisits?.length) {
             setLastFlags(recentVisits[0].flags || null)
-            setMoodTrend(recentVisits.map(v => v.mood_score != null ? v.mood_score >= 4 : null))
+            setFlagTrend(recentVisits.slice(0, 4).map(v => v.flags || 'none'))
+            setPreviousVisits(recentVisits)
           }
 
           const { count } = await supabase
@@ -816,6 +876,25 @@ export function CompanionVisit() {
 
   async function onPostUpdateDone(note: string | null) {
     if (!t1Data) return
+    // Gate completion on the recommended minimum visit duration.
+    const mins = differenceInMinutes(new Date(), startTimeRef.current)
+    if (mins < MIN_VISIT_MINS) {
+      setPendingNote(note)
+      setWarningMins(mins)
+      setShortReason('')
+      setShowDurationWarning(true)
+      return
+    }
+    await commitVisit(note, null)
+  }
+
+  async function confirmShortVisit() {
+    setShowDurationWarning(false)
+    await commitVisit(pendingNote, shortReason.trim() || null)
+  }
+
+  // Appends the optional continuity note, then writes the visit record.
+  async function commitVisit(note: string | null, shortVisitReason: string | null) {
     if (note && elderProfile?.id) {
       const companion = authProfile?.full_name || 'Companion'
       const datePart  = format(new Date(), 'dd MMM yyyy')
@@ -825,10 +904,10 @@ export function CompanionVisit() {
         .update({ continuity_notes: `${existing}\n${datePart} — ${companion}: ${note}` })
         .eq('id', elderProfile.id)
     }
-    await finaliseVisit()
+    await finaliseVisit(shortVisitReason)
   }
 
-  async function finaliseVisit() {
+  async function finaliseVisit(shortVisitReason: string | null = null) {
     if (!booking || !user || !t1Data) return
     setSaving(true); setSaveError('')
 
@@ -857,29 +936,33 @@ export function CompanionVisit() {
       completed_at:   checkOutAt,
     }).eq('id', booking.id)
 
-    const { error: visErr } = await supabase.from('visits').insert({
-      booking_id:     booking.id,
-      elder_id:       elderProfile?.id ?? null,
-      companion_id:   user.id,
-      start_time:     startTime.toISOString(),
-      end_time:       checkOutAt,
-      tier_completed: t3Data ? 3 : t2Data ? 2 : 1,
-      checklist_data: { tier1: t1Data, tier2: t2Data ?? null, tier3: t3Data ?? null },
-      flags,
-      flag_notes:     t2Data?.concerns_text || null,
-      one_moment:     t1Data.one_moment,
-      photo_urls:     tier3PhotoUrls,
-      mood_score:     moodScore,
-    })
-
-    if (visErr) { setSaveError(visErr.message); setSaving(false); return }
-
+    // Build the WhatsApp report up-front so it can be persisted with the visit
     const elderName     = elderProfile?.name || booking.loved_ones?.full_name || 'Aunty/Uncle'
     const companionName = authProfile?.full_name || 'Companion'
     const text = generateWhatsAppReport({
       elderName, companionName, startTime, endTime: new Date(checkOutAt),
       t1: t1Data, t2: t2Data, flags,
     })
+
+    const { error: visErr } = await supabase.from('visits').insert({
+      booking_id:         booking.id,
+      elder_id:           elderProfile?.id ?? null,
+      companion_id:       user.id,
+      start_time:         startTime.toISOString(),
+      end_time:           checkOutAt,
+      tier_completed:     t3Data ? 3 : t2Data ? 2 : 1,
+      checklist_data:     { tier1: t1Data, tier2: t2Data ?? null, tier3: t3Data ?? null },
+      flags,
+      flag_notes:         t2Data?.concerns_text || null,
+      one_moment:         t1Data.one_moment,
+      photo_urls:         tier3PhotoUrls,
+      mood_score:         moodScore,
+      report_text:        text,
+      short_visit_reason: shortVisitReason,
+    })
+
+    if (visErr) { setSaveError(visErr.message); setSaving(false); return }
+
     setReportText(text)
     setSaving(false)
     setScreen('report')
@@ -1049,8 +1132,9 @@ export function CompanionVisit() {
       )}
 
       {screen === 'briefing' && (
-        <BriefingScreen booking={booking} profile={elderProfile} lastFlags={lastFlags}
-          moodTrend={moodTrend} onStart={() => setScreen('tier1')} />
+        <BriefingScreen booking={booking} profile={elderProfile} hasElderProfile={!!elderProfile}
+          lastFlags={lastFlags} flagTrend={flagTrend} previousVisits={previousVisits}
+          onStart={() => setScreen('tier1')} />
       )}
 
       {screen === 'tier1' && <Tier1Screen onNext={onTier1Done} />}
@@ -1090,6 +1174,41 @@ export function CompanionVisit() {
         <ReportScreen report={reportText}
           flags={t1Data ? deriveFlags(t1Data, t2Data || {}) : 'none'}
           onSend={sendReport} sending={saving} sent={reportSent} />
+      )}
+
+      {/* Minimum-duration warning */}
+      {showDurationWarning && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowDurationWarning(false)}>
+          <div className="bg-white rounded-2xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle size={18} className="text-amber-600 flex-shrink-0" />
+              <h3 className="font-serif text-lg text-green-900">Short visit</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              This visit was only {warningMins} minute{warningMins === 1 ? '' : 's'}. Close Eye recommends a
+              minimum of {MIN_VISIT_MINS} minutes. Are you sure you want to complete?
+            </p>
+            <label className="block text-xs font-semibold text-green-900 mb-1.5">Reason for the short visit *</label>
+            <textarea
+              value={shortReason}
+              onChange={e => setShortReason(e.target.value)}
+              rows={3}
+              placeholder="e.g. Elder was asleep, or asked me to leave early."
+              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 resize-none mb-4"
+            />
+            <div className="flex gap-3">
+              <button onClick={() => setShowDurationWarning(false)}
+                className="flex-1 py-3 rounded-xl font-semibold text-sm border-2 border-gray-200 text-gray-600 hover:border-gray-300 transition-colors min-h-[48px]">
+                Go Back
+              </button>
+              <button onClick={confirmShortVisit} disabled={!shortReason.trim()}
+                className="flex-1 bg-amber-600 text-white font-bold py-3 rounded-xl hover:bg-amber-700 disabled:bg-gray-200 disabled:text-gray-400 transition-colors min-h-[48px]">
+                Continue Anyway
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

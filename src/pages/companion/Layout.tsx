@@ -1,6 +1,6 @@
 // src/pages/companion/Layout.tsx
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Home, Calendar, Wallet, User, LogOut } from 'lucide-react'
+import { Home, Calendar, Wallet, User, LogOut, History } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -11,6 +11,7 @@ import clsx from 'clsx'
 const NAV = [
   { to: '/companion', icon: Home, label: 'Today', end: true },
   { to: '/companion/schedule', icon: Calendar, label: 'Schedule' },
+  { to: '/companion/visits', icon: History, label: 'History' },
   { to: '/companion/earnings', icon: Wallet, label: 'Earnings' },
   { to: '/companion/profile', icon: User, label: 'Profile' },
 ]
@@ -18,6 +19,7 @@ const NAV = [
 const PAGE_LABELS: Record<string, string> = {
   '/companion': 'Today',
   '/companion/schedule': 'Schedule',
+  '/companion/visits': 'Visit History',
   '/companion/earnings': 'Earnings',
   '/companion/profile': 'Profile',
 }
@@ -162,7 +164,7 @@ export function CompanionLayout() {
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 inset-x-0 z-30 bg-white border-t border-gray-100 grid grid-cols-4 md:hidden pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 inset-x-0 z-30 bg-white border-t border-gray-100 grid grid-cols-5 md:hidden pb-[env(safe-area-inset-bottom)]">
         {NAV.map(n => (
           <NavLink
             key={n.to}
