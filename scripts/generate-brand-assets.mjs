@@ -84,15 +84,15 @@ function svgIconWhite() {
 // Navbar reference: font-serif text-xl tracking-tight = DM Serif Display 20px.
 // For the export we use a large font, same typeface + two-tone color pattern.
 function svgWordmark(style, c1, c2) {
-  // Over-wide canvas; transparent right/top/bottom trimmed by sharp
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 240">
+  // viewBox must be wider than the text — sharp trims transparent right edge
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 240">
   ${style}
   <text x="24" y="185"
         text-anchor="start"
         font-family="${FONT}"
         font-size="160"
         letter-spacing="-4">
-    <tspan fill="${c1}">close </tspan><tspan fill="${c2}">eye</tspan>
+    <tspan fill="${c1}">close</tspan><tspan fill="${c2}" dx="44">eye</tspan>
   </text>
 </svg>`
 }
@@ -110,7 +110,8 @@ function svgLogoFull(style, c1, c2, iconSnippet) {
   const textX = iW + 44          // 244 — tight gap
   const textY = 154              // baseline: cap top ≈ 154 - 130 = 24 (flush with icon top)
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 200">
+  // viewBox must be wide enough so nothing clips — sharp trims the right
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2200 220">
   ${style}
   ${iconSnippet(tf)}
   <text x="${textX}" y="${textY}"
@@ -118,7 +119,7 @@ function svgLogoFull(style, c1, c2, iconSnippet) {
         font-family="${FONT}"
         font-size="180"
         letter-spacing="-4">
-    <tspan fill="${c1}">close </tspan><tspan fill="${c2}">eye</tspan>
+    <tspan fill="${c1}">close</tspan><tspan fill="${c2}" dx="44">eye</tspan>
   </text>
 </svg>`
 }
@@ -155,23 +156,37 @@ async function main() {
     { name: 'icon-only',      svg: svgIconOnly(),  w: 500,  h: 500,  trimPad: false },
     { name: 'icon-white',     svg: svgIconWhite(), w: 500,  h: 500,  trimPad: false },
     // Text assets: render on an over-wide canvas, trim transparent edges, re-add even padding
-    { name: 'wordmark-only',  svg: svgWordmark(style, GREEN_900, GREEN_600), w: 1200, h: 240, trimPad: true },
-    { name: 'wordmark-white', svg: svgWordmark(style, WHITE,     WHITE),     w: 1200, h: 240, trimPad: true },
-    { name: 'logo-full',       svg: svgLogoFull(style, GREEN_900, GREEN_600, iconGreenSnippet), w: 1100, h: 200, trimPad: true },
-    { name: 'logo-full-white', svg: svgLogoFull(style, WHITE,     WHITE,     iconWhiteSnippet), w: 1100, h: 200, trimPad: true },
+    { name: 'wordmark-only',  svg: svgWordmark(style, GREEN_900, GREEN_600), w: 2400, h: 240, trimPad: true },
+    { name: 'wordmark-white', svg: svgWordmark(style, WHITE,     WHITE),     w: 2400, h: 240, trimPad: true },
+    { name: 'logo-full',       svg: svgLogoFull(style, GREEN_900, GREEN_600, iconGreenSnippet), w: 2200, h: 220, trimPad: true },
+    { name: 'logo-full-white', svg: svgLogoFull(style, WHITE,     WHITE,     iconWhiteSnippet), w: 2200, h: 220, trimPad: true },
   ]
 
   console.log('\nGenerating PNGs...')
   for (const { name, svg, w, h, trimPad } of assets) {
     const out = `${ROOT}/public/${name}.png`
-    let pipe = sharp(Buffer.from(svg), { density: 288 }).resize(w, h, { fit: 'fill' })
+
     if (trimPad) {
-      pipe = pipe
-        .trim({ background: TRANSPARENT, threshold: 0 })
+      // Two-step: rasterise SVG → raw PNG buffer first, THEN trim the raster.
+      // Sharp's trim works reliably on rasterised PNGs but not directly on SVG input.
+      const rawBuf = await sharp(Buffer.from(svg), { density: 288 })
+        .resize(w, h, { fit: 'fill' })
+        .png()
+        .toBuffer()
+
+      const info = await sharp(rawBuf)
+        .trim()   // auto-detects corner pixel (transparent) and removes matching edges
         .extend({ top: PAD, right: PAD, bottom: PAD, left: PAD, background: TRANSPARENT })
+        .png({ compressionLevel: 9, adaptiveFiltering: true })
+        .toFile(out)
+      console.log(`  ✓ public/${name}.png  (${info.width}×${info.height})`)
+    } else {
+      const info = await sharp(Buffer.from(svg), { density: 288 })
+        .resize(w, h, { fit: 'fill' })
+        .png({ compressionLevel: 9, adaptiveFiltering: true })
+        .toFile(out)
+      console.log(`  ✓ public/${name}.png  (${info.width}×${info.height})`)
     }
-    const info = await pipe.png({ compressionLevel: 9, adaptiveFiltering: true }).toFile(out)
-    console.log(`  ✓ public/${name}.png  (${info.width}×${info.height})`)
   }
 
   console.log('\nDone. URLs after deploy:')
