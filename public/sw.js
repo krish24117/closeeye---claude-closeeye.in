@@ -1,72 +1,90 @@
-const CACHE_NAME = 'closeeye-v3'
+// Close Eye service worker.
+//
+// Design goal: NEVER serve a stale app shell that points at deleted hashed
+// build assets — that is the classic cause of a blank screen after a deploy.
+// So navigations are network-first (always fetch a fresh index.html when
+// online) and only fall back to the cached shell when truly offline.
+//
+// Bump CACHE_NAME on any change here so the activate handler purges old caches.
+const CACHE_NAME = 'closeeye-v4'
 
-// Pre-cached on install — app shell + all PWA icons/splash
-const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.svg',
-  '/apple-touch-icon.png',
-  '/icons/android-chrome-192x192.png',
-  '/icons/android-chrome-512x512.png',
-  '/icons/maskable-icon-512x512.png',
-  '/splash/splash-2048x2732.png',
-  '/splash/splash-1668x2388.png',
-  '/splash/splash-1320x2868.png',
-  '/splash/splash-1290x2796.png',
-  '/splash/splash-1206x2622.png',
-  '/splash/splash-1284x2778.png',
-  '/splash/splash-1170x2532.png',
-  '/splash/splash-1179x2556.png',
-  '/splash/splash-1125x2436.png',
-  '/splash/splash-750x1334.png',
-]
+// Keep the precache list minimal + known-good. addAll() rejects the whole
+// install if ANY entry 404s, which would leave users on a broken SW — so we
+// only precache the shell. Icons/splash are cached on demand (cache-first).
+const PRECACHE_ASSETS = ['/', '/index.html', '/manifest.json']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS))
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
+      .then(() => self.skipWaiting())
+      .catch((err) => console.warn('SW precache failed (non-fatal):', err))
   )
-  self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   )
-  self.clients.claim()
 })
 
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url)
+function cachePut(request, response) {
+  // Only cache successful, basic (same-origin) responses
+  if (response && response.ok && response.type === 'basic') {
+    const clone = response.clone()
+    caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+  }
+  return response
+}
 
-  // Never intercept Supabase API, Razorpay, or analytics
+self.addEventListener('fetch', (event) => {
+  const { request } = event
+  const url = new URL(request.url)
+
+  // Only same-origin GETs. Never touch Supabase/Razorpay/analytics/Twilio.
+  if (request.method !== 'GET' || url.origin !== self.location.origin) return
   if (
     url.hostname.endsWith('.supabase.co') ||
     url.hostname.endsWith('razorpay.com') ||
     url.hostname.endsWith('twilio.com')
   ) return
 
-  // Only handle same-origin GET requests
-  if (event.request.method !== 'GET' || url.origin !== self.location.origin) return
-
-  // Splash + icons: cache-first (immutable between deploys)
-  if (url.pathname.startsWith('/splash/') || url.pathname.startsWith('/icons/')) {
+  // Navigations (the HTML document): network-first, fall back to cached shell.
+  // This guarantees a fresh index.html (with current asset hashes) whenever
+  // the device is online, so the app never boots from a stale shell.
+  if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match(event.request).then((cached) => cached ?? fetch(event.request))
+      fetch(request)
+        .then((response) => {
+          // Keep the shell cache fresh for offline use
+          if (response && response.ok) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', clone))
+          }
+          return response
+        })
+        .catch(() => caches.match('/index.html').then((r) => r || caches.match('/')))
     )
     return
   }
 
-  // App shell + everything else: network-first, fall back to cache for offline
+  // Immutable build output + static assets: cache-first (fast, hashed URLs).
+  if (
+    url.pathname.startsWith('/assets/') ||
+    url.pathname.startsWith('/icons/') ||
+    url.pathname.startsWith('/splash/') ||
+    url.pathname.startsWith('/screenshots/')
+  ) {
+    event.respondWith(
+      caches.match(request).then((cached) => cached || fetch(request).then((r) => cachePut(request, r)))
+    )
+    return
+  }
+
+  // Everything else: network-first, fall back to cache when offline.
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        const clone = response.clone()
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
-        return response
-      })
-      .catch(() => caches.match(event.request))
+    fetch(request).then((r) => cachePut(request, r)).catch(() => caches.match(request))
   )
 })

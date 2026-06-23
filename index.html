@@ -19,7 +19,7 @@
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#1a3a2a" />
+    <meta name="theme-color" content="#0E2A1F" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -156,32 +156,30 @@
     }
     </script>
 
-    <!-- App shell loading styles -->
+    <!-- App shell loading styles — brand green (#0E2A1F) so it matches the
+         native TWA/Android splash and there is NEVER a white flash while JS
+         loads. The green background paints instantly, before any JS runs. -->
     <style>
       html, body { margin: 0; overflow-x: hidden; }
-      body { background: #fff; }
+      body { background: #0E2A1F; }
       #app-loader {
         position: fixed; inset: 0; z-index: 50;
-        background: #fff;
-        display: flex; flex-direction: column;
+        background: #0E2A1F;
+        display: flex; align-items: center; justify-content: center;
         transition: opacity 0.25s ease;
       }
       #app-loader.fade-out { opacity: 0; pointer-events: none; }
-      #app-loader nav { padding-top: env(safe-area-inset-top, 0px); }
       @keyframes ce-spin { to { transform: rotate(360deg); } }
     </style>
   </head>
   <body>
-    <!-- Neutral loading shell — same markup for every URL, no page-specific content -->
+    <!-- Branded green loading shell — same markup for every URL. Renders
+         instantly from HTML/CSS (no JS, no network) so the user always sees
+         Close Eye branding, never a blank white screen. -->
     <div id="app-loader">
-      <nav style="border-bottom:1px solid #f3f4f6;padding:0 1.5rem;height:60px;display:flex;align-items:center;box-sizing:border-box;">
-        <span style="font-family:Georgia,'Times New Roman',serif;font-size:1.1rem;color:#14532d;">close eye</span>
-      </nav>
-      <div style="flex:1;display:flex;align-items:center;justify-content:center;">
-        <div style="text-align:center;">
-          <div style="width:28px;height:28px;border:2.5px solid #14532d;border-top-color:transparent;border-radius:50%;animation:ce-spin 0.75s linear infinite;margin:0 auto 12px;"></div>
-          <p style="font-family:system-ui,sans-serif;font-size:0.75rem;color:#9ca3af;margin:0;">Loading…</p>
-        </div>
+      <div style="text-align:center;">
+        <p style="font-family:Georgia,'Times New Roman',serif;font-size:1.7rem;color:#ffffff;margin:0 0 16px;letter-spacing:0.01em;">close <span style="color:#86efac;">eye</span></p>
+        <div style="width:30px;height:30px;border:2.5px solid rgba(255,255,255,0.22);border-top-color:#86efac;border-radius:50%;animation:ce-spin 0.75s linear infinite;margin:0 auto;"></div>
       </div>
     </div>
 
