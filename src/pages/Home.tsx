@@ -312,7 +312,7 @@ export function HomePage() {
             <div className="ce-phone">
               <div className="ce-wa-header">
                 <span className="ce-wa-back" aria-hidden>‹</span>
-                <span className="ce-wa-avatar">CE</span>
+                <span className="ce-wa-avatar"><Logo className="w-6 h-6" /></span>
                 <div>
                   <div className="ce-wa-name">Close Eye 🌿</div>
                   <div className="ce-wa-sub">Usually replies instantly</div>
