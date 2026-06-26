@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Check, Menu, X, ArrowRight, Shield, Stethoscope, User } from 'lucide-react'
 import { FaWhatsapp } from 'react-icons/fa'
 import { supabase } from '@/lib/supabase'
@@ -165,7 +165,10 @@ function Ticks() {
 /* ------------------------------------------------------------------ */
 
 export function HomePage() {
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const hamburgerRef = useRef<HTMLButtonElement>(null)
+  const overlayRef = useRef<HTMLDivElement>(null)
   // Preselect the Society tab when arriving via /#societies (e.g. from the For Societies page)
   const [tab, setTab] = useState<'nri' | 'society' | 'ondemand'>(
     typeof window !== 'undefined' && window.location.hash === '#societies' ? 'society' : 'nri'
@@ -216,10 +219,47 @@ export function HomePage() {
     return () => io.disconnect()
   }, [])
 
-  // Lock body scroll while the mobile overlay is open
+  // Mobile menu: focus trap, Escape to close, inert background (SR skips it),
+  // body-scroll lock, and focus restored to the toggle on close.
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
+    const overlay = overlayRef.current
+    if (!overlay) return
+    const siblings = Array.from(overlay.parentElement?.children || [])
+      .filter(el => el !== overlay) as HTMLElement[]
+
+    if (!menuOpen) {
+      overlay.setAttribute('inert', '')
+      return
+    }
+
+    overlay.removeAttribute('inert')
+    siblings.forEach(el => el.setAttribute('inert', ''))
+    document.body.style.overflow = 'hidden'
+
+    const getFocusable = () =>
+      Array.from(overlay.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'))
+    // Defer a frame so the dialog is visible (CSS transition) before we focus it
+    const focusTarget = overlay.querySelector<HTMLElement>('.ce-mobile-close') || getFocusable()[0]
+    const raf = requestAnimationFrame(() => focusTarget?.focus())
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.preventDefault(); setMenuOpen(false); return }
+      if (e.key !== 'Tab') return
+      const f = getFocusable()
+      if (!f.length) return
+      const first = f[0], last = f[f.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      cancelAnimationFrame(raf)
+      document.removeEventListener('keydown', onKeyDown)
+      siblings.forEach(el => el.removeAttribute('inert'))
+      document.body.style.overflow = ''
+      hamburgerRef.current?.focus()
+    }
   }, [menuOpen])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -267,30 +307,69 @@ export function HomePage() {
           </div>
 
           <button
+            ref={hamburgerRef}
             className="ce-hamburger"
-            aria-label="Open menu"
-            onClick={() => setMenuOpen(true)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+            onClick={() => setMenuOpen(o => !o)}
           >
             <Menu size={26} />
           </button>
         </div>
       </nav>
 
-      {/* Mobile full-screen overlay */}
-      {menuOpen && (
-        <div className="ce-mobile-overlay">
-          <button className="ce-mobile-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>
-            <X size={32} />
-          </button>
-          {NAV_LINKS.map(l => (
-            l.to
-              ? <Link key={l.label} to={l.to} onClick={() => setMenuOpen(false)}>{l.label}</Link>
-              : <a key={l.label} href={l.href} onClick={() => setMenuOpen(false)}>{l.label}</a>
-          ))}
-          <Link to="/auth?mode=signup" onClick={() => setMenuOpen(false)}>Register Family</Link>
-          <Link to="/auth" onClick={() => setMenuOpen(false)}>Sign In</Link>
+      {/* Mobile menu — accessible dialog (focus-trapped; background set inert) */}
+      <div
+        id="mobile-menu"
+        ref={overlayRef}
+        className={`ce-mobile-overlay${menuOpen ? ' is-open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Main menu"
+        onClick={e => { if (e.target === e.currentTarget) setMenuOpen(false) }}
+      >
+        <div className="ce-mobile-inner">
+          <div className="ce-mobile-top">
+            <Link to="/" className="ce-mobile-logo" onClick={() => setMenuOpen(false)}>
+              <Logo className="w-7 h-7" /> close eye
+            </Link>
+            <button className="ce-mobile-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>
+              <X size={24} />
+            </button>
+          </div>
+
+          <div className="ce-mobile-body">
+            <nav className="ce-mobile-nav" aria-label="Main">
+              {NAV_LINKS.map(l => {
+                const active = !!l.to && location.pathname === l.to
+                return l.to
+                  ? (
+                    <Link
+                      key={l.label}
+                      to={l.to}
+                      className={`ce-mobile-link${active ? ' is-active' : ''}`}
+                      aria-current={active ? 'page' : undefined}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {l.label}
+                    </Link>
+                  )
+                  : <a key={l.label} href={l.href} className="ce-mobile-link" onClick={() => setMenuOpen(false)}>{l.label}</a>
+              })}
+            </nav>
+
+            <div className="ce-mobile-ctas">
+              <Link to="/auth?mode=signup" className="ce-mobile-btn ce-mobile-btn-primary" onClick={() => setMenuOpen(false)}>
+                Register Family
+              </Link>
+              <Link to="/auth" className="ce-mobile-btn ce-mobile-btn-secondary" onClick={() => setMenuOpen(false)}>
+                Sign In
+              </Link>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
       {/* ── HERO ─────────────────────────────────────────────────── */}
       <section className="ce-hero">
@@ -703,16 +782,19 @@ export function HomePage() {
       </footer>
 
       {/* ── FLOATING WHATSAPP ────────────────────────────────────── */}
-      <a
-        href={WA_LINK}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="ce-wa-float"
-        aria-label="Chat with Close Eye on WhatsApp"
-        title="Chat on WhatsApp"
-      >
-        <FaWhatsapp size={28} />
-      </a>
+      {/* Hidden while the mobile menu is open so it doesn't overlap the overlay */}
+      {!menuOpen && (
+        <a
+          href={WA_LINK}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ce-wa-float"
+          aria-label="Chat with Close Eye on WhatsApp"
+          title="Chat on WhatsApp"
+        >
+          <FaWhatsapp size={28} />
+        </a>
+      )}
     </div>
   )
 }
