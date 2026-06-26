@@ -113,9 +113,11 @@ const PILLARS = [
 ]
 
 const ADVISORS = [
-  { initials: 'SA', name: 'Sanjay Arora', role: 'Brand Strategist', detail: 'TEDx Speaker · CNN-NEWS18 · 738K followers' },
-  { initials: 'DR', name: 'Dr. [Name]', role: 'Orthopaedic Surgeon', detail: 'Apollo Hospital, Hyderabad' },
-  { initials: 'SS', name: 'Dr. Sidharth', role: 'Medical Co-Founder', detail: 'MBBS · Hyderabad Hospital Network' },
+  // Sanjay Arora hidden until the advisory agreement is signed.
+  // To re-enable, set enabled: true.
+  { initials: 'SA', name: 'Sanjay Arora', role: 'Brand Strategist', detail: 'TEDx Speaker · CNN-NEWS18 · 738K followers', enabled: false },
+  { initials: 'DR', name: 'Dr. [Name]', role: 'Orthopaedic Surgeon', detail: 'Apollo Hospital, Hyderabad', enabled: true },
+  { initials: 'SS', name: 'Dr. Sidharth', role: 'Medical Co-Founder', detail: 'MBBS · Hyderabad Hospital Network', enabled: true },
 ]
 
 const FOUNDING_BENEFITS = [
@@ -521,7 +523,7 @@ export function HomePage() {
           <div className="ce-advisory animate-on-scroll">
             <p className="ce-advisory-label">Advisory Board</p>
             <div className="ce-advisor-row">
-              {ADVISORS.map(a => (
+              {ADVISORS.filter(a => a.enabled).map(a => (
                 <div key={a.name} className="ce-advisor-pill">
                   <span className="ce-advisor-avatar">{a.initials}</span>
                   <div>
