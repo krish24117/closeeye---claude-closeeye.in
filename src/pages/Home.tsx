@@ -1,683 +1,679 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  Shield, Camera, Clock, RefreshCw, AlertCircle, Banknote, ChevronRight,
-  UserPlus, CalendarCheck, FileText, BadgeCheck, Users, Star,
-  ChevronLeft, Plus, Minus, Mail, Loader2,
-} from 'lucide-react'
-import clsx from 'clsx'
+import { Check, Menu, X, ArrowRight, Shield, Stethoscope, User } from 'lucide-react'
+import { FaWhatsapp } from 'react-icons/fa'
 import { supabase } from '@/lib/supabase'
-import { PLANS } from '@/lib/subscription-plans'
+import { Logo } from '@/components/ui/Logo'
 import { ON_DEMAND_SERVICES } from '@/lib/one-time-services'
 
 /* ------------------------------------------------------------------ */
-/*  Data                                                                */
+/*  Constants + data                                                    */
 /* ------------------------------------------------------------------ */
 
-const TRUST = [
-  { icon: Shield,       title: '5-Layer Background Verification',  desc: 'Police clearance, address verification, identity checks, employment history and two personal references.', tag: 'Verified before Day 1' },
-  { icon: Camera,       title: 'Photo-Verified Visit Reports',      desc: 'Every visit generates a time-stamped report with photos and a wellbeing summary — sent within the hour.',   tag: 'Real-time accountability' },
-  { icon: Clock,        title: 'Trained for Elder Companionship',   desc: 'Companions are trained in first-response basics, medication reminders and emotional engagement.',           tag: 'Certified & supervised' },
-  { icon: RefreshCw,    title: 'Guaranteed Replacement in 24 hrs', desc: "If your companion is ever unavailable, we arrange a briefed replacement. Your parents never experience a gap.", tag: 'Zero-gap guarantee' },
-  { icon: AlertCircle,  title: 'Emergency Protocol Built In',       desc: "Every companion knows your family's doctor, nearest hospital and your emergency contact.",                  tag: 'Pre-briefed always' },
-  { icon: Banknote,     title: 'No Cash, No Keys — Ever',           desc: 'Companions never handle cash or hold property keys unsupervised. All payments flow through the platform.',  tag: 'Structural safeguard' },
+const WA_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '919000221261'
+const WA_LINK = `https://wa.me/${WA_NUMBER}?text=Hi%2C%20I%27m%20interested%20in%20Close%20Eye%20for%20my%20family`
+
+const NAV_LINKS = [
+  { href: '#how-it-works', label: 'How It Works' },
+  { href: '#services', label: 'Services' },
+  { href: '#pricing', label: 'Pricing' },
+  { href: '#societies', label: 'For Societies' },
 ]
 
-const PLAN = PLANS[0]
-const CHEAPEST_ON_DEMAND_PRICE = Math.min(...ON_DEMAND_SERVICES.map(s => s.paise)) / 100
-
-const SERVICE_TEASERS = [
-  { price: PLAN.priceLabel, name: PLAN.name, desc: PLAN.tagline },
-  ...ON_DEMAND_SERVICES.slice(0, 3).map(s => ({ price: s.price, name: s.name, desc: s.desc })),
+const TRUST_SIGNALS = [
+  'GPS-verified visits',
+  'Doctor-reviewed reports',
+  'WhatsApp delivered',
+  'Apollo Hospital nearby',
 ]
 
-const HOW_STEPS = [
+const WA_MESSAGES = [
   {
-    icon: UserPlus,
-    n: '1',
-    title: "Create your loved one's profile",
-    desc: 'Share their address, preferences, health notes and emergency contacts. Takes 5 minutes.',
+    text: '*Visit Summary — Mrs. Lakshmi Devi ✓*\n📅 Today, 3:45pm | ⏱ 52 minutes\nCompanion: Krishna',
+    time: '3:47 PM',
   },
   {
-    icon: CalendarCheck,
-    n: '2',
-    title: 'Request a visit',
-    desc: 'Choose a visit type and time. We match a verified local companion in their city.',
+    text: 'How she is today:\nMrs. Lakshmi was in warm spirits. She spoke about your last video call and said you looked tired. She wants you to eat properly 🙂',
+    time: '3:47 PM',
   },
   {
-    icon: FileText,
-    n: '3',
-    title: 'Receive a verified report',
-    desc: 'Photos, notes and a wellbeing summary land in your dashboard and WhatsApp — within the hour.',
+    text: '*Health snapshot:*\n😊 Mood: Good\n✅ Eaten: Breakfast + lunch\n✅ Medicines: All taken on schedule\n🏠 Home: Clean and safe',
+    time: '3:48 PM',
+  },
+  {
+    text: "*From today's visit:*\nShe showed me the photo of you from your graduation. It's on her bedside table. Has been there for 11 years 🥹",
+    time: '3:48 PM',
+  },
+  {
+    text: 'Next visit: Thursday 26th June\nQuestions? Reply here. 🌿',
+    time: '3:48 PM',
   },
 ]
 
-const VERIFICATION = [
+const PROBLEM_QUOTES = [
+  {
+    text: "I call every day. But I still don't know if she actually ate. Or if she took her BP medicine. Or if she's just saying she's fine to not worry me.",
+    attr: '— NRI family, Houston TX',
+  },
+  {
+    text: "She fell in the bathroom last month and didn't tell me for three days because she didn't want to disturb me. Three days.",
+    attr: '— NRI family, Dubai',
+  },
+  {
+    text: 'The worst part is not the distance. It’s the not knowing.',
+    attr: '— NRI family, London',
+  },
+]
+
+const STEPS_ABROAD = [
+  { title: 'Register in 2 minutes', body: 'Tell us about your parent. Their health history, preferences, what makes them comfortable.' },
+  { title: 'We keep you updated', body: 'WhatsApp report within 1 hour of every visit. Health snapshot, personal moments, any concerns.' },
+  { title: 'Peace of mind — always', body: 'You always know your parent is safe, cared for, and not alone. Even from 10,000 miles away.' },
+]
+
+const STEPS_HOME = [
+  { title: 'We introduce ourselves', body: 'We visit, have tea, and listen. No medical forms. No equipment. Just genuine conversation.' },
+  { title: 'We check everything', body: 'Medicines. Meals. Home safety. And one personal moment we always capture for your family.' },
+  { title: 'They feel valued — not monitored', body: 'Not a service. A relationship. We remember what they like, what they worry about, their stories.' },
+]
+
+const NRI_SERVICES = [
+  { name: 'Monthly Companion Plan', price: '₹1,500/month', desc: '1 home visit + weekly calls + WhatsApp reports + medicine reminders' },
+  { name: 'Home Visit', price: '₹1,000/visit', desc: 'Verified companion visit + health check + WhatsApp report within 1 hour' },
+  { name: 'Doctor Visit Support', price: '₹1,500', desc: 'Companion escorts to doctor, takes notes, reports to family' },
+  { name: 'Hospital Assistance', price: '₹2,000 – ₹4,000', desc: 'Half day or full day hospital presence. Family updated throughout' },
+  { name: 'Emergency Response', price: '₹3,000', desc: '2-hour emergency visit. Falls, sudden illness, or distress.' },
+  { name: 'Grocery & Medicine', price: '₹500', desc: 'Collection and delivery with receipt provided' },
+]
+
+const SOCIETY_BENEFITS = [
+  'Entire family covered',
+  '24/7 AI health assistant',
+  'Doctor-verified responses',
+  'Emergency coordination',
+  '10% discount on all services',
+]
+
+const PILLARS = [
   {
     icon: Shield,
-    label: 'Background Check',
-    sublabel: 'Before we say yes',
-    detail: 'Police clearance · address verification · employment history · 2 personal references',
-    color: 'text-blue-700',
-    ring: 'ring-blue-200',
-    bg: 'bg-blue-50',
-    dot: 'bg-blue-500',
+    title: 'Verified Companions',
+    body: 'Every companion is background-verified, personally interviewed, and trained before their first visit. GPS check-in on every visit. No exceptions.',
   },
   {
-    icon: BadgeCheck,
-    label: 'ID Verified',
-    sublabel: 'Before the first visit',
-    detail: 'Aadhaar + face-match confirmed. No companion is dispatched until identity is locked.',
-    color: 'text-amber-700',
-    ring: 'ring-amber-200',
-    bg: 'bg-amber-50',
-    dot: 'bg-amber-500',
+    icon: Stethoscope,
+    title: 'Doctor-Reviewed Reports',
+    body: "Every complex query is reviewed by a qualified doctor. Monthly reports are clinically signed. Your parent's health is taken seriously.",
   },
   {
-    icon: Users,
-    label: 'Family Approved',
-    sublabel: 'Before every assignment',
-    detail: "You review the companion's profile and give the go-ahead. No surprises at the door.",
-    color: 'text-green-700',
-    ring: 'ring-green-200',
-    bg: 'bg-green-50',
-    dot: 'bg-green-500',
+    icon: User,
+    title: 'Founder-Led Quality',
+    body: 'Our founder personally conducts early visits. Trust is earned in person — not promised on a website.',
   },
 ]
 
-const TESTIMONIALS = [
-  {
-    initials: 'PS',
-    name: 'Priya S.',
-    location: 'Houston, TX',
-    stars: 5,
-    text: "My mother lives alone in Hyderabad, and I used to call her three times a day just to feel okay. With Close Eye, I get a real report with photos after every visit. It's the closest I've felt to actually being there.",
-  },
-  {
-    initials: 'RM',
-    name: 'Rajesh M.',
-    location: 'Dubai, UAE',
-    stars: 5,
-    text: "Coordinating care for my father in Bengaluru from Dubai felt impossible until Close Eye. The companion checks his medications and sends a quick WhatsApp update after every visit. It's given my whole family real peace of mind.",
-  },
-  {
-    initials: 'AK',
-    name: 'Anita K.',
-    location: 'London, UK',
-    stars: 5,
-    text: "My dad in Chennai is stubborn about asking for help, but the companion built a genuine rapport with him within two visits. I finally feel like someone is actually keeping an eye on him, not just checking a box.",
-  },
+const ADVISORS = [
+  { initials: 'SA', name: 'Sanjay Arora', role: 'Brand Strategist', detail: 'TEDx Speaker · CNN-NEWS18 · 738K followers' },
+  { initials: 'MA', name: 'Medical Advisor', role: 'Orthopaedic Surgeon', detail: 'Apollo Hospital' },
+  { initials: 'SS', name: 'Dr. Sidharth', role: 'Medical Co-Founder', detail: 'MBBS · Hyderabad Hospital Network' },
 ]
 
-const HOME_FAQS = [
-  {
-    q: 'How are companions verified?',
-    a: 'Every companion completes a 5-layer verification — police clearance, identity verification, address confirmation, employment history, and two personal references — before their first visit.',
-  },
-  {
-    q: 'What cities do you currently serve?',
-    a: 'We currently serve families in Hyderabad and are actively expanding to Bengaluru, Chennai, Mumbai, and Delhi. Join the waitlist to be notified the moment we launch near your loved one.',
-  },
-  {
-    q: 'How does a visit work step by step?',
-    a: 'You tell us about your parents, we match a verified companion, and you receive a detailed visit report with photos on your dashboard and WhatsApp — usually within an hour.',
-  },
-  {
-    q: 'Can I speak with the companion before the first visit?',
-    a: 'Yes. On monthly plans, we introduce you to your dedicated companion over WhatsApp before their first visit. For one-time visits, you can request this introduction too.',
-  },
-  {
-    q: "What if I'm not satisfied with a visit?",
-    a: "Let us know within 24 hours and we'll address it directly — including a free follow-up visit or a refund, depending on the situation.",
-  },
-  {
-    q: 'How do I pay from abroad?',
-    a: "All payments are processed securely via Razorpay (UPI, cards, net banking). International card support is rolling out — WhatsApp us if you're paying from outside India.",
-  },
-  {
-    q: "Is my parents' information kept private?",
-    a: "Visit reports and your loved one's information are shared only with the family contacts you register — never with anyone else. Companions sign a strict confidentiality agreement.",
-  },
+const FOUNDING_BENEFITS = [
+  'Entire family covered',
+  '24/7 AI health assistant',
+  'Doctor-verified responses',
+  'Emergency coordination',
+  '10% discount on all services',
 ]
+
+const MONTHLY_BENEFITS = [
+  '1 home visit every month',
+  'Weekly wellbeing calls',
+  'WhatsApp report after every visit',
+  'Medicine reminders',
+  'Priority emergency response',
+]
+
+const ONDEMAND_EXAMPLES = [
+  { name: 'Home Visit', price: '₹1,000' },
+  { name: 'Doctor Visit Support', price: '₹1,500' },
+  { name: 'Emergency Response', price: '₹3,000' },
+  { name: 'Grocery & Medicine', price: '₹500' },
+]
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                             */
+/* ------------------------------------------------------------------ */
+
+// Render *bold* segments inside a WhatsApp message (newlines via white-space)
+function renderWa(text: string) {
+  return text.split('*').map((seg, i) =>
+    i % 2 === 1 ? <strong key={i}>{seg}</strong> : <span key={i}>{seg}</span>
+  )
+}
+
+function Ticks() {
+  return <span className="ce-ticks">✓✓</span>
+}
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                           */
 /* ------------------------------------------------------------------ */
 
 export function HomePage() {
-  const [waitlistCount, setWaitlistCount] = useState(50)
-  const [tIdx, setTIdx] = useState(0)
-  const trackRef = useRef<HTMLDivElement>(null)
-  const [faqOpen, setFaqOpen] = useState<number | null>(0)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [tab, setTab] = useState<'nri' | 'society' | 'ondemand'>('nri')
 
-  const [checklistEmail, setChecklistEmail] = useState('')
-  const [checklistStatus, setChecklistStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
-  const [checklistError, setChecklistError] = useState('')
+  const [waReveal, setWaReveal] = useState(false)
+  const phoneRef = useRef<HTMLDivElement>(null)
 
-  async function handleChecklistSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setChecklistStatus('submitting')
-    setChecklistError('')
-    const { error } = await supabase
-      .from('waitlist_emails')
-      .insert({ email: checklistEmail.trim().toLowerCase(), source: 'nri_checklist' })
-    if (error && error.code !== '23505') {
-      setChecklistStatus('error')
-      setChecklistError('Something went wrong. Please try again.')
+  const [email, setEmail] = useState('')
+  const [whatsapp, setWhatsapp] = useState('')
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [errMsg, setErrMsg] = useState('')
+
+  // Scroll-reveal observer — toggles `animated` on any reveal element once visible
+  useEffect(() => {
+    const els = document.querySelectorAll<HTMLElement>('.animate-on-scroll, .animate-left')
+    if (!('IntersectionObserver' in window) || !els.length) {
+      els.forEach(el => el.classList.add('animated'))
       return
     }
-    setChecklistStatus('success')
-  }
-
-  useEffect(() => {
-    supabase
-      .from('waitlist')
-      .select('*', { count: 'exact', head: true })
-      .then(({ count }) => {
-        if (count !== null && count > 50) setWaitlistCount(count)
-      })
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('animated')
+            io.unobserve(e.target)
+          }
+        })
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+    )
+    els.forEach(el => io.observe(el))
+    return () => io.disconnect()
   }, [])
 
-  const prevT = () => setTIdx(i => (i - 1 + TESTIMONIALS.length) % TESTIMONIALS.length)
-  const nextT = () => setTIdx(i => (i + 1) % TESTIMONIALS.length)
+  // WhatsApp mockup — staggered reveal when the phone enters the viewport
+  useEffect(() => {
+    const node = phoneRef.current
+    if (!node) return
+    if (!('IntersectionObserver' in window)) { setWaReveal(true); return }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) { setWaReveal(true); io.disconnect() }
+      },
+      { threshold: 0.3 }
+    )
+    io.observe(node)
+    return () => io.disconnect()
+  }, [])
+
+  // Lock body scroll while the mobile overlay is open
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [menuOpen])
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setStatus('submitting')
+    setErrMsg('')
+    // waitlist_emails has no phone column — preserve the optional WhatsApp
+    // number in `source` so admins reading the table still get the contact.
+    const wa = whatsapp.trim()
+    const source = wa ? `homepage_register|wa:${wa}` : 'homepage_register'
+    const { error } = await supabase
+      .from('waitlist_emails')
+      .insert({ email: email.trim().toLowerCase(), source })
+    // 23505 = duplicate email → treat as success (already registered)
+    if (error && error.code !== '23505') {
+      setStatus('error')
+      setErrMsg('Something went wrong. Please try again or WhatsApp us.')
+      return
+    }
+    setStatus('success')
+  }
 
   return (
-    <main className="overflow-x-hidden">
+    <div className="ce-home">
 
-      {/* ── Hero ──────────────────────────────────────────────────── */}
-      <section className="relative bg-gradient-to-br from-green-900 via-green-800 to-green-700 text-white px-4 sm:px-6 py-20 md:py-32 text-center overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_50%,rgba(74,155,106,.18),transparent_70%)] pointer-events-none" />
-        <div className="relative max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-green-200 text-xs font-medium px-4 py-1.5 rounded-full mb-6 sm:mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            Trusted by NRI families across 5 countries
-          </div>
-          <p className="text-green-300 text-sm mb-3 font-medium tracking-wide">A Support System, Not A Replacement</p>
-          <h1 className="text-3xl sm:text-4xl md:text-6xl font-serif leading-tight mb-5">
-            When you can't be there,<br />
-            <em className="text-green-200 not-italic">Close Eye</em> can.
-          </h1>
-          <p className="text-white/75 text-base sm:text-lg leading-relaxed max-w-xl mx-auto mb-8 sm:mb-10">
-            Verified wellbeing visits and trusted local support for your loved ones in India.
-            Real visits. Real photos. Real reports.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              to="/waitlist"
-              className="bg-white text-green-900 font-semibold px-8 py-3.5 rounded-xl hover:bg-green-50 transition-colors text-sm sm:text-base shadow-sm"
-            >
-              Join Waitlist
-            </Link>
-            <Link
-              to="/contact"
-              className="border border-white/30 text-white font-medium px-8 py-3.5 rounded-xl hover:bg-white/10 transition-colors text-sm sm:text-base"
-            >
-              Book a call
-            </Link>
-          </div>
-          <p className="mt-6 text-white/40 text-xs tracking-widest">USA · UK · UAE · CA · AU</p>
-
-          {/* Hero stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-px mt-10 sm:mt-14 bg-white/10 rounded-2xl overflow-hidden border border-white/10">
-            {[
-              [`${waitlistCount}+`, 'families on waitlist'],
-              ['Hyderabad', 'live city'],
-              ['Beta families', 'love it — word of mouth'],
-              ['<1hr', 'report delivery'],
-            ].map(([v, l]) => (
-              <div key={l} className="py-4 sm:py-5 px-3 sm:px-4 bg-white/5 text-center">
-                <strong className="block font-serif text-xl sm:text-2xl text-white">{v}</strong>
-                <span className="text-white/50 text-xs">{l}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 1. Waitlist counter strip ─────────────────────────────── */}
-      <section className="bg-green-900 border-b border-green-800/60 py-3.5 px-4">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
-          <span className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-400" />
-            </span>
-            <span className="text-green-400 text-xs font-semibold uppercase tracking-widest">Live</span>
-          </span>
-          <p className="text-white/80 text-sm">
-            <strong className="font-serif text-base text-white">{waitlistCount}+</strong>
-            {' '}families from the USA, UK, UAE, Canada and Australia are waiting.
-          </p>
-          <Link
-            to="/waitlist"
-            className="text-xs font-semibold text-green-300 hover:text-green-200 underline underline-offset-2 whitespace-nowrap transition-colors"
-          >
-            Reserve your spot →
+      {/* ── NAV ──────────────────────────────────────────────────── */}
+      <nav className="ce-nav">
+        <div className="ce-nav-inner">
+          <Link to="/" className="ce-nav-logo">
+            <Logo className="w-8 h-8" />
+            close eye
           </Link>
-        </div>
-      </section>
 
-      {/* ── Services ──────────────────────────────────────────────── */}
-      <section className="px-4 sm:px-6 py-16 sm:py-20 max-w-6xl mx-auto">
-        <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">Our Services</p>
-        <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900 mb-10 sm:mb-12">
-          A trusted presence, on the days<br className="hidden md:block" /> you cannot be there.
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-          {SERVICE_TEASERS.map(s => (
-            <Link
-              key={s.name}
-              to="/services"
-              className="group border border-gray-100 rounded-2xl p-5 sm:p-6 hover:shadow-card-hover hover:-translate-y-0.5 transition-all bg-white"
-            >
-              <span className="inline-block text-xs font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full mb-4">{s.price}</span>
-              <h3 className="font-serif text-lg text-green-900 mb-2">{s.name}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed mb-4">{s.desc}</p>
-              <span className="text-green-600 text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
-                Learn more <ChevronRight size={14} />
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ── 2. How It Works ──────────────────────────────────────── */}
-      <section id="how-it-works" className="bg-green-50 px-4 sm:px-6 py-16 sm:py-20 scroll-mt-16">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
-            <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">How it works</p>
-            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900">
-              Three steps to real peace of mind.
-            </h2>
-          </div>
-
-          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            {/* Connector line — desktop only */}
-            <div className="hidden md:block absolute top-10 left-[calc(16.66%+1.5rem)] right-[calc(16.66%+1.5rem)] h-px bg-green-200 z-0" />
-
-            {HOW_STEPS.map(s => (
-              <div key={s.n} className="relative z-10 flex flex-col items-center text-center">
-                {/* Icon circle */}
-                <div className="w-20 h-20 rounded-full bg-white shadow-card border border-green-100 flex flex-col items-center justify-center mb-5 group-hover:shadow-card-hover">
-                  <s.icon size={26} className="text-green-700 mb-0.5" />
-                  <span className="text-[10px] font-bold text-green-700 leading-none">STEP {s.n}</span>
-                </div>
-                <h3 className="font-semibold text-green-900 mb-2 text-sm sm:text-base leading-snug">{s.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{s.desc}</p>
-              </div>
+          <div className="ce-nav-center">
+            {NAV_LINKS.map(l => (
+              <a key={l.href} href={l.href} className="ce-nav-link">{l.label}</a>
             ))}
           </div>
 
-          <div className="mt-10 sm:mt-12 text-center">
-            <Link
-              to="/waitlist"
-              className="inline-flex items-center gap-2 bg-green-800 hover:bg-green-700 text-white font-semibold px-7 py-3 rounded-xl transition-colors text-sm"
-            >
-              Get started <ChevronRight size={16} />
-            </Link>
+          <div className="ce-nav-right">
+            <a href="#societies" className="ce-nav-textlink">For Societies</a>
+            <Link to="/auth" className="ce-nav-register">Register Family</Link>
+          </div>
+
+          <button
+            className="ce-hamburger"
+            aria-label="Open menu"
+            onClick={() => setMenuOpen(true)}
+          >
+            <Menu size={26} />
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile full-screen overlay */}
+      {menuOpen && (
+        <div className="ce-mobile-overlay">
+          <button className="ce-mobile-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>
+            <X size={32} />
+          </button>
+          {NAV_LINKS.map(l => (
+            <a key={l.href} href={l.href} onClick={() => setMenuOpen(false)}>{l.label}</a>
+          ))}
+          <Link to="/auth" onClick={() => setMenuOpen(false)}>Register Family</Link>
+          <Link to="/auth" onClick={() => setMenuOpen(false)}>Sign In</Link>
+        </div>
+      )}
+
+      {/* ── HERO ─────────────────────────────────────────────────── */}
+      <section className="ce-hero">
+        <div className="ce-hero-left animate-on-scroll">
+          <p className="ce-eyebrow">Trusted elder care companion — Hyderabad</p>
+          <h1 className="ce-h1">
+            Your mother made tea<br />
+            for two this morning.<br />
+            <span className="ce-hero-h1-cont">She forgot you moved abroad.</span>
+          </h1>
+          <div className="ce-hero-body">
+            <p>Close Eye visits your parents personally. We check their health, medicines, and home. We send you a WhatsApp report within the hour.</p>
+            <p>Every time. So you always know.</p>
+          </div>
+          <div className="ce-hero-buttons">
+            <Link to="/auth" className="ce-btn ce-btn-primary">Register Your Family <ArrowRight size={18} /></Link>
+            <a href="#how-it-works" className="ce-btn ce-btn-secondary">See How It Works</a>
+          </div>
+          <div className="ce-trust-row">
+            {TRUST_SIGNALS.map(t => (
+              <span key={t} className="ce-trust-item"><Check size={15} /> {t}</span>
+            ))}
           </div>
         </div>
-      </section>
 
-      {/* ── 3. Companion Verification Pipeline ───────────────────── */}
-      <section className="px-4 sm:px-6 py-16 sm:py-20 max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">Our vetting process</p>
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900 mb-4">
-            Every companion earns your trust<br className="hidden sm:block" /> before they knock on the door.
-          </h2>
-          <p className="text-gray-500 text-sm sm:text-base max-w-xl mx-auto">
-            We run three layers of verification before any companion is matched to a family.
-            No shortcuts. No exceptions.
-          </p>
-        </div>
-
-        {/* Pipeline */}
-        <div className="relative flex flex-col md:flex-row items-stretch gap-4 md:gap-0">
-          {VERIFICATION.map((v, i) => (
-            <div key={v.label} className="flex flex-col md:flex-row flex-1 items-stretch">
-              {/* Card */}
-              <div className={`flex-1 rounded-2xl p-6 sm:p-7 border border-gray-100 shadow-card bg-white flex flex-col gap-4`}>
-                <div className={`w-12 h-12 rounded-xl ${v.bg} ring-1 ${v.ring} flex items-center justify-center`}>
-                  <v.icon size={22} className={v.color} />
-                </div>
+        <div className="ce-hero-right">
+          <div className="ce-phone-wrap" ref={phoneRef}>
+            <div className="ce-phone">
+              <div className="ce-wa-header">
+                <span className="ce-wa-back" aria-hidden>‹</span>
+                <span className="ce-wa-avatar">CE</span>
                 <div>
-                  <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${v.color} mb-1.5`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${v.dot}`} />
-                    {v.sublabel}
-                  </span>
-                  <h3 className="font-semibold text-green-900 text-base mb-1.5">{v.label}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{v.detail}</p>
+                  <div className="ce-wa-name">Close Eye 🌿</div>
+                  <div className="ce-wa-sub">Usually replies instantly</div>
                 </div>
               </div>
-
-              {/* Arrow connector — hidden on last item */}
-              {i < VERIFICATION.length - 1 && (
-                <div className="flex items-center justify-center py-2 md:py-0 md:px-3">
-                  <ChevronRight size={18} className="text-green-300 rotate-90 md:rotate-0" />
-                </div>
-              )}
+              <div className="ce-wa-chat">
+                {WA_MESSAGES.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`ce-wa-msg${waReveal ? ' ce-wa-in' : ''}`}
+                    style={{ transitionDelay: `${i * 600}ms` }}
+                  >
+                    {renderWa(m.text)}
+                    <div className="ce-wa-time">{m.time} <Ticks /></div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+            <p className="ce-phone-caption">What your family receives after every Close Eye visit</p>
+          </div>
         </div>
-
-        <p className="mt-8 text-center text-xs text-gray-500 tracking-wide">
-          Companions are re-verified every 6 months and can be removed by a family at any time.
-        </p>
       </section>
 
-      {/* ── Trust signals ─────────────────────────────────────────── */}
-      <section className="bg-green-50 px-4 sm:px-6 py-16 sm:py-20">
-        <div className="max-w-6xl mx-auto">
-          <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">Why families trust us</p>
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900 mb-10 sm:mb-12">
-            We don't just send someone.<br className="hidden md:block" />
-            <em className="not-italic text-green-600">We send the right someone.</em>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {TRUST.map(t => (
-              <div key={t.title} className="bg-white rounded-2xl p-5 sm:p-6 border border-green-100 hover:shadow-card transition-shadow">
-                <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center mb-4">
-                  <t.icon size={20} className="text-green-700" />
+      {/* ── PROBLEM ──────────────────────────────────────────────── */}
+      <section className="ce-section ce-bg-forest">
+        <div className="ce-container">
+          <p className="ce-eyebrow ce-eyebrow-sage animate-on-scroll">Why families choose Close Eye</p>
+          <h2 className="ce-h2 animate-on-scroll" style={{ color: 'var(--white)' }}>Every NRI knows this feeling.</h2>
+          <div className="ce-quote-grid">
+            {PROBLEM_QUOTES.map((q, i) => (
+              <div key={i} className="ce-quote-card animate-on-scroll" style={{ transitionDelay: `${i * 100}ms` }}>
+                <span className="ce-quote-mark" aria-hidden>&ldquo;</span>
+                <p className="ce-quote-text">{q.text}</p>
+                <p className="ce-quote-attr">{q.attr}</p>
+              </div>
+            ))}
+          </div>
+          <p className="ce-problem-close animate-on-scroll">Close Eye exists for exactly this.</p>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ─────────────────────────────────────────── */}
+      <section id="how-it-works" className="ce-section ce-bg-white" style={{ scrollMarginTop: '72px' }}>
+        <div className="ce-container">
+          <p className="ce-eyebrow animate-on-scroll">The Process</p>
+          <h2 className="ce-h2 animate-on-scroll">Simple for you.<br />Meaningful for them.</h2>
+          <p className="ce-subtitle animate-on-scroll">Two experiences. One service.</p>
+
+          <div className="ce-how-cols">
+            <div className="ce-how-col animate-on-scroll">
+              <span className="ce-pill ce-pill-forest">For You — Abroad</span>
+              <div className="ce-steps">
+                {STEPS_ABROAD.map((s, i) => (
+                  <div key={i} className="ce-step">
+                    <span className="ce-step-num ce-step-num-forest">{i + 1}</span>
+                    <div>
+                      <p className="ce-step-title">{s.title}</p>
+                      <p className="ce-step-body">{s.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="ce-how-connector">
+              <div className="ce-how-connector-line" />
+              <Logo className="w-9 h-9" />
+              <div className="ce-how-connector-text">Close Eye bridges the distance</div>
+              <div className="ce-how-connector-line" />
+            </div>
+
+            <div className="ce-how-col animate-on-scroll">
+              <span className="ce-pill ce-pill-sage">For Them — In Hyderabad</span>
+              <div className="ce-steps">
+                {STEPS_HOME.map((s, i) => (
+                  <div key={i} className="ce-step">
+                    <span className="ce-step-num ce-step-num-sage">{i + 1}</span>
+                    <div>
+                      <p className="ce-step-title">{s.title}</p>
+                      <p className="ce-step-body">{s.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SERVICES ─────────────────────────────────────────────── */}
+      <section id="services" className="ce-section ce-bg-cream" style={{ scrollMarginTop: '72px' }}>
+        <div className="ce-container">
+          <p className="ce-eyebrow animate-on-scroll">What we offer</p>
+          <h2 className="ce-h2 animate-on-scroll">For every family.<br />Whatever the distance.</h2>
+
+          <div className="ce-tabs" style={{ marginTop: '32px' }}>
+            <button className={`ce-tab${tab === 'nri' ? ' ce-tab-active' : ''}`} onClick={() => setTab('nri')}>NRI Families</button>
+            <button className={`ce-tab${tab === 'society' ? ' ce-tab-active' : ''}`} onClick={() => setTab('society')}>Society Members</button>
+            <button className={`ce-tab${tab === 'ondemand' ? ' ce-tab-active' : ''}`} onClick={() => setTab('ondemand')}>On-Demand</button>
+          </div>
+
+          {tab === 'nri' && (
+            <div className="ce-svc-grid">
+              {NRI_SERVICES.map((s, i) => (
+                <div key={s.name} className="ce-svc-card animate-on-scroll" style={{ transitionDelay: `${(i % 3) * 100}ms` }}>
+                  <h3 className="ce-svc-name">{s.name}</h3>
+                  <p className="ce-svc-price">{s.price}</p>
+                  <p className="ce-svc-desc">{s.desc}</p>
                 </div>
-                <h3 className="font-semibold text-green-900 mb-2 text-sm">{t.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed mb-3">{t.desc}</p>
-                <span className="text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">{t.tag}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
-          {/* Trust stats bar */}
-          <div className="grid grid-cols-3 gap-px mt-8 sm:mt-10 bg-green-100 rounded-2xl overflow-hidden border border-green-100">
-            {[
-              [`${waitlistCount}+`, 'Families on waitlist'],
-              ['100%', 'Background-checked'],
-              ['<1hr', 'Report delivery'],
-            ].map(([v, l]) => (
-              <div key={l} className="py-5 sm:py-7 text-center bg-white">
-                <strong className="block font-serif text-2xl sm:text-3xl text-green-800">{v}</strong>
-                <span className="text-gray-500 text-xs">{l}</span>
+          {tab === 'society' && (
+            <div id="societies" style={{ scrollMarginTop: '88px' }}>
+              <div className="ce-society-card animate-on-scroll">
+                <span className="ce-gold-pill">Founding Member Price</span>
+                <p className="ce-society-price">₹100</p>
+                <p className="ce-society-period">One-time registration</p>
+                <hr className="ce-divider" />
+                <ul className="ce-benefits">
+                  {SOCIETY_BENEFITS.map(b => (
+                    <li key={b}><Check size={18} /> {b}</li>
+                  ))}
+                </ul>
+                <Link to="/auth" className="ce-btn ce-btn-primary ce-btn-full">Register Your Family <ArrowRight size={18} /></Link>
+                <p className="ce-society-note">Currently serving Rivera Residences and Lanco Hills, Hyderabad</p>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {tab === 'ondemand' && (
+            <div className="animate-on-scroll">
+              <table className="ce-price-table">
+                <thead>
+                  <tr><th>Service</th><th>Price</th></tr>
+                </thead>
+                <tbody>
+                  {ON_DEMAND_SERVICES.map(s => (
+                    <tr key={s.type}><td>{s.name}</td><td>{s.price}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* ── 4. Testimonials carousel ──────────────────────────────── */}
-      <section className="px-4 sm:px-6 py-16 sm:py-20 max-w-4xl mx-auto">
-        <div className="text-center mb-10">
-          <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">What families say</p>
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900">
-            Real words from real families.
-          </h2>
-        </div>
+      {/* ── TRUST & TEAM ─────────────────────────────────────────── */}
+      <section className="ce-section ce-bg-white">
+        <div className="ce-container">
+          <p className="ce-eyebrow animate-on-scroll">Why trust us</p>
+          <h2 className="ce-h2 animate-on-scroll" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>Built on presence.<br />Not promises.</h2>
 
-        <div className="relative">
-          {/* Track */}
-          <div className="overflow-hidden rounded-2xl">
-            <div
-              ref={trackRef}
-              className="flex transition-transform duration-500 ease-in-out"
-              style={{ transform: `translateX(-${tIdx * 100}%)` }}
-            >
-              {TESTIMONIALS.map(t => (
-                <div
-                  key={t.name}
-                  className="min-w-full px-1"
-                >
-                  <div className="bg-green-50 border border-green-100 rounded-2xl p-7 sm:p-10">
-                    {/* Stars */}
-                    <div className="flex gap-1 mb-5">
-                      {Array.from({ length: t.stars }).map((_, i) => (
-                        <Star key={i} size={16} className="fill-amber-400 text-amber-400" />
-                      ))}
-                    </div>
-                    <blockquote className="font-serif text-lg sm:text-xl text-green-900 leading-relaxed mb-7 italic">
-                      "{t.text}"
-                    </blockquote>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-green-700 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
-                        {t.initials}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-green-900 text-sm">{t.name}</p>
-                        <p className="text-xs text-gray-500">{t.location}</p>
-                      </div>
-                      <span className="ml-auto text-[10px] font-semibold uppercase tracking-widest text-green-500 bg-green-100 px-2 py-0.5 rounded-full">Early Adopter Feedback</span>
-                    </div>
+          <div className="ce-pillars">
+            {PILLARS.map((p, i) => (
+              <div key={p.title} className="animate-left ce-pillar" style={{ transitionDelay: `${i * 120}ms` }}>
+                <div className="ce-pillar-icon"><p.icon size={22} /></div>
+                <h3 className="ce-pillar-title">{p.title}</h3>
+                <p className="ce-pillar-body">{p.body}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Founder */}
+          <div className="ce-founder">
+            <div className="animate-on-scroll">
+              <img
+                src="/krishna.jpg"
+                alt="Krishna — Founder & MD, Close Eye"
+                className="ce-founder-photo"
+                width={280}
+                height={280}
+                loading="lazy"
+              />
+              <p className="ce-founder-caption">Krishna — Founder &amp; MD, Close Eye</p>
+            </div>
+            <div className="animate-on-scroll">
+              <p className="ce-founder-label">A note from the founder</p>
+              <div className="ce-founder-quote">
+                <p>&ldquo;I do every visit myself.</p>
+                <p>Not because we don&rsquo;t have a team — but because before I ask any family to trust us with their parents, I need to earn that trust personally.</p>
+                <p>One visit. One family. One report. That is how Close Eye was built.&rdquo;</p>
+              </div>
+              <p className="ce-founder-name">Krishna</p>
+              <p className="ce-founder-role">Founder &amp; MD, Close Eye Companion</p>
+              <p className="ce-founder-role">Stexa Products &amp; Services Pvt. Ltd.</p>
+            </div>
+          </div>
+
+          {/* Advisory board */}
+          <div className="ce-advisory animate-on-scroll">
+            <p className="ce-advisory-label">Advisory Board</p>
+            <div className="ce-advisor-row">
+              {ADVISORS.map(a => (
+                <div key={a.name} className="ce-advisor-pill">
+                  <span className="ce-advisor-avatar">{a.initials}</span>
+                  <div>
+                    <div className="ce-advisor-name">{a.name}</div>
+                    <div className="ce-advisor-role">{a.role} · {a.detail}</div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-
-          {/* Controls */}
-          <div className="flex items-center justify-center gap-4 mt-6">
-            <button
-              onClick={prevT}
-              aria-label="Previous testimonial"
-              className="w-9 h-9 rounded-full border border-green-200 hover:border-green-400 flex items-center justify-center text-green-600 hover:text-green-800 transition-colors"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            {TESTIMONIALS.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setTIdx(i)}
-                aria-label={`Testimonial ${i + 1}`}
-                className={`h-2 rounded-full transition-all ${i === tIdx ? 'w-6 bg-green-700' : 'w-2 bg-green-200 hover:bg-green-300'}`}
-              />
-            ))}
-            <button
-              onClick={nextT}
-              aria-label="Next testimonial"
-              className="w-9 h-9 rounded-full border border-green-200 hover:border-green-400 flex items-center justify-center text-green-600 hover:text-green-800 transition-colors"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
         </div>
       </section>
 
-      {/* ── Pricing ───────────────────────────────────────────────── */}
-      <section className="bg-green-50 px-4 sm:px-6 py-16 sm:py-20">
-        <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-12">
-          <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">Pricing</p>
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900 mb-3">Simple, transparent pricing.</h2>
-          <p className="text-gray-500 text-sm sm:text-base">
-            One monthly plan, plus on-demand help whenever you need it.
-          </p>
-        </div>
+      {/* ── PRICING ──────────────────────────────────────────────── */}
+      <section id="pricing" className="ce-section ce-bg-cream" style={{ scrollMarginTop: '72px' }}>
+        <div className="ce-container">
+          <p className="ce-eyebrow animate-on-scroll">Pricing</p>
+          <h2 className="ce-h2 animate-on-scroll" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>Honest pricing.<br />No surprises.</h2>
 
-        <div className="max-w-sm mx-auto bg-white rounded-2xl border-2 border-green-800 p-6 sm:p-7">
-          <h3 className="font-serif text-xl text-green-900 mb-1">{PLAN.name}</h3>
-          <p className="text-xs text-gray-500 mb-4">{PLAN.tagline}</p>
-          <p className="font-serif text-3xl text-green-900 mb-5">{PLAN.priceLabel}</p>
-          <ul className="space-y-2 mb-6">
-            {PLAN.features.slice(0, 4).map(f => (
-              <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
-                <span className="text-green-600 font-bold flex-shrink-0">✓</span> {f}
-              </li>
-            ))}
-          </ul>
-          <Link
-            to="/services"
-            className="block text-center bg-green-800 hover:bg-green-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
-          >
-            View all services →
-          </Link>
-        </div>
-
-        <p className="text-center text-xs text-gray-500 mt-6">
-          Plus on-demand services from ₹{CHEAPEST_ON_DEMAND_PRICE.toLocaleString('en-IN')} — no subscription needed.
-        </p>
-      </section>
-
-      {/* ── FAQ ───────────────────────────────────────────────────── */}
-      <section className="px-4 sm:px-6 py-16 sm:py-20 max-w-2xl mx-auto">
-        <div className="text-center mb-10">
-          <p className="text-xs font-semibold uppercase tracking-widest text-green-600 mb-3">Questions</p>
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-green-900">
-            Things families ask us first.
-          </h2>
-        </div>
-        <div className="divide-y divide-gray-100">
-          {HOME_FAQS.map((f, i) => (
-            <div key={f.q} className="py-1">
-              <button
-                onClick={() => setFaqOpen(faqOpen === i ? null : i)}
-                aria-expanded={faqOpen === i}
-                aria-controls={`home-faq-a-${i}`}
-                className="w-full min-h-[44px] flex justify-between items-center py-4 text-left gap-4 group"
-              >
-                <span className={clsx(
-                  'font-semibold text-base transition-colors',
-                  faqOpen === i ? 'text-green-700' : 'text-green-900 group-hover:text-green-700'
-                )}>
-                  {f.q}
-                </span>
-                <span className={clsx(
-                  'flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors',
-                  faqOpen === i ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400 group-hover:bg-green-50 group-hover:text-green-600'
-                )}>
-                  {faqOpen === i ? <Minus size={14} /> : <Plus size={14} />}
-                </span>
-              </button>
-              <div
-                id={`home-faq-a-${i}`}
-                className={clsx(
-                  'overflow-hidden transition-all duration-300 ease-in-out',
-                  faqOpen === i ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                )}
-              >
-                <p className="pb-4 text-base text-gray-500 leading-relaxed">{f.a}</p>
-              </div>
+          <div className="ce-price-cards">
+            {/* Founding member */}
+            <div className="ce-price-card animate-on-scroll">
+              <span className="ce-tag ce-tag-sage">Most Popular</span>
+              <p className="ce-price-big">₹100</p>
+              <p className="ce-price-period">One-time registration</p>
+              <hr className="ce-divider" />
+              <ul className="ce-benefits">
+                {FOUNDING_BENEFITS.map(b => <li key={b}><Check size={18} /> {b}</li>)}
+              </ul>
+              <Link to="/auth" className="ce-btn ce-btn-primary ce-btn-full">Register for ₹100 <ArrowRight size={18} /></Link>
             </div>
-          ))}
+
+            {/* Monthly (featured) */}
+            <div className="ce-price-card ce-price-card-featured animate-on-scroll" style={{ transitionDelay: '100ms' }}>
+              <span className="ce-tag ce-tag-sage">NRI Families</span>
+              <p className="ce-price-big">₹1,500</p>
+              <p className="ce-price-period">Per month</p>
+              <hr className="ce-divider" />
+              <ul className="ce-benefits">
+                {MONTHLY_BENEFITS.map(b => <li key={b}><Check size={18} /> {b}</li>)}
+              </ul>
+              <Link to="/auth" className="ce-btn ce-btn-white ce-btn-full">Start Monthly Plan <ArrowRight size={18} /></Link>
+            </div>
+
+            {/* On-demand */}
+            <div className="ce-price-card animate-on-scroll" style={{ transitionDelay: '200ms' }}>
+              <p className="ce-price-range">₹500 – ₹4,000</p>
+              <p className="ce-price-period">Pay per service</p>
+              <hr className="ce-divider" />
+              <p className="ce-price-body" style={{ marginBottom: '16px' }}>
+                No subscription needed. Book any service when you need it. Cancel or change anytime.
+              </p>
+              <ul className="ce-benefits">
+                {ONDEMAND_EXAMPLES.map(s => (
+                  <li key={s.name}><Check size={18} /> {s.name} — {s.price}</li>
+                ))}
+              </ul>
+              <a href="#services" onClick={() => setTab('ondemand')} className="ce-btn ce-btn-outline ce-btn-full">View All Services <ArrowRight size={18} /></a>
+            </div>
+          </div>
+
+          <p className="ce-pricing-note">
+            All prices in INR. NRI families can pay via international cards and UPI. Invoice provided for every transaction.
+          </p>
         </div>
-        <p className="text-center mt-8">
-          <Link to="/faq" className="text-sm font-semibold text-green-700 hover:text-green-900 underline underline-offset-2">
-            See all FAQs →
-          </Link>
-        </p>
       </section>
 
-      {/* ── Email capture ────────────────────────────────────────── */}
-      <section className="bg-green-50 px-4 sm:px-6 py-16 sm:py-20">
-        <div className="max-w-lg mx-auto text-center">
-          <Mail size={28} className="text-green-700 mx-auto mb-4" />
-          <h2 className="font-serif text-2xl sm:text-3xl text-green-900 mb-3">
-            Get the Free NRI Family Care Checklist
+      {/* ── FINAL CTA ────────────────────────────────────────────── */}
+      <section className="ce-section ce-bg-forest">
+        <div className="ce-container ce-cta">
+          <h2 className="ce-h2 animate-on-scroll" style={{ color: 'var(--white)', fontSize: 'clamp(28px, 5vw, 52px)' }}>
+            Your parent deserves someone<br />who genuinely cares.
           </h2>
-          <p className="text-gray-500 text-sm sm:text-base mb-7">
-            10 signs your elderly parent may need extra support — and what to do about it.
-          </p>
+          <p className="ce-cta-sub animate-on-scroll">Let someone be there when you can&rsquo;t.</p>
 
-          {checklistStatus === 'success' ? (
-            <p className="bg-white border border-green-200 rounded-xl p-5 text-green-800 text-sm font-medium">
-              You're in! Check your inbox for the checklist shortly.
-            </p>
+          {status === 'success' ? (
+            <div className="ce-cta-form">
+              <p className="ce-cta-success">
+                You&rsquo;re registered. We&rsquo;ll reach out on WhatsApp within 2 hours to set up your first visit. 🌿
+              </p>
+            </div>
           ) : (
-            <form onSubmit={handleChecklistSubmit} className="flex flex-col sm:flex-row gap-3">
+            <form className="ce-cta-form animate-on-scroll" onSubmit={handleSubmit}>
               <input
+                className="ce-input"
                 type="email"
                 required
-                value={checklistEmail}
-                onChange={e => setChecklistEmail(e.target.value)}
-                placeholder="you@email.com"
-                className="flex-1 min-h-[44px] border-2 border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:border-green-600 transition-colors bg-white"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Email address"
+                aria-label="Email address"
               />
-              <button
-                type="submit"
-                disabled={checklistStatus === 'submitting'}
-                className="min-h-[44px] bg-green-800 hover:bg-green-700 disabled:opacity-60 text-white font-semibold px-6 rounded-xl transition-colors text-base whitespace-nowrap flex items-center justify-center gap-2"
-              >
-                {checklistStatus === 'submitting' ? <Loader2 size={15} className="animate-spin" /> : null}
-                Send Me the Checklist
+              <input
+                className="ce-input"
+                type="tel"
+                value={whatsapp}
+                onChange={e => setWhatsapp(e.target.value)}
+                placeholder="WhatsApp number (optional)"
+                aria-label="WhatsApp number (optional)"
+              />
+              <button type="submit" disabled={status === 'submitting'} className="ce-btn ce-btn-white ce-btn-full" style={{ padding: '18px' }}>
+                {status === 'submitting' ? 'Registering…' : <>Register Your Family <ArrowRight size={18} /></>}
               </button>
+              {status === 'error' && <p style={{ color: '#ffb4b4', fontSize: '13px', marginTop: '10px' }}>{errMsg}</p>}
             </form>
           )}
-          {checklistStatus === 'error' && (
-            <p className="text-red-600 text-xs mt-3">{checklistError}</p>
-          )}
+
+          <p className="ce-cta-or">or</p>
+          <a href={WA_LINK} target="_blank" rel="noopener noreferrer" className="ce-cta-wa">
+            <FaWhatsapp size={20} /> WhatsApp us: +91 9000221261
+          </a>
+          <p className="ce-cta-reassure">No spam. No commitment. We respond within 2 hours.</p>
         </div>
       </section>
 
-      {/* ── What every visit looks like ────────────────────────────── */}
-      <section className="bg-green-900 text-white px-4 sm:px-6 py-16 sm:py-20">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10 sm:gap-16 items-center">
-          {/* Sample report card */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-7">
-            <div className="flex items-center gap-2 mb-5">
-              <span className="text-xs text-green-300 font-semibold uppercase tracking-widest">✓ Visit completed</span>
-              <span className="ml-auto text-xs font-semibold bg-amber-400/20 text-amber-300 px-2.5 py-0.5 rounded-full">Sample Report</span>
-            </div>
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center font-bold text-sm flex-shrink-0">PS</div>
-              <div>
-                <p className="font-semibold text-sm">Priya Sharma</p>
-                <p className="text-xs text-green-300">Companion · Hyderabad</p>
-              </div>
-            </div>
-            <p className="text-white/80 italic text-sm leading-relaxed mb-6">
-              "Had a lovely tea with auntie today. She's looking forward to your call tonight. Medication taken on time."
-            </p>
-            <ul className="space-y-2">
-              {[
-                'Mood & general wellbeing',
-                'Health & medication check',
-                'Home & safety observations',
-                'Photos from the visit',
-                'Notes for the family',
-              ].map(item => (
-                <li key={item} className="flex items-center gap-2 text-xs sm:text-sm text-white/60">
-                  <span className="text-green-400 flex-shrink-0">📋</span> {item}
-                </li>
-              ))}
-            </ul>
+      {/* ── FOOTER ───────────────────────────────────────────────── */}
+      <footer className="ce-footer">
+        <div className="ce-footer-grid">
+          <div>
+            <Link to="/" className="ce-footer-logo"><Logo className="w-8 h-8" /> close eye</Link>
+            <p className="ce-footer-tagline">Your trusted presence in India.</p>
+            <p className="ce-footer-company">Operated by Stexa Products &amp; Services Pvt. Ltd., Hyderabad</p>
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-green-400 mb-4">What every visit looks like</p>
-            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl mb-5">"Mom is doing great."</h2>
-            <p className="text-white/65 leading-relaxed mb-8 text-sm sm:text-base">
-              Every visit generates a detailed, time-stamped report delivered to your WhatsApp and dashboard
-              within the hour. Real photos. Real notes. Real peace of mind from 10,000 km away.
-            </p>
-            <Link
-              to="/waitlist"
-              className="inline-block border border-white/30 text-white font-medium px-7 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm"
-            >
-              Join Waitlist →
-            </Link>
+            <p className="ce-footer-label">Quick Links</p>
+            <div className="ce-footer-links">
+              <a href="#how-it-works">How It Works</a>
+              <a href="#services">Services</a>
+              <a href="#pricing">Pricing</a>
+              <a href="#societies">For Societies</a>
+              <Link to="/about">About Us</Link>
+            </div>
+          </div>
+
+          <div>
+            <p className="ce-footer-label">Contact</p>
+            <div className="ce-footer-contact">
+              <a href="mailto:hello@closeeye.in">📧 hello@closeeye.in</a>
+              <a href={`tel:+${WA_NUMBER}`}>📱 +91 9000221261</a>
+              <a href={WA_LINK} target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>
+              <a href="https://www.instagram.com/closeeyeglobal/" target="_blank" rel="noopener noreferrer">📸 @closeeyeglobal</a>
+              <a href="https://www.linkedin.com/company/closeeye/" target="_blank" rel="noopener noreferrer">💼 LinkedIn</a>
+            </div>
           </div>
         </div>
-      </section>
 
-      {/* ── CTA ───────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-br from-green-800 to-green-700 text-white px-4 sm:px-6 py-16 sm:py-20 text-center">
-        <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl mb-4">
-          Join the families we look after across India.
-        </h2>
-        <p className="text-white/65 mb-8 text-sm sm:text-base">
-          {waitlistCount} families are already on the waitlist. Be first in your city.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
-            to="/waitlist"
-            className="bg-white text-green-900 font-semibold px-8 py-3.5 rounded-xl hover:bg-green-50 transition-colors text-sm"
-          >
-            Join Waitlist
-          </Link>
-          <Link
-            to="/contact"
-            className="border border-white/30 text-white font-medium px-8 py-3.5 rounded-xl hover:bg-white/10 transition-colors text-sm"
-          >
-            Book a call
-          </Link>
+        <div className="ce-footer-bottom">
+          <span>© 2025 Close Eye Companion. All rights reserved.</span>
+          <span>
+            <Link to="/privacy-policy">Privacy Policy</Link>
+            {'  ·  '}
+            <Link to="/terms">Terms of Service</Link>
+          </span>
         </div>
-      </section>
+      </footer>
 
-    </main>
+      {/* ── FLOATING WHATSAPP ────────────────────────────────────── */}
+      <a
+        href={WA_LINK}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="ce-wa-float"
+        aria-label="Chat with Close Eye on WhatsApp"
+        title="Chat on WhatsApp"
+      >
+        <FaWhatsapp size={28} />
+      </a>
+    </div>
   )
 }

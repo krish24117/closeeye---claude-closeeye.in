@@ -55,7 +55,7 @@ const AdminElders = lazy(() => import('@/pages/admin/Elders').then(m => ({ defau
 const SurveyPage = lazy(() => import('@/pages/Survey').then(m => ({ default: m.SurveyPage })))
 
 const PAGE_TITLES: Record<string, string> = {
-  '/': "Close Eye — When you can't be there, Close Eye can.",
+  '/': 'Close Eye — Trusted Elder Care Companion for NRI Families | Hyderabad',
   '/services': 'Services — Close Eye',
   '/about': 'About Us — Close Eye',
   '/faq': 'FAQ — Close Eye',
@@ -92,7 +92,7 @@ const PAGE_TITLES: Record<string, string> = {
 }
 
 const PAGE_DESCRIPTIONS: Record<string, string> = {
-  '/': 'Verified wellbeing visits and trusted local support for your loved ones in India. Real visits. Real photos. Real reports.',
+  '/': 'Close Eye provides verified companion visits for elderly parents of NRI families in Hyderabad. We visit, check their health, and send a WhatsApp report within the hour. Register your family today.',
   '/services': 'Companion visits, hospital companions, emergency visits, and monthly care plans — choose the right support for your loved one in India.',
   '/about': 'Meet Close Eye — verified local companions providing trusted, in-person wellbeing visits for elderly parents and loved ones across India.',
   '/faq': 'Answers to common questions about Close Eye visits, companion verification, pricing, cancellations, and coverage areas.',
@@ -220,7 +220,8 @@ export default function App() {
         <SEOManager />
         <Suspense fallback={<RouteSpinner />}>
           <Routes>
-            <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
+            {/* Home renders its own bespoke nav + footer (redesign) — no PublicLayout wrapper */}
+            <Route path="/" element={<HomePage />} />
             <Route path="/services" element={<PublicLayout><ServicesPage /></PublicLayout>} />
             <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
             <Route path="/faq" element={<PublicLayout><FAQPage /></PublicLayout>} />
