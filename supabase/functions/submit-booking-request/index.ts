@@ -87,5 +87,34 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Could not save request" }, 500);
   }
 
+  // Notify admin on WhatsApp (Twilio) — non-fatal; never blocks the response.
+  try {
+    const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const token = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const from = Deno.env.get("TWILIO_WHATSAPP_FROM");
+    const adminTo = Deno.env.get("ADMIN_WHATSAPP") || "+919000221261";
+    if (sid && token && from) {
+      const wa = (n: string) => (n.trim().startsWith("whatsapp:") ? n.trim() : `whatsapp:${n.trim()}`);
+      const body =
+        `🔔 New booking request\n` +
+        `Service: ${service_name}${amount_paise ? ` (₹${(amount_paise / 100).toLocaleString("en-IN")})` : ""}\n` +
+        `For: ${recipient_name}\n` +
+        `When: ${scheduled_at_ist || "—"}\n` +
+        `Address: ${recipient_address}\n` +
+        `Contact: ${requester_whatsapp}\n` +
+        (notes?.trim() ? `Notes: ${notes.trim()}\n` : "") +
+        `closeeye.in/admin`;
+      const params = new URLSearchParams({ From: wa(from), To: wa(adminTo), Body: body });
+      const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded", Authorization: `Basic ${btoa(`${sid}:${token}`)}` },
+        body: params.toString(),
+      });
+      if (!res.ok) console.error("Twilio admin notify failed:", res.status, await res.text());
+    }
+  } catch (waErr) {
+    console.error("Admin WhatsApp notify error (non-fatal):", waErr);
+  }
+
   return json({ ok: true, request_id: data.id });
 });

@@ -30,6 +30,7 @@ const DashboardProfile = lazy(() => import('@/pages/dashboard/Profile').then(m =
 const DashboardBookings = lazy(() => import('@/pages/dashboard/Bookings').then(m => ({ default: m.DashboardBookings })))
 const DashboardLovedOnes = lazy(() => import('@/pages/dashboard/LovedOnes').then(m => ({ default: m.DashboardLovedOnes })))
 const DashboardReports = lazy(() => import('@/pages/dashboard/Reports').then(m => ({ default: m.DashboardReports })))
+const DashboardReportDetail = lazy(() => import('@/pages/dashboard/Reports').then(m => ({ default: m.DashboardReportDetail })))
 const DashboardNotifications = lazy(() => import('@/pages/dashboard/Notifications').then(m => ({ default: m.DashboardNotifications })))
 const DashboardNewBooking = lazy(() => import('@/pages/dashboard/NewBooking').then(m => ({ default: m.DashboardNewBooking })))
 const DashboardMembers = lazy(() => import('@/pages/dashboard/Members').then(m => ({ default: m.DashboardMembers })))
@@ -247,6 +248,7 @@ export default function App() {
               <Route path="bookings" element={<DashboardBookings />} />
               <Route path="loved-ones" element={<DashboardLovedOnes />} />
               <Route path="reports" element={<DashboardReports />} />
+              <Route path="reports/:visitId" element={<DashboardReportDetail />} />
               <Route path="notifications" element={<DashboardNotifications />} />
               <Route path="new-booking" element={<DashboardNewBooking />} />
               <Route path="members" element={<DashboardMembers />} />

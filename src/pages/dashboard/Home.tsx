@@ -52,10 +52,10 @@ function NriHome() {
     let active = true
     ;(async () => {
       const { data: lo } = await supabase
-        .from('loved_ones').select('id, name').eq('family_user_id', user.id)
+        .from('loved_ones').select('id, full_name').eq('family_user_id', user.id)
         .order('created_at', { ascending: true }).limit(1).maybeSingle()
       if (!active) return
-      setElderName(lo?.name || 'Your loved one')
+      setElderName(lo?.full_name || 'Your loved one')
 
       if (lo?.id) {
         const { data: ep } = await supabase
