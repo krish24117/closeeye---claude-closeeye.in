@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Loader2, ArrowRight, Siren, ShieldCheck, Clock, X } from 'lucide-react'
+import { Check, Loader2, ArrowRight, Siren, ShieldCheck, Clock, X, HeartHandshake } from 'lucide-react'
 import { FaWhatsapp } from 'react-icons/fa'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { loadRazorpayScript } from '@/lib/razorpay'
 import { ConsultationModal } from '@/components/ConsultationModal'
+import { CustomCareModal } from '@/components/CustomCareModal'
 import { BookingDrawer } from '@/components/BookingDrawer'
 import {
   MONTHLY_PLAN, ONE_OFF_SERVICES, MEMBERSHIP_PAISE,
@@ -25,6 +26,7 @@ export function ServicesPage() {
   const [drawerService, setDrawerService] = useState<ServiceItem | null>(null)
   const [upsellFor, setUpsellFor] = useState<string | null>(null)
   const [consultOpen, setConsultOpen] = useState(false)
+  const [customCareOpen, setCustomCareOpen] = useState(false)
 
   // RUNG 2 — recurring subscription (existing server-verified flow)
   async function handleSubscribe() {
@@ -236,6 +238,17 @@ export function ServicesPage() {
         onSubmitted={(s) => setUpsellFor(s.name)}
       />
       <ConsultationModal open={consultOpen} onClose={() => setConsultOpen(false)} interestedPlan={MONTHLY_PLAN.name} />
+
+      {/* Custom Care — floating help button (opposite the WhatsApp button) */}
+      <button
+        type="button"
+        className="ce-help-float"
+        onClick={() => setCustomCareOpen(true)}
+        aria-label="Custom care — request a quote for special needs"
+      >
+        <HeartHandshake size={20} /> <span>Custom care</span>
+      </button>
+      <CustomCareModal open={customCareOpen} onClose={() => setCustomCareOpen(false)} />
     </main>
   )
 }

@@ -76,19 +76,30 @@ export function AuthPage() {
     if (!loading && user && profile && mode !== 'update-password') {
       const pendingRaw = sessionStorage.getItem('pendingCheckout')
       if (pendingRaw) {
-        sessionStorage.removeItem('pendingCheckout')
         try {
-          const pending = JSON.parse(pendingRaw) as { type: 'subscription'; planId: string } | { type: 'booking'; serviceType: string }
+          const pending = JSON.parse(pendingRaw) as
+            | { type: 'subscription'; planId: string }
+            | { type: 'booking'; serviceType: string }
+            | { type: 'membership' }
           if (pending.type === 'subscription') {
+            sessionStorage.removeItem('pendingCheckout')
             navigate(`/dashboard/subscription?autoplan=${pending.planId}`, { replace: true })
             return
           }
           if (pending.type === 'booking') {
+            sessionStorage.removeItem('pendingCheckout')
             navigate(`/dashboard/new-booking?service=${pending.serviceType}`, { replace: true })
             return
           }
+          if (pending.type === 'membership') {
+            // Founding-member onboarding: keep the flag so the /services resume
+            // effect launches the ₹100 Razorpay checkout, which on server-side
+            // verification redirects to the dashboard.
+            navigate('/services', { replace: true })
+            return
+          }
         } catch {
-          // malformed value - fall through to default redirect
+          sessionStorage.removeItem('pendingCheckout')
         }
       }
       navigate(getRoleHome(profile), { replace: true })

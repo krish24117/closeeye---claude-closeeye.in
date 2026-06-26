@@ -99,7 +99,7 @@ export function Footer() {
         rel="noopener noreferrer"
         aria-label="Chat with Close Eye on WhatsApp"
         title="Chat on WhatsApp"
-        className="fixed bottom-6 right-4 sm:right-6 bg-[#25D366] rounded-full flex items-center justify-center shadow-lg hover:scale-110 animate-pulse transition-transform z-50"
+        className="fixed bottom-6 left-4 sm:left-6 bg-[#25D366] rounded-full flex items-center justify-center shadow-lg hover:scale-110 animate-pulse transition-transform z-50"
         style={{ width: '56px', height: '56px' }}
       >
         <svg viewBox="0 0 24 24" className="w-6 h-6 fill-white">
