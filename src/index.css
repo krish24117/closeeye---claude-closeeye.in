@@ -210,7 +210,7 @@
   grid-template-columns: 55fr 45fr;
   align-items: center;
   gap: 64px;
-  padding: 120px 64px;
+  padding: 72px 64px;
 }
 .ce-hero-h1-cont { color: var(--forest); }
 .ce-hero-body {
@@ -227,8 +227,20 @@
 .ce-trust-item svg { color: var(--forest); flex-shrink: 0; }
 
 /* ---- WhatsApp mockup ---- */
-.ce-phone-wrap { width: 280px; max-width: 280px; margin: 0 auto; position: relative; }
-.ce-phone { background: #1D1D1F; border-radius: 36px; padding: 14px; box-shadow: 0 24px 64px rgba(0,0,0,0.20); }
+.ce-phone-wrap { width: 300px; max-width: 100%; margin: 0 auto; position: relative; }
+/* Fixed-size device: realistic ~19.5:9 portrait, capped so it never exceeds the
+   viewport. The chat scrolls internally (below) so the frame stays fully visible. */
+.ce-phone {
+  background: #1D1D1F;
+  border-radius: 36px;
+  padding: 14px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.20);
+  width: 100%;
+  aspect-ratio: 9 / 19.5;
+  max-height: min(640px, 86vh);
+  display: flex;
+  flex-direction: column;
+}
 .ce-wa-header {
   background: #075E54;
   padding: 12px 16px;
@@ -236,6 +248,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 .ce-wa-back { color: #fff; flex-shrink: 0; }
 .ce-wa-avatar {
@@ -252,12 +265,17 @@
 .ce-wa-chat {
   background: #ECE5DD;
   padding: 16px 12px;
-  min-height: 440px;
   border-radius: 0 0 16px 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex: 1;
+  min-height: 0;            /* allow the flex child to shrink so it can scroll */
+  overflow-y: auto;        /* scroll the messages inside the phone, like real WhatsApp */
+  scrollbar-width: none;   /* hide scrollbar (Firefox) */
+  -ms-overflow-style: none;
 }
+.ce-wa-chat::-webkit-scrollbar { display: none; }
 .ce-wa-msg {
   background: #fff;
   border-radius: 0 12px 12px 12px;
@@ -571,11 +589,14 @@
   .ce-hero { grid-template-columns: 1fr; }
   .ce-hero-left { order: 1; }
   .ce-hero-right { order: 2; }
+  /* Stacked layout: phone uses its natural height, all messages visible (no inner scroll) */
+  .ce-phone { aspect-ratio: auto; max-height: none; }
+  .ce-wa-chat { overflow-y: visible; min-height: 0; }
 }
 
 @media (max-width: 1024px) {
   .ce-section { padding: 80px 40px; }
-  .ce-hero { padding: 100px 40px; }
+  .ce-hero { padding: 64px 40px; }
   .ce-footer { padding: 56px 40px 28px; }
   .ce-nav-inner { padding: 0 24px; }
 }
