@@ -102,10 +102,10 @@ export function Navbar() {
                   Sign in
                 </Link>
                 <Link
-                  to="/waitlist"
+                  to="/auth?mode=signup"
                   className="text-sm font-semibold bg-green-800 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                 >
-                  Join Waitlist
+                  Register Family
                 </Link>
               </>
             )}
@@ -170,10 +170,10 @@ export function Navbar() {
           ) : (
             <>
               <Link
-                to="/waitlist"
+                to="/auth?mode=signup"
                 className="block text-center py-3 bg-green-800 text-white rounded-xl text-sm font-semibold"
               >
-                Join Waitlist
+                Register Family
               </Link>
               <Link
                 to="/auth"

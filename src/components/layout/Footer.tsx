@@ -78,7 +78,7 @@ export function Footer() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-white/60 mb-4">Get started</p>
             <ul className="space-y-2.5 text-sm">
-              <li><Link to="/waitlist" className="hover:text-white transition-colors">Join Waitlist</Link></li>
+              <li><Link to="/auth?mode=signup" className="hover:text-white transition-colors">Register Your Family</Link></li>
               <li><Link to="/auth" className="hover:text-white transition-colors">Sign in</Link></li>
               <li><Link to="/contact" className="hover:text-white transition-colors">Book a call</Link></li>
             </ul>

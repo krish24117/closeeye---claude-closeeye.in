@@ -254,7 +254,7 @@ export function HomePage() {
 
           <div className="ce-nav-right">
             <a href="#societies" className="ce-nav-textlink">For Societies</a>
-            <Link to="/auth" className="ce-nav-register">Register Family</Link>
+            <Link to="/auth?mode=signup" className="ce-nav-register">Register Family</Link>
           </div>
 
           <button
@@ -276,7 +276,7 @@ export function HomePage() {
           {NAV_LINKS.map(l => (
             <a key={l.href} href={l.href} onClick={() => setMenuOpen(false)}>{l.label}</a>
           ))}
-          <Link to="/auth" onClick={() => setMenuOpen(false)}>Register Family</Link>
+          <Link to="/auth?mode=signup" onClick={() => setMenuOpen(false)}>Register Family</Link>
           <Link to="/auth" onClick={() => setMenuOpen(false)}>Sign In</Link>
         </div>
       )}
@@ -295,7 +295,7 @@ export function HomePage() {
             <p>Every time. So you always know.</p>
           </div>
           <div className="ce-hero-buttons">
-            <Link to="/auth" className="ce-btn ce-btn-primary">Register Your Family <ArrowRight size={18} /></Link>
+            <Link to="/auth?mode=signup" className="ce-btn ce-btn-primary">Register Your Family <ArrowRight size={18} /></Link>
             <a href="#how-it-works" className="ce-btn ce-btn-secondary">See How It Works</a>
           </div>
           <div className="ce-trust-row">
@@ -436,7 +436,7 @@ export function HomePage() {
                     <li key={b}><Check size={18} /> {b}</li>
                   ))}
                 </ul>
-                <Link to="/auth" className="ce-btn ce-btn-primary ce-btn-full">Register Your Family <ArrowRight size={18} /></Link>
+                <Link to="/auth?mode=signup" className="ce-btn ce-btn-primary ce-btn-full">Register Your Family <ArrowRight size={18} /></Link>
                 <p className="ce-society-note">Currently serving Rivera Residences and Lanco Hills, Hyderabad</p>
               </div>
             </div>
@@ -535,7 +535,7 @@ export function HomePage() {
               <ul className="ce-benefits">
                 {FOUNDING_BENEFITS.map(b => <li key={b}><Check size={18} /> {b}</li>)}
               </ul>
-              <Link to="/auth" className="ce-btn ce-btn-primary ce-btn-full">Register for ₹100 <ArrowRight size={18} /></Link>
+              <Link to="/auth?mode=signup" className="ce-btn ce-btn-primary ce-btn-full">Register for ₹100 <ArrowRight size={18} /></Link>
             </div>
 
             {/* Monthly (featured) */}
@@ -547,7 +547,7 @@ export function HomePage() {
               <ul className="ce-benefits">
                 {MONTHLY_BENEFITS.map(b => <li key={b}><Check size={18} /> {b}</li>)}
               </ul>
-              <Link to="/auth" className="ce-btn ce-btn-white ce-btn-full">Start Monthly Plan <ArrowRight size={18} /></Link>
+              <Link to="/auth?mode=signup" className="ce-btn ce-btn-white ce-btn-full">Start Monthly Plan <ArrowRight size={18} /></Link>
             </div>
 
             {/* On-demand */}

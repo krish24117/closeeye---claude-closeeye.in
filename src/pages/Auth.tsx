@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -41,7 +41,9 @@ function getRoleHome(profile: { role?: string } | null | undefined) {
 }
 
 export function AuthPage() {
-  const [mode, setMode] = useState<Mode>('login')
+  // "Register Family" CTAs link to /auth?mode=signup so they open the create-account tab
+  const [searchParams] = useSearchParams()
+  const [mode, setMode] = useState<Mode>(searchParams.get('mode') === 'signup' ? 'signup' : 'login')
   const [error, setError] = useState('')
   const [resetSent, setResetSent] = useState(false)
   const [signupConfirmSent, setSignupConfirmSent] = useState(false)
