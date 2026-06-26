@@ -642,7 +642,7 @@
 /* ---- Floating WhatsApp ---- */
 .ce-wa-float {
   position: fixed;
-  bottom: 24px; left: 24px;
+  bottom: 24px; right: 24px;
   z-index: 9999;
   width: 60px; height: 60px;
   border-radius: 50%;
@@ -730,7 +730,7 @@
   .ce-footer-bottom { flex-direction: column; align-items: flex-start; }
 
   /* WhatsApp button above mobile browser nav bar */
-  .ce-wa-float { bottom: 80px; left: 16px; }
+  .ce-wa-float { bottom: 80px; right: 16px; }
 }
 
 /* ==================================================================== */
@@ -876,7 +876,7 @@
 
 /* Custom Care floating help button (bottom-right; WhatsApp sits bottom-left) */
 .ce-help-float {
-  position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+  position: fixed; bottom: 24px; left: 24px; z-index: 1000;
   display: inline-flex; align-items: center; gap: 8px;
   background: var(--forest); color: #fff; border: none; cursor: pointer;
   padding: 12px 18px; border-radius: 100px; font-family: inherit; font-size: 14px; font-weight: 700;
@@ -893,7 +893,7 @@
   .ce-od-cta .ce-pp-btn { width: 100%; }
 
   /* Icon-only on small screens, lifted above the mobile nav bar */
-  .ce-help-float { bottom: 80px; right: 16px; padding: 14px; }
+  .ce-help-float { bottom: 80px; left: 16px; padding: 14px; }
   .ce-help-float span { display: none; }
 }
 
