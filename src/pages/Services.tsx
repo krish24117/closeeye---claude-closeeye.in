@@ -1,79 +1,106 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  Check, Loader2, Sparkles, Lightbulb,
-  Home as HomeIcon, Building2, BedDouble, Siren, ShoppingBasket, Wrench,
-} from 'lucide-react'
+import { Check, Loader2, ArrowRight, Siren, ShieldCheck, Clock, X } from 'lucide-react'
+import { FaWhatsapp } from 'react-icons/fa'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { loadRazorpayScript } from '@/lib/razorpay'
-import { PLANS, type PlanId } from '@/lib/subscription-plans'
-import { ON_DEMAND_SERVICES } from '@/lib/one-time-services'
 import { ConsultationModal } from '@/components/ConsultationModal'
-import { CustomCareModal } from '@/components/CustomCareModal'
+import { BookingDrawer } from '@/components/BookingDrawer'
+import {
+  MONTHLY_PLAN, ONE_OFF_SERVICES, MEMBERSHIP_PAISE,
+  paiseToUsdApprox, type ServiceItem,
+} from '@/lib/services-catalog'
 
-const PLAN = PLANS[0]
-
-const SERVICE_ICONS: Record<string, typeof HomeIcon> = {
-  home_visit: HomeIcon,
-  hospital_assistance_half_day: Building2,
-  hospital_assistance_full_day: BedDouble,
-  emergency_support_visit: Siren,
-  grocery_medicine_assistance: ShoppingBasket,
-  home_maintenance_coordination: Wrench,
-}
+const WA_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '919000221261'
+const EMERGENCY_WA = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('EMERGENCY — I need urgent help for my parent in Hyderabad.')}`
+const EMERGENCY_TEL = `tel:+${WA_NUMBER}`
 
 export function ServicesPage() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
 
-  const [subscribing, setSubscribing] = useState(false)
+  const [busy, setBusy] = useState<'sub' | 'join' | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [drawerService, setDrawerService] = useState<ServiceItem | null>(null)
+  const [upsellFor, setUpsellFor] = useState<string | null>(null)
+  const [consultOpen, setConsultOpen] = useState(false)
 
-  const [consultationOpen, setConsultationOpen] = useState(false)
-  const [interestedPlan, setInterestedPlan] = useState<string | undefined>(undefined)
-  const [customCareOpen, setCustomCareOpen] = useState(false)
-
-  function openConsultation(plan?: string) {
-    setInterestedPlan(plan)
-    setConsultationOpen(true)
-  }
-
-  async function handleSubscribe(planId: PlanId) {
+  // RUNG 2 — recurring subscription (existing server-verified flow)
+  async function handleSubscribe() {
     setError(null)
-
     if (!user || profile?.role !== 'family') {
-      sessionStorage.setItem('pendingCheckout', JSON.stringify({ type: 'subscription', planId }))
-      navigate('/auth')
+      sessionStorage.setItem('pendingCheckout', JSON.stringify({ type: 'subscription', planId: MONTHLY_PLAN.planId }))
+      navigate('/auth?mode=signup')
       return
     }
-
-    setSubscribing(true)
+    setBusy('sub')
     try {
       const { data, error: fnErr } = await supabase.functions.invoke('razorpay-create-subscription', {
-        body: { plan_id: planId },
+        body: { plan_id: MONTHLY_PLAN.planId },
       })
-      if (fnErr || !data?.subscription_id) {
-        throw new Error(data?.error || 'Failed to start checkout.')
-      }
-
+      if (fnErr || !data?.subscription_id) throw new Error(data?.error || 'Failed to start checkout.')
       const loaded = await loadRazorpayScript()
       if (!loaded) throw new Error('Could not load payment gateway. Please refresh and try again.')
-
+      // NOTE: source of truth is the server-side webhook (HMAC-verified). The
+      // client handler only navigates; it never marks the subscription paid.
+      // TODO(intl-recurring): NRI cards need international recurring e-mandates
+      // enabled on the Razorpay account (UPI AutoPay is domestic-only). Confirm
+      // this is enabled before relying on auto-charge for overseas cards.
       const rzp = new window.Razorpay({
         key: data.key_id,
         subscription_id: data.subscription_id,
         name: 'Close Eye',
-        description: `${PLAN.name} — ${PLAN.priceLabel}`,
+        description: `${MONTHLY_PLAN.name} — ${MONTHLY_PLAN.priceLabel}/mo`,
         image: '/favicon.svg',
-        theme: { color: '#1a3a2a' },
-        prefill: {
-          name: profile?.full_name || '',
-          email: user?.email || '',
-          contact: profile?.whatsapp_number || '',
-        },
-        handler: () => {
-          navigate('/dashboard/subscription')
+        theme: { color: '#0E2A1F' },
+        prefill: { name: profile?.full_name || '', email: user?.email || '', contact: profile?.whatsapp_number || '' },
+        handler: () => navigate('/dashboard/subscription'),
+        modal: { backdropclose: false },
+      })
+      rzp.open()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  // RUNG 1 — founding membership, one-time ₹100 (server-verified)
+  async function handleJoin() {
+    setError(null)
+    if (!user) {
+      sessionStorage.setItem('pendingCheckout', JSON.stringify({ type: 'membership' }))
+      navigate('/auth?mode=signup')
+      return
+    }
+    setBusy('join')
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke('razorpay-create-membership', { body: {} })
+      if (fnErr || !data?.order_id) throw new Error(data?.error || 'Could not start membership checkout.')
+      const loaded = await loadRazorpayScript()
+      if (!loaded) throw new Error('Could not load payment gateway. Please refresh and try again.')
+      const rzp = new window.Razorpay({
+        key: data.key_id,
+        order_id: data.order_id,
+        amount: data.amount,
+        currency: 'INR',
+        name: 'Close Eye',
+        description: 'Founding membership',
+        image: '/favicon.svg',
+        theme: { color: '#0E2A1F' },
+        prefill: { name: profile?.full_name || '', email: user?.email || '', contact: profile?.whatsapp_number || '' },
+        // Membership is marked paid ONLY after server-side signature verification.
+        handler: async (resp: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
+          const { error: vErr } = await supabase.functions.invoke('razorpay-verify-membership', {
+            body: {
+              razorpay_payment_id: resp.razorpay_payment_id,
+              razorpay_order_id: resp.razorpay_order_id,
+              razorpay_signature: resp.razorpay_signature,
+            },
+          })
+          if (vErr) { setError('Payment received — verifying took longer than expected. We will confirm by WhatsApp.'); return }
+          navigate('/dashboard')
         },
         modal: { backdropclose: false },
       })
@@ -81,172 +108,134 @@ export function ServicesPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {
-      setSubscribing(false)
+      setBusy(null)
     }
   }
 
-  function handleBookNow(serviceType: string) {
-    if (!user) {
-      sessionStorage.setItem('pendingCheckout', JSON.stringify({ type: 'booking', serviceType }))
-      navigate('/auth')
-      return
-    }
-    navigate(`/dashboard/new-booking?service=${serviceType}`)
+  // Resume a membership checkout if the user signed up and returned to /services.
+  // (Auth's default post-signup redirect goes to the dashboard; wiring that to
+  // resume membership would touch Auth.tsx, which is out of this branch's scope.)
+  useEffect(() => {
+    if (!user) return
+    const raw = sessionStorage.getItem('pendingCheckout')
+    if (!raw) return
+    try {
+      if (JSON.parse(raw)?.type === 'membership') {
+        sessionStorage.removeItem('pendingCheckout')
+        handleJoin()
+      }
+    } catch { /* ignore malformed */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
+  function handleCta(s: ServiceItem) {
+    if (s.type === 'emergency') { window.open(EMERGENCY_WA, '_blank', 'noopener'); return }
+    setDrawerService(s) // one_off → request drawer
   }
 
   return (
-    <main>
-      {/* Hero */}
-      <div className="bg-gradient-to-br from-green-900 to-green-800 text-white px-4 sm:px-6 py-16 sm:py-20 text-center">
-        <p className="text-green-300 text-xs font-semibold uppercase tracking-widest mb-3">Services & Pricing</p>
-        <h1 className="font-serif text-3xl sm:text-4xl mb-4">A trusted presence, on the days you cannot be there.</h1>
-        <p className="text-white/65 max-w-lg mx-auto text-sm sm:text-base">One simple plan, plus on-demand help whenever you need it.</p>
-      </div>
+    <main className="ce-pricing-page">
+      {/* Heading */}
+      <header className="ce-pp-head">
+        <h1 className="ce-pp-h1">Care for your parents, whatever the distance</h1>
+        <p className="ce-pp-sub">Prices are the same for everyone. All amounts are billed in INR.</p>
+      </header>
 
-      {/* ── Section 1: The subscription plan ───────────────────────────── */}
-      <section className="max-w-md mx-auto px-4 sm:px-6 py-12 sm:py-16">
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 text-center">
-            {error}
+      {error && <div className="ce-pp-error" role="alert">{error}</div>}
+
+      {/* Post-booking upsell */}
+      {upsellFor && (
+        <div className="ce-upsell-banner" role="status">
+          <div>
+            <strong>Request sent for {upsellFor}.</strong> Families on the Monthly Plan get this visit included —
+            plus weekly calls and a report every time — for ₹1,500/month.
           </div>
-        )}
-
-        <div className="relative bg-white border-2 border-green-800 ring-2 ring-green-800 rounded-2xl shadow-xl p-7 sm:p-8 flex flex-col hover:shadow-2xl transition-shadow">
-          <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gold-500 text-green-900 text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm whitespace-nowrap">
-            Best Value
-          </span>
-          <div className="mb-5 text-center">
-            <h2 className="font-serif text-2xl text-green-900 mb-1">CloseEye Companion</h2>
-            <p className="text-sm text-gray-400 mb-4">{PLAN.tagline}</p>
-            <div className="flex items-end justify-center gap-1">
-              <span className="font-serif text-4xl text-green-900">₹1,500</span>
-              <span className="text-gray-400 text-sm mb-1">/month</span>
-            </div>
-            <p className="text-xs text-gray-400 mt-1">Paid via Razorpay (UPI / Card / NetBanking)</p>
+          <div className="ce-upsell-actions">
+            <button className="ce-pp-btn ce-pp-btn-primary" onClick={handleSubscribe}>Start plan</button>
+            <button className="ce-upsell-dismiss" aria-label="Dismiss" onClick={() => setUpsellFor(null)}><X size={18} /></button>
           </div>
+        </div>
+      )}
 
-          <ul className="space-y-2.5 mb-7">
-            {PLAN.features.map(f => (
-              <li key={f} className="flex items-start gap-2.5 text-sm text-gray-600">
-                <Check size={15} className="text-green-600 flex-shrink-0 mt-0.5" />
-                {f}
-              </li>
+      {/* RUNG 1 — entry strip */}
+      <section className="ce-rung1">
+        <p>New here? <strong>Start with a founding membership</strong> — {paiseToUsdApprox(MEMBERSHIP_PAISE)}, billed in INR.</p>
+        <button className="ce-pp-btn ce-pp-btn-gold" onClick={handleJoin} disabled={busy === 'join'}>
+          {busy === 'join' ? <><Loader2 size={15} className="ce-spin" /> Starting…</> : 'Join for ₹100'}
+        </button>
+      </section>
+
+      {/* RUNG 2 — featured monthly plan */}
+      <section className="ce-rung2">
+        <div className="ce-plan-card">
+          <span className="ce-plan-badge">{MONTHLY_PLAN.badge}</span>
+          <h2 className="ce-plan-name">{MONTHLY_PLAN.name}</h2>
+          <p className="ce-plan-price">
+            <span className="ce-plan-amount">{MONTHLY_PLAN.priceLabel}</span>
+            <span className="ce-plan-period">{MONTHLY_PLAN.period}</span>
+          </p>
+          <p className="ce-plan-usd">{paiseToUsdApprox(MONTHLY_PLAN.amountPaise)}/mo · billed in INR</p>
+          <ul className="ce-plan-bullets">
+            {MONTHLY_PLAN.bullets.map(b => (
+              <li key={b}><Check size={16} /> {b}</li>
             ))}
           </ul>
-
-          <button
-            onClick={() => handleSubscribe(PLAN.id)}
-            disabled={subscribing}
-            className="w-full min-h-[44px] text-center font-semibold py-3 rounded-xl transition-colors text-sm disabled:opacity-60 flex items-center justify-center gap-2 bg-green-800 text-white hover:bg-green-700"
-          >
-            {subscribing ? <><Loader2 size={15} className="animate-spin" /> Setting up…</> : 'Subscribe Now'}
+          <button className="ce-pp-btn ce-pp-btn-primary ce-pp-btn-full" onClick={handleSubscribe} disabled={busy === 'sub'}>
+            {busy === 'sub' ? <><Loader2 size={16} className="ce-spin" /> Setting up…</> : <>Start plan <ArrowRight size={16} /></>}
           </button>
-          <button
-            onClick={() => openConsultation(PLAN.name)}
-            className="text-center text-xs font-semibold text-green-700 hover:text-green-900 mt-3 underline"
-          >
-            Talk to us first
-          </button>
-        </div>
-        <p className="text-center text-xs text-gray-400 mt-5">
-          Cancel anytime. No lock-in. Setup within 48 hours of signup.
-        </p>
-      </section>
-
-      {/* ── Smart upsell callout ─────────────────────────────────────────── */}
-      <section className="px-4 sm:px-6 pb-4">
-        <div className="max-w-4xl mx-auto bg-green-50 border border-green-200 rounded-2xl p-5 sm:p-6 flex items-start gap-3 sm:gap-4">
-          <Lightbulb size={20} className="text-green-700 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-green-900 leading-relaxed">
-            <strong>Subscribers save automatically</strong> — your monthly home visit is included in the ₹1,500/month plan, saving ₹1,000 vs booking on-demand.
-          </p>
+          <button className="ce-plan-talk" onClick={() => setConsultOpen(true)}>Prefer to talk first? Book a free call</button>
         </div>
       </section>
 
-      {/* ── Section 2: Consultation banner ─────────────────────────────── */}
-      <section className="px-4 sm:px-6 pb-4">
-        <div className="max-w-4xl mx-auto bg-white border-2 border-green-800 rounded-2xl shadow-card-hover p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
-          <div className="w-12 h-12 bg-green-800 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <Sparkles size={22} className="text-white" />
-          </div>
-          <div className="flex-1 text-center sm:text-left">
-            <h2 className="font-serif text-xl sm:text-2xl text-green-900 mb-1.5">Have questions? Let's talk first.</h2>
-            <p className="text-sm text-gray-500">Book a free 15-minute call. No pressure, no commitment.</p>
-          </div>
-          <button
-            onClick={() => openConsultation()}
-            className="bg-green-800 text-white font-semibold px-6 py-3 rounded-xl hover:bg-green-700 transition-colors text-sm whitespace-nowrap flex-shrink-0"
-          >
-            Book a Free Consultation
-          </button>
-        </div>
-      </section>
-
-      {/* ── Section 3: On-demand services ──────────────────────────────── */}
-      <section className="bg-green-50 px-4 sm:px-6 py-12 sm:py-14">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="font-serif text-2xl text-green-900 mb-2">Need something specific? Pay only for what you need.</h2>
-            <p className="text-gray-500 text-sm">All services are available à la carte. No subscription required.</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {ON_DEMAND_SERVICES.map(s => {
-              const Icon = SERVICE_ICONS[s.type] ?? HomeIcon
-              return (
-                <div key={s.type} className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
-                        <Icon size={18} className="text-green-700" />
-                      </div>
-                      <p className="font-bold text-green-900 text-sm">{s.name}</p>
-                    </div>
-                    <span className="font-serif text-xl text-green-700 flex-shrink-0">{s.price}</span>
-                  </div>
-                  <p className="text-xs text-gray-500 leading-relaxed flex-1 mb-4">{s.desc}</p>
-                  <button
-                    onClick={() => handleBookNow(s.type)}
-                    className="block min-h-[44px] text-center border border-green-200 text-green-800 text-xs font-semibold py-2 rounded-xl hover:bg-green-50 transition-colors"
-                  >
-                    Book Now
-                  </button>
+      {/* RUNG 3 — on-demand */}
+      <section className="ce-rung3">
+        <h2 className="ce-rung3-title">Or just need something once?</h2>
+        <ul className="ce-od-list">
+          {ONE_OFF_SERVICES.map(s => {
+            const isEmergency = s.type === 'emergency'
+            return (
+              <li key={s.id} className="ce-od-row">
+                <div className="ce-od-info">
+                  <p className="ce-od-name">{s.name}</p>
+                  <p className="ce-od-sub">{s.subLabel}</p>
                 </div>
-              )
-            })}
-          </div>
-        </div>
+                <div className="ce-od-price">
+                  <span className="ce-od-amount">{s.priceLabel}</span>
+                  {s.amountPaise != null && <span className="ce-od-usd">{paiseToUsdApprox(s.amountPaise)}</span>}
+                </div>
+                <div className="ce-od-cta">
+                  <button
+                    className={`ce-pp-btn ${isEmergency ? 'ce-pp-btn-emergency' : 'ce-pp-btn-outline'}`}
+                    onClick={() => handleCta(s)}
+                  >
+                    {isEmergency ? <><Siren size={15} /> Get help now</> : 'Book'}
+                  </button>
+                  {isEmergency && <a className="ce-od-tel" href={EMERGENCY_TEL}>or call +91 90002 21261</a>}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
       </section>
 
-      {/* ── Section 4: Custom Care ──────────────────────────────────────── */}
-      <section className="px-4 sm:px-6 py-12 sm:py-16">
-        <div className="max-w-md mx-auto bg-green-900 text-white rounded-2xl p-7 sm:p-8 flex flex-col text-center">
-          <h2 className="font-serif text-2xl mb-1">Custom Care</h2>
-          <p className="text-xs text-green-300 mb-4">Tailored to your family's needs</p>
-          <p className="text-sm text-white/70 leading-relaxed mb-6">
-            Multiple parents? Special medical needs? We'll build a plan just for your family.
-          </p>
-          <button
-            onClick={() => setCustomCareOpen(true)}
-            className="w-full text-center font-semibold py-3 rounded-xl transition-colors text-sm bg-white text-green-900 hover:bg-green-50"
-          >
-            Request a Quote
-          </button>
-        </div>
+      {/* Trust strip (refund line intentionally omitted per ops) */}
+      <section className="ce-trust-strip">
+        <span><ShieldCheck size={16} /> Verified companions</span>
+        <span><Clock size={16} /> Report within the hour</span>
+        <span><FaWhatsapp size={16} /> Updates on WhatsApp</span>
       </section>
 
-      {/* ── Payment note ──────────────────────────────────────────────── */}
-      <p className="max-w-2xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16 text-center text-xs text-gray-400 leading-relaxed">
-        All prices are in Indian Rupees (INR). Payments are processed securely via Razorpay (UPI, cards,
-        net banking). International card support is rolling out — WhatsApp us if you're paying from
-        outside India. Invoices provided for every transaction.
+      <p className="ce-pp-foot">
+        All prices in INR. USD shown is approximate. Payments are processed securely via Razorpay.
+        Invoice provided for every transaction.
       </p>
 
-      <ConsultationModal
-        open={consultationOpen}
-        onClose={() => setConsultationOpen(false)}
-        interestedPlan={interestedPlan}
+      <BookingDrawer
+        service={drawerService}
+        onClose={() => setDrawerService(null)}
+        onSubmitted={(s) => setUpsellFor(s.name)}
       />
-      <CustomCareModal open={customCareOpen} onClose={() => setCustomCareOpen(false)} />
+      <ConsultationModal open={consultOpen} onClose={() => setConsultOpen(false)} interestedPlan={MONTHLY_PLAN.name} />
     </main>
   )
 }

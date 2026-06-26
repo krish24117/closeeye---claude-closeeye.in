@@ -4,7 +4,7 @@ import { FaWhatsapp } from 'react-icons/fa'
 
 const WA = import.meta.env.VITE_WHATSAPP_NUMBER || '919000221261'
 const WA_SOCIETY = `https://wa.me/${WA}?text=${encodeURIComponent(
-  "Hi, I'm on the committee of a society and would like to bring Close Eye to our residents."
+  "Hi, I'm on the committee of a society and would like to book a Close Eye demo for our residents."
 )}`
 const WA_OVERVIEW = `https://wa.me/${WA}?text=${encodeURIComponent(
   'Hi, please share the Close Eye partnership overview for our society.'
@@ -84,7 +84,7 @@ export function ForSocietiesPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 bg-white text-green-900 font-semibold px-7 py-3.5 rounded-xl hover:bg-green-200 transition-colors text-sm sm:text-base"
             >
-              <FaWhatsapp size={18} className="text-[#25D366]" /> Talk to us about your society
+              <FaWhatsapp size={18} className="text-[#25D366]" /> Book a society demo
             </a>
             <a
               href={WA_OVERVIEW}
@@ -198,7 +198,7 @@ export function ForSocietiesPage() {
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 bg-white text-green-900 font-semibold px-7 py-3.5 rounded-xl hover:bg-green-200 transition-colors text-sm sm:text-base"
           >
-            <FaWhatsapp size={18} className="text-[#25D366]" /> Talk to us about your society
+            <FaWhatsapp size={18} className="text-[#25D366]" /> Book a society demo
           </a>
           <Link
             to="/#societies"
