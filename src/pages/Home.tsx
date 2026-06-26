@@ -4,7 +4,6 @@ import { Check, Menu, X, ArrowRight, Shield, Stethoscope, User } from 'lucide-re
 import { FaWhatsapp } from 'react-icons/fa'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/ui/Logo'
-import { ON_DEMAND_SERVICES } from '@/lib/one-time-services'
 
 /* ------------------------------------------------------------------ */
 /*  Constants + data                                                    */
@@ -75,25 +74,6 @@ const STEPS_HOME = [
   { title: 'We introduce ourselves', body: 'We visit, have tea, and listen. No medical forms. No equipment. Just genuine conversation.' },
   { title: 'We check everything', body: 'Medicines. Meals. Home safety. And one personal moment we always capture for your family.' },
   { title: 'They feel valued — not monitored', body: 'Not a service. A relationship. We remember what they like, what they worry about, their stories.' },
-]
-
-const NRI_SERVICES = [
-  { name: 'Monthly Companion Plan', price: '₹1,500/month', desc: '1 home visit + weekly calls + WhatsApp reports + medicine reminders' },
-  { name: 'Home Visit', price: '₹1,000/visit', desc: 'Verified companion visit + health check + WhatsApp report within 1 hour' },
-  { name: 'Doctor Visit Support', price: '₹1,500', desc: 'Companion escorts to doctor, takes notes, reports to family' },
-  { name: 'Hospital Assistance', price: '₹2,000 – ₹4,000', desc: 'Half day or full day hospital presence. Family updated throughout' },
-  { name: 'Emergency Response', price: '₹3,000', desc: '2-hour emergency visit. Falls, sudden illness, or distress.' },
-  { name: 'Grocery & Medicine', price: '₹500', desc: 'Collection and delivery with receipt provided' },
-]
-
-// Resident family (B2C) — what the ₹100 founding registration covers.
-// "Wellbeing assistant" is framed as guidance + escalation, never diagnosis.
-const SOCIETY_COVERS = [
-  { t: 'Your whole family, set up', d: "Your parents' profiles, preferences, medical notes, and emergency contacts — ready so we can act fast when it matters." },
-  { t: 'A 24/7 wellbeing assistant', d: 'Helps you and your parents understand symptoms in plain language, decide when something needs a doctor, and reach our care team. Guidance and coordination — not diagnosis, and never a replacement for a doctor.' },
-  { t: 'Priority emergency coordination', d: 'If something happens, we mobilise and keep you informed every step.' },
-  { t: '10% off every Close Eye service', d: "For as long as you're a member." },
-  { t: 'No monthly commitment', d: 'Add a single visit or a full plan whenever you want.' },
 ]
 
 const PILLARS = [
@@ -169,10 +149,6 @@ export function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const hamburgerRef = useRef<HTMLButtonElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
-  // Preselect the Society tab when arriving via /#societies (e.g. from the For Societies page)
-  const [tab, setTab] = useState<'nri' | 'society' | 'ondemand'>(
-    typeof window !== 'undefined' && window.location.hash === '#societies' ? 'society' : 'nri'
-  )
 
   const [waReveal, setWaReveal] = useState(false)
   const phoneRef = useRef<HTMLDivElement>(null)
@@ -490,74 +466,19 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ── SERVICES ─────────────────────────────────────────────── */}
+      {/* ── SERVICES (teaser → full pricing page) ─────────────────── */}
       <section id="services" className="ce-section ce-bg-cream" style={{ scrollMarginTop: '72px' }}>
         <div className="ce-container">
           <p className="ce-eyebrow animate-on-scroll">What we offer</p>
           <h2 className="ce-h2 animate-on-scroll">For every family.<br />Whatever the distance.</h2>
-
-          <div className="ce-tabs" style={{ marginTop: '32px' }}>
-            <button className={`ce-tab${tab === 'nri' ? ' ce-tab-active' : ''}`} onClick={() => setTab('nri')}>NRI Families</button>
-            <button className={`ce-tab${tab === 'society' ? ' ce-tab-active' : ''}`} onClick={() => setTab('society')}>Society Members</button>
-            <button className={`ce-tab${tab === 'ondemand' ? ' ce-tab-active' : ''}`} onClick={() => setTab('ondemand')}>On-Demand</button>
+          <p className="ce-subtitle animate-on-scroll" style={{ maxWidth: '560px' }}>
+            Start with a ₹100 founding membership, move to the ₹1,500/month companion plan,
+            or book any one-off visit — home visits, doctor and hospital support, emergencies,
+            grocery &amp; medicine. One simple page, prices the same for everyone.
+          </p>
+          <div className="animate-on-scroll" style={{ marginTop: '28px' }}>
+            <Link to="/services" className="ce-btn ce-btn-primary">See all services &amp; pricing <ArrowRight size={18} /></Link>
           </div>
-
-          {tab === 'nri' && (
-            <div className="ce-svc-grid">
-              {NRI_SERVICES.map(s => (
-                <div key={s.name} className="ce-svc-card animate-fade-in">
-                  <h3 className="ce-svc-name">{s.name}</h3>
-                  <p className="ce-svc-price">{s.price}</p>
-                  <p className="ce-svc-desc">{s.desc}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {tab === 'society' && (
-            <div id="societies" style={{ scrollMarginTop: '88px' }}>
-              <div className="ce-society-card animate-fade-in">
-                <span className="ce-gold-pill">Founding Member</span>
-                <p className="ce-society-price">₹100</p>
-                <p className="ce-society-period">One-time registration</p>
-                <p style={{ fontSize: '14px', color: 'var(--gray-mid)', marginTop: '4px' }}>For families in our partner societies.</p>
-                <hr className="ce-divider" />
-                <p className="ce-covers-label">What your ₹100 covers</p>
-                <ul className="ce-benefits ce-covers">
-                  {SOCIETY_COVERS.map(c => (
-                    <li key={c.t}>
-                      <Check size={18} />
-                      <span><strong>{c.t}.</strong> {c.d}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="ce-upsell">
-                  From here, book a one-time visit when you need one, or <strong>start a monthly companion plan from ₹1,500</strong> — one home visit a week, regular calls, and a WhatsApp report every time.
-                </div>
-                <Link to="/auth?mode=signup" className="ce-btn ce-btn-primary ce-btn-full">Register your family — ₹100 <ArrowRight size={18} /></Link>
-              </div>
-              <p className="ce-society-crosslink">
-                Not in a partner society yet?{' '}
-                <Link to="/for-societies">Bring Close Eye to your society →</Link>
-              </p>
-              <p className="ce-society-note" style={{ textAlign: 'center' }}>Currently serving Rivera Residences and Lanco Hills, Hyderabad</p>
-            </div>
-          )}
-
-          {tab === 'ondemand' && (
-            <div className="animate-fade-in">
-              <table className="ce-price-table">
-                <thead>
-                  <tr><th>Service</th><th>Price</th></tr>
-                </thead>
-                <tbody>
-                  {ON_DEMAND_SERVICES.map(s => (
-                    <tr key={s.type}><td>{s.name}</td><td>{s.price}</td></tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
       </section>
 
@@ -681,7 +602,7 @@ export function HomePage() {
                   <li key={s.name}><Check size={18} /> {s.name} — {s.price}</li>
                 ))}
               </ul>
-              <a href="#services" onClick={() => setTab('ondemand')} className="ce-btn ce-btn-outline ce-btn-full">View All Services <ArrowRight size={18} /></a>
+              <Link to="/services" className="ce-btn ce-btn-outline ce-btn-full">View All Services <ArrowRight size={18} /></Link>
             </div>
           </div>
 

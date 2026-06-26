@@ -138,7 +138,7 @@ export function ForSocietiesPage() {
           </div>
           <p className="mt-8 text-sm text-gray-500">
             For residents of a partner society —{' '}
-            <Link to="/#societies" className="font-semibold text-green-700 hover:text-green-900 underline underline-offset-2">
+            <Link to="/services" className="font-semibold text-green-700 hover:text-green-900 underline underline-offset-2">
               see the family plans and register →
             </Link>
           </p>
@@ -201,7 +201,7 @@ export function ForSocietiesPage() {
             <FaWhatsapp size={18} className="text-[#25D366]" /> Book a society demo
           </a>
           <Link
-            to="/#societies"
+            to="/services"
             className="inline-flex items-center justify-center gap-2 border border-white/30 text-white font-medium px-7 py-3.5 rounded-xl hover:bg-white/10 transition-colors text-sm sm:text-base"
           >
             For residents — see services <ArrowRight size={16} />
