@@ -33,7 +33,7 @@ const WA_MESSAGES = [
     time: '3:47 PM',
   },
   {
-    text: 'How she is today:\nMrs. Lakshmi was in warm spirits. She spoke about your last video call and said you looked tired. She wants you to eat properly 🙂',
+    text: 'How she is today:\nMrs. Lakshmi was in warm spirits. She lit up talking about your last video call and asked me to send you her love 🙂',
     time: '3:47 PM',
   },
   {
@@ -41,7 +41,7 @@ const WA_MESSAGES = [
     time: '3:48 PM',
   },
   {
-    text: "*From today's visit:*\nShe showed me the photo of you from your graduation. It's on her bedside table. Has been there for 11 years 🥹",
+    text: "*From today's visit:*\nShe showed me your graduation photo on her bedside table — she's so proud of you 🥹",
     time: '3:48 PM',
   },
   {
@@ -56,7 +56,7 @@ const PROBLEM_QUOTES = [
     attr: '— NRI family, Houston TX',
   },
   {
-    text: "She fell in the bathroom last month and didn't tell me for three days because she didn't want to disturb me. Three days.",
+    text: "Mom will always tell me she's fine — she never wants to be a worry. I just want someone there who truly knows how she's doing.",
     attr: '— NRI family, Dubai',
   },
   {
@@ -290,7 +290,7 @@ export function HomePage() {
           <h1 className="ce-h1">
             Your mother made tea<br />
             for two this morning.<br />
-            <span className="ce-hero-h1-cont">She forgot you moved abroad.</span>
+            <span className="ce-hero-h1-cont">Someone was there to share it.</span>
           </h1>
           <div className="ce-hero-body">
             <p>Close Eye visits your parents personally. We check their health, medicines, and home. We send you a WhatsApp report within the hour.</p>

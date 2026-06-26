@@ -6,16 +6,16 @@
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Open Sauce One', system-ui, sans-serif;
     color: #1D1D1F;
     background: #ffffff;
     -webkit-font-smoothing: antialiased;
   }
-  h1,h2,h3 { font-family: 'Playfair Display', Georgia, serif; }
+  h1,h2,h3 { font-family: 'Open Sauce One', system-ui, sans-serif; font-weight: 800; letter-spacing: -0.02em; }
 }
 
 @layer utilities {
-  .font-serif { font-family: 'Playfair Display', Georgia, serif; }
+  .font-serif { font-family: 'Open Sauce One', system-ui, sans-serif; font-weight: 800; letter-spacing: -0.02em; }
   .text-balance { text-wrap: balance; }
   .animate-fade-in {
     animation: fadeIn .4s ease both;
@@ -54,7 +54,7 @@
 
 /* ---- Base + typography ---- */
 .ce-home {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Open Sauce One', system-ui, sans-serif;
   font-size: 16px;
   color: var(--black);
   background: var(--white);
@@ -64,7 +64,7 @@
 .ce-home *,
 .ce-home *::before,
 .ce-home *::after { box-sizing: border-box; }
-.ce-display { font-family: 'Playfair Display', Georgia, serif; }
+.ce-display { font-family: 'Open Sauce One', system-ui, sans-serif; font-weight: 800; letter-spacing: -0.02em; }
 .ce-eyebrow {
   font-size: 11px;
   letter-spacing: 0.15em;
@@ -74,19 +74,21 @@
   margin: 0 0 24px;
 }
 .ce-h1 {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Open Sauce One', system-ui, sans-serif;
   font-size: 64px;
   line-height: 1.1;
   color: var(--black);
   margin: 0;
-  font-weight: 600;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 .ce-h2 {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Open Sauce One', system-ui, sans-serif;
   font-size: 48px;
   line-height: 1.15;
   margin: 0;
-  font-weight: 600;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 /* ---- Buttons ---- */
@@ -96,7 +98,7 @@
   justify-content: center;
   gap: 8px;
   border-radius: var(--radius-btn);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Open Sauce One', system-ui, sans-serif;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -139,11 +141,12 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Open Sauce One', system-ui, sans-serif;
   font-size: 20px;
   color: var(--forest);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   flex-shrink: 0;
 }
 .ce-nav-center { display: flex; align-items: center; gap: 4px; }
@@ -189,7 +192,7 @@
   padding: 24px;
 }
 .ce-mobile-overlay a, .ce-mobile-overlay button {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Open Sauce One', system-ui, sans-serif;
   font-size: 32px;
   color: var(--white);
   text-decoration: none;
@@ -209,7 +212,7 @@
   gap: 64px;
   padding: 120px 64px;
 }
-.ce-hero-h1-cont { color: var(--forest); font-style: italic; }
+.ce-hero-h1-cont { color: var(--forest); }
 .ce-hero-body {
   font-size: 18px;
   color: var(--gray-dark);
@@ -296,7 +299,7 @@
 }
 .ce-quote-card:hover { background: rgba(255,255,255,0.10); }
 .ce-quote-mark {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Open Sauce One', system-ui, sans-serif;
   font-size: 80px;
   color: var(--sage);
   opacity: 0.6;
@@ -374,7 +377,7 @@
   transition: all 200ms ease;
 }
 .ce-svc-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-4px); }
-.ce-svc-name { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--black); margin: 0; font-weight: 600; }
+.ce-svc-name { font-family: 'Open Sauce One', system-ui, sans-serif; font-size: 18px; color: var(--black); margin: 0; font-weight: 700; letter-spacing: -0.01em; }
 .ce-svc-price { font-size: 24px; font-weight: 700; color: var(--forest); margin: 8px 0; }
 .ce-svc-desc { font-size: 14px; color: var(--gray-mid); line-height: 1.6; margin: 0; }
 
@@ -398,7 +401,7 @@
   padding: 6px 14px;
   border-radius: 100px;
 }
-.ce-society-price { font-family: 'Playfair Display', serif; font-size: 64px; color: var(--forest); margin: 20px 0 4px; line-height: 1; }
+.ce-society-price { font-family: 'Open Sauce One', system-ui, sans-serif; font-weight: 800; letter-spacing: -0.02em; font-size: 64px; color: var(--forest); margin: 20px 0 4px; line-height: 1; }
 .ce-society-period { font-size: 16px; color: var(--gray-mid); }
 .ce-divider { height: 1px; background: var(--gray-light); margin: 24px 0; border: none; }
 .ce-benefits { list-style: none; padding: 0; margin: 0 0 28px; text-align: left; display: flex; flex-direction: column; gap: 12px; }
@@ -418,7 +421,7 @@
 .ce-pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px; }
 .ce-pillar { background: var(--cream); border-radius: var(--radius-card); padding: 32px; border: 1px solid var(--cream-dark); }
 .ce-pillar-icon { width: 48px; height: 48px; border-radius: 50%; background: var(--sage); display: flex; align-items: center; justify-content: center; color: var(--forest); margin-bottom: 20px; }
-.ce-pillar-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--black); margin: 0; font-weight: 600; }
+.ce-pillar-title { font-family: 'Open Sauce One', system-ui, sans-serif; font-size: 20px; color: var(--black); margin: 0; font-weight: 700; letter-spacing: -0.01em; }
 .ce-pillar-body { font-size: 14px; color: var(--gray-mid); line-height: 1.7; margin-top: 12px; }
 
 /* ---- Founders (co-founder cards) ---- */
@@ -429,7 +432,7 @@
 .ce-founder-name { font-size: 18px; font-weight: 700; color: var(--black); }
 .ce-founder-role { font-size: 14px; color: var(--gray-mid); }
 .ce-founder-label { font-size: 10px; color: var(--forest); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; text-align: center; margin: 0; }
-.ce-founder-quote { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--black); font-style: italic; line-height: 1.6; margin: 16px 0 0; text-align: center; }
+.ce-founder-quote { font-family: 'Open Sauce One', system-ui, sans-serif; font-size: 20px; color: var(--black); font-style: italic; line-height: 1.6; margin: 16px 0 0; text-align: center; }
 .ce-founder-quote p { margin: 0 0 14px; }
 .ce-founder-quote p:last-child { margin-bottom: 0; }
 
@@ -454,9 +457,9 @@
 }
 .ce-tag { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; border-radius: 100px; padding: 4px 12px; margin-bottom: 20px; }
 .ce-tag-sage { background: var(--sage); color: var(--forest); }
-.ce-price-big { font-family: 'Playfair Display', serif; font-size: 52px; color: var(--forest); margin: 0; line-height: 1; }
+.ce-price-big { font-family: 'Open Sauce One', system-ui, sans-serif; font-weight: 800; letter-spacing: -0.02em; font-size: 52px; color: var(--forest); margin: 0; line-height: 1; }
 .ce-price-card-featured .ce-price-big { color: var(--white); }
-.ce-price-range { font-family: 'Playfair Display', serif; font-size: 36px; color: var(--forest); margin: 0; line-height: 1.1; }
+.ce-price-range { font-family: 'Open Sauce One', system-ui, sans-serif; font-weight: 800; letter-spacing: -0.02em; font-size: 36px; color: var(--forest); margin: 0; line-height: 1.1; }
 .ce-price-period { font-size: 14px; color: var(--gray-mid); margin-top: 6px; }
 .ce-price-card-featured .ce-price-period { color: rgba(255,255,255,0.6); }
 .ce-price-card-featured .ce-divider { background: rgba(255,255,255,0.15); }
@@ -491,7 +494,7 @@
 /* ---- Footer ---- */
 .ce-footer { background: var(--forest-dark); padding: 64px 64px 32px; }
 .ce-footer-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 48px; }
-.ce-footer-logo { display: inline-flex; align-items: center; gap: 8px; font-family: 'Playfair Display', serif; font-size: 20px; color: var(--white); text-decoration: none; }
+.ce-footer-logo { display: inline-flex; align-items: center; gap: 8px; font-family: 'Open Sauce One', system-ui, sans-serif; font-weight: 800; letter-spacing: -0.02em; font-size: 20px; color: var(--white); text-decoration: none; }
 .ce-footer-tagline { font-size: 14px; color: rgba(255,255,255,0.6); margin: 12px 0 0; }
 .ce-footer-company { font-size: 12px; color: rgba(255,255,255,0.4); margin: 8px 0 0; line-height: 1.5; }
 .ce-footer-label { font-size: 11px; color: var(--sage); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 16px; font-weight: 600; }

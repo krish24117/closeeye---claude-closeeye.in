@@ -24,8 +24,9 @@ export default {
         sage:   { DEFAULT: '#A8D5B5' },
       },
       fontFamily: {
-        serif: ['"Playfair Display"', 'Georgia', 'serif'],
-        sans:  ['Inter', 'system-ui', 'sans-serif'],
+        // Open Sauce One is the only brand typeface; both keys map to it.
+        serif: ['"Open Sauce One"', 'system-ui', 'sans-serif'],
+        sans:  ['"Open Sauce One"', 'system-ui', 'sans-serif'],
       },
       borderRadius: { xl: '12px', '2xl': '16px', '3xl': '24px' },
       boxShadow: {
