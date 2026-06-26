@@ -408,6 +408,15 @@
 .ce-benefits li { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; color: var(--gray-dark); }
 .ce-benefits li svg { color: var(--sage); flex-shrink: 0; margin-top: 3px; }
 .ce-society-note { font-size: 12px; color: var(--gray-mid); margin-top: 16px; }
+.ce-covers-label { text-align: left; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--forest); margin: 0 0 14px; }
+.ce-covers li { align-items: flex-start; }
+.ce-covers li > span { font-size: 14px; line-height: 1.55; color: var(--gray-mid); }
+.ce-covers li > span strong { color: var(--black); font-weight: 700; }
+.ce-upsell { background: var(--cream-dark); border-radius: 12px; padding: 16px; text-align: left; font-size: 14px; color: var(--gray-dark); line-height: 1.6; margin: 4px 0 20px; }
+.ce-upsell strong { color: var(--forest); font-weight: 700; }
+.ce-society-crosslink { text-align: center; margin-top: 20px; font-size: 14px; color: var(--gray-mid); }
+.ce-society-crosslink a { color: var(--forest); font-weight: 600; text-decoration: none; }
+.ce-society-crosslink a:hover { text-decoration: underline; }
 
 .ce-price-table { width: 100%; border-collapse: collapse; border-radius: var(--radius-card); overflow: hidden; box-shadow: var(--shadow-card); }
 .ce-price-table th, .ce-price-table td { text-align: left; padding: 16px 24px; font-size: 15px; }

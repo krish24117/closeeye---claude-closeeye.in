@@ -20,6 +20,7 @@ import { RefundPage } from '@/pages/Refund'
 
 // Auth + app sections — lazy-loaded to keep initial bundle lean
 const AuthPage = lazy(() => import('@/pages/Auth').then(m => ({ default: m.AuthPage })))
+const ForSocietiesPage = lazy(() => import('@/pages/ForSocieties').then(m => ({ default: m.ForSocietiesPage })))
 
 const DashboardLayout = lazy(() => import('@/pages/dashboard/Layout').then(m => ({ default: m.DashboardLayout })))
 const DashboardHome = lazy(() => import('@/pages/dashboard/Home').then(m => ({ default: m.DashboardHome })))
@@ -61,6 +62,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/faq': 'FAQ — Close Eye',
   '/contact': 'Contact — Close Eye',
   '/waitlist': 'Join Waitlist — Close Eye',
+  '/for-societies': 'For Societies — Close Eye',
   '/auth': 'Sign In — Close Eye',
   '/privacy-policy': 'Privacy Policy — Close Eye',
   '/terms': 'Terms of Service — Close Eye',
@@ -98,6 +100,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/faq': 'Answers to common questions about Close Eye visits, companion verification, pricing, cancellations, and coverage areas.',
   '/contact': 'Get in touch with the Close Eye team on WhatsApp or email — we reply within a few hours.',
   '/waitlist': 'Join the Close Eye waitlist to be notified the moment we launch verified companion visits in your city.',
+  '/for-societies': 'Partner with Close Eye to bring verified elder-care companions, wellbeing visits, and a real emergency plan to your residents — at no cost to the society.',
   '/auth': 'Sign in or create a Close Eye account to book and manage companion visits for your loved ones.',
   '/privacy-policy': "How Close Eye collects, uses, and protects your family's data.",
   '/terms': 'Terms of service for booking and using Close Eye companion visits.',
@@ -227,6 +230,7 @@ export default function App() {
             <Route path="/faq" element={<PublicLayout><FAQPage /></PublicLayout>} />
             <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
             <Route path="/waitlist" element={<PublicLayout><WaitlistPage /></PublicLayout>} />
+            <Route path="/for-societies" element={<PublicLayout><ForSocietiesPage /></PublicLayout>} />
             <Route path="/privacy-policy" element={<PublicLayout><PrivacyPage /></PublicLayout>} />
             <Route path="/terms" element={<PublicLayout><TermsPage /></PublicLayout>} />
             <Route path="/refund-policy" element={<PublicLayout><RefundPage /></PublicLayout>} />

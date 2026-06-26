@@ -60,6 +60,7 @@ export function Footer() {
               <li><Link to="/" className="hover:text-white transition-colors">Home</Link></li>
               <li><Link to="/#how-it-works" className="hover:text-white transition-colors">How It Works</Link></li>
               <li><Link to="/services" className="hover:text-white transition-colors">Pricing</Link></li>
+              <li><Link to="/for-societies" className="hover:text-white transition-colors">For Societies</Link></li>
               <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
               <li><Link to="/faq" className="hover:text-white transition-colors">FAQ</Link></li>
               <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>

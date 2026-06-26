@@ -13,11 +13,11 @@ import { ON_DEMAND_SERVICES } from '@/lib/one-time-services'
 const WA_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '919000221261'
 const WA_LINK = `https://wa.me/${WA_NUMBER}?text=Hi%2C%20I%27m%20interested%20in%20Close%20Eye%20for%20my%20family`
 
-const NAV_LINKS = [
+const NAV_LINKS: { label: string; href?: string; to?: string }[] = [
   { href: '#how-it-works', label: 'How It Works' },
   { href: '#services', label: 'Services' },
   { href: '#pricing', label: 'Pricing' },
-  { href: '#societies', label: 'For Societies' },
+  { to: '/for-societies', label: 'For Societies' },
 ]
 
 const TRUST_SIGNALS = [
@@ -86,12 +86,14 @@ const NRI_SERVICES = [
   { name: 'Grocery & Medicine', price: '₹500', desc: 'Collection and delivery with receipt provided' },
 ]
 
-const SOCIETY_BENEFITS = [
-  'Entire family covered',
-  '24/7 AI health assistant',
-  'Doctor-verified responses',
-  'Emergency coordination',
-  '10% discount on all services',
+// Resident family (B2C) — what the ₹100 founding registration covers.
+// "Wellbeing assistant" is framed as guidance + escalation, never diagnosis.
+const SOCIETY_COVERS = [
+  { t: 'Your whole family, set up', d: "Your parents' profiles, preferences, medical notes, and emergency contacts — ready so we can act fast when it matters." },
+  { t: 'A 24/7 wellbeing assistant', d: 'Helps you and your parents understand symptoms in plain language, decide when something needs a doctor, and reach our care team. Guidance and coordination — not diagnosis, and never a replacement for a doctor.' },
+  { t: 'Priority emergency coordination', d: 'If something happens, we mobilise and keep you informed every step.' },
+  { t: '10% off every Close Eye service', d: "For as long as you're a member." },
+  { t: 'No monthly commitment', d: 'Add a single visit or a full plan whenever you want.' },
 ]
 
 const PILLARS = [
@@ -121,11 +123,11 @@ const ADVISORS = [
 ]
 
 const FOUNDING_BENEFITS = [
-  'Entire family covered',
-  '24/7 AI health assistant',
-  'Doctor-verified responses',
-  'Emergency coordination',
-  '10% discount on all services',
+  'Whole family set up — profiles, meds, emergency contacts',
+  '24/7 wellbeing assistant (guidance, not diagnosis)',
+  'Priority emergency coordination',
+  '10% off every Close Eye service',
+  'No monthly commitment',
 ]
 
 const MONTHLY_BENEFITS = [
@@ -164,7 +166,10 @@ function Ticks() {
 
 export function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [tab, setTab] = useState<'nri' | 'society' | 'ondemand'>('nri')
+  // Preselect the Society tab when arriving via /#societies (e.g. from the For Societies page)
+  const [tab, setTab] = useState<'nri' | 'society' | 'ondemand'>(
+    typeof window !== 'undefined' && window.location.hash === '#societies' ? 'society' : 'nri'
+  )
 
   const [waReveal, setWaReveal] = useState(false)
   const phoneRef = useRef<HTMLDivElement>(null)
@@ -250,7 +255,9 @@ export function HomePage() {
 
           <div className="ce-nav-center">
             {NAV_LINKS.map(l => (
-              <a key={l.href} href={l.href} className="ce-nav-link">{l.label}</a>
+              l.to
+                ? <Link key={l.label} to={l.to} className="ce-nav-link">{l.label}</Link>
+                : <a key={l.label} href={l.href} className="ce-nav-link">{l.label}</a>
             ))}
           </div>
 
@@ -276,7 +283,9 @@ export function HomePage() {
             <X size={32} />
           </button>
           {NAV_LINKS.map(l => (
-            <a key={l.href} href={l.href} onClick={() => setMenuOpen(false)}>{l.label}</a>
+            l.to
+              ? <Link key={l.label} to={l.to} onClick={() => setMenuOpen(false)}>{l.label}</Link>
+              : <a key={l.label} href={l.href} onClick={() => setMenuOpen(false)}>{l.label}</a>
           ))}
           <Link to="/auth?mode=signup" onClick={() => setMenuOpen(false)}>Register Family</Link>
           <Link to="/auth" onClick={() => setMenuOpen(false)}>Sign In</Link>
@@ -416,8 +425,8 @@ export function HomePage() {
 
           {tab === 'nri' && (
             <div className="ce-svc-grid">
-              {NRI_SERVICES.map((s, i) => (
-                <div key={s.name} className="ce-svc-card animate-on-scroll" style={{ transitionDelay: `${(i % 3) * 100}ms` }}>
+              {NRI_SERVICES.map(s => (
+                <div key={s.name} className="ce-svc-card animate-fade-in">
                   <h3 className="ce-svc-name">{s.name}</h3>
                   <p className="ce-svc-price">{s.price}</p>
                   <p className="ce-svc-desc">{s.desc}</p>
@@ -428,24 +437,36 @@ export function HomePage() {
 
           {tab === 'society' && (
             <div id="societies" style={{ scrollMarginTop: '88px' }}>
-              <div className="ce-society-card animate-on-scroll">
-                <span className="ce-gold-pill">Founding Member Price</span>
+              <div className="ce-society-card animate-fade-in">
+                <span className="ce-gold-pill">Founding Member</span>
                 <p className="ce-society-price">₹100</p>
                 <p className="ce-society-period">One-time registration</p>
+                <p style={{ fontSize: '14px', color: 'var(--gray-mid)', marginTop: '4px' }}>For families in our partner societies.</p>
                 <hr className="ce-divider" />
-                <ul className="ce-benefits">
-                  {SOCIETY_BENEFITS.map(b => (
-                    <li key={b}><Check size={18} /> {b}</li>
+                <p className="ce-covers-label">What your ₹100 covers</p>
+                <ul className="ce-benefits ce-covers">
+                  {SOCIETY_COVERS.map(c => (
+                    <li key={c.t}>
+                      <Check size={18} />
+                      <span><strong>{c.t}.</strong> {c.d}</span>
+                    </li>
                   ))}
                 </ul>
-                <Link to="/auth?mode=signup" className="ce-btn ce-btn-primary ce-btn-full">Register Your Family <ArrowRight size={18} /></Link>
-                <p className="ce-society-note">Currently serving Rivera Residences and Lanco Hills, Hyderabad</p>
+                <div className="ce-upsell">
+                  From here, book a one-time visit when you need one, or <strong>start a monthly companion plan from ₹1,500</strong> — one home visit a week, regular calls, and a WhatsApp report every time.
+                </div>
+                <Link to="/auth?mode=signup" className="ce-btn ce-btn-primary ce-btn-full">Register your family — ₹100 <ArrowRight size={18} /></Link>
               </div>
+              <p className="ce-society-crosslink">
+                Not in a partner society yet?{' '}
+                <Link to="/for-societies">Bring Close Eye to your society →</Link>
+              </p>
+              <p className="ce-society-note" style={{ textAlign: 'center' }}>Currently serving Rivera Residences and Lanco Hills, Hyderabad</p>
             </div>
           )}
 
           {tab === 'ondemand' && (
-            <div className="animate-on-scroll">
+            <div className="animate-fade-in">
               <table className="ce-price-table">
                 <thead>
                   <tr><th>Service</th><th>Price</th></tr>
@@ -654,7 +675,7 @@ export function HomePage() {
               <a href="#how-it-works">How It Works</a>
               <a href="#services">Services</a>
               <a href="#pricing">Pricing</a>
-              <a href="#societies">For Societies</a>
+              <Link to="/for-societies">For Societies</Link>
               <Link to="/about">About Us</Link>
             </div>
           </div>
