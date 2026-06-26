@@ -43,8 +43,8 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-green-100 pt-[env(safe-area-inset-top)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-[env(safe-area-inset-top)]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-[72px] flex items-center justify-between">
 
           {/* Logo */}
           <Link
@@ -132,7 +132,7 @@ export function Navbar() {
 
       {/* Mobile menu drawer */}
       <div className={clsx(
-        'fixed top-16 left-0 right-0 bg-white z-40 md:hidden border-b border-green-100 shadow-lg transition-all duration-200',
+        'fixed top-[72px] left-0 right-0 bg-white z-40 md:hidden border-b border-gray-200 shadow-lg transition-all duration-200',
         open ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
       )}>
         <div className="px-4 py-3 space-y-1">
