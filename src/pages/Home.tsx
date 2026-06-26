@@ -255,7 +255,7 @@ export function HomePage() {
           </div>
 
           <div className="ce-nav-right">
-            <a href="#societies" className="ce-nav-textlink">For Societies</a>
+            <Link to="/auth" className="ce-nav-textlink">Sign in</Link>
             <Link to="/auth?mode=signup" className="ce-nav-register">Register Family</Link>
           </div>
 
