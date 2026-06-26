@@ -6,7 +6,7 @@
 // online) and only fall back to the cached shell when truly offline.
 //
 // Bump CACHE_NAME on any change here so the activate handler purges old caches.
-const CACHE_NAME = 'closeeye-v4'
+const CACHE_NAME = 'closeeye-v5'
 
 // Keep the precache list minimal + known-good. addAll() rejects the whole
 // install if ANY entry 404s, which would leave users on a broken SW — so we
@@ -56,7 +56,9 @@ self.addEventListener('fetch', (event) => {
   // the device is online, so the app never boots from a stale shell.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
+      // cache:'no-store' guarantees the freshest index.html (current asset
+      // hashes) on every navigation — never a stale shell from the HTTP cache.
+      fetch(request, { cache: 'no-store' })
         .then((response) => {
           // Keep the shell cache fresh for offline use
           if (response && response.ok) {

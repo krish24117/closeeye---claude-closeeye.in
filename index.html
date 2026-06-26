@@ -242,11 +242,31 @@
         mo.observe(root, { childList: true });
       })();
 
-      // Register Service Worker
+      // Register Service Worker + auto-update so new deploys show up without
+      // users clearing cache.
       if ('serviceWorker' in navigator) {
+        // When a new SW takes control after an update, reload once to pick up
+        // the fresh assets. Only if a controller already existed (i.e. this is
+        // an UPDATE, not a first install) so first-time visitors don't reload.
+        if (navigator.serviceWorker.controller) {
+          var ceRefreshing = false;
+          navigator.serviceWorker.addEventListener('controllerchange', function () {
+            if (ceRefreshing) return;
+            ceRefreshing = true;
+            window.location.reload();
+          });
+        }
         window.addEventListener('load', function () {
           navigator.serviceWorker.register('/sw.js')
-            .then(function (reg) { console.log('SW registered:', reg.scope); })
+            .then(function (reg) {
+              console.log('SW registered:', reg.scope);
+              reg.update();
+              // Re-check for a new version whenever the app regains focus
+              // (handles installed PWAs that stay open for a long time).
+              document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') reg.update();
+              });
+            })
             .catch(function (err) { console.log('SW registration failed:', err); });
         });
       }
