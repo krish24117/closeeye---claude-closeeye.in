@@ -24,6 +24,9 @@ const ForSocietiesPage = lazy(() => import('@/pages/ForSocieties').then(m => ({ 
 
 const DashboardLayout = lazy(() => import('@/pages/dashboard/Layout').then(m => ({ default: m.DashboardLayout })))
 const DashboardHome = lazy(() => import('@/pages/dashboard/Home').then(m => ({ default: m.DashboardHome })))
+const DashboardAsk = lazy(() => import('@/pages/dashboard/Ask').then(m => ({ default: m.DashboardAsk })))
+const DashboardBook = lazy(() => import('@/pages/dashboard/Book').then(m => ({ default: m.DashboardBook })))
+const DashboardProfile = lazy(() => import('@/pages/dashboard/Profile').then(m => ({ default: m.DashboardProfile })))
 const DashboardBookings = lazy(() => import('@/pages/dashboard/Bookings').then(m => ({ default: m.DashboardBookings })))
 const DashboardLovedOnes = lazy(() => import('@/pages/dashboard/LovedOnes').then(m => ({ default: m.DashboardLovedOnes })))
 const DashboardReports = lazy(() => import('@/pages/dashboard/Reports').then(m => ({ default: m.DashboardReports })))
@@ -238,6 +241,9 @@ export default function App() {
             <Route path="/survey" element={<SurveyPage />} />
             <Route path="/dashboard" element={<ProtectedRoute role="family"><DashboardLayout /></ProtectedRoute>}>
               <Route index element={<DashboardHome />} />
+              <Route path="ask" element={<DashboardAsk />} />
+              <Route path="book" element={<DashboardBook />} />
+              <Route path="profile" element={<DashboardProfile />} />
               <Route path="bookings" element={<DashboardBookings />} />
               <Route path="loved-ones" element={<DashboardLovedOnes />} />
               <Route path="reports" element={<DashboardReports />} />

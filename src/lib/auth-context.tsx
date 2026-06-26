@@ -8,6 +8,7 @@ interface Profile {
   whatsapp_number: string | null
   country: string | null
   role: 'family' | 'companion' | 'admin'
+  user_type: 'nri' | 'society'
   avatar_url: string | null
 }
 

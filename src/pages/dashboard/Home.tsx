@@ -1,520 +1,326 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  Calendar, Heart, FileText, Bell, Plus,
-  AlertTriangle, Phone, BadgeCheck, X, ChevronRight,
-  Clock, MapPin, ArrowRight, CreditCard, CheckCircle,
-} from 'lucide-react'
-import { format, formatDistanceToNow, differenceInDays } from 'date-fns'
+import { Calendar, ChevronRight, MessageCircle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
-import { PLAN_NAMES, type PlanId } from '@/lib/subscription-plans'
-import { Skeleton } from '@/components/ui/Skeleton'
 
-// ── Loading skeleton ──────────────────────────────────────────────────────────
+/* ------------------------------------------------------------------ */
+/*  Shared helpers                                                     */
+/* ------------------------------------------------------------------ */
 
-function HomeSkeleton() {
+function initials(name?: string | null) {
+  return (name || 'CE').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+}
+function istTime(iso?: string | null) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })
+}
+function istDate(iso?: string | null) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long' })
+}
+function durationMin(start?: string | null, end?: string | null) {
+  if (!start || !end) return null
+  return Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000))
+}
+
+const FOREST_GRADIENT = { background: 'linear-gradient(135deg, #0E2A1F 0%, #1B4332 100%)' }
+
+function CardSkeleton({ h = 180 }: { h?: number }) {
+  return <div className="skeleton" style={{ height: h, margin: '16px', borderRadius: 20 }} />
+}
+
+/* ================================================================== */
+/*  NRI FAMILY HOME                                                    */
+/* ================================================================== */
+
+interface VisitRow {
+  id: string; start_time: string | null; end_time: string | null; created_at: string
+  flags: string; flag_notes: string | null; one_moment: string | null; mood_score: number | null
+  checklist_data: Record<string, unknown> | null
+}
+
+function NriHome() {
+  const { user, profile } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [elderName, setElderName] = useState<string>('')
+  const [visit, setVisit] = useState<VisitRow | null>(null)
+  const [nextBooking, setNextBooking] = useState<{ scheduled_at: string } | null>(null)
+
+  useEffect(() => {
+    if (!user) return
+    let active = true
+    ;(async () => {
+      const { data: lo } = await supabase
+        .from('loved_ones').select('id, name').eq('family_user_id', user.id)
+        .order('created_at', { ascending: true }).limit(1).maybeSingle()
+      if (!active) return
+      setElderName(lo?.name || 'Your loved one')
+
+      if (lo?.id) {
+        const { data: ep } = await supabase
+          .from('elder_profiles').select('id').eq('loved_one_id', lo.id).maybeSingle()
+        if (ep?.id) {
+          const { data: v } = await supabase
+            .from('visits').select('id,start_time,end_time,created_at,flags,flag_notes,one_moment,mood_score,checklist_data')
+            .eq('elder_id', ep.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
+          if (active && v) setVisit(v as VisitRow)
+        }
+      }
+
+      const { data: bk } = await supabase
+        .from('bookings').select('scheduled_at')
+        .eq('family_user_id', user.id).gte('scheduled_at', new Date().toISOString())
+        .order('scheduled_at', { ascending: true }).limit(1).maybeSingle()
+      if (active && bk) setNextBooking(bk)
+
+      if (active) setLoading(false)
+    })()
+    return () => { active = false }
+  }, [user])
+
+  if (loading) return <><CardSkeleton h={230} /><CardSkeleton h={120} /></>
+
+  const state: 'A' | 'B' | 'C' = !visit ? 'B' : visit.flags && visit.flags !== 'none' ? 'C' : 'A'
+  const visitMins = durationMin(visit?.start_time, visit?.end_time)
+  const moodGood = (visit?.mood_score ?? 4) >= 4
+
   return (
-    <div className="space-y-4 animate-pulse" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6rem)' }}>
-      <div className="pt-1">
-        <Skeleton className="h-7 w-52 mb-2" />
-        <Skeleton className="h-4 w-64" />
-      </div>
-      {/* Loved ones */}
-      <div>
-        <Skeleton className="h-3 w-28 mb-2.5" />
-        <div className="flex gap-2.5">
-          {[1, 2].map(i => <Skeleton key={i} className="w-44 h-16 rounded-2xl flex-shrink-0" />)}
-        </div>
-      </div>
-      {/* Next visit */}
-      <Skeleton className="h-40 rounded-2xl" />
-      {/* Stat row */}
-      <div className="grid grid-cols-3 gap-3">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-2">
-            <Skeleton className="w-8 h-8 rounded-xl" />
-            <Skeleton className="h-6 w-10" />
-            <Skeleton className="h-3 w-16" />
+    <div className="ce-slide-up">
+      {/* ── Wellbeing status card ─────────────────────────────── */}
+      <section style={{ margin: 16, borderRadius: 20, overflow: 'hidden' }}>
+        <div style={{
+          padding: 24,
+          ...(state === 'A' ? FOREST_GRADIENT
+            : state === 'B' ? { background: 'linear-gradient(135deg, #1a3a28 0%, #0E2A1F 100%)' }
+            : { background: 'linear-gradient(135deg, #3d2000 0%, #2a1500 100%)' }),
+        }}>
+          <div className="flex items-center justify-between">
+            <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{elderName}</span>
+            <span style={{
+              width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+              background: 'rgba(168,213,181,0.20)', border: '2px solid var(--sage)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 16, fontWeight: 700, color: 'var(--sage)',
+            }}>{initials(elderName)}</span>
           </div>
+
+          <div style={{ textAlign: 'center', margin: '16px 0' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 24px', borderRadius: 100,
+              background: state === 'A' ? 'rgba(168,213,181,0.15)' : 'rgba(255,255,255,0.06)',
+              border: `1px solid ${state === 'A' ? 'rgba(168,213,181,0.4)' : 'rgba(255,255,255,0.15)'}`,
+            }}>
+              {state === 'A' && <span className="ce-pulse-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80' }} />}
+              {state === 'C' && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }} />}
+              <span style={{ fontSize: 16, fontWeight: 600, color: state === 'A' ? '#fff' : state === 'B' ? 'var(--sage)' : '#FFA500' }}>
+                {state === 'A' ? 'All well today' : state === 'B' ? (nextBooking ? `Next visit: ${istDate(nextBooking.scheduled_at)}` : 'No visit scheduled yet') : 'Needs your attention'}
+              </span>
+            </span>
+          </div>
+
+          <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0 }}>
+            {state === 'A' && `Visited ${istTime(visit?.start_time || visit?.created_at)}${visitMins ? ` · ${visitMins} min` : ''}`}
+            {state === 'B' && (visit ? `Last visited ${istTime(visit.created_at)}` : 'Your first visit is being arranged')}
+            {state === 'C' && `Noticed ${istTime(visit?.created_at)}`}
+          </p>
+
+          {state === 'A' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
+              {[
+                ['😊', 'Mood', moodGood ? 'Good' : 'Okay'],
+                ['🍽️', 'Eating', 'Normal'],
+                ['💊', 'Medicines', 'Taken'],
+                ['🏠', 'Home', 'Safe'],
+              ].map(([emoji, label, value]) => (
+                <div key={label} style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>{emoji}</span>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{label}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>{value}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {state === 'C' && (
+            <>
+              <div style={{ background: 'rgba(255,165,0,0.10)', border: '1px solid rgba(255,165,0,0.30)', borderRadius: 12, padding: '12px 16px', fontSize: 14, color: '#FFA500', marginTop: 12 }}>
+                {visit?.flag_notes || 'Your companion flagged something from the last visit. We will reach out.'}
+              </div>
+              <a href="https://wa.me/919000221261?text=Hi%2C%20I%20saw%20a%20flag%20on%20my%20dashboard" target="_blank" rel="noopener noreferrer"
+                style={{ display: 'inline-block', border: '1px solid #FFA500', color: '#FFA500', borderRadius: 'var(--radius-btn)', padding: '10px 20px', fontSize: 14, fontWeight: 600, marginTop: 12, textDecoration: 'none' }}>
+                Call us about this →
+              </a>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* ── Quick actions ─────────────────────────────────────── */}
+      <div className="ce-noscroll" style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '0 16px', marginTop: 12 }}>
+        {[
+          { label: '📋 View Report', to: '/dashboard/reports' },
+          { label: '📅 Book Visit', to: '/dashboard/book' },
+          { label: '💬 Ask Health', to: '/dashboard/ask' },
+        ].map(p => (
+          <Link key={p.label} to={p.to} className="ce-press" style={{ background: '#fff', border: '1px solid var(--gray-light)', borderRadius: 100, padding: '10px 18px', fontSize: 13, fontWeight: 600, color: 'var(--forest)', boxShadow: 'var(--shadow-card)', whiteSpace: 'nowrap', flexShrink: 0, textDecoration: 'none' }}>{p.label}</Link>
         ))}
+        <a href="https://wa.me/919000221261" target="_blank" rel="noopener noreferrer" className="ce-press" style={{ background: '#fff', border: '1px solid var(--gray-light)', borderRadius: 100, padding: '10px 18px', fontSize: 13, fontWeight: 600, color: 'var(--forest)', boxShadow: 'var(--shadow-card)', whiteSpace: 'nowrap', flexShrink: 0, textDecoration: 'none' }}>📞 Call Us</a>
       </div>
-      {/* Book CTA */}
-      <Skeleton className="h-20 rounded-2xl" />
+
+      {/* ── Last visit preview ────────────────────────────────── */}
+      {visit && (
+        <div style={{ margin: '12px 16px 0', background: '#fff', borderRadius: 'var(--radius-card)', padding: 20, boxShadow: 'var(--shadow-card)' }}>
+          <div className="flex items-center justify-between">
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.08em' }}>LAST VISIT</span>
+            <Link to="/dashboard/reports" style={{ fontSize: 12, fontWeight: 500, color: 'var(--forest)', textDecoration: 'none' }}>Full report →</Link>
+          </div>
+          <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--black)', margin: '8px 0 0' }}>{elderName}</p>
+          <p style={{ fontSize: 13, color: 'var(--gray-mid)', margin: '2px 0 0' }}>{istTime(visit.start_time || visit.created_at)}{visitMins ? ` · ${visitMins} min` : ''}</p>
+          {visit.one_moment && (
+            <>
+              <hr style={{ border: 'none', borderTop: '1px solid var(--gray-light)', margin: '14px 0' }} />
+              <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--sage)', opacity: 0.5, lineHeight: 0.5 }}>“</span>
+              <p style={{ fontSize: 15, color: 'var(--gray-dark)', lineHeight: 1.7, fontStyle: 'italic', margin: '6px 0 0' }}>{visit.one_moment}</p>
+            </>
+          )}
+          <hr style={{ border: 'none', borderTop: '1px solid var(--gray-light)', margin: '14px 0' }} />
+          <div className="flex items-center" style={{ gap: 8 }}>
+            <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--forest)', color: '#fff', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>K</span>
+            <span style={{ fontSize: 12, color: 'var(--gray-mid)' }}>Krishna · Companion</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Upcoming visit ────────────────────────────────────── */}
+      {nextBooking && (
+        <div style={{ margin: '12px 16px 0', background: '#fff', borderRadius: 'var(--radius-card)', padding: '16px 20px', boxShadow: 'var(--shadow-card)', display: 'flex', alignItems: 'center' }}>
+          <Calendar size={20} color="var(--forest)" />
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--black)', marginLeft: 10, flex: 1 }}>Next visit — {istDate(nextBooking.scheduled_at)}</span>
+          <Link to="/dashboard/book" style={{ fontSize: 12, color: 'var(--gray-mid)', textDecoration: 'none' }}>Reschedule</Link>
+        </div>
+      )}
+
+      {/* ── Health query shortcut ─────────────────────────────── */}
+      <Link to="/dashboard/ask" className="ce-press" style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '12px 16px 24px', background: 'var(--cream-dark)', borderRadius: 'var(--radius-card)', padding: '18px 20px', textDecoration: 'none' }}>
+        <span style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--forest)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <MessageCircle size={20} color="#fff" />
+        </span>
+        <span style={{ flex: 1 }}>
+          <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--black)' }}>Have a health question?</span>
+          <span style={{ display: 'block', fontSize: 13, color: 'var(--gray-mid)' }}>Ask Close Eye — doctor reviewed</span>
+        </span>
+        <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--forest)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: 'var(--shadow-btn)' }}>
+          <ChevronRight size={18} color="#fff" />
+        </span>
+      </Link>
+
+      <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--gray-mid)', padding: '0 24px 8px' }}>Signed in as {profile?.full_name || 'you'}</p>
     </div>
   )
 }
 
-// ── Visit status badge ────────────────────────────────────────────────────────
+/* ================================================================== */
+/*  SOCIETY MEMBER HOME                                                */
+/* ================================================================== */
 
-function VisitStatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; cls: string }> = {
-    pending:            { label: 'Awaiting companion', cls: 'bg-amber-50 text-amber-700' },
-    confirmed:          { label: 'Confirmed',           cls: 'bg-blue-50 text-blue-700' },
-    companion_assigned: { label: 'Companion assigned',  cls: 'bg-green-100 text-green-700' },
-    in_progress:        { label: 'Visit in progress',   cls: 'bg-green-700 text-white' },
-  }
-  const s = map[status]
-  if (!s) return null
+function SocietyHome() {
+  const { user, profile } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [member, setMember] = useState<{ name: string; society_name: string | null } | null>(null)
+  const [recent, setRecent] = useState<{ id: string; question: string; answer: string | null; ai_answer: string | null; status: string; created_at: string }[]>([])
+  const [tip, setTip] = useState<string>('')
+
+  useEffect(() => {
+    if (!user) return
+    let active = true
+    ;(async () => {
+      const { data: m } = await supabase.from('society_members').select('name, society_name').eq('user_id', user.id).maybeSingle()
+      if (active) setMember(m)
+
+      const { data: q } = await supabase.from('member_queries').select('id,question,answer,ai_answer,status,created_at')
+        .eq('user_id', user.id).order('created_at', { ascending: false }).limit(3)
+      if (active && q) setRecent(q)
+
+      const { data: tips } = await supabase.from('health_tips').select('tip').eq('day_index', new Date().getDay())
+      if (active) setTip(tips?.[0]?.tip || 'Small daily habits — water, a short walk, a phone call home — protect health more than any single big effort.')
+
+      if (active) setLoading(false)
+    })()
+    return () => { active = false }
+  }, [user])
+
+  const name = member?.name || profile?.full_name?.split(' ')[0] || 'there'
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+
+  if (loading) return <><CardSkeleton h={170} /><CardSkeleton h={200} /></>
+
   return (
-    <span className={`mt-2 inline-block text-xs px-2 py-0.5 rounded-full font-medium ${s.cls}`}>
-      {s.label}
-    </span>
+    <div className="ce-slide-up">
+      <section style={{ margin: 16, borderRadius: 20, padding: 24, ...FOREST_GRADIENT }}>
+        <p style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: 0 }}>{greeting}, {name} 🌿</p>
+        <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--sage)', margin: '4px 0 0' }}>Your Close Eye Family Shield</p>
+        <span style={{ display: 'inline-block', marginTop: 16, background: 'rgba(168,213,181,0.15)', border: '1px solid rgba(168,213,181,0.3)', borderRadius: 100, padding: '8px 18px', fontSize: 12, fontWeight: 600, color: 'var(--sage)' }}>
+          Founding Member{member?.society_name ? ` · ${member.society_name}` : ''}
+        </span>
+      </section>
+
+      <Link to="/dashboard/ask" className="ce-press" style={{ display: 'block', margin: '0 16px', background: '#fff', borderRadius: 'var(--radius-card)', padding: 20, boxShadow: 'var(--shadow-card)', textDecoration: 'none' }}>
+        <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--black)', margin: '0 0 12px' }}>What health question can we answer for you today?</p>
+        <div style={{ background: 'var(--cream)', border: '1px solid var(--gray-light)', borderRadius: 12, padding: '14px 16px', fontSize: 15, color: 'var(--gray-mid)' }}>
+          e.g. My child has had a fever for 2 days…
+        </div>
+        <span className="ce-btn ce-btn-primary ce-btn-full" style={{ marginTop: 12, padding: 14, fontSize: 16 }}>Ask Close Eye →</span>
+      </Link>
+
+      {recent.length > 0 && (
+        <div style={{ margin: '12px 16px 0' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.08em', margin: '0 0 8px' }}>RECENT QUESTIONS</p>
+          {recent.map(q => (
+            <Link key={q.id} to="/dashboard/ask" style={{ display: 'block', background: '#fff', borderRadius: 'var(--radius-card)', padding: 16, boxShadow: 'var(--shadow-card)', marginBottom: 10, textDecoration: 'none' }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--black)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.question}</p>
+              <p style={{ fontSize: 13, color: 'var(--gray-mid)', margin: '4px 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {q.answer || q.ai_answer || (q.status === 'pending' ? 'Doctor review in progress…' : '')}
+              </p>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      <div style={{ margin: '12px 16px 0' }}>
+        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.08em', margin: '0 0 8px' }}>BOOK A SERVICE</p>
+        <div className="ce-noscroll" style={{ display: 'flex', gap: 12, overflowX: 'auto' }}>
+          {[['🏠', 'Home Visit', '₹1,000'], ['👨‍⚕️', 'Doctor Support', '₹1,500'], ['🚨', 'Emergency', '₹3,000'], ['🛒', 'Grocery', '₹500']].map(([e, n, p]) => (
+            <Link key={n} to="/dashboard/book" className="ce-press" style={{ minWidth: 140, flexShrink: 0, background: '#fff', borderRadius: 14, padding: 16, boxShadow: 'var(--shadow-card)', textDecoration: 'none' }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>{e}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--black)' }}>{n}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--forest)', marginTop: 4 }}>{p}</div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ margin: '12px 16px 0', background: 'var(--cream-dark)', borderRadius: 'var(--radius-card)', padding: '18px 20px' }}>
+        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.08em', margin: '0 0 8px' }}>TODAY'S HEALTH TIP</p>
+        <p style={{ fontSize: 14, color: 'var(--gray-dark)', lineHeight: 1.6, margin: 0 }}>{tip}</p>
+      </div>
+
+      <section style={{ margin: '12px 16px 24px', borderRadius: 20, padding: 24, ...FOREST_GRADIENT }}>
+        <p style={{ fontSize: 16, fontWeight: 700, color: '#fff', margin: 0 }}>Have elderly parents at home?</p>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', margin: '6px 0 0' }}>Add Close Eye companion visits to your family plan.</p>
+        <p style={{ fontSize: 13, color: 'var(--sage)', margin: '8px 0 0' }}>₹1,500/month — 1 visit + weekly calls + WhatsApp reports.</p>
+        <Link to="/dashboard/book" className="ce-btn ce-btn-white ce-btn-full" style={{ marginTop: 18, padding: 14 }}>Add Elder Care →</Link>
+      </section>
+    </div>
   )
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+/* ================================================================== */
 
 export function DashboardHome() {
   const { profile } = useAuth()
-
-  const [lovedOnes, setLovedOnes]         = useState<any[]>([])
-  const [stats, setStats]                 = useState({ bookings: 0, reports: 0, unread: 0 })
-  const [nextVisit, setNextVisit]         = useState<any>(null)
-  const [lastVisit, setLastVisit]         = useState<any>(null)
-  const [companion, setCompanion]         = useState<{ companion: any; scheduled_at: string } | null>(null)
-  const [subscription, setSubscription]   = useState<any>(null)
-  const [loading, setLoading]             = useState(true)
-  const [error, setError]                 = useState<string | null>(null)
-  const [companionPhotoUrl, setCompanionPhotoUrl] = useState<string | null>(null)
-
-  const [sosOpen, setSosOpen]     = useState(false)
-  const [sosSending, setSosSending] = useState(false)
-  const [sosDone, setSosDone]     = useState(false)
-
-  useEffect(() => { load() }, [])
-
-  useEffect(() => {
-    const c = companion?.companion
-    if (!c?.photo_url) return
-    supabase.storage.from('companion-photos').createSignedUrl(c.photo_url, 3600).then(({ data }) => {
-      if (data?.signedUrl) setCompanionPhotoUrl(data.signedUrl)
-    })
-  }, [companion])
-
-  async function load() {
-    setLoading(true)
-    setError(null)
-    try {
-      const now = new Date().toISOString()
-      const [loRes, bCount, rCount, nCount, nvRes, lvRes, cbRes, sbRes] = await Promise.all([
-        supabase.from('loved_ones').select('id, full_name, city').order('full_name'),
-        supabase.from('bookings').select('id', { count: 'exact', head: true }),
-        supabase.from('visit_reports').select('id', { count: 'exact', head: true }),
-        supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('read', false),
-        supabase.from('bookings')
-          .select('id, scheduled_at, status, loved_ones(full_name)')
-          .in('status', ['pending', 'confirmed', 'companion_assigned', 'in_progress'])
-          .gte('scheduled_at', now)
-          .order('scheduled_at', { ascending: true })
-          .limit(1)
-          .maybeSingle(),
-        supabase.from('bookings')
-          .select('id, completed_at, loved_ones(full_name)')
-          .eq('status', 'completed')
-          .order('completed_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase.from('bookings')
-          .select('id, scheduled_at, companions(id, full_name, phone, photo_url, rating, verified)')
-          .in('status', ['companion_assigned', 'in_progress'])
-          .gte('scheduled_at', now)
-          .order('scheduled_at', { ascending: true })
-          .limit(1)
-          .maybeSingle(),
-        supabase.from('subscriptions').select('*').maybeSingle(),
-      ])
-      if (bCount.error || rCount.error || nCount.error) throw bCount.error || rCount.error || nCount.error
-      setLovedOnes(loRes.data || [])
-      setStats({ bookings: bCount.count || 0, reports: rCount.count || 0, unread: nCount.count || 0 })
-      setNextVisit(nvRes.data || null)
-      setLastVisit(lvRes.data || null)
-      setCompanion(cbRes.data?.companions ? { companion: cbRes.data.companions, scheduled_at: cbRes.data.scheduled_at } : null)
-      setSubscription(sbRes.data || null)
-    } catch (err) {
-      console.error('Dashboard load error:', err)
-      setError('Something went wrong — please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function sendSos() {
-    setSosSending(true)
-    try {
-      await supabase.functions.invoke('send-sos-alert')
-      setSosDone(true)
-      setSosOpen(false)
-      setTimeout(() => setSosDone(false), 6000)
-    } catch {
-      setSosOpen(false)
-    } finally {
-      setSosSending(false)
-    }
-  }
-
-  const firstName   = profile?.full_name?.split(' ')[0] || 'there'
-  const hour        = new Date().getHours()
-  const greeting    = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const daysUntilNext = nextVisit ? differenceInDays(new Date(nextVisit.scheduled_at), new Date()) : null
-  const isNewUser   = lovedOnes.length === 0
-
-  if (loading) return <HomeSkeleton />
-
-  return (
-    <div className="space-y-4 animate-fade-in" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6rem)' }}>
-
-      {/* ── Greeting ───────────────────────────────────────── */}
-      <div className="pt-1">
-        <h1 className="font-serif text-2xl text-green-900">{greeting}, {firstName}</h1>
-        <p className="text-gray-400 text-sm mt-0.5">
-          {isNewUser ? "Welcome to Close Eye — let's get started." : "Here's your family's wellbeing at a glance."}
-        </p>
-      </div>
-
-      {/* ── Alerts ─────────────────────────────────────────── */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
-          {error}
-          <button onClick={load} className="font-semibold underline whitespace-nowrap">Retry</button>
-        </div>
-      )}
-      {sosDone && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center gap-3">
-          <AlertTriangle size={16} className="flex-shrink-0" />
-          Emergency alert sent to all family members.
-          <button onClick={() => setSosDone(false)} className="ml-auto"><X size={15} /></button>
-        </div>
-      )}
-
-      {/* ── New-user onboarding ─────────────────────────────── */}
-      {isNewUser && (
-        <div className="bg-gradient-to-br from-green-800 to-green-700 rounded-2xl p-6 text-white">
-          <div className="w-12 h-12 bg-white/15 rounded-2xl flex items-center justify-center mb-4">
-            <Heart size={22} className="text-white" />
-          </div>
-          <h2 className="font-serif text-xl mb-2">Add your loved one</h2>
-          <p className="text-white/70 text-sm leading-relaxed mb-5">
-            Start by adding your parent or family member's profile — we'll match the right companion for them.
-          </p>
-          <Link
-            to="/dashboard/loved-ones"
-            className="inline-flex items-center gap-2 bg-white text-green-900 font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-green-50 transition-colors"
-          >
-            <Plus size={16} /> Add loved one
-          </Link>
-        </div>
-      )}
-
-      {/* ── Loved ones row ─────────────────────────────────── */}
-      {lovedOnes.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-2.5">
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Your loved ones</p>
-            <Link to="/dashboard/loved-ones" className="text-xs text-green-700 font-semibold hover:underline flex items-center gap-0.5">
-              Manage <ChevronRight size={12} />
-            </Link>
-          </div>
-          <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
-            {lovedOnes.map(lo => (
-              <div key={lo.id} className="flex-shrink-0 bg-white rounded-2xl border border-gray-100 px-4 py-3 flex items-center gap-3 min-w-[160px]">
-                <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                  <span className="text-green-700 font-bold text-base">{lo.full_name?.[0]}</span>
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-green-900 text-sm truncate leading-tight">{lo.full_name}</p>
-                  {lo.city && (
-                    <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                      <MapPin size={10} className="flex-shrink-0" />{lo.city}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-            <Link
-              to="/dashboard/loved-ones"
-              className="flex-shrink-0 w-14 bg-gray-50 hover:bg-gray-100 border border-dashed border-gray-200 rounded-2xl flex items-center justify-center transition-colors"
-            >
-              <Plus size={18} className="text-gray-400" />
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* ── Next visit card ─────────────────────────────────── */}
-      {nextVisit ? (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className={`px-5 py-3 flex items-center justify-between ${
-            daysUntilNext === 0 ? 'bg-green-700' :
-            daysUntilNext !== null && daysUntilNext <= 2 ? 'bg-green-600' : 'bg-green-50'
-          }`}>
-            <p className={`text-xs font-semibold uppercase tracking-wider ${
-              daysUntilNext !== null && daysUntilNext <= 2 ? 'text-white/80' : 'text-green-700'
-            }`}>
-              Next visit
-            </p>
-            {daysUntilNext !== null && (
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                daysUntilNext <= 2 ? 'bg-white/20 text-white' : 'bg-green-100 text-green-700'
-              }`}>
-                {daysUntilNext === 0 ? 'Today' : daysUntilNext === 1 ? 'Tomorrow' : `In ${daysUntilNext} days`}
-              </span>
-            )}
-          </div>
-          <div className="p-5">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="font-semibold text-green-900 text-base leading-tight">
-                  {(nextVisit.loved_ones as any)?.full_name}
-                </p>
-                <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
-                  <Clock size={13} className="flex-shrink-0" />
-                  {format(new Date(nextVisit.scheduled_at), 'EEE, d MMM · h:mm a')}
-                </p>
-                <VisitStatusBadge status={nextVisit.status} />
-              </div>
-              <Link to="/dashboard/bookings" className="flex items-center gap-0.5 text-xs text-green-700 font-semibold hover:underline mt-1 flex-shrink-0">
-                All <ChevronRight size={13} />
-              </Link>
-            </div>
-            {companion && (
-              <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-green-100 flex-shrink-0 overflow-hidden">
-                  {companionPhotoUrl
-                    ? <img src={companionPhotoUrl} alt={companion.companion.full_name} className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center text-green-700 font-bold text-base">{companion.companion.full_name?.[0]}</div>
-                  }
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <p className="text-sm font-semibold text-green-900 truncate">{companion.companion.full_name}</p>
-                    {companion.companion.verified && (
-                      <span className="inline-flex items-center gap-0.5 bg-blue-50 text-blue-600 text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
-                        <BadgeCheck size={10} /> Verified
-                      </span>
-                    )}
-                  </div>
-                  {companion.companion.rating != null && (
-                    <p className="text-xs text-amber-500 mt-0.5">
-                      {'★'.repeat(Math.round(companion.companion.rating))}{'☆'.repeat(5 - Math.round(companion.companion.rating))}
-                      <span className="text-gray-400 ml-1">{companion.companion.rating.toFixed(1)}</span>
-                    </p>
-                  )}
-                </div>
-                {companion.companion.phone && (
-                  <a
-                    href={`tel:${companion.companion.phone}`}
-                    className="w-9 h-9 bg-green-50 hover:bg-green-100 rounded-xl flex items-center justify-center text-green-600 transition-colors flex-shrink-0"
-                    title={`Call ${companion.companion.full_name}`}
-                  >
-                    <Phone size={16} />
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      ) : !isNewUser ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-4">
-          <div className="w-11 h-11 bg-amber-50 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <Calendar size={19} className="text-amber-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-green-900 text-sm">No upcoming visits</p>
-            <p className="text-xs text-gray-400 mt-0.5">Schedule a visit to keep your loved ones checked on.</p>
-          </div>
-          <Link
-            to="/dashboard/new-booking"
-            className="flex-shrink-0 bg-green-800 hover:bg-green-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors whitespace-nowrap"
-          >
-            Book now
-          </Link>
-        </div>
-      ) : null}
-
-      {/* ── Stat strip ─────────────────────────────────────── */}
-      {!isNewUser && (
-        <div className="grid grid-cols-3 gap-3">
-          <Link to="/dashboard/bookings" className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-sm transition-shadow">
-            <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center mb-2.5">
-              <Calendar size={15} className="text-blue-500" />
-            </div>
-            <p className="font-serif text-2xl text-green-900 leading-none">{stats.bookings}</p>
-            <p className="text-xs text-gray-400 mt-1">Bookings</p>
-          </Link>
-          <Link to="/dashboard/reports" className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-sm transition-shadow">
-            <div className="w-8 h-8 bg-amber-50 rounded-xl flex items-center justify-center mb-2.5">
-              <FileText size={15} className="text-amber-500" />
-            </div>
-            <p className="font-serif text-2xl text-green-900 leading-none">{stats.reports}</p>
-            <p className="text-xs text-gray-400 mt-1">Reports</p>
-          </Link>
-          <Link to="/dashboard/notifications" className="relative bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-sm transition-shadow">
-            {stats.unread > 0 && <span className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full" />}
-            <div className="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center mb-2.5">
-              <Bell size={15} className="text-green-600" />
-            </div>
-            <p className="font-serif text-2xl text-green-900 leading-none">{stats.unread}</p>
-            <p className="text-xs text-gray-400 mt-1">Unread</p>
-          </Link>
-        </div>
-      )}
-
-      {/* ── Last completed visit ────────────────────────────── */}
-      {lastVisit && (
-        <div className="bg-white rounded-2xl border border-gray-100 px-4 py-3 flex items-center gap-3">
-          <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
-            <CheckCircle size={16} className="text-emerald-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-400 font-medium">Last completed visit</p>
-            <p className="text-sm font-semibold text-green-900 mt-0.5 truncate">
-              {(lastVisit.loved_ones as any)?.full_name}
-            </p>
-            <p className="text-xs text-gray-400">
-              {lastVisit.completed_at
-                ? formatDistanceToNow(new Date(lastVisit.completed_at), { addSuffix: true })
-                : 'Date unknown'}
-            </p>
-          </div>
-          <Link to="/dashboard/reports" className="flex items-center gap-1 text-xs text-green-700 font-semibold hover:underline flex-shrink-0">
-            Report <ArrowRight size={12} />
-          </Link>
-        </div>
-      )}
-
-      {/* ── Book a visit CTA ────────────────────────────────── */}
-      {!isNewUser && (
-        <Link
-          to="/dashboard/new-booking"
-          className="flex items-center justify-between bg-green-800 hover:bg-green-700 rounded-2xl p-5 text-white transition-colors group"
-        >
-          <div>
-            <p className="font-serif text-lg leading-tight">Book a visit</p>
-            <p className="text-white/55 text-xs mt-1">UPI · Cards · Net Banking accepted</p>
-          </div>
-          <div className="w-11 h-11 bg-white/15 group-hover:bg-white/25 rounded-xl flex items-center justify-center transition-colors flex-shrink-0">
-            <Plus size={20} />
-          </div>
-        </Link>
-      )}
-
-      {/* ── Subscription strip ──────────────────────────────── */}
-      {subscription && ['active', 'authenticated', 'paused'].includes(subscription.status) ? (
-        <div className="bg-green-50 border border-green-100 rounded-2xl p-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-green-700 rounded-xl flex items-center justify-center flex-shrink-0">
-              <CreditCard size={15} className="text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-green-900">
-                {PLAN_NAMES[subscription.plan_id as PlanId]}
-                <span className={`ml-2 text-xs font-normal px-1.5 py-0.5 rounded-full ${
-                  subscription.status === 'active' ? 'bg-green-200 text-green-800' : 'bg-amber-100 text-amber-700'
-                }`}>
-                  {subscription.status === 'active' ? 'Active' : subscription.status === 'paused' ? 'Paused' : 'Activating'}
-                </span>
-              </p>
-              {subscription.next_billing_at && (
-                <p className="text-xs text-gray-400 mt-0.5">Next billing {format(new Date(subscription.next_billing_at), 'd MMM yyyy')}</p>
-              )}
-            </div>
-          </div>
-          <Link to="/dashboard/subscription" className="text-xs text-green-700 font-semibold hover:underline whitespace-nowrap flex items-center gap-0.5">
-            Manage <ChevronRight size={12} />
-          </Link>
-        </div>
-      ) : !isNewUser ? (
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-amber-900">No active plan</p>
-            <p className="text-xs text-amber-600 mt-0.5">Subscribe to unlock companion visits</p>
-          </div>
-          <Link
-            to="/dashboard/subscription"
-            className="text-xs bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3.5 py-2 rounded-xl transition-colors whitespace-nowrap"
-          >
-            View Plans
-          </Link>
-        </div>
-      ) : null}
-
-      {/* ── Quick links ─────────────────────────────────────── */}
-      {!isNewUser && (
-        <div>
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Quick access</p>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'Reports',  href: '/dashboard/reports',      icon: FileText, desc: 'Visit notes & photos',  color: 'bg-amber-50 text-amber-500' },
-              { label: 'Family',   href: '/dashboard/members',      icon: Heart,    desc: 'Notification members',  color: 'bg-pink-50 text-pink-500'   },
-              { label: 'Bookings', href: '/dashboard/bookings',     icon: Calendar, desc: 'Visit history',         color: 'bg-blue-50 text-blue-500'   },
-            ].map(q => (
-              <Link
-                key={q.href}
-                to={q.href}
-                className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-sm transition-shadow group text-center"
-              >
-                <div className={`w-9 h-9 ${q.color} rounded-xl flex items-center justify-center mx-auto mb-2`}>
-                  <q.icon size={16} />
-                </div>
-                <p className="font-semibold text-green-900 text-xs group-hover:text-green-700 transition-colors">{q.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5 leading-snug">{q.desc}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── SOS button ──────────────────────────────────────── */}
-      <button
-        onClick={() => setSosOpen(true)}
-        className="fixed z-40 w-14 h-14 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-full shadow-lg flex items-center justify-center transition-all"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)', right: '1.25rem' }}
-        title="Emergency SOS"
-        aria-label="Emergency SOS"
-      >
-        <AlertTriangle size={22} />
-      </button>
-
-      {/* ── SOS modal ───────────────────────────────────────── */}
-      {sosOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center"
-          style={{ padding: '1rem 1rem calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
-          onClick={() => setSosOpen(false)}
-        >
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-            <div className="text-center mb-5">
-              <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <AlertTriangle size={28} className="text-red-600" />
-              </div>
-              <h3 className="text-lg font-bold text-red-700">Emergency SOS</h3>
-              <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                This sends an immediate WhatsApp alert to all your family members asking them to contact you.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2.5">
-              <button
-                onClick={sendSos}
-                disabled={sosSending}
-                className="w-full bg-red-600 text-white font-bold py-3 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                {sosSending ? (
-                  <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Sending…</>
-                ) : (
-                  '🚨 Send Emergency Alert'
-                )}
-              </button>
-              <button
-                onClick={() => setSosOpen(false)}
-                className="w-full border border-gray-200 text-gray-600 py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
+  return profile?.user_type === 'nri' ? <NriHome /> : <SocietyHome />
 }
