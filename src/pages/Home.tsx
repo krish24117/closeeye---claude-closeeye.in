@@ -475,29 +475,45 @@ export function HomePage() {
             ))}
           </div>
 
-          {/* Founder */}
-          <div className="ce-founder">
-            <div className="animate-on-scroll">
-              <img
-                src="/krishna.jpg"
-                alt="Krishna — Founder & MD, Close Eye"
-                className="ce-founder-photo"
-                width={280}
-                height={280}
-                loading="lazy"
-              />
-              <p className="ce-founder-caption">Krishna — Founder &amp; MD, Close Eye</p>
-            </div>
-            <div className="animate-on-scroll">
-              <p className="ce-founder-label">A note from the founder</p>
-              <div className="ce-founder-quote">
-                <p>&ldquo;I do every visit myself.</p>
-                <p>Not because we don&rsquo;t have a team — but because before I ask any family to trust us with their parents, I need to earn that trust personally.</p>
-                <p>One visit. One family. One report. That is how Close Eye was built.&rdquo;</p>
+          {/* Founders */}
+          <div className="ce-founders-wrap">
+            <p className="ce-founder-label">A note from the founders</p>
+            <div className="ce-founders">
+              <div className="ce-founder-card animate-on-scroll">
+                <img
+                  src="/krishna.jpg"
+                  alt="Krishna — Founder & MD, Close Eye"
+                  className="ce-founder-photo"
+                  width={280}
+                  height={280}
+                  loading="lazy"
+                />
+                <p className="ce-founder-name">Krishna</p>
+                <p className="ce-founder-role">Founder &amp; MD, Close Eye Companion</p>
+                <p className="ce-founder-role">Stexa Products &amp; Services Pvt. Ltd.</p>
+                <div className="ce-founder-quote">
+                  <p>&ldquo;I do every visit myself.</p>
+                  <p>Not because we don&rsquo;t have a team — but because before I ask any family to trust us with their parents, I need to earn that trust personally.</p>
+                  <p>One visit. One family. One report. That is how Close Eye was built.&rdquo;</p>
+                </div>
               </div>
-              <p className="ce-founder-name">Krishna</p>
-              <p className="ce-founder-role">Founder &amp; MD, Close Eye Companion</p>
-              <p className="ce-founder-role">Stexa Products &amp; Services Pvt. Ltd.</p>
+
+              <div className="ce-founder-card animate-on-scroll" style={{ transitionDelay: '100ms' }}>
+                <img
+                  src="/aishwarya.jpg"
+                  alt="Aishwarya — Co-Founder & Chief of Care, Close Eye"
+                  className="ce-founder-photo"
+                  style={{ objectPosition: 'center top' }}
+                  width={280}
+                  height={280}
+                  loading="lazy"
+                />
+                <p className="ce-founder-name">Aishwarya</p>
+                <p className="ce-founder-role">Co-Founder &amp; Chief of Care</p>
+                <div className="ce-founder-quote">
+                  <p>&ldquo;I care for my parents as a daughter. I became a mother this year. I built Close Eye so every elder feels that same love — even when family cannot be there.&rdquo;</p>
+                </div>
+              </div>
             </div>
           </div>
 
