@@ -1,5 +1,12 @@
 // Supabase Edge Function — send-visit-whatsapp
-// Sends a Twilio WhatsApp message to the family with the visit PDF link.
+// Sends a multi-bubble Twilio WhatsApp report to the family after a completed visit.
+//
+// Bubble order:
+//   1. Visit summary (date, time, duration, companion)
+//   2. A moment from today (one_moment field)
+//   3. Health snapshot (checklist tier1)
+//   4. Photo — sent as WhatsApp image via MediaUrl (skipped if none)
+//   5. Full PDF report + warm sign-off
 //
 // Recipients: the family owner's whatsapp_number plus any family_members who
 // opted into visit alerts (notify_visits = true). NOTE: reads `whatsapp_number`
@@ -25,6 +32,27 @@ const CORS = {
 function waNumber(raw: string): string {
   const t = raw.trim()
   return t.startsWith('whatsapp:') ? t : `whatsapp:${t}`
+}
+
+function firstNameOf(full: string): string {
+  return full.trim().split(/\s+/)[0] || full
+}
+
+function yn(v: boolean | null | undefined, good: string, bad: string): string {
+  if (v === true) return good
+  if (v === false) return bad
+  return '— Not recorded'
+}
+
+function formatIndiaDateTime(iso: string): { date: string; time: string } {
+  const d = new Date(iso)
+  const date = new Intl.DateTimeFormat('en-IN', {
+    weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata',
+  }).format(d)
+  const time = new Intl.DateTimeFormat('en-IN', {
+    hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata',
+  }).format(d)
+  return { date, time }
 }
 
 Deno.serve(async (req) => {
@@ -77,6 +105,15 @@ Deno.serve(async (req) => {
       return json({ error: 'Forbidden' }, 403)
     }
 
+    // ── Fetch visit content for message bubbles ───────────────────────
+    const { data: visit } = await sb
+      .from('visits')
+      .select('one_moment, checklist_data, photo_urls, start_time, end_time')
+      .eq('booking_id', booking_id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
     // ── Build recipient list ──────────────────────────────────────────
     const familyUserId = (booking.loved_ones as any)?.family_user_id
     if (!familyUserId) {
@@ -114,24 +151,78 @@ Deno.serve(async (req) => {
       .eq('id', booking.companion_id)
       .single()
 
-    // ── Build message ─────────────────────────────────────────────────
+    // ── Names, visit meta, health data ───────────────────────────────
     const lovedOneName  = (booking.loved_ones as any)?.full_name ?? 'your loved one'
     const city          = (booking.loved_ones as any)?.city       ?? ''
     const companionName = compProfile?.full_name                  ?? 'your companion'
+    const elderFirst    = firstNameOf(lovedOneName)
 
-    const body = [
-      `✅ *Close Eye — Visit Complete*`,
-      ``,
-      `Your companion *${companionName}* has completed a visit with *${lovedOneName}*${city ? ` in ${city}` : ''}.`,
-      ``,
-      `📋 *Full visit report (photos, scores & notes):*`,
-      pdf_url,
-      ``,
-      `_This report was auto-generated and verified by Close Eye._`,
-      `Reply to this message or call us: +91 90002 21261`,
+    const tier1     = (visit?.checklist_data as any)?.tier1 ?? {}
+    const oneMoment = visit?.one_moment ?? ''
+
+    const durationMin = visit?.start_time && visit?.end_time
+      ? Math.round(
+          (new Date(visit.end_time).getTime() - new Date(visit.start_time).getTime()) / 60000
+        )
+      : null
+
+    const { date: dateStr, time: timeStr } = visit?.start_time
+      ? formatIndiaDateTime(visit.start_time)
+      : { date: 'Today', time: '' }
+
+    // ── Signed photo URL (first photo only, 7-day validity) ──────────
+    let photoSignedUrl: string | null = null
+    const photoPaths: string[] = Array.isArray(visit?.photo_urls) ? visit.photo_urls : []
+    if (photoPaths.length) {
+      const { data: signedPhotos } = await sb.storage
+        .from('visit-photos')
+        .createSignedUrls(photoPaths.slice(0, 1), 60 * 60 * 24 * 7)
+      photoSignedUrl = signedPhotos?.[0]?.signedUrl ?? null
+    }
+
+    // ── Assemble message bubbles ──────────────────────────────────────
+    const summaryLines = [
+      `📅 ${dateStr}${timeStr ? `, ${timeStr}` : ''}${durationMin ? ` | ⏱ ${durationMin} min` : ''}`,
+      `👤 Companion: ${companionName}`,
+      city ? `📍 ${city}` : null,
+    ].filter(Boolean).join('\n')
+
+    const healthLines = [
+      `*How ${elderFirst} is today:*`,
+      yn(tier1.mood,      '😊 Comfortable and settled',               '⚠️ Seemed unsettled — please check in'),
+      yn(tier1.eating,    '✅ Eaten today',                            '⚠️ Missed a meal — please follow up'),
+      yn(tier1.medicines, '💊 All medicines taken on schedule',        '⚠️ Medicines not taken — please follow up'),
+      yn(tier1.home,      '🏠 Home is clean and safe',                '⚠️ Home safety concern — see full report'),
     ].join('\n')
 
-    // ── Twilio ────────────────────────────────────────────────────────
+    type Bubble = { body: string; mediaUrl?: string }
+
+    const bubbles: Bubble[] = [
+      // 1: Visit summary
+      { body: `✅ *Close Eye — Visit Complete*\n\n${summaryLines}` },
+
+      // 2: The one moment — most valuable, shown early (skip if empty)
+      ...(oneMoment ? [{ body: `💛 *A moment from today*\n\n${oneMoment}` }] : []),
+
+      // 3: Health snapshot
+      { body: healthLines },
+
+      // 4: Photo as WhatsApp image (skip if none)
+      ...(photoSignedUrl ? [{ body: `📸 From today's visit`, mediaUrl: photoSignedUrl }] : []),
+
+      // 5: Full PDF + warm sign-off
+      {
+        body: [
+          `📋 *Full visit report (photos, scores & notes):*`,
+          ``,
+          `We'll check in on ${elderFirst} again soon. — Team Close Eye 🌿`,
+          `_Reply here or call us: +91 90002 21261_`,
+        ].join('\n'),
+        mediaUrl: pdf_url,
+      },
+    ]
+
+    // ── Twilio: send all bubbles per recipient, parallel across recipients ──
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID')
     const authToken  = Deno.env.get('TWILIO_AUTH_TOKEN')
     const fromNumber = Deno.env.get('TWILIO_WHATSAPP_FROM') ?? 'whatsapp:+14155238886'
@@ -141,33 +232,39 @@ Deno.serve(async (req) => {
       return json({ error: 'Twilio not configured' }, 500)
     }
 
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`
+    const twilioAuth = `Basic ${btoa(`${accountSid}:${authToken}`)}`
+
+    const sendBubble = async (to: string, bubble: Bubble): Promise<string | null> => {
+      const params = new URLSearchParams({
+        From: waNumber(fromNumber),
+        To:   waNumber(to),
+        Body: bubble.body,
+      })
+      if (bubble.mediaUrl) params.set('MediaUrl', bubble.mediaUrl)
+      const res = await fetch(twilioUrl, {
+        method:  'POST',
+        headers: { Authorization: twilioAuth, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body:    params,
+      })
+      if (res.ok) return null
+      return await res.text()
+    }
+
     let sent = 0
     const errors: string[] = []
+
     await Promise.all([...recipients].map(async (to) => {
-      const params = new URLSearchParams({
-        From:     waNumber(fromNumber),
-        To:       waNumber(to),
-        Body:     body,
-        MediaUrl: pdf_url,
-      })
-      const res = await fetch(
-        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-        {
-          method:  'POST',
-          headers: {
-            Authorization:  `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: params,
+      let recipientOk = true
+      for (const bubble of bubbles) {
+        const err = await sendBubble(to, bubble)
+        if (err) {
+          console.error(`Twilio error (to ${to}):`, err)
+          errors.push(err)
+          recipientOk = false
         }
-      )
-      if (res.ok) {
-        sent++
-      } else {
-        const detail = await res.text()
-        console.error(`Twilio error sending to ${to}:`, detail)
-        errors.push(detail)
       }
+      if (recipientOk) sent++
     }))
 
     if (sent === 0) {
