@@ -653,6 +653,19 @@
   transition: all 200ms ease;
 }
 .ce-wa-float:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(37,211,102,0.45); }
+.ce-wa-float::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--sage);
+  animation: ce-pulse-ring 3s ease-out infinite;
+}
+@keyframes ce-pulse-ring {
+  0%   { opacity: 1; transform: scale(1); }
+  70%  { opacity: 0; transform: scale(1.5); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
 
 /* ---- Scroll reveal ---- */
 .animate-on-scroll { opacity: 0; transform: translateY(24px); transition: opacity 400ms ease-out, transform 400ms ease-out; }
@@ -662,6 +675,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .animate-on-scroll, .animate-left, .ce-wa-msg { opacity: 1 !important; transform: none !important; transition: none; }
+  .ce-wa-float::before { animation: none; }
 }
 
 /* ==================================================================== */
