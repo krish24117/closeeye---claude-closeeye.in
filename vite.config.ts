@@ -10,6 +10,16 @@ export default defineConfig({
   // Broaden mobile-browser support (older iOS Safari / Android WebView)
   build: {
     target: 'es2015',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react':    ['react', 'react-dom', 'react-router-dom'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-dates':    ['date-fns'],
+          'vendor-icons':    ['lucide-react', 'react-icons'],
+        },
+      },
+    },
   },
   // @react-pdf/renderer uses CJS internals that confuse Vite's pre-bundler
   optimizeDeps: {

@@ -5,11 +5,10 @@ import {
   TbHistory, TbPin, TbPhoneCall, TbCamera, TbNotes, TbSend, TbAlertTriangle, TbLoader2, TbX,
 } from 'react-icons/tb'
 import { format, differenceInMinutes } from 'date-fns'
-import { pdf } from '@react-pdf/renderer'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { getCurrentPosition } from '@/lib/useGeolocation'
-import { VisitReportPDF, type VisitPdfData } from '@/lib/visitPdf'
+import type { VisitPdfData } from '@/lib/visitPdf'
 import {
   asArray, continuityEntries, initialsOf, durationLabel,
   type Medication, type EmergencyContact,
@@ -601,6 +600,11 @@ function ChecklistPhase({
         const { data } = await supabase.storage.from('visit-photos').createSignedUrls(photoPaths, 3600)
         signedPhotos = (data || []).map(s => s.signedUrl).filter(Boolean) as string[]
       }
+      // Lazy-load PDF renderer only at submit time — keeps the visit page chunk ~1 MB lighter
+      const [{ pdf }, { VisitReportPDF }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('@/lib/visitPdf'),
+      ])
       const pdfData = buildPdf({ checks, oneMoment, additional, companionName, elderName, city: lo?.city || '', checkInAt: checkInAt || startTime.toISOString(), checkOutAt: endIso, checkInLat: booking.check_in_lat, checkInLng: booking.check_in_lng, checkOutLat: checkOutGps?.lat ?? null, checkOutLng: checkOutGps?.lng ?? null, moodScore, flags, photoUrls: signedPhotos })
       const blob = await pdf(<VisitReportPDF data={pdfData} />).toBlob()
       const pdfPath = `${booking.id}/visit-${Date.now()}.pdf`
