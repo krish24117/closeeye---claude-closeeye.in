@@ -56,8 +56,7 @@ Deno.serve(async (req) => {
       .select(`
         id,
         companion_id,
-        loved_ones ( full_name, city, family_user_id ),
-        companions ( full_name )
+        loved_ones ( full_name, city, family_user_id )
       `)
       .eq('id', booking_id)
       .single()
@@ -108,10 +107,17 @@ Deno.serve(async (req) => {
       return json({ skipped: true, reason: 'no_whatsapp_number' })
     }
 
+    // ── Companion name from profiles (always populated by handle_new_user) ──
+    const { data: compProfile } = await sb
+      .from('profiles')
+      .select('full_name')
+      .eq('id', booking.companion_id)
+      .single()
+
     // ── Build message ─────────────────────────────────────────────────
-    const lovedOneName  = (booking.loved_ones as any)?.full_name  ?? 'your loved one'
-    const city          = (booking.loved_ones as any)?.city        ?? ''
-    const companionName = (booking.companions as any)?.full_name   ?? 'your companion'
+    const lovedOneName  = (booking.loved_ones as any)?.full_name ?? 'your loved one'
+    const city          = (booking.loved_ones as any)?.city       ?? ''
+    const companionName = compProfile?.full_name                  ?? 'your companion'
 
     const body = [
       `✅ *Close Eye — Visit Complete*`,

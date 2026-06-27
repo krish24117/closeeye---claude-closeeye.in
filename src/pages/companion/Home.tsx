@@ -213,7 +213,8 @@ export function CompanionHome() {
   const monthVisits = monthDone.length
   const monthHours = Math.round(monthDone.reduce((sum, b) => {
     if (!b.checked_in_at || !b.checked_out_at) return sum
-    return sum + (new Date(b.checked_out_at).getTime() - new Date(b.checked_in_at).getTime()) / 3_600_000
+    const hrs = (new Date(b.checked_out_at).getTime() - new Date(b.checked_in_at).getTime()) / 3_600_000
+    return sum + Math.min(Math.max(0, hrs), 8)
   }, 0) * 10) / 10
   const monthFamilies = new Set(monthDone.map(b => b.loved_one_id).filter(Boolean)).size
 

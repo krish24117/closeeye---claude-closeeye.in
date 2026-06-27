@@ -493,9 +493,14 @@ function ChecklistPhase({
 
   const set = <K extends keyof Checks>(k: K, v: Checks[K]) => setChecks(p => ({ ...p, [k]: v }))
 
-  // Timer mm:ss
+  // Timer: MM:SS under 1 h, H:MM:SS at or above 1 h
   const elapsed = Math.max(0, Math.floor((now - startTime.getTime()) / 1000))
-  const timer = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`
+  const h = Math.floor(elapsed / 3600)
+  const m = Math.floor((elapsed % 3600) / 60)
+  const s = elapsed % 60
+  const timer = h > 0
+    ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 
   // Progress: 6 toggles + one moment
   const toggleKeys: (keyof Checks)[] = ['medicines_taken', 'had_meal', 'home_safe', 'elder_comfortable', 'pain_noted', 'alert_responsive']
@@ -588,27 +593,28 @@ function ChecklistPhase({
           .eq('id', elder.id)
       }
 
-      // PDF → upload → WhatsApp (non-fatal)
-      try {
-        let signedPhotos: string[] = []
-        if (photoPaths.length) {
-          const { data } = await supabase.storage.from('visit-photos').createSignedUrls(photoPaths, 3600)
-          signedPhotos = (data || []).map(s => s.signedUrl).filter(Boolean) as string[]
-        }
-        const pdfData = buildPdf({ checks, oneMoment, additional, companionName, elderName, city: lo?.city || '', checkInAt: checkInAt || startTime.toISOString(), checkOutAt: endIso, checkInLat: booking.check_in_lat, checkInLng: booking.check_in_lng, checkOutLat: checkOutGps?.lat ?? null, checkOutLng: checkOutGps?.lng ?? null, moodScore, flags, photoUrls: signedPhotos })
-        const blob = await pdf(<VisitReportPDF data={pdfData} />).toBlob()
-        const pdfPath = `${booking.id}/visit-${Date.now()}.pdf`
-        const { error: upErr } = await supabase.storage.from('visit-pdfs').upload(pdfPath, blob, { contentType: 'application/pdf', upsert: true })
-        if (!upErr && visRow?.id) {
-          await supabase.from('visits').update({ pdf_path: pdfPath }).eq('id', visRow.id)
-          const { data: signed } = await supabase.storage.from('visit-pdfs').createSignedUrl(pdfPath, 60 * 60 * 24 * 7)
-          if (signed?.signedUrl) {
-            await supabase.functions.invoke('send-visit-whatsapp', { body: { booking_id: booking.id, pdf_url: signed.signedUrl } })
-            await supabase.from('visits').update({ report_sent: true, report_sent_at: new Date().toISOString() }).eq('id', visRow.id)
-          }
-        }
-      } catch (e) {
-        console.warn('PDF/WhatsApp step failed (non-fatal):', e)
+      // PDF → storage → WhatsApp. All errors propagate to the outer catch
+      // so the companion sees them instead of landing on the success screen.
+      // report_sent is only stamped true after Twilio confirms delivery.
+      let signedPhotos: string[] = []
+      if (photoPaths.length) {
+        const { data } = await supabase.storage.from('visit-photos').createSignedUrls(photoPaths, 3600)
+        signedPhotos = (data || []).map(s => s.signedUrl).filter(Boolean) as string[]
+      }
+      const pdfData = buildPdf({ checks, oneMoment, additional, companionName, elderName, city: lo?.city || '', checkInAt: checkInAt || startTime.toISOString(), checkOutAt: endIso, checkInLat: booking.check_in_lat, checkInLng: booking.check_in_lng, checkOutLat: checkOutGps?.lat ?? null, checkOutLng: checkOutGps?.lng ?? null, moodScore, flags, photoUrls: signedPhotos })
+      const blob = await pdf(<VisitReportPDF data={pdfData} />).toBlob()
+      const pdfPath = `${booking.id}/visit-${Date.now()}.pdf`
+      const { error: upErr } = await supabase.storage.from('visit-pdfs').upload(pdfPath, blob, { contentType: 'application/pdf', upsert: true })
+      if (upErr) throw new Error('Report upload failed — please tap Submit again.')
+      if (visRow?.id) {
+        await supabase.from('visits').update({ pdf_path: pdfPath }).eq('id', visRow.id)
+        const { data: signed } = await supabase.storage.from('visit-pdfs').createSignedUrl(pdfPath, 60 * 60 * 24 * 7)
+        if (!signed?.signedUrl) throw new Error('Could not generate report link — please tap Submit again.')
+        const { error: waErr } = await supabase.functions.invoke('send-visit-whatsapp', {
+          body: { booking_id: booking.id, pdf_url: signed.signedUrl },
+        })
+        if (waErr) throw new Error('WhatsApp report could not be sent — please tap Submit again.')
+        await supabase.from('visits').update({ report_sent: true, report_sent_at: new Date().toISOString() }).eq('id', visRow.id)
       }
 
       window.dispatchEvent(new Event('closeeye:active-booking-changed'))
