@@ -42,7 +42,10 @@ const BookingConfirmationPage = lazy(() => import('@/pages/dashboard/BookingConf
 const CompanionLayout = lazy(() => import('@/pages/companion/Layout').then(m => ({ default: m.CompanionLayout })))
 const CompanionHome = lazy(() => import('@/pages/companion/Home').then(m => ({ default: m.CompanionHome })))
 const CompanionVisit = lazy(() => import('@/pages/companion/Visit').then(m => ({ default: m.CompanionVisit })))
+const CompanionActiveVisit = lazy(() => import('@/pages/companion/ActiveVisit').then(m => ({ default: m.CompanionActiveVisit })))
 const CompanionVisits = lazy(() => import('@/pages/companion/Visits').then(m => ({ default: m.CompanionVisits })))
+const CompanionElders = lazy(() => import('@/pages/companion/Elders').then(m => ({ default: m.CompanionElders })))
+const CompanionElderDetail = lazy(() => import('@/pages/companion/Elders').then(m => ({ default: m.CompanionElderDetail })))
 const CompanionSchedule = lazy(() => import('@/pages/companion/Schedule').then(m => ({ default: m.CompanionSchedule })))
 const CompanionEarnings = lazy(() => import('@/pages/companion/Earnings').then(m => ({ default: m.CompanionEarnings })))
 const CompanionProfile = lazy(() => import('@/pages/companion/Profile').then(m => ({ default: m.CompanionProfile })))
@@ -278,11 +281,15 @@ export default function App() {
             </Route>
             <Route path="/companion" element={<ProtectedRoute role="companion"><CompanionLayout /></ProtectedRoute>}>
               <Route index element={<CompanionHome />} />
+              <Route path="visit/active" element={<CompanionActiveVisit />} />
               <Route path="visit/:bookingId" element={<CompanionVisit />} />
+              <Route path="elders" element={<CompanionElders />} />
+              <Route path="elder/:elderId" element={<CompanionElderDetail />} />
+              <Route path="me" element={<CompanionProfile />} />
               <Route path="visits" element={<CompanionVisits />} />
               <Route path="schedule" element={<CompanionSchedule />} />
               <Route path="earnings" element={<CompanionEarnings />} />
-              <Route path="profile" element={<CompanionProfile />} />
+              <Route path="profile" element={<Navigate to="/companion/me" replace />} />
               <Route path="dashboard" element={<Navigate to="/companion" replace />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute role="admin"><AdminLayout /></ProtectedRoute>}>

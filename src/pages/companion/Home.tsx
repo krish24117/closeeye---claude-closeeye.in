@@ -1,229 +1,185 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Phone, Clock, ArrowRight, ChevronRight, ChevronDown, AlertCircle } from 'lucide-react'
-import { format, isToday, isFuture, differenceInMinutes, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns'
+import {
+  TbClock, TbArrowRight, TbFileText, TbCalendarOff, TbPin, TbHistory, TbPill,
+} from 'react-icons/tb'
+import { format, differenceInMinutes, startOfMonth, endOfMonth } from 'date-fns'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
-import { SERVICE_NAMES } from '@/lib/booking-labels'
-import { Skeleton } from '@/components/ui/Skeleton'
+import {
+  greetingFor, firstNameOf, Avatar, asArray, continuityEntries, usePullToRefresh,
+  type Medication,
+} from './_shared'
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function timeUntilLabel(scheduledAt: string): string {
-  const mins = differenceInMinutes(new Date(scheduledAt), new Date())
-  if (mins < 0) return 'Past scheduled time'
-  if (mins === 0) return 'Now'
-  if (mins < 60) return `in ${mins}m`
-  const h = Math.floor(mins / 60), m = mins % 60
-  return m > 0 ? `in ${h}h ${m}m` : `in ${h}h`
+type Booking = {
+  id: string
+  status: string
+  scheduled_at: string | null
+  loved_one_id: string | null
+  loved_ones: { full_name: string | null; city: string | null; address: string | null } | null
+  visits: { id: string; flags: string | null }[] | null
+}
+type Elder = {
+  loved_one_id: string | null
+  pinned_note: string | null
+  continuity_notes: string | null
+  current_medications: unknown
 }
 
-function durationSince(iso: string): string {
-  const mins = differenceInMinutes(new Date(), new Date(iso))
-  if (mins < 60) return `${mins} min`
-  const h = Math.floor(mins / 60), m = mins % 60
-  return m > 0 ? `${h}h ${m}m` : `${h}h`
+// ── Pre-visit briefing note (priority: pinned → continuity → medicines → default)
+function briefingNote(elder: Elder | undefined): { text: string; kind: 'pinned' | 'continuity' | 'plain' } {
+  if (elder?.pinned_note) return { text: elder.pinned_note, kind: 'pinned' }
+  const cont = continuityEntries(elder?.continuity_notes, 1)[0]
+  if (cont) return { text: cont, kind: 'continuity' }
+  const meds = asArray<Medication>(elder?.current_medications).map(m => m.name).filter(Boolean)
+  if (meds.length) return { text: `Remember to check medicines: ${meds.slice(0, 3).join(', ')}.`, kind: 'plain' }
+  return { text: 'No special notes — be warm, attentive, and take your time.', kind: 'plain' }
 }
 
-// ─── Skeletons ────────────────────────────────────────────────────────────────
-
-function StripSkeleton() {
-  return (
-    <div className="grid grid-cols-3 gap-3">
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="bg-white rounded-2xl border border-gray-100 p-3 space-y-2">
-          <Skeleton className="h-6 w-8 mx-auto" />
-          <Skeleton className="h-2.5 w-12 mx-auto" />
-        </div>
-      ))}
-    </div>
-  )
+const STATUS_META: Record<string, { label: string; cls: string; accent: string }> = {
+  companion_assigned: { label: 'Upcoming',     cls: 'bg-[#0E2A1F]/[0.06] text-[#0E2A1F]', accent: 'bg-[#0E2A1F]' },
+  in_progress:        { label: 'In progress',  cls: 'bg-[#A8D5B5]/20 text-[#0F5132]',      accent: 'bg-[#A8D5B5]' },
+  completed:          { label: 'Done ✓',        cls: 'bg-[#DCFCE7] text-[#15803D]',         accent: 'bg-[#E5E5EA]' },
+  flagged:            { label: 'Flagged !',     cls: 'bg-[#FEE2E2] text-[#B91C1C]',         accent: 'bg-[#EF4444]' },
 }
 
-function CardSkeleton() {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 px-4 py-3 space-y-2">
-      <div className="flex justify-between items-start">
-        <div className="space-y-1.5">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-3 w-20" />
-        </div>
-        <div className="space-y-1.5 items-end flex flex-col">
-          <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-3 w-12" />
-        </div>
-      </div>
-      <Skeleton className="h-9 w-full rounded-xl" />
-    </div>
-  )
-}
-
-// ─── Active visit card ────────────────────────────────────────────────────────
-
-function ActiveVisitCard({ b }: { b: any }) {
+function VisitCard({ b, elder }: { b: Booking; elder: Elder | undefined }) {
+  const flagged = b.status === 'completed' && (b.visits || []).some(v => v.flags === 'monitor' || v.flags === 'urgent')
+  const metaKey = flagged ? 'flagged' : b.status
+  const meta = STATUS_META[metaKey] || STATUS_META.companion_assigned
   const lo = b.loved_ones
-  return (
-    <div className="bg-gradient-to-br from-green-900 to-green-700 rounded-2xl p-5 text-white shadow-lg">
-      <div className="flex items-center gap-2 mb-4">
-        <span className="w-2 h-2 bg-green-300 rounded-full animate-pulse flex-shrink-0" />
-        <p className="text-xs font-bold text-green-200 uppercase tracking-widest">Active Visit</p>
-      </div>
-      <p className="font-serif text-2xl leading-tight mb-1">{lo?.full_name}</p>
-      <p className="text-green-200 text-sm mb-4">
-        {[lo?.city, lo?.address].filter(Boolean).join(' · ')}
-      </p>
-      {b.checked_in_at && (
-        <div className="bg-white/10 rounded-xl px-4 py-2.5 mb-4 flex items-center gap-2">
-          <Clock size={14} className="text-green-200 flex-shrink-0" />
-          <p className="text-green-100 text-sm">
-            Checked in {format(new Date(b.checked_in_at), 'h:mm a')}
-            <span className="text-green-300 ml-2">· {durationSince(b.checked_in_at)} in progress</span>
-          </p>
-        </div>
-      )}
-      <Link
-        to={`/companion/visit/${b.id}`}
-        className="inline-flex items-center gap-2 bg-white text-green-900 font-bold text-sm px-5 py-3 rounded-xl hover:bg-green-50 transition-colors"
-      >
-        Continue Visit <ArrowRight size={15} />
-      </Link>
-    </div>
-  )
-}
-
-// ─── Compact visit card ───────────────────────────────────────────────────────
-
-function VisitCard({ b, showCountdown }: { b: any; showCountdown: boolean }) {
-  const [expanded, setExpanded] = useState(false)
-  const lo = b.loved_ones
-  const hasReport  = (b.visit_reports?.length ?? 0) > 0
-  const isPast     = b.scheduled_at && !isFuture(new Date(b.scheduled_at))
-  const hasDetails = lo?.address || lo?.emergency_contact_name || lo?.medical_notes
+  const subRow = [lo?.city, lo?.address].filter(Boolean).join(' · ')
+  const isUpcoming = b.status === 'companion_assigned'
+  const note = isUpcoming ? briefingNote(elder) : null
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-      {/* Top row */}
-      <div className="flex items-start gap-3 px-4 pt-3.5 pb-2">
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-green-900 text-sm">{lo?.full_name}</p>
-          <p className="text-xs text-gray-400 mt-0.5 truncate">
-            {SERVICE_NAMES[b.service_type] || b.service_type}
-            {lo?.city ? ` · ${lo.city}` : ''}
+    <div className="bg-white rounded-2xl mx-4 mb-2.5 border-[0.5px] border-[#E5E5EA] shadow-[var(--shadow-card)] overflow-hidden ce-press">
+      <div className={`h-[3px] w-full ${meta.accent}`} />
+      <div className="p-4">
+        {/* Row 1 — time + status */}
+        <div className="flex items-center justify-between">
+          <p className="text-[13px] font-semibold text-[#0E2A1F]">
+            {b.scheduled_at ? format(new Date(b.scheduled_at), 'h:mm a') : 'Anytime today'}
           </p>
+          <span className={`rounded-full px-3 py-1 text-[10px] font-bold ${meta.cls}`}>{meta.label}</span>
         </div>
-        {b.scheduled_at && (
-          <div className="text-right flex-shrink-0">
-            <p className="text-sm font-bold text-green-700">{format(new Date(b.scheduled_at), 'h:mm a')}</p>
-            <p className={`text-xs mt-0.5 font-medium ${isPast ? 'text-red-400' : 'text-gray-400'}`}>
-              {showCountdown ? timeUntilLabel(b.scheduled_at) : format(new Date(b.scheduled_at), 'EEE, d MMM')}
-            </p>
+
+        {/* Row 2 — elder */}
+        <div className="mt-3 flex items-center gap-3">
+          <Avatar name={lo?.full_name} size={40} />
+          <div className="min-w-0">
+            <p className="text-[16px] font-bold text-[#1D1D1F] truncate">{lo?.full_name || 'Elder'}</p>
+            {subRow && <p className="text-[12px] text-[#6E6E73] mt-0.5 truncate">{subRow}</p>}
           </div>
-        )}
-      </div>
-
-      {/* Chips row */}
-      <div className="px-4 pb-2 flex items-center gap-2 flex-wrap">
-        {lo?.medical_notes && (
-          <span className="text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100 px-2 py-0.5 rounded-full">
-            ⚕️ Medical notes
-          </span>
-        )}
-        {hasDetails && (
-          <button
-            onClick={() => setExpanded(v => !v)}
-            className="text-[10px] font-semibold text-gray-400 hover:text-green-700 flex items-center gap-0.5 transition-colors"
-          >
-            Prep info <ChevronDown size={10} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
-          </button>
-        )}
-      </div>
-
-      {/* Expandable prep details */}
-      {expanded && (
-        <div className="mx-4 mb-2 bg-gray-50 rounded-xl p-3 space-y-2">
-          {lo?.address && (
-            <a
-              href={`https://maps.google.com/?q=${encodeURIComponent(lo.address)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-start gap-2 text-xs text-gray-500 hover:text-green-700 transition-colors group"
-            >
-              <MapPin size={12} className="mt-0.5 flex-shrink-0 group-hover:text-green-600" />
-              <span className="group-hover:underline">{lo.address}</span>
-            </a>
-          )}
-          {lo?.emergency_contact_name && (
-            <a
-              href={lo?.emergency_contact_phone ? `tel:${lo.emergency_contact_phone}` : undefined}
-              className="flex items-center gap-2 text-xs text-gray-500 hover:text-green-700 transition-colors"
-            >
-              <Phone size={12} className="flex-shrink-0 text-gray-400" />
-              <span>
-                {lo.emergency_contact_name}
-                {lo.emergency_contact_phone && <span className="text-gray-400 ml-1">· {lo.emergency_contact_phone}</span>}
-              </span>
-            </a>
-          )}
-          {lo?.medical_notes && (
-            <div className="bg-amber-50 border border-amber-100 rounded-lg p-2">
-              <p className="text-[10px] font-bold text-amber-800 mb-0.5 uppercase tracking-wide">Medical Notes</p>
-              <p className="text-xs text-amber-700 leading-relaxed">{lo.medical_notes}</p>
-            </div>
-          )}
         </div>
-      )}
 
-      {/* CTA */}
-      <div className="px-4 pb-4 pt-1">
-        <Link
-          to={`/companion/visit/${b.id}`}
-          className={`flex items-center justify-center gap-2 w-full font-semibold text-sm py-2.5 rounded-xl transition-colors ${
-            hasReport
-              ? 'bg-green-50 text-green-700 border border-green-200'
-              : 'bg-green-800 text-white hover:bg-green-700'
-          }`}
-        >
-          {hasReport ? '✓ Report submitted' : b.status === 'in_progress' ? 'Continue Visit' : 'Start Visit'}
-          {!hasReport && <ChevronRight size={14} />}
-        </Link>
+        {/* Pre-visit note (upcoming only) */}
+        {note && (
+          <>
+            <div className="h-px bg-[#E5E5EA] my-3" />
+            <p className="text-[10px] font-semibold text-[#6E6E73] uppercase tracking-[0.06em] mb-1.5 flex items-center gap-1.5">
+              {note.kind === 'pinned' ? <TbPin size={12} className="text-[#F59E0B]" />
+                : note.kind === 'continuity' ? <TbHistory size={12} className="text-[#16a34a]" />
+                : <TbPill size={12} className="text-[#0E2A1F]" />}
+              Pre-visit note
+            </p>
+            <p
+              className={`text-[13px] text-[#3A3A3C] leading-[1.55] line-clamp-2 ${
+                note.kind === 'pinned'     ? 'bg-[#FFFBEB] border-l-[3px] border-[#F59E0B] rounded-r-lg px-3 py-2 italic'
+                : note.kind === 'continuity' ? 'bg-[#F0FDF4] border-l-[3px] border-[#A8D5B5] rounded-r-lg px-3 py-2 italic'
+                : 'italic'
+              }`}
+            >
+              {note.text}
+            </p>
+          </>
+        )}
+
+        {/* Action */}
+        <ActionButton b={b} />
       </div>
     </div>
   )
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+function ActionButton({ b }: { b: Booking }) {
+  if (b.status === 'in_progress') {
+    return (
+      <Link to={`/companion/visit/${b.id}`}
+        className="mt-3 flex items-center justify-center gap-2 w-full min-h-[48px] rounded-xl bg-[#A8D5B5] text-[#0E2A1F] text-[14px] font-semibold">
+        Continue visit <TbArrowRight size={17} />
+      </Link>
+    )
+  }
+  if (b.status === 'completed') {
+    return (
+      <Link to="/companion/visits"
+        className="mt-3 flex items-center justify-center gap-2 w-full min-h-[48px] rounded-xl border-[0.5px] border-[#E5E5EA] text-[#6E6E73] text-[14px] font-semibold">
+        <TbFileText size={16} /> View report
+      </Link>
+    )
+  }
+  return (
+    <Link to={`/companion/visit/${b.id}`}
+      className="mt-3 flex items-center justify-center gap-2 w-full min-h-[48px] rounded-xl bg-[#0E2A1F] text-white text-[14px] font-semibold">
+      Start visit <TbArrowRight size={17} />
+    </Link>
+  )
+}
 
 export function CompanionHome() {
   const { user, profile } = useAuth()
-  const [bookings, setBookings] = useState<any[]>([])
-  const [completedCount, setCompletedCount] = useState(0)
+  const [today, setToday] = useState<Booking[]>([])
+  const [monthDone, setMonthDone] = useState<{ loved_one_id: string | null; checked_in_at: string | null; checked_out_at: string | null }[]>([])
+  const [elders, setElders] = useState<Record<string, Elder>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!user) return
-    setLoading(true)
     setError(null)
     try {
-      const [activeRes, completedRes] = await Promise.all([
-        supabase
-          .from('bookings')
-          .select('*, loved_ones(full_name,city,address,medical_notes,emergency_contact_name,emergency_contact_phone), visit_reports(id)')
+      const start = new Date(); start.setHours(0, 0, 0, 0)
+      const end = new Date(); end.setHours(23, 59, 59, 999)
+      const mStart = startOfMonth(new Date()), mEnd = endOfMonth(new Date())
+
+      const [todayRes, monthRes] = await Promise.all([
+        supabase.from('bookings')
+          .select('id,status,scheduled_at,loved_one_id,loved_ones(full_name,city,address),visits(id,flags)')
           .eq('companion_id', user.id)
-          .in('status', ['companion_assigned', 'in_progress'])
+          .neq('status', 'cancelled')
+          .gte('scheduled_at', start.toISOString())
+          .lte('scheduled_at', end.toISOString())
           .order('scheduled_at', { ascending: true }),
-        supabase
-          .from('bookings')
-          .select('id', { count: 'exact', head: true })
+        supabase.from('bookings')
+          .select('loved_one_id,checked_in_at,checked_out_at')
           .eq('companion_id', user.id)
-          .eq('status', 'completed'),
+          .eq('status', 'completed')
+          .gte('completed_at', mStart.toISOString())
+          .lte('completed_at', mEnd.toISOString()),
       ])
-      if (activeRes.error) throw activeRes.error
-      setBookings(activeRes.data || [])
-      setCompletedCount(completedRes.count || 0)
+      if (todayRes.error) throw todayRes.error
+      const rows = (todayRes.data || []) as unknown as Booking[]
+      setToday(rows)
+      setMonthDone((monthRes.data || []) as any[])
+
+      // Elder profiles for upcoming visits (pre-visit notes)
+      const lovedIds = Array.from(new Set(rows
+        .filter(b => b.status === 'companion_assigned' && b.loved_one_id)
+        .map(b => b.loved_one_id as string)))
+      if (lovedIds.length) {
+        const { data: eps } = await supabase.from('elder_profiles')
+          .select('loved_one_id,pinned_note,continuity_notes,current_medications')
+          .in('loved_one_id', lovedIds)
+        const map: Record<string, Elder> = {}
+        for (const e of (eps || []) as Elder[]) if (e.loved_one_id) map[e.loved_one_id] = e
+        setElders(map)
+      } else {
+        setElders({})
+      }
     } catch (err) {
-      console.error('Failed to load visits:', err)
-      setError('Could not load visits — please try again.')
+      console.error('Failed to load today:', err)
+      setError('Could not load your visits — please try again.')
     } finally {
       setLoading(false)
     }
@@ -233,107 +189,128 @@ export function CompanionHome() {
 
   useEffect(() => {
     if (!user) return
-    const ch = supabase.channel(`companion-home-${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `companion_id=eq.${user.id}` }, load)
+    const ch = supabase.channel(`companion-today-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `companion_id=eq.${user.id}` }, () => load())
       .subscribe()
     return () => { supabase.removeChannel(ch) }
   }, [user, load])
 
+  const ptr = usePullToRefresh(load)
+
   const now = new Date()
-  const weekStart = startOfWeek(now, { weekStartsOn: 1 })
-  const weekEnd   = endOfWeek(now, { weekStartsOn: 1 })
+  const doneToday = today.filter(b => b.status === 'completed').length
+  const pendingToday = today.filter(b => b.status === 'companion_assigned' || b.status === 'in_progress').length
+  const todayTotal = today.length
 
-  const activeVisit  = bookings.find(b => b.status === 'in_progress')
-  const todayVisits  = bookings.filter(b =>
-    b.status === 'companion_assigned' && b.scheduled_at && isToday(new Date(b.scheduled_at))
-  )
-  const futureVisits = bookings.filter(b =>
-    b.status === 'companion_assigned' && b.scheduled_at &&
-    !isToday(new Date(b.scheduled_at)) && isFuture(new Date(b.scheduled_at))
-  )
+  // Next-visit alert: earliest upcoming within 2 hours
+  const nextSoon = today
+    .filter(b => b.status === 'companion_assigned' && b.scheduled_at && new Date(b.scheduled_at) > now)
+    .map(b => ({ b, mins: differenceInMinutes(new Date(b.scheduled_at as string), now) }))
+    .filter(x => x.mins <= 120)
+    .sort((a, b) => a.mins - b.mins)[0]
 
-  const todayTotal    = (activeVisit ? 1 : 0) + todayVisits.length
-  const thisWeekCount = bookings.filter(b =>
-    b.scheduled_at && isWithinInterval(new Date(b.scheduled_at), { start: weekStart, end: weekEnd })
-  ).length + (activeVisit ? 1 : 0)
-
-  const firstName = profile?.full_name?.split(' ')[0] || 'there'
-  const hour      = now.getHours()
-  const greeting  = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  // Monthly stats
+  const monthVisits = monthDone.length
+  const monthHours = Math.round(monthDone.reduce((sum, b) => {
+    if (!b.checked_in_at || !b.checked_out_at) return sum
+    return sum + (new Date(b.checked_out_at).getTime() - new Date(b.checked_in_at).getTime()) / 3_600_000
+  }, 0) * 10) / 10
+  const monthFamilies = new Set(monthDone.map(b => b.loved_one_id).filter(Boolean)).size
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div {...ptr.bind}>
+      {ptr.indicator}
 
-      {/* Header */}
-      <div>
-        <h1 className="font-serif text-2xl text-green-900">{greeting}, {firstName}</h1>
-        <p className="text-sm text-gray-400 mt-0.5">
-          {format(now, 'EEEE, d MMMM')} ·{' '}
-          {todayTotal === 0 ? 'No visits today' : `${todayTotal} visit${todayTotal > 1 ? 's' : ''} today`}
-        </p>
+      {/* ── Greeting card ─────────────────────────────────────────────── */}
+      <div className="bg-[#0E2A1F] px-4 pt-5 pb-6">
+        <h1 className="text-[20px] font-bold text-white">
+          {greetingFor(now)}, {firstNameOf(profile?.full_name)} 🌿
+        </h1>
+        <p className="text-[12px] text-white/50 mt-[3px]">{format(now, 'EEEE, d MMMM yyyy')}</p>
+
+        <div className="mt-[18px] pt-4 border-t-[0.5px] border-white/10 flex">
+          {[
+            { n: todayTotal, l: 'Today' },
+            { n: doneToday, l: 'Done' },
+            { n: pendingToday, l: 'Pending' },
+          ].map((s, i, arr) => (
+            <div key={s.l} className={`flex-1 text-center px-3 ${i < arr.length - 1 ? 'border-r-[0.5px] border-white/10' : ''}`}>
+              <p className="text-[24px] font-bold text-white leading-none">{loading ? '·' : s.n}</p>
+              <p className="text-[10px] text-white/50 mt-[3px]">{s.l}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
-          <span className="flex items-center gap-2"><AlertCircle size={15} /> {error}</span>
+        <div className="mx-4 mt-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 flex items-center justify-between gap-3">
+          <span>{error}</span>
           <button onClick={load} className="font-semibold underline whitespace-nowrap">Retry</button>
         </div>
       )}
 
-      {/* ── STAT STRIP ─────────────────────────────────────────────────────── */}
-      {loading ? <StripSkeleton /> : (
-        <div className="grid grid-cols-3 gap-3">
+      {/* ── Next visit alert ──────────────────────────────────────────── */}
+      {nextSoon && (
+        <div className="mx-4 mt-3 bg-[#A8D5B5]/15 border border-[#A8D5B5] rounded-[14px] px-4 py-3.5 flex items-center gap-3">
+          <TbClock size={20} className="text-[#0E2A1F] flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-bold text-[#0E2A1F]">
+              Next visit in {nextSoon.mins < 1 ? 'under a minute' : `${nextSoon.mins} minute${nextSoon.mins === 1 ? '' : 's'}`}
+            </p>
+            <p className="text-[12px] text-[#6E6E73] truncate">
+              {nextSoon.b.loved_ones?.full_name}{nextSoon.b.loved_ones?.address ? ` · ${nextSoon.b.loved_ones.address}` : ''}
+            </p>
+          </div>
+          {nextSoon.b.loved_ones?.address && (
+            <a href={`https://maps.google.com/?q=${encodeURIComponent(nextSoon.b.loved_ones.address)}`}
+              target="_blank" rel="noreferrer"
+              className="text-[12px] font-semibold text-[#0E2A1F] whitespace-nowrap flex-shrink-0">
+              Directions →
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* ── Today's visits ────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <p className="text-[11px] font-semibold text-[#6E6E73] uppercase tracking-[0.08em]">Your visits today</p>
+        {todayTotal > 0 && (
+          <span className="bg-[#0E2A1F]/[0.08] rounded-full px-2.5 py-[3px] text-[11px] font-semibold text-[#0E2A1F]">
+            {todayTotal} visit{todayTotal === 1 ? '' : 's'}
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="px-4 space-y-2.5">
+          {[0, 1].map(i => <div key={i} className="skeleton h-[150px] rounded-2xl" />)}
+        </div>
+      ) : todayTotal === 0 ? (
+        <div className="mx-4 mt-12 flex flex-col items-center text-center">
+          <TbCalendarOff size={48} className="text-[#E5E5EA] mb-4" />
+          <p className="text-[18px] font-bold text-[#1D1D1F]">No visits today</p>
+          <p className="text-[14px] text-[#6E6E73] mt-1.5 max-w-[240px]">Your schedule is clear. Enjoy your day.</p>
+        </div>
+      ) : (
+        today.map(b => <VisitCard key={b.id} b={b} elder={b.loved_one_id ? elders[b.loved_one_id] : undefined} />)
+      )}
+
+      {/* ── Monthly stats ─────────────────────────────────────────────── */}
+      <div className="mx-4 mt-3 mb-6 bg-[#FAF7F2] rounded-[14px] p-4 border-[0.5px] border-[#EDE8E0]">
+        <p className="text-[10px] font-semibold text-[#6E6E73] uppercase tracking-[0.06em] mb-3.5">This month</p>
+        <div className="flex">
           {[
-            { value: todayTotal,      label: 'Today',          color: 'text-green-700' },
-            { value: thisWeekCount,   label: 'This week',      color: 'text-blue-700'  },
-            { value: completedCount,  label: 'Completed',      color: 'text-gray-500'  },
-          ].map(c => (
-            <div key={c.label} className="bg-white rounded-2xl border border-gray-100 p-3 text-center">
-              <p className={`font-serif text-2xl leading-none ${c.color}`}>{c.value}</p>
-              <p className="text-[11px] font-semibold text-gray-400 mt-1">{c.label}</p>
+            { n: monthVisits, l: 'Visits' },
+            { n: monthHours, l: 'Hours' },
+            { n: monthFamilies, l: 'Families' },
+          ].map((s, i, arr) => (
+            <div key={s.l} className={`flex-1 text-center ${i < arr.length - 1 ? 'border-r-[0.5px] border-[#EDE8E0]' : ''}`}>
+              <p className="text-[24px] font-bold text-[#0E2A1F] leading-none">{loading ? '·' : s.n}</p>
+              <p className="text-[11px] text-[#6E6E73] mt-1">{s.l}</p>
             </div>
           ))}
         </div>
-      )}
-
-      {/* ── ACTIVE VISIT ────────────────────────────────────────────────────── */}
-      {!loading && activeVisit && <ActiveVisitCard b={activeVisit} />}
-
-      {/* ── TODAY'S VISITS ───────────────────────────────────────────────────── */}
-      {!loading && todayVisits.length > 0 && (
-        <section>
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Today</p>
-          <div className="space-y-2">
-            {todayVisits.map(b => <VisitCard key={b.id} b={b} showCountdown />)}
-          </div>
-        </section>
-      )}
-
-      {/* ── UPCOMING ─────────────────────────────────────────────────────────── */}
-      {!loading && futureVisits.length > 0 && (
-        <section>
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Upcoming</p>
-          <div className="space-y-2">
-            {futureVisits.map(b => <VisitCard key={b.id} b={b} showCountdown={false} />)}
-          </div>
-        </section>
-      )}
-
-      {/* ── LOADING ───────────────────────────────────────────────────────────── */}
-      {loading && (
-        <div className="space-y-2">
-          {[...Array(3)].map((_, i) => <CardSkeleton key={i} />)}
-        </div>
-      )}
-
-      {/* ── EMPTY ─────────────────────────────────────────────────────────────── */}
-      {!loading && !activeVisit && todayVisits.length === 0 && futureVisits.length === 0 && (
-        <div className="text-center py-16 bg-green-50 rounded-2xl">
-          <p className="text-5xl mb-4">🌿</p>
-          <p className="font-semibold text-green-900 text-lg mb-1">You're all caught up</p>
-          <p className="text-sm text-gray-400">No visits scheduled. New bookings will appear here automatically.</p>
-        </div>
-      )}
+      </div>
     </div>
   )
 }
