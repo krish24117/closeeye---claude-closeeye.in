@@ -30,8 +30,8 @@ export function AdminHome() {
       supabase.from('bookings').select('id, status, companion_id, scheduled_at, service_type, loved_ones(full_name, city), companions(full_name)')
         .gte('scheduled_at', dayStart.toISOString()).lte('scheduled_at', dayEnd.toISOString()).order('scheduled_at'),
       supabase.from('member_queries').select('id, question, subject_label, status, created_at, user_id').neq('status', 'doctor_reviewed').order('created_at', { ascending: false }).limit(6),
-      supabase.from('bookings').select('amount_paise').eq('payment_status', 'paid').gte('created_at', monthStart.toISOString()),
-      supabase.from('bookings').select('amount_paise').eq('payment_status', 'paid').gte('created_at', lastMonthStart.toISOString()).lt('created_at', monthStart.toISOString()),
+      supabase.from('bookings').select('amount_paise').in('payment_status', ['paid', 'received']).gte('created_at', monthStart.toISOString()),
+      supabase.from('bookings').select('amount_paise').in('payment_status', ['paid', 'received']).gte('created_at', lastMonthStart.toISOString()).lt('created_at', monthStart.toISOString()),
       supabase.from('memberships').select('amount_paise').eq('status', 'active').gte('created_at', monthStart.toISOString()),
       supabase.from('bookings').select('id, amount_paise, service_type, created_at, loved_ones(full_name)').order('created_at', { ascending: false }).limit(6),
       supabase.from('society_members').select('society_name'),
