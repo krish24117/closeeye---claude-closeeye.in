@@ -972,3 +972,100 @@
 @media (prefers-reduced-motion: reduce) {
   .ce-sheet, .ce-check-pop { animation: none; }
 }
+
+/* ==================================================================== */
+/*  COMPANION DASHBOARD (mobile-first PWA, /companion)                   */
+/*  Forest top bar + 4-tab bottom nav, used by companions on their       */
+/*  phones during live visits. Scoped under .ce-comp where it matters.   */
+/* ==================================================================== */
+
+/* Centered phone-width column on every screen (mobile-first, no desktop
+   sidebar — companions only ever use this on a phone). */
+.ce-comp-shell { min-height: 100vh; background: #F5F5F7; }
+.ce-comp-main {
+  max-width: 480px; margin: 0 auto; width: 100%;
+  padding-top: calc(60px + env(safe-area-inset-top));
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  min-height: 100vh;
+}
+
+/* Top bar — fixed forest header */
+.ce-comp-top {
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; z-index: 100;
+  height: calc(60px + env(safe-area-inset-top));
+  background: var(--forest);
+  padding: env(safe-area-inset-top) 16px 0;
+  display: flex; align-items: center; justify-content: space-between;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Bottom nav — fixed white bar, 4 equal tabs */
+.ce-comp-bottom {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; z-index: 100;
+  background: #fff; border-top: 0.5px solid var(--gray-light);
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+  display: flex; padding-bottom: env(safe-area-inset-bottom);
+}
+.ce-comp-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 4px; padding: 8px 0; min-height: 48px;
+  color: #AEAEB2; text-decoration: none; position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.ce-comp-tab.is-active { color: var(--forest); }
+.ce-comp-tab-dot {
+  position: absolute; top: 2px; width: 3px; height: 3px; border-radius: 50%;
+  background: var(--forest); opacity: 0;
+}
+.ce-comp-tab.is-active .ce-comp-tab-dot { opacity: 1; }
+.ce-comp-tab-label { font-size: 10px; font-weight: 500; line-height: 1; }
+
+/* Notification banner — slides down from under the top bar */
+@keyframes ce-comp-banner-in {
+  from { opacity: 0; transform: translate(0, -12px); }
+  to   { opacity: 1; transform: translate(0, 0); }
+}
+.ce-comp-banner { animation: ce-comp-banner-in 280ms ease-out both; }
+
+/* Pull-to-refresh spinner */
+.ce-comp-ptr {
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; color: var(--forest);
+}
+.ce-comp-ptr svg { animation: ce-spin 0.8s linear infinite; }
+
+/* Toggle switch (checklist) */
+.ce-toggle {
+  width: 44px; height: 24px; border-radius: 100px; border: none;
+  background: var(--gray-light); position: relative; cursor: pointer;
+  transition: background 200ms ease; flex-shrink: 0;
+}
+.ce-toggle.is-on { background: var(--forest); }
+.ce-toggle::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 20px; height: 20px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15); transition: left 200ms ease;
+}
+.ce-toggle.is-on::after { left: 22px; }
+
+/* Success checkmark draw */
+@keyframes ce-draw-circle { to { stroke-dashoffset: 0; } }
+@keyframes ce-show-check  { to { opacity: 1; } }
+.ce-check-circle {
+  stroke: var(--forest); stroke-width: 3; fill: none;
+  stroke-dasharray: 226; stroke-dashoffset: 226;
+  animation: ce-draw-circle 600ms ease-out forwards;
+}
+.ce-check-mark {
+  stroke: var(--sage); stroke-width: 4; fill: none; opacity: 0;
+  stroke-linecap: round; stroke-linejoin: round;
+  animation: ce-show-check 300ms ease-out 600ms forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ce-comp-banner, .ce-comp-ptr svg { animation: none; }
+  .ce-check-circle { stroke-dashoffset: 0; animation: none; }
+  .ce-check-mark   { opacity: 1; animation: none; }
+}
