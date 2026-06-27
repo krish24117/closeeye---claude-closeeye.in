@@ -60,6 +60,7 @@ export function Footer() {
               <li><Link to="/" className="hover:text-white transition-colors">Home</Link></li>
               <li><Link to="/#how-it-works" className="hover:text-white transition-colors">How It Works</Link></li>
               <li><Link to="/services" className="hover:text-white transition-colors">Pricing</Link></li>
+              <li><Link to="/companions" className="hover:text-white transition-colors">Our Companions</Link></li>
               <li><Link to="/for-societies" className="hover:text-white transition-colors">For Societies</Link></li>
               <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
               <li><Link to="/faq" className="hover:text-white transition-colors">FAQ</Link></li>
@@ -80,6 +81,7 @@ export function Footer() {
             <p className="text-xs font-semibold uppercase tracking-widest text-white/60 mb-4">Get started</p>
             <ul className="space-y-2.5 text-sm">
               <li><Link to="/auth?mode=signup" className="hover:text-white transition-colors">Register Your Family</Link></li>
+              <li><Link to="/join-as-companion" className="hover:text-white transition-colors">Become a Companion</Link></li>
               <li><Link to="/auth" className="hover:text-white transition-colors">Sign in</Link></li>
               <li><Link to="/contact" className="hover:text-white transition-colors">Book a call</Link></li>
             </ul>
