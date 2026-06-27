@@ -78,7 +78,7 @@ export const serviceLabel = (id?: string | null) =>
 export function Avatar({ name, src, size = 30 }: { name?: string | null; src?: string | null; size?: number }) {
   return (
     <span className="adm-avatar" style={{ width: size, height: size, fontSize: size * 0.38 }}>
-      {src ? <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(name)}
+      {src ? <img src={src} alt={name ? `${name}'s photo` : 'Profile photo'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(name)}
     </span>
   )
 }

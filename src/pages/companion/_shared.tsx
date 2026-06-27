@@ -46,7 +46,7 @@ export function continuityEntries(notes?: string | null, n = 5): string[] {
 
 export function Avatar({ name, size = 40, photoUrl }: { name?: string | null; size?: number; photoUrl?: string | null }) {
   if (photoUrl) {
-    return <img src={photoUrl} alt="" style={{ width: size, height: size }} className="rounded-full object-cover flex-shrink-0" />
+    return <img src={photoUrl} alt={name ? `${name}'s profile photo` : 'Profile photo'} style={{ width: size, height: size }} className="rounded-full object-cover flex-shrink-0" />
   }
   return (
     <div

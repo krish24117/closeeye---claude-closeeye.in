@@ -723,7 +723,7 @@
   .ce-founders { grid-template-columns: 1fr; }
 
   .ce-price-card-featured { transform: none; }
-  .ce-advisor-pill { flex: 1 1 100%; }
+  .ce-advisor-pill { flex: 1 1 100%; min-width: 0; }
   .ce-advisory { padding: 28px 20px; }
   .ce-society-card { padding: 32px 24px; }
 

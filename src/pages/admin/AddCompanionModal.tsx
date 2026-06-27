@@ -232,7 +232,7 @@ export function AddCompanionModal({ onClose, onAdded }: { onClose: () => void, o
             <div>
               <label className="block text-xs font-semibold text-green-900 mb-1.5">Profile photo</label>
               <input type="file" accept="image/*" onChange={handlePhotoChange} className="w-full text-xs text-gray-500" />
-              {photoPreview && <img src={photoPreview} alt="" className="w-12 h-12 rounded-full object-cover mt-2" />}
+              {photoPreview && <img src={photoPreview} alt="Profile photo preview" className="w-12 h-12 rounded-full object-cover mt-2" />}
             </div>
           </div>
 

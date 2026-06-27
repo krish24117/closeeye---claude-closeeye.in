@@ -201,7 +201,7 @@ export function ElderProfileModal({ elder, lovedOnes, onClose, onSaved }: Props)
 
             <Field label="Photo (optional)">
               <div className="flex items-center gap-3">
-                {photoSrc && <img src={photoSrc} alt="" className="w-14 h-14 rounded-full object-cover border border-gray-100" />}
+                {photoSrc && <img src={photoSrc} alt="Elder photo preview" className="w-14 h-14 rounded-full object-cover border border-gray-100" />}
                 <input type="file" accept="image/*" onChange={handlePhotoChange} className="text-xs text-gray-500" />
               </div>
             </Field>

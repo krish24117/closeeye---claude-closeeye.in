@@ -689,7 +689,7 @@ function ChecklistPhase({
           <p className="text-[12px] text-[#6E6E73] mb-3">Optional — families love seeing a photo from each visit</p>
           {photo ? (
             <div className="relative w-20 h-20">
-              <img src={photo.url} alt="" className="w-20 h-20 object-cover rounded-[10px] border-2 border-[#A8D5B5]" />
+              <img src={photo.url} alt="Visit photo preview" className="w-20 h-20 object-cover rounded-[10px] border-2 border-[#A8D5B5]" />
               <button onClick={() => { URL.revokeObjectURL(photo.url); setPhoto(null) }}
                 className="absolute -top-2 -right-2 bg-white border border-gray-200 rounded-full p-1 shadow-sm" aria-label="Remove photo">
                 <TbX size={12} />

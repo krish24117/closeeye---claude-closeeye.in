@@ -77,7 +77,7 @@ export function CompanionProfile() {
       {/* Profile header */}
       <div className="bg-[#0E2A1F] px-4 pt-7 pb-7 flex flex-col items-center text-center">
         {photoUrl ? (
-          <img src={photoUrl} alt="" className="w-20 h-20 rounded-full object-cover border-2 border-[#A8D5B5]" />
+          <img src={photoUrl} alt="Your profile photo" className="w-20 h-20 rounded-full object-cover border-2 border-[#A8D5B5]" />
         ) : (
           <div className="w-20 h-20 rounded-full bg-white/10 border-2 border-[#A8D5B5] flex items-center justify-center">
             <span className="text-[26px] font-bold text-white">{initialsOf(name)}</span>
