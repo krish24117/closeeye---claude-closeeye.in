@@ -350,7 +350,7 @@ export function HomePage() {
       {/* ── HERO ─────────────────────────────────────────────────── */}
       <section className="ce-hero">
         <div className="ce-hero-left animate-on-scroll">
-          <p className="ce-eyebrow">Your trusted presence in India — Hyderabad</p>
+          <p className="ce-eyebrow">Your trusted presence in India</p>
           <h1 className="ce-h1">
             Your mother made tea<br />
             for two this morning.<br />
@@ -367,6 +367,10 @@ export function HomePage() {
             <Link to="/auth?mode=signup" className="ce-btn ce-btn-primary">Register Your Family <ArrowRight size={18} /></Link>
             <a href="#how-it-works" className="ce-btn ce-btn-secondary">See How It Works</a>
           </div>
+          <p style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '12px', fontWeight: 500, color: 'var(--forest)', background: 'rgba(168,213,181,0.15)', border: '1px solid var(--sage)', borderRadius: '100px', padding: '5px 13px', marginTop: '10px' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--sage)', flexShrink: 0 }} />
+            Now serving founding families · Public launch 15 August
+          </p>
           <div className="ce-trust-row">
             {TRUST_SIGNALS.map(t => (
               <span key={t} className="ce-trust-item"><Check size={15} /> {t}</span>
