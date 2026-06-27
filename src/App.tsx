@@ -65,6 +65,9 @@ const AdminSettings = lazy(() => import('@/pages/admin/Settings').then(m => ({ d
 const AdminFamilyDetail = lazy(() => import('@/pages/admin/Families').then(m => ({ default: m.AdminFamilyDetail })))
 const AdminCompanionDetail = lazy(() => import('@/pages/admin/Companions').then(m => ({ default: m.AdminCompanionDetail })))
 
+const DoctorLayout = lazy(() => import('@/pages/doctor/Layout').then(m => ({ default: m.DoctorLayout })))
+const DoctorHome = lazy(() => import('@/pages/doctor/Home').then(m => ({ default: m.DoctorHome })))
+
 const SurveyPage = lazy(() => import('@/pages/Survey').then(m => ({ default: m.SurveyPage })))
 
 const PAGE_TITLES: Record<string, string> = {
@@ -192,7 +195,7 @@ function SEOManager() {
   return null
 }
 
-function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: string }) {
+function ProtectedRoute({ children, role, adminRole }: { children: React.ReactNode; role?: string; adminRole?: string }) {
   const { user, profile, loading } = useAuth()
   if (loading || (user && !profile)) return (
     <div className="min-h-screen flex items-center justify-center bg-green-50">
@@ -204,6 +207,8 @@ function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: 
   )
   if (!user) return <Navigate to="/auth" replace />
   if (role && profile?.role !== role) return <Navigate to="/" replace />
+  // Sub-role gate (e.g. doctor panel): super_admin may always pass through.
+  if (adminRole && profile?.admin_role !== adminRole && profile?.admin_role !== 'super_admin') return <Navigate to="/" replace />
   return <>{children}</>
 }
 
@@ -291,6 +296,9 @@ export default function App() {
               <Route path="leads" element={<AdminLeadsCRM />} />
               <Route path="elders" element={<AdminElders />} />
               <Route path="settings" element={<AdminSettings />} />
+            </Route>
+            <Route path="/doctor" element={<ProtectedRoute adminRole="doctor"><DoctorLayout /></ProtectedRoute>}>
+              <Route index element={<DoctorHome />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { TbUserPlus, TbBrandWhatsapp, TbBuildingCommunity, TbPlus } from 'react-icons/tb'
+import { TbUserPlus, TbBrandWhatsapp, TbBuildingCommunity, TbPlus, TbStethoscope } from 'react-icons/tb'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/Toast'
 import { Card, Badge, Avatar, EmptyState, Skeleton } from './_shared'
@@ -80,6 +80,68 @@ export function AdminSettings() {
     if (error) { showToast('Could not update role', 'error'); return }
     setMembers(ms => ms.map(m => m.id === id ? { ...m, admin_role: next } : m))
     showToast('Role updated', 'success')
+  }
+
+  /* ---- doctors ---- */
+  const [doctors, setDoctors] = useState<any[]>([])
+  const [doctorAccounts, setDoctorAccounts] = useState<any[]>([])
+  const [docLoading, setDocLoading] = useState(true)
+  const [newDoc, setNewDoc] = useState({ name: '', specialisation: '', hospital: '', phone: '', whatsapp: '', user_id: '' })
+
+  async function loadDoctors() {
+    setDocLoading(true)
+    const [{ data: docs }, { data: accts }] = await Promise.all([
+      supabase.from('doctors').select('*').order('name'),
+      supabase.from('profiles').select('id, full_name').eq('admin_role', 'doctor').order('full_name'),
+    ])
+    setDoctors(docs || [])
+    setDoctorAccounts(accts || [])
+    setDocLoading(false)
+  }
+  useEffect(() => { loadDoctors() }, [])
+
+  const accountName = (uid?: string | null) =>
+    doctorAccounts.find(a => a.id === uid)?.full_name || 'Linked account'
+
+  async function toggleDoctorActive(d: any) {
+    const { error } = await supabase.from('doctors').update({ is_active: !d.is_active }).eq('id', d.id)
+    if (error) { showToast('Could not update doctor', 'error'); return }
+    setDoctors(ds => ds.map(x => x.id === d.id ? { ...x, is_active: !x.is_active } : x))
+    showToast(d.is_active ? 'Doctor deactivated' : 'Doctor activated', 'success')
+  }
+
+  async function removeDoctor(d: any) {
+    if (!window.confirm(`Remove ${d.name} from the doctors roster?`)) return
+    const { error } = await supabase.from('doctors').delete().eq('id', d.id)
+    if (error) { showToast('Could not remove doctor', 'error'); return }
+    setDoctors(ds => ds.filter(x => x.id !== d.id))
+    showToast('Doctor removed', 'success')
+  }
+
+  async function linkDoctor(d: any, value: string) {
+    const uid = value || null
+    const { error } = await supabase.from('doctors').update({ user_id: uid }).eq('id', d.id)
+    if (error) { showToast('Could not link doctor', 'error'); return }
+    setDoctors(ds => ds.map(x => x.id === d.id ? { ...x, user_id: uid } : x))
+    showToast('Doctor linked', 'success')
+  }
+
+  async function addDoctor() {
+    const name = newDoc.name.trim()
+    if (!name) { showToast('Doctor name is required', 'error'); return }
+    const { data, error } = await supabase.from('doctors').insert({
+      name,
+      specialisation: newDoc.specialisation.trim() || null,
+      hospital: newDoc.hospital.trim() || null,
+      phone: newDoc.phone.trim() || null,
+      whatsapp: newDoc.whatsapp.trim() || null,
+      user_id: newDoc.user_id || null,
+      is_active: true,
+    }).select().single()
+    if (error) { showToast(error.message || 'Could not add doctor', 'error'); return }
+    setDoctors(ds => [data, ...ds])
+    setNewDoc({ name: '', specialisation: '', hospital: '', phone: '', whatsapp: '', user_id: '' })
+    showToast('Doctor added', 'success')
   }
 
   /* ---- notifications ---- */
@@ -167,6 +229,109 @@ export function AdminSettings() {
                 )
               })}
             </div>
+          )}
+        </Section>
+
+        {/* 1b) DOCTORS */}
+        <Section
+          title="Doctors"
+          subtitle="The roster families' health queries can be assigned to."
+          right={
+            <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--sage)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <TbStethoscope size={20} color="var(--forest)" />
+            </span>
+          }
+        >
+          {docLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>{[0, 1, 2].map(i => <Skeleton key={i} h={56} />)}</div>
+          ) : (
+            <>
+              {doctors.length === 0 ? (
+                <EmptyState title="No doctors yet" sub="Add a doctor below to build your roster." />
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {doctors.map(d => (
+                    <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '0.5px solid var(--gray-light)', flexWrap: 'wrap' }}>
+                      <Avatar name={d.name} size={34} />
+                      <div style={{ flex: 1, minWidth: 180 }}>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--black)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          {d.name}
+                          <Badge tone={d.is_active ? 'green' : 'gray'}>{d.is_active ? 'Active' : 'Inactive'}</Badge>
+                        </div>
+                        {(d.specialisation || d.hospital) && (
+                          <div style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 2 }}>
+                            {[d.specialisation, d.hospital].filter(Boolean).join(' · ')}
+                          </div>
+                        )}
+                        {(d.phone || d.whatsapp) && (
+                          <div style={{ fontSize: 11, color: 'var(--gray-mid)', marginTop: 2 }}>
+                            {[d.phone, d.whatsapp].filter(Boolean).join(' · ')}
+                          </div>
+                        )}
+                        <div style={{ marginTop: 4 }}>
+                          {d.user_id ? (
+                            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--forest)' }}>Login linked · {accountName(d.user_id)}</span>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: '#b45309' }}>No login yet</span>
+                              <select
+                                className="adm-input"
+                                style={{ width: 200, height: 30, padding: '2px 8px', fontSize: 12 }}
+                                value=""
+                                onChange={e => linkDoctor(d, e.target.value)}
+                              >
+                                <option value="">Link to login account…</option>
+                                {doctorAccounts.map(a => (
+                                  <option key={a.id} value={a.id}>{a.full_name || 'Unnamed'}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                        <button className="adm-btn" onClick={() => toggleDoctorActive(d)}>
+                          {d.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeDoctor(d)}
+                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 12, color: 'var(--gray-mid)', textDecoration: 'underline' }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add doctor form */}
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '0.5px solid var(--gray-light)' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--black)', marginBottom: 10 }}>Add doctor</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+                  <input className="adm-input" placeholder="Name *" value={newDoc.name} onChange={e => setNewDoc({ ...newDoc, name: e.target.value })} />
+                  <input className="adm-input" placeholder="Specialisation" value={newDoc.specialisation} onChange={e => setNewDoc({ ...newDoc, specialisation: e.target.value })} />
+                  <input className="adm-input" placeholder="Hospital" value={newDoc.hospital} onChange={e => setNewDoc({ ...newDoc, hospital: e.target.value })} />
+                  <input className="adm-input" placeholder="Phone" value={newDoc.phone} onChange={e => setNewDoc({ ...newDoc, phone: e.target.value })} />
+                  <input className="adm-input" placeholder="WhatsApp" value={newDoc.whatsapp} onChange={e => setNewDoc({ ...newDoc, whatsapp: e.target.value })} />
+                  <select className="adm-input" value={newDoc.user_id} onChange={e => setNewDoc({ ...newDoc, user_id: e.target.value })}>
+                    <option value="">Link to login account (optional)</option>
+                    {doctorAccounts.map(a => (
+                      <option key={a.id} value={a.id}>{a.full_name || 'Unnamed'}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  <button className="adm-btn adm-btn-primary" onClick={addDoctor}>
+                    <TbPlus size={15} style={{ marginRight: 6, verticalAlign: '-2px' }} />Add doctor
+                  </button>
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '12px 0 0' }}>
+                  To let a doctor log in at /doctor, set their account's role to Doctor in Team members above, then link it here.
+                </p>
+              </div>
+            </>
           )}
         </Section>
 

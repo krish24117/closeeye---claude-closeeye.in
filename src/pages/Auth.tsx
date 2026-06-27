@@ -34,7 +34,8 @@ type ResetData = z.infer<typeof resetSchema>
 type UpdatePasswordData = z.infer<typeof updatePasswordSchema>
 type Mode = 'login' | 'signup' | 'reset' | 'update-password'
 
-function getRoleHome(profile: { role?: string } | null | undefined) {
+function getRoleHome(profile: { role?: string; admin_role?: string | null } | null | undefined) {
+  if (profile?.admin_role === 'doctor') return '/doctor'
   if (profile?.role === 'admin') return '/admin'
   if (profile?.role === 'companion') return '/companion'
   return '/dashboard'
