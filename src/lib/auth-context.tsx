@@ -9,6 +9,7 @@ interface Profile {
   country: string | null
   role: 'family' | 'companion' | 'admin'
   user_type: 'nri' | 'society'
+  admin_role: 'super_admin' | 'companion' | 'doctor' | null
   avatar_url: string | null
 }
 

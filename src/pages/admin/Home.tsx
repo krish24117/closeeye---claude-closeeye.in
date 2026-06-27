@@ -1,341 +1,191 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar, Activity, ClipboardList, ChevronRight, AlertCircle, AlertTriangle } from 'lucide-react'
-import { format, startOfDay, endOfDay } from 'date-fns'
+import { TbChevronRight } from 'react-icons/tb'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/lib/auth-context'
-import { SERVICE_NAMES, STATUS_COLORS } from '@/lib/booking-labels'
-import { Skeleton } from '@/components/ui/Skeleton'
+import {
+  StatCard, Card, Avatar, Badge, EmptyState, Skeleton,
+  inr, serviceLabel, istTime, bookingTone, queryTone,
+} from './_shared'
 
-// ── Skeletons ──────────────────────────────────────────────────────────────────
-
-function ActionStripSkeleton() {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      {[...Array(4)].map((_, i) => (
-        <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-2">
-          <Skeleton className="h-3 w-16" />
-          <Skeleton className="h-8 w-12" />
-          <Skeleton className="h-3 w-20" />
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function FeedSkeleton() {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50">
-      {[...Array(4)].map((_, i) => (
-        <div key={i} className="flex items-center gap-3 px-4 py-3.5">
-          <Skeleton className="w-2 h-2 rounded-full flex-shrink-0" />
-          <div className="flex-1 space-y-1.5">
-            <Skeleton className="h-3 w-2/3" />
-            <Skeleton className="h-2.5 w-1/2" />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ── Status dot ─────────────────────────────────────────────────────────────────
-
-function StatusDot({ status }: { status: string }) {
-  const cls =
-    status === 'in_progress'        ? 'bg-green-500 animate-pulse' :
-    status === 'pending'            ? 'bg-amber-400' :
-    status === 'confirmed'          ? 'bg-blue-400' :
-    status === 'companion_assigned' ? 'bg-purple-400' :
-    status === 'completed'          ? 'bg-gray-300' :
-    'bg-gray-200'
-  return <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cls}`} />
-}
-
-// ── Action card ────────────────────────────────────────────────────────────────
-
-function ActionCard({
-  to, count, label, sub, color, pulse,
-}: {
-  to: string
-  count: number
-  label: string
-  sub: string
-  color: 'green' | 'amber' | 'blue' | 'red'
-  pulse?: boolean
-}) {
-  const cfg = {
-    green: { border: 'border-green-200 hover:border-green-400', num: 'text-green-700', sub: 'text-green-600', bg: 'bg-green-50' },
-    amber: { border: count > 0 ? 'border-amber-300 hover:border-amber-500' : 'border-gray-100 hover:border-gray-200', num: count > 0 ? 'text-amber-700' : 'text-gray-400', sub: count > 0 ? 'text-amber-600' : 'text-gray-400', bg: count > 0 ? 'bg-amber-50' : 'bg-gray-50' },
-    blue:  { border: 'border-blue-200 hover:border-blue-400', num: 'text-blue-700', sub: 'text-blue-600', bg: 'bg-blue-50' },
-    red:   { border: 'border-red-300 hover:border-red-500', num: 'text-red-700', sub: 'text-red-600', bg: 'bg-red-50' },
-  }[color]
-
-  return (
-    <Link to={to} className={`group bg-white rounded-2xl border-2 ${cfg.border} p-4 transition-colors`}>
-      <p className={`font-serif text-3xl leading-none ${cfg.num} ${pulse && count > 0 ? 'animate-pulse' : ''}`}>
-        {count}
-      </p>
-      <p className={`text-xs font-semibold mt-1.5 ${cfg.num}`}>{label}</p>
-      <p className={`text-[11px] mt-0.5 ${cfg.sub}`}>{sub}</p>
-      <p className={`text-[11px] font-semibold mt-2.5 flex items-center gap-1 ${cfg.sub} group-hover:gap-2 transition-all`}>
-        View <ChevronRight size={10} />
-      </p>
-    </Link>
-  )
-}
-
-// ── Main ───────────────────────────────────────────────────────────────────────
+const paiseSum = (rows: any[] | null | undefined, field = 'amount_paise') =>
+  (rows || []).reduce((s, r) => s + (r[field] || 0), 0)
 
 export function AdminHome() {
-  const { profile } = useAuth()
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  // action strip counts
-  const [visitsTodayCount, setVisitsTodayCount] = useState(0)
-  const [unassignedCount, setUnassignedCount] = useState(0)
-  const [newLeadsCount, setNewLeadsCount] = useState(0)
-
-  // lists
-  const [todayVisits, setTodayVisits] = useState<any[]>([])
-  const [recentFeed, setRecentFeed] = useState<any[]>([])
-
-  useEffect(() => { load() }, [])
+  const [d, setD] = useState<any>(null)
 
   async function load() {
     setLoading(true)
-    setError(null)
-    try {
-      const now = new Date()
-      const todayStart = startOfDay(now).toISOString()
-      const todayEnd   = endOfDay(now).toISOString()
+    const now = new Date()
+    const dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0)
+    const dayEnd = new Date(now); dayEnd.setHours(23, 59, 59, 999)
+    const weekAgo = new Date(now.getTime() - 7 * 864e5)
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
-      const [allBookingsRes, todayBookingsRes, newSurveyRes, newWaitlistRes] = await Promise.all([
-        supabase.from('bookings')
-          .select('id, status, companion_id, payment_status, amount_paise, service_type, scheduled_at, created_at, loved_ones(full_name,city), companions(full_name)')
-          .order('created_at', { ascending: false }),
-        supabase.from('bookings')
-          .select('id, status, service_type, scheduled_at, loved_ones(full_name,city), companions(full_name)')
-          .gte('scheduled_at', todayStart)
-          .lte('scheduled_at', todayEnd)
-          .not('status', 'in', '("cancelled")')
-          .order('scheduled_at'),
-        supabase.from('survey_responses')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'new'),
-        supabase.from('waitlist')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'new'),
-      ])
+    const [fam, soc, newFam, todayB, queries, monthBk, lastBk, monthMem, recent, societies, flaggedToday] = await Promise.all([
+      supabase.from('loved_ones').select('id', { count: 'exact', head: true }),
+      supabase.from('society_members').select('id', { count: 'exact', head: true }),
+      supabase.from('loved_ones').select('id', { count: 'exact', head: true }).gte('created_at', weekAgo.toISOString()),
+      supabase.from('bookings').select('id, status, companion_id, scheduled_at, service_type, loved_ones(full_name, city), companions(full_name)')
+        .gte('scheduled_at', dayStart.toISOString()).lte('scheduled_at', dayEnd.toISOString()).order('scheduled_at'),
+      supabase.from('member_queries').select('id, question, subject_label, status, created_at, user_id').neq('status', 'doctor_reviewed').order('created_at', { ascending: false }).limit(6),
+      supabase.from('bookings').select('amount_paise').eq('payment_status', 'paid').gte('created_at', monthStart.toISOString()),
+      supabase.from('bookings').select('amount_paise').eq('payment_status', 'paid').gte('created_at', lastMonthStart.toISOString()).lt('created_at', monthStart.toISOString()),
+      supabase.from('memberships').select('amount_paise').eq('status', 'active').gte('created_at', monthStart.toISOString()),
+      supabase.from('bookings').select('id, amount_paise, service_type, created_at, loved_ones(full_name)').order('created_at', { ascending: false }).limit(6),
+      supabase.from('society_members').select('society_name'),
+      supabase.from('visits').select('id').neq('flags', 'none').gte('created_at', dayStart.toISOString()),
+    ])
 
-      if (allBookingsRes.error) throw allBookingsRes.error
-
-      const all = allBookingsRes.data || []
-      const unassigned = all.filter(b => !b.companion_id && !['completed', 'cancelled'].includes(b.status))
-
-      setUnassignedCount(unassigned.length)
-      setVisitsTodayCount(todayBookingsRes.data?.length || 0)
-      setNewLeadsCount((newSurveyRes.count || 0) + (newWaitlistRes.count || 0))
-      setTodayVisits(todayBookingsRes.data || [])
-      setRecentFeed(all.slice(0, 10))
-    } catch (err) {
-      console.error('Admin overview error:', err)
-      setError('Something went wrong — please refresh.')
-    } finally {
-      setLoading(false)
+    const userIds = [...new Set((queries.data || []).map((q: any) => q.user_id).filter(Boolean))]
+    let names: Record<string, string> = {}
+    if (userIds.length) {
+      const { data: profs } = await supabase.from('profiles').select('id, full_name').in('id', userIds)
+      names = Object.fromEntries((profs || []).map((p: any) => [p.id, p.full_name]))
     }
-  }
 
-  const firstName = profile?.full_name?.split(' ')[0] || 'Admin'
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const todayStr = format(new Date(), 'EEEE, d MMM')
+    const todayList = todayB.data || []
+    const done = todayList.filter((b: any) => b.status === 'completed').length
+    const pending = todayList.length - done
+    const unassigned = todayList.filter((b: any) => !b.companion_id && b.status !== 'cancelled').length
+
+    const socMap: Record<string, number> = {}
+    ;(societies.data || []).forEach((s: any) => { const n = s.society_name || 'Unassigned'; socMap[n] = (socMap[n] || 0) + 1 })
+    const socList = Object.entries(socMap).sort((a, b) => b[1] - a[1])
+
+    const revMonth = paiseSum(monthBk.data) + paiseSum(monthMem.data)
+    const revLast = paiseSum(lastBk.data)
+
+    setD({
+      famCount: (fam.count || 0) + (soc.count || 0),
+      newFam: newFam.count || 0,
+      todayList, done, pending, unassigned,
+      queriesCount: queries.data?.length || 0,
+      queries: (queries.data || []).map((q: any) => ({ ...q, name: names[q.user_id] || 'A family' })),
+      revMonth, revDelta: revMonth - revLast,
+      recent: recent.data || [],
+      socList, socTotal: societies.data?.length || 0,
+      flaggedToday: flaggedToday.data?.length || 0,
+    })
+    setLoading(false)
+  }
+  useEffect(() => { load() }, [])
+
+  if (loading) return (
+    <>
+      <div className="adm-grid adm-grid-4" style={{ marginBottom: 20 }}>{[0, 1, 2, 3].map(i => <Skeleton key={i} h={92} />)}</div>
+      <div className="adm-grid adm-grid-2" style={{ marginBottom: 20 }}><Skeleton h={260} /><Skeleton h={260} /></div>
+    </>
+  )
+
+  const actions: { tone: string; title: string; sub: string; to: string }[] = []
+  if (d.flaggedToday > 0) actions.push({ tone: '#FEE2E2', title: `${d.flaggedToday} visit${d.flaggedToday > 1 ? 's' : ''} flagged today`, sub: 'Review and call family if urgent', to: '/admin/visits' })
+  if (d.unassigned > 0) actions.push({ tone: '#FEF3C7', title: `${d.unassigned} visit${d.unassigned > 1 ? 's' : ''} unassigned today`, sub: 'Assign a companion', to: '/admin/bookings' })
+  if (d.queriesCount > 0) actions.push({ tone: '#EDE9FE', title: `${d.queriesCount} health quer${d.queriesCount > 1 ? 'ies' : 'y'} to review`, sub: 'A doctor needs to verify', to: '/admin/queries' })
+  if (d.pending > 0) actions.push({ tone: '#DBEAFE', title: `${d.pending} visit${d.pending > 1 ? 's' : ''} pending today`, sub: 'Track to completion', to: '/admin/visits' })
 
   return (
-    <div className="space-y-6 pb-10 animate-fade-in">
-
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-2xl text-green-900">{greeting}, {firstName}</h1>
-          <p className="text-gray-400 text-sm mt-0.5">{todayStr}</p>
-        </div>
-        <Link
-          to="/admin/bookings"
-          className="flex-shrink-0 flex items-center gap-1.5 bg-green-800 hover:bg-green-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors"
-        >
-          <Calendar size={13} /> New booking
-        </Link>
+    <>
+      <div className="adm-grid adm-grid-4" style={{ marginBottom: 20 }}>
+        <StatCard label="Active families" value={d.famCount} sub={d.newFam > 0 ? `+${d.newFam} this week` : 'Families & members'} subTone={d.newFam > 0 ? 'pos' : undefined} />
+        <StatCard label="Visits today" value={d.todayList.length} sub={`${d.done} done · ${d.pending} pending`} />
+        <StatCard label="Queries pending" value={<span className={d.queriesCount > 0 ? 'adm-warn' : ''}>{d.queriesCount}</span>} sub="Need doctor review" subTone={d.queriesCount > 0 ? 'warn' : undefined} />
+        <StatCard label="Revenue this month" value={inr(d.revMonth)} sub={`${d.revDelta >= 0 ? '+' : ''}${inr(d.revDelta)} vs last month`} subTone={d.revDelta >= 0 ? 'pos' : 'warn'} />
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
-          {error}
-          <button onClick={load} className="font-semibold underline whitespace-nowrap">Retry</button>
-        </div>
-      )}
-
-      {/* ── ACTION STRIP ──────────────────────────────────────────────────────── */}
-      <div>
-        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Right now</p>
-        {loading ? <ActionStripSkeleton /> : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <ActionCard
-              to="/admin/live-map"
-              count={visitsTodayCount}
-              label="Visits today"
-              sub="Scheduled for today"
-              color="green"
-              pulse
-            />
-            <ActionCard
-              to="/admin/bookings"
-              count={unassignedCount}
-              label="Unassigned"
-              sub={unassignedCount > 0 ? 'Need a companion' : 'All covered'}
-              color="amber"
-            />
-            <ActionCard
-              to="/admin/leads"
-              count={newLeadsCount}
-              label="New leads"
-              sub="Survey + waitlist"
-              color="blue"
-            />
-            {/* SOS — hidden if 0, shown in red if > 0 */}
-            {0 > 0 ? (
-              <ActionCard
-                to="/admin/bookings"
-                count={0}
-                label="SOS alerts"
-                sub="Need immediate action"
-                color="red"
-                pulse
-              />
-            ) : (
-              <Link to="/admin/bookings" className="group bg-white rounded-2xl border border-gray-100 p-4 transition-colors hover:border-gray-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle size={14} className="text-gray-300" />
-                  <span className="text-[11px] font-semibold text-gray-300 uppercase tracking-wide">SOS alerts</span>
-                </div>
-                <p className="text-2xl font-bold text-gray-200">0</p>
-                <p className="text-[11px] text-gray-300 mt-1">All clear</p>
-              </Link>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── TODAY'S VISITS ────────────────────────────────────────────────────── */}
-      {!loading && todayVisits.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Today's visits</p>
-            <Link to="/admin/live-map" className="text-xs text-green-700 font-semibold flex items-center gap-0.5 hover:underline">
-              Live map <ChevronRight size={12} />
-            </Link>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50">
-            {todayVisits.map(b => (
-              <Link key={b.id} to="/admin/bookings"
-                className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors first:rounded-t-2xl last:rounded-b-2xl"
-              >
-                <StatusDot status={b.status} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-green-900 truncate">
-                    {(b.loved_ones as any)?.full_name || '—'}
-                  </p>
-                  <p className="text-xs text-gray-400 truncate">
-                    {SERVICE_NAMES[b.service_type] || b.service_type}
-                    {b.scheduled_at ? ` · ${format(new Date(b.scheduled_at), 'h:mm a')}` : ''}
-                    {(b.companions as any)?.full_name ? ` · ${(b.companions as any).full_name}` : ' · Unassigned'}
-                  </p>
-                </div>
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${STATUS_COLORS[b.status] || 'bg-gray-100 text-gray-500'}`}>
-                  {b.status.replace(/_/g, ' ')}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── RECENT ACTIVITY ───────────────────────────────────────────────────── */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Recent bookings</p>
-          <Link to="/admin/bookings" className="text-xs text-green-700 font-semibold flex items-center gap-0.5 hover:underline">
-            All <ChevronRight size={12} />
-          </Link>
-        </div>
-        {loading ? <FeedSkeleton /> : recentFeed.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
-            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <AlertCircle size={20} className="text-green-600" />
-            </div>
-            <p className="font-semibold text-green-900 text-sm mb-1">No bookings yet</p>
-            <p className="text-xs text-gray-400">Activity will appear here once bookings are made.</p>
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50">
-            {recentFeed.map(b => (
-              <Link key={b.id} to="/admin/bookings"
-                className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors first:rounded-t-2xl last:rounded-b-2xl"
-              >
-                <StatusDot status={b.status} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-green-900 truncate">
-                      {(b.loved_ones as any)?.full_name || '—'}
-                    </p>
-                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${STATUS_COLORS[b.status] || 'bg-gray-100 text-gray-500'}`}>
-                      {b.status.replace(/_/g, ' ')}
-                    </span>
+      <div className="adm-grid adm-grid-2" style={{ marginBottom: 20 }}>
+        <Card>
+          <div className="adm-card-head"><span className="adm-card-title">Today’s visits</span><Link className="adm-link" to="/admin/visits">View all →</Link></div>
+          {d.todayList.length === 0 ? <EmptyState title="No visits scheduled today" /> : (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {d.todayList.slice(0, 6).map((b: any) => {
+                const bt = bookingTone(b.status)
+                return (
+                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '0.5px solid var(--gray-light)' }}>
+                    <Avatar name={b.loved_ones?.full_name} size={30} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500 }}>{b.loved_ones?.full_name || 'Elder'}</div>
+                      <div style={{ fontSize: 11, color: 'var(--gray-mid)' }}>{b.loved_ones?.city || 'Hyderabad'} · {b.companions?.full_name || 'Unassigned'}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <Badge tone={bt.tone}>{bt.label}</Badge>
+                      <div style={{ fontSize: 11, color: 'var(--gray-mid)', marginTop: 2 }}>{istTime(b.scheduled_at)}</div>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">
-                    {SERVICE_NAMES[b.service_type] || b.service_type}
-                    {b.scheduled_at ? ` · ${format(new Date(b.scheduled_at), 'd MMM, h:mm a')}` : ''}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {!b.companion_id && !['completed', 'cancelled'].includes(b.status) && (
-                    <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-lg">
-                      NEEDS COMPANION
-                    </span>
-                  )}
-                  {(b.companions as any)?.full_name && (
-                    <p className="text-xs text-gray-400 hidden sm:block truncate max-w-[100px]">
-                      {(b.companions as any).full_name}
-                    </p>
-                  )}
-                  <ChevronRight size={14} className="text-gray-300" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+                )
+              })}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <div className="adm-card-head"><span className="adm-card-title">Queries needing review</span><Link className="adm-link" to="/admin/queries">View all →</Link></div>
+          {d.queries.length === 0 ? <EmptyState title="No pending queries" sub="Doctors are all caught up." /> : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {d.queries.slice(0, 4).map((q: any) => {
+                const qt = queryTone(q.status)
+                return (
+                  <div key={q.id} style={{ borderBottom: '0.5px solid var(--gray-light)', paddingBottom: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                      <span style={{ fontSize: 12, fontWeight: 500 }}>{q.name}{q.subject_label ? ` — for ${q.subject_label}` : ''}</span>
+                      <Badge tone={qt.tone}>{qt.label}</Badge>
+                    </div>
+                    <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '4px 0 8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{q.question}</p>
+                    <Link to="/admin/queries" className="adm-btn adm-btn-sage" style={{ fontSize: 11, padding: '4px 10px' }}>Review now</Link>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </Card>
       </div>
 
-      {/* Quick links */}
-      {!loading && (
-        <div>
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Quick access</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {[
-              { to: '/admin/companions', icon: Activity, label: 'Companions', sub: 'Roster & approvals' },
-              { to: '/admin/families', icon: ClipboardList, label: 'Families', sub: 'All registered families' },
-              { to: '/admin/payments', icon: Calendar, label: 'Payments', sub: 'Revenue & payouts' },
-            ].map(c => (
-              <Link key={c.to} to={c.to} className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-card-hover transition-shadow group">
-                <p className="text-sm font-semibold text-green-900">{c.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{c.sub}</p>
-              </Link>
-            ))}
+      <div className="adm-grid adm-grid-3">
+        <Card>
+          <div className="adm-card-head"><span className="adm-card-title">Recent payments</span><Link className="adm-link" to="/admin/revenue">View all →</Link></div>
+          {d.recent.length === 0 ? <EmptyState title="No payments yet" /> : d.recent.map((p: any) => (
+            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '0.5px solid var(--gray-light)' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.loved_ones?.full_name || 'Family'}</div>
+                <div style={{ fontSize: 11, color: 'var(--gray-mid)' }}>{serviceLabel(p.service_type)}</div>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--forest)' }}>{inr(p.amount_paise)}</span>
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <div className="adm-card-head"><span className="adm-card-title">Pending actions</span></div>
+          {actions.length === 0 ? <EmptyState title="Nothing needs you" sub="All clear for now." /> : actions.map((a, i) => (
+            <Link key={i} to={a.to} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '0.5px solid var(--gray-light)', textDecoration: 'none' }}>
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: a.tone, flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--black)' }}>{a.title}</div>
+                <div style={{ fontSize: 11, color: 'var(--gray-mid)' }}>{a.sub}</div>
+              </div>
+              <TbChevronRight size={16} color="var(--gray-mid)" />
+            </Link>
+          ))}
+        </Card>
+
+        <Card>
+          <div className="adm-card-head"><span className="adm-card-title">Societies overview</span><Link className="adm-link" to="/admin/societies">View all →</Link></div>
+          {d.socList.length === 0 ? <EmptyState title="No societies yet" /> : d.socList.slice(0, 5).map(([name, count]: any) => (
+            <div key={name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '0.5px solid var(--gray-light)' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+                <div style={{ fontSize: 11, color: 'var(--gray-mid)' }}>{count} member{count > 1 ? 's' : ''}</div>
+              </div>
+              <Badge tone="green">Live</Badge>
+            </div>
+          ))}
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '0.5px solid var(--gray-light)' }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--forest)' }}>{d.socTotal}</div>
+            <div style={{ fontSize: 11, color: 'var(--gray-mid)' }}>registered members across {d.socList.length} societ{d.socList.length === 1 ? 'y' : 'ies'}</div>
           </div>
-        </div>
-      )}
-    </div>
+        </Card>
+      </div>
+    </>
   )
 }

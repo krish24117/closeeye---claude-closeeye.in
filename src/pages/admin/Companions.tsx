@@ -1,396 +1,364 @@
 import { useEffect, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { TbStar, TbPhone, TbMapPin } from 'react-icons/tb'
 import { supabase } from '@/lib/supabase'
-import { CardSkeleton } from '@/components/ui/Skeleton'
 import { useToast } from '@/components/ui/Toast'
-import { UserPlus, UserMinus, Plus, FileText, Phone, ChevronDown } from 'lucide-react'
-import { AddCompanionModal } from './AddCompanionModal'
-import { AVAILABILITY_LABELS, COMPANION_STATUS_COLORS as STATUS_COLORS } from '@/lib/companion-options'
+import {
+  Card, Badge, Avatar, EmptyState, ErrorBox, Skeleton,
+  istDate, durationMin, flagTone,
+} from './_shared'
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+/* ---------- helpers ---------- */
+const statusTone = (s?: string | null) =>
+  s === 'approved' ? 'green' : s === 'rejected' ? 'red' : 'amber'
+const statusLabel = (s?: string | null) =>
+  s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Pending'
+const truncate = (t?: string | null, n = 80) =>
+  !t ? '' : t.length > n ? t.slice(0, n).trimEnd() + '…' : t
 
-function callLink(phone: string) {
-  const digits = phone.replace(/\D/g, '')
-  return `tel:${digits}`
-}
+const monthStartISO = () =>
+  new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
 
-function Avatar({ name, photoUrl }: { name: string; photoUrl?: string }) {
-  if (photoUrl) {
-    return <img src={photoUrl} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
-  }
-  return (
-    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-sm font-bold text-green-700 flex-shrink-0">
-      {name?.[0] || '?'}
-    </div>
-  )
-}
-
-// ── Main ───────────────────────────────────────────────────────────────────────
-
+/* ============================================================
+   LIST
+============================================================ */
 export function AdminCompanions() {
   const { showToast } = useToast()
-  const [companions, setCompanions] = useState<any[]>([])
-  const [companionProfiles, setCompanionProfiles] = useState<any[]>([])
-  const [familyProfiles, setFamilyProfiles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState(false)
+  const [companions, setCompanions] = useState<any[]>([])
+  const [avatars, setAvatars] = useState<Record<string, string>>({})
+  const [whatsapps, setWhatsapps] = useState<Record<string, string>>({})
+  const [visits, setVisits] = useState<Record<string, number>>({})
   const [search, setSearch] = useState('')
-  const [phoneInputs, setPhoneInputs] = useState<Record<string, string>>({})
-  const [savingId, setSavingId] = useState<string | null>(null)
-  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({})
-  const [idProofUrls, setIdProofUrls] = useState<Record<string, string>>({})
-  const [visitsThisMonth, setVisitsThisMonth] = useState<Record<string, number>>({})
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [expanded, setExpanded] = useState<string | null>(null)
-
-  useEffect(() => { load() }, [])
+  const [filter, setFilter] = useState<'all' | 'approved' | 'pending'>('all')
 
   async function load() {
     setLoading(true)
-    setError(null)
+    setError(false)
     try {
-      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
-
-      const [companionsRes, companionProfilesRes, familiesRes, visitsRes] = await Promise.all([
+      const [compRes, profRes, bkRes] = await Promise.all([
         supabase.from('companions').select('*').order('full_name'),
-        supabase.from('profiles').select('id,full_name,whatsapp_number,avatar_url').eq('role', 'companion'),
-        supabase.from('profiles').select('id,full_name,whatsapp_number').eq('role', 'family').order('full_name'),
-        supabase.from('bookings')
-          .select('companion_id')
-          .gte('created_at', startOfMonth)
-          .not('companion_id', 'is', null),
+        supabase.from('profiles').select('id, avatar_url, whatsapp_number').eq('role', 'companion'),
+        supabase.from('bookings').select('companion_id').gte('created_at', monthStartISO()),
       ])
-      if (companionsRes.error) throw companionsRes.error
+      if (compRes.error) throw compRes.error
 
-      setCompanions(companionsRes.data || [])
-      setCompanionProfiles(companionProfilesRes.data || [])
-      setFamilyProfiles(familiesRes.data || [])
+      setCompanions(compRes.data || [])
 
-      // Tally visits per companion this month
+      const av: Record<string, string> = {}
+      const wa: Record<string, string> = {}
+      ;(profRes.data || []).forEach((p: any) => {
+        if (p.avatar_url) av[p.id] = p.avatar_url
+        if (p.whatsapp_number) wa[p.id] = p.whatsapp_number
+      })
+      setAvatars(av)
+      setWhatsapps(wa)
+
       const tally: Record<string, number> = {}
-      ;(visitsRes.data || []).forEach((b: any) => {
+      ;(bkRes.data || []).forEach((b: any) => {
         if (b.companion_id) tally[b.companion_id] = (tally[b.companion_id] || 0) + 1
       })
-      setVisitsThisMonth(tally)
-
-      const phones: Record<string, string> = {}
-      ;(companionsRes.data || []).forEach((c: any) => { phones[c.id] = c.phone || '' })
-      setPhoneInputs(phones)
-    } catch (err) {
-      console.error('Failed to load companions:', err)
-      setError('Something went wrong — please try again.')
+      setVisits(tally)
+    } catch {
+      setError(true)
     } finally {
       setLoading(false)
     }
   }
+  useEffect(() => { load() }, [])
 
-  // Resolve signed URLs for photos and ID proofs
-  useEffect(() => {
-    const photoPaths = companions.map(c => c.photo_url).filter(Boolean) as string[]
-    if (photoPaths.length) {
-      supabase.storage.from('companion-photos').createSignedUrls(photoPaths, 3600).then(({ data }) => {
-        const map: Record<string, string> = {}
-        data?.forEach(d => { if (d.signedUrl && d.path) map[d.path] = d.signedUrl })
-        setPhotoUrls(map)
-      })
-    }
-    const idPaths = companions.map(c => c.id_proof_url).filter(Boolean) as string[]
-    if (idPaths.length) {
-      supabase.storage.from('companion-documents').createSignedUrls(idPaths, 3600).then(({ data }) => {
-        const map: Record<string, string> = {}
-        data?.forEach(d => { if (d.signedUrl && d.path) map[d.path] = d.signedUrl })
-        setIdProofUrls(map)
-      })
-    }
-  }, [companions])
-
-  async function savePhone(id: string) {
-    setSavingId(id)
-    try {
-      const phone = phoneInputs[id] ?? ''
-      const { error } = await supabase.from('companions').update({ phone }).eq('id', id)
-      if (error) throw error
-      setCompanions(prev => prev.map(c => c.id === id ? { ...c, phone } : c))
-      showToast('Phone updated', 'success')
-    } catch {
-      showToast('Could not update phone — try again', 'error')
-    } finally {
-      setSavingId(null)
-    }
-  }
-
-  async function updateStatus(id: string, status: string) {
-    setSavingId(id)
-    try {
-      const { error } = await supabase.from('companions').update({ status }).eq('id', id)
-      if (error) throw error
-      setCompanions(prev => prev.map(c => c.id === id ? { ...c, status } : c))
-      showToast(`Marked as ${status}`, 'success')
-    } catch {
+  async function changeStatus(id: string, status: string) {
+    const prev = companions
+    setCompanions(cs => cs.map(c => c.id === id ? { ...c, status } : c))
+    const { error } = await supabase.from('companions').update({ status }).eq('id', id)
+    if (error) {
+      setCompanions(prev)
       showToast('Could not update status — try again', 'error')
-    } finally {
-      setSavingId(null)
+    } else {
+      showToast(`Marked as ${status}`, 'success')
     }
   }
 
-  async function removeAccess(p: any) {
-    if (!window.confirm(`Remove companion access for ${p.full_name}?`)) return
-    setSavingId(p.id)
-    try {
-      const { error } = await supabase.from('profiles').update({ role: 'family' }).eq('id', p.id)
-      if (error) throw error
-      setCompanionProfiles(prev => prev.filter(x => x.id !== p.id))
-      setFamilyProfiles(prev => [...prev, p].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '')))
-      showToast(`Removed companion access for ${p.full_name}`, 'success')
-    } catch {
-      showToast('Could not update — try again', 'error')
-    } finally {
-      setSavingId(null)
-    }
-  }
+  const filtered = companions.filter(c => {
+    if (filter === 'approved' && c.status !== 'approved') return false
+    if (filter === 'pending' && c.status === 'approved') return false
+    if (search && !(c.full_name || '').toLowerCase().includes(search.toLowerCase())
+      && !(c.city || '').toLowerCase().includes(search.toLowerCase())) return false
+    return true
+  })
 
-  async function promote(p: any) {
-    setSavingId(p.id)
-    try {
-      const { error: roleErr } = await supabase.from('profiles').update({ role: 'companion' }).eq('id', p.id)
-      if (roleErr) throw roleErr
-      const { data: row, error: upsertErr } = await supabase.from('companions')
-        .upsert({ id: p.id, full_name: p.full_name, phone: '', city: '', status: 'approved' })
-        .select().single()
-      if (upsertErr) throw upsertErr
-      setFamilyProfiles(prev => prev.filter(x => x.id !== p.id))
-      setCompanionProfiles(prev => [...prev, p].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '')))
-      setCompanions(prev => [...prev.filter(c => c.id !== p.id), row].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '')))
-      setPhoneInputs(prev => ({ ...prev, [p.id]: '' }))
-      showToast(`${p.full_name} is now a companion`, 'success')
-    } catch {
-      showToast('Could not promote — try again', 'error')
-    } finally {
-      setSavingId(null)
-    }
-  }
+  const approvedCount = companions.filter(c => c.status === 'approved').length
 
-  function handleAdded(row: any) {
-    setCompanions(prev => [row, ...prev])
-    setPhoneInputs(prev => ({ ...prev, [row.id]: row.phone || '' }))
-    setShowAddModal(false)
-    showToast(`${row.full_name} added`, 'success')
-  }
-
-  const filteredFamilies = familyProfiles.filter(p =>
-    !search || p.full_name?.toLowerCase().includes(search.toLowerCase())
+  if (loading) return (
+    <>
+      <h1 className="adm-page-h" style={{ marginBottom: 16 }}>Companions</h1>
+      <div className="adm-grid adm-grid-3">{[0, 1, 2, 3, 4, 5].map(i => <Skeleton key={i} h={150} />)}</div>
+    </>
+  )
+  if (error) return (
+    <>
+      <h1 className="adm-page-h" style={{ marginBottom: 16 }}>Companions</h1>
+      <Card><ErrorBox onRetry={load} /></Card>
+    </>
   )
 
-  const active = companions.filter(c => c.status === 'approved')
-  const inactive = companions.filter(c => c.status !== 'approved')
-
   return (
-    <div className="space-y-6 animate-fade-in">
-
-      {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
+    <>
+      <div className="adm-card-head" style={{ marginBottom: 16, alignItems: 'flex-start' }}>
         <div>
-          <h1 className="font-serif text-2xl text-green-900">Companions</h1>
-          <p className="text-gray-400 text-sm mt-0.5">
-            {active.length} active · {inactive.length} pending/inactive
+          <h1 className="adm-page-h">Companions</h1>
+          <p className="adm-page-sub" style={{ margin: 0 }}>
+            {approvedCount} approved · {companions.length - approvedCount} pending/inactive
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 text-sm font-semibold bg-green-800 text-white px-4 py-2.5 rounded-xl hover:bg-green-700 transition-colors"
-        >
-          <Plus size={16} /> Add
-        </button>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
-          {error}
-          <button onClick={load} className="font-semibold underline">Retry</button>
+      {/* search + filters */}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
+        <input
+          className="adm-input"
+          placeholder="Search by name or city…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ flex: '1 1 240px', minWidth: 200 }}
+        />
+        <div style={{ display: 'flex', gap: 6 }}>
+          {(['all', 'approved', 'pending'] as const).map(f => (
+            <button
+              key={f}
+              className={`adm-pill-f ${filter === f ? 'active' : ''}`}
+              onClick={() => setFilter(f)}
+            >
+              {f === 'all' ? 'All' : f === 'approved' ? 'Approved' : 'Pending'}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* Companion cards */}
-      {loading ? (
-        <div className="space-y-2">
-          {[...Array(4)].map((_, i) => <CardSkeleton key={i} />)}
-        </div>
-      ) : companions.length === 0 ? (
-        <div className="text-center py-12 bg-green-50 rounded-2xl">
-          <p className="text-4xl mb-3">🧑‍🤝‍🧑</p>
-          <p className="font-semibold text-green-900">No companions yet</p>
-          <p className="text-sm text-gray-400 mt-1">Add one above, or promote a family member below.</p>
-        </div>
+      {filtered.length === 0 ? (
+        <Card><EmptyState title="No companions found" sub="Try a different search or filter." /></Card>
       ) : (
-        <div className="space-y-2">
-          {companions.map(c => {
-            const linkedProfile = companionProfiles.find(p => p.id === c.id)
-            const isInactive = c.status !== 'approved'
-            const phone = phoneInputs[c.id] ?? c.phone ?? ''
-            const visits = visitsThisMonth[c.id] || 0
-            const isExpanded = expanded === c.id
-
+        <div className="adm-grid adm-grid-3">
+          {filtered.map(c => {
+            const v = visits[c.id] || 0
+            const wa = whatsapps[c.id]
             return (
-              <div key={c.id} className={`bg-white rounded-2xl border border-gray-100 transition-all ${isInactive ? 'opacity-60' : ''}`}>
-                {/* Compact row */}
-                <button
-                  className="w-full text-left px-4 py-3 flex items-center gap-3"
-                  onClick={() => setExpanded(isExpanded ? null : c.id)}
-                >
-                  <Avatar
-                    name={c.full_name}
-                    photoUrl={c.photo_url && photoUrls[c.photo_url] ? photoUrls[c.photo_url] : undefined}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-green-900 text-sm truncate">{c.full_name}</p>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${STATUS_COLORS[c.status] || 'bg-gray-100 text-gray-500'}`}>
-                        {c.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1) : 'Unknown'}
-                      </span>
+              <div key={c.id} className="adm-card adm-card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {/* header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Avatar name={c.full_name} src={avatars[c.id]} size={44} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--black)' }}>{c.full_name || 'Companion'}</span>
+                      <Badge tone={statusTone(c.status)}>{statusLabel(c.status)}</Badge>
                     </div>
-                    <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                      {/* Visits this month */}
-                      <span className="text-xs text-gray-400">
-                        <span className="font-semibold text-gray-600">{visits}</span> visit{visits !== 1 ? 's' : ''} this month
-                      </span>
-                      {/* Rating placeholder */}
-                      <span className="text-xs text-gray-400">
-                        ★ {(c.rating ?? '—')}
-                      </span>
-                      {/* City */}
-                      {c.city && <span className="text-xs text-gray-400">{c.city}</span>}
+                    <div style={{ fontSize: 11, color: 'var(--gray-mid)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <TbPhone size={11} /> {c.phone || '—'}{wa && wa !== c.phone ? ` · wa ${wa}` : ''}
                     </div>
                   </div>
-                  {/* Click-to-call */}
-                  {c.phone && (
-                    <a
-                      href={callLink(c.phone)}
-                      onClick={e => e.stopPropagation()}
-                      className="flex-shrink-0 flex items-center gap-1 text-xs font-semibold text-green-700 border border-green-200 rounded-xl px-2.5 py-1.5 hover:bg-green-50 transition-colors"
-                    >
-                      <Phone size={12} /> Call
-                    </a>
-                  )}
-                  <ChevronDown size={14} className={`text-gray-300 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                </button>
+                </div>
 
-                {/* Expanded details */}
-                {isExpanded && (
-                  <div className="border-t border-gray-50 px-4 pb-4 pt-3 space-y-3">
-                    {/* Tags */}
-                    {(c.languages?.length > 0 || c.skills?.length > 0 || c.availability) && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {c.languages?.map((l: string) => (
-                          <span key={l} className="text-xs bg-gray-50 text-gray-600 px-2 py-0.5 rounded-lg">{l}</span>
-                        ))}
-                        {c.skills?.map((s: string) => (
-                          <span key={s} className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-lg">{s}</span>
-                        ))}
-                        {c.availability && (
-                          <span className="text-xs bg-gray-50 text-gray-600 px-2 py-0.5 rounded-lg">
-                            {AVAILABILITY_LABELS[c.availability] || c.availability}
-                          </span>
-                        )}
-                        {c.id_proof_url && idProofUrls[c.id_proof_url] && (
-                          <a
-                            href={idProofUrls[c.id_proof_url]}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs font-semibold text-green-700 px-2 py-0.5 rounded-lg bg-green-50 flex items-center gap-1"
-                          >
-                            <FileText size={11} /> ID proof
-                          </a>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Phone + status actions */}
-                    <div className="flex flex-wrap gap-2 items-center">
-                      <input
-                        value={phone}
-                        onChange={e => setPhoneInputs(prev => ({ ...prev, [c.id]: e.target.value }))}
-                        placeholder="Phone number"
-                        className="w-36 border-2 border-gray-200 rounded-xl px-2.5 py-1.5 text-sm focus:outline-none focus:border-green-600"
-                      />
-                      <button
-                        onClick={() => savePhone(c.id)}
-                        disabled={savingId === c.id}
-                        className="text-xs font-semibold bg-green-800 text-white px-3 py-1.5 rounded-xl hover:bg-green-700 disabled:opacity-50"
-                      >
-                        Save
-                      </button>
-
-                      <div className="relative">
-                        <select
-                          value={c.status || 'pending'}
-                          onChange={e => updateStatus(c.id, e.target.value)}
-                          disabled={savingId === c.id}
-                          className="text-xs border-2 border-gray-200 rounded-xl px-2.5 py-1.5 pr-6 appearance-none bg-white focus:outline-none focus:border-green-600 disabled:opacity-50"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="approved">Approved</option>
-                          <option value="rejected">Rejected</option>
-                        </select>
-                        <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                      </div>
-
-                      {linkedProfile && (
-                        <button
-                          onClick={() => removeAccess(linkedProfile)}
-                          disabled={savingId === c.id}
-                          className="flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-700 disabled:opacity-50"
-                        >
-                          <UserMinus size={13} /> Remove access
-                        </button>
-                      )}
-                    </div>
+                {/* stats */}
+                <div className="adm-grid adm-grid-3" style={{ textAlign: 'center', gap: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--forest)' }}>{v}</div>
+                    <div style={{ fontSize: 10, color: 'var(--gray-mid)' }}>Visits this month</div>
                   </div>
-                )}
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--forest)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                      <TbStar size={14} /> {c.rating != null ? Number(c.rating).toFixed(1) : '—'}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--gray-mid)' }}>Rating</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.city || '—'}</div>
+                    <div style={{ fontSize: 10, color: 'var(--gray-mid)' }}>City</div>
+                  </div>
+                </div>
+
+                {/* actions */}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 'auto' }}>
+                  <Link to={`/admin/companions/${c.id}`} className="adm-btn adm-btn-primary" style={{ flex: 1, textAlign: 'center', textDecoration: 'none' }}>
+                    View visits
+                  </Link>
+                  <select
+                    className="adm-input"
+                    value={c.status || 'pending'}
+                    onChange={e => changeStatus(c.id, e.target.value)}
+                    style={{ width: 130 }}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
               </div>
             )
           })}
         </div>
       )}
+    </>
+  )
+}
 
-      {/* Promote a family member */}
-      <div className="space-y-3">
-        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Promote a family member</p>
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search by name…"
-          className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-600"
-        />
-        {!loading && filteredFamilies.length === 0 ? (
-          <p className="text-sm text-gray-400 py-2">No family accounts found.</p>
+/* ============================================================
+   DETAIL
+============================================================ */
+export function AdminCompanionDetail() {
+  const { id } = useParams()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [companion, setCompanion] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
+  const [visits, setVisits] = useState<any[]>([])
+  const [bookings, setBookings] = useState<any[]>([])
+
+  async function load() {
+    if (!id) return
+    setLoading(true)
+    setError(false)
+    try {
+      const [compRes, profRes, visitsRes, bkRes] = await Promise.all([
+        supabase.from('companions').select('*').eq('id', id).maybeSingle(),
+        supabase.from('profiles').select('*').eq('id', id).maybeSingle(),
+        supabase.from('visits')
+          .select('id, flags, one_moment, start_time, end_time, created_at, elder_profiles(name)')
+          .eq('companion_id', id).order('created_at', { ascending: false }),
+        supabase.from('bookings')
+          .select('id, status, scheduled_at, loved_ones(full_name, city)')
+          .eq('companion_id', id).order('scheduled_at', { ascending: false }),
+      ])
+      if (compRes.error) throw compRes.error
+      setCompanion(compRes.data)
+      setProfile(profRes.data)
+      setVisits(visitsRes.data || [])
+      setBookings(bkRes.data || [])
+    } catch {
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+  useEffect(() => { load() }, [id])
+
+  if (loading) return (
+    <>
+      <Skeleton h={28} />
+      <div style={{ height: 12 }} />
+      <Skeleton h={120} />
+      <div style={{ height: 16 }} />
+      <div className="adm-grid adm-grid-3">{[0, 1, 2].map(i => <Skeleton key={i} h={92} />)}</div>
+    </>
+  )
+  if (error) return <Card><ErrorBox onRetry={load} /></Card>
+  if (!companion) return (
+    <>
+      <Link to="/admin/companions" className="adm-link">← Companions</Link>
+      <Card style={{ marginTop: 12 }}><EmptyState title="Companion not found" sub="This companion may have been removed." /></Card>
+    </>
+  )
+
+  const durations = visits.map(v => durationMin(v.start_time, v.end_time)).filter((m): m is number => m != null)
+  const avgDuration = durations.length ? Math.round(durations.reduce((s, m) => s + m, 0) / durations.length) : null
+  const flaggedCount = visits.filter(v => v.flags && v.flags !== 'none').length
+
+  return (
+    <>
+      <Link to="/admin/companions" className="adm-link">← Companions</Link>
+
+      {/* header */}
+      <Card style={{ marginTop: 12, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <Avatar name={companion.full_name} src={profile?.avatar_url} size={56} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--black)' }}>{companion.full_name || 'Companion'}</span>
+              <Badge tone={statusTone(companion.status)}>{statusLabel(companion.status)}</Badge>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 4, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><TbPhone size={12} /> {companion.phone || '—'}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><TbMapPin size={12} /> {companion.city || '—'}</span>
+              {companion.rating != null && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><TbStar size={12} /> {Number(companion.rating).toFixed(1)}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* metrics */}
+      <div className="adm-grid adm-grid-3" style={{ marginBottom: 16 }}>
+        <div className="adm-card adm-card-pad">
+          <div className="adm-stat-label">Total visits</div>
+          <div className="adm-stat-value">{visits.length}</div>
+        </div>
+        <div className="adm-card adm-card-pad">
+          <div className="adm-stat-label">Avg duration</div>
+          <div className="adm-stat-value">{avgDuration != null ? `${avgDuration} min` : '—'}</div>
+        </div>
+        <div className="adm-card adm-card-pad">
+          <div className="adm-stat-label">Flagged visits</div>
+          <div className="adm-stat-value">{flaggedCount}</div>
+        </div>
+      </div>
+
+      {/* assigned elders / bookings */}
+      <Card style={{ marginBottom: 16 }}>
+        <div className="adm-card-head"><span className="adm-card-title">Assigned elders · recent bookings</span></div>
+        {bookings.length === 0 ? (
+          <EmptyState title="No bookings assigned yet" />
         ) : (
-          <div className="space-y-2">
-            {filteredFamilies.map(p => (
-              <div key={p.id} className="bg-white rounded-2xl border border-gray-100 px-4 py-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 flex-shrink-0">
-                    {p.full_name?.[0] || '?'}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-green-900 truncate">{p.full_name}</p>
-                    <p className="text-xs text-gray-400">{p.whatsapp_number}</p>
-                  </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {bookings.map(b => (
+              <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '0.5px solid var(--gray-light)' }}>
+                <Avatar name={b.loved_ones?.full_name} size={32} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>{b.loved_ones?.full_name || 'Elder'}</div>
+                  <div style={{ fontSize: 11, color: 'var(--gray-mid)' }}>{b.loved_ones?.city || '—'}</div>
                 </div>
-                <button
-                  onClick={() => promote(p)}
-                  disabled={savingId === p.id}
-                  className="flex items-center gap-1 text-xs font-semibold bg-green-800 text-white px-3 py-1.5 rounded-xl hover:bg-green-700 disabled:opacity-50"
-                >
-                  <UserPlus size={13} /> Make companion
-                </button>
+                <div style={{ textAlign: 'right' }}>
+                  <Badge tone={b.status === 'completed' ? 'green' : b.status === 'cancelled' ? 'gray' : 'amber'}>
+                    {b.status ? b.status.replace(/_/g, ' ') : 'pending'}
+                  </Badge>
+                  <div style={{ fontSize: 11, color: 'var(--gray-mid)', marginTop: 2 }}>{istDate(b.scheduled_at)}</div>
+                </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </Card>
 
-      {showAddModal && (
-        <AddCompanionModal onClose={() => setShowAddModal(false)} onAdded={handleAdded} />
-      )}
-    </div>
+      {/* visit history */}
+      <Card>
+        <div className="adm-card-head"><span className="adm-card-title">Visit history</span></div>
+        {visits.length === 0 ? (
+          <EmptyState title="No visits logged yet" />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {visits.map(v => {
+              const ft = flagTone(v.flags)
+              const dur = durationMin(v.start_time, v.end_time)
+              return (
+                <div key={v.id} style={{ padding: '10px 0', borderBottom: '0.5px solid var(--gray-light)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500 }}>{v.elder_profiles?.name || 'Elder'}</div>
+                      <div style={{ fontSize: 11, color: 'var(--gray-mid)' }}>
+                        {istDate(v.created_at)}{dur != null ? ` · ${dur} min` : ''}
+                      </div>
+                    </div>
+                    <Badge tone={ft.tone}>{ft.label}</Badge>
+                  </div>
+                  {v.one_moment && (
+                    <p style={{ fontSize: 12, color: 'var(--gray-dark)', margin: '6px 0 0' }}>{truncate(v.one_moment, 120)}</p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </Card>
+    </>
   )
 }

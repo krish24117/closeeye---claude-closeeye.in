@@ -56,6 +56,14 @@ const AdminLiveMap = lazy(() => import('@/pages/admin/LiveMap').then(m => ({ def
 const AdminSurveyLeads = lazy(() => import('@/pages/admin/SurveyLeads').then(m => ({ default: m.AdminSurveyLeads })))
 const AdminLeadsCRM = lazy(() => import('@/pages/admin/LeadsCRM').then(m => ({ default: m.AdminLeadsCRM })))
 const AdminElders = lazy(() => import('@/pages/admin/Elders').then(m => ({ default: m.AdminElders })))
+const AdminVisits = lazy(() => import('@/pages/admin/Visits').then(m => ({ default: m.AdminVisits })))
+const AdminQueries = lazy(() => import('@/pages/admin/Queries').then(m => ({ default: m.AdminQueries })))
+const AdminRevenue = lazy(() => import('@/pages/admin/Revenue').then(m => ({ default: m.AdminRevenue })))
+const AdminSocieties = lazy(() => import('@/pages/admin/Societies').then(m => ({ default: m.AdminSocieties })))
+const AdminSocietyDetail = lazy(() => import('@/pages/admin/Societies').then(m => ({ default: m.AdminSocietyDetail })))
+const AdminSettings = lazy(() => import('@/pages/admin/Settings').then(m => ({ default: m.AdminSettings })))
+const AdminFamilyDetail = lazy(() => import('@/pages/admin/Families').then(m => ({ default: m.AdminFamilyDetail })))
+const AdminCompanionDetail = lazy(() => import('@/pages/admin/Companions').then(m => ({ default: m.AdminCompanionDetail })))
 
 const SurveyPage = lazy(() => import('@/pages/Survey').then(m => ({ default: m.SurveyPage })))
 
@@ -266,15 +274,23 @@ export default function App() {
             </Route>
             <Route path="/admin" element={<ProtectedRoute role="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminHome />} />
+              <Route path="visits" element={<AdminVisits />} />
+              <Route path="queries" element={<AdminQueries />} />
               <Route path="bookings" element={<AdminBookings />} />
               <Route path="companions" element={<AdminCompanions />} />
+              <Route path="companions/:id" element={<AdminCompanionDetail />} />
               <Route path="families" element={<AdminFamilies />} />
+              <Route path="families/:id" element={<AdminFamilyDetail />} />
+              <Route path="societies" element={<AdminSocieties />} />
+              <Route path="societies/:name" element={<AdminSocietyDetail />} />
+              <Route path="revenue" element={<AdminRevenue />} />
               <Route path="payments" element={<AdminPayments />} />
               <Route path="reports" element={<AdminReports />} />
               <Route path="live-map" element={<AdminLiveMap />} />
               <Route path="survey-leads" element={<AdminSurveyLeads />} />
               <Route path="leads" element={<AdminLeadsCRM />} />
               <Route path="elders" element={<AdminElders />} />
+              <Route path="settings" element={<AdminSettings />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
