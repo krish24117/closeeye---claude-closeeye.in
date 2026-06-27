@@ -17,6 +17,7 @@ const NAV_LINKS: { label: string; href?: string; to?: string }[] = [
   { href: '#services', label: 'Services' },
   { href: '#pricing', label: 'Pricing' },
   { to: '/for-societies', label: 'For Societies' },
+  { to: '/companions', label: 'Companions' },
 ]
 
 const TRUST_SIGNALS = [
@@ -683,6 +684,8 @@ export function HomePage() {
               <a href="#services">Services</a>
               <a href="#pricing">Pricing</a>
               <Link to="/for-societies">For Societies</Link>
+              <Link to="/companions">Companions</Link>
+              <Link to="/join-as-companion">Become a Companion</Link>
               <Link to="/about">About Us</Link>
             </div>
           </div>
