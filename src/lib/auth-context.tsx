@@ -33,12 +33,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let active = true
+    // Safety net: if getSession() hangs on a dropped connection, unblock
+    // the UI after 10 s so the page renders instead of spinning forever.
+    const timeout = setTimeout(() => { if (active) setLoading(false) }, 10_000)
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(timeout)
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id)
       else setLoading(false)
     }).catch((err) => {
+      clearTimeout(timeout)
       console.error('Failed to get session:', err)
       setLoading(false)
     })
@@ -58,7 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      active = false
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function fetchProfile(userId: string) {
