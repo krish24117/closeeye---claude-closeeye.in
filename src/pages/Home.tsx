@@ -350,14 +350,17 @@ export function HomePage() {
       {/* ── HERO ─────────────────────────────────────────────────── */}
       <section className="ce-hero">
         <div className="ce-hero-left animate-on-scroll">
-          <p className="ce-eyebrow">Trusted elder care companion — Hyderabad</p>
+          <p className="ce-eyebrow">Your trusted presence in India — Hyderabad</p>
           <h1 className="ce-h1">
             Your mother made tea<br />
             for two this morning.<br />
             <span className="ce-hero-h1-cont">Someone was there to share it.</span>
           </h1>
+          <p style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--forest)', marginTop: '1.25rem', marginBottom: '1rem', lineHeight: 1.4 }}>
+            When you can't be there, Close Eye can.
+          </p>
           <div className="ce-hero-body">
-            <p>Close Eye visits your parents personally. We check their health, medicines, and home. We send you a WhatsApp report within the hour.</p>
+            <p>Close Eye visits your parents — or any loved one — personally. We check their health, medicines, and home. We send you a WhatsApp report within the hour.</p>
             <p>Every time. So you always know.</p>
           </div>
           <div className="ce-hero-buttons">
