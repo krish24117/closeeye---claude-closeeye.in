@@ -1,18 +1,19 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { Home, FileText, MessageCircle, CalendarPlus, User, Bell, LogOut } from 'lucide-react'
+import { Home, FileText, MessageCircle, CalendarPlus, User, Bell, LogOut, CalendarCheck2 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { Logo } from '@/components/ui/Logo'
 
 const NRI_TABS = [
   { to: '/dashboard', icon: Home, label: 'Home', end: true },
+  { to: '/dashboard/bookings', icon: CalendarCheck2, label: 'Bookings' },
   { to: '/dashboard/reports', icon: FileText, label: 'Reports' },
   { to: '/dashboard/ask', icon: MessageCircle, label: 'Ask' },
   { to: '/dashboard/book', icon: CalendarPlus, label: 'Book' },
-  { to: '/dashboard/profile', icon: User, label: 'Profile' },
 ]
 const SOCIETY_TABS = [
   { to: '/dashboard', icon: Home, label: 'Home', end: true },
+  { to: '/dashboard/bookings', icon: CalendarCheck2, label: 'Bookings' },
   { to: '/dashboard/ask', icon: MessageCircle, label: 'Ask' },
   { to: '/dashboard/book', icon: CalendarPlus, label: 'Book' },
   { to: '/dashboard/profile', icon: User, label: 'Profile' },

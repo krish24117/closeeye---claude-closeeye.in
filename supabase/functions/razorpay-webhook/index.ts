@@ -154,12 +154,85 @@ Deno.serve(async (req: Request) => {
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const sb = createClient(supabaseUrl, supabaseServiceKey);
 
-  // Extract subscription object from payload
-  // Razorpay webhook payload: payload.payload.subscription.entity
+  // Extract subscription and payment objects from payload
   // deno-lint-ignore no-explicit-any
   const rzSub = (payload.payload as any)?.subscription?.entity as Record<string, unknown> | undefined;
   // deno-lint-ignore no-explicit-any
   const rzPayment = (payload.payload as any)?.payment?.entity as Record<string, unknown> | undefined;
+
+  // ── Handle booking payment captures ──────────────────────────────────────────
+  // payment.captured fires for one-time orders (booking_requests), not subscriptions.
+  if (event === "payment.captured") {
+    const orderId = rzPayment?.order_id as string | undefined;
+    if (orderId) {
+      const { data: br } = await sb
+        .from("booking_requests")
+        .select("id, status, service_name, recipient_name, requester_whatsapp, scheduled_at")
+        .eq("razorpay_order_id", orderId)
+        .maybeSingle();
+
+      if (br && br.status !== "paid") {
+        await sb.from("booking_requests").update({
+          status: "paid",
+          payment_status: "paid",
+          razorpay_payment_id: rzPayment?.id as string ?? null,
+          paid_at: new Date().toISOString(),
+        }).eq("id", br.id);
+
+        // Non-fatal WhatsApp: "Visit confirmed ✓ — see you on {date}"
+        try {
+          const waNum = (br.requester_whatsapp as string | null)?.trim();
+          if (waNum) {
+            const scheduledAt = br.scheduled_at as string | null;
+            const dateStr = scheduledAt
+              ? new Intl.DateTimeFormat("en-IN", {
+                  weekday: "long", day: "numeric", month: "long",
+                  hour: "numeric", minute: "2-digit", hour12: true,
+                  timeZone: "Asia/Kolkata",
+                }).format(new Date(scheduledAt))
+              : "your scheduled date";
+            const body = [
+              `Your Close Eye visit is confirmed ✓`,
+              ``,
+              `${br.service_name || "Companion visit"} for ${br.recipient_name || "your loved one"} is locked in.`,
+              `📅 ${dateStr}`,
+              ``,
+              `We will be there. See you soon!`,
+              ``,
+              `With care,`,
+              `Team Close Eye`,
+            ].join("\n");
+
+            const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+            const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
+            const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM") ?? "whatsapp:+14155238886";
+
+            if (accountSid && authToken) {
+              const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
+              const params = new URLSearchParams({ From: fromNum, To: to, Body: body });
+              await fetch(
+                `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+                    "Content-Type": "application/x-www-form-urlencoded",
+                  },
+                  body: params,
+                },
+              );
+            }
+          }
+        } catch (waErr) {
+          console.error("Payment confirmation WhatsApp failed (non-fatal):", waErr);
+        }
+
+        return json({ ok: true, handled: "booking_payment_captured" });
+      }
+    }
+    // payment.captured for non-booking order — nothing to do
+    return json({ ok: true });
+  }
 
   if (!rzSub?.id) {
     console.warn("No subscription entity in payload", event);

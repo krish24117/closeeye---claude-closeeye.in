@@ -1,442 +1,456 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/components/ui/Toast'
-import { format, differenceInDays, isFuture } from 'date-fns'
-import { SERVICE_NAMES } from '@/lib/booking-labels'
-import { LiveMap } from '@/components/ui/LiveMap'
-import { Skeleton } from '@/components/ui/Skeleton'
-import { Calendar, Phone, MapPin, Plus, CheckCircle, Clock, AlertCircle, XCircle, ChevronRight } from 'lucide-react'
+import { Calendar, CheckCircle, Clock, AlertCircle, XCircle, ChevronRight, Plus } from 'lucide-react'
+import { loadRazorpayScript } from '@/lib/razorpay'
 
-// ── Status config ─────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<string, { label: string; pill: string; icon: React.ReactNode }> = {
-  pending:            { label: 'Awaiting companion',  pill: 'bg-amber-100 text-amber-700',   icon: <Clock size={12} /> },
-  confirmed:          { label: 'Confirmed',            pill: 'bg-blue-100 text-blue-700',     icon: <CheckCircle size={12} /> },
-  companion_assigned: { label: 'Companion assigned',  pill: 'bg-purple-100 text-purple-700', icon: <CheckCircle size={12} /> },
-  in_progress:        { label: 'Visit in progress',   pill: 'bg-green-600 text-white',        icon: <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse inline-block" /> },
-  completed:          { label: 'Completed',            pill: 'bg-green-100 text-green-700',   icon: <CheckCircle size={12} /> },
-  cancelled:          { label: 'Cancelled',            pill: 'bg-red-100 text-red-600',       icon: <XCircle size={12} /> },
+interface BookingRequest {
+  id: string
+  service_id: string
+  service_name: string
+  amount_paise: number | null
+  scheduled_at: string | null
+  recipient_name: string
+  recipient_address: string
+  requester_whatsapp: string
+  notes: string | null
+  status: string
+  payment_status: string | null
+  companion_name: string | null
+  confirmed_at: string | null
+  paid_at: string | null
+  razorpay_order_id: string | null
+  created_at: string
 }
 
-// ── Progress steps ────────────────────────────────────────────────────────────
+// ── Status config ──────────────────────────────────────────────────────────────
 
-const STEPS = [
-  { key: 'paid',     label: 'Paid' },
-  { key: 'assigned', label: 'Companion ready' },
-  { key: 'visit',    label: 'Visit done' },
-]
-
-function stepIndex(status: string) {
-  if (status === 'in_progress')        return 2
-  if (status === 'companion_assigned') return 1
-  return 0
+const STATUS_CFG: Record<string, { label: string; sub: string; pill: string; icon: React.ReactNode }> = {
+  requested: {
+    label: 'Request received',
+    sub:   'Confirming a companion — usually within 2 hours.',
+    pill:  'bg-amber-100 text-amber-700',
+    icon:  <Clock size={13} />,
+  },
+  needs_details: {
+    label: 'Details needed',
+    sub:   'We need your address or WhatsApp to proceed.',
+    pill:  'bg-orange-100 text-orange-700',
+    icon:  <AlertCircle size={13} />,
+  },
+  confirmed: {
+    label: 'Confirmed',
+    sub:   'Your visit has been confirmed.',
+    pill:  'bg-blue-100 text-blue-700',
+    icon:  <CheckCircle size={13} />,
+  },
+  companion_confirmed: {
+    label: 'Companion confirmed',
+    sub:   'Pay to lock in your visit.',
+    pill:  'bg-blue-100 text-blue-700',
+    icon:  <CheckCircle size={13} />,
+  },
+  paid: {
+    label: 'Visit confirmed ✓',
+    sub:   "Your visit is locked. We'll be there.",
+    pill:  'bg-green-100 text-green-700',
+    icon:  <CheckCircle size={13} />,
+  },
+  cancelled: {
+    label: 'Cancelled',
+    sub:   'This booking was cancelled.',
+    pill:  'bg-red-100 text-red-600',
+    icon:  <XCircle size={13} />,
+  },
 }
 
-function ProgressTrack({ status }: { status: string }) {
-  if (['completed', 'cancelled'].includes(status)) return null
-  const active = stepIndex(status)
-  return (
-    <div className="flex items-center gap-0 mt-4">
-      {STEPS.map((s, i) => {
-        const done    = i < active || (status === 'in_progress' && i === 2)
-        const current = i === active && status !== 'in_progress'
-        const pulse   = status === 'in_progress' && i === 2
-        return (
-          <div key={s.key} className="flex items-center flex-1 last:flex-none">
-            <div className="flex flex-col items-center">
-              <div className={[
-                'w-6 h-6 rounded-full flex items-center justify-center text-xs transition-colors',
-                done    ? 'bg-green-600 text-white' :
-                current ? 'bg-green-100 ring-2 ring-green-400 text-green-700' :
-                pulse   ? 'bg-green-600 text-white animate-pulse' :
-                          'bg-gray-100 text-gray-400',
-              ].join(' ')}>
-                {done ? <CheckCircle size={13} /> : <span className="font-bold">{i + 1}</span>}
-              </div>
-              <p className={`text-xs mt-1 whitespace-nowrap ${done || current || pulse ? 'text-green-700 font-medium' : 'text-gray-400'}`}>
-                {s.label}
-              </p>
-            </div>
-            {i < STEPS.length - 1 && (
-              <div className={`flex-1 h-0.5 mx-1 mb-4 rounded-full ${i < active ? 'bg-green-400' : 'bg-gray-100'}`} />
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
+function cfg(status: string) {
+  return STATUS_CFG[status] ?? {
+    label: status.replace(/_/g, ' '),
+    sub: '',
+    pill: 'bg-gray-100 text-gray-500',
+    icon: <Clock size={13} />,
+  }
 }
 
-// ── Live map ──────────────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
-function ActiveVisitMap({ booking }: { booking: any }) {
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
-
-  useEffect(() => {
-    let active = true
-    supabase.from('companion_locations').select('lat,lng').eq('booking_id', booking.id).maybeSingle()
-      .then(({ data, error }) => {
-        if (!active) return
-        if (error) { console.error('Failed to load companion location:', error); return }
-        if (data) setLocation(data as any)
-      })
-    const channel = supabase.channel(`family-location-${booking.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'companion_locations', filter: `booking_id=eq.${booking.id}` }, (payload) => {
-        if (payload.eventType === 'DELETE') { setLocation(null); return }
-        setLocation(payload.new as any)
-      })
-      .subscribe()
-    return () => { active = false; supabase.removeChannel(channel) }
-  }, [booking.id])
-
-  return (
-    <div className="mt-4 pt-4 border-t border-gray-100">
-      <p className="text-xs font-semibold text-green-800 mb-2 flex items-center gap-1.5">
-        <MapPin size={12} /> Live companion location
-      </p>
-      {location ? (
-        <LiveMap
-          markers={[{ id: booking.companion_id, lat: location.lat, lng: location.lng, label: booking.companions?.full_name }]}
-          center={{ lat: location.lat, lng: location.lng }}
-          height="200px"
-        />
-      ) : (
-        <div className="bg-gray-50 rounded-2xl flex items-center justify-center text-xs text-gray-400 text-center px-4" style={{ height: '180px' }}>
-          Waiting for companion's live location…
-        </div>
-      )}
-    </div>
-  )
+function fmtDate(iso: string | null) {
+  if (!iso) return null
+  return new Date(iso).toLocaleDateString('en-IN', {
+    weekday: 'long', day: 'numeric', month: 'long',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+    timeZone: 'Asia/Kolkata',
+  })
 }
 
-// ── Full booking card (upcoming) ──────────────────────────────────────────────
-
-function BookingCard({ booking, onCancel, cancelling }: { booking: any; onCancel: (b: any) => void; cancelling: boolean }) {
-  const cfg = STATUS_CONFIG[booking.status] ?? { label: booking.status, pill: 'bg-gray-100 text-gray-500', icon: null }
-  const canCancel = ['pending', 'confirmed'].includes(booking.status)
-  const paid = ['paid', 'received'].includes(booking.payment_status)
-  const daysUntil = booking.scheduled_at && isFuture(new Date(booking.scheduled_at))
-    ? differenceInDays(new Date(booking.scheduled_at), new Date()) : null
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-      <div className={`px-4 py-2.5 flex items-center justify-between gap-2 ${
-        booking.status === 'in_progress' ? 'bg-green-600' : 'bg-gray-50'
-      }`}>
-        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.pill}`}>
-          {cfg.icon}{cfg.label}
-        </span>
-        {daysUntil !== null && (
-          <span className={`text-xs font-bold ${booking.status === 'in_progress' ? 'text-white/80' : 'text-gray-400'}`}>
-            {daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : `In ${daysUntil} days`}
-          </span>
-        )}
-      </div>
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-green-900">{SERVICE_NAMES[booking.service_type] || booking.service_type}</p>
-            <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-              {booking.scheduled_at && (
-                <p className="text-xs text-gray-500 flex items-center gap-1">
-                  <Calendar size={12} className="flex-shrink-0" />
-                  {format(new Date(booking.scheduled_at), 'EEE, d MMM yyyy · h:mm a')}
-                </p>
-              )}
-              {booking.loved_ones?.full_name && (
-                <p className="text-xs text-gray-400">
-                  For <span className="font-medium text-gray-600">{booking.loved_ones.full_name}</span>
-                  {booking.loved_ones.city ? ` · ${booking.loved_ones.city}` : ''}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="text-right flex-shrink-0">
-            <p className="font-serif text-lg text-green-900 leading-tight">₹{(booking.amount_paise / 100).toLocaleString('en-IN')}</p>
-            <span className={`text-xs font-medium ${paid ? 'text-green-600' : 'text-amber-600'}`}>
-              {paid ? '✓ Paid' : 'Unpaid'}
-            </span>
-          </div>
-        </div>
-        <ProgressTrack status={booking.status} />
-        {booking.companions && (
-          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-green-700 font-bold text-sm">{booking.companions.full_name?.[0]}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-green-900 truncate">{booking.companions.full_name}</p>
-              <p className="text-xs text-gray-400">Your companion</p>
-            </div>
-            {booking.companions.phone && (
-              <a
-                href={`tel:${booking.companions.phone}`}
-                className="w-9 h-9 bg-green-50 hover:bg-green-100 rounded-xl flex items-center justify-center text-green-600 transition-colors flex-shrink-0"
-              >
-                <Phone size={16} />
-              </a>
-            )}
-          </div>
-        )}
-        {booking.status === 'in_progress' && booking.companion_id && <ActiveVisitMap booking={booking} />}
-        {canCancel && (
-          <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end">
-            <button
-              onClick={() => onCancel(booking)}
-              disabled={cancelling}
-              className="text-xs font-semibold text-red-500 hover:text-red-700 disabled:opacity-50 transition-colors flex items-center gap-1"
-            >
-              <XCircle size={13} /> {cancelling ? 'Cancelling…' : 'Cancel booking'}
-            </button>
-          </div>
-        )}
-        {booking.status === 'completed' && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <Link to="/dashboard/reports" className="text-xs font-semibold text-green-700 hover:underline">
-              View visit report →
-            </Link>
-          </div>
-        )}
-        {booking.special_instructions && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-400 mb-1">Notes for companion</p>
-            <p className="text-xs text-gray-600 leading-relaxed">{booking.special_instructions}</p>
-          </div>
-        )}
-      </div>
-    </div>
-  )
+function fmtShort(iso: string) {
+  return new Date(iso).toLocaleDateString('en-IN', {
+    day: 'numeric', month: 'short', year: 'numeric',
+    timeZone: 'Asia/Kolkata',
+  })
 }
 
-// ── Compact card (past bookings) ──────────────────────────────────────────────
-
-function CompactBookingCard({ booking, onCancel, cancelling }: { booking: any; onCancel: (b: any) => void; cancelling: boolean }) {
-  const cfg  = STATUS_CONFIG[booking.status] ?? { label: booking.status, pill: 'bg-gray-100 text-gray-500', icon: null }
-  const paid = ['paid', 'received'].includes(booking.payment_status)
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 px-4 py-3 flex items-center gap-3">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-green-900 truncate">{SERVICE_NAMES[booking.service_type] || booking.service_type}</p>
-        <p className="text-xs text-gray-400 mt-0.5 truncate">
-          {booking.loved_ones?.full_name}
-          {booking.scheduled_at ? ` · ${format(new Date(booking.scheduled_at), 'd MMM yyyy')}` : ''}
-          {booking.companions?.full_name ? ` · ${booking.companions.full_name}` : ''}
-        </p>
-      </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${cfg.pill}`}>
-          {cfg.icon}{cfg.label}
-        </span>
-        {booking.amount_paise && (
-          <p className="text-sm font-semibold text-green-800 whitespace-nowrap">
-            ₹{(booking.amount_paise / 100).toLocaleString('en-IN')}
-          </p>
-        )}
-        {booking.status === 'completed' && (
-          <Link to="/dashboard/reports" className="text-green-600 hover:text-green-800 transition-colors" title="View report">
-            <ChevronRight size={15} />
-          </Link>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ── Skeleton ──────────────────────────────────────────────────────────────────
+// ── Skeleton ───────────────────────────────────────────────────────────────────
 
 function BookingsSkeleton() {
   return (
-    <div className="space-y-5 animate-pulse">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-7 w-24" />
-        <Skeleton className="h-9 w-28 rounded-xl" />
-      </div>
-      <Skeleton className="h-10 rounded-xl" />
-      {[1, 2, 3].map(i => (
-        <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <Skeleton className="h-10 rounded-none" />
-          <div className="p-5 space-y-3">
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-3 w-36" />
-            <Skeleton className="h-3 w-52" />
-          </div>
+    <div className="space-y-4 animate-pulse" style={{ padding: '0 0 80px' }}>
+      <div style={{ height: 32, width: 140, background: '#f3f4f6', borderRadius: 12 }} />
+      {[1, 2].map(i => (
+        <div key={i} style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: 20 }}>
+          <div style={{ height: 16, width: 160, background: '#f3f4f6', borderRadius: 8, marginBottom: 12 }} />
+          <div style={{ height: 12, width: 200, background: '#f3f4f6', borderRadius: 8, marginBottom: 8 }} />
+          <div style={{ height: 12, width: 120, background: '#f3f4f6', borderRadius: 8 }} />
         </div>
       ))}
     </div>
   )
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ── Pay button ─────────────────────────────────────────────────────────────────
 
-export function DashboardBookings() {
+function PayButton({
+  booking,
+  profile,
+  onPaid,
+}: {
+  booking: BookingRequest
+  profile: { full_name?: string | null; whatsapp_number?: string | null } | null
+  onPaid: (id: string) => void
+}) {
   const { showToast } = useToast()
-  const [bookings, setBookings]         = useState<any[]>([])
-  const [loading, setLoading]           = useState(true)
-  const [error, setError]               = useState<string | null>(null)
-  const [cancellingId, setCancellingId] = useState<string | null>(null)
-  const [tab, setTab]                   = useState<'upcoming' | 'past'>('upcoming')
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => { load() }, [])
-
-  async function load() {
+  async function handlePay() {
+    if (!booking.amount_paise) { showToast('Amount not set — contact support', 'error'); return }
     setLoading(true)
-    setError(null)
     try {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('*, loved_ones(full_name,city), companions(full_name,phone)')
-        .order('scheduled_at', { ascending: false })
-      if (error) throw error
-      setBookings(data || [])
+      const rzLoaded = await loadRazorpayScript()
+      if (!rzLoaded) { showToast('Could not load payment gateway — please try again', 'error'); return }
+
+      const { data, error } = await supabase.functions.invoke('create-booking-payment-order', {
+        body: { booking_request_id: booking.id },
+      })
+      if (error || !data?.order_id) {
+        showToast(data?.error || 'Could not start payment — try again', 'error')
+        return
+      }
+
+      const { order_id, key_id, amount_paise } = data as { order_id: string; key_id: string; amount_paise: number }
+
+      const options = {
+        key: key_id,
+        amount: amount_paise,
+        currency: 'INR',
+        order_id,
+        name: 'Close Eye',
+        description: `${booking.service_name} for ${booking.recipient_name}`,
+        prefill: {
+          name: profile?.full_name || '',
+          contact: booking.requester_whatsapp || profile?.whatsapp_number || '',
+        },
+        theme: { color: '#0E2A1F' },
+        handler: () => {
+          showToast('Payment received — confirming your visit…', 'success')
+          onPaid(booking.id)
+        },
+      }
+
+      const rzp = new window.Razorpay(options) as { open(): void; on(event: string, cb: () => void): void }
+      rzp.on('payment.failed', () => {
+        showToast('Payment did not complete — please try again', 'error')
+      })
+      rzp.open()
     } catch (err) {
-      console.error('Failed to load bookings:', err)
-      setError('Something went wrong — please try again.')
+      console.error('Payment error:', err)
+      showToast('Something went wrong — please try again', 'error')
     } finally {
       setLoading(false)
     }
   }
 
-  async function cancelBooking(b: any) {
-    if (!window.confirm('Cancel this booking? This cannot be undone.')) return
-    setCancellingId(b.id)
-    try {
-      const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', b.id)
-      if (error) throw error
-      setBookings(prev => prev.map(x => x.id === b.id ? { ...x, status: 'cancelled' } : x))
-      showToast('Booking cancelled', 'success')
-    } catch {
-      showToast('Could not cancel booking — try again', 'error')
-    } finally {
-      setCancellingId(null)
-    }
-  }
-
-  const upcoming = bookings.filter(b => ['pending', 'confirmed', 'companion_assigned', 'in_progress'].includes(b.status))
-  const past     = bookings.filter(b => ['completed', 'cancelled'].includes(b.status))
-  const shown    = tab === 'upcoming' ? upcoming : past
-
-  if (loading) return <BookingsSkeleton />
+  const amountStr = booking.amount_paise
+    ? `₹${Math.round(booking.amount_paise / 100).toLocaleString('en-IN')}`
+    : ''
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <button
+      onClick={handlePay}
+      disabled={loading}
+      style={{
+        background: 'var(--forest)',
+        color: '#FAF7F2',
+        borderRadius: 100,
+        padding: '13px 28px',
+        fontSize: 15,
+        fontWeight: 700,
+        border: 'none',
+        cursor: loading ? 'not-allowed' : 'pointer',
+        opacity: loading ? 0.7 : 1,
+        width: '100%',
+        marginTop: 16,
+      }}
+    >
+      {loading ? 'Opening payment…' : `Pay ${amountStr} to confirm →`}
+    </button>
+  )
+}
 
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-2xl text-green-900">Bookings</h1>
-          <p className="text-gray-400 text-sm mt-0.5">{bookings.length} total · {upcoming.length} upcoming</p>
-        </div>
-        <Link
-          to="/dashboard/new-booking"
-          className="flex items-center gap-1.5 bg-green-800 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+// ── Booking card ───────────────────────────────────────────────────────────────
+
+function BookingCard({
+  booking,
+  profile,
+  optimisticPaid,
+  onPaid,
+}: {
+  booking: BookingRequest
+  profile: { full_name?: string | null; whatsapp_number?: string | null } | null
+  optimisticPaid: boolean
+  onPaid: (id: string) => void
+}) {
+  const status = optimisticPaid ? 'paid' : booking.status
+  const { label, sub, pill, icon } = cfg(status)
+  const isPaid = status === 'paid'
+  const isComp = status === 'companion_confirmed'
+  const isNeedsDetails = status === 'needs_details'
+  const dateStr = fmtDate(booking.scheduled_at)
+
+  return (
+    <div style={{
+      background: '#fff',
+      borderRadius: 20,
+      border: `1px solid ${isPaid ? '#bbf7d0' : isComp ? '#bfdbfe' : '#f0f0f0'}`,
+      borderLeft: isPaid ? '4px solid #22c55e' : isComp ? '4px solid #3b82f6' : undefined,
+      overflow: 'hidden',
+    }}>
+      {/* Status strip */}
+      <div style={{
+        padding: '10px 16px',
+        background: isPaid ? '#f0fdf4' : isComp ? '#eff6ff' : '#f9f9f9',
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        <span
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 100 }}
+          className={pill}
         >
-          <Plus size={15} /> New booking
+          {icon}{label}
+        </span>
+        {optimisticPaid && !booking.paid_at && (
+          <span style={{ fontSize: 11, color: '#6b7280', marginLeft: 2 }}>Confirming…</span>
+        )}
+      </div>
+
+      {/* Body */}
+      <div style={{ padding: '16px 16px 8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--forest)', margin: 0 }}>
+              {booking.service_name}
+            </p>
+            <p style={{ fontSize: 13, color: '#6b7280', margin: '2px 0 0' }}>
+              For {booking.recipient_name}
+            </p>
+          </div>
+          {booking.amount_paise ? (
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--forest)', margin: 0 }}>
+                ₹{Math.round(booking.amount_paise / 100).toLocaleString('en-IN')}
+              </p>
+              <p style={{ fontSize: 11, color: isPaid ? '#16a34a' : '#9ca3af', margin: '1px 0 0', fontWeight: 600 }}>
+                {isPaid ? '✓ Paid' : isComp ? 'Due now' : 'Pending'}
+              </p>
+            </div>
+          ) : null}
+        </div>
+
+        {booking.companion_name && (
+          <p style={{ fontSize: 13, color: '#374151', marginTop: 10, fontWeight: 500 }}>
+            👤 <span style={{ fontWeight: 700 }}>{booking.companion_name}</span>
+          </p>
+        )}
+
+        {dateStr && (
+          <p style={{ fontSize: 13, color: '#4b5563', marginTop: 6 }}>📅 {dateStr}</p>
+        )}
+
+        {/* Status sub-copy */}
+        {!isPaid && sub && (
+          <p style={{ fontSize: 13, color: '#9ca3af', marginTop: 8 }}>{sub}</p>
+        )}
+        {isPaid && (
+          <p style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, marginTop: 8 }}>
+            Your visit is confirmed. We'll be there.
+          </p>
+        )}
+
+        {/* Pay CTA */}
+        {isComp && !optimisticPaid && (
+          <PayButton booking={booking} profile={profile} onPaid={onPaid} />
+        )}
+
+        {booking.recipient_address && (
+          <p style={{ fontSize: 12, color: '#d1d5db', marginTop: 10 }}>
+            📍 {booking.recipient_address}
+          </p>
+        )}
+
+        {booking.notes && (
+          <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4, fontStyle: 'italic' }}>
+            "{booking.notes}"
+          </p>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        borderTop: '1px solid #f3f4f6', padding: '10px 16px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      }}>
+        <p style={{ fontSize: 11, color: '#d1d5db', margin: 0 }}>
+          Requested {fmtShort(booking.created_at)}
+        </p>
+        {isNeedsDetails && (
+          <Link
+            to="/dashboard/profile"
+            style={{ fontSize: 12, fontWeight: 700, color: 'var(--forest)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}
+          >
+            Update profile <ChevronRight size={12} />
+          </Link>
+        )}
+        {!['paid', 'cancelled', 'needs_details'].includes(status) && (
+          <span style={{ fontSize: 11, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 4 }}>
+            Live tracking
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} className="ce-pulse-dot" />
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────────
+
+export function DashboardBookings() {
+  const { user, profile } = useAuth()
+  const [bookings, setBookings]               = useState<BookingRequest[]>([])
+  const [loading, setLoading]                 = useState(true)
+  const [error, setError]                     = useState<string | null>(null)
+  const [optimisticPaid, setOptimisticPaid]   = useState<Set<string>>(new Set())
+
+  const load = useCallback(async () => {
+    if (!user) return
+    const { data, error: err } = await supabase
+      .from('booking_requests')
+      .select('id,service_id,service_name,amount_paise,scheduled_at,recipient_name,recipient_address,requester_whatsapp,notes,status,payment_status,companion_name,confirmed_at,paid_at,razorpay_order_id,created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (err) { setError('Could not load bookings — please try again.'); setLoading(false); return }
+    setBookings(data || [])
+    setLoading(false)
+    setError(null)
+  }, [user])
+
+  useEffect(() => {
+    load()
+    const interval = setInterval(load, 30_000)
+    return () => clearInterval(interval)
+  }, [load])
+
+  function handlePaid(id: string) {
+    setOptimisticPaid(prev => new Set(prev).add(id))
+    setTimeout(() => load(), 5000)
+  }
+
+  const active = bookings.filter(b => b.status !== 'cancelled')
+  const past   = bookings.filter(b => b.status === 'cancelled')
+
+  if (loading) return (
+    <div style={{ padding: '0 16px' }}>
+      <BookingsSkeleton />
+    </div>
+  )
+
+  return (
+    <div style={{ padding: '0 16px 80px' }} className="ce-slide-up">
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
+        <h1 style={{ fontWeight: 700, fontSize: 22, color: 'var(--forest)', margin: 0 }}>My bookings</h1>
+        <Link
+          to="/dashboard/book"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: 'var(--forest)', color: '#FAF7F2', borderRadius: 100,
+            padding: '10px 18px', fontSize: 13, fontWeight: 700, textDecoration: 'none',
+          }}
+        >
+          <Plus size={14} /> New visit
         </Link>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
+        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, fontSize: 14, color: '#dc2626' }}>
           {error}
-          <button onClick={load} className="font-semibold underline whitespace-nowrap">Retry</button>
+          <button onClick={load} style={{ fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', flexShrink: 0 }}>Retry</button>
         </div>
       )}
 
-      {/* Tabs */}
-      {bookings.length > 0 && (
-        <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
-          {([
-            { key: 'upcoming', label: 'Upcoming', count: upcoming.length },
-            { key: 'past',     label: 'Past',     count: past.length },
-          ] as const).map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={[
-                'flex-1 flex items-center justify-center gap-2 text-sm font-semibold py-2 rounded-lg transition-all',
-                tab === t.key ? 'bg-white text-green-900 shadow-sm' : 'text-gray-500 hover:text-gray-700',
-              ].join(' ')}
-            >
-              {t.label}
-              {t.count > 0 && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
-                  tab === t.key ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'
-                }`}>
-                  {t.count}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Empty — no bookings at all */}
+      {/* Empty state */}
       {bookings.length === 0 && (
-        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
-          <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Calendar size={24} className="text-green-600" />
+        <div style={{ textAlign: 'center', padding: '64px 20px', background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0' }}>
+          <div style={{ width: 56, height: 56, background: '#f0fdf4', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <Calendar size={24} color="#16a34a" />
           </div>
-          <p className="font-semibold text-green-900 mb-1">No bookings yet</p>
-          <p className="text-sm text-gray-400 mb-6">Book your first companion visit for a loved one.</p>
+          <p style={{ fontWeight: 700, fontSize: 16, color: 'var(--forest)', margin: '0 0 6px' }}>No bookings yet</p>
+          <p style={{ fontSize: 14, color: '#9ca3af', margin: '0 0 24px' }}>Book a companion visit for your loved one.</p>
           <Link
-            to="/dashboard/new-booking"
-            className="inline-flex items-center gap-2 bg-green-800 hover:bg-green-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-colors"
+            to="/dashboard/book"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--forest)', color: '#FAF7F2', borderRadius: 100, padding: '12px 24px', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}
           >
-            <Plus size={15} /> Book a visit
+            <Plus size={14} /> Book a visit
           </Link>
         </div>
       )}
 
-      {/* Tab empty states */}
-      {bookings.length > 0 && shown.length === 0 && (
-        tab === 'upcoming' ? (
-          <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
-            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <Calendar size={20} className="text-amber-500" />
-            </div>
-            <p className="font-semibold text-green-900 mb-1 text-sm">No upcoming visits</p>
-            <p className="text-xs text-gray-400 mb-5">Schedule a new companion visit for your loved one.</p>
-            <Link
-              to="/dashboard/new-booking"
-              className="inline-flex items-center gap-2 bg-green-800 hover:bg-green-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
-            >
-              <Plus size={15} /> Book now
-            </Link>
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
-            <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <AlertCircle size={20} className="text-gray-400" />
-            </div>
-            <p className="font-semibold text-green-900 mb-1 text-sm">No past visits yet</p>
-            <p className="text-xs text-gray-400">Completed and cancelled bookings will appear here.</p>
-          </div>
-        )
+      {/* Active bookings */}
+      {active.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: past.length ? 24 : 0 }}>
+          {active.map(b => (
+            <BookingCard
+              key={b.id}
+              booking={b}
+              profile={profile}
+              optimisticPaid={optimisticPaid.has(b.id)}
+              onPaid={handlePaid}
+            />
+          ))}
+        </div>
       )}
 
-      {/* Booking list */}
-      {shown.length > 0 && (
-        <div className="space-y-3">
-          {tab === 'upcoming'
-            ? shown.map(b => (
-                <BookingCard
-                  key={b.id}
-                  booking={b}
-                  onCancel={cancelBooking}
-                  cancelling={cancellingId === b.id}
-                />
-              ))
-            : shown.map(b => (
-                <CompactBookingCard
-                  key={b.id}
-                  booking={b}
-                  onCancel={cancelBooking}
-                  cancelling={cancellingId === b.id}
-                />
-              ))
-          }
-        </div>
+      {/* Cancelled bookings */}
+      {past.length > 0 && (
+        <>
+          {active.length > 0 && (
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: '0.08em', margin: '0 0 10px' }}>CANCELLED</p>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {past.map(b => (
+              <BookingCard
+                key={b.id}
+                booking={b}
+                profile={profile}
+                optimisticPaid={false}
+                onPaid={() => {}}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

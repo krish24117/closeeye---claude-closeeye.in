@@ -4,20 +4,22 @@ import { CardSkeleton } from '@/components/ui/Skeleton'
 import { useToast } from '@/components/ui/Toast'
 import { format } from 'date-fns'
 import { SERVICE_NAMES } from '@/lib/booking-labels'
-import { ChevronDown, AlertTriangle, X } from 'lucide-react'
+import { ChevronDown, AlertTriangle, X, CheckCircle2 } from 'lucide-react'
 
 const ALL_STATUSES = ['pending', 'confirmed', 'companion_assigned', 'in_progress', 'completed', 'cancelled']
 
 const BADGE: Record<string, string> = {
-  pending:            'bg-amber-100 text-amber-700',
-  confirmed:          'bg-blue-100 text-blue-700',
-  companion_assigned: 'bg-purple-100 text-purple-700',
-  in_progress:        'bg-green-100 text-green-700',
-  completed:          'bg-gray-100 text-gray-500',
-  cancelled:          'bg-red-100 text-red-600',
-  requested:          'bg-amber-100 text-amber-700',
-  needs_details:      'bg-orange-100 text-orange-700',
-  scheduled:          'bg-blue-100 text-blue-700',
+  pending:             'bg-amber-100 text-amber-700',
+  confirmed:           'bg-blue-100 text-blue-700',
+  companion_assigned:  'bg-purple-100 text-purple-700',
+  in_progress:         'bg-green-100 text-green-700',
+  completed:           'bg-gray-100 text-gray-500',
+  cancelled:           'bg-red-100 text-red-600',
+  requested:           'bg-amber-100 text-amber-700',
+  needs_details:       'bg-orange-100 text-orange-700',
+  scheduled:           'bg-blue-100 text-blue-700',
+  companion_confirmed: 'bg-blue-100 text-blue-700',
+  paid:                'bg-green-100 text-green-700',
 }
 
 const PAYMENT_BADGE: Record<string, string> = {
@@ -28,11 +30,13 @@ const PAYMENT_BADGE: Record<string, string> = {
 }
 
 const LABEL: Record<string, string> = {
-  requested:     'Request received',
-  needs_details: 'Needs details',
-  confirmed:     'Confirmed',
-  scheduled:     'Scheduled',
-  cancelled:     'Cancelled',
+  requested:           'Request received',
+  needs_details:       'Needs details',
+  confirmed:           'Confirmed',
+  scheduled:           'Scheduled',
+  companion_confirmed: 'Companion confirmed',
+  paid:                'Visit confirmed',
+  cancelled:           'Cancelled',
 }
 
 function StatusLabel({ status }: { status: string }) {
@@ -173,6 +177,162 @@ function ConfirmModal({
   )
 }
 
+// ── ConfirmDrawer ─────────────────────────────────────────────────────────────
+
+function ConfirmDrawer({
+  request,
+  onClose,
+  onConfirmed,
+}: {
+  request: BookingRequest & { _family_name?: string | null }
+  onClose: () => void
+  onConfirmed: (id: string, updates: Partial<BookingRequest>) => void
+}) {
+  const { showToast } = useToast()
+  const [companionName, setCompanionName] = useState(request.companion_name || '')
+  const [scheduledAt, setScheduledAt]     = useState(
+    request.scheduled_at ? request.scheduled_at.slice(0, 16) : ''
+  )
+  const [amountRupees, setAmountRupees] = useState(
+    request.amount_paise ? String(Math.round(request.amount_paise / 100)) : ''
+  )
+  const [saving, setSaving] = useState(false)
+
+  const familyName = request._family_name || 'there'
+  const elderName  = request.recipient_name || 'your loved one'
+  const waNumber   = request.requester_whatsapp.replace(/\D/g, '')
+  const hasWa      = waNumber.length >= 7
+
+  function buildWhatsAppMessage(): string {
+    const dateStr = scheduledAt
+      ? new Date(scheduledAt).toLocaleDateString('en-IN', {
+          weekday: 'long', day: 'numeric', month: 'long',
+          hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata',
+        })
+      : '—'
+    return [
+      `Namaste ${familyName} 🌿`,
+      ``,
+      `Your Close Eye visit has been confirmed!`,
+      ``,
+      `🏠 ${request.service_name} for ${elderName}`,
+      ...(scheduledAt ? [`📅 ${dateStr} IST`] : []),
+      ...(companionName ? [`👤 Companion: ${companionName}`] : []),
+      ...(amountRupees ? [`💳 Amount: ₹${amountRupees}`] : []),
+      ``,
+      `To complete your booking, open the Close Eye app and pay now. Once paid, your visit is locked.`,
+      ``,
+      `Warm regards,`,
+      `Team Close Eye`,
+      `When you can't be there, Close Eye can.`,
+    ].join('\n')
+  }
+
+  async function handleConfirm() {
+    if (!companionName.trim()) { showToast('Enter a companion name', 'error'); return }
+    setSaving(true)
+    try {
+      const amountPaise = amountRupees ? Math.round(parseFloat(amountRupees) * 100) : request.amount_paise
+      const updates: Record<string, unknown> = {
+        status: 'companion_confirmed',
+        companion_name: companionName.trim(),
+        confirmed_at: new Date().toISOString(),
+        ...(scheduledAt ? { scheduled_at: new Date(scheduledAt).toISOString() } : {}),
+        ...(amountPaise ? { amount_paise: amountPaise } : {}),
+      }
+      const { error } = await supabase.from('booking_requests').update(updates).eq('id', request.id)
+      if (error) throw error
+      onConfirmed(request.id, updates as Partial<BookingRequest>)
+      // Open WhatsApp with pre-filled payment-prompt message
+      if (hasWa) {
+        window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(buildWhatsAppMessage())}`, '_blank')
+      }
+      onClose()
+    } catch {
+      showToast('Could not confirm booking — try again', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px]"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div>
+            <p className="font-semibold text-green-900">Confirm booking</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {request.service_name} for {elderName}
+              {familyName !== 'there' ? ` · ${familyName}` : ''}
+            </p>
+          </div>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-auto px-5 py-4 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Companion name *</label>
+            <input
+              type="text"
+              value={companionName}
+              onChange={e => setCompanionName(e.target.value)}
+              placeholder="e.g. Priya Sharma"
+              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Scheduled date & time</label>
+            <input
+              type="datetime-local"
+              value={scheduledAt}
+              onChange={e => setScheduledAt(e.target.value)}
+              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Amount (₹)</label>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={amountRupees}
+              onChange={e => setAmountRupees(e.target.value)}
+              placeholder="e.g. 999"
+              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600"
+            />
+            <p className="text-xs text-gray-400 mt-1">Family will see this amount in the app and be asked to pay.</p>
+          </div>
+
+          {!hasWa && (
+            <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2.5">
+              <AlertTriangle size={13} className="text-orange-600 flex-shrink-0" />
+              <p className="text-xs text-orange-700 font-medium">No WhatsApp number — status will still be updated, but notification won't send.</p>
+            </div>
+          )}
+        </div>
+
+        <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+          <button
+            onClick={handleConfirm}
+            disabled={saving || !companionName.trim()}
+            className="flex-1 bg-green-800 text-white text-sm font-semibold rounded-xl py-3 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? 'Saving…' : hasWa ? 'Confirm & notify on WhatsApp →' : 'Confirm booking'}
+          </button>
+          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700 px-4">Cancel</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Requests tab ─────────────────────────────────────────────────────────────
 
 interface BookingRequest {
@@ -188,15 +348,19 @@ interface BookingRequest {
   notes: string | null
   status: string
   created_at: string
+  companion_name?: string | null
+  payment_status?: string | null
+  confirmed_at?: string | null
   _family_name?: string | null
 }
 
 function RequestsTab() {
   const { showToast } = useToast()
-  const [requests, setRequests] = useState<BookingRequest[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [requests, setRequests]           = useState<BookingRequest[]>([])
+  const [loading, setLoading]             = useState(true)
+  const [error, setError]                 = useState<string | null>(null)
   const [confirmTarget, setConfirmTarget] = useState<BookingRequest | null>(null)
+  const [drawerTarget, setDrawerTarget]   = useState<BookingRequest | null>(null)
 
   useEffect(() => { loadRequests() }, [])
 
@@ -226,11 +390,11 @@ function RequestsTab() {
     setLoading(false)
   }
 
-  async function updateRequestStatus(id: string, status: string) {
-    const { error: err } = await supabase.from('booking_requests').update({ status }).eq('id', id)
-    if (err) { showToast('Could not update status', 'error'); return }
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r))
-    showToast('Status updated', 'success')
+  async function cancelRequest(id: string) {
+    const { error: err } = await supabase.from('booking_requests').update({ status: 'cancelled' }).eq('id', id)
+    if (err) { showToast('Could not cancel', 'error'); return }
+    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'cancelled' } : r))
+    showToast('Booking cancelled', 'success')
   }
 
   const needsDetailsCount = requests.filter(r => r.status === 'needs_details').length
@@ -268,19 +432,35 @@ function RequestsTab() {
         const missingAddress  = !r.recipient_address.trim()
         const missingWhatsapp = !r.requester_whatsapp.trim()
         const isNeedsDetails  = r.status === 'needs_details'
+        const isPaid          = r.status === 'paid'
+        const isCancelled     = r.status === 'cancelled'
+        const isCompConfirmed = r.status === 'companion_confirmed'
+        const needsConfirm    = r.status === 'requested' || isNeedsDetails
 
         return (
           <div
             key={r.id}
-            className={`bg-white rounded-2xl border ${isNeedsDetails ? 'border-orange-300 border-l-4 border-l-orange-400' : 'border-gray-100'} transition-all`}
+            className={`bg-white rounded-2xl border transition-all ${
+              isNeedsDetails  ? 'border-orange-300 border-l-4 border-l-orange-400'
+              : isPaid        ? 'border-green-200 border-l-4 border-l-green-500'
+              : isCompConfirmed ? 'border-blue-200 border-l-4 border-l-blue-400'
+              : isCancelled   ? 'border-gray-100 opacity-60'
+              : 'border-gray-100'
+            }`}
           >
             {isNeedsDetails && (
               <div className="flex items-center gap-2 px-4 py-2 bg-orange-50 rounded-t-2xl border-b border-orange-100">
                 <AlertTriangle size={13} className="text-orange-600 flex-shrink-0" />
                 <p className="text-xs font-semibold text-orange-700">
                   Missing: {[missingAddress && 'address', missingWhatsapp && 'WhatsApp'].filter(Boolean).join(' + ')}
-                  {' '}— contact the family before dispatching
+                  {' '}— contact the family before confirming
                 </p>
+              </div>
+            )}
+            {isPaid && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-t-2xl border-b border-green-100">
+                <CheckCircle2 size={13} className="text-green-600 flex-shrink-0" />
+                <p className="text-xs font-semibold text-green-700">Payment received · Visit confirmed</p>
               </div>
             )}
 
@@ -310,6 +490,9 @@ function RequestsTab() {
                   {r.scheduled_at ? ` · ${format(new Date(r.scheduled_at), 'd MMM, h:mm a')}` : ''}
                   {' · '}{format(new Date(r.created_at), 'd MMM HH:mm')}
                 </p>
+                {r.companion_name && (
+                  <p className="text-xs text-blue-700 font-medium">👤 {r.companion_name}</p>
+                )}
                 <p className={`text-xs ${missingAddress ? 'text-orange-600 font-semibold' : 'text-gray-500'}`}>
                   📍 {r.recipient_address || 'Address not provided'}
                 </p>
@@ -321,32 +504,47 @@ function RequestsTab() {
             </div>
 
             <div className="border-t border-gray-50 px-4 py-2.5 flex items-center gap-2 flex-wrap">
-              <div className="relative">
-                <select
-                  value={r.status}
-                  onChange={e => updateRequestStatus(r.id, e.target.value)}
-                  className="text-xs border-2 border-gray-200 rounded-xl px-2.5 py-1.5 pr-6 focus:outline-none focus:border-green-600 appearance-none bg-white text-gray-700"
+              {needsConfirm && (
+                <button
+                  onClick={() => setDrawerTarget(r)}
+                  className="text-xs font-semibold text-white bg-green-800 hover:bg-green-700 rounded-xl px-3 py-1.5 transition-colors"
                 >
-                  {['requested', 'needs_details', 'confirmed', 'scheduled', 'cancelled'].map(s => (
-                    <option key={s} value={s}>{LABEL[s] || s.replace(/_/g, ' ')}</option>
-                  ))}
-                </select>
-                <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              </div>
+                  Confirm booking →
+                </button>
+              )}
 
-              {/* Confirm on WhatsApp — opens the warm template modal */}
-              {r.status !== 'cancelled' && (
+              {isCompConfirmed && (
                 <button
                   onClick={() => setConfirmTarget(r)}
                   className="text-xs font-semibold text-green-700 hover:text-green-900 border-2 border-green-200 rounded-xl px-3 py-1.5 hover:bg-green-50 transition-colors"
                 >
-                  ✉️ Confirm on WhatsApp
+                  ✉️ Send payment reminder
+                </button>
+              )}
+
+              {!isCancelled && !isPaid && (
+                <button
+                  onClick={() => { if (window.confirm('Cancel this booking?')) cancelRequest(r.id) }}
+                  className="text-xs text-red-400 hover:text-red-600 transition-colors ml-auto"
+                >
+                  Cancel
                 </button>
               )}
             </div>
           </div>
         )
       })}
+
+      {drawerTarget && (
+        <ConfirmDrawer
+          request={drawerTarget}
+          onClose={() => setDrawerTarget(null)}
+          onConfirmed={(id, updates) => {
+            setRequests(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r))
+            setDrawerTarget(null)
+          }}
+        />
+      )}
 
       {confirmTarget && (
         <ConfirmModal

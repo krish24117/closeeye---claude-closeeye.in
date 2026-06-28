@@ -46,6 +46,7 @@ function NriHome() {
   const [elderName, setElderName] = useState<string>('')
   const [visit, setVisit] = useState<VisitRow | null>(null)
   const [nextBooking, setNextBooking] = useState<{ scheduled_at: string } | null>(null)
+  const [activeRequest, setActiveRequest] = useState<{ id: string; service_name: string; status: string } | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -74,6 +75,16 @@ function NriHome() {
         .order('scheduled_at', { ascending: true }).limit(1).maybeSingle()
       if (active && bk) setNextBooking(bk)
 
+      const { data: ar } = await supabase
+        .from('booking_requests')
+        .select('id, service_name, status')
+        .eq('user_id', user.id)
+        .not('status', 'in', '("cancelled")')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (active && ar) setActiveRequest(ar)
+
       if (active) setLoading(false)
     })()
     return () => { active = false }
@@ -82,6 +93,7 @@ function NriHome() {
   if (loading) return <><CardSkeleton h={230} /><CardSkeleton h={120} /></>
 
   const state: 'A' | 'B' | 'C' = !visit ? 'B' : visit.flags && visit.flags !== 'none' ? 'C' : 'A'
+  const firstName = profile?.full_name?.split(' ')[0] || 'there'
   const visitMins = durationMin(visit?.start_time, visit?.end_time)
   const moodGood = (visit?.mood_score ?? 4) >= 4
 
@@ -114,16 +126,24 @@ function NriHome() {
               {state === 'A' && <span className="ce-pulse-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80' }} />}
               {state === 'C' && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }} />}
               <span style={{ fontSize: 16, fontWeight: 600, color: state === 'A' ? '#fff' : state === 'B' ? 'var(--sage)' : '#FFA500' }}>
-                {state === 'A' ? 'All well today' : state === 'B' ? (nextBooking ? `Next visit: ${istDate(nextBooking.scheduled_at)}` : 'No visit scheduled yet') : 'Needs your attention'}
+                {state === 'A' ? 'All well today' : state === 'B' ? (nextBooking ? 'Visit being arranged' : `Welcome, ${firstName}`) : 'Needs your attention'}
               </span>
             </span>
           </div>
 
           <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0 }}>
             {state === 'A' && `Visited ${istTime(visit?.start_time || visit?.created_at)}${visitMins ? ` · ${visitMins} min` : ''}`}
-            {state === 'B' && (visit ? `Last visited ${istTime(visit.created_at)}` : 'Your first visit is being arranged')}
+            {state === 'B' && (nextBooking ? `We'll confirm the time for ${elderName}'s visit shortly` : `Let's arrange ${elderName}'s first visit`)}
             {state === 'C' && `Noticed ${istTime(visit?.created_at)}`}
           </p>
+
+          {state === 'B' && !nextBooking && (
+            <div style={{ textAlign: 'center', marginTop: 20 }}>
+              <Link to="/dashboard/book" style={{ display: 'inline-block', background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '12px 28px', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                Book the first visit →
+              </Link>
+            </div>
+          )}
 
           {state === 'A' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
@@ -170,6 +190,57 @@ function NriHome() {
         <a href="https://wa.me/919000221261" target="_blank" rel="noopener noreferrer" className="ce-press" style={{ background: '#fff', border: '1px solid var(--gray-light)', borderRadius: 100, padding: '10px 18px', fontSize: 13, fontWeight: 600, color: 'var(--forest)', boxShadow: 'var(--shadow-card)', whiteSpace: 'nowrap', flexShrink: 0, textDecoration: 'none' }}>📞 Call Us</a>
       </div>
 
+      {/* ── Active booking status line ────────────────────────── */}
+      {activeRequest && (() => {
+        const statusCopy: Record<string, string> = {
+          requested:           'Request received — confirming a companion',
+          needs_details:       'Missing info needed',
+          confirmed:           'Confirmed',
+          companion_confirmed: 'Companion confirmed — pay to confirm visit',
+          paid:                'Visit confirmed ✓',
+        }
+        const copy = statusCopy[activeRequest.status] || activeRequest.status.replace(/_/g, ' ')
+        return (
+          <Link
+            to="/dashboard/bookings"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              margin: '12px 16px 0', background: '#fff',
+              border: '1px solid var(--gray-light)', borderRadius: 14, padding: '12px 14px',
+              textDecoration: 'none', boxShadow: 'var(--shadow-card)',
+            }}
+          >
+            <div>
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', margin: '0 0 1px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {activeRequest.service_name}
+              </p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--forest)', margin: 0 }}>{copy}</p>
+            </div>
+            <ChevronRight size={16} color="var(--forest)" style={{ flexShrink: 0 }} />
+          </Link>
+        )
+      })()}
+
+      {/* ── Onboarding strip ─────────────────────────────────── */}
+      {state === 'B' && !nextBooking && (
+        <div style={{ margin: '12px 16px 0', background: '#fff', borderRadius: 'var(--radius-card)', padding: '20px 20px 16px', boxShadow: 'var(--shadow-card)' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.08em', margin: '0 0 16px' }}>HOW IT WORKS</p>
+          {([
+            ['1', 'Join as a Founding Member', '₹100 one-time — locks your place and activates health support'],
+            ['2', 'We visit and check on them', 'A verified companion visits your parent in person'],
+            ['3', 'You get a WhatsApp report', 'Health, mood, medicines — sent within the hour'],
+          ] as [string, string, string][]).map(([num, title, desc], i, arr) => (
+            <div key={num} style={{ display: 'flex', gap: 14, marginBottom: i < arr.length - 1 ? 14 : 0 }}>
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--forest)', color: '#fff', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{num}</span>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)', margin: 0 }}>{title}</p>
+                <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '2px 0 0' }}>{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ── Last visit preview ────────────────────────────────── */}
       {visit && (
         <div style={{ margin: '12px 16px 0', background: '#fff', borderRadius: 'var(--radius-card)', padding: 20, boxShadow: 'var(--shadow-card)' }}>
@@ -210,7 +281,7 @@ function NriHome() {
         </span>
         <span style={{ flex: 1 }}>
           <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--black)' }}>Have a health question?</span>
-          <span style={{ display: 'block', fontSize: 13, color: 'var(--gray-mid)' }}>Ask Close Eye — doctor reviewed</span>
+          <span style={{ display: 'block', fontSize: 13, color: 'var(--gray-mid)' }}>Ask Close Eye — guided by our medical team</span>
         </span>
         <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--forest)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: 'var(--shadow-btn)' }}>
           <ChevronRight size={18} color="#fff" />
