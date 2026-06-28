@@ -73,7 +73,7 @@ export function WaitlistPage() {
   }
 
   if (success) return (
-    <main style={{ minHeight: '100vh', background: 'var(--cream)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
+    <main style={{ minHeight: '100vh', background: 'var(--cream)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'max(24px, env(safe-area-inset-top, 0px)) 16px max(24px, env(safe-area-inset-bottom, 0px))' }}>
       <div style={{ textAlign: 'center', maxWidth: 440 }}>
         <Logo className="w-10 h-10 mx-auto mb-6" />
 
@@ -119,7 +119,8 @@ export function WaitlistPage() {
   return (
     <main style={{ background: 'var(--cream)', minHeight: '100vh' }}>
       {/* Header */}
-      <div style={{ background: 'var(--forest)', color: '#fff', padding: '64px 24px 48px', textAlign: 'center' }}>
+      {/* paddingTop uses max() so it's never less than 64px but always clears the notch/Dynamic Island */}
+      <div style={{ background: 'var(--forest)', color: '#fff', padding: 'max(64px, calc(20px + env(safe-area-inset-top, 0px))) 24px 48px', textAlign: 'center' }}>
         <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 14, marginBottom: 24 }}>
           <Logo className="w-6 h-6" /> close eye
         </Link>

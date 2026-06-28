@@ -34,12 +34,17 @@ export function FoundingMemberPage() {
     <div style={{ fontFamily: 'inherit', background: 'var(--cream)', minHeight: '100vh' }}>
 
       {/* ── MINIMAL NAV ──────────────────────────────────────────── */}
+      {/* Safe-area-inset-top: on iOS standalone the status bar overlays content.
+          We extend the nav's height and push its content below the notch/island. */}
       <nav style={{
         position: 'sticky', top: 0, zIndex: 50,
         background: 'rgba(250,247,242,0.95)', backdropFilter: 'blur(8px)',
         borderBottom: '1px solid rgba(14,42,31,0.08)',
-        padding: '0 24px', height: 60,
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingLeft: 24, paddingRight: 24, paddingBottom: 0,
+        height: 'calc(60px + env(safe-area-inset-top, 0px))',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        boxSizing: 'border-box',
       }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', color: 'var(--forest)', fontWeight: 700, fontSize: 16 }}>
           <Logo className="w-7 h-7" /> close eye

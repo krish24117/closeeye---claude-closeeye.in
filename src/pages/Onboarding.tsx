@@ -548,7 +548,7 @@ export function OnboardingPage() {
     <div style={{
       minHeight: '100svh', background: 'var(--cream)',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: '28px 16px 56px',
+      padding: 'max(28px, calc(16px + env(safe-area-inset-top, 0px))) 16px max(56px, calc(40px + env(safe-area-inset-bottom, 0px)))',
     }}>
       {/* Logo */}
       <div style={{ marginBottom: 28, display: 'flex', alignItems: 'center', gap: 8 }}>

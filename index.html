@@ -243,6 +243,19 @@
         mo.observe(root, { childList: true });
       })();
 
+      // Android install prompt — capture before React mounts (the event fires
+      // early and is gone if not caught). Exposed as window.__ceInstallPrompt
+      // so the IOSInstallBanner component can call .prompt() on demand.
+      window.__ceInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__ceInstallPrompt = e;
+        window.dispatchEvent(new CustomEvent('ce-install-ready'));
+      });
+      window.addEventListener('appinstalled', function () {
+        window.__ceInstallPrompt = null;
+      });
+
       // Register Service Worker + auto-update so new deploys show up without
       // users clearing cache.
       if ('serviceWorker' in navigator) {

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Check, Menu, X, ArrowRight, Shield, Stethoscope, User } from 'lucide-react'
 import { FaWhatsapp } from 'react-icons/fa'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/ui/Logo'
+import { useAuth } from '@/lib/auth-context'
 
 /* ------------------------------------------------------------------ */
 /*  Constants + data                                                    */
@@ -147,7 +148,20 @@ function Ticks() {
 
 export function HomePage() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, profile } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+
+  // When launched from the home screen (standalone PWA), send authenticated
+  // family users straight to their dashboard — no marketing page flash.
+  useEffect(() => {
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+    if (isStandalone && user && profile?.role === 'family') {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [user, profile, navigate])
   const hamburgerRef = useRef<HTMLButtonElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
 
