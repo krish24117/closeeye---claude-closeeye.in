@@ -41,21 +41,25 @@ export function FoundingMemberPage() {
         background: 'rgba(250,247,242,0.95)', backdropFilter: 'blur(8px)',
         borderBottom: '1px solid rgba(14,42,31,0.08)',
         paddingTop: 'env(safe-area-inset-top, 0px)',
-        paddingLeft: 24, paddingRight: 24, paddingBottom: 0,
+        paddingLeft: 16, paddingRight: 16, paddingBottom: 0,
         height: 'calc(60px + env(safe-area-inset-top, 0px))',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        boxSizing: 'border-box',
+        boxSizing: 'border-box', gap: 12,
       }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', color: 'var(--forest)', fontWeight: 700, fontSize: 16 }}>
+        <Link to="/" style={{
+          display: 'flex', alignItems: 'center', gap: 7, textDecoration: 'none',
+          color: 'var(--forest)', fontWeight: 700, fontSize: 15,
+          whiteSpace: 'nowrap', flexShrink: 0,
+        }}>
           <Logo className="w-7 h-7" /> close eye
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link to="/waitlist" style={{ fontSize: 13, color: 'var(--forest)', textDecoration: 'none', fontWeight: 500 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <Link to="/waitlist" style={{ fontSize: 13, color: 'var(--forest)', textDecoration: 'none', fontWeight: 500, whiteSpace: 'nowrap' }}>
             Join waitlist
           </Link>
           <Link to="/auth?mode=signup" style={{
             background: 'var(--forest)', color: '#fff', fontSize: 13, fontWeight: 600,
-            padding: '8px 18px', borderRadius: 100, textDecoration: 'none',
+            padding: '8px 16px', borderRadius: 100, textDecoration: 'none', whiteSpace: 'nowrap',
           }}>
             Become a Member →
           </Link>
