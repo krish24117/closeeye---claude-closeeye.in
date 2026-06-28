@@ -221,25 +221,42 @@ function NriHome() {
         )
       })()}
 
-      {/* ── Onboarding strip ─────────────────────────────────── */}
-      {state === 'B' && !nextBooking && (
-        <div style={{ margin: '12px 16px 0', background: '#fff', borderRadius: 'var(--radius-card)', padding: '20px 20px 16px', boxShadow: 'var(--shadow-card)' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.08em', margin: '0 0 16px' }}>HOW IT WORKS</p>
-          {([
-            ['1', 'Join as a Founding Member', '₹100 one-time — locks your place and activates health support'],
-            ['2', 'We visit and check on them', 'A verified companion visits your parent in person'],
-            ['3', 'You get a WhatsApp report', 'Health, mood, medicines — sent within the hour'],
-          ] as [string, string, string][]).map(([num, title, desc], i, arr) => (
-            <div key={num} style={{ display: 'flex', gap: 14, marginBottom: i < arr.length - 1 ? 14 : 0 }}>
-              <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--forest)', color: '#fff', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{num}</span>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)', margin: 0 }}>{title}</p>
-                <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '2px 0 0' }}>{desc}</p>
+      {/* ── How it works / What's next strip ────────────────── */}
+      {state === 'B' && !nextBooking && (() => {
+        const isMember = !!profile?.is_founding_member
+        const steps = isMember
+          ? [
+              { done: true,  label: '✓', title: `Founding Member${profile?.founding_number ? ` #${profile.founding_number}` : ''}`, desc: 'Your place is reserved — we launch visits on 15 August' },
+              { done: false, label: '2', title: 'Book the first visit',      desc: 'Schedule a companion to visit your parent in India' },
+              { done: false, label: '3', title: 'You get a WhatsApp report', desc: 'Health, mood, medicines — sent within the hour' },
+            ]
+          : [
+              { done: false, label: '1', title: 'Join as a Founding Member', desc: '₹100 one-time — locks your place and activates health support' },
+              { done: false, label: '2', title: 'We visit and check on them', desc: 'A verified companion visits your parent in person' },
+              { done: false, label: '3', title: 'You get a WhatsApp report', desc: 'Health, mood, medicines — sent within the hour' },
+            ]
+        return (
+          <div style={{ margin: '12px 16px 0', background: '#fff', borderRadius: 'var(--radius-card)', padding: '20px 20px 16px', boxShadow: 'var(--shadow-card)' }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.08em', margin: '0 0 16px' }}>
+              {isMember ? "WHAT'S NEXT" : 'HOW IT WORKS'}
+            </p>
+            {steps.map(({ done, label, title, desc }, i) => (
+              <div key={i} style={{ display: 'flex', gap: 14, marginBottom: i < steps.length - 1 ? 14 : 0 }}>
+                <span style={{ width: 28, height: 28, borderRadius: '50%', background: done ? '#16a34a' : 'var(--forest)', color: '#fff', fontSize: done ? 14 : 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{label}</span>
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: done ? 'var(--gray-mid)' : 'var(--black)', margin: 0 }}>{title}</p>
+                  <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '2px 0 0' }}>{desc}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+            {isMember && (
+              <Link to="/dashboard/book" style={{ display: 'block', marginTop: 16, background: 'var(--forest)', color: '#fff', borderRadius: 100, padding: '12px 20px', fontSize: 14, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
+                Book the first visit →
+              </Link>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ── Last visit preview ────────────────────────────────── */}
       {visit && (
