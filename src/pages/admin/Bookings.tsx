@@ -4,11 +4,10 @@ import { CardSkeleton } from '@/components/ui/Skeleton'
 import { useToast } from '@/components/ui/Toast'
 import { format } from 'date-fns'
 import { SERVICE_NAMES } from '@/lib/booking-labels'
-import { ChevronDown, AlertTriangle } from 'lucide-react'
+import { ChevronDown, AlertTriangle, X } from 'lucide-react'
 
 const ALL_STATUSES = ['pending', 'confirmed', 'companion_assigned', 'in_progress', 'completed', 'cancelled']
 
-// Admin-specific status badge: completed = grey, in_progress = green pulse
 const BADGE: Record<string, string> = {
   pending:            'bg-amber-100 text-amber-700',
   confirmed:          'bg-blue-100 text-blue-700',
@@ -28,20 +27,157 @@ const PAYMENT_BADGE: Record<string, string> = {
   failed:   'bg-red-100 text-red-700',
 }
 
+const LABEL: Record<string, string> = {
+  requested:     'Request received',
+  needs_details: 'Needs details',
+  confirmed:     'Confirmed',
+  scheduled:     'Scheduled',
+  cancelled:     'Cancelled',
+}
+
 function StatusLabel({ status }: { status: string }) {
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${BADGE[status] || 'bg-gray-100 text-gray-500'}`}>
       {status === 'in_progress' && <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
       {status === 'needs_details' && <AlertTriangle size={10} />}
-      {status.replace(/_/g, ' ')}
+      {LABEL[status] || status.replace(/_/g, ' ')}
     </span>
   )
 }
 
-// ── Requests tab ────────────────────────────────────────────────────────────
+// ── Date/time helper ─────────────────────────────────────────────────────────
+
+function formatScheduledAt(iso: string): { date: string; time: string } {
+  const d = new Date(iso)
+  return {
+    date: d.toLocaleDateString('en-IN', {
+      weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata',
+    }),
+    time: d.toLocaleTimeString('en-IN', {
+      hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata',
+    }),
+  }
+}
+
+// ── Confirmation template ─────────────────────────────────────────────────────
+
+function buildConfirmTemplate(r: BookingRequest & { _family_name?: string | null }): string {
+  const familyName = r._family_name || 'there'
+  const elderName  = r.recipient_name || 'your loved one'
+  const { date, time } = r.scheduled_at
+    ? formatScheduledAt(r.scheduled_at)
+    : { date: '—', time: '—' }
+
+  return [
+    `Namaste ${familyName} 🌿`,
+    ``,
+    `This is Close Eye. We're happy to confirm your booking:`,
+    ``,
+    `🏠 ${r.service_name} for ${elderName}`,
+    `📅 ${date}`,
+    `⏰ ${time} IST`,
+    `📍 ${r.recipient_address || '—'}`,
+    ``,
+    `Our companion will visit ${elderName} and send you a full update here on WhatsApp after the visit. If you'd like us to know anything beforehand, just reply to this message.`,
+    ``,
+    `Warm regards,`,
+    `Team Close Eye`,
+    `When you can't be there, Close Eye can.`,
+  ].join('\n')
+}
+
+// ── Confirmation modal ────────────────────────────────────────────────────────
+
+function ConfirmModal({
+  request,
+  onClose,
+  onSent,
+}: {
+  request: BookingRequest & { _family_name?: string | null }
+  onClose: () => void
+  onSent: (id: string) => void
+}) {
+  const [text, setText] = useState(() => buildConfirmTemplate(request))
+  const [sending, setSending] = useState(false)
+
+  const waNumber = request.requester_whatsapp.replace(/\D/g, '')
+  const hasNumber = waNumber.length >= 7
+
+  async function handleSend() {
+    if (!hasNumber) return
+    setSending(true)
+    // Open WhatsApp
+    window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`, '_blank')
+    // Update request status to confirmed
+    await supabase.from('booking_requests').update({ status: 'confirmed' }).eq('id', request.id)
+    setSending(false)
+    onSent(request.id)
+    onClose()
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px]"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div>
+            <p className="font-semibold text-green-900">Send confirmation</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              To: {request.requester_whatsapp || '—'} · for {request.recipient_name}
+            </p>
+          </div>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Template (editable) */}
+        <div className="flex-1 overflow-auto px-5 py-4">
+          <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">WhatsApp message — review before sending</p>
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value)}
+            rows={18}
+            className="w-full text-sm text-gray-800 bg-green-50 border border-green-100 rounded-xl p-4 resize-none focus:outline-none focus:border-green-400 font-mono leading-relaxed"
+          />
+          <p className="text-xs text-gray-400 mt-2">
+            This opens WhatsApp with the message pre-filled. Review, then tap Send in WhatsApp.
+            Status will auto-update to <span className="font-semibold">Confirmed</span>.
+          </p>
+          {!hasNumber && (
+            <div className="flex items-center gap-2 mt-3 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
+              <AlertTriangle size={13} className="text-orange-600 flex-shrink-0" />
+              <p className="text-xs text-orange-700 font-medium">No WhatsApp number on this request — get it from the family before confirming.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+          <button
+            onClick={handleSend}
+            disabled={!hasNumber || sending}
+            className="flex-1 bg-green-800 text-white text-sm font-semibold rounded-xl py-3 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {sending ? 'Opening…' : 'Open in WhatsApp →'}
+          </button>
+          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700 px-4">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Requests tab ─────────────────────────────────────────────────────────────
 
 interface BookingRequest {
   id: string
+  user_id: string | null
   service_id: string
   service_name: string
   amount_paise: number | null
@@ -52,6 +188,7 @@ interface BookingRequest {
   notes: string | null
   status: string
   created_at: string
+  _family_name?: string | null
 }
 
 function RequestsTab() {
@@ -59,6 +196,7 @@ function RequestsTab() {
   const [requests, setRequests] = useState<BookingRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [confirmTarget, setConfirmTarget] = useState<BookingRequest | null>(null)
 
   useEffect(() => { loadRequests() }, [])
 
@@ -68,8 +206,23 @@ function RequestsTab() {
       .from('booking_requests')
       .select('*')
       .order('created_at', { ascending: false })
+
     if (err) { setError('Could not load requests.'); setLoading(false); return }
-    setRequests(data || [])
+
+    const rows: BookingRequest[] = data || []
+
+    // Enrich with family names (booking_requests.user_id = profiles.id)
+    const userIds = [...new Set(rows.filter(r => r.user_id).map(r => r.user_id!))]
+    if (userIds.length) {
+      const { data: profs } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', userIds)
+      const nameMap = new Map((profs || []).map(p => [p.id, p.full_name as string]))
+      rows.forEach(r => { r._family_name = r.user_id ? (nameMap.get(r.user_id) ?? null) : null })
+    }
+
+    setRequests(rows)
     setLoading(false)
   }
 
@@ -110,10 +263,11 @@ function RequestsTab() {
           </p>
         </div>
       )}
+
       {requests.map(r => {
-        const missingAddress = !r.recipient_address.trim()
+        const missingAddress  = !r.recipient_address.trim()
         const missingWhatsapp = !r.requester_whatsapp.trim()
-        const isNeedsDetails = r.status === 'needs_details'
+        const isNeedsDetails  = r.status === 'needs_details'
 
         return (
           <div
@@ -129,11 +283,17 @@ function RequestsTab() {
                 </p>
               </div>
             )}
+
             <div className="px-4 py-3">
               <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <p className="font-semibold text-green-900 text-sm truncate flex-1 min-w-0">
-                  {SERVICE_NAMES[r.service_id] || r.service_name}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-green-900 text-sm truncate">
+                    {SERVICE_NAMES[r.service_id] || r.service_name}
+                  </p>
+                  {r._family_name && (
+                    <p className="text-xs text-gray-400 mt-0.5">Family: {r._family_name}</p>
+                  )}
+                </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <StatusLabel status={r.status} />
                   {r.amount_paise && (
@@ -160,7 +320,7 @@ function RequestsTab() {
               </div>
             </div>
 
-            <div className="border-t border-gray-50 px-4 py-2.5 flex items-center gap-2">
+            <div className="border-t border-gray-50 px-4 py-2.5 flex items-center gap-2 flex-wrap">
               <div className="relative">
                 <select
                   value={r.status}
@@ -168,30 +328,38 @@ function RequestsTab() {
                   className="text-xs border-2 border-gray-200 rounded-xl px-2.5 py-1.5 pr-6 focus:outline-none focus:border-green-600 appearance-none bg-white text-gray-700"
                 >
                   {['requested', 'needs_details', 'confirmed', 'scheduled', 'cancelled'].map(s => (
-                    <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+                    <option key={s} value={s}>{LABEL[s] || s.replace(/_/g, ' ')}</option>
                   ))}
                 </select>
                 <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
-              {r.requester_whatsapp && (
-                <a
-                  href={`https://wa.me/${r.requester_whatsapp.replace(/\D/g, '')}?text=Hi%20${encodeURIComponent(r.recipient_name || '')}%2C%20this%20is%20Close%20Eye%20confirming%20your%20booking%20for%20${encodeURIComponent(r.service_name)}.`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-semibold text-green-700 hover:text-green-900 border border-green-200 rounded-lg px-2.5 py-1.5 hover:bg-green-50 transition-colors"
+
+              {/* Confirm on WhatsApp — opens the warm template modal */}
+              {r.status !== 'cancelled' && (
+                <button
+                  onClick={() => setConfirmTarget(r)}
+                  className="text-xs font-semibold text-green-700 hover:text-green-900 border-2 border-green-200 rounded-xl px-3 py-1.5 hover:bg-green-50 transition-colors"
                 >
-                  WhatsApp →
-                </a>
+                  ✉️ Confirm on WhatsApp
+                </button>
               )}
             </div>
           </div>
         )
       })}
+
+      {confirmTarget && (
+        <ConfirmModal
+          request={confirmTarget}
+          onClose={() => setConfirmTarget(null)}
+          onSent={id => setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'confirmed' } : r))}
+        />
+      )}
     </div>
   )
 }
 
-// ── Main component ────��─────────────────────────────────────────────────────
+// ── Main component ────────────────────────────────────────────────────────────
 
 export function AdminBookings() {
   const { showToast } = useToast()
@@ -329,12 +497,8 @@ export function AdminBookings() {
 
   return (
     <div className="space-y-5 animate-fade-in">
-
-      {/* Header */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="font-serif text-2xl text-green-900">Bookings</h1>
-        </div>
+        <h1 className="font-serif text-2xl text-green-900">Bookings</h1>
       </div>
 
       {/* Tabs */}
