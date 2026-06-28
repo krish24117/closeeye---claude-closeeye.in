@@ -92,9 +92,9 @@ Deno.serve(async (req: Request) => {
   try {
     const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
     const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM") ?? "whatsapp:+14155238886";
+    const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM");
 
-    if (accountSid && authToken && waNum) {
+    if (accountSid && authToken && fromNum && waNum) {
       const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
       const msgBody = [
         `Welcome to Close Eye, ${name} 🌿`,
@@ -111,7 +111,7 @@ Deno.serve(async (req: Request) => {
       ].join("\n");
 
       const params = new URLSearchParams({ From: fromNum, To: to, Body: msgBody });
-      await fetch(
+      const waRes = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
         {
           method: "POST",
@@ -122,6 +122,14 @@ Deno.serve(async (req: Request) => {
           body: params,
         },
       );
+      if (!waRes.ok) {
+        const errText = await waRes.text();
+        console.error(`[waitlist-signup] Twilio error ${waRes.status} for ${to}:`, errText);
+      } else {
+        console.log(`[waitlist-signup] WhatsApp welcome sent to ${to}`);
+      }
+    } else {
+      console.warn("[waitlist-signup] WhatsApp skipped — missing TWILIO_WHATSAPP_FROM or credentials");
     }
   } catch (waErr) {
     console.error("Waitlist WhatsApp welcome failed (non-fatal):", waErr);

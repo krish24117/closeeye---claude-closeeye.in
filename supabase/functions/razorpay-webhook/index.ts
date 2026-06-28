@@ -265,7 +265,10 @@ Deno.serve(async (req: Request) => {
             .eq("id", membership.user_id)
             .maybeSingle();
           const waNum = (prof?.whatsapp_number as string | null)?.trim();
-          if (waNum) {
+          const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+          const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
+          const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM");
+          if (waNum && accountSid && authToken && fromNum) {
             const name = (prof?.full_name as string | null) || "there";
             const msgBody = [
               `Welcome to Close Eye, ${name} 🌿`,
@@ -278,24 +281,27 @@ Deno.serve(async (req: Request) => {
               `Krishna & Aishwarya`,
               `Close Eye`,
             ].join("\n");
-            const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-            const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
-            const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM") ?? "whatsapp:+14155238886";
-            if (accountSid && authToken) {
-              const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
-              const params = new URLSearchParams({ From: fromNum, To: to, Body: msgBody });
-              await fetch(
-                `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-                    "Content-Type": "application/x-www-form-urlencoded",
-                  },
-                  body: params,
+            const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
+            const params = new URLSearchParams({ From: fromNum, To: to, Body: msgBody });
+            const waRes = await fetch(
+              `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+                  "Content-Type": "application/x-www-form-urlencoded",
                 },
-              );
+                body: params,
+              },
+            );
+            if (!waRes.ok) {
+              const errText = await waRes.text();
+              console.error(`[razorpay-webhook] Twilio error ${waRes.status} for ${to}:`, errText);
+            } else {
+              console.log(`[razorpay-webhook] WhatsApp welcome sent to ${to}`);
             }
+          } else {
+            console.warn("[razorpay-webhook] WhatsApp skipped — missing TWILIO_WHATSAPP_FROM or credentials");
           }
         } catch (waErr) {
           console.error("Membership welcome WhatsApp failed (non-fatal):", waErr);
