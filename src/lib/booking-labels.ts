@@ -3,6 +3,8 @@
 
 export const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-700',
+  requested: 'bg-amber-100 text-amber-700',
+  needs_details: 'bg-orange-100 text-orange-700',
   confirmed: 'bg-blue-100 text-blue-700',
   companion_assigned: 'bg-purple-100 text-purple-700',
   in_progress: 'bg-orange-100 text-orange-700',

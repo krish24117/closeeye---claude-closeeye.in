@@ -36,6 +36,9 @@ export const bookingTone = (status?: string | null): { label: string; tone: Tone
     case 'companion_assigned': return { label: 'Assigned', tone: 'blue' }
     case 'confirmed': return { label: 'Confirmed', tone: 'green' }
     case 'cancelled': return { label: 'Cancelled', tone: 'gray' }
+    case 'needs_details': return { label: 'Needs details', tone: 'red' }
+    case 'requested': return { label: 'Requested', tone: 'amber' }
+    case 'scheduled': return { label: 'Scheduled', tone: 'blue' }
     default: return { label: 'Pending', tone: 'amber' }
   }
 }

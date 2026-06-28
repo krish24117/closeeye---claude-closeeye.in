@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Loader2, Check, X } from 'lucide-react'
+import { Loader2, Check, X, AlertTriangle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 
@@ -18,9 +18,15 @@ const SERVICES: Service[] = [
 const TIME_SLOTS = [['Morning', ['09:00', '10:00', '11:00']], ['Afternoon', ['14:00', '15:00', '16:00']]] as const
 const slotLabel = (s: string) => { const h = +s.slice(0, 2); return `${((h + 11) % 12) + 1}${h < 12 ? 'am' : 'pm'}` }
 
+const INPUT_STYLE: React.CSSProperties = {
+  width: '100%', background: 'var(--cream)', border: '1.5px solid var(--gray-light)', borderRadius: 12,
+  padding: '12px 14px', fontSize: 15, fontFamily: 'inherit', boxSizing: 'border-box',
+}
+
 export function DashboardBook() {
   const { user, profile } = useAuth()
   const isNri = profile?.user_type === 'nri'
+  const isFoundingMember = !!((profile as unknown) as Record<string, unknown>)?.is_founding_member
   const [recipient, setRecipient] = useState<{ name: string; address: string }>({ name: '', address: '' })
 
   const [active, setActive] = useState<Service | null>(null)
@@ -29,7 +35,13 @@ export function DashboardBook() {
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
+  const [doneNeedsDetails, setDoneNeedsDetails] = useState(false)
+  const [doneMissing, setDoneMissing] = useState<{ address: boolean; whatsapp: boolean }>({ address: false, whatsapp: false })
   const [err, setErr] = useState('')
+
+  // Inline collection for missing address / WhatsApp
+  const [tempAddress, setTempAddress] = useState('')
+  const [tempWhatsapp, setTempWhatsapp] = useState('')
 
   useEffect(() => {
     if (!user) return
@@ -51,23 +63,38 @@ export function DashboardBook() {
 
   const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return d })
 
-  function openSheet(s: Service) { setActive(s); setDate(null); setSlot(''); setNotes(''); setDone(false); setErr('') }
+  function openSheet(s: Service) {
+    setActive(s); setDate(null); setSlot(''); setNotes(''); setDone(false); setErr('')
+    setTempAddress(''); setTempWhatsapp('')
+    setDoneNeedsDetails(false); setDoneMissing({ address: false, whatsapp: false })
+  }
   function close() { setActive(null) }
+
+  // Derived: which fields are still empty (after inline inputs)
+  const effectiveAddress = tempAddress.trim() || recipient.address
+  const effectiveWhatsapp = tempWhatsapp.trim() || profile?.whatsapp_number || ''
+  const showAddressInput = !recipient.address.trim()
+  const showWhatsappInput = !profile?.whatsapp_number?.trim()
 
   async function confirm() {
     if (!active || !date || !slot) { setErr('Please pick a date and time.'); return }
+    if (showAddressInput && !tempAddress.trim()) { setErr('Please add an address so we can send a companion.'); return }
     setSubmitting(true); setErr('')
     const y = date.getFullYear(), m = String(date.getMonth() + 1).padStart(2, '0'), d = String(date.getDate()).padStart(2, '0')
     const scheduled_at_ist = `${y}-${m}-${d}T${slot}:00+05:30`
-    const { error } = await supabase.functions.invoke('submit-booking-request', {
+    const { data: result, error } = await supabase.functions.invoke('submit-booking-request', {
       body: {
         service_id: active.id, service_name: active.name, amount_paise: active.paise,
-        scheduled_at_ist, recipient_name: recipient.name, recipient_address: recipient.address,
-        requester_whatsapp: profile?.whatsapp_number || '', notes: notes.trim() || null,
+        scheduled_at_ist, recipient_name: recipient.name,
+        recipient_address: effectiveAddress,
+        requester_whatsapp: effectiveWhatsapp,
+        notes: notes.trim() || null,
       },
     })
     setSubmitting(false)
     if (error) { setErr("Couldn't send your request. Please try again."); return }
+    setDoneNeedsDetails(!!(result as any)?.needs_details)
+    setDoneMissing((result as any)?.missing ?? { address: false, whatsapp: false })
     setDone(true)
   }
 
@@ -77,6 +104,41 @@ export function DashboardBook() {
       <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: '0 16px 16px' }}>
         {isNri ? `For ${recipient.name || 'your loved one'} · Hyderabad` : 'For your family · Hyderabad'}
       </p>
+
+      {/* Founding Membership card */}
+      <div style={{ margin: '0 16px 16px', borderRadius: 20, overflow: 'hidden', background: 'linear-gradient(135deg, #0E2A1F 0%, #1B4332 100%)' }}>
+        <div style={{ padding: '20px 20px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Founding Membership</span>
+            <span style={{ background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '3px 10px', fontSize: 10, fontWeight: 700 }}>FOUNDING MEMBER</span>
+          </div>
+          <p style={{ fontSize: 28, fontWeight: 700, color: 'var(--sage)', margin: '0 0 14px' }}>₹100 <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.65)' }}>· one-time</span></p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
+            {['Health assistant — ask us anything, anytime', 'Priority emergency response for your family', 'Founding member benefits as we grow'].map(item => (
+              <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <span style={{ color: 'var(--sage)', fontWeight: 700, fontSize: 14, lineHeight: 1.4, flexShrink: 0 }}>✓</span>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>{item}</span>
+              </div>
+            ))}
+          </div>
+          {isFoundingMember ? (
+            <div style={{ background: 'rgba(168,213,181,0.15)', border: '1px solid rgba(168,213,181,0.4)', borderRadius: 12, padding: '12px 16px', textAlign: 'center', fontSize: 14, fontWeight: 600, color: 'var(--sage)' }}>
+              ✓ You're a Founding Member
+            </div>
+          ) : (
+            <a
+              href="https://wa.me/919000221261?text=Hi%2C%20I'd%20like%20to%20become%20a%20Founding%20Member%20of%20Close%20Eye"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'block', background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '13px 20px', fontSize: 15, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}
+            >
+              Become a Founding Member →
+            </a>
+          )}
+        </div>
+      </div>
+
+      <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '0 16px 12px' }}>Membership is a one-time join — services below are booked separately as needed.</p>
 
       {SERVICES.map(s => (
         <div key={s.id} style={{ margin: '0 16px 10px', background: '#fff', borderRadius: 'var(--radius-card)', padding: '18px 20px', boxShadow: 'var(--shadow-card)', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -150,6 +212,40 @@ export function DashboardBook() {
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any specific instructions? (optional)"
                   style={{ width: '100%', minHeight: 64, resize: 'none', background: 'var(--cream)', border: '1px solid var(--gray-light)', borderRadius: 12, padding: '12px 14px', fontSize: 15, fontFamily: 'inherit', marginTop: 8 }} />
 
+                {/* Collect missing fields inline */}
+                {(showAddressInput || showWhatsappInput) && (
+                  <div style={{ marginTop: 14, background: '#FFF7ED', border: '1.5px solid #F59E0B', borderRadius: 14, padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                      <AlertTriangle size={14} color="#B45309" />
+                      <p style={{ fontSize: 13, fontWeight: 700, color: '#B45309', margin: 0 }}>We need a few details to confirm your visit</p>
+                    </div>
+                    {showAddressInput && (
+                      <div style={{ marginBottom: 10 }}>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>ADDRESS IN HYDERABAD</label>
+                        <input
+                          value={tempAddress}
+                          onChange={e => setTempAddress(e.target.value)}
+                          placeholder="Flat / house, area, landmark…"
+                          style={INPUT_STYLE}
+                        />
+                      </div>
+                    )}
+                    {showWhatsappInput && (
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>YOUR WHATSAPP NUMBER</label>
+                        <input
+                          value={tempWhatsapp}
+                          onChange={e => setTempWhatsapp(e.target.value)}
+                          placeholder="+91 98765 43210"
+                          type="tel"
+                          style={INPUT_STYLE}
+                        />
+                        <p style={{ fontSize: 11, color: 'var(--gray-mid)', margin: '4px 0 0' }}>We'll send confirmation and the visit report here.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {err && <p style={{ color: '#b42318', fontSize: 13, margin: '8px 0 0' }}>{err}</p>}
 
                 <button onClick={confirm} disabled={submitting} className="ce-btn ce-btn-primary ce-btn-full" style={{ marginTop: 14, padding: 16 }}>
@@ -162,8 +258,19 @@ export function DashboardBook() {
                 <span className="ce-check-pop" style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--sage)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Check size={32} color="var(--forest)" strokeWidth={3} />
                 </span>
-                <p style={{ fontSize: 22, fontWeight: 700, color: 'var(--black)', margin: '16px 0 4px' }}>Booking Confirmed</p>
-                <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: 0 }}>We'll confirm a companion within 2 hours.</p>
+                <p style={{ fontSize: 22, fontWeight: 700, color: 'var(--black)', margin: '16px 0 4px' }}>Request sent</p>
+                {doneNeedsDetails ? (
+                  <>
+                    <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: '0 0 10px' }}>
+                      Your booking is saved. We'll call to confirm{doneMissing.address ? ' — our team will verify the address' : ''} before dispatching a companion.
+                    </p>
+                    <div style={{ background: '#FFF7ED', border: '1px solid #F59E0B', borderRadius: 12, padding: '10px 14px', fontSize: 13, color: '#B45309' }}>
+                      To confirm faster, please message us on WhatsApp with your {[doneMissing.address && 'address', doneMissing.whatsapp && 'contact number'].filter(Boolean).join(' and ')}.
+                    </div>
+                  </>
+                ) : (
+                  <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: 0 }}>We'll confirm a companion within 2 hours.</p>
+                )}
                 <button onClick={close} className="ce-btn ce-btn-primary ce-btn-full" style={{ marginTop: 20, padding: 14 }}>Done</button>
               </div>
             )}

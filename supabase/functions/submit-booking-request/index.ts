@@ -1,7 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// One-off booking REQUEST (request -> confirm -> pay). No payment is taken here.
+// One-off booking REQUEST (request -> confirm -> pay). No payment taken here.
 // We persist an unpaid request; ops confirm availability, then send a payment link.
+//
+// Status rules:
+//   'requested'    — all contact/address fields present; ready for companion dispatch
+//   'needs_details'— address or WhatsApp was blank; booking saved but MUST NOT be
+//                    dispatched until ops or the family supplies the missing info
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -58,9 +63,16 @@ Deno.serve(async (req: Request) => {
     scheduled_at_ist, recipient_name, recipient_address, requester_whatsapp, notes,
   } = body;
 
-  if (!service_id || !service_name || !recipient_name || !recipient_address || !requester_whatsapp) {
-    return json({ error: "Missing required fields" }, 400);
+  // Only the service identity is strictly required.
+  if (!service_id || !service_name) {
+    return json({ error: "Missing required fields: service_id and service_name" }, 400);
   }
+
+  const addrClean = (recipient_address || "").trim();
+  const waClean = (requester_whatsapp || "").trim();
+  const missingAddress = addrClean === "";
+  const missingWhatsapp = waClean === "";
+  const needsDetails = missingAddress || missingWhatsapp;
 
   const sb = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -73,11 +85,11 @@ Deno.serve(async (req: Request) => {
       variant_id: variant_id ?? null,
       amount_paise: amount_paise ?? null,
       scheduled_at: scheduled_at_ist || null,
-      recipient_name: recipient_name.trim(),
-      recipient_address: recipient_address.trim(),
-      requester_whatsapp: requester_whatsapp.trim(),
+      recipient_name: (recipient_name || "").trim(),
+      recipient_address: addrClean,
+      requester_whatsapp: waClean,
       notes: notes?.trim() || null,
-      status: "requested",
+      status: needsDetails ? "needs_details" : "requested",
     })
     .select("id")
     .single();
@@ -87,7 +99,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Could not save request" }, 500);
   }
 
-  // Notify admin on WhatsApp (Twilio) — non-fatal; never blocks the response.
+  // Notify admin on WhatsApp (Twilio) — non-fatal; booking is already saved above.
   try {
     const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
     const token = Deno.env.get("TWILIO_AUTH_TOKEN");
@@ -95,16 +107,20 @@ Deno.serve(async (req: Request) => {
     const adminTo = Deno.env.get("ADMIN_WHATSAPP") || "+919000221261";
     if (sid && token && from) {
       const wa = (n: string) => (n.trim().startsWith("whatsapp:") ? n.trim() : `whatsapp:${n.trim()}`);
-      const body =
+      const missingNote = needsDetails
+        ? `⚠️ NEEDS DETAILS: ${[missingAddress && "address", missingWhatsapp && "WhatsApp"].filter(Boolean).join(", ")} missing\n`
+        : "";
+      const msgBody =
         `🔔 New booking request\n` +
+        missingNote +
         `Service: ${service_name}${amount_paise ? ` (₹${(amount_paise / 100).toLocaleString("en-IN")})` : ""}\n` +
-        `For: ${recipient_name}\n` +
+        `For: ${recipient_name || "—"}\n` +
         `When: ${scheduled_at_ist || "—"}\n` +
-        `Address: ${recipient_address}\n` +
-        `Contact: ${requester_whatsapp}\n` +
+        `Address: ${addrClean || "—"}\n` +
+        `Contact: ${waClean || "—"}\n` +
         (notes?.trim() ? `Notes: ${notes.trim()}\n` : "") +
         `closeeye.in/admin`;
-      const params = new URLSearchParams({ From: wa(from), To: wa(adminTo), Body: body });
+      const params = new URLSearchParams({ From: wa(from), To: wa(adminTo), Body: msgBody });
       const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded", Authorization: `Basic ${btoa(`${sid}:${token}`)}` },
@@ -116,5 +132,13 @@ Deno.serve(async (req: Request) => {
     console.error("Admin WhatsApp notify error (non-fatal):", waErr);
   }
 
-  return json({ ok: true, request_id: data.id });
+  return json({
+    ok: true,
+    request_id: data.id,
+    needs_details: needsDetails,
+    missing: {
+      address: missingAddress,
+      whatsapp: missingWhatsapp,
+    },
+  });
 });
