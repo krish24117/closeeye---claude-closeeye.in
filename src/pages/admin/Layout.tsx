@@ -4,7 +4,7 @@ import {
   TbLayoutDashboard, TbWalk, TbMessageCircle, TbCalendar, TbClock, TbUsers,
   TbBuildingCommunity, TbUserHeart, TbWheelchair, TbStethoscope, TbCash, TbReceipt,
   TbCreditCard, TbClipboardText, TbFileText, TbDownload, TbSettings, TbSearch,
-  TbBell, TbMenu2, TbX, TbPlus, TbChevronRight, TbHome,
+  TbBell, TbMenu2, TbX, TbPlus, TbChevronRight, TbHome, TbStar,
 } from 'react-icons/tb'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -25,6 +25,7 @@ const SECTIONS: NavSection[] = [
     { to: '/admin/live-map', icon: TbClock, label: 'Schedules' },
   ] },
   { label: 'People', items: [
+    { to: '/admin/founding-members', icon: TbStar, label: 'Founding members' },
     { to: '/admin/families', icon: TbUsers, label: 'Families' },
     { to: '/admin/societies', icon: TbBuildingCommunity, label: 'Societies' },
     { to: '/admin/companions', icon: TbUserHeart, label: 'Companions' },
@@ -50,6 +51,7 @@ const TITLES: { match: string; title: string; crumb: string }[] = [
   { match: '/admin/visits', title: 'Visits', crumb: 'Operations / Visits' },
   { match: '/admin/queries', title: 'Health queries', crumb: 'Operations / Health queries' },
   { match: '/admin/bookings', title: 'Bookings', crumb: 'Operations / Bookings' },
+  { match: '/admin/founding-members', title: 'Founding members', crumb: 'People / Founding members' },
   { match: '/admin/families', title: 'Families', crumb: 'People / Families' },
   { match: '/admin/societies', title: 'Societies', crumb: 'People / Societies' },
   { match: '/admin/companions', title: 'Companions', crumb: 'People / Companions' },

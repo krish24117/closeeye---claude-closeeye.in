@@ -70,6 +70,8 @@ const AdminSocietyDetail = lazy(() => import('@/pages/admin/Societies').then(m =
 const AdminSettings = lazy(() => import('@/pages/admin/Settings').then(m => ({ default: m.AdminSettings })))
 const AdminFamilyDetail = lazy(() => import('@/pages/admin/Families').then(m => ({ default: m.AdminFamilyDetail })))
 const AdminCompanionDetail = lazy(() => import('@/pages/admin/Companions').then(m => ({ default: m.AdminCompanionDetail })))
+const AdminFoundingMembers = lazy(() => import('@/pages/admin/FoundingMembers').then(m => ({ default: m.AdminFoundingMembers })))
+const AdminFoundingMemberDetail = lazy(() => import('@/pages/admin/FoundingMembers').then(m => ({ default: m.AdminFoundingMemberDetail })))
 
 const DoctorLayout = lazy(() => import('@/pages/doctor/Layout').then(m => ({ default: m.DoctorLayout })))
 const DoctorHome = lazy(() => import('@/pages/doctor/Home').then(m => ({ default: m.DoctorHome })))
@@ -318,6 +320,8 @@ export default function App() {
               <Route path="leads" element={<AdminLeadsCRM />} />
               <Route path="elders" element={<AdminElders />} />
               <Route path="settings" element={<AdminSettings />} />
+              <Route path="founding-members" element={<AdminFoundingMembers />} />
+              <Route path="founding-members/:userId" element={<AdminFoundingMemberDetail />} />
             </Route>
             <Route path="/doctor" element={<ProtectedRoute adminRole="doctor"><DoctorLayout /></ProtectedRoute>}>
               <Route index element={<DoctorHome />} />
