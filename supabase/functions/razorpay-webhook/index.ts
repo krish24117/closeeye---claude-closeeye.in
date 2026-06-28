@@ -244,8 +244,18 @@ Deno.serve(async (req: Request) => {
           activated_at: new Date().toISOString(),
         }).eq("id", membership.id);
 
+        // Assign a sequential founding number (low-volume pre-launch, non-atomic is fine)
+        const { count: fmCount } = await sb
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("is_founding_member", true);
+        const foundingNumber = (fmCount ?? 0) + 1;
+        const foundingDate = new Date().toISOString();
+
         await sb.from("profiles").update({
           is_founding_member: true,
+          founding_number: foundingNumber,
+          founding_date: foundingDate,
         }).eq("id", membership.user_id);
 
         // Non-fatal WhatsApp welcome
@@ -260,12 +270,13 @@ Deno.serve(async (req: Request) => {
             const msgBody = [
               `Welcome to Close Eye, ${name} 🌿`,
               ``,
-              `You're now a Founding Member — thank you for trusting us with the ones you love.`,
+              `You're Founding Member #${foundingNumber} — thank you for trusting us with the ones you love.`,
               ``,
               `We launch companion visits on 15 August. Until then, ask our medical team any health questions at closeeye.in/dashboard/ask`,
               ``,
               `With care,`,
-              `Team Close Eye`,
+              `Krishna & Aishwarya`,
+              `Close Eye`,
             ].join("\n");
             const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
             const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");

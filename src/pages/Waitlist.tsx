@@ -1,26 +1,29 @@
 import { useState, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
+import { Logo } from '@/components/ui/Logo'
+import { ArrowRight } from 'lucide-react'
 
 const schema = z.object({
   full_name: z.string().min(2, 'Enter your full name'),
   email: z.string().email('Enter a valid email'),
   whatsapp_number: z.string().min(8, 'Enter a valid WhatsApp number'),
   country: z.string().min(1, 'Select your country'),
-  loved_one_city: z.string().min(2, 'Enter your loved one\'s city'),
+  loved_one_city: z.string().min(2, "Enter your loved one's city"),
   urgency: z.enum(['this_week', 'one_to_three_months', 'exploring'], {
     required_error: 'Please select when you need support',
   }),
   support_needed: z.string().optional(),
-  website: z.string().optional(), // honeypot - real users never see or fill this
+  website: z.string().optional(), // honeypot
 })
 type FormData = z.infer<typeof schema>
 
 const COUNTRIES = ['USA', 'UK', 'UAE', 'Canada', 'Australia', 'Singapore', 'New Zealand', 'Germany', 'Netherlands', 'Other']
 const URGENCY_OPTIONS = [
-  { value: 'this_week', label: 'Within a week — it\'s urgent', emoji: '🔴' },
+  { value: 'this_week', label: "Within a week — it's urgent", emoji: '🔴' },
   { value: 'one_to_three_months', label: 'Within 1–3 months', emoji: '🟡' },
   { value: 'exploring', label: 'Just exploring for now', emoji: '🟢' },
 ]
@@ -32,187 +35,221 @@ export function WaitlistPage() {
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { urgency: 'exploring' } // ✅ Default selected
+    defaultValues: { urgency: 'exploring' },
   })
 
   async function onSubmit(data: FormData) {
     setServerError('')
 
-    // Bot check: honeypot field filled, or form submitted too fast to be human.
-    // Pretend success so bots don't learn to avoid these signals.
+    // Bot check: honeypot filled or form submitted inhuman-fast
     if (data.website || Date.now() - mountedAt.current < 3000) {
       setSuccess(true)
       return
     }
 
-    const { error } = await supabase.from('waitlist').insert({
-      full_name: data.full_name,
-      email: data.email,
-      whatsapp_number: data.whatsapp_number,
-      country: data.country,
-      loved_one_city: data.loved_one_city,
-      urgency: data.urgency,
-      support_needed: data.support_needed || null,
+    const { error } = await supabase.functions.invoke('waitlist-signup', {
+      body: {
+        full_name: data.full_name,
+        email: data.email,
+        whatsapp_number: data.whatsapp_number,
+        country: data.country,
+        loved_one_city: data.loved_one_city,
+        urgency: data.urgency,
+        support_needed: data.support_needed || null,
+      },
     })
+
     if (error) {
-      if (error.code === '23505') setServerError('This email is already on our waitlist — we\'ll be in touch soon!')
-      else setServerError('Something went wrong. Please WhatsApp us at +91 90002 21261.')
+      const msg = error?.message || ''
+      if (msg.includes('already been registered') || msg.includes('already') || msg.includes('email_exists')) {
+        setSuccess(true)
+        return
+      }
+      setServerError('Something went wrong. Please WhatsApp us at +91 90002 21261.')
       return
     }
+
     setSuccess(true)
   }
 
   if (success) return (
-    <main className="min-h-[70vh] flex items-center justify-center px-4 sm:px-6">
-      <div className="text-center max-w-md animate-fade-in">
-        <div className="text-6xl mb-5">🎉</div>
-        <h2 className="font-serif text-2xl sm:text-3xl text-green-900 mb-3">You're on the list!</h2>
-        <p className="text-gray-500 leading-relaxed mb-8 text-sm sm:text-base">
-          We've received your details and will reach out on WhatsApp within 24 hours. Thank you for trusting Close Eye with your family.
+    <main style={{ minHeight: '100vh', background: 'var(--cream)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
+      <div style={{ textAlign: 'center', maxWidth: 440 }}>
+        <Logo className="w-10 h-10 mx-auto mb-6" />
+
+        <div style={{ fontSize: 52, marginBottom: 16 }}>🌿</div>
+        <h2 style={{ fontSize: 28, fontWeight: 700, color: 'var(--forest)', margin: '0 0 12px' }}>
+          You're on the list.
+        </h2>
+        <p style={{ fontSize: 16, color: 'var(--gray-mid)', lineHeight: 1.6, margin: '0 0 8px' }}>
+          Welcome to Close Eye. Check your WhatsApp — we've sent you a welcome message.
         </p>
+        <p style={{ fontSize: 14, color: 'var(--gray-mid)', lineHeight: 1.6, margin: '0 0 28px' }}>
+          Check your email too — click the link to activate your account and start asking health questions (5/month, free).
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Link
+            to="/founding-member"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              background: 'var(--forest)', color: '#fff', fontWeight: 600,
+              padding: '16px 24px', borderRadius: 14, textDecoration: 'none', fontSize: 15,
+            }}
+          >
+            Become a Founding Member — ₹100 <ArrowRight size={16} />
+          </Link>
+          <p style={{ fontSize: 12, color: 'var(--gray-mid)' }}>
+            One-time. Founding Members get priority access and a permanent 10% discount when services launch.
+          </p>
+        </div>
+
         <a
           href="https://wa.me/919000221261"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 bg-green-800 text-white font-semibold px-7 py-3 rounded-xl hover:bg-green-700 transition-colors text-sm"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--forest)', marginTop: 20, textDecoration: 'none' }}
         >
-          💬 WhatsApp Us Now
+          💬 WhatsApp us directly
         </a>
       </div>
     </main>
   )
 
   return (
-    <main>
-      <div className="bg-gradient-to-br from-green-900 to-green-800 text-white px-4 sm:px-6 py-16 sm:py-20 text-center">
-        <p className="text-green-300 text-xs font-semibold uppercase tracking-widest mb-3">Waitlist</p>
-        <h1 className="font-serif text-3xl sm:text-4xl mb-4">Be first in your city.</h1>
-        <p className="text-white/65 max-w-md mx-auto text-sm sm:text-base">
-          Tell us where your loved one lives and what kind of support would help. We'll reach out within 24 hours.
+    <main style={{ background: 'var(--cream)', minHeight: '100vh' }}>
+      {/* Header */}
+      <div style={{ background: 'var(--forest)', color: '#fff', padding: '64px 24px 48px', textAlign: 'center' }}>
+        <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 14, marginBottom: 24 }}>
+          <Logo className="w-6 h-6" /> close eye
+        </Link>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--sage)', textTransform: 'uppercase', margin: '0 0 12px' }}>
+          Free · Pre-launch
         </p>
+        <h1 style={{ fontSize: 'clamp(26px, 6vw, 36px)', fontWeight: 700, margin: '0 0 12px', lineHeight: 1.2 }}>
+          Join our waitlist.
+        </h1>
+        <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', maxWidth: 440, margin: '0 auto 16px', lineHeight: 1.6 }}>
+          Tell us about your family. We launch 15 August — waitlisters get notified first, and you can ask our medical team health questions in the meantime.
+        </p>
+        <Link
+          to="/founding-member"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--sage)', color: 'var(--forest)', fontWeight: 600, padding: '10px 20px', borderRadius: 100, fontSize: 13, textDecoration: 'none' }}
+        >
+          Or become a Founding Member (₹100) →
+        </Link>
       </div>
 
-      <section className="max-w-xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {/* Form */}
+      <section style={{ maxWidth: 560, margin: '0 auto', padding: '40px 16px 80px' }}>
+        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-          {/* Honeypot - hidden from real users, often filled in by bots */}
-          <div className="absolute -left-[9999px]" aria-hidden="true">
-            <label htmlFor="website">Leave this field blank</label>
-            <input type="text" id="website" tabIndex={-1} autoComplete="off" {...register('website')} />
+          {/* Honeypot */}
+          <div style={{ position: 'absolute', left: -9999 }} aria-hidden="true">
+            <input type="text" tabIndex={-1} autoComplete="off" {...register('website')} />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
             <div>
-              <label className="block text-sm font-semibold text-green-900 mb-1.5">Full name *</label>
-              <input
-                {...register('full_name')}
-                placeholder="Rahul Mehta"
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-600 transition-colors"
-              />
-              {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name.message}</p>}
+              <label style={labelStyle}>Full name *</label>
+              <input {...register('full_name')} placeholder="Rahul Mehta" style={inputStyle} />
+              {errors.full_name && <p style={errStyle}>{errors.full_name.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-semibold text-green-900 mb-1.5">Email *</label>
-              <input
-                {...register('email')}
-                type="email"
-                placeholder="rahul@email.com"
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-600 transition-colors"
-              />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              <label style={labelStyle}>Email *</label>
+              <input {...register('email')} type="email" placeholder="rahul@email.com" style={inputStyle} />
+              {errors.email && <p style={errStyle}>{errors.email.message}</p>}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
             <div>
-              <label className="block text-sm font-semibold text-green-900 mb-1.5">WhatsApp number *</label>
-              <input
-                {...register('whatsapp_number')}
-                placeholder="+1 555 000 0000"
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-600 transition-colors"
-              />
-              {errors.whatsapp_number && <p className="text-red-500 text-xs mt-1">{errors.whatsapp_number.message}</p>}
+              <label style={labelStyle}>WhatsApp number *</label>
+              <input {...register('whatsapp_number')} placeholder="+1 555 000 0000" style={inputStyle} />
+              {errors.whatsapp_number && <p style={errStyle}>{errors.whatsapp_number.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-semibold text-green-900 mb-1.5">Your country *</label>
-              <select
-                {...register('country')}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-600 bg-white transition-colors"
-              >
+              <label style={labelStyle}>Your country *</label>
+              <select {...register('country')} style={{ ...inputStyle, background: '#fff' }}>
                 <option value="">Select country</option>
                 {COUNTRIES.map(c => <option key={c}>{c}</option>)}
               </select>
-              {errors.country && <p className="text-red-500 text-xs mt-1">{errors.country.message}</p>}
+              {errors.country && <p style={errStyle}>{errors.country.message}</p>}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-green-900 mb-1.5">Loved one's city in India *</label>
-            <input
-              {...register('loved_one_city')}
-              placeholder="e.g. Hyderabad, Mumbai, Bengaluru..."
-              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-600 transition-colors"
-            />
-            {errors.loved_one_city && <p className="text-red-500 text-xs mt-1">{errors.loved_one_city.message}</p>}
+            <label style={labelStyle}>Loved one's city in India *</label>
+            <input {...register('loved_one_city')} placeholder="e.g. Hyderabad, Mumbai, Bengaluru..." style={inputStyle} />
+            {errors.loved_one_city && <p style={errStyle}>{errors.loved_one_city.message}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-green-900 mb-2">How soon do you need support? *</label>
-            <div className="space-y-2">
+            <label style={labelStyle}>How soon do you need support? *</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 }}>
               {URGENCY_OPTIONS.map(opt => (
-                <label
-                  key={opt.value}
-                  className="flex items-center gap-3 p-3 sm:p-3.5 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-green-300 hover:bg-green-50 transition-colors has-[:checked]:border-green-600 has-[:checked]:bg-green-50"
-                >
-                  <input
-                    type="radio"
-                    value={opt.value}
-                    {...register('urgency')}
-                    className="accent-green-700 w-4 h-4"
-                  />
-                  <span className="text-sm text-gray-700">{opt.emoji} {opt.label}</span>
+                <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: '#fff', border: '1.5px solid #e5e5e5', borderRadius: 12, cursor: 'pointer', fontSize: 14, color: 'var(--gray-dark)' }}>
+                  <input type="radio" value={opt.value} {...register('urgency')} style={{ accentColor: 'var(--forest)', width: 16, height: 16 }} />
+                  {opt.emoji} {opt.label}
                 </label>
               ))}
             </div>
-            {errors.urgency && <p className="text-red-500 text-xs mt-1">{errors.urgency.message}</p>}
+            {errors.urgency && <p style={errStyle}>{errors.urgency.message}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-green-900 mb-1.5">
-              What support would help? <span className="font-normal text-gray-400">(optional)</span>
-            </label>
+            <label style={labelStyle}>What support would help? <span style={{ fontWeight: 400, color: 'var(--gray-mid)' }}>(optional)</span></label>
             <textarea
               {...register('support_needed')}
               rows={3}
               placeholder="Tell us a little about your situation — we read every response personally."
-              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-600 resize-none transition-colors"
+              style={{ ...inputStyle, resize: 'none', minHeight: 80 }}
             />
           </div>
 
           {serverError && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-sm text-red-700">{serverError}</p>
+            <div style={{ padding: '12px 16px', background: '#fff0f0', border: '1px solid #fca5a5', borderRadius: 10 }}>
+              <p style={{ fontSize: 13, color: '#b91c1c', margin: 0 }}>{serverError}</p>
             </div>
           )}
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-green-800 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-xl transition-colors text-sm"
+            style={{
+              background: isSubmitting ? 'var(--gray-light)' : 'var(--forest)',
+              color: '#fff', fontWeight: 700, padding: '16px', borderRadius: 14,
+              border: 'none', cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
           >
             {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              <>
+                <svg className="ce-spin" width={16} height={16} viewBox="0 0 24 24" fill="none">
+                  <circle opacity={0.25} cx={12} cy={12} r={10} stroke="currentColor" strokeWidth={4} />
+                  <path opacity={0.75} fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
-                Joining waitlist...
-              </span>
-            ) : 'Join Waitlist — We\'ll be in touch within 24 hours'}
+                Joining…
+              </>
+            ) : <>Join the Waitlist <ArrowRight size={16} /></>}
           </button>
-          <p className="text-xs text-center text-gray-400">No spam, ever. We'll reach out on WhatsApp to discuss next steps.</p>
+
+          <p style={{ fontSize: 12, textAlign: 'center', color: 'var(--gray-mid)' }}>
+            No spam. We'll reach out on WhatsApp within 24 hours.
+          </p>
         </form>
       </section>
     </main>
   )
+}
+
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--forest)', marginBottom: 6,
+}
+const inputStyle: React.CSSProperties = {
+  width: '100%', border: '1.5px solid #e5e5e5', borderRadius: 12,
+  padding: '12px 14px', fontSize: 16, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+}
+const errStyle: React.CSSProperties = {
+  color: '#dc2626', fontSize: 12, marginTop: 4,
 }

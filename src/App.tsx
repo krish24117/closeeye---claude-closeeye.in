@@ -14,6 +14,7 @@ import { AboutPage } from '@/pages/About'
 import { FAQPage } from '@/pages/FAQ'
 import { ContactPage } from '@/pages/Contact'
 import { WaitlistPage } from '@/pages/Waitlist'
+import { FoundingMemberPage } from '@/pages/FoundingMember'
 import { PrivacyPage } from '@/pages/Privacy'
 import { TermsPage } from '@/pages/Terms'
 import { RefundPage } from '@/pages/Refund'
@@ -83,6 +84,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/faq': 'FAQ — Close Eye',
   '/contact': 'Contact — Close Eye',
   '/waitlist': 'Join Waitlist — Close Eye',
+  '/founding-member': 'Founding Membership — Close Eye',
   '/for-societies': 'For Societies — Close Eye',
   '/companions': 'How We Verify Companions — Close Eye',
   '/join-as-companion': 'Join as a Companion — Close Eye',
@@ -124,6 +126,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/faq': 'Answers to common questions about Close Eye visits, companion verification, pricing, cancellations, and coverage areas.',
   '/contact': 'Get in touch with the Close Eye team on WhatsApp or email — we reply within a few hours.',
   '/waitlist': 'Join the Close Eye waitlist to be notified the moment we launch verified companion visits in your city.',
+  '/founding-member': 'Become a Close Eye Founding Member for ₹100. Priority access, permanent benefits, and direct support for your loved ones in India — from 15 August.',
   '/for-societies': 'Partner with Close Eye to bring verified elder-care companions, wellbeing visits, and a real emergency plan to your residents — at no cost to the society.',
   '/companions': 'Every Close Eye companion is verified at seven levels — application, interviews, police clearance, Aadhaar, training, and supervised visits — before they ever visit your parent alone.',
   '/join-as-companion': 'Apply to become a verified Close Eye companion in Hyderabad. Meaningful work caring for elders, with training and support from our founding team.',
@@ -257,7 +260,8 @@ export default function App() {
             <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
             <Route path="/faq" element={<PublicLayout><FAQPage /></PublicLayout>} />
             <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
-            <Route path="/waitlist" element={<PublicLayout><WaitlistPage /></PublicLayout>} />
+            <Route path="/waitlist" element={<WaitlistPage />} />
+            <Route path="/founding-member" element={<FoundingMemberPage />} />
             <Route path="/for-societies" element={<PublicLayout><ForSocietiesPage /></PublicLayout>} />
             <Route path="/companions" element={<PublicLayout><CompanionsPage /></PublicLayout>} />
             <Route path="/join-as-companion" element={<JoinAsCompanionPage />} />

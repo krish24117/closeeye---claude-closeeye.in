@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom'
 import { Home, FileText, MessageCircle, CalendarPlus, User, Bell, LogOut, CalendarCheck2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
@@ -18,6 +18,12 @@ const SOCIETY_TABS = [
   { to: '/dashboard/book', icon: CalendarPlus, label: 'Book' },
   { to: '/dashboard/profile', icon: User, label: 'Profile' },
 ]
+// Waitlisted users get a minimal tab set — Ask + Profile only, no booking
+const WAITLIST_TABS = [
+  { to: '/dashboard', icon: Home, label: 'Home', end: true },
+  { to: '/dashboard/ask', icon: MessageCircle, label: 'Ask' },
+  { to: '/dashboard/profile', icon: User, label: 'Profile' },
+]
 
 export function DashboardLayout() {
   const { profile, loading, signOut } = useAuth()
@@ -25,11 +31,14 @@ export function DashboardLayout() {
   const [menu, setMenu] = useState(false)
 
   useEffect(() => {
-    if (!loading && profile && profile.role === 'family' && !profile.is_founding_member) {
+    // Redirect to onboarding only if they are neither a founding member nor a waitlister
+    if (!loading && profile && profile.role === 'family' && !profile.is_founding_member && !profile.is_waitlisted) {
       navigate('/onboarding', { replace: true })
     }
   }, [loading, profile, navigate])
-  const tabs = profile?.user_type === 'nri' ? NRI_TABS : SOCIETY_TABS
+
+  const isWaitlistOnly = profile?.is_waitlisted && !profile?.is_founding_member
+  const tabs = isWaitlistOnly ? WAITLIST_TABS : (profile?.user_type === 'nri' ? NRI_TABS : SOCIETY_TABS)
 
   const initials = (profile?.full_name || 'U').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
 
@@ -59,6 +68,18 @@ export function DashboardLayout() {
           </div>
         )}
       </header>
+
+      {/* Upgrade banner for waitlist-only users */}
+      {isWaitlistOnly && (
+        <div style={{ background: 'var(--forest)', color: '#fff', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>
+            🌿 You're on the waitlist — ask health questions free (5/month)
+          </span>
+          <Link to="/onboarding" style={{ background: 'var(--sage)', color: 'var(--forest)', fontWeight: 700, padding: '6px 14px', borderRadius: 100, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            Become a Founding Member →
+          </Link>
+        </div>
+      )}
 
       {/* Scrollable content between the bars */}
       <main className="ce-fam-main">

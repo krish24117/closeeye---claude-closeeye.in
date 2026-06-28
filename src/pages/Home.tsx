@@ -348,6 +348,34 @@ export function HomePage() {
         </div>
       </div>
 
+      {/* ── LAUNCH BAND ─────────────────────────────────────────── */}
+      <div style={{
+        background: 'var(--forest)', color: '#fff',
+        padding: '12px 20px', textAlign: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexWrap: 'wrap', gap: '10px 20px',
+      }}>
+        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>
+          🌿 Founding Membership open · Launching 15 August
+        </span>
+        <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+          <Link to="/founding-member" style={{
+            background: 'var(--sage)', color: 'var(--forest)', fontWeight: 700,
+            padding: '6px 16px', borderRadius: 100, fontSize: 13, textDecoration: 'none',
+            whiteSpace: 'nowrap',
+          }}>
+            Become a Founding Member →
+          </Link>
+          <Link to="/waitlist" style={{
+            background: 'transparent', color: 'rgba(255,255,255,0.8)', fontWeight: 500,
+            padding: '6px 16px', borderRadius: 100, fontSize: 13, textDecoration: 'none',
+            border: '1px solid rgba(255,255,255,0.25)', whiteSpace: 'nowrap',
+          }}>
+            Join the waitlist
+          </Link>
+        </div>
+      </div>
+
       {/* ── HERO ─────────────────────────────────────────────────── */}
       <section className="ce-hero">
         <div className="ce-hero-left animate-on-scroll">

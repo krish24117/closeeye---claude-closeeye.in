@@ -297,7 +297,7 @@ function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
           return
         }
       } catch { /* network hiccup — keep polling */ }
-      if (polls >= 10) {
+      if (polls >= 20) {
         clearInterval(pollRef.current!)
         if (mountedRef.current) setPayState('timeout')
       }
@@ -406,7 +406,12 @@ function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
         <p style={{ fontSize: 13, color: '#9CA3AF', lineHeight: 1.5, maxWidth: 260, margin: '0 auto 28px' }}>
           No action needed, and <strong style={{ color: '#6B7280' }}>no need to pay again.</strong>
         </p>
-        <Btn outline onClick={checkAgain}>Check again</Btn>
+        <button
+          onClick={checkAgain}
+          style={{ background: 'none', border: 'none', color: '#9CA3AF', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: '4px 0', fontFamily: 'inherit' }}
+        >
+          Check again
+        </button>
       </div>
     )
   }
@@ -460,20 +465,48 @@ function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
 // Step 3 — Confirmed
 // ─────────────────────────────────────────────────────────────────────────────
 
+const FOUNDING_BENEFITS = [
+  'Priority companion matching on launch day — 15 August',
+  '10% off every Close Eye service — forever',
+  'Medical team Q&A — 5 free questions/month, starting today',
+  'Price locked at ₹1,500/month when companion visits launch',
+  'Founding Member badge — your number never changes',
+]
+
 function ConfirmStep() {
+  const { profile } = useAuth()
   const navigate = useNavigate()
+  const num = profile?.founding_number
+
   return (
     <div style={{ textAlign: 'center', padding: '16px 8px 8px' }}>
-      <div style={{ fontSize: 52, marginBottom: 20, lineHeight: 1 }}>🌿</div>
-      <h2 style={{ fontSize: 24, fontWeight: 800, color: F, margin: '0 0 14px', letterSpacing: '-0.3px' }}>
+      <div style={{ fontSize: 52, marginBottom: 12, lineHeight: 1 }}>🌿</div>
+      {num && (
+        <div style={{
+          display: 'inline-block', background: 'rgba(168,213,181,0.15)',
+          border: '1.5px solid rgba(168,213,181,0.6)',
+          borderRadius: 100, padding: '5px 16px', fontSize: 13,
+          fontWeight: 700, color: F, marginBottom: 16, letterSpacing: '0.02em',
+        }}>
+          Founding Member #{num}
+        </div>
+      )}
+      <h2 style={{ fontSize: 24, fontWeight: 800, color: F, margin: '0 0 12px', letterSpacing: '-0.3px' }}>
         You're a Founding Member
       </h2>
-      <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.7, maxWidth: 300, margin: '0 auto 8px' }}>
-        We launch companion visits on <strong>15 August</strong>. You'll be the first to book — at your founding rate.
+      <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.65, maxWidth: 290, margin: '0 auto 20px' }}>
+        We launch companion visits on <strong style={{ color: F }}>15 August</strong>. You'll be first — matched, scheduled, and WhatsApp-ready.
       </p>
-      <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.65, maxWidth: 290, margin: '0 auto 32px' }}>
-        Until then, Ask Close Eye is yours — our medical team is here for your questions.
-      </p>
+
+      <div style={{ background: 'rgba(168,213,181,0.08)', border: '1px solid rgba(168,213,181,0.3)', borderRadius: 14, padding: '16px', marginBottom: 20, textAlign: 'left' }}>
+        {FOUNDING_BENEFITS.map(b => (
+          <div key={b} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
+            <span style={{ color: F, fontWeight: 700, flexShrink: 0, lineHeight: '1.5rem', fontSize: 14 }}>✓</span>
+            <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{b}</span>
+          </div>
+        ))}
+      </div>
+
       <Btn onClick={() => navigate('/dashboard/ask', { replace: true })}>
         Open Ask Close Eye →
       </Btn>

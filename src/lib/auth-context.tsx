@@ -13,6 +13,9 @@ interface Profile {
   admin_role: 'super_admin' | 'companion' | 'doctor' | null
   avatar_url: string | null
   is_founding_member: boolean
+  founding_number: number | null
+  founding_date: string | null
+  is_waitlisted: boolean
 }
 
 interface AuthCtx {

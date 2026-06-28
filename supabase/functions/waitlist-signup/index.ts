@@ -1,0 +1,131 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Public endpoint — saves waitlist entry, creates auth account with is_waitlisted=true,
+// and sends a WhatsApp welcome via Twilio. Called from the /waitlist page (anon).
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS_HEADERS });
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const sb = createClient(supabaseUrl, serviceKey);
+
+  let body: {
+    full_name?: string;
+    email?: string;
+    whatsapp_number?: string;
+    country?: string;
+    loved_one_city?: string;
+    urgency?: string;
+    support_needed?: string;
+  };
+  try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+
+  const { full_name, email, whatsapp_number, country, loved_one_city, urgency, support_needed } = body;
+  if (!full_name || !email || !whatsapp_number) {
+    return json({ error: "full_name, email, and whatsapp_number are required" }, 400);
+  }
+
+  const name = full_name.trim();
+  const emailLower = email.trim().toLowerCase();
+  const waNum = whatsapp_number.trim();
+
+  // 1) Create auth account (confirm email immediately so they can log in after clicking the link)
+  const { data: authData, error: authErr } = await sb.auth.admin.createUser({
+    email: emailLower,
+    email_confirm: false, // Supabase sends confirmation email
+    user_metadata: { full_name: name },
+  });
+
+  let userId: string | null = null;
+
+  if (authErr) {
+    if (authErr.message?.includes("already been registered") || authErr.code === "email_exists" || (authErr as { status?: number }).status === 422) {
+      // Email already exists — fetch the existing user so we can still set is_waitlisted
+      const { data: existingUsers } = await sb.auth.admin.listUsers();
+      const existing = existingUsers?.users?.find((u) => u.email === emailLower);
+      if (existing) userId = existing.id;
+    } else {
+      console.error("Auth user create error:", authErr);
+      return json({ error: "Could not create account. Please try again." }, 500);
+    }
+  } else {
+    userId = authData.user?.id ?? null;
+  }
+
+  // 2) Set is_waitlisted=true on the profile (upsert handles both new and existing users)
+  if (userId) {
+    await sb.from("profiles").upsert({
+      id: userId,
+      full_name: name,
+      whatsapp_number: waNum,
+      is_waitlisted: true,
+      role: "family",
+    }, { onConflict: "id" });
+  }
+
+  // 3) Insert waitlist row (upsert by email — idempotent)
+  await sb.from("waitlist").upsert({
+    full_name: name,
+    email: emailLower,
+    whatsapp_number: waNum,
+    country: country || null,
+    loved_one_city: loved_one_city || null,
+    urgency: urgency || "exploring",
+    support_needed: support_needed || null,
+  }, { onConflict: "email" });
+
+  // 4) Send WhatsApp welcome (non-fatal)
+  try {
+    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM") ?? "whatsapp:+14155238886";
+
+    if (accountSid && authToken && waNum) {
+      const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
+      const msgBody = [
+        `Welcome to Close Eye, ${name} 🌿`,
+        ``,
+        `You're on our pre-launch list — thank you for reaching out.`,
+        ``,
+        `We launch companion visits on 15 August. Until then, you can ask our medical team health questions for free (5/month).`,
+        ``,
+        `Check your email to activate your Close Eye account, then visit: closeeye.in/dashboard/ask`,
+        ``,
+        `With care,`,
+        `Krishna & Aishwarya`,
+        `Close Eye`,
+      ].join("\n");
+
+      const params = new URLSearchParams({ From: fromNum, To: to, Body: msgBody });
+      await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: params,
+        },
+      );
+    }
+  } catch (waErr) {
+    console.error("Waitlist WhatsApp welcome failed (non-fatal):", waErr);
+  }
+
+  return json({ ok: true });
+});
