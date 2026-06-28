@@ -184,7 +184,8 @@ function ProfileStep({ onNext }: { onNext: () => void }) {
       }
 
       onNext()
-    } catch {
+    } catch (err) {
+      console.error('[ProfileStep] save failed:', err)
       setErrors({ form: 'Something went wrong — please try again.' })
     } finally {
       setSaving(false)
