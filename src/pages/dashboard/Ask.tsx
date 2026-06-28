@@ -7,16 +7,16 @@ import { Logo } from '@/components/ui/Logo'
 
 interface Query {
   id: string; question: string; answer: string | null; ai_answer: string | null
-  status: string; created_at: string
+  status: string; created_at: string; reviewed_by: string | null
 }
 
 const SOCIETY_SUBJECTS = ['Myself', 'My Child', 'My Parent', 'Partner']
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, reviewedBy }: { status: string; reviewedBy?: string | null }) {
   if (status === 'doctor_reviewed')
-    return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: 'var(--forest)', background: 'rgba(14,42,31,0.06)', borderRadius: 100, padding: '4px 12px' }}>✓ Reviewed by Close Eye Medical Team</span>
+    return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: 'var(--forest)', background: 'rgba(14,42,31,0.06)', borderRadius: 100, padding: '4px 12px' }}>✓ Reviewed by {reviewedBy || 'Close Eye medical team'}</span>
   if (status === 'ai_answered')
-    return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 500, color: 'var(--gray-mid)' }}>AI guidance · being reviewed by our medical team</span>
+    return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 500, color: 'var(--gray-mid)' }}>AI guidance — guided by our medical team</span>
   return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 400, color: 'var(--gray-mid)' }}>⏳ Our medical team is reviewing this</span>
 }
 
@@ -43,7 +43,7 @@ export function DashboardAsk() {
 
   async function loadHistory() {
     if (!user) return
-    const { data } = await supabase.from('member_queries').select('id,question,answer,ai_answer,status,created_at')
+    const { data } = await supabase.from('member_queries').select('id,question,answer,ai_answer,status,reviewed_by,created_at')
       .eq('user_id', user.id).order('created_at', { ascending: false }).limit(20)
     if (data) setHistory(data)
     const now = new Date()
@@ -138,7 +138,7 @@ export function DashboardAsk() {
               <p style={{ fontSize: 13, color: 'var(--gray-dark)', lineHeight: 1.6, margin: '8px 0 0' }}>
                 {q.answer || q.ai_answer || 'Our medical team is reviewing…'}
               </p>
-              <div style={{ marginTop: 10 }}><StatusBadge status={q.status} /></div>
+              <div style={{ marginTop: 10 }}><StatusBadge status={q.status} reviewedBy={q.reviewed_by} /></div>
               <p style={{ fontSize: 11, color: 'var(--gray-mid)', fontStyle: 'italic', margin: '8px 0 0' }}>General guidance, not a diagnosis. For emergencies or serious concerns, please contact a doctor.</p>
             </div>
           ))}

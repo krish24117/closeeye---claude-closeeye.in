@@ -50,6 +50,7 @@ export function DoctorHome() {
         .select(
           'id, subject_label, question, ai_answer, doctor_response, verification_status, assigned_at, created_at, verified_at'
         )
+        .eq('assigned_doctor_id', profile.id)
         .order('created_at', { ascending: false })
       if (!active) return
       const rows = (data || []) as Query[]
