@@ -274,7 +274,7 @@ function ProfileStep({ onNext }: { onNext: () => void }) {
 // Step 2 — Payment
 // ─────────────────────────────────────────────────────────────────────────────
 
-type PayState = 'idle' | 'creating' | 'open' | 'verifying' | 'verify_error'
+type PayState = 'idle' | 'creating' | 'open' | 'verifying' | 'verify_error' | 'polling'
 
 function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
   const { user } = useAuth()
@@ -288,8 +288,34 @@ function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
   } | null>(null)
   const handlerFiredRef = useRef(false)
   const mountedRef = useRef(true)
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  useEffect(() => () => { mountedRef.current = false }, [])
+  useEffect(() => () => {
+    mountedRef.current = false
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+  }, [])
+
+  // Poll for webhook-triggered activation (UPI app-switch — handler never fires)
+  useEffect(() => {
+    if (payState !== 'polling') return
+    let count = 0
+    const interval = setInterval(async () => {
+      count++
+      if (count > 20) { // ~60 s timeout
+        clearInterval(interval)
+        if (mountedRef.current) setPayState('idle')
+        return
+      }
+      const { data } = await supabase
+        .from('profiles').select('is_founding_member').eq('id', user!.id).maybeSingle()
+      if (data?.is_founding_member && mountedRef.current) {
+        clearInterval(interval)
+        await onConfirmed()
+      }
+    }, 3000)
+    pollIntervalRef.current = interval
+    return () => clearInterval(interval)
+  }, [payState, user, onConfirmed])
 
   async function doVerify(resp: NonNullable<typeof pendingPayRef.current>) {
     if (!mountedRef.current) return
@@ -343,7 +369,10 @@ function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
         theme: { color: '#0E2A1F' },
         modal: {
           ondismiss: () => {
-            if (!handlerFiredRef.current && mountedRef.current) setPayState('idle')
+            if (!handlerFiredRef.current && mountedRef.current) {
+              // UPI app-switch: modal closes before handler fires. Poll for webhook activation.
+              setPayState('polling')
+            }
           },
         },
         handler: (resp: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
@@ -365,6 +394,25 @@ function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
       setPayError('Something went wrong — please try again.')
       setPayState('idle')
     }
+  }
+
+  // ── Polling (UPI app-switch — waiting for webhook to activate) ───────────────
+  if (payState === 'polling') {
+    return (
+      <div style={{ textAlign: 'center', padding: '48px 16px' }}>
+        <Loader2 size={36} className="animate-spin" style={{ color: F, margin: '0 auto 20px', display: 'block' }} />
+        <p style={{ fontSize: 18, fontWeight: 700, color: F, margin: '0 0 8px' }}>Checking your payment…</p>
+        <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6, maxWidth: 300, margin: '0 auto 24px' }}>
+          If you approved the UPI request, we're confirming your membership — hang on a moment.
+        </p>
+        <Btn outline onClick={() => {
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+          setPayState('idle')
+        }}>
+          I haven't paid yet
+        </Btn>
+      </div>
+    )
   }
 
   // ── Verifying ────────────────────────────────────────────────────────────────
