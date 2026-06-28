@@ -1,10 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Verify a founding-membership payment SERVER-SIDE (HMAC of order_id|payment_id).
-// Membership is marked 'active' ONLY after this passes — never from a client
-// success callback alone. (A webhook on order.paid would add belt-and-suspenders;
-// TODO: add a one-off/order webhook handler if desired — the existing webhook
-// only handles subscription events.)
+// Called directly from the Razorpay handler callback in the client — no polling.
+// Idempotent: if already activated, returns the existing founding_number.
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -74,12 +72,78 @@ Deno.serve(async (req: Request) => {
   if (mErr || !membership) return json({ error: "Membership not found" }, 404);
   if (membership.user_id !== user.id) return json({ error: "Forbidden" }, 403);
 
-  // Persist ONLY after verification
+  // Idempotent: already activated (webhook beat us to it) — return existing number
+  if (membership.status === "active") {
+    const { data: prof } = await sb.from("profiles")
+      .select("founding_number")
+      .eq("id", user.id)
+      .maybeSingle();
+    return json({ ok: true, founding_number: prof?.founding_number ?? 1 });
+  }
+
+  // Mark membership active
   await sb.from("memberships").update({
     status: "active",
     razorpay_payment_id,
     activated_at: new Date().toISOString(),
   }).eq("id", membership.id);
 
-  return json({ ok: true });
+  // Assign sequential founding number (low-volume pre-launch, non-atomic is fine)
+  const { count: fmCount } = await sb
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("is_founding_member", true);
+  const foundingNumber = (fmCount ?? 0) + 1;
+  const foundingDate = new Date().toISOString();
+
+  await sb.from("profiles").update({
+    is_founding_member: true,
+    founding_number: foundingNumber,
+    founding_date: foundingDate,
+  }).eq("id", user.id);
+
+  // Non-fatal WhatsApp welcome
+  try {
+    const { data: prof } = await sb.from("profiles")
+      .select("whatsapp_number, full_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    const waNum = (prof?.whatsapp_number as string | null)?.trim();
+    if (waNum) {
+      const name = (prof?.full_name as string | null) || "there";
+      const msgBody = [
+        `Welcome to Close Eye, ${name} 🌿`,
+        ``,
+        `You're Founding Member #${foundingNumber} — thank you for trusting us with the ones you love.`,
+        ``,
+        `We launch companion visits on 15 August. Until then, ask our medical team any health questions at closeeye.in/dashboard/ask`,
+        ``,
+        `With care,`,
+        `Krishna & Aishwarya`,
+        `Close Eye`,
+      ].join("\n");
+      const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+      const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
+      const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM") ?? "whatsapp:+14155238886";
+      if (accountSid && authToken) {
+        const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
+        const params = new URLSearchParams({ From: fromNum, To: to, Body: msgBody });
+        await fetch(
+          `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: params,
+          },
+        );
+      }
+    }
+  } catch (waErr) {
+    console.error("Membership welcome WhatsApp failed (non-fatal):", waErr);
+  }
+
+  return json({ ok: true, founding_number: foundingNumber });
 });

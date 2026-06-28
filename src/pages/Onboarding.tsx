@@ -274,49 +274,40 @@ function ProfileStep({ onNext }: { onNext: () => void }) {
 // Step 2 — Payment
 // ─────────────────────────────────────────────────────────────────────────────
 
-type PayState = 'idle' | 'creating' | 'open' | 'polling' | 'timeout'
+type PayState = 'idle' | 'creating' | 'open' | 'verifying' | 'verify_error'
 
 function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
   const { user } = useAuth()
   const [payState, setPayState] = useState<PayState>('idle')
   const [payError, setPayError] = useState('')
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Store the Razorpay response so we can retry verification without re-paying
+  const pendingPayRef = useRef<{
+    razorpay_payment_id: string
+    razorpay_order_id: string
+    razorpay_signature: string
+  } | null>(null)
   const handlerFiredRef = useRef(false)
   const mountedRef = useRef(true)
 
-  useEffect(() => () => {
-    mountedRef.current = false
-    if (pollRef.current) clearInterval(pollRef.current)
-  }, [])
+  useEffect(() => () => { mountedRef.current = false }, [])
 
-  function startPolling() {
-    let polls = 0
-    pollRef.current = setInterval(async () => {
-      polls++
-      try {
-        const { data } = await supabase.from('profiles')
-          .select('is_founding_member').eq('id', user!.id).single()
-        if (data?.is_founding_member) {
-          clearInterval(pollRef.current!)
-          if (mountedRef.current) await onConfirmed()
-          return
-        }
-      } catch { /* network hiccup — keep polling */ }
-      if (polls >= 20) {
-        clearInterval(pollRef.current!)
-        if (mountedRef.current) setPayState('timeout')
-      }
-    }, 3000)
-  }
-
-  async function checkAgain() {
+  async function doVerify(resp: NonNullable<typeof pendingPayRef.current>) {
+    if (!mountedRef.current) return
+    setPayState('verifying')
     try {
-      const { data } = await supabase.from('profiles')
-        .select('is_founding_member').eq('id', user!.id).single()
-      if (data?.is_founding_member) { await onConfirmed(); return }
-    } catch {}
-    setPayState('polling')
-    startPolling()
+      const { error } = await supabase.functions.invoke('razorpay-verify-membership', {
+        body: {
+          razorpay_payment_id: resp.razorpay_payment_id,
+          razorpay_order_id: resp.razorpay_order_id,
+          razorpay_signature: resp.razorpay_signature,
+        },
+      })
+      if (error) throw error
+      if (mountedRef.current) await onConfirmed()
+    } catch (err) {
+      console.error('[PayStep] verify-membership failed:', err)
+      if (mountedRef.current) setPayState('verify_error')
+    }
   }
 
   async function pay() {
@@ -355,12 +346,10 @@ function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
             if (!handlerFiredRef.current && mountedRef.current) setPayState('idle')
           },
         },
-        handler: () => {
+        handler: (resp: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
           handlerFiredRef.current = true
-          if (mountedRef.current) {
-            setPayState('polling')
-            startPolling()
-          }
+          pendingPayRef.current = resp
+          doVerify(resp)
         },
       }) as { open(): void; on(event: string, cb: (r: unknown) => void): void }
 
@@ -378,21 +367,21 @@ function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
     }
   }
 
-  // ── Polling state ────────────────────────────────────────────────────────────
-  if (payState === 'polling') {
+  // ── Verifying ────────────────────────────────────────────────────────────────
+  if (payState === 'verifying') {
     return (
       <div style={{ textAlign: 'center', padding: '48px 16px' }}>
         <Loader2 size={36} className="animate-spin" style={{ color: F, margin: '0 auto 20px', display: 'block' }} />
         <p style={{ fontSize: 18, fontWeight: 700, color: F, margin: '0 0 8px' }}>Confirming your membership…</p>
         <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6, maxWidth: 260, margin: '0 auto' }}>
-          Razorpay is confirming your payment. This takes a few seconds.
+          Verifying payment — this takes just a second.
         </p>
       </div>
     )
   }
 
-  // ── Timeout (payment received, webhook delayed) ──────────────────────────────
-  if (payState === 'timeout') {
+  // ── Verification failed (payment went through but confirmation errored) ───────
+  if (payState === 'verify_error') {
     return (
       <div style={{ textAlign: 'center', padding: '36px 16px 24px' }}>
         <div style={{
@@ -406,17 +395,14 @@ function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
         </div>
         <p style={{ fontSize: 20, fontWeight: 700, color: F, margin: '0 0 12px' }}>Payment received ✓</p>
         <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.65, maxWidth: 290, margin: '0 auto 8px' }}>
-          We're activating your membership — this usually takes a moment.
+          We received your payment but couldn't confirm the membership yet.
         </p>
         <p style={{ fontSize: 13, color: '#9CA3AF', lineHeight: 1.5, maxWidth: 260, margin: '0 auto 28px' }}>
-          No action needed, and <strong style={{ color: '#6B7280' }}>no need to pay again.</strong>
+          <strong style={{ color: '#6B7280' }}>Do not pay again.</strong> Tap below to retry confirmation.
         </p>
-        <button
-          onClick={checkAgain}
-          style={{ background: 'none', border: 'none', color: '#9CA3AF', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: '4px 0', fontFamily: 'inherit' }}
-        >
-          Check again
-        </button>
+        <Btn onClick={() => pendingPayRef.current && doVerify(pendingPayRef.current)}>
+          Retry confirmation →
+        </Btn>
       </div>
     )
   }
@@ -527,9 +513,12 @@ export function OnboardingPage() {
   const { user, profile, loading, reloadProfile } = useAuth()
   const navigate = useNavigate()
   const [step, setStep] = useState<1 | 2 | 3>(1)
+  // Set true before reloadProfile() so the useEffect below can't redirect while
+  // the confirmation screen is rendering (profile change fires before setStep(3)).
+  const payConfirmedRef = useRef(false)
 
   useEffect(() => {
-    if (!loading && profile?.is_founding_member) {
+    if (!loading && profile?.is_founding_member && !payConfirmedRef.current) {
       navigate('/dashboard/ask', { replace: true })
     }
   }, [loading, profile, navigate])
@@ -545,6 +534,7 @@ export function OnboardingPage() {
   if (!user) return <Navigate to="/auth" replace />
 
   async function handlePayConfirmed() {
+    payConfirmedRef.current = true
     await reloadProfile()
     setStep(3)
   }
