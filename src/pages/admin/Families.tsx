@@ -355,6 +355,31 @@ export function AdminFamilyDetail() {
         </div>
       </Card>
 
+      {/* Loved ones — city routing info for ops */}
+      {d.lovedOnes.length > 0 && (
+        <Card style={{ marginBottom: 16 }}>
+          <div className="adm-card-head"><span className="adm-card-title">Loved ones</span></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {d.lovedOnes.map((lo: any) => (
+              <div key={lo.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 0', borderBottom: '0.5px solid var(--gray-light)' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--black)' }}>
+                    {lo.full_name || '—'}{lo.age ? <span style={{ fontWeight: 400, color: 'var(--gray-mid)', marginLeft: 4 }}>· {lo.age}</span> : null}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
+                    {lo.city
+                      ? <Badge tone="green">{lo.city}</Badge>
+                      : <Badge tone="amber">City missing — fill before scheduling</Badge>
+                    }
+                    {lo.address && <span style={{ fontSize: 12, color: 'var(--gray-mid)' }}>{lo.address}</span>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* Elder profile(s) */}
       {d.elderProfiles.length > 0 && (
         <Card style={{ marginBottom: 16 }}>

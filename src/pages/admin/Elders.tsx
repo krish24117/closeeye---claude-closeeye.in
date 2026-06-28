@@ -146,7 +146,7 @@ export function AdminElders() {
               <tbody className="divide-y divide-gray-50">
                 {filtered.map(e => {
                   const name = e.name || e.loved_ones?.full_name || '—'
-                  const city = e.city || e.loved_ones?.city || '—'
+                  const rawCity = e.city || e.loved_ones?.city || ''
                   const lv   = lastVisit[e.id]
                   const comp = e.loved_one_id ? companionByLO[e.loved_one_id] : null
                   return (
@@ -156,7 +156,12 @@ export function AdminElders() {
                         {!e.loved_one_id && <span className="ml-2 text-[10px] font-semibold bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full">Unlinked</span>}
                       </td>
                       <td className="px-4 py-3 text-gray-600">{e.age ?? '—'}</td>
-                      <td className="px-4 py-3 text-gray-600">{city}</td>
+                      <td className="px-4 py-3">
+                        {rawCity
+                          ? <span className="text-gray-600">{rawCity}</span>
+                          : <span className="text-[11px] font-semibold bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full">City missing</span>
+                        }
+                      </td>
                       <td className="px-4 py-3 text-gray-600">{lv ? format(new Date(lv), 'dd MMM yyyy') : <span className="text-gray-300">No visits</span>}</td>
                       <td className="px-4 py-3 text-gray-600">{comp || <span className="text-gray-300">—</span>}</td>
                       <td className="px-4 py-3 text-right">
@@ -175,7 +180,7 @@ export function AdminElders() {
           <div className="md:hidden space-y-2">
             {filtered.map(e => {
               const name = e.name || e.loved_ones?.full_name || '—'
-              const city = e.city || e.loved_ones?.city || '—'
+              const rawCity = e.city || e.loved_ones?.city || ''
               const lv   = lastVisit[e.id]
               const comp = e.loved_one_id ? companionByLO[e.loved_one_id] : null
               return (
@@ -183,7 +188,10 @@ export function AdminElders() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-semibold text-green-900">{name}{e.age ? <span className="text-gray-400 font-normal">, {e.age}</span> : ''}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{city}</p>
+                      {rawCity
+                        ? <p className="text-xs text-gray-400 mt-0.5">{rawCity}</p>
+                        : <span className="mt-1 inline-block text-[11px] font-semibold bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full">City missing</span>
+                      }
                     </div>
                     <button onClick={() => openEdit(e)} className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-green-700 border border-green-200 rounded-xl px-2.5 py-1.5">
                       <Pencil size={12} /> Edit

@@ -126,6 +126,7 @@ function ProfileStep({ onNext }: { onNext: () => void }) {
   const [phone, setPhone] = useState(profile?.whatsapp_number || '')
   const [address, setAddress] = useState(profile?.address || '')
   const [lovedName, setLovedName] = useState('')
+  const [lovedCity, setLovedCity] = useState('')
   const [lovedAddress, setLovedAddress] = useState('')
   const [lovedAge, setLovedAge] = useState('')
   const [lovedRel, setLovedRel] = useState('')
@@ -136,11 +137,12 @@ function ProfileStep({ onNext }: { onNext: () => void }) {
   useEffect(() => {
     if (!user) return
     supabase.from('loved_ones')
-      .select('full_name, address, age, relationship')
+      .select('full_name, city, address, age, relationship')
       .eq('family_user_id', user.id).limit(1).maybeSingle()
       .then(({ data }) => {
         if (!data) return
         setLovedName(data.full_name || '')
+        setLovedCity(data.city || '')
         setLovedAddress(data.address || '')
         setLovedAge(data.age != null ? String(data.age) : '')
         setLovedRel(data.relationship || '')
@@ -171,6 +173,7 @@ function ProfileStep({ onNext }: { onNext: () => void }) {
 
       const loPayload = {
         full_name: lovedName.trim(),
+        city: lovedCity.trim() || null,
         address: lovedAddress.trim(),
         age: lovedAge ? parseInt(lovedAge, 10) : null,
         relationship: lovedRel || null,
@@ -219,10 +222,11 @@ function ProfileStep({ onNext }: { onNext: () => void }) {
       <SLabel>Your loved one in India</SLabel>
 
       <Field label="Their name" required value={lovedName} onChange={e => setLovedName(e.target.value)} error={errors.lovedName} placeholder="e.g. Kamala Kumar" />
+      <Field label="City in India" value={lovedCity} onChange={e => setLovedCity(e.target.value)} placeholder="e.g. Hyderabad, Chennai, Pune" />
 
       <div style={{ marginBottom: 16 }}>
         <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: F, marginBottom: 5 }}>
-          Their address in India <span style={{ color: '#EF4444' }}>*</span>
+          Their full address <span style={{ color: '#EF4444' }}>*</span>
         </label>
         <textarea
           value={lovedAddress}
