@@ -82,31 +82,34 @@ export function AdminFoundingMembers() {
   async function load() {
     setLoading(true); setErr(false)
     try {
-      const { data, error } = await supabase
+      const { data: profs, error: pErr } = await supabase
         .from('profiles')
-        .select('id, full_name, whatsapp_number, country, founding_number, founding_date, memberships(status, razorpay_payment_id, activated_at), loved_ones(id, full_name, city, relationship, age)')
+        .select('id, full_name, whatsapp_number, country, founding_number, founding_date')
         .eq('is_founding_member', true)
         .order('founding_number', { ascending: true })
-      if (error) throw error
-      const rows = (data || []) as MemberRow[]
-      setMembers(rows)
+      if (pErr) throw pErr
+      if (!profs?.length) { setMembers([]); setLoading(false); return }
 
-      if (rows.length > 0) {
-        const ids = rows.map(r => r.id)
-        const { data: bks } = await supabase
-          .from('bookings')
-          .select('family_user_id, status')
-          .in('family_user_id', ids)
-          .not('status', 'in', '("cancelled")')
-        const vm: Record<string, { status: string }[]> = {}
-        ;(bks || []).forEach((b: any) => {
-          if (!vm[b.family_user_id]) vm[b.family_user_id] = []
-          vm[b.family_user_id].push({ status: b.status })
-        })
-        setVisitMap(vm)
-      }
-    } catch { setErr(true) }
-    finally { setLoading(false) }
+      const ids = profs.map((p: any) => p.id)
+      const [msRes, loRes, bkRes] = await Promise.all([
+        supabase.from('memberships').select('user_id, status, razorpay_payment_id, activated_at').in('user_id', ids),
+        supabase.from('loved_ones').select('id, family_user_id, full_name, city, relationship, age').in('family_user_id', ids),
+        supabase.from('bookings').select('family_user_id, status').in('family_user_id', ids).not('status', 'in', '("cancelled")'),
+      ])
+
+      const msMap: Record<string, MembershipRow[]> = {}
+      ;(msRes.data || []).forEach((m: any) => { (msMap[m.user_id] = msMap[m.user_id] || []).push(m) })
+      const loMap: Record<string, LovedOneRow[]> = {}
+      ;(loRes.data || []).forEach((lo: any) => { (loMap[lo.family_user_id] = loMap[lo.family_user_id] || []).push(lo) })
+      const vm: Record<string, { status: string }[]> = {}
+      ;(bkRes.data || []).forEach((b: any) => { (vm[b.family_user_id] = vm[b.family_user_id] || []).push({ status: b.status }) })
+
+      setMembers(profs.map((p: any) => ({ ...p, memberships: msMap[p.id] || [], loved_ones: loMap[p.id] || [] })))
+      setVisitMap(vm)
+    } catch (e) {
+      console.error('[FoundingMembers] load error:', e)
+      setErr(true)
+    } finally { setLoading(false) }
   }
 
   const total      = members.length
@@ -216,25 +219,34 @@ export function AdminFoundingMemberDetail() {
   async function load() {
     setLoading(true); setErr(false)
     try {
-      const [profRes, bkRes] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('id, full_name, whatsapp_number, country, founding_number, founding_date, memberships(status, razorpay_payment_id, activated_at, created_at), loved_ones(id, full_name, city, address, relationship, age, elder_profiles(id, name, age, conditions, medications, doctor_name, notes))')
-          .eq('id', userId!)
-          .eq('is_founding_member', true)
-          .single(),
-        supabase
-          .from('bookings')
-          .select('id, status, scheduled_at, service_type, amount_paise')
-          .eq('family_user_id', userId!)
-          .order('scheduled_at', { ascending: false })
-          .limit(20),
+      const [profRes, msRes, loRes, bkRes] = await Promise.all([
+        supabase.from('profiles').select('id, full_name, whatsapp_number, country, founding_number, founding_date').eq('id', userId!).eq('is_founding_member', true).maybeSingle(),
+        supabase.from('memberships').select('status, razorpay_payment_id, activated_at, created_at').eq('user_id', userId!),
+        supabase.from('loved_ones').select('id, full_name, city, address, relationship, age').eq('family_user_id', userId!),
+        supabase.from('bookings').select('id, status, scheduled_at, service_type, amount_paise').eq('family_user_id', userId!).order('scheduled_at', { ascending: false }).limit(20),
       ])
-      if (profRes.error) throw profRes.error
-      setData(profRes.data)
+      if (!profRes.data) throw new Error('Profile not found')
+
+      const loIds = (loRes.data || []).map((lo: any) => lo.id)
+      let elderProfiles: any[] = []
+      if (loIds.length) {
+        const { data } = await supabase
+          .from('elder_profiles')
+          .select('id, loved_one_id, name, age, conditions, medications, doctor_name, notes')
+          .in('loved_one_id', loIds)
+        elderProfiles = data || []
+      }
+      const loWithEp = (loRes.data || []).map((lo: any) => ({
+        ...lo,
+        elder_profiles: elderProfiles.filter((ep: any) => ep.loved_one_id === lo.id),
+      }))
+
+      setData({ ...profRes.data, memberships: msRes.data || [], loved_ones: loWithEp })
       setBookings(bkRes.data || [])
-    } catch { setErr(true) }
-    finally { setLoading(false) }
+    } catch (e) {
+      console.error('[FoundingMemberDetail] load error:', e)
+      setErr(true)
+    } finally { setLoading(false) }
   }
 
   if (loading) return <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}><Skeleton h={120} /><Skeleton h={200} /><Skeleton h={160} /></div>
