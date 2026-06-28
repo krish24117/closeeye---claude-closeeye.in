@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { TbUserPlus, TbBrandWhatsapp, TbBuildingCommunity, TbPlus, TbStethoscope } from 'react-icons/tb'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/components/ui/Toast'
 import { Card, Badge, Avatar, EmptyState, Skeleton } from './_shared'
 import type { Tone } from './_shared'
@@ -56,7 +57,35 @@ const PRICING_KEY = 'adm-pricing'
 const WHATSAPP_NUMBER: string = (import.meta as any).env?.VITE_WHATSAPP_NUMBER || '+91 90002 21261'
 
 export function AdminSettings() {
+  const { profile } = useAuth()
   const { showToast } = useToast()
+  const [testSending, setTestSending] = useState(false)
+
+  async function sendTestMessage() {
+    const to = profile?.whatsapp_number?.trim()
+    if (!to) {
+      showToast('Your profile has no WhatsApp number — add one first', 'error')
+      return
+    }
+    setTestSending(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-send-whatsapp', {
+        body: {
+          to,
+          message: `✅ Close Eye WhatsApp test\n\nThis message confirms your Twilio sender is working.\n\nSent to: ${to}\nFrom: configured TWILIO_WHATSAPP_FROM\n\nClose Eye Admin`,
+        },
+      })
+      if (error || !data?.sent) {
+        showToast(`Send failed — check Supabase logs for the Twilio error`, 'error')
+      } else {
+        showToast(`Test sent to ${to} — check your WhatsApp`, 'success')
+      }
+    } catch (err) {
+      showToast('Unexpected error — check console', 'error')
+      console.error('Test WhatsApp error:', err)
+    }
+    setTestSending(false)
+  }
 
   /* ---- team members ---- */
   const [loading, setLoading] = useState(true)
@@ -351,7 +380,9 @@ export function AdminSettings() {
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--black)' }}>{WHATSAPP_NUMBER}</div>
               </div>
             </div>
-            <button className="adm-btn" onClick={() => showToast('Test message sent', 'success')}>Send test message</button>
+            <button className="adm-btn" onClick={sendTestMessage} disabled={testSending}>
+              {testSending ? 'Sending…' : 'Send test message'}
+            </button>
           </div>
         </Section>
 
