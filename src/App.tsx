@@ -74,6 +74,7 @@ const DoctorLayout = lazy(() => import('@/pages/doctor/Layout').then(m => ({ def
 const DoctorHome = lazy(() => import('@/pages/doctor/Home').then(m => ({ default: m.DoctorHome })))
 
 const SurveyPage = lazy(() => import('@/pages/Survey').then(m => ({ default: m.SurveyPage })))
+const OnboardingPage = lazy(() => import('@/pages/Onboarding').then(m => ({ default: m.OnboardingPage })))
 
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Close Eye — Trusted Elder Care Companion for NRI Families | Hyderabad',
@@ -98,6 +99,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/members': 'Family Members — Close Eye',
   '/dashboard/subscription': 'Subscription — Close Eye',
   '/dashboard/booking-confirmation': 'Booking Confirmed — Close Eye',
+  '/onboarding': 'Join Close Eye — Founding Membership',
   '/companion': 'Companion Portal — Close Eye',
   '/companion/visits': 'Visit History — Close Eye',
   '/companion/schedule': 'My Schedule — Close Eye',
@@ -263,6 +265,7 @@ export default function App() {
             <Route path="/terms" element={<PublicLayout><TermsPage /></PublicLayout>} />
             <Route path="/refund-policy" element={<PublicLayout><RefundPage /></PublicLayout>} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/onboarding" element={<ProtectedRoute role="family"><OnboardingPage /></ProtectedRoute>} />
             <Route path="/survey" element={<SurveyPage />} />
             <Route path="/dashboard" element={<ProtectedRoute role="family"><DashboardLayout /></ProtectedRoute>}>
               <Route index element={<DashboardHome />} />

@@ -7,10 +7,12 @@ interface Profile {
   full_name: string | null
   whatsapp_number: string | null
   country: string | null
+  address: string | null
   role: 'family' | 'companion' | 'admin'
   user_type: 'nri' | 'society'
   admin_role: 'super_admin' | 'companion' | 'doctor' | null
   avatar_url: string | null
+  is_founding_member: boolean
 }
 
 interface AuthCtx {
@@ -19,11 +21,13 @@ interface AuthCtx {
   session: Session | null
   loading: boolean
   signOut: () => Promise<void>
+  reloadProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthCtx>({
   user: null, profile: null, session: null, loading: true,
-  signOut: async () => {}
+  signOut: async () => {},
+  reloadProfile: async () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -123,6 +127,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function reloadProfile() {
+    if (user) await fetchProfile(user.id)
+  }
+
   async function signOut() {
     await supabase.auth.signOut()
     setUser(null); setProfile(null); setSession(null)
@@ -134,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, profile, session, loading, signOut, reloadProfile }}>
       {children}
     </AuthContext.Provider>
   )

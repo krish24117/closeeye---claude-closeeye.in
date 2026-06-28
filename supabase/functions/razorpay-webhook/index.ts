@@ -229,8 +229,71 @@ Deno.serve(async (req: Request) => {
 
         return json({ ok: true, handled: "booking_payment_captured" });
       }
+
+      // ── Founding membership payment ─────────────────────────────────────────
+      const { data: membership } = await sb
+        .from("memberships")
+        .select("id, user_id, status")
+        .eq("razorpay_order_id", orderId)
+        .maybeSingle();
+
+      if (membership && membership.status !== "active") {
+        await sb.from("memberships").update({
+          status: "active",
+          razorpay_payment_id: rzPayment?.id as string ?? null,
+          activated_at: new Date().toISOString(),
+        }).eq("id", membership.id);
+
+        await sb.from("profiles").update({
+          is_founding_member: true,
+        }).eq("id", membership.user_id);
+
+        // Non-fatal WhatsApp welcome
+        try {
+          const { data: prof } = await sb.from("profiles")
+            .select("whatsapp_number, full_name")
+            .eq("id", membership.user_id)
+            .maybeSingle();
+          const waNum = (prof?.whatsapp_number as string | null)?.trim();
+          if (waNum) {
+            const name = (prof?.full_name as string | null) || "there";
+            const msgBody = [
+              `Welcome to Close Eye, ${name} 🌿`,
+              ``,
+              `You're now a Founding Member — thank you for trusting us with the ones you love.`,
+              ``,
+              `We launch companion visits on 15 August. Until then, ask our medical team any health questions at closeeye.in/dashboard/ask`,
+              ``,
+              `With care,`,
+              `Team Close Eye`,
+            ].join("\n");
+            const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+            const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
+            const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM") ?? "whatsapp:+14155238886";
+            if (accountSid && authToken) {
+              const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
+              const params = new URLSearchParams({ From: fromNum, To: to, Body: msgBody });
+              await fetch(
+                `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+                    "Content-Type": "application/x-www-form-urlencoded",
+                  },
+                  body: params,
+                },
+              );
+            }
+          }
+        } catch (waErr) {
+          console.error("Membership welcome WhatsApp failed (non-fatal):", waErr);
+        }
+
+        return json({ ok: true, handled: "founding_membership_activated" });
+      }
     }
-    // payment.captured for non-booking order — nothing to do
+    // payment.captured for unrecognised order — nothing to do
     return json({ ok: true });
   }
 

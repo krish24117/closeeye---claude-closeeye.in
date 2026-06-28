@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -15,8 +16,8 @@ function StatusBadge({ status }: { status: string }) {
   if (status === 'doctor_reviewed')
     return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: 'var(--forest)', background: 'rgba(14,42,31,0.06)', borderRadius: 100, padding: '4px 12px' }}>✓ Reviewed by Close Eye Medical Team</span>
   if (status === 'ai_answered')
-    return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 500, color: 'var(--gray-mid)' }}>AI guidance · pending doctor review</span>
-  return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 400, color: 'var(--gray-mid)' }}>⏳ Doctor review in progress</span>
+    return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 500, color: 'var(--gray-mid)' }}>AI guidance · being reviewed by our medical team</span>
+  return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 400, color: 'var(--gray-mid)' }}>⏳ Our medical team is reviewing this</span>
 }
 
 export function DashboardAsk() {
@@ -28,6 +29,7 @@ export function DashboardAsk() {
   const [submitting, setSubmitting] = useState(false)
   const [answer, setAnswer] = useState<{ text: string | null; pending: boolean } | null>(null)
   const [history, setHistory] = useState<Query[]>([])
+  const [monthlyCount, setMonthlyCount] = useState(0)
 
   useEffect(() => {
     if (!user) return
@@ -44,6 +46,11 @@ export function DashboardAsk() {
     const { data } = await supabase.from('member_queries').select('id,question,answer,ai_answer,status,created_at')
       .eq('user_id', user.id).order('created_at', { ascending: false }).limit(20)
     if (data) setHistory(data)
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    const { count } = await supabase.from('member_queries').select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id).gte('created_at', startOfMonth)
+    setMonthlyCount(count ?? 0)
   }
 
   async function submit() {
@@ -85,11 +92,26 @@ export function DashboardAsk() {
           style={{ width: '100%', minHeight: 90, resize: 'none', background: 'var(--cream)', border: '1px solid var(--gray-light)', borderRadius: 12, padding: '14px 16px', fontSize: 16, fontFamily: 'inherit' }}
         />
         <p style={{ fontSize: 11, color: 'var(--gray-mid)', fontStyle: 'italic', margin: '8px 0 12px' }}>
-          General wellness guidance only. For emergencies call 108.
+          General guidance only — not a diagnosis. For emergencies or serious concerns, please contact a doctor.
         </p>
-        <button onClick={submit} disabled={submitting || !text.trim()} className="ce-btn ce-btn-primary ce-btn-full" style={{ padding: 14, opacity: submitting || !text.trim() ? 0.6 : 1 }}>
-          {submitting ? <><Loader2 size={16} className="ce-spin" /> Thinking…</> : 'Ask Close Eye →'}
-        </button>
+        {monthlyCount === 4 && (
+          <div style={{ background: 'rgba(168,213,181,0.15)', border: '1px solid rgba(168,213,181,0.4)', borderRadius: 12, padding: '10px 14px', fontSize: 13, color: 'var(--forest)', marginBottom: 10 }}>
+            You have <strong>1 question left</strong> this month.{' '}
+            <Link to="/onboarding" style={{ color: 'var(--forest)', fontWeight: 600 }}>Become a Founding Member →</Link>{' '}
+            for continued access.
+          </div>
+        )}
+        {monthlyCount >= 5 ? (
+          <div style={{ background: 'var(--cream)', border: '1px solid var(--gray-light)', borderRadius: 12, padding: '16px', textAlign: 'center' }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--black)', margin: '0 0 4px' }}>You've used your 5 free questions this month</p>
+            <p style={{ fontSize: 13, color: 'var(--gray-mid)', margin: '0 0 12px' }}>Founding Members get unlimited access for ₹100 — one-time.</p>
+            <Link to="/onboarding" className="ce-btn ce-btn-primary" style={{ display: 'inline-block', padding: '10px 24px', textDecoration: 'none', fontSize: 14 }}>Become a Founding Member →</Link>
+          </div>
+        ) : (
+          <button onClick={submit} disabled={submitting || !text.trim()} className="ce-btn ce-btn-primary ce-btn-full" style={{ padding: 14, opacity: submitting || !text.trim() ? 0.6 : 1 }}>
+            {submitting ? <><Loader2 size={16} className="ce-spin" /> Thinking…</> : 'Ask Close Eye →'}
+          </button>
+        )}
       </div>
 
       {/* Latest response */}
@@ -100,9 +122,10 @@ export function DashboardAsk() {
             <span style={{ fontSize: 13, color: 'var(--gray-mid)' }}>Close Eye</span>
           </div>
           <p style={{ fontSize: 15, color: 'var(--gray-dark)', lineHeight: 1.7, margin: 0 }}>
-            {answer.text || 'Thanks — a Close Eye doctor will review your question and reply shortly. For anything urgent, call 108.'}
+            {answer.text || 'Thanks — our medical team will review your question and reply shortly. For anything urgent, call 108.'}
           </p>
           <div style={{ marginTop: 12 }}><StatusBadge status={answer.text ? 'ai_answered' : 'pending'} /></div>
+          <p style={{ fontSize: 11, color: 'var(--gray-mid)', fontStyle: 'italic', margin: '8px 0 0' }}>General guidance, not a diagnosis. For emergencies or serious concerns, please contact a doctor.</p>
         </div>
       )}
 
@@ -113,9 +136,10 @@ export function DashboardAsk() {
             <div key={q.id} style={{ background: '#fff', borderRadius: 'var(--radius-card)', padding: 16, boxShadow: 'var(--shadow-card)', marginBottom: 10 }}>
               <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)', margin: 0 }}>{q.question}</p>
               <p style={{ fontSize: 13, color: 'var(--gray-dark)', lineHeight: 1.6, margin: '8px 0 0' }}>
-                {q.answer || q.ai_answer || 'Doctor review in progress…'}
+                {q.answer || q.ai_answer || 'Our medical team is reviewing…'}
               </p>
               <div style={{ marginTop: 10 }}><StatusBadge status={q.status} /></div>
+              <p style={{ fontSize: 11, color: 'var(--gray-mid)', fontStyle: 'italic', margin: '8px 0 0' }}>General guidance, not a diagnosis. For emergencies or serious concerns, please contact a doctor.</p>
             </div>
           ))}
         </div>
@@ -125,7 +149,7 @@ export function DashboardAsk() {
         <div style={{ textAlign: 'center', padding: '40px 24px' }}>
           <div style={{ fontSize: 40 }}>💬</div>
           <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--black)', margin: '8px 0 0' }}>Ask your first health question</p>
-          <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: '4px 0 0' }}>Get warm, doctor-reviewed guidance in plain language.</p>
+          <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: '4px 0 0' }}>Get clear, caring guidance from our medical team — in plain language.</p>
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { Home, FileText, MessageCircle, CalendarPlus, User, Bell, LogOut, CalendarCheck2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { Logo } from '@/components/ui/Logo'
 
@@ -20,9 +20,15 @@ const SOCIETY_TABS = [
 ]
 
 export function DashboardLayout() {
-  const { profile, signOut } = useAuth()
+  const { profile, loading, signOut } = useAuth()
   const navigate = useNavigate()
   const [menu, setMenu] = useState(false)
+
+  useEffect(() => {
+    if (!loading && profile && profile.role === 'family' && !profile.is_founding_member) {
+      navigate('/onboarding', { replace: true })
+    }
+  }, [loading, profile, navigate])
   const tabs = profile?.user_type === 'nri' ? NRI_TABS : SOCIETY_TABS
 
   const initials = (profile?.full_name || 'U').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
