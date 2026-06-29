@@ -76,7 +76,11 @@ export function AdminSettings() {
         },
       })
       if (error || !data?.sent) {
-        showToast(`Send failed — check Supabase logs for the Twilio error`, 'error')
+        const code = data?.twilioCode ? ` (Twilio ${data.twilioCode})` : ''
+        const hint = data?.twilioCode === 63016
+          ? ' — no 24h session: WhatsApp the business number from your phone first'
+          : ' — check Supabase edge function logs'
+        showToast(`Send failed${code}${hint}`, 'error')
       } else {
         showToast(`Test sent to ${to} — check your WhatsApp`, 'success')
       }

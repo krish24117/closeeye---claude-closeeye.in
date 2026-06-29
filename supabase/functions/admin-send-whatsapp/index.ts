@@ -54,9 +54,16 @@ Deno.serve(async (req: Request) => {
       body: params.toString(),
     });
     if (!res.ok) {
-      const text = await res.text();
-      console.error("Twilio error:", res.status, text);
-      return json({ error: "Send failed", sent: false }, 200);
+      const errText = await res.text();
+      let twilioCode: number | string = "unknown";
+      let twilioMessage = "Send failed";
+      try {
+        const parsed = JSON.parse(errText);
+        twilioCode = parsed.code ?? "unknown";
+        twilioMessage = parsed.message ?? "Send failed";
+      } catch { /* not JSON */ }
+      console.error(`Twilio error ${res.status} code=${twilioCode}:`, errText);
+      return json({ error: twilioMessage, twilioCode, sent: false }, 200);
     }
     return json({ sent: true });
   } catch (err) {
