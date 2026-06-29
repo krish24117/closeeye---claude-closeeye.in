@@ -175,7 +175,7 @@ Deno.serve(async (req: Request) => {
     if (orderId) {
       const { data: br } = await sb
         .from("booking_requests")
-        .select("id, status, service_name, recipient_name, requester_whatsapp, scheduled_at")
+        .select("id, status, service_name, recipient_name, requester_whatsapp, scheduled_at, user_id")
         .eq("razorpay_order_id", orderId)
         .maybeSingle();
 
@@ -187,7 +187,7 @@ Deno.serve(async (req: Request) => {
           paid_at: new Date().toISOString(),
         }).eq("id", br.id);
 
-        // Non-fatal WhatsApp: "Visit confirmed ✓ — see you on {date}"
+        // Non-fatal WhatsApp: visit_confirmed template (or free-form fallback)
         try {
           const waNum = (br.requester_whatsapp as string | null)?.trim();
           if (waNum) {
@@ -199,17 +199,6 @@ Deno.serve(async (req: Request) => {
                   timeZone: "Asia/Kolkata",
                 }).format(new Date(scheduledAt))
               : "your scheduled date";
-            const body = [
-              `Your Close Eye visit is confirmed ✓`,
-              ``,
-              `${br.service_name || "Companion visit"} for ${br.recipient_name || "your loved one"} is locked in.`,
-              `📅 ${dateStr}`,
-              ``,
-              `We will be there. See you soon!`,
-              ``,
-              `With care,`,
-              `Team Close Eye`,
-            ].join("\n");
 
             const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
             const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
@@ -217,8 +206,42 @@ Deno.serve(async (req: Request) => {
 
             if (accountSid && authToken) {
               const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
-              const params = new URLSearchParams({ From: fromNum, To: to, Body: body });
-              await fetch(
+              const templateSid = Deno.env.get("TWILIO_TEMPLATE_VISIT_CONFIRMED");
+
+              // Lookup requester name for template variable {{1}}
+              let requesterName = "there";
+              const brUserId = (br as Record<string, unknown>).user_id as string | null;
+              if (brUserId) {
+                const { data: reqProf } = await sb.from("profiles").select("full_name").eq("id", brUserId).maybeSingle();
+                requesterName = (reqProf?.full_name as string | null) || "there";
+              }
+
+              const params = templateSid
+                ? new URLSearchParams({
+                    From: fromNum, To: to,
+                    ContentSid: templateSid,
+                    ContentVariables: JSON.stringify({
+                      "1": requesterName,
+                      "2": "our companion",
+                      "3": dateStr,
+                    }),
+                  })
+                : new URLSearchParams({
+                    From: fromNum, To: to,
+                    Body: [
+                      `Your Close Eye visit is confirmed ✓`,
+                      ``,
+                      `${br.service_name || "Companion visit"} for ${br.recipient_name || "your loved one"} is locked in.`,
+                      `📅 ${dateStr}`,
+                      ``,
+                      `We will be there. See you soon!`,
+                      ``,
+                      `With care,`,
+                      `Team Close Eye`,
+                    ].join("\n"),
+                  });
+
+              const res = await fetch(
                 `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
                 {
                   method: "POST",
@@ -229,6 +252,11 @@ Deno.serve(async (req: Request) => {
                   body: params,
                 },
               );
+              if (!res.ok) {
+                console.error(`[razorpay-webhook] visit_confirmed Twilio error ${res.status}:`, await res.text());
+              } else {
+                console.log(`[razorpay-webhook] visit_confirmed sent via ${templateSid ? "template" : "free-form"}`);
+              }
             }
           }
         } catch (waErr) {
@@ -311,6 +339,31 @@ Deno.serve(async (req: Request) => {
               console.error(`[razorpay-webhook] Twilio error ${waRes.status} for ${to}:`, errText);
             } else {
               console.log(`[razorpay-webhook] WhatsApp welcome sent to ${to} via ${templateSid ? "template" : "free-form"}`);
+            }
+            // Also send payment_received template
+            const paymentTemplateSid = Deno.env.get("TWILIO_TEMPLATE_PAYMENT_RECEIVED");
+            if (paymentTemplateSid) {
+              const payParams = new URLSearchParams({
+                From: fromNum, To: to,
+                ContentSid: paymentTemplateSid,
+                ContentVariables: JSON.stringify({ "1": name, "2": "₹100", "3": "Founding Membership" }),
+              });
+              const payRes = await fetch(
+                `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+                    "Content-Type": "application/x-www-form-urlencoded",
+                  },
+                  body: payParams,
+                },
+              );
+              if (!payRes.ok) {
+                console.error(`[razorpay-webhook] payment_received Twilio error:`, await payRes.text());
+              } else {
+                console.log(`[razorpay-webhook] payment_received sent to ${to}`);
+              }
             }
           } else {
             console.warn("[razorpay-webhook] WhatsApp skipped — missing TWILIO_WHATSAPP_FROM or credentials");

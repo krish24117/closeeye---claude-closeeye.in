@@ -179,6 +179,32 @@ Deno.serve(async (req: Request) => {
       answered_at: new Date().toISOString(),
     }).eq("id", row.id);
 
+    // Non-fatal: notify user their question has been answered
+    try {
+      const { data: prof } = await sb.from("profiles").select("whatsapp_number, full_name").eq("id", user.id).maybeSingle();
+      const waNum = prof?.whatsapp_number?.trim();
+      const accountSid  = Deno.env.get("TWILIO_ACCOUNT_SID");
+      const authToken   = Deno.env.get("TWILIO_AUTH_TOKEN");
+      const fromNum     = Deno.env.get("TWILIO_WHATSAPP_FROM");
+      const templateSid = Deno.env.get("TWILIO_TEMPLATE_QUERY_RESPONSE");
+      if (waNum && accountSid && authToken && fromNum && templateSid) {
+        const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
+        const params = new URLSearchParams({
+          From: fromNum, To: to,
+          ContentSid: templateSid,
+          ContentVariables: JSON.stringify({ "1": prof?.full_name || "there" }),
+        });
+        const waRes = await fetch(
+          `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+          { method: "POST", headers: { Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`, "Content-Type": "application/x-www-form-urlencoded" }, body: params },
+        );
+        if (!waRes.ok) console.error(`[ask-health] query_response Twilio error:`, await waRes.text());
+        else console.log(`[ask-health] query_response sent to ${to}`);
+      }
+    } catch (waErr) {
+      console.error("[ask-health] query_response WhatsApp failed (non-fatal):", waErr);
+    }
+
     return json({ query_id: row.id, ai_answer: aiAnswer });
   } catch (err) {
     console.error("Anthropic call failed:", err);

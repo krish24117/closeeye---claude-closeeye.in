@@ -143,6 +143,31 @@ Deno.serve(async (req: Request) => {
       } else {
         console.log(`[verify-membership] WhatsApp welcome sent to ${to} via ${templateSid ? "template" : "free-form"}`);
       }
+      // Also send payment_received template
+      const paymentTemplateSid = Deno.env.get("TWILIO_TEMPLATE_PAYMENT_RECEIVED");
+      if (paymentTemplateSid) {
+        const payParams = new URLSearchParams({
+          From: fromNum, To: to,
+          ContentSid: paymentTemplateSid,
+          ContentVariables: JSON.stringify({ "1": name, "2": "₹100", "3": "Founding Membership" }),
+        });
+        const payRes = await fetch(
+          `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: payParams,
+          },
+        );
+        if (!payRes.ok) {
+          console.error(`[verify-membership] payment_received Twilio error:`, await payRes.text());
+        } else {
+          console.log(`[verify-membership] payment_received sent to ${to}`);
+        }
+      }
     } else {
       console.warn("[verify-membership] WhatsApp skipped — missing TWILIO_WHATSAPP_FROM or credentials");
     }

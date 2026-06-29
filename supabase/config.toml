@@ -2,3 +2,9 @@ project_id = "kghwmiriboavmyswcqnr"
 
 [functions.razorpay-webhook]
 verify_jwt = false
+
+[functions.send-visit-reminder]
+verify_jwt = false
+
+[functions.send-monthly-summary]
+verify_jwt = false

@@ -110,7 +110,14 @@ Deno.serve(async (req: Request) => {
         `Close Eye`,
       ].join("\n");
 
-      const params = new URLSearchParams({ From: fromNum, To: to, Body: msgBody });
+      const templateSid = Deno.env.get("TWILIO_TEMPLATE_WAITLIST_WELCOME");
+      const params = templateSid
+        ? new URLSearchParams({
+            From: fromNum, To: to,
+            ContentSid: templateSid,
+            ContentVariables: JSON.stringify({ "1": name }),
+          })
+        : new URLSearchParams({ From: fromNum, To: to, Body: msgBody });
       const waRes = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
         {
@@ -126,7 +133,7 @@ Deno.serve(async (req: Request) => {
         const errText = await waRes.text();
         console.error(`[waitlist-signup] Twilio error ${waRes.status} for ${to}:`, errText);
       } else {
-        console.log(`[waitlist-signup] WhatsApp welcome sent to ${to}`);
+        console.log(`[waitlist-signup] WhatsApp welcome sent to ${to} via ${templateSid ? "template" : "free-form"}`);
       }
     } else {
       console.warn("[waitlist-signup] WhatsApp skipped — missing TWILIO_WHATSAPP_FROM or credentials");

@@ -334,6 +334,35 @@ Deno.serve(async (req) => {
       return await res.text()
     }
 
+    // Send visit_completed template first — opens the 24h session window for free-form follow-up
+    const visitCompletedSid = Deno.env.get('TWILIO_TEMPLATE_VISIT_COMPLETED')
+    if (visitCompletedSid) {
+      const visitDate = visit?.start_time
+        ? new Intl.DateTimeFormat('en-IN', {
+            weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata',
+          }).format(new Date(visit.start_time))
+        : 'today'
+      await Promise.all([...recipients].map(async (to) => {
+        const tParams = new URLSearchParams({
+          From: waNumber(fromNumber), To: waNumber(to),
+          ContentSid: visitCompletedSid,
+          ContentVariables: JSON.stringify({
+            '1': familyName,
+            '2': elderName,
+            '3': compProfile?.full_name || 'our companion',
+            '4': visitDate,
+          }),
+        })
+        const tRes = await fetch(twilioUrl, {
+          method: 'POST',
+          headers: { Authorization: twilioAuth, 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: tParams,
+        })
+        if (!tRes.ok) console.warn(`[send-visit-whatsapp] visit_completed template failed (to ${to}):`, await tRes.text())
+        else console.log(`[send-visit-whatsapp] visit_completed sent to ${to}`)
+      }))
+    }
+
     let sent = 0
     const errors: string[] = []
     await Promise.all([...recipients].map(async (to) => {
