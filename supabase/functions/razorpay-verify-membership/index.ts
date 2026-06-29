@@ -114,19 +114,18 @@ Deno.serve(async (req: Request) => {
     const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM");
     if (waNum && accountSid && authToken && fromNum) {
       const name = (prof?.full_name as string | null) || "there";
-      const msgBody = [
-        `Welcome to Close Eye, ${name} 🌿`,
-        ``,
-        `You're Founding Member #${foundingNumber} — thank you for trusting us with the ones you love.`,
-        ``,
-        `We launch companion visits on 15 August. Until then, ask our medical team any health questions at closeeye.in/dashboard/ask`,
-        ``,
-        `With care,`,
-        `Krishna & Aishwarya`,
-        `Close Eye`,
-      ].join("\n");
       const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
-      const params = new URLSearchParams({ From: fromNum, To: to, Body: msgBody });
+      const templateSid = Deno.env.get("TWILIO_TEMPLATE_FOUNDING_WELCOME");
+      const params = templateSid
+        ? new URLSearchParams({
+            From: fromNum, To: to,
+            ContentSid: templateSid,
+            ContentVariables: JSON.stringify({ "1": name, "2": String(foundingNumber) }),
+          })
+        : new URLSearchParams({
+            From: fromNum, To: to,
+            Body: `Welcome to Close Eye, ${name}!\n\nYou are Founding Member #${foundingNumber}. Thank you for trusting us with your loved ones.\n\nCompanion visits launch 15 August 2026. Until then: closeeye.in\n\nKrishna & Aishwarya, Close Eye`,
+          });
       const waRes = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
         {
@@ -142,7 +141,7 @@ Deno.serve(async (req: Request) => {
         const errText = await waRes.text();
         console.error(`[verify-membership] Twilio error ${waRes.status} for ${to}:`, errText);
       } else {
-        console.log(`[verify-membership] WhatsApp welcome sent to ${to}`);
+        console.log(`[verify-membership] WhatsApp welcome sent to ${to} via ${templateSid ? "template" : "free-form"}`);
       }
     } else {
       console.warn("[verify-membership] WhatsApp skipped — missing TWILIO_WHATSAPP_FROM or credentials");
