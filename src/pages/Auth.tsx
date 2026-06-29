@@ -163,6 +163,17 @@ export function AuthPage() {
     if (error) setError(error.message)
   }
 
+  // While the auth context is resolving (including Google OAuth callback parsing the
+  // URL hash and fetching the profile), show a blank spinner. Without this guard the
+  // login/signup form flashes on screen for ~300ms before the redirect fires.
+  if (loading && mode !== 'update-password') {
+    return (
+      <div className="min-h-screen bg-green-50 flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-green-800 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
   const InputClass = "w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-600 transition-colors"
 
   return (
