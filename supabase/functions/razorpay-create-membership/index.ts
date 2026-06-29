@@ -80,7 +80,10 @@ Deno.serve(async (req: Request) => {
   }
 
   const order = await rzRes.json();
-  await sb.from("memberships").update({ razorpay_order_id: order.id }).eq("id", membership.id);
+  const { error: linkErr } = await sb.from("memberships").update({ razorpay_order_id: order.id }).eq("id", membership.id);
+  if (linkErr) {
+    console.error("[create-membership] CRITICAL: failed to link razorpay_order_id — webhook activation will fail:", linkErr);
+  }
 
   return json({
     order_id: order.id,

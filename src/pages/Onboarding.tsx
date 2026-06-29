@@ -274,7 +274,7 @@ function ProfileStep({ onNext }: { onNext: () => void }) {
 // Step 2 — Payment
 // ─────────────────────────────────────────────────────────────────────────────
 
-type PayState = 'idle' | 'creating' | 'open' | 'verifying' | 'verify_error' | 'polling'
+type PayState = 'idle' | 'creating' | 'open' | 'verifying' | 'verify_error' | 'polling' | 'processing'
 
 function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
   const { user } = useAuth()
@@ -295,15 +295,30 @@ function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
   }, [])
 
+  // On mount: if user already activated (webhook fired after a prior polling timeout), skip straight to confirmed
+  useEffect(() => {
+    if (!user) return
+    supabase.from('profiles').select('is_founding_member').eq('id', user.id).maybeSingle()
+      .then(({ data }) => { if (data?.is_founding_member && mountedRef.current) onConfirmed() })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Poll for webhook-triggered activation (UPI app-switch — handler never fires)
   useEffect(() => {
     if (payState !== 'polling') return
     let count = 0
     const interval = setInterval(async () => {
       count++
-      if (count > 20) { // ~60 s timeout
+      if (count > 40) { // ~2 min — Razorpay webhooks can take time
         clearInterval(interval)
-        if (mountedRef.current) setPayState('idle')
+        // Final check before stopping
+        const { data: final } = await supabase
+          .from('profiles').select('is_founding_member').eq('id', user!.id).maybeSingle()
+        if (final?.is_founding_member && mountedRef.current) {
+          await onConfirmed()
+        } else if (mountedRef.current) {
+          setPayState('processing') // Do NOT go to idle — user might re-pay accidentally
+        }
         return
       }
       const { data } = await supabase
@@ -316,6 +331,16 @@ function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
     pollIntervalRef.current = interval
     return () => clearInterval(interval)
   }, [payState, user, onConfirmed])
+
+  async function checkAgain() {
+    const { data } = await supabase
+      .from('profiles').select('is_founding_member').eq('id', user!.id).maybeSingle()
+    if (data?.is_founding_member && mountedRef.current) {
+      await onConfirmed()
+    } else if (mountedRef.current) {
+      setPayState('polling')
+    }
+  }
 
   async function doVerify(resp: NonNullable<typeof pendingPayRef.current>) {
     if (!mountedRef.current) return
@@ -411,6 +436,31 @@ function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
         }}>
           I haven't paid yet
         </Btn>
+      </div>
+    )
+  }
+
+  // ── Processing (UPI confirmed on phone, webhook taking longer than 2 min) ────
+  if (payState === 'processing') {
+    return (
+      <div style={{ textAlign: 'center', padding: '36px 16px 24px' }}>
+        <div style={{
+          width: 60, height: 60, borderRadius: '50%',
+          background: 'rgba(168,213,181,0.15)',
+          border: '1.5px solid rgba(168,213,181,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 20px',
+        }}>
+          <CheckCircle2 size={28} style={{ color: F }} />
+        </div>
+        <p style={{ fontSize: 20, fontWeight: 700, color: F, margin: '0 0 12px' }}>Payment received ✓</p>
+        <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.65, maxWidth: 290, margin: '0 auto 8px' }}>
+          Your UPI payment went through. We're still confirming your membership — it can take a minute.
+        </p>
+        <p style={{ fontSize: 13, color: '#9CA3AF', lineHeight: 1.5, maxWidth: 260, margin: '0 auto 28px' }}>
+          <strong style={{ color: '#6B7280' }}>Do not pay again.</strong> Tap below to check your status.
+        </p>
+        <Btn onClick={checkAgain}>Check my membership →</Btn>
       </div>
     )
   }

@@ -139,8 +139,10 @@ Deno.serve(async (req: Request) => {
   const signature = req.headers.get("x-razorpay-signature") ?? "";
   const valid = await verifySignature(rawBody, signature, webhookSecret);
   if (!valid) {
+    console.error(`[razorpay-webhook] Invalid signature — sig=${signature.slice(0, 16)}... body_len=${rawBody.length}`);
     return json({ error: "Invalid signature" }, 400);
   }
+  console.log(`[razorpay-webhook] Signature verified OK`);
 
   let payload: Record<string, unknown>;
   try {
@@ -164,6 +166,12 @@ Deno.serve(async (req: Request) => {
   // payment.captured fires for one-time orders (booking_requests), not subscriptions.
   if (event === "payment.captured") {
     const orderId = rzPayment?.order_id as string | undefined;
+    const paymentId = rzPayment?.id as string | undefined;
+    console.log(`[razorpay-webhook] payment.captured — orderId=${orderId} paymentId=${paymentId}`);
+    if (!orderId) {
+      console.error("[razorpay-webhook] payment.captured missing order_id in payload");
+      return json({ ok: true });
+    }
     if (orderId) {
       const { data: br } = await sb
         .from("booking_requests")
@@ -231,18 +239,23 @@ Deno.serve(async (req: Request) => {
       }
 
       // ── Founding membership payment ─────────────────────────────────────────
-      const { data: membership } = await sb
+      const { data: membership, error: memErr } = await sb
         .from("memberships")
         .select("id, user_id, status")
         .eq("razorpay_order_id", orderId)
         .maybeSingle();
+      console.log(`[razorpay-webhook] membership lookup — found=${!!membership} status=${membership?.status} err=${memErr?.message}`);
 
       if (membership && membership.status !== "active") {
-        await sb.from("memberships").update({
+        const { error: updateErr } = await sb.from("memberships").update({
           status: "active",
-          razorpay_payment_id: rzPayment?.id as string ?? null,
+          razorpay_payment_id: paymentId ?? null,
           activated_at: new Date().toISOString(),
         }).eq("id", membership.id);
+        if (updateErr) {
+          console.error(`[razorpay-webhook] membership update failed: ${updateErr.message}`);
+          return json({ error: "DB update failed" }, 500);
+        }
 
         // Assign a sequential founding number (low-volume pre-launch, non-atomic is fine)
         const { count: fmCount } = await sb
