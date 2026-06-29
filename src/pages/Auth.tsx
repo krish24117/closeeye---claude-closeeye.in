@@ -93,11 +93,13 @@ export function AuthPage() {
             return
           }
           if (pending.type === 'membership') {
-            // Founding-member onboarding: keep the flag so the /services resume
-            // effect launches the ₹100 Razorpay checkout, which on server-side
-            // verification redirects to the dashboard.
-            navigate('/services', { replace: true })
-            return
+            if (profile.is_founding_member) {
+              // Already paid — clear the stale flag and fall through to dashboard
+              sessionStorage.removeItem('pendingCheckout')
+            } else {
+              navigate('/services', { replace: true })
+              return
+            }
           }
         } catch {
           sessionStorage.removeItem('pendingCheckout')

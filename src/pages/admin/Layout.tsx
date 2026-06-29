@@ -116,7 +116,7 @@ export function AdminLayout() {
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
   const roleLabel = adminRole === 'super_admin' ? 'Super admin' : adminRole === 'doctor' ? 'Doctor' : 'Companion'
 
-  async function handleSignOut() { await signOut(); navigate('/') }
+  async function handleSignOut() { await signOut(); window.location.replace('/auth') }
 
   const ctx = {
     adminRole, counts, refreshCounts,

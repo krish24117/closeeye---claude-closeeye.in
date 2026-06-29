@@ -42,7 +42,7 @@ export function DashboardLayout() {
 
   const initials = (profile?.full_name || 'U').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
 
-  async function handleSignOut() { await signOut(); navigate('/') }
+  async function handleSignOut() { await signOut(); window.location.replace('/auth') }
 
   return (
     <div className="ce-fam min-h-screen bg-[var(--cream)]">
