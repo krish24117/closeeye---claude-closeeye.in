@@ -64,19 +64,26 @@ export function DashboardNewBooking() {
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [emergencyDone, setEmergencyDone] = useState(false)
 
   const todayStr = new Date().toISOString().slice(0, 10)
 
   useEffect(() => {
-    supabase.from('loved_ones').select('id,full_name,city').order('full_name')
-      .then(({ data }) => {
+    ;(async () => {
+      try {
+        const { data } = await supabase.from('loved_ones').select('id,full_name,city').order('full_name')
         setLovedOnes(data || [])
         if (data && data.length === 1) setLovedOneId(data[0].id)
+      } catch (err) {
+        console.error('loved_ones load failed:', err)
+      } finally {
         setLoadingLO(false)
-      })
+      }
+    })()
   }, [])
 
   const selectedService = SERVICES.find(s => s.type === serviceType)
+  const isEmergency = serviceType === 'emergency_support_visit'
 
   async function handleAddMember() {
     if (!user) return
@@ -99,7 +106,7 @@ export function DashboardNewBooking() {
         .select('id,full_name,city')
         .single()
 
-      if (insertErr || !data) throw insertErr
+      if (insertErr || !data) throw insertErr ?? new Error('Family member could not be created')
 
       setLovedOnes(prev => [...prev, data].sort((a, b) => a.full_name.localeCompare(b.full_name)))
       setLovedOneId(data.id)
@@ -113,6 +120,40 @@ export function DashboardNewBooking() {
     } finally {
       setSavingMember(false)
     }
+  }
+
+  async function handleEmergency(e: React.FormEvent) {
+    e.preventDefault()
+    if (!lovedOneId) { setError('Please select who this visit is for.'); return }
+    if (!user) { setError('You must be signed in.'); return }
+    setSubmitting(true); setError(null)
+    try {
+      const lovedOneName = lovedOnes.find(lo => lo.id === lovedOneId)?.full_name || ''
+      const { error: fnErr } = await supabase.functions.invoke('submit-booking-request', {
+        body: {
+          service_id: 'emergency_support_visit',
+          service_name: 'Emergency Support Visit',
+          amount_paise: 300000,
+          scheduled_at_ist: null,
+          recipient_name: lovedOneName,
+          recipient_address: '',
+          requester_whatsapp: profile?.whatsapp_number || '',
+          notes: notes.trim() || null,
+          is_emergency: true,
+        },
+      })
+      if (fnErr) throw fnErr
+      setEmergencyDone(true)
+    } catch {
+      setError("Couldn't send the request. Please call +91 90002 21261 directly.")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    if (isEmergency) return handleEmergency(e)
+    return handlePay(e)
   }
 
   async function handlePay(e: React.FormEvent) {
@@ -166,20 +207,25 @@ export function DashboardNewBooking() {
           razorpay_signature: string
         }) => {
           setSubmitting(true)
-          const { data: vd, error: ve } = await supabase.functions.invoke('razorpay-verify-payment', {
-            body: {
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id:   response.razorpay_order_id,
-              razorpay_signature:  response.razorpay_signature,
-              booking_id:          data.booking_id,
-            },
-          })
-          if (ve || !vd?.success) {
+          try {
+            const { data: vd, error: ve } = await supabase.functions.invoke('razorpay-verify-payment', {
+              body: {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id:   response.razorpay_order_id,
+                razorpay_signature:  response.razorpay_signature,
+                booking_id:          data.booking_id,
+              },
+            })
+            if (ve || !vd?.success) {
+              setError('Payment received but verification failed — contact support with payment ID: ' + response.razorpay_payment_id)
+              setSubmitting(false)
+            } else {
+              paymentSucceeded.current = true
+              navigate(`/dashboard/booking-confirmation?id=${data.booking_id}`, { replace: true })
+            }
+          } catch {
             setError('Payment received but verification failed — contact support with payment ID: ' + response.razorpay_payment_id)
             setSubmitting(false)
-          } else {
-            paymentSucceeded.current = true
-            navigate(`/dashboard/booking-confirmation?id=${data.booking_id}`, { replace: true })
           }
         },
         modal: {
@@ -206,12 +252,22 @@ export function DashboardNewBooking() {
         <p className="text-gray-400 text-sm mt-1">Securely pay via UPI, card, or net banking.</p>
       </div>
 
-      {loadingLO ? (
+      {emergencyDone ? (
+        <div className="text-center py-10">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle size={32} className="text-green-700" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Request sent</h2>
+          <p className="text-gray-500 text-sm leading-relaxed">
+            Our team has been alerted. A companion will contact you within 30 minutes.
+          </p>
+        </div>
+      ) : loadingLO ? (
         <div className="flex items-center gap-2 text-sm text-gray-400 py-8">
           <Loader2 size={16} className="animate-spin" /> Loading…
         </div>
       ) : (
-        <form onSubmit={handlePay} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-start justify-between gap-3">
@@ -364,69 +420,109 @@ export function DashboardNewBooking() {
             </div>
           </div>
 
-          {/* ── Step 3: When ─────────────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">3 · Preferred date & time</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* ── Step 3: When (regular) / Get help now (emergency) ── */}
+          {isEmergency ? (
+            <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-5 space-y-4">
+              <p className="text-xs font-semibold text-red-600 uppercase tracking-wider">3 · Get help now</p>
+              <a
+                href="tel:+919000221261"
+                className="flex items-center justify-center gap-3 bg-red-700 hover:bg-red-600 text-white rounded-xl py-4 text-base font-bold transition-colors no-underline"
+                style={{ textDecoration: 'none' }}
+              >
+                📞 Call +91 90002 21261
+              </a>
+              <p className="text-xs text-red-500 text-center">Call first if this is urgent — we dispatch immediately.</p>
               <div>
-                <label className="text-xs text-gray-500 mb-1.5 block">Date</label>
+                <label className="text-xs text-gray-500 mb-1.5 block">What's happening? <span className="text-gray-400">(optional)</span></label>
                 <input
-                  type="date"
-                  value={visitDate}
-                  onChange={e => setVisitDate(e.target.value)}
-                  min={todayStr}
-                  required
-                  className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 bg-white"
+                  type="text"
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="e.g. Chest pain, fell at home, needs hospital…"
+                  className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-red-400 bg-white"
                 />
               </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1.5 block">Time</label>
-                <select
-                  value={visitTime}
-                  onChange={e => setVisitTime(e.target.value)}
-                  required
-                  className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 bg-white"
-                >
-                  <option value="">— Pick a time —</option>
-                  {TIME_SLOTS.map(t => (
-                    <option key={t} value={t}>{formatTimeLabel(t)}</option>
-                  ))}
-                </select>
-              </div>
             </div>
-            <p className="text-xs text-gray-400">Our coordinator will confirm the exact time when they call.</p>
-          </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">3 · Preferred date & time</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1.5 block">Date</label>
+                  <input
+                    type="date"
+                    value={visitDate}
+                    onChange={e => setVisitDate(e.target.value)}
+                    min={todayStr}
+                    required
+                    className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1.5 block">Time</label>
+                  <select
+                    value={visitTime}
+                    onChange={e => setVisitTime(e.target.value)}
+                    required
+                    className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 bg-white"
+                  >
+                    <option value="">— Pick a time —</option>
+                    {TIME_SLOTS.map(t => (
+                      <option key={t} value={t}>{formatTimeLabel(t)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400">Our coordinator will confirm the exact time when they call.</p>
+            </div>
+          )}
 
-          {/* ── Step 4: Notes ────────────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">4 · Notes <span className="normal-case font-normal">(optional)</span></p>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              rows={3}
-              placeholder="Access code, gate number, medications to remind about, things the companion should know…"
-              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 resize-none"
-            />
-          </div>
+          {/* ── Step 4: Notes (regular only — emergency note is in step 3) ── */}
+          {!isEmergency && (
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">4 · Notes <span className="normal-case font-normal">(optional)</span></p>
+              <textarea
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                rows={3}
+                placeholder="Access code, gate number, medications to remind about, things the companion should know…"
+                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 resize-none"
+              />
+            </div>
+          )}
 
-          {/* ── Order summary + Pay ───────────────────────────── */}
+          {/* ── Order summary + Submit ─────────────────────────── */}
           {selectedService && (
-            <div className="bg-green-900 rounded-2xl p-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-white font-semibold text-sm">{selectedService.name}</p>
-                <p className="text-green-300 text-xs mt-0.5">UPI · Cards · Net Banking · Wallets</p>
+            isEmergency ? (
+              <div className="bg-red-900 rounded-2xl p-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-white font-semibold text-sm">Emergency Support Visit</p>
+                  <p className="text-red-300 text-xs mt-0.5">Our team is alerted immediately</p>
+                </div>
+                <p className="font-serif text-xl text-white flex-shrink-0">₹3,000</p>
               </div>
-              <p className="font-serif text-xl text-white flex-shrink-0">{selectedService.price}</p>
-            </div>
+            ) : (
+              <div className="bg-green-900 rounded-2xl p-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-white font-semibold text-sm">{selectedService.name}</p>
+                  <p className="text-green-300 text-xs mt-0.5">UPI · Cards · Net Banking · Wallets</p>
+                </div>
+                <p className="font-serif text-xl text-white flex-shrink-0">{selectedService.price}</p>
+              </div>
+            )
           )}
 
           <button
             type="submit"
             disabled={submitting || !serviceType}
-            className="w-full bg-green-800 hover:bg-green-700 disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm flex items-center justify-center gap-2"
+            className={`w-full disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm flex items-center justify-center gap-2 ${
+              isEmergency ? 'bg-red-700 hover:bg-red-600' : 'bg-green-800 hover:bg-green-700'
+            }`}
           >
             {submitting ? (
-              <><Loader2 size={16} className="animate-spin" /> Processing…</>
+              <><Loader2 size={16} className="animate-spin" /> {isEmergency ? 'Alerting team…' : 'Processing…'}</>
+            ) : isEmergency ? (
+              'Request emergency visit →'
             ) : selectedService ? (
               `Pay ${selectedService.price} via Razorpay`
             ) : (
@@ -434,10 +530,12 @@ export function DashboardNewBooking() {
             )}
           </button>
 
-          <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400 pb-2">
-            <ShieldCheck size={12} />
-            Secured by Razorpay · Close Eye never stores your payment details
-          </div>
+          {!isEmergency && (
+            <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400 pb-2">
+              <ShieldCheck size={12} />
+              Secured by Razorpay · Close Eye never stores your payment details
+            </div>
+          )}
 
         </form>
       )}
