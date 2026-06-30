@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/ui/Logo'
+import { getPersona, getPersonaCopy } from '@/lib/persona'
 
 interface Query {
   id: string; question: string; answer: string | null; ai_answer: string | null
@@ -89,7 +90,7 @@ export function DashboardAsk() {
   const isFounder = !!profile?.is_founding_member
   const isNri     = profile?.user_type === 'nri'
 
-  const [elder, setElder]         = useState<{ id: string; full_name: string } | null>(null)
+  const [elder, setElder]         = useState<{ id: string; full_name: string; city?: string } | null>(null)
   const [subject, setSubject]     = useState('Myself')
   const [text, setText]           = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -104,9 +105,9 @@ export function DashboardAsk() {
   useEffect(() => {
     if (!user) return
     if (isNri) {
-      supabase.from('loved_ones').select('id, full_name').eq('family_user_id', user.id)
+      supabase.from('loved_ones').select('id, full_name, city').eq('family_user_id', user.id)
         .order('created_at').limit(1).maybeSingle()
-        .then(({ data }) => { if (data) setElder(data) })
+        .then(({ data }) => { if (data) setElder(data as { id: string; full_name: string; city?: string }) })
     }
     loadHistory()
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -148,6 +149,12 @@ export function DashboardAsk() {
     loadHistory()
   }
 
+  // Persona copy — affects placeholder text only
+  const persona = isNri ? getPersona(profile?.country, elder?.city) : null
+  const pcopy = isNri && persona
+    ? getPersonaCopy(persona, { parentName: elder?.full_name, parentCity: elder?.city, userCity: profile?.country ?? undefined })
+    : null
+
   // Free cap: 5/month for non-founders; founders have no cap (edge function handles it)
   const atCap = !isFounder && monthlyCount >= 5
   const nearCap = !isFounder && monthlyCount === 4
@@ -186,7 +193,7 @@ export function DashboardAsk() {
         <textarea
           value={text} onChange={e => setText(e.target.value)}
           placeholder={isNri
-            ? (elder ? `e.g. Is it okay to give ${elder.full_name.split(' ')[0]} paracetamol with BP medicine?` : 'e.g. Is it okay to give paracetamol with BP medicine?')
+            ? (pcopy?.askInputHint || (elder ? `e.g. Is it okay to give ${elder.full_name.split(' ')[0]} paracetamol with BP medicine?` : 'e.g. Is it okay to give paracetamol with BP medicine?'))
             : 'e.g. My child has had a fever for 2 days…'
           }
           disabled={atCap}

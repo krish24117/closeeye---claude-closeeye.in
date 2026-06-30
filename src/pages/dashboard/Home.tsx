@@ -4,6 +4,7 @@ import { Calendar, ChevronRight, MessageCircle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { isOnboardingDismissed } from '@/pages/Onboarding'
+import { getPersona, getPersonaCopy } from '@/lib/persona'
 
 /* ------------------------------------------------------------------ */
 /*  Shared helpers                                                     */
@@ -45,6 +46,7 @@ function NriHome() {
   const { user, profile } = useAuth()
   const [loading, setLoading] = useState(true)
   const [elderName, setElderName] = useState<string>('')
+  const [elderCity, setElderCity] = useState<string>('')
   const [visit, setVisit] = useState<VisitRow | null>(null)
   const [nextBooking, setNextBooking] = useState<{ scheduled_at: string } | null>(null)
   const [activeRequest, setActiveRequest] = useState<{ id: string; service_name: string; status: string } | null>(null)
@@ -54,10 +56,11 @@ function NriHome() {
     let active = true
     ;(async () => {
       const { data: lo } = await supabase
-        .from('loved_ones').select('id, full_name').eq('family_user_id', user.id)
+        .from('loved_ones').select('id, full_name, city').eq('family_user_id', user.id)
         .order('created_at', { ascending: true }).limit(1).maybeSingle()
       if (!active) return
       setElderName(lo?.full_name || 'Your loved one')
+      setElderCity((lo as any)?.city || '')
 
       if (lo?.id) {
         const { data: ep } = await supabase
@@ -97,6 +100,14 @@ function NriHome() {
   const firstName = profile?.full_name?.split(' ')[0] || 'there'
   const visitMins = durationMin(visit?.start_time, visit?.end_time)
   const moodGood = (visit?.mood_score ?? 4) >= 4
+
+  // Persona — derived from where user lives vs where parent is
+  const persona = getPersona(profile?.country, elderCity)
+  const pcopy = getPersonaCopy(persona, {
+    parentName: elderName,
+    parentCity: elderCity,
+    userCity: profile?.country ?? undefined,
+  })
 
   // Show resume card if onboarding was dismissed mid-way (no whatsapp yet = Step 1 never finished)
   const showSetupCard = !profile?.whatsapp_number && isOnboardingDismissed()
@@ -165,9 +176,15 @@ function NriHome() {
 
           <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0 }}>
             {state === 'A' && `Visited ${istTime(visit?.start_time || visit?.created_at)}${visitMins ? ` · ${visitMins} min` : ''}`}
-            {state === 'B' && (nextBooking ? `We'll confirm the time for ${elderName}'s visit shortly` : `Let's arrange ${elderName}'s first visit`)}
+            {state === 'B' && (nextBooking ? `We'll confirm the time for ${elderName}'s visit shortly` : pcopy.emptyStateSub)}
             {state === 'C' && `Noticed ${istTime(visit?.created_at)}`}
           </p>
+          {/* Persona tag — visible in state B only */}
+          {state === 'B' && (
+            <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(168,213,181,0.7)', margin: '6px 0 0', fontStyle: 'italic' }}>
+              {pcopy.heroSub}
+            </p>
+          )}
 
           {state === 'B' && !nextBooking && (
             <div style={{ textAlign: 'center', marginTop: 20 }}>
@@ -330,7 +347,7 @@ function NriHome() {
         </span>
         <span style={{ flex: 1 }}>
           <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--black)' }}>Have a health question?</span>
-          <span style={{ display: 'block', fontSize: 13, color: 'var(--gray-mid)' }}>Ask Close Eye — guided by our medical team</span>
+          <span style={{ display: 'block', fontSize: 13, color: 'var(--gray-mid)' }}>{pcopy.askShortcutSub}</span>
         </span>
         <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--forest)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: 'var(--shadow-btn)' }}>
           <ChevronRight size={18} color="#fff" />
