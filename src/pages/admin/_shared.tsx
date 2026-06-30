@@ -96,12 +96,12 @@ export function Card({ children, className = '', style }: { children: ReactNode;
   return <div className={`adm-card adm-card-pad ${className}`} style={style}>{children}</div>
 }
 
-export function StatCard({ label, value, sub, subTone }: { label: string; value: ReactNode; sub?: ReactNode; subTone?: 'pos' | 'warn' | 'urgent' }) {
+export function StatCard({ label, value, sub, subTone, alert }: { label: string; value: ReactNode; sub?: ReactNode; subTone?: 'pos' | 'warn' | 'urgent'; alert?: boolean }) {
   return (
-    <div className="adm-card adm-card-pad">
+    <div className={`adm-card adm-card-pad${alert ? ' alert' : ''}`}>
       <div className="adm-stat-label">{label}</div>
       <div className="adm-stat-value">{value}</div>
-      {sub != null && <div className={`adm-stat-sub ${subTone ? 'adm-' + subTone : ''}`}>{sub}</div>}
+      {sub != null && <div className={`adm-stat-sub${subTone ? ' adm-' + subTone : ''}`}>{sub}</div>}
     </div>
   )
 }

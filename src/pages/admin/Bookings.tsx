@@ -1,33 +1,39 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { CardSkeleton } from '@/components/ui/Skeleton'
 import { useToast } from '@/components/ui/Toast'
 import { format } from 'date-fns'
 import { SERVICE_NAMES } from '@/lib/booking-labels'
-import { ChevronDown, AlertTriangle, X, CheckCircle2 } from 'lucide-react'
+import { Badge, EmptyState, ErrorBox, Skeleton } from './_shared'
+
+type Tone = 'green' | 'amber' | 'red' | 'blue' | 'purple' | 'gray'
 
 const ALL_STATUSES = ['pending', 'confirmed', 'companion_assigned', 'in_progress', 'completed', 'cancelled']
 
-const BADGE: Record<string, string> = {
-  pending:              'bg-amber-100 text-amber-700',
-  confirmed:            'bg-blue-100 text-blue-700',
-  companion_assigned:   'bg-purple-100 text-purple-700',
-  in_progress:          'bg-green-100 text-green-700',
-  completed:            'bg-gray-100 text-gray-500',
-  cancelled:            'bg-red-100 text-red-600',
-  requested:            'bg-amber-100 text-amber-700',
-  needs_details:        'bg-orange-100 text-orange-700',
-  needs_reschedule:     'bg-red-100 text-red-700',
-  scheduled:            'bg-blue-100 text-blue-700',
-  companion_confirmed:  'bg-blue-100 text-blue-700',
-  paid:                 'bg-green-100 text-green-700',
+function statusTone(status: string): Tone {
+  switch (status) {
+    case 'pending':            return 'amber'
+    case 'confirmed':          return 'blue'
+    case 'companion_assigned': return 'purple'
+    case 'in_progress':        return 'green'
+    case 'completed':          return 'gray'
+    case 'cancelled':          return 'red'
+    case 'requested':          return 'amber'
+    case 'needs_details':      return 'amber'
+    case 'needs_reschedule':   return 'red'
+    case 'scheduled':          return 'blue'
+    case 'companion_confirmed':return 'blue'
+    case 'paid':               return 'green'
+    default:                   return 'gray'
+  }
 }
 
-const PAYMENT_BADGE: Record<string, string> = {
-  pending:  'bg-orange-50 text-orange-700',
-  received: 'bg-green-100 text-green-700',
-  paid:     'bg-green-100 text-green-700',
-  failed:   'bg-red-100 text-red-700',
+function paymentTone(status: string): Tone {
+  switch (status) {
+    case 'received':
+    case 'paid':    return 'green'
+    case 'failed':  return 'red'
+    default:        return 'amber'
+  }
 }
 
 const LABEL: Record<string, string> = {
@@ -39,16 +45,6 @@ const LABEL: Record<string, string> = {
   companion_confirmed: 'Companion confirmed',
   paid:                'Visit confirmed',
   cancelled:           'Cancelled',
-}
-
-function StatusLabel({ status }: { status: string }) {
-  return (
-    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${BADGE[status] || 'bg-gray-100 text-gray-500'}`}>
-      {status === 'in_progress' && <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
-      {status === 'needs_details' && <AlertTriangle size={10} />}
-      {LABEL[status] || status.replace(/_/g, ' ')}
-    </span>
-  )
 }
 
 // ── Date/time helper ─────────────────────────────────────────────────────────
@@ -122,60 +118,62 @@ function ConfirmModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px]"
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
-      <div className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+    <>
+      <div className="adm-overlay" onClick={onClose} />
+      <div className="adm-slideover" style={{ display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+        <button
+          onClick={onClose}
+          style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-dark)', padding: 4, fontSize: 22, lineHeight: 1 }}
+        >×</button>
+
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <div>
-            <p className="font-semibold text-green-900">Send confirmation</p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              To: {request.requester_whatsapp || '—'} · for {request.recipient_name}
-            </p>
-          </div>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 transition-colors">
-            <X size={18} />
-          </button>
+        <div style={{ borderBottom: '1px solid var(--line)', padding: '16px 20px' }}>
+          <p style={{ fontWeight: 700, color: 'var(--forest)' }}>Send confirmation</p>
+          <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 2 }}>
+            To: {request.requester_whatsapp || '—'} · for {request.recipient_name}
+          </p>
         </div>
 
         {/* Template (editable) */}
-        <div className="flex-1 overflow-auto px-5 py-4">
-          <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">WhatsApp message — review before sending</p>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            WhatsApp message — review before sending
+          </p>
           <textarea
             value={text}
             onChange={e => setText(e.target.value)}
             rows={18}
-            className="w-full text-sm text-gray-800 bg-green-50 border border-green-100 rounded-xl p-4 resize-none focus:outline-none focus:border-green-400 font-mono leading-relaxed"
+            className="adm-textarea"
+            style={{ fontFamily: 'monospace', lineHeight: 1.6 }}
           />
-          <p className="text-xs text-gray-400 mt-2">
+          <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 8 }}>
             This opens WhatsApp with the message pre-filled. Review, then tap Send in WhatsApp.
-            Status will auto-update to <span className="font-semibold">Confirmed</span>.
+            Status will auto-update to <span style={{ fontWeight: 700 }}>Confirmed</span>.
           </p>
           {!hasNumber && (
-            <div className="flex items-center gap-2 mt-3 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
-              <AlertTriangle size={13} className="text-orange-600 flex-shrink-0" />
-              <p className="text-xs text-orange-700 font-medium">No WhatsApp number on this request — get it from the family before confirming.</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 8, padding: '8px 12px' }}>
+              <span style={{ fontSize: 13, color: '#D97706', flexShrink: 0 }}>⚠</span>
+              <p style={{ fontSize: 12, color: '#92400E', fontWeight: 500 }}>No WhatsApp number on this request — get it from the family before confirming.</p>
             </div>
           )}
         </div>
 
         {/* Actions */}
-        <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+        <div style={{ borderTop: '1px solid var(--line)', padding: '16px 20px', display: 'flex', gap: 12 }}>
           <button
             onClick={handleSend}
             disabled={!hasNumber || sending}
-            className="flex-1 bg-green-800 text-white text-sm font-semibold rounded-xl py-3 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="adm-btn adm-btn-primary"
+            style={{ flex: 1, opacity: (!hasNumber || sending) ? 0.5 : 1, cursor: (!hasNumber || sending) ? 'not-allowed' : 'pointer' }}
           >
             {sending ? 'Opening…' : 'Open in WhatsApp →'}
           </button>
-          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700 px-4">
+          <button onClick={onClose} className="adm-btn" style={{ color: 'var(--gray-mid)' }}>
             Cancel
           </button>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -258,42 +256,41 @@ function ConfirmDrawer({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px]"
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
-      <div className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <div>
-            <p className="font-semibold text-green-900">Confirm booking</p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {request.service_name} for {elderName}
-              {familyName !== 'there' ? ` · ${familyName}` : ''}
-            </p>
-          </div>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 transition-colors">
-            <X size={18} />
-          </button>
+    <>
+      <div className="adm-overlay" onClick={onClose} />
+      <div className="adm-slideover" style={{ display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+        <button
+          onClick={onClose}
+          style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-dark)', padding: 4, fontSize: 22, lineHeight: 1 }}
+        >×</button>
+
+        <div style={{ borderBottom: '1px solid var(--line)', padding: '16px 20px' }}>
+          <p style={{ fontWeight: 700, color: 'var(--forest)' }}>Confirm booking</p>
+          <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 2 }}>
+            {request.service_name} for {elderName}
+            {familyName !== 'there' ? ` · ${familyName}` : ''}
+          </p>
         </div>
 
-        <div className="flex-1 overflow-auto px-5 py-4 space-y-4">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Companion name *</label>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>Companion name *</label>
             <input
               type="text"
               value={companionName}
               onChange={e => setCompanionName(e.target.value)}
               placeholder="e.g. Priya Sharma"
-              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600"
+              className="adm-input"
+              style={{ width: '100%' }}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Visit date & time</label>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>Visit date & time</label>
             {request.scheduled_at && (
-              <div className="flex items-center gap-1.5 mb-1.5 px-2.5 py-1.5 bg-blue-50 border border-blue-100 rounded-lg">
-                <span className="text-xs text-blue-600">📅</span>
-                <span className="text-xs font-medium text-blue-700">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, padding: '6px 10px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8 }}>
+                <span style={{ fontSize: 12, color: '#2563EB' }}>📅</span>
+                <span style={{ fontSize: 12, fontWeight: 500, color: '#1D4ED8' }}>
                   User requested:{' '}
                   {new Date(request.scheduled_at).toLocaleString('en-IN', {
                     weekday: 'short', day: 'numeric', month: 'short',
@@ -306,15 +303,16 @@ function ConfirmDrawer({
               type="datetime-local"
               value={scheduledAt}
               onChange={e => setScheduledAt(e.target.value)}
-              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600"
+              className="adm-input"
+              style={{ width: '100%' }}
             />
             {!scheduledAt && (
-              <p className="text-xs text-amber-600 mt-1">No time set — enter the confirmed visit time.</p>
+              <p style={{ fontSize: 12, color: 'var(--gold)', marginTop: 4 }}>No time set — enter the confirmed visit time.</p>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Amount (₹)</label>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>Amount (₹)</label>
             <input
               type="number"
               min="1"
@@ -322,31 +320,33 @@ function ConfirmDrawer({
               value={amountRupees}
               onChange={e => setAmountRupees(e.target.value)}
               placeholder="e.g. 999"
-              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600"
+              className="adm-input"
+              style={{ width: '100%' }}
             />
-            <p className="text-xs text-gray-400 mt-1">Family will see this amount in the app and be asked to pay.</p>
+            <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 4 }}>Family will see this amount in the app and be asked to pay.</p>
           </div>
 
           {!hasWa && (
-            <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2.5">
-              <AlertTriangle size={13} className="text-orange-600 flex-shrink-0" />
-              <p className="text-xs text-orange-700 font-medium">No WhatsApp number — status will still be updated, but notification won't send.</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 10, padding: '10px 12px' }}>
+              <span style={{ fontSize: 13, color: '#D97706', flexShrink: 0 }}>⚠</span>
+              <p style={{ fontSize: 12, color: '#92400E', fontWeight: 500 }}>No WhatsApp number — status will still be updated, but notification won't send.</p>
             </div>
           )}
         </div>
 
-        <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+        <div style={{ borderTop: '1px solid var(--line)', padding: '16px 20px', display: 'flex', gap: 12 }}>
           <button
             onClick={handleConfirm}
             disabled={saving || !companionName.trim()}
-            className="flex-1 bg-green-800 text-white text-sm font-semibold rounded-xl py-3 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="adm-btn adm-btn-primary"
+            style={{ flex: 1, opacity: (saving || !companionName.trim()) ? 0.5 : 1, cursor: (saving || !companionName.trim()) ? 'not-allowed' : 'pointer' }}
           >
             {saving ? 'Saving…' : hasWa ? 'Confirm & notify on WhatsApp →' : 'Confirm booking'}
           </button>
-          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700 px-4">Cancel</button>
+          <button onClick={onClose} className="adm-btn" style={{ color: 'var(--gray-mid)' }}>Cancel</button>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -422,24 +422,24 @@ function RescheduleDrawer({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px]"
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
-      <div className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <div>
-            <p className="font-semibold text-red-800">Can't serve this time</p>
-            <p className="text-xs text-gray-400 mt-0.5">{request.service_name} · {elderName}</p>
-          </div>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700"><X size={18} /></button>
+    <>
+      <div className="adm-overlay" onClick={onClose} />
+      <div className="adm-slideover" style={{ display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+        <button
+          onClick={onClose}
+          style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-dark)', padding: 4, fontSize: 22, lineHeight: 1 }}
+        >×</button>
+
+        <div style={{ borderBottom: '1px solid var(--line)', padding: '16px 20px' }}>
+          <p style={{ fontWeight: 700, color: '#991B1B' }}>Can't serve this time</p>
+          <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 2 }}>{request.service_name} · {elderName}</p>
         </div>
 
-        <div className="flex-1 overflow-auto px-5 py-4 space-y-4">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           {request.scheduled_at && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
-              <span className="text-sm">📅</span>
-              <p className="text-xs text-red-700 font-medium">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '10px 12px' }}>
+              <span style={{ fontSize: 14 }}>📅</span>
+              <p style={{ fontSize: 12, color: '#991B1B', fontWeight: 500 }}>
                 User requested: {new Date(request.scheduled_at).toLocaleString('en-IN', {
                   weekday: 'short', day: 'numeric', month: 'short',
                   hour: 'numeric', minute: '2-digit', hour12: true,
@@ -448,7 +448,7 @@ function RescheduleDrawer({
             </div>
           )}
 
-          <p className="text-xs text-gray-500">Propose up to 3 alternatives. The family will receive a WhatsApp message to choose one.</p>
+          <p style={{ fontSize: 12, color: 'var(--gray-mid)' }}>Propose up to 3 alternatives. The family will receive a WhatsApp message to choose one.</p>
 
           {[
             { label: 'Option 1 *', value: slot1, set: setSlot1 },
@@ -456,36 +456,38 @@ function RescheduleDrawer({
             { label: 'Option 3', value: slot3, set: setSlot3 },
           ].map(({ label, value, set }) => (
             <div key={label}>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">{label}</label>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>{label}</label>
               <input
                 type="datetime-local"
                 value={value}
                 onChange={e => set(e.target.value)}
-                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-red-400"
+                className="adm-input"
+                style={{ width: '100%' }}
               />
             </div>
           ))}
 
           {!hasWa && (
-            <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2.5">
-              <AlertTriangle size={13} className="text-orange-600 flex-shrink-0" />
-              <p className="text-xs text-orange-700 font-medium">No WhatsApp number — status will update but message won't send.</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 10, padding: '10px 12px' }}>
+              <span style={{ fontSize: 13, color: '#D97706', flexShrink: 0 }}>⚠</span>
+              <p style={{ fontSize: 12, color: '#92400E', fontWeight: 500 }}>No WhatsApp number — status will update but message won't send.</p>
             </div>
           )}
         </div>
 
-        <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+        <div style={{ borderTop: '1px solid var(--line)', padding: '16px 20px', display: 'flex', gap: 12 }}>
           <button
             onClick={handleSend}
             disabled={saving || !slot1}
-            className="flex-1 bg-red-700 text-white text-sm font-semibold rounded-xl py-3 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="adm-btn"
+            style={{ flex: 1, background: '#B91C1C', color: '#fff', fontWeight: 700, opacity: (saving || !slot1) ? 0.5 : 1, cursor: (saving || !slot1) ? 'not-allowed' : 'pointer' }}
           >
             {saving ? 'Sending…' : hasWa ? 'Send reschedule request on WhatsApp →' : 'Mark as needs reschedule'}
           </button>
-          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700 px-4">Cancel</button>
+          <button onClick={onClose} className="adm-btn" style={{ color: 'var(--gray-mid)' }}>Cancel</button>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -556,30 +558,25 @@ function RequestsTab() {
 
   const needsDetailsCount = requests.filter(r => r.status === 'needs_details').length
 
-  if (loading) return <div className="space-y-2">{[...Array(3)].map((_, i) => <CardSkeleton key={i} />)}</div>
-
-  if (error) return (
-    <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
-      {error}
-      <button onClick={loadRequests} className="font-semibold underline">Retry</button>
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {[...Array(3)].map((_, i) => <Skeleton key={i} h={88} />)}
     </div>
   )
 
+  if (error) return <ErrorBox onRetry={loadRequests} />
+
   if (requests.length === 0) return (
-    <div className="text-center py-16 bg-green-50 rounded-2xl">
-      <p className="text-3xl mb-3">📋</p>
-      <p className="font-semibold text-green-900">No booking requests yet</p>
-      <p className="text-sm text-gray-400 mt-1">Requests from the family dashboard will appear here.</p>
-    </div>
+    <EmptyState title="No booking requests yet" sub="Requests from the family dashboard will appear here." />
   )
 
   return (
-    <div className="space-y-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {needsDetailsCount > 0 && (
-        <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-4 py-2.5">
-          <AlertTriangle size={14} className="text-orange-600 flex-shrink-0" />
-          <p className="text-sm text-orange-800">
-            <span className="font-semibold">{needsDetailsCount} request{needsDetailsCount > 1 ? 's' : ''} need{needsDetailsCount === 1 ? 's' : ''} details</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 10, padding: '10px 16px' }}>
+          <span style={{ fontSize: 14, color: '#D97706', flexShrink: 0 }}>⚠</span>
+          <p style={{ fontSize: 14, color: '#92400E' }}>
+            <span style={{ fontWeight: 700 }}>{needsDetailsCount} request{needsDetailsCount > 1 ? 's' : ''} need{needsDetailsCount === 1 ? 's' : ''} details</span>
             {' '}— do not dispatch a companion until address and WhatsApp are confirmed.
           </p>
         </div>
@@ -595,84 +592,95 @@ function RequestsTab() {
         const isNeedsReschedule = r.status === 'needs_reschedule'
         const needsConfirm      = r.status === 'requested' || isNeedsDetails
 
+        const borderLeftStyle = isNeedsDetails
+          ? '3px solid var(--gold)'
+          : isNeedsReschedule
+          ? '3px solid #EF4444'
+          : isPaid
+          ? '3px solid var(--forest)'
+          : isCompConfirmed
+          ? '3px solid #2563EB'
+          : undefined
+
         return (
           <div
             key={r.id}
-            className={`bg-white rounded-2xl border transition-all ${
-              isNeedsDetails    ? 'border-orange-300 border-l-4 border-l-orange-400'
-              : isNeedsReschedule ? 'border-red-300 border-l-4 border-l-red-400'
-              : isPaid          ? 'border-green-200 border-l-4 border-l-green-500'
-              : isCompConfirmed ? 'border-blue-200 border-l-4 border-l-blue-400'
-              : isCancelled     ? 'border-gray-100 opacity-60'
-              : 'border-gray-100'
-            }`}
+            className="adm-card"
+            style={{
+              borderLeft: borderLeftStyle,
+              opacity: isCancelled ? 0.6 : 1,
+              overflow: 'hidden',
+            }}
           >
             {isNeedsDetails && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-orange-50 rounded-t-2xl border-b border-orange-100">
-                <AlertTriangle size={13} className="text-orange-600 flex-shrink-0" />
-                <p className="text-xs font-semibold text-orange-700">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: '#FEF3C7', borderBottom: '1px solid #FCD34D' }}>
+                <span style={{ fontSize: 13, color: '#D97706', flexShrink: 0 }}>⚠</span>
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#92400E' }}>
                   Missing: {[missingAddress && 'address', missingWhatsapp && 'WhatsApp'].filter(Boolean).join(' + ')}
                   {' '}— contact the family before confirming
                 </p>
               </div>
             )}
             {isPaid && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-t-2xl border-b border-green-100">
-                <CheckCircle2 size={13} className="text-green-600 flex-shrink-0" />
-                <p className="text-xs font-semibold text-green-700">Payment received · Visit confirmed</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: '#DCFCE7', borderBottom: '1px solid #86EFAC' }}>
+                <span style={{ fontSize: 13, color: 'var(--green)', flexShrink: 0 }}>✓</span>
+                <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--forest)' }}>Payment received · Visit confirmed</p>
               </div>
             )}
             {isNeedsReschedule && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-red-50 rounded-t-2xl border-b border-red-100">
-                <AlertTriangle size={13} className="text-red-600 flex-shrink-0" />
-                <p className="text-xs font-semibold text-red-700">Awaiting reschedule — family has been contacted</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: '#FEE2E2', borderBottom: '1px solid #FCA5A5' }}>
+                <span style={{ fontSize: 13, color: '#DC2626', flexShrink: 0 }}>⚠</span>
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#991B1B' }}>Awaiting reschedule — family has been contacted</p>
               </div>
             )}
 
-            <div className="px-4 py-3">
-              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-green-900 text-sm truncate">
+            <div style={{ padding: '12px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 700, color: 'var(--forest)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {SERVICE_NAMES[r.service_id] || r.service_name}
                   </p>
                   {r._family_name && (
-                    <p className="text-xs text-gray-400 mt-0.5">Family: {r._family_name}</p>
+                    <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 2 }}>Family: {r._family_name}</p>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <StatusLabel status={r.status} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  <Badge tone={statusTone(r.status)}>
+                    {LABEL[r.status] || r.status.replace(/_/g, ' ')}
+                  </Badge>
                   {r.amount_paise && (
-                    <span className="text-xs font-semibold text-green-800">
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--forest)' }}>
                       ₹{(r.amount_paise / 100).toLocaleString('en-IN')}
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="mt-1.5 space-y-0.5">
-                <p className="text-xs text-gray-500">
-                  <span className="font-medium text-gray-700">{r.recipient_name || '—'}</span>
+              <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <p style={{ fontSize: 12, color: 'var(--gray-mid)' }}>
+                  <span style={{ fontWeight: 500, color: 'var(--gray-dark)' }}>{r.recipient_name || '—'}</span>
                   {r.scheduled_at ? ` · ${format(new Date(r.scheduled_at), 'd MMM, h:mm a')}` : ''}
                   {' · '}{format(new Date(r.created_at), 'd MMM HH:mm')}
                 </p>
                 {r.companion_name && (
-                  <p className="text-xs text-blue-700 font-medium">👤 {r.companion_name}</p>
+                  <p style={{ fontSize: 12, color: '#1D4ED8', fontWeight: 500 }}>👤 {r.companion_name}</p>
                 )}
-                <p className={`text-xs ${missingAddress ? 'text-orange-600 font-semibold' : 'text-gray-500'}`}>
+                <p style={{ fontSize: 12, color: missingAddress ? 'var(--clay)' : 'var(--gray-mid)', fontWeight: missingAddress ? 700 : 400 }}>
                   📍 {r.recipient_address || 'Address not provided'}
                 </p>
-                <p className={`text-xs ${missingWhatsapp ? 'text-orange-600 font-semibold' : 'text-gray-500'}`}>
+                <p style={{ fontSize: 12, color: missingWhatsapp ? 'var(--clay)' : 'var(--gray-mid)', fontWeight: missingWhatsapp ? 700 : 400 }}>
                   💬 {r.requester_whatsapp || 'WhatsApp not provided'}
                 </p>
-                {r.notes && <p className="text-xs text-gray-400 italic">"{r.notes}"</p>}
+                {r.notes && <p style={{ fontSize: 12, color: 'var(--gray-mid)', fontStyle: 'italic' }}>"{r.notes}"</p>}
               </div>
             </div>
 
-            <div className="border-t border-gray-50 px-4 py-2.5 flex items-center gap-2 flex-wrap">
+            <div style={{ borderTop: '1px solid var(--line)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {needsConfirm && (
                 <button
                   onClick={() => setDrawerTarget(r)}
-                  className="text-xs font-semibold text-white bg-green-800 hover:bg-green-700 rounded-xl px-3 py-1.5 transition-colors"
+                  className="adm-btn adm-btn-primary"
+                  style={{ fontSize: 12, padding: '6px 12px' }}
                 >
                   Confirm booking →
                 </button>
@@ -680,7 +688,8 @@ function RequestsTab() {
               {(needsConfirm || isNeedsReschedule) && (
                 <button
                   onClick={() => setRescheduleTarget(r)}
-                  className="text-xs font-semibold text-red-700 border border-red-200 hover:bg-red-50 rounded-xl px-3 py-1.5 transition-colors"
+                  className="adm-btn"
+                  style={{ fontSize: 12, padding: '6px 12px', color: '#B91C1C', border: '1px solid #FCA5A5' }}
                 >
                   Can't serve this time
                 </button>
@@ -689,7 +698,8 @@ function RequestsTab() {
               {isCompConfirmed && (
                 <button
                   onClick={() => setConfirmTarget(r)}
-                  className="text-xs font-semibold text-green-700 hover:text-green-900 border-2 border-green-200 rounded-xl px-3 py-1.5 hover:bg-green-50 transition-colors"
+                  className="adm-btn"
+                  style={{ fontSize: 12, padding: '6px 12px', color: 'var(--forest)', border: '2px solid var(--sage)' }}
                 >
                   ✉️ Send payment reminder
                 </button>
@@ -698,7 +708,8 @@ function RequestsTab() {
               {!isCancelled && !isPaid && (
                 <button
                   onClick={() => { if (window.confirm('Cancel this booking?')) cancelRequest(r.id) }}
-                  className="text-xs text-red-400 hover:text-red-600 transition-colors ml-auto"
+                  className="adm-btn"
+                  style={{ fontSize: 12, color: '#EF4444', marginLeft: 'auto', border: 'none', background: 'none' }}
                 >
                   Cancel
                 </button>
@@ -878,18 +889,18 @@ export function AdminBookings() {
   const unassignedCount = bookings.filter(b => !b.companion_id && !['completed', 'cancelled'].includes(b.status)).length
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <h1 className="font-serif text-2xl text-green-900">Bookings</h1>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <h1 className="adm-page-h">Bookings</h1>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+      <div style={{ display: 'flex', gap: 4 }}>
         {([['requests', 'Requests'], ['bookings', 'Confirmed bookings']] as const).map(([t, label]) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors ${tab === t ? 'bg-white text-green-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`adm-pill-f${tab === t ? ' is-active' : ''}`}
           >
             {label}
           </button>
@@ -900,25 +911,20 @@ export function AdminBookings() {
         <RequestsTab />
       ) : (
         <>
-          <p className="text-gray-400 text-sm -mt-2">
+          <p style={{ fontSize: 14, color: 'var(--gray-mid)', marginTop: -8 }}>
             {bookings.length} total
             {unassignedCount > 0 && (
-              <span className="ml-2 text-amber-600 font-semibold">· {unassignedCount} need a companion</span>
+              <span style={{ marginLeft: 8, color: 'var(--gold)', fontWeight: 700 }}>· {unassignedCount} need a companion</span>
             )}
           </p>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
-              {error}
-              <button onClick={load} className="font-semibold underline">Retry</button>
-            </div>
-          )}
+          {error && <ErrorBox onRetry={load} />}
 
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div style={{ display: 'flex', flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
-              className="border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white"
+              className="adm-input"
             >
               <option value="all">All statuses</option>
               {ALL_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
@@ -927,22 +933,19 @@ export function AdminBookings() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search family or companion…"
-              className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+              className="adm-input"
+              style={{ flex: 1, minWidth: 160 }}
             />
           </div>
 
           {loading ? (
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => <CardSkeleton key={i} />)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[...Array(5)].map((_, i) => <Skeleton key={i} h={88} />)}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-16 bg-green-50 rounded-2xl">
-              <p className="text-3xl mb-3">📅</p>
-              <p className="font-semibold text-green-900">No bookings found</p>
-              <p className="text-sm text-gray-400 mt-1">Try a different filter or search.</p>
-            </div>
+            <EmptyState title="No bookings found" sub="Try a different filter or search." />
           ) : (
-            <div className="space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {filtered.map(b => {
                 const isUnassigned = !b.companion_id && !['completed', 'cancelled'].includes(b.status)
                 const isSaving = savingId === b.id
@@ -952,40 +955,45 @@ export function AdminBookings() {
                 return (
                   <div
                     key={b.id}
-                    className={`bg-white rounded-2xl border border-gray-100 ${isUnassigned ? 'border-l-4 border-l-amber-400' : ''} transition-all`}
+                    className="adm-card"
+                    style={{
+                      borderLeft: isUnassigned ? '3px solid var(--gold)' : undefined,
+                      overflow: 'hidden',
+                    }}
                   >
-                    <div className="px-4 py-3">
-                      <div className="flex items-center gap-2 flex-wrap min-w-0">
-                        <p className="font-semibold text-green-900 text-sm truncate flex-1 min-w-0">
+                    <div style={{ padding: '12px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
+                        <p style={{ fontWeight: 700, color: 'var(--forest)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
                           {SERVICE_NAMES[b.service_type] || b.service_type}
                         </p>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                           {isUnassigned && (
-                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-lg whitespace-nowrap">
-                              NEEDS COMPANION
-                            </span>
+                            <Badge tone="amber">NEEDS COMPANION</Badge>
                           )}
-                          <StatusLabel status={b.status} />
-                          <span className="text-xs font-semibold text-green-800">{amountRupees}</span>
+                          <Badge tone={statusTone(b.status)}>
+                            {LABEL[b.status] || b.status.replace(/_/g, ' ')}
+                          </Badge>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--forest)' }}>{amountRupees}</span>
                         </div>
                       </div>
 
-                      <p className="text-xs text-gray-400 mt-0.5 truncate">
+                      <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {b.loved_ones?.full_name || '—'}
                         {b.loved_ones?.city ? ` · ${b.loved_ones.city}` : ''}
                         {b.scheduled_at ? ` · ${format(new Date(b.scheduled_at), 'd MMM, h:mm a')}` : ''}
                         {payoutRupees ? ` · payout ${payoutRupees}` : ''}
                       </p>
 
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${PAYMENT_BADGE[b.payment_status] || 'bg-gray-100 text-gray-400'}`}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
+                        <Badge tone={paymentTone(b.payment_status)}>
                           {b.payment_status === 'paid' || b.payment_status === 'received' ? 'Paid' : 'Payment pending'}
-                        </span>
+                        </Badge>
                         {b.payment_status === 'pending' && (
                           <button
                             onClick={() => markPaymentReceived(b)}
                             disabled={isSaving}
-                            className="text-[10px] font-semibold text-green-700 hover:text-green-800 disabled:opacity-50"
+                            className="adm-btn"
+                            style={{ fontSize: 11, padding: '2px 8px', color: 'var(--forest)', fontWeight: 700, opacity: isSaving ? 0.5 : 1 }}
                           >
                             ✓ Mark received
                           </button>
@@ -993,34 +1001,34 @@ export function AdminBookings() {
                       </div>
                     </div>
 
-                    <div className="border-t border-gray-50 px-4 py-2.5 flex flex-wrap gap-2 items-center">
-                      <div className="relative flex-1 min-w-[140px]">
+                    <div style={{ borderTop: '1px solid var(--line)', padding: '10px 16px', display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                      <div style={{ position: 'relative', flex: 1, minWidth: 140 }}>
                         <select
                           value={b.companion_id || ''}
                           onChange={e => assignCompanion(b, e.target.value)}
                           disabled={isSaving}
-                          className={`w-full text-xs border-2 rounded-xl px-2.5 py-1.5 pr-6 focus:outline-none focus:border-green-600 appearance-none bg-white disabled:opacity-50 ${isUnassigned ? 'border-amber-200 text-amber-700' : 'border-gray-200 text-gray-700'}`}
+                          className="adm-input"
+                          style={{ width: '100%', fontSize: 12, padding: '6px 10px', color: isUnassigned ? 'var(--gold)' : 'var(--gray-dark)', opacity: isSaving ? 0.5 : 1 }}
                         >
                           <option value="">— Assign companion —</option>
                           {companions.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
                         </select>
-                        <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                       </div>
 
-                      <div className="relative">
+                      <div>
                         <select
                           value={b.status}
                           onChange={e => updateStatus(b, e.target.value)}
                           disabled={isSaving}
-                          className="text-xs border-2 border-gray-200 rounded-xl px-2.5 py-1.5 pr-6 focus:outline-none focus:border-green-600 appearance-none bg-white disabled:opacity-50 text-gray-700"
+                          className="adm-input"
+                          style={{ fontSize: 12, padding: '6px 10px', opacity: isSaving ? 0.5 : 1 }}
                         >
                           {ALL_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
                         </select>
-                        <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                       </div>
 
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-gray-400">₹</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 12, color: 'var(--gray-mid)' }}>₹</span>
                         <input
                           type="number"
                           min="0"
@@ -1028,12 +1036,14 @@ export function AdminBookings() {
                           value={payoutInputs[b.id] ?? ''}
                           onChange={e => setPayoutInputs(prev => ({ ...prev, [b.id]: e.target.value }))}
                           placeholder="Payout"
-                          className="w-20 border-2 border-gray-200 rounded-xl px-2 py-1.5 text-xs focus:outline-none focus:border-green-600"
+                          className="adm-input"
+                          style={{ width: 80, fontSize: 12, padding: '6px 8px' }}
                         />
                         <button
                           type="button"
                           onClick={() => setPayoutInputs(prev => ({ ...prev, [b.id]: String(Math.round((b.amount_paise || 0) * 0.7 / 100)) }))}
-                          className="text-[10px] text-gray-400 hover:text-gray-600 whitespace-nowrap"
+                          className="adm-btn"
+                          style={{ fontSize: 10, padding: '4px 8px', color: 'var(--gray-mid)', border: 'none', background: 'none' }}
                         >
                           70%
                         </button>
@@ -1041,7 +1051,8 @@ export function AdminBookings() {
                           type="button"
                           onClick={() => savePayout(b)}
                           disabled={isSaving}
-                          className="text-[10px] font-semibold bg-green-800 text-white px-2.5 py-1.5 rounded-lg hover:bg-green-700 disabled:opacity-50 whitespace-nowrap"
+                          className="adm-btn adm-btn-primary"
+                          style={{ fontSize: 10, padding: '4px 10px', opacity: isSaving ? 0.5 : 1 }}
                         >
                           {isSaving ? '…' : 'Save'}
                         </button>

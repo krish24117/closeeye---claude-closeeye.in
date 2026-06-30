@@ -1,38 +1,38 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { StatsSkeleton, Skeleton } from '@/components/ui/Skeleton'
 import { format } from 'date-fns'
 import { TrendingUp, Banknote, PieChart, Clock } from 'lucide-react'
+import { Badge, EmptyState, ErrorBox, Skeleton } from './_shared'
+import type { Tone } from './_shared'
 
-const PAYMENT_BADGE: Record<string, string> = {
-  paid:     'bg-green-100 text-green-700',
-  received: 'bg-green-100 text-green-700',
-  pending:  'bg-orange-50 text-orange-700',
-  failed:   'bg-red-100 text-red-700',
+function paymentTone(status: string): Tone {
+  if (status === 'paid' || status === 'received') return 'green'
+  if (status === 'pending') return 'amber'
+  if (status === 'failed') return 'red'
+  return 'gray'
 }
 
-const STATUS_BADGE: Record<string, string> = {
-  pending:            'bg-amber-100 text-amber-700',
-  confirmed:          'bg-blue-100 text-blue-700',
-  companion_assigned: 'bg-purple-100 text-purple-700',
-  in_progress:        'bg-green-100 text-green-700',
-  completed:          'bg-gray-100 text-gray-500',
-  cancelled:          'bg-red-100 text-red-600',
+function statusTone(status: string): Tone {
+  if (status === 'pending') return 'amber'
+  if (status === 'confirmed') return 'blue'
+  if (status === 'companion_assigned') return 'purple'
+  if (status === 'in_progress') return 'green'
+  if (status === 'completed') return 'gray'
+  if (status === 'cancelled') return 'red'
+  return 'gray'
 }
 
 function rupees(paise: number | null | undefined) {
-  if (paise == null) return <span className="text-gray-300">—</span>
+  if (paise == null) return <span style={{ color: 'var(--gray-light)' }}>—</span>
   return <span>₹{(paise / 100).toLocaleString('en-IN')}</span>
 }
 
 function TableSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50">
+    <div className="adm-card">
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="px-4 py-3.5 flex gap-4">
-          <Skeleton className="h-3 w-20" />
-          <Skeleton className="h-3 w-28 flex-1" />
-          <Skeleton className="h-3 w-16" />
+        <div key={i} style={{ padding: '12px 16px', display: 'flex', gap: 16, borderBottom: '1px solid var(--line)' }}>
+          <Skeleton h={12} />
         </div>
       ))}
     </div>
@@ -78,37 +78,40 @@ export function AdminPayments() {
   const fmt = (dt: string) => format(new Date(dt), 'dd MMM yy')
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div>
 
       {/* Header */}
-      <div>
-        <h1 className="font-serif text-2xl text-green-900">Payments</h1>
-        <p className="text-gray-400 text-sm mt-0.5">Revenue, payouts, and platform margin.</p>
+      <div style={{ marginBottom: 24 }}>
+        <h1 className="adm-page-h">Payments</h1>
+        <p className="adm-page-sub">Revenue, payouts, and platform margin.</p>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
-          {error}
-          <button onClick={load} className="font-semibold underline">Retry</button>
+        <div style={{ marginBottom: 20 }}>
+          <ErrorBox onRetry={load} />
         </div>
       )}
 
       {/* Stat cards */}
-      {loading ? <StatsSkeleton /> : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {loading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 24 }}>
+          {[...Array(4)].map((_, i) => <Skeleton key={i} h={100} />)}
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 24 }}>
           {[
-            { icon: TrendingUp, label: 'Total Revenue',        value: `₹${(totalRevenue / 100).toLocaleString('en-IN')}`,  sub: 'All time paid' },
-            { icon: Banknote,   label: 'This month',           value: `₹${(monthRevenue / 100).toLocaleString('en-IN')}`,  sub: format(now, 'MMMM yyyy') },
-            { icon: PieChart,   label: 'Platform Margin',      value: `₹${(margin / 100).toLocaleString('en-IN')}`,        sub: 'Revenue − payouts' },
-            { icon: Clock,      label: 'Pending Payments',     value: pendingCount,                                        sub: 'Awaiting payment' },
+            { icon: TrendingUp, label: 'Total Revenue',    value: `₹${(totalRevenue / 100).toLocaleString('en-IN')}`,  sub: 'All time paid' },
+            { icon: Banknote,   label: 'This month',       value: `₹${(monthRevenue / 100).toLocaleString('en-IN')}`,  sub: format(now, 'MMMM yyyy') },
+            { icon: PieChart,   label: 'Platform Margin',  value: `₹${(margin / 100).toLocaleString('en-IN')}`,        sub: 'Revenue − payouts' },
+            { icon: Clock,      label: 'Pending Payments', value: pendingCount,                                        sub: 'Awaiting payment' },
           ].map(c => (
-            <div key={c.label} className="bg-white rounded-2xl border border-gray-100 p-4">
-              <div className="w-9 h-9 rounded-xl bg-green-50 text-green-700 flex items-center justify-center mb-3">
+            <div key={c.label} className="adm-card adm-card-pad">
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0faf3', color: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
                 <c.icon size={17} />
               </div>
-              <p className="font-serif text-2xl text-green-900 leading-none">{c.value}</p>
-              <p className="text-xs font-semibold text-gray-700 mt-1">{c.label}</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">{c.sub}</p>
+              <p style={{ fontFamily: 'Georgia, serif', fontSize: 24, color: 'var(--forest)', lineHeight: 1, margin: 0 }}>{c.value}</p>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--gray-dark)', marginTop: 6, marginBottom: 0 }}>{c.label}</p>
+              <p style={{ fontSize: 11, color: 'var(--gray-mid)', marginTop: 2, marginBottom: 0 }}>{c.sub}</p>
             </div>
           ))}
         </div>
@@ -116,56 +119,50 @@ export function AdminPayments() {
 
       {/* Payments list */}
       <div>
-        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">All payments</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>All payments</p>
 
         {loading ? <TableSkeleton /> : bookings.length === 0 ? (
-          <div className="text-center py-16 bg-green-50 rounded-2xl">
-            <p className="text-4xl mb-3">💳</p>
-            <p className="font-semibold text-green-900">No bookings yet</p>
-            <p className="text-sm text-gray-400 mt-1">Payments will appear here once bookings are made.</p>
-          </div>
+          <EmptyState title="No bookings yet" sub="Payments will appear here once bookings are made." />
         ) : (
           <>
             {/* Desktop table */}
-            <div className="hidden sm:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="adm-table-wrap" style={{ display: 'none' }} data-desktop>
+              <table className="adm-table" style={{ width: '100%' }}>
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    <th className="px-4 py-3 text-left">Date</th>
-                    <th className="px-4 py-3 text-left">Family / Companion</th>
-                    <th className="px-4 py-3 text-left">Status</th>
-                    <th className="px-4 py-3 text-right">Amount</th>
-                    <th className="px-4 py-3 text-right">Payout</th>
-                    <th className="px-4 py-3 text-right">Margin</th>
-                    <th className="px-4 py-3 text-left">Payment</th>
+                  <tr>
+                    <th style={{ textAlign: 'left' }}>Date</th>
+                    <th style={{ textAlign: 'left' }}>Family / Companion</th>
+                    <th style={{ textAlign: 'left' }}>Status</th>
+                    <th style={{ textAlign: 'right' }}>Amount</th>
+                    <th style={{ textAlign: 'right' }}>Payout</th>
+                    <th style={{ textAlign: 'right' }}>Margin</th>
+                    <th style={{ textAlign: 'left' }}>Payment</th>
                   </tr>
                 </thead>
                 <tbody>
                   {bookings.map(b => (
-                    <tr key={b.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                      <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{fmt(b.created_at)}</td>
-                      <td className="px-4 py-3">
-                        <p className="text-sm font-medium text-gray-700">{b.loved_ones?.full_name || '—'}</p>
-                        <p className="text-xs text-gray-400">{b.companions?.full_name || 'Unassigned'}</p>
+                    <tr key={b.id}>
+                      <td style={{ fontSize: 12, color: 'var(--gray-mid)', whiteSpace: 'nowrap' }}>{fmt(b.created_at)}</td>
+                      <td>
+                        <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--gray-dark)', margin: 0 }}>{b.loved_ones?.full_name || '—'}</p>
+                        <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: 0 }}>{b.companions?.full_name || 'Unassigned'}</p>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[b.status] || 'bg-gray-100 text-gray-500'}`}>
-                          {b.status.replace(/_/g, ' ')}
-                        </span>
+                      <td>
+                        <Badge tone={statusTone(b.status)}>{b.status.replace(/_/g, ' ')}</Badge>
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold text-green-800 whitespace-nowrap text-sm">
+                      <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--forest)', whiteSpace: 'nowrap', fontSize: 14 }}>
                         {rupees(b.amount_paise)}
                       </td>
-                      <td className="px-4 py-3 text-right text-gray-500 whitespace-nowrap text-sm">
+                      <td style={{ textAlign: 'right', color: 'var(--gray-mid)', whiteSpace: 'nowrap', fontSize: 14 }}>
                         {rupees(b.companion_payout_paise)}
                       </td>
-                      <td className="px-4 py-3 text-right text-gray-500 whitespace-nowrap text-sm">
-                        {b.companion_payout_paise != null ? rupees(b.amount_paise - b.companion_payout_paise) : <span className="text-gray-300">—</span>}
+                      <td style={{ textAlign: 'right', color: 'var(--gray-mid)', whiteSpace: 'nowrap', fontSize: 14 }}>
+                        {b.companion_payout_paise != null ? rupees(b.amount_paise - b.companion_payout_paise) : <span style={{ color: 'var(--gray-light)' }}>—</span>}
                       </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${PAYMENT_BADGE[b.payment_status] || 'bg-gray-100 text-gray-400'}`}>
+                      <td>
+                        <Badge tone={paymentTone(b.payment_status)}>
                           {b.payment_status === 'received' ? 'Received' : b.payment_status === 'paid' ? 'Paid' : b.payment_status === 'failed' ? 'Failed' : 'Pending'}
-                        </span>
+                        </Badge>
                       </td>
                     </tr>
                   ))}
@@ -174,35 +171,33 @@ export function AdminPayments() {
             </div>
 
             {/* Mobile cards — replaces horizontal table to avoid cutoff */}
-            <div className="sm:hidden space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {bookings.map(b => (
-                <div key={b.id} className="bg-white rounded-2xl border border-gray-100 px-4 py-3 space-y-2">
+                <div key={b.id} className="adm-card adm-card-pad">
                   {/* Row 1: family + date */}
-                  <div className="flex items-start justify-between gap-2">
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
                     <div>
-                      <p className="text-sm font-semibold text-green-900">{b.loved_ones?.full_name || '—'}</p>
-                      <p className="text-xs text-gray-400">{b.companions?.full_name || 'Unassigned'}</p>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--forest)', margin: 0 }}>{b.loved_ones?.full_name || '—'}</p>
+                      <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: 0 }}>{b.companions?.full_name || 'Unassigned'}</p>
                     </div>
-                    <p className="text-xs text-gray-400 whitespace-nowrap">{fmt(b.created_at)}</p>
+                    <p style={{ fontSize: 12, color: 'var(--gray-mid)', whiteSpace: 'nowrap', margin: 0 }}>{fmt(b.created_at)}</p>
                   </div>
                   {/* Row 2: amount + payout + margin */}
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="font-semibold text-green-800">{b.amount_paise ? `₹${(b.amount_paise/100).toLocaleString('en-IN')}` : '—'}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, marginBottom: 8 }}>
+                    <span style={{ fontWeight: 600, color: 'var(--forest)' }}>{b.amount_paise ? `₹${(b.amount_paise/100).toLocaleString('en-IN')}` : '—'}</span>
                     {b.companion_payout_paise != null && (
-                      <span className="text-gray-400">payout ₹{(b.companion_payout_paise/100).toLocaleString('en-IN')}</span>
+                      <span style={{ color: 'var(--gray-mid)' }}>payout ₹{(b.companion_payout_paise/100).toLocaleString('en-IN')}</span>
                     )}
                     {b.companion_payout_paise != null && (
-                      <span className="text-gray-400">margin ₹{((b.amount_paise - b.companion_payout_paise)/100).toLocaleString('en-IN')}</span>
+                      <span style={{ color: 'var(--gray-mid)' }}>margin ₹{((b.amount_paise - b.companion_payout_paise)/100).toLocaleString('en-IN')}</span>
                     )}
                   </div>
                   {/* Row 3: status badges */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${STATUS_BADGE[b.status] || 'bg-gray-100 text-gray-400'}`}>
-                      {b.status.replace(/_/g, ' ')}
-                    </span>
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${PAYMENT_BADGE[b.payment_status] || 'bg-gray-100 text-gray-400'}`}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <Badge tone={statusTone(b.status)}>{b.status.replace(/_/g, ' ')}</Badge>
+                    <Badge tone={paymentTone(b.payment_status)}>
                       {b.payment_status === 'received' ? 'Received' : b.payment_status === 'paid' ? 'Paid' : b.payment_status === 'failed' ? 'Failed' : 'Pending'}
-                    </span>
+                    </Badge>
                   </div>
                 </div>
               ))}

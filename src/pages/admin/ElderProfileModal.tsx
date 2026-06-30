@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { X, Plus, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -162,52 +161,152 @@ export function ElderProfileModal({ elder, lovedOnes, onClose, onSaved }: Props)
   const photoSrc = photoPreview ?? existingPhotoUrl
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={onClose}>
+    <>
+      <div className="adm-overlay" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="elder-modal-title"
-        className="bg-white rounded-2xl max-w-2xl w-full my-8 max-h-[92vh] overflow-y-auto"
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 640,
+          maxWidth: '92vw',
+          background: '#fff',
+          borderRadius: 'var(--radius-card)',
+          zIndex: 90,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+          maxHeight: '85vh',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
-          <h2 id="elder-modal-title" className="font-serif text-xl text-green-900">
+        {/* Header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 20px',
+          borderBottom: '1px solid var(--line)',
+          position: 'sticky',
+          top: 0,
+          background: '#fff',
+          borderRadius: 'var(--radius-card) var(--radius-card) 0 0',
+          zIndex: 10,
+        }}>
+          <h2 id="elder-modal-title" className="adm-page-h" style={{ fontSize: 18, margin: 0 }}>
             {isEdit ? 'Edit Elder Profile' : 'Add New Elder'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-green-800 transition-colors" aria-label="Close">
-            <X size={20} />
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--gray-mid)',
+              padding: 4,
+              fontSize: 22,
+              lineHeight: 1,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            ×
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="p-5 space-y-6">
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3">{error}</div>}
+        <form onSubmit={onSubmit} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {error && (
+            <div style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: '#b91c1c',
+              fontSize: 13,
+              borderRadius: 'var(--radius-card)',
+              padding: '10px 14px',
+            }}>
+              {error}
+            </div>
+          )}
 
-          {/* ── Identity ─────────────────────────────────────────────── */}
-          <section className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Identity */}
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
               <Field label="Full name *">
-                <input ref={firstFieldRef} required value={form.name} onChange={e => set('name', e.target.value)} className={inputCls} />
+                <input
+                  ref={firstFieldRef}
+                  required
+                  value={form.name}
+                  onChange={e => set('name', e.target.value)}
+                  className="adm-input"
+                />
               </Field>
               <Field label="Age *">
-                <input type="number" min={1} max={120} required value={form.age} onChange={e => set('age', e.target.value)} className={inputCls} />
+                <input
+                  type="number"
+                  min={1}
+                  max={120}
+                  required
+                  value={form.age}
+                  onChange={e => set('age', e.target.value)}
+                  className="adm-input"
+                />
               </Field>
               <Field label="Address *">
-                <input required value={form.address} onChange={e => set('address', e.target.value)} className={inputCls} />
+                <input
+                  required
+                  value={form.address}
+                  onChange={e => set('address', e.target.value)}
+                  className="adm-input"
+                />
               </Field>
               <Field label="City *">
-                <input required value={form.city} onChange={e => set('city', e.target.value)} placeholder="e.g. Hyderabad" className={inputCls} />
+                <input
+                  required
+                  value={form.city}
+                  onChange={e => set('city', e.target.value)}
+                  placeholder="e.g. Hyderabad"
+                  className="adm-input"
+                />
               </Field>
             </div>
 
             <Field label="Photo (optional)">
-              <div className="flex items-center gap-3">
-                {photoSrc && <img src={photoSrc} alt="Elder photo preview" className="w-14 h-14 rounded-full object-cover border border-gray-100" />}
-                <input type="file" accept="image/*" onChange={handlePhotoChange} className="text-xs text-gray-500" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {photoSrc && (
+                  <img
+                    src={photoSrc}
+                    alt="Elder photo preview"
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '1px solid var(--line)',
+                    }}
+                  />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  style={{ fontSize: 12, color: 'var(--gray-mid)' }}
+                />
               </div>
             </Field>
 
             <Field label="Link to registered family member (optional)">
-              <select value={form.loved_one_id} onChange={e => set('loved_one_id', e.target.value)} className={`${inputCls} bg-white`}>
+              <select
+                value={form.loved_one_id}
+                onChange={e => set('loved_one_id', e.target.value)}
+                className="adm-input"
+                style={{ background: '#fff' }}
+              >
                 <option value="">Not linked yet</option>
                 {lovedOnes.map(lo => (
                   <option key={lo.id} value={lo.id}>
@@ -218,126 +317,207 @@ export function ElderProfileModal({ elder, lovedOnes, onClose, onSaved }: Props)
             </Field>
           </section>
 
-          {/* ── Pinned note ──────────────────────────────────────────── */}
-          <Section title="Pinned note" hint="Shown prominently to the companion before every visit">
-            <textarea value={form.pinned_note} onChange={e => set('pinned_note', e.target.value)} rows={2}
+          {/* Pinned note */}
+          <ModalSection title="Pinned note" hint="Shown prominently to the companion before every visit">
+            <textarea
+              value={form.pinned_note}
+              onChange={e => set('pinned_note', e.target.value)}
+              rows={2}
               placeholder="e.g. Hard of hearing on the left — sit on her right side."
-              className={`${inputCls} resize-none`} />
-          </Section>
+              className="adm-textarea"
+              style={{ resize: 'none' }}
+            />
+          </ModalSection>
 
-          {/* ── Medical ──────────────────────────────────────────────── */}
-          <Section title="Medical">
+          {/* Medical */}
+          <ModalSection title="Medical">
             <Field label="Nearest hospital (name + address)">
-              <input value={form.nearest_hospital} onChange={e => set('nearest_hospital', e.target.value)} className={inputCls} />
+              <input
+                value={form.nearest_hospital}
+                onChange={e => set('nearest_hospital', e.target.value)}
+                className="adm-input"
+              />
             </Field>
             <Field label="Medical conditions">
-              <textarea value={form.medical_conditions} onChange={e => set('medical_conditions', e.target.value)} rows={2} className={`${inputCls} resize-none`} />
+              <textarea
+                value={form.medical_conditions}
+                onChange={e => set('medical_conditions', e.target.value)}
+                rows={2}
+                className="adm-textarea"
+                style={{ resize: 'none' }}
+              />
             </Field>
             <Field label="Allergies">
-              <input value={form.allergies} onChange={e => set('allergies', e.target.value)} className={inputCls} />
+              <input
+                value={form.allergies}
+                onChange={e => set('allergies', e.target.value)}
+                className="adm-input"
+              />
             </Field>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
               <Field label="Doctor name">
-                <input value={form.doctor_name} onChange={e => set('doctor_name', e.target.value)} className={inputCls} />
+                <input
+                  value={form.doctor_name}
+                  onChange={e => set('doctor_name', e.target.value)}
+                  className="adm-input"
+                />
               </Field>
               <Field label="Doctor phone">
-                <input value={form.doctor_phone} onChange={e => set('doctor_phone', e.target.value)} className={inputCls} />
+                <input
+                  value={form.doctor_phone}
+                  onChange={e => set('doctor_phone', e.target.value)}
+                  className="adm-input"
+                />
               </Field>
             </div>
-          </Section>
+          </ModalSection>
 
-          {/* ── Medications (dynamic rows) ───────────────────────────── */}
-          <Section title="Current medications">
+          {/* Medications (dynamic rows) */}
+          <ModalSection title="Current medications">
             <RowEditor
               rows={medications}
               onChange={setMedications}
               blank={BLANK_MED}
               addLabel="Add medication"
               columns={[
-                { key: 'name',   placeholder: 'Medicine name', flex: 'flex-[2]' },
-                { key: 'dosage', placeholder: 'Dosage',        flex: 'flex-1' },
-                { key: 'timing', placeholder: 'Timing',        flex: 'flex-1' },
+                { key: 'name',   placeholder: 'Medicine name', flex: 2 },
+                { key: 'dosage', placeholder: 'Dosage',        flex: 1 },
+                { key: 'timing', placeholder: 'Timing',        flex: 1 },
               ]}
             />
-          </Section>
+          </ModalSection>
 
-          {/* ── Emergency contacts (dynamic rows) ────────────────────── */}
-          <Section title="Emergency contacts">
+          {/* Emergency contacts (dynamic rows) */}
+          <ModalSection title="Emergency contacts">
             <RowEditor
               rows={contacts}
               onChange={setContacts}
               blank={BLANK_CONTACT}
               addLabel="Add contact"
               columns={[
-                { key: 'name',     placeholder: 'Name',          flex: 'flex-[2]' },
-                { key: 'relation', placeholder: 'Relation',      flex: 'flex-1' },
-                { key: 'phone',    placeholder: 'Phone',         flex: 'flex-[1.5]' },
-                { key: 'priority', placeholder: 'Priority',      flex: 'flex-[0.7]', type: 'number' },
+                { key: 'name',     placeholder: 'Name',     flex: 2 },
+                { key: 'relation', placeholder: 'Relation', flex: 1 },
+                { key: 'phone',    placeholder: 'Phone',    flex: 1.5 },
+                { key: 'priority', placeholder: 'Priority', flex: 0.7, type: 'number' },
               ]}
             />
-          </Section>
+          </ModalSection>
 
-          {/* ── Lifestyle ────────────────────────────────────────────── */}
-          <Section title="Lifestyle & preferences">
+          {/* Lifestyle */}
+          <ModalSection title="Lifestyle & preferences">
             <Field label="Food preferences">
-              <input value={form.food_preferences} onChange={e => set('food_preferences', e.target.value)} className={inputCls} />
+              <input
+                value={form.food_preferences}
+                onChange={e => set('food_preferences', e.target.value)}
+                className="adm-input"
+              />
             </Field>
             <Field label="Conversation interests">
-              <input value={form.conversation_interests} onChange={e => set('conversation_interests', e.target.value)} className={inputCls} />
+              <input
+                value={form.conversation_interests}
+                onChange={e => set('conversation_interests', e.target.value)}
+                className="adm-input"
+              />
             </Field>
             <Field label="Things to avoid">
-              <textarea value={form.things_to_avoid} onChange={e => set('things_to_avoid', e.target.value)} rows={2} className={`${inputCls} resize-none`} />
+              <textarea
+                value={form.things_to_avoid}
+                onChange={e => set('things_to_avoid', e.target.value)}
+                rows={2}
+                className="adm-textarea"
+                style={{ resize: 'none' }}
+              />
             </Field>
             <Field label="Daily routine / schedule">
-              <textarea value={form.daily_routine} onChange={e => set('daily_routine', e.target.value)} rows={2} className={`${inputCls} resize-none`} />
+              <textarea
+                value={form.daily_routine}
+                onChange={e => set('daily_routine', e.target.value)}
+                rows={2}
+                className="adm-textarea"
+                style={{ resize: 'none' }}
+              />
             </Field>
-          </Section>
+          </ModalSection>
 
-          {/* ── Special dates (dynamic rows) ─────────────────────────── */}
-          <Section title="Special dates">
+          {/* Special dates (dynamic rows) */}
+          <ModalSection title="Special dates">
             <RowEditor
               rows={specialDates}
               onChange={setSpecialDates}
               blank={BLANK_DATE}
               addLabel="Add date"
               columns={[
-                { key: 'occasion', placeholder: 'Occasion (e.g. Birthday)', flex: 'flex-[2]' },
-                { key: 'date',     placeholder: 'Date',                      flex: 'flex-1', type: 'date' },
+                { key: 'occasion', placeholder: 'Occasion (e.g. Birthday)', flex: 2 },
+                { key: 'date',     placeholder: 'Date',                      flex: 1, type: 'date' },
               ]}
             />
-          </Section>
+          </ModalSection>
 
-          <div className="flex items-center justify-end gap-3 pt-2 sticky bottom-0 bg-white pb-1">
-            <button type="button" onClick={onClose} className="text-sm font-medium text-gray-500 hover:text-green-800 px-4 py-2.5 transition-colors">
+          {/* Footer actions */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 12,
+            paddingTop: 4,
+            position: 'sticky',
+            bottom: 0,
+            background: '#fff',
+            paddingBottom: 4,
+          }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                fontSize: 13,
+                fontWeight: 500,
+                color: 'var(--gray-mid)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '8px 14px',
+              }}
+            >
               Cancel
             </button>
-            <button type="submit" disabled={saving} className="text-sm font-semibold bg-green-800 text-white px-5 py-2.5 rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors">
+            <button
+              type="submit"
+              disabled={saving}
+              className="adm-btn adm-btn-primary"
+              style={{ opacity: saving ? 0.5 : 1 }}
+            >
               {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Add Elder'}
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </>
   )
 }
 
-const inputCls = 'w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600'
-
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <label className="block text-xs font-semibold text-green-900 mb-1.5">{label}</label>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--forest)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        {label}
+      </label>
       {children}
     </div>
   )
 }
 
-function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+function ModalSection({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-4 border-t border-gray-100 pt-5">
+    <section style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 16,
+      borderTop: '1px solid var(--line)',
+      paddingTop: 20,
+    }}>
       <div>
-        <h3 className="text-sm font-bold text-green-900">{title}</h3>
-        {hint && <p className="text-xs text-gray-400 mt-0.5">{hint}</p>}
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--forest)', margin: 0 }}>{title}</h3>
+        {hint && <p style={{ fontSize: 11, color: 'var(--gray-mid)', marginTop: 3, marginBottom: 0 }}>{hint}</p>}
       </div>
       {children}
     </section>
@@ -352,15 +532,15 @@ function RowEditor<T extends Record<string, string>>({
   onChange: (rows: T[]) => void
   blank: T
   addLabel: string
-  columns: { key: keyof T; placeholder: string; flex: string; type?: string }[]
+  columns: { key: keyof T; placeholder: string; flex: number; type?: string }[]
 }) {
   function update(i: number, key: keyof T, value: string) {
     onChange(rows.map((r, j) => j === i ? { ...r, [key]: value } : r))
   }
   return (
-    <div className="space-y-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {rows.map((row, i) => (
-        <div key={i} className="flex items-center gap-2">
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {columns.map(col => (
             <input
               key={String(col.key)}
@@ -368,18 +548,48 @@ function RowEditor<T extends Record<string, string>>({
               value={row[col.key] as string}
               onChange={e => update(i, col.key, e.target.value)}
               placeholder={col.placeholder}
-              className={`${col.flex} min-w-0 border-2 border-gray-200 rounded-xl px-2.5 py-2 text-sm focus:outline-none focus:border-green-600`}
+              className="adm-input"
+              style={{ flex: col.flex, minWidth: 0 }}
             />
           ))}
-          <button type="button" onClick={() => onChange(rows.filter((_, j) => j !== i))}
-            className="flex-shrink-0 text-gray-300 hover:text-red-500 transition-colors p-1" aria-label="Remove row">
-            <Trash2 size={15} />
+          <button
+            type="button"
+            onClick={() => onChange(rows.filter((_, j) => j !== i))}
+            aria-label="Remove row"
+            style={{
+              flexShrink: 0,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--gray-mid)',
+              padding: 4,
+              fontSize: 16,
+              lineHeight: 1,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--clay)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--gray-mid)')}
+          >
+            ×
           </button>
         </div>
       ))}
-      <button type="button" onClick={() => onChange([...rows, { ...blank }])}
-        className="flex items-center gap-1.5 text-xs font-semibold text-green-700 hover:text-green-900 transition-colors">
-        <Plus size={14} /> {addLabel}
+      <button
+        type="button"
+        onClick={() => onChange([...rows, { ...blank }])}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 12,
+          fontWeight: 600,
+          color: 'var(--forest)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '4px 0',
+        }}
+      >
+        <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> {addLabel}
       </button>
     </div>
   )

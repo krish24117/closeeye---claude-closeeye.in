@@ -74,6 +74,7 @@ const AdminFamilyDetail = lazy(() => import('@/pages/admin/Families').then(m => 
 const AdminCompanionDetail = lazy(() => import('@/pages/admin/Companions').then(m => ({ default: m.AdminCompanionDetail })))
 const AdminFoundingMembers = lazy(() => import('@/pages/admin/FoundingMembers').then(m => ({ default: m.AdminFoundingMembers })))
 const AdminFoundingMemberDetail = lazy(() => import('@/pages/admin/FoundingMembers').then(m => ({ default: m.AdminFoundingMemberDetail })))
+const AdminHealthReports = lazy(() => import('@/pages/admin/HealthReports').then(m => ({ default: m.AdminHealthReports })))
 
 const DoctorLayout = lazy(() => import('@/pages/doctor/Layout').then(m => ({ default: m.DoctorLayout })))
 const DoctorHome = lazy(() => import('@/pages/doctor/Home').then(m => ({ default: m.DoctorHome })))
@@ -326,6 +327,10 @@ export default function App() {
               <Route path="settings" element={<AdminSettings />} />
               <Route path="founding-members" element={<AdminFoundingMembers />} />
               <Route path="founding-members/:userId" element={<AdminFoundingMemberDetail />} />
+              <Route path="health-reports" element={<AdminHealthReports />} />
+              <Route path="doctors" element={<AdminSettings />} />
+              <Route path="plans" element={<AdminSettings />} />
+              <Route path="export" element={<AdminRevenue />} />
             </Route>
             <Route path="/doctor" element={<ProtectedRoute adminRole="doctor"><DoctorLayout /></ProtectedRoute>}>
               <Route index element={<DoctorHome />} />

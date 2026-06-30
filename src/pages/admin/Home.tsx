@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TbChevronRight } from 'react-icons/tb'
 import { supabase } from '@/lib/supabase'
@@ -87,30 +87,35 @@ export function AdminHome() {
 
   return (
     <>
+      {/* Stats row */}
       <div className="adm-grid adm-grid-4" style={{ marginBottom: 20 }}>
         <StatCard label="Active families" value={d.famCount} sub={d.newFam > 0 ? `+${d.newFam} this week` : 'Families & members'} subTone={d.newFam > 0 ? 'pos' : undefined} />
         <StatCard label="Visits today" value={d.todayList.length} sub={`${d.done} done · ${d.pending} pending`} />
-        <StatCard label="Queries pending" value={<span className={d.queriesCount > 0 ? 'adm-warn' : ''}>{d.queriesCount}</span>} sub="Need doctor review" subTone={d.queriesCount > 0 ? 'warn' : undefined} />
+        <StatCard label="Queries pending" value={d.queriesCount} sub="Need doctor review" alert={d.queriesCount > 0} subTone={d.queriesCount > 0 ? 'urgent' : undefined} />
         <StatCard label="Revenue this month" value={inr(d.revMonth)} sub={`${d.revDelta >= 0 ? '+' : ''}${inr(d.revDelta)} vs last month`} subTone={d.revDelta >= 0 ? 'pos' : 'warn'} />
       </div>
 
+      {/* Main two-col */}
       <div className="adm-grid adm-grid-2" style={{ marginBottom: 20 }}>
         <Card>
-          <div className="adm-card-head"><span className="adm-card-title">Today’s visits</span><Link className="adm-link" to="/admin/visits">View all →</Link></div>
+          <div className="adm-card-head">
+            <span className="adm-card-title">Today's visits</span>
+            <Link className="adm-link" to="/admin/visits">View all →</Link>
+          </div>
           {d.todayList.length === 0 ? <EmptyState title="No visits scheduled today" /> : (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {d.todayList.slice(0, 6).map((b: any) => {
                 const bt = bookingTone(b.status)
                 return (
-                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '0.5px solid var(--gray-light)' }}>
+                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--cream-2)' }}>
                     <Avatar name={b.loved_ones?.full_name} size={30} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500 }}>{b.loved_ones?.full_name || 'Elder'}</div>
-                      <div style={{ fontSize: 11, color: 'var(--gray-mid)' }}>{b.loved_ones?.city || 'Hyderabad'} · {b.companions?.full_name || 'Unassigned'}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--forest)' }}>{b.loved_ones?.full_name || 'Elder'}</div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>{b.loved_ones?.city || 'Hyderabad'} · {b.companions?.full_name || 'Unassigned'}</div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <Badge tone={bt.tone}>{bt.label}</Badge>
-                      <div style={{ fontSize: 11, color: 'var(--gray-mid)', marginTop: 2 }}>{istTime(b.scheduled_at)}</div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{istTime(b.scheduled_at)}</div>
                     </div>
                   </div>
                 )
@@ -120,18 +125,21 @@ export function AdminHome() {
         </Card>
 
         <Card>
-          <div className="adm-card-head"><span className="adm-card-title">Queries needing review</span><Link className="adm-link" to="/admin/queries">View all →</Link></div>
+          <div className="adm-card-head">
+            <span className="adm-card-title">Queries needing review</span>
+            <Link className="adm-link" to="/admin/queries">View all →</Link>
+          </div>
           {d.queries.length === 0 ? <EmptyState title="No pending queries" sub="Doctors are all caught up." /> : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {d.queries.slice(0, 4).map((q: any) => {
                 const qt = queryTone(q.status)
                 return (
-                  <div key={q.id} style={{ borderBottom: '0.5px solid var(--gray-light)', paddingBottom: 10 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                      <span style={{ fontSize: 12, fontWeight: 500 }}>{q.name}{q.subject_label ? ` — for ${q.subject_label}` : ''}</span>
+                  <div key={q.id} style={{ borderBottom: '1px solid var(--cream-2)', paddingBottom: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--forest)' }}>{q.name}{q.subject_label ? ` — for ${q.subject_label}` : ''}</span>
                       <Badge tone={qt.tone}>{qt.label}</Badge>
                     </div>
-                    <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '4px 0 8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{q.question}</p>
+                    <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{q.question}</p>
                     <Link to="/admin/queries" className="adm-btn adm-btn-sage" style={{ fontSize: 11, padding: '4px 10px' }}>Review now</Link>
                   </div>
                 )
@@ -141,40 +149,37 @@ export function AdminHome() {
         </Card>
       </div>
 
-      <div className="adm-grid adm-grid-3">
+      {/* Bottom two-col */}
+      <div className="adm-grid adm-grid-2">
         <Card>
-          <div className="adm-card-head"><span className="adm-card-title">Recent payments</span><Link className="adm-link" to="/admin/revenue">View all →</Link></div>
+          <div className="adm-card-head">
+            <span className="adm-card-title">Recent payments</span>
+            <Link className="adm-link" to="/admin/revenue">View all →</Link>
+          </div>
           {d.recent.length === 0 ? <EmptyState title="No payments yet" /> : d.recent.map((p: any) => (
-            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '0.5px solid var(--gray-light)' }}>
+            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--cream-2)' }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.loved_ones?.full_name || 'Family'}</div>
-                <div style={{ fontSize: 11, color: 'var(--gray-mid)' }}>{serviceLabel(p.service_type)}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--forest)' }}>{p.loved_ones?.full_name || 'Family'}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>{serviceLabel(p.service_type)}</div>
               </div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--forest)' }}>{inr(p.amount_paise)}</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--forest)', flexShrink: 0 }}>{inr(p.amount_paise)}</span>
             </div>
           ))}
         </Card>
 
         <Card>
-          <div className="adm-card-head"><span className="adm-card-title">Pending actions</span></div>
-          {actions.length === 0 ? <EmptyState title="Nothing needs you" sub="All clear for now." /> : actions.map((a, i) => (
-            <Link key={i} to={a.to} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '0.5px solid var(--gray-light)', textDecoration: 'none' }}>
-              <span style={{ width: 28, height: 28, borderRadius: '50%', background: a.tone, flexShrink: 0 }} />
+          <div className="adm-card-head"><span className="adm-card-title">Needs attention</span></div>
+          {actions.length === 0 ? <EmptyState title="All clear" sub="Nothing needs attention right now." /> : actions.map((a, i) => (
+            <Link key={i} to={a.to} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--cream-2)', textDecoration: 'none' }}>
+              <span style={{ width: 28, height: 28, borderRadius: 8, background: a.tone, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--black)' }}>{a.title}</div>
-                <div style={{ fontSize: 11, color: 'var(--gray-mid)' }}>{a.sub}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--forest)' }}>{a.title}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>{a.sub}</div>
               </div>
-              <TbChevronRight size={16} color="var(--gray-mid)" />
+              <TbChevronRight size={14} color="var(--muted)" />
             </Link>
           ))}
         </Card>
-
-        {/* Societies overview card disabled — re-enable when feature launches
-        <Card>
-          <div className="adm-card-head"><span className="adm-card-title">Societies overview</span><Link className="adm-link" to="/admin/societies">View all →</Link></div>
-          ...
-        </Card>
-        */}
       </div>
     </>
   )
