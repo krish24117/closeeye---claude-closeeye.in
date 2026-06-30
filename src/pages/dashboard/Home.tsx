@@ -1,415 +1,409 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Calendar, ChevronRight, MessageCircle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { isOnboardingDismissed } from '@/pages/Onboarding'
 import { getPersona, getPersonaCopy } from '@/lib/persona'
 
-/* ------------------------------------------------------------------ */
-/*  Shared helpers                                                     */
-/* ------------------------------------------------------------------ */
+// ── Helpers ────────────────────────────────────────────────────────────────
 
 function initials(name?: string | null) {
   return (name || 'CE').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
 }
 function istTime(iso?: string | null) {
   if (!iso) return ''
-  return new Date(iso).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })
+  return new Date(iso).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })
 }
-function istDate(iso?: string | null) {
-  if (!iso) return ''
-  return new Date(iso).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long' })
-}
-function durationMin(start?: string | null, end?: string | null) {
-  if (!start || !end) return null
-  return Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000))
-}
-
-const FOREST_GRADIENT = { background: 'linear-gradient(135deg, #0E2A1F 0%, #1B4332 100%)' }
 
 function CardSkeleton({ h = 180 }: { h?: number }) {
   return <div className="skeleton" style={{ height: h, margin: '16px', borderRadius: 20 }} />
 }
 
-/* ================================================================== */
-/*  NRI FAMILY HOME                                                    */
-/* ================================================================== */
+// ── Constants ──────────────────────────────────────────────────────────────
+
+const MUTED  = '#5c6b62'
+const LINE   = '#e3ddd1'
+const CREAM2 = '#f1ece2'
+const CLAY   = '#C0734F'
+
+const SEC: React.CSSProperties = {
+  fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.12em',
+  color: MUTED, fontWeight: 700, margin: '18px 0 9px',
+}
+
+const SERVICE_LABELS: Record<string, string> = {
+  wellbeing_visit:          'Wellbeing visit',
+  doctor_visit:             'Doctor visit',
+  grocery_errand:           'Grocery errand',
+  pharmacy_run:             'Pharmacy run',
+  emergency_support_visit:  'Emergency visit',
+}
+
+// ── NRI types ──────────────────────────────────────────────────────────────
 
 interface VisitRow {
   id: string; start_time: string | null; end_time: string | null; created_at: string
   flags: string; flag_notes: string | null; one_moment: string | null; mood_score: number | null
-  checklist_data: Record<string, unknown> | null
-  photo_urls: string[]
-  pdf_path: string | null
+  checklist_data: Record<string, unknown> | null; photo_urls: string[]; pdf_path: string | null
 }
+
+interface LovedOneRow { id: string; full_name: string; city: string | null; relationship: string | null }
+interface NextBookingRow { scheduled_at: string; service_type: string | null }
+interface ActiveReqRow  { id: string; service_name: string; status: string }
+
+// ── NRI home ───────────────────────────────────────────────────────────────
 
 function NriHome() {
   const { user, profile } = useAuth()
-  const [loading, setLoading] = useState(true)
-  const [elderName, setElderName] = useState<string>('')
-  const [elderCity, setElderCity] = useState<string>('')
-  const [visit, setVisit] = useState<VisitRow | null>(null)
-  const [visitPhotoUrl, setVisitPhotoUrl] = useState<string | null>(null)
-  const [nextBooking, setNextBooking] = useState<{ scheduled_at: string } | null>(null)
-  const [activeRequest, setActiveRequest] = useState<{ id: string; service_name: string; status: string } | null>(null)
+  const navigate = useNavigate()
+
+  const [loading,      setLoading]      = useState(true)
+  const [lovedOne,     setLovedOne]     = useState<LovedOneRow | null>(null)
+  const [visit,        setVisit]        = useState<VisitRow | null>(null)
+  const [visitPhoto,   setVisitPhoto]   = useState<string | null>(null)
+  const [nextBooking,  setNextBooking]  = useState<NextBookingRow | null>(null)
+  const [activeReq,    setActiveReq]    = useState<ActiveReqRow | null>(null)
+  const [visitCount,   setVisitCount]   = useState(0)
 
   useEffect(() => {
     if (!user) return
-    let active = true
+    let alive = true
     ;(async () => {
-      const { data: lo } = await supabase
-        .from('loved_ones').select('id, full_name, city').eq('family_user_id', user.id)
-        .order('created_at', { ascending: true }).limit(1).maybeSingle()
-      if (!active) return
-      setElderName(lo?.full_name || 'Your loved one')
-      setElderCity((lo as any)?.city || '')
+      // Phase 1 — parallel: loved one + next booking + active request + completed count
+      const [loRes, bkRes, arRes, cntRes] = await Promise.all([
+        supabase.from('loved_ones')
+          .select('id, full_name, city, relationship')
+          .eq('family_user_id', user.id)
+          .order('created_at', { ascending: true })
+          .limit(1).maybeSingle(),
+        supabase.from('bookings')
+          .select('scheduled_at, service_type')
+          .eq('family_user_id', user.id)
+          .gte('scheduled_at', new Date().toISOString())
+          .order('scheduled_at', { ascending: true })
+          .limit(1).maybeSingle(),
+        supabase.from('booking_requests')
+          .select('id, service_name, status')
+          .eq('user_id', user.id)
+          .not('status', 'in', '("cancelled")')
+          .order('created_at', { ascending: false })
+          .limit(1).maybeSingle(),
+        supabase.from('bookings')
+          .select('id', { count: 'exact', head: true })
+          .eq('family_user_id', user.id)
+          .eq('status', 'completed'),
+      ])
+      if (!alive) return
 
+      const lo = loRes.data as LovedOneRow | null
+      setLovedOne(lo)
+      if (bkRes.data) setNextBooking(bkRes.data as NextBookingRow)
+      if (arRes.data) setActiveReq(arRes.data as ActiveReqRow)
+      setVisitCount((cntRes as any).count ?? 0)
+
+      // Phase 2 — visit report (needs elder_id, so sequential after phase 1)
       if (lo?.id) {
         const { data: ep } = await supabase
           .from('elder_profiles').select('id').eq('loved_one_id', lo.id).maybeSingle()
-        if (ep?.id) {
+        if (alive && ep?.id) {
           const { data: v } = await supabase
-            .from('visits').select('id,start_time,end_time,created_at,flags,flag_notes,one_moment,mood_score,checklist_data,photo_urls,pdf_path')
-            .eq('elder_id', ep.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
-          if (active && v) {
+            .from('visits')
+            .select('id,start_time,end_time,created_at,flags,flag_notes,one_moment,mood_score,checklist_data,photo_urls,pdf_path')
+            .eq('elder_id', ep.id)
+            .order('created_at', { ascending: false }).limit(1).maybeSingle()
+          if (alive && v) {
             setVisit(v as VisitRow)
-            if (v.photo_urls?.length) {
-              const { data: signed } = await supabase.storage
-                .from('visit-photos').createSignedUrl(v.photo_urls[0], 3600)
-              if (active && signed?.signedUrl) setVisitPhotoUrl(signed.signedUrl)
+            if ((v as VisitRow).photo_urls?.length) {
+              const { data: s } = await supabase.storage
+                .from('visit-photos').createSignedUrl((v as VisitRow).photo_urls[0], 3600)
+              if (alive && s?.signedUrl) setVisitPhoto(s.signedUrl)
             }
           }
         }
       }
 
-      const { data: bk } = await supabase
-        .from('bookings').select('scheduled_at')
-        .eq('family_user_id', user.id).gte('scheduled_at', new Date().toISOString())
-        .order('scheduled_at', { ascending: true }).limit(1).maybeSingle()
-      if (active && bk) setNextBooking(bk)
-
-      const { data: ar } = await supabase
-        .from('booking_requests')
-        .select('id, service_name, status')
-        .eq('user_id', user.id)
-        .not('status', 'in', '("cancelled")')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-      if (active && ar) setActiveRequest(ar)
-
-      if (active) setLoading(false)
+      if (alive) setLoading(false)
     })()
-    return () => { active = false }
+    return () => { alive = false }
   }, [user])
 
-  if (loading) return <><CardSkeleton h={230} /><CardSkeleton h={120} /></>
+  if (loading) return <><CardSkeleton h={200} /><CardSkeleton h={140} /></>
 
-  const state: 'A' | 'B' | 'C' = !visit ? 'B' : visit.flags && visit.flags !== 'none' ? 'C' : 'A'
-  const firstName = profile?.full_name?.split(' ')[0] || 'there'
-  const isFounder = !!profile?.is_founding_member
-  const visitMins = durationMin(visit?.start_time, visit?.end_time)
-  const moodGood = (visit?.mood_score ?? 4) >= 4
+  // Derived state
+  const state: 'A' | 'B' | 'C' = !visit ? 'B'
+    : (visit.flags && visit.flags !== 'none' ? 'C' : 'A')
 
-  // Persona — derived from where user lives vs where parent is
+  const firstName  = profile?.full_name?.split(' ')[0] || 'there'
+  const isFounder  = !!profile?.is_founding_member
+  const rel        = lovedOne?.relationship?.toLowerCase() || 'loved one'
+  const relTitle   = lovedOne?.relationship || 'Parent'
+  const elderName  = lovedOne?.full_name   || 'your loved one'
+  const elderCity  = lovedOne?.city        || ''
+
   const persona = getPersona(profile?.country, elderCity)
-  const pcopy = getPersonaCopy(persona, {
-    parentName: elderName,
-    parentCity: elderCity,
-    userCity: profile?.country ?? undefined,
-  })
+  const pcopy   = getPersonaCopy(persona, { parentName: elderName, parentCity: elderCity, userCity: profile?.country ?? undefined })
 
-  // Show resume card if onboarding was dismissed mid-way (no whatsapp yet = Step 1 never finished)
   const showSetupCard = !profile?.whatsapp_number && isOnboardingDismissed()
 
+  const nextDate    = nextBooking?.scheduled_at ? new Date(nextBooking.scheduled_at) : null
+  const nextDay     = nextDate?.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric' })
+  const nextMon     = nextDate?.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short' })?.toUpperCase()
+  const nextTime    = nextDate?.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })
+  const nextShort   = nextDate?.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })
+  const nextLabel   = (nextBooking?.service_type && SERVICE_LABELS[nextBooking.service_type]) || 'Upcoming visit'
+
+  const statusCopy: Record<string, string> = {
+    requested:           'Request received — confirming a companion',
+    needs_details:       'Missing info needed',
+    confirmed:           'Confirmed',
+    companion_confirmed: 'Companion confirmed',
+    paid:                'Visit confirmed ✓',
+  }
+
   return (
-    <div className="ce-slide-up">
-      {/* ── Welcome + setup resume card ───────────────────────── */}
-      {showSetupCard && (
-        <div style={{
-          margin: '16px 16px 0',
-          background: 'linear-gradient(135deg, #0E2A1F 0%, #1B4332 100%)',
-          borderRadius: 20, padding: '20px 20px 16px',
-        }}>
-          <p style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>
-            Welcome, {firstName} 🌿
-          </p>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', margin: '0 0 16px', lineHeight: 1.5 }}>
-            Finish setting up your parent's care — takes under 2 minutes.
-          </p>
-          <Link
-            to="/onboarding"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: 'var(--sage)', color: 'var(--forest)',
-              borderRadius: 100, padding: '12px 22px',
-              fontSize: 14, fontWeight: 700, textDecoration: 'none',
-              minHeight: 44,
-            }}
-          >
-            Continue setup <ChevronRight size={16} />
-          </Link>
-        </div>
-      )}
+    <div className="ce-slide-up" style={{ paddingBottom: 24 }}>
 
-      {/* ── Wellbeing status card ─────────────────────────────── */}
-      <section style={{ margin: 16, borderRadius: 20, overflow: 'hidden' }}>
-        <div style={{
-          padding: 24,
-          ...(state === 'A' ? FOREST_GRADIENT
-            : state === 'B' ? { background: 'linear-gradient(135deg, #1a3a28 0%, #0E2A1F 100%)' }
-            : { background: 'linear-gradient(135deg, #3d2000 0%, #2a1500 100%)' }),
-        }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{elderName}</span>
-              {isFounder && profile.founding_number && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginLeft: 10, background: 'rgba(127,191,148,0.14)', border: '1px solid rgba(127,191,148,0.4)', borderRadius: 100, padding: '2px 10px', fontSize: 11, fontWeight: 600, color: '#7FBF94', verticalAlign: 'middle' }}>
-                  ★ Founding Member #{String(profile.founding_number).padStart(4, '0')}
-                </div>
-              )}
-            </div>
-            <span style={{
-              width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
-              background: 'rgba(168,213,181,0.20)', border: '2px solid var(--sage)',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 16, fontWeight: 700, color: 'var(--sage)',
-            }}>{initials(elderName)}</span>
-          </div>
-
-          <div style={{ textAlign: 'center', margin: '16px 0' }}>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 24px', borderRadius: 100,
-              background: state === 'A' ? 'rgba(168,213,181,0.15)' : 'rgba(255,255,255,0.06)',
-              border: `1px solid ${state === 'A' ? 'rgba(168,213,181,0.4)' : 'rgba(255,255,255,0.15)'}`,
-            }}>
-              {state === 'A' && <span className="ce-pulse-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80' }} />}
-              {state === 'C' && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }} />}
-              <span style={{ fontSize: 16, fontWeight: 600, color: state === 'A' ? '#fff' : state === 'B' ? 'var(--sage)' : '#FFA500' }}>
-                {state === 'A' ? 'All well today'
-                  : state === 'B' ? (nextBooking ? 'Visit being arranged' : isFounder ? 'Account active' : `Welcome, ${firstName}`)
-                  : 'Needs your attention'}
-              </span>
-            </span>
-          </div>
-
-          <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0 }}>
-            {state === 'A' && `Visited ${istTime(visit?.start_time || visit?.created_at)}${visitMins ? ` · ${visitMins} min` : ''}`}
-            {state === 'B' && (nextBooking
-              ? `We'll confirm the time for ${elderName}'s visit shortly`
-              : isFounder
-                ? `Your place is locked in — book the first visit whenever you're ready`
-                : pcopy.emptyStateSub)}
-            {state === 'C' && `Noticed ${istTime(visit?.created_at)}`}
-          </p>
-          {/* Persona tag — visible in state B only */}
-          {state === 'B' && (
-            <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(168,213,181,0.7)', margin: '6px 0 0', fontStyle: 'italic' }}>
-              {pcopy.heroSub}
+      {/* ── Forest greeting header ─────────────────────────────── */}
+      <div style={{ background: '#0E2A1F', color: 'var(--cream)', padding: '14px 18px 28px' }}>
+        {showSetupCard ? (
+          <div>
+            <p style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Welcome, {firstName}</p>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', marginBottom: 14, lineHeight: 1.5 }}>
+              Finish setting up your parent's care — takes under 2 minutes.
             </p>
+            <Link to="/onboarding" style={{ display: 'inline-block', background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '10px 22px', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+              Continue setup →
+            </Link>
+          </div>
+        ) : (
+          <>
+            <p style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.01em' }}>Hello, {firstName}</p>
+            {isFounder && (
+              <span style={{ display: 'inline-block', marginTop: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: '0.04em', background: 'rgba(168,213,181,.16)', border: '1px solid rgba(168,213,181,.3)', color: 'var(--sage)', padding: '3px 10px', borderRadius: 999 }}>
+                ★ Founding Member{profile?.founding_number ? ` #${String(profile.founding_number).padStart(4, '0')}` : ''}
+              </span>
+            )}
+          </>
+        )}
+      </div>
+
+      <div style={{ padding: '0 16px' }}>
+
+        {/* ── Status card — floats over header ──────────────────── */}
+        <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 16, padding: 16, marginTop: -12, boxShadow: '0 10px 26px rgba(14,42,31,.08)', position: 'relative', zIndex: 2 }}>
+
+          {/* State A — completed visit, no flags */}
+          {state === 'A' && visit && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--forest)' }}>How is your {rel}?</div>
+                  <div style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>Last visit · {istTime(visit.start_time || visit.created_at)}</div>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#2c6b43', background: '#eaf5ee', border: '1px solid #cfe6d7', padding: '4px 10px', borderRadius: 999, whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 8 }}>
+                  Doing well
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 12, marginTop: 13 }}>
+                <div style={{ flexShrink: 0, width: 74, height: 74, borderRadius: 12, background: 'linear-gradient(135deg,#cfe6d7,#a8d5b5)', overflow: 'hidden', display: 'grid', placeItems: 'center', color: '#2c6b43', fontSize: 11, fontWeight: 700 }}>
+                  {visitPhoto
+                    ? <img src={visitPhoto} alt="Visit" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <span>📷</span>
+                  }
+                </div>
+                <p style={{ fontSize: 12.5, color: '#243831', lineHeight: 1.45, flex: 1, margin: 0 }}>
+                  {visit.one_moment ? `"${visit.one_moment}"` : (visit.flag_notes || 'All looked well during this visit.')}
+                </p>
+              </div>
+              <Link to="/dashboard/reports" style={{ display: 'block', textAlign: 'center', marginTop: 13, background: 'var(--cream)', border: `1px solid ${LINE}`, borderRadius: 11, padding: 11, fontSize: 13, fontWeight: 700, color: 'var(--forest)', textDecoration: 'none' }}>
+                View full report →
+              </Link>
+            </>
           )}
 
           {/* State B — no visit yet */}
-          {state === 'B' && !nextBooking && (
-            <div style={{ textAlign: 'center', marginTop: 20 }}>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 12px' }}>
-                No visits yet — book the first one
-              </p>
-              <Link to="/dashboard/book" style={{ display: 'inline-block', background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '12px 28px', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                Book the first visit →
-              </Link>
-            </div>
-          )}
-
-          {/* State A — mini checklist + visit preview (photo, quote, report link) */}
-          {state === 'A' && visit && (
+          {state === 'B' && (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
-                {[
-                  ['😊', 'Mood', moodGood ? 'Good' : 'Okay'],
-                  ['🍽️', 'Eating', 'Normal'],
-                  ['💊', 'Medicines', 'Taken'],
-                  ['🏠', 'Home', 'Safe'],
-                ].map(([emoji, label, value]) => (
-                  <div key={label} style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 16 }}>{emoji}</span>
-                    <div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{label}</div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>{value}</div>
-                    </div>
-                  </div>
-                ))}
+              <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--forest)' }}>
+                {nextBooking ? 'Visit arranged — report will appear here after' : "First visit isn't scheduled yet"}
               </div>
-              <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.10)' }}>
-                {visitPhotoUrl && (
-                  <img
-                    src={visitPhotoUrl}
-                    alt="Visit photo"
-                    style={{ width: '100%', borderRadius: 12, marginBottom: 12, maxHeight: 180, objectFit: 'cover' }}
-                  />
-                )}
-                {visit.one_moment && (
-                  <>
-                    <span style={{ fontSize: 26, fontWeight: 700, color: 'var(--sage)', opacity: 0.5, lineHeight: 0.5, display: 'block' }}>"</span>
-                    <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', lineHeight: 1.65, fontStyle: 'italic', margin: '6px 0 12px' }}>
-                      {visit.one_moment}
-                    </p>
-                  </>
-                )}
-                <Link
-                  to="/dashboard/reports"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 700, color: 'var(--sage)', textDecoration: 'none' }}
-                >
-                  View full report →
+              <div style={{ fontSize: 12, color: MUTED, marginTop: 4, lineHeight: 1.5 }}>
+                {nextBooking
+                  ? `${nextLabel} · ${nextDate?.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long' })}`
+                  : (isFounder
+                    ? "Your place is locked in — book the first visit whenever you're ready"
+                    : pcopy.emptyStateSub)}
+              </div>
+              {!nextBooking && (
+                <Link to="/dashboard/book" style={{ display: 'block', textAlign: 'center', marginTop: 13, background: 'var(--forest)', borderRadius: 11, padding: 11, fontSize: 13, fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
+                  Book the first visit →
                 </Link>
-              </div>
+              )}
             </>
           )}
 
-          {/* State C — flag notes + action links */}
-          {state === 'C' && (
+          {/* State C — flagged visit */}
+          {state === 'C' && visit && (
             <>
-              <div style={{ background: 'rgba(255,165,0,0.10)', border: '1px solid rgba(255,165,0,0.30)', borderRadius: 12, padding: '12px 16px', fontSize: 14, color: '#FFA500', marginTop: 12 }}>
-                {visit?.flag_notes || 'Your companion flagged something from the last visit. We will reach out.'}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--forest)' }}>How is your {rel}?</div>
+                  <div style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>Last visit · {istTime(visit.start_time || visit.created_at)}</div>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#c0392b', background: '#fdecea', border: '1px solid #f5c6c2', padding: '4px 10px', borderRadius: 999, whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 8 }}>
+                  Needs attention
+                </span>
               </div>
-              <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-                <a href="https://wa.me/919000221261?text=Hi%2C%20I%20saw%20a%20flag%20on%20my%20dashboard" target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'inline-block', border: '1px solid #FFA500', color: '#FFA500', borderRadius: 'var(--radius-btn)', padding: '10px 20px', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
-                  Call us about this →
-                </a>
-                <Link to="/dashboard/reports"
-                  style={{ display: 'inline-block', border: '1px solid rgba(255,165,0,0.4)', color: 'rgba(255,165,0,0.7)', borderRadius: 'var(--radius-btn)', padding: '10px 20px', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
-                  View report →
-                </Link>
+              <div style={{ background: 'rgba(255,165,0,.10)', border: '1px solid rgba(255,165,0,.30)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#b45309', marginTop: 12 }}>
+                {visit.flag_notes || 'Your companion flagged something. We will reach out shortly.'}
               </div>
+              <Link to="/dashboard/reports" style={{ display: 'block', textAlign: 'center', marginTop: 13, background: 'var(--cream)', border: `1px solid ${LINE}`, borderRadius: 11, padding: 11, fontSize: 13, fontWeight: 700, color: 'var(--forest)', textDecoration: 'none' }}>
+                View full report →
+              </Link>
             </>
           )}
         </div>
-      </section>
 
-      {/* ── Quick actions ─────────────────────────────────────── */}
-      <div className="ce-noscroll" style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '0 16px', marginTop: 12 }}>
-        {(() => {
-          const pill: React.CSSProperties = { background: '#fff', border: '1px solid var(--gray-light)', borderRadius: 100, padding: '10px 18px', fontSize: 13, fontWeight: 600, color: 'var(--forest)', boxShadow: 'var(--shadow-card)', whiteSpace: 'nowrap', flexShrink: 0, textDecoration: 'none' }
-          const emergencyPill: React.CSSProperties = { ...pill, background: '#b91c1c', color: '#fff', border: '1px solid transparent' }
-          return (
-            <>
-              <Link to="/dashboard/book" className="ce-press" style={pill}>📅 Book a service</Link>
-              <a href="https://wa.me/919000221261?text=Hi%2C+I%27d+like+to+request+a+call" target="_blank" rel="noopener noreferrer" className="ce-press" style={pill}>📞 Request a call</a>
-              <Link to="/dashboard/profile" className="ce-press" style={pill}>👤 Parent's profile</Link>
-              <a href="tel:+919000221261" className="ce-press" style={emergencyPill}>🆘 Get help now</a>
-            </>
-          )
-        })()}
-      </div>
-
-      {/* ── Active booking status line ────────────────────────── */}
-      {activeRequest && (() => {
-        const statusCopy: Record<string, string> = {
-          requested:           'Request received — confirming a companion',
-          needs_details:       'Missing info needed',
-          confirmed:           'Confirmed',
-          companion_confirmed: 'Companion confirmed — pay to confirm visit',
-          paid:                'Visit confirmed ✓',
-        }
-        const copy = statusCopy[activeRequest.status] || activeRequest.status.replace(/_/g, ' ')
-        return (
-          <Link
-            to="/dashboard/bookings"
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              margin: '12px 16px 0', background: '#fff',
-              border: '1px solid var(--gray-light)', borderRadius: 14, padding: '12px 14px',
-              textDecoration: 'none', boxShadow: 'var(--shadow-card)',
-            }}
-          >
-            <div>
-              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', margin: '0 0 1px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {activeRequest.service_name}
-              </p>
-              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--forest)', margin: 0 }}>{copy}</p>
+        {/* ── Next visit ─────────────────────────────────────────── */}
+        <p style={SEC}>Next visit</p>
+        {nextBooking && nextDate ? (
+          <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, padding: '14px 15px', display: 'flex', alignItems: 'center', gap: 13 }}>
+            <div style={{ flexShrink: 0, width: 46, height: 46, borderRadius: 11, background: 'var(--forest)', color: 'var(--cream)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ fontSize: 16, fontWeight: 800, lineHeight: 1 }}>{nextDay}</div>
+              <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{nextMon}</div>
             </div>
-            <ChevronRight size={16} color="var(--forest)" style={{ flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--forest)' }}>{nextLabel}{nextTime ? ` · ${nextTime} IST` : ''}</div>
+              <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>A companion will check in and report back.</div>
+            </div>
+            <Link to="/dashboard/bookings" style={{ color: MUTED, fontSize: 20, textDecoration: 'none', flexShrink: 0 }}>›</Link>
+          </div>
+        ) : (
+          <Link to="/dashboard/book" style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: `1.5px dashed ${LINE}`, borderRadius: 14, padding: '14px 15px', textDecoration: 'none', color: 'var(--forest)' }}>
+            <Calendar size={18} />
+            <span style={{ fontSize: 13.5, fontWeight: 700 }}>Schedule a visit →</span>
           </Link>
-        )
-      })()}
+        )}
 
-      {/* ── How it works / What's next strip ────────────────── */}
-      {state === 'B' && !nextBooking && (() => {
-        const isMember = isFounder
-        const steps = isMember
-          ? [
-              { done: true,  label: '✓', title: `Founding Member${profile?.founding_number ? ` #${profile.founding_number}` : ''}`, desc: 'Your place is reserved — we launch visits on 15 August' },
-              { done: false, label: '2', title: 'Book the first visit',      desc: 'Schedule a companion to visit your parent in India' },
-              { done: false, label: '3', title: 'You get a WhatsApp report', desc: 'Health, mood, medicines — sent within the hour' },
-            ]
-          : [
-              { done: false, label: '1', title: 'Join as a Founding Member', desc: '₹100 one-time — locks your place and activates health support' },
-              { done: false, label: '2', title: 'We visit and check on them', desc: 'A verified companion visits your parent in person' },
-              { done: false, label: '3', title: 'You get a WhatsApp report', desc: 'Health, mood, medicines — sent within the hour' },
-            ]
-        return (
-          <div style={{ margin: '12px 16px 0', background: '#fff', borderRadius: 'var(--radius-card)', padding: '20px 20px 16px', boxShadow: 'var(--shadow-card)' }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.08em', margin: '0 0 16px' }}>
-              {isMember ? "WHAT'S NEXT" : 'HOW IT WORKS'}
-            </p>
-            {steps.map(({ done, label, title, desc }, i) => (
-              <div key={i} style={{ display: 'flex', gap: 14, marginBottom: i < steps.length - 1 ? 14 : 0 }}>
-                <span style={{ width: 28, height: 28, borderRadius: '50%', background: done ? '#16a34a' : 'var(--forest)', color: '#fff', fontSize: done ? 14 : 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{label}</span>
+        {/* ── Ask Close Eye ──────────────────────────────────────── */}
+        <p style={SEC}>Ask Close Eye</p>
+        <div style={{ background: 'linear-gradient(120deg,#eef6f0,#e4f0e8)', border: '1px solid #cfe6d7', borderRadius: 14, padding: '14px 15px' }}>
+          <div style={{ fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 7, color: 'var(--forest)' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 1l2.4 7.2L22 11l-7.6 2.4L12 21l-2.4-7.6L2 11l7.6-2.8L12 1z" fill="url(#askgrad)" />
+              <defs><linearGradient id="askgrad" x1="2" y1="1" x2="22" y2="21"><stop stopColor="#A8D5B5" /><stop offset="1" stopColor="#7FBF94" /></linearGradient></defs>
+            </svg>
+            Ask about your {rel}
+          </div>
+          <div style={{ fontSize: 12, color: '#3a5a47', marginTop: 4 }}>
+            {pcopy.askShortcutSub || `Personalised to their health & history. Guided by our medical team.`}
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 11 }}>
+            <input
+              readOnly
+              placeholder={`e.g. Is their BP reading okay?`}
+              onFocus={() => navigate('/dashboard/ask')}
+              style={{ flex: 1, fontFamily: 'inherit', fontSize: 13, padding: '10px 12px', border: '1px solid #cfe6d7', borderRadius: 11, background: '#fff', color: 'var(--forest)', outline: 'none', cursor: 'text' }}
+            />
+            <Link to="/dashboard/ask" style={{ background: 'var(--forest)', color: 'var(--cream)', border: 'none', borderRadius: 11, padding: '0 15px', fontWeight: 700, fontSize: 13, display: 'inline-flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
+              Ask
+            </Link>
+          </div>
+        </div>
+
+        {/* ── Quick actions 2×2 ─────────────────────────────────── */}
+        <p style={SEC}>Quick actions</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {/* Book a service — forest bg */}
+          <Link to="/dashboard/book" style={{ background: 'var(--forest)', color: 'var(--cream)', borderRadius: 13, padding: 14, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 7 }}>
+            <span style={{ width: 30, height: 30, borderRadius: 9, background: 'rgba(168,213,181,.18)', display: 'grid', placeItems: 'center', fontSize: 15 }}>＋</span>
+            <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>Book a service</span>
+            <span style={{ fontSize: 11, color: '#c8d5cb' }}>Visit, doctor, errands</span>
+          </Link>
+          {/* Request a call */}
+          <a href="https://wa.me/919000221261?text=Hi%2C+I%27d+like+to+request+a+wellbeing+call" target="_blank" rel="noopener noreferrer" style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 13, padding: 14, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 7, color: 'var(--forest)' }}>
+            <span style={{ width: 30, height: 30, borderRadius: 9, background: CREAM2, display: 'grid', placeItems: 'center', fontSize: 15 }}>📞</span>
+            <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>Request a call</span>
+            <span style={{ fontSize: 11, color: MUTED }}>Weekly wellbeing call</span>
+          </a>
+          {/* Parent's profile */}
+          <Link to="/dashboard/profile" style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 13, padding: 14, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 7, color: 'var(--forest)' }}>
+            <span style={{ width: 30, height: 30, borderRadius: 9, background: CREAM2, display: 'grid', placeItems: 'center', fontSize: 15 }}>👤</span>
+            <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>{relTitle}'s profile</span>
+            <span style={{ fontSize: 11, color: MUTED }}>Health &amp; details</span>
+          </Link>
+          {/* Get help now — clay left border */}
+          <a href="tel:+919000221261" style={{ background: '#fff', border: `1px solid ${LINE}`, borderLeft: `3px solid ${CLAY}`, borderRadius: 13, padding: 14, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 7, color: 'var(--forest)' }}>
+            <span style={{ width: 30, height: 30, borderRadius: 9, background: CREAM2, display: 'grid', placeItems: 'center', fontSize: 15 }}>⚠</span>
+            <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2, color: CLAY }}>Get help now</span>
+            <span style={{ fontSize: 11, color: MUTED }}>Emergency response</span>
+          </a>
+        </div>
+
+        {/* ── Membership mini-cards (founders) ──────────────────── */}
+        {isFounder && (
+          <>
+            <p style={SEC}>Your membership</p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ flex: 1, background: '#fff', border: `1px solid ${LINE}`, borderRadius: 13, padding: 13 }}>
+                <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: MUTED, fontWeight: 700 }}>Plan</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--forest)', marginTop: 5 }}>Founding</div>
+                <div style={{ fontSize: 11.5, color: MUTED, marginTop: 2 }}>On-demand · ₹100 joined</div>
+              </div>
+              <div style={{ flex: 1, background: '#fff', border: `1px solid ${LINE}`, borderRadius: 13, padding: 13 }}>
+                <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: MUTED, fontWeight: 700 }}>Visits</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--forest)', marginTop: 5 }}>
+                  {visitCount > 0 ? `${visitCount} done` : 'None yet'}
+                </div>
+                <div style={{ fontSize: 11.5, color: MUTED, marginTop: 2 }}>
+                  {nextShort ? `Next: ${nextShort}` : 'Not scheduled'}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── How it works (state B, non-founders) ──────────────── */}
+        {state === 'B' && !nextBooking && !isFounder && (
+          <div style={{ marginTop: 18, background: '#fff', borderRadius: 16, padding: '18px 20px', border: `1px solid ${LINE}` }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: '0.08em', margin: '0 0 14px', textTransform: 'uppercase' }}>HOW IT WORKS</p>
+            {[
+              { n: '1', t: 'Join as a Founding Member', d: '₹100 one-time — locks your place and activates health support' },
+              { n: '2', t: 'We visit and check on them',  d: 'A verified companion visits your parent in person' },
+              { n: '3', t: 'You get a WhatsApp report',   d: 'Health, mood, medicines — sent within the hour' },
+            ].map(({ n, t, d }, i) => (
+              <div key={n} style={{ display: 'flex', gap: 14, marginBottom: i < 2 ? 14 : 0 }}>
+                <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--forest)', color: '#fff', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</span>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: done ? 'var(--gray-mid)' : 'var(--black)', margin: 0 }}>{title}</p>
-                  <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '2px 0 0' }}>{desc}</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)', margin: 0 }}>{t}</p>
+                  <p style={{ fontSize: 12, color: MUTED, margin: '2px 0 0' }}>{d}</p>
                 </div>
               </div>
             ))}
-            {isMember && (
-              <Link to="/dashboard/book" style={{ display: 'block', marginTop: 16, background: 'var(--forest)', color: '#fff', borderRadius: 100, padding: '12px 20px', fontSize: 14, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
-                Book the first visit →
-              </Link>
-            )}
           </div>
-        )
-      })()}
+        )}
 
-      {/* ── Upcoming visit ────────────────────────────────────── */}
-      {nextBooking && (
-        <div style={{ margin: '12px 16px 0', background: '#fff', borderRadius: 'var(--radius-card)', padding: '16px 20px', boxShadow: 'var(--shadow-card)', display: 'flex', alignItems: 'center' }}>
-          <Calendar size={20} color="var(--forest)" />
-          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--black)', marginLeft: 10, flex: 1 }}>Next visit — {istDate(nextBooking.scheduled_at)}</span>
-          <Link to="/dashboard/book" style={{ fontSize: 12, color: 'var(--gray-mid)', textDecoration: 'none' }}>Reschedule</Link>
-        </div>
-      )}
+        {/* ── Active booking status line ─────────────────────────── */}
+        {activeReq && (
+          <Link to="/dashboard/bookings" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, padding: '12px 14px', textDecoration: 'none' }}>
+            <div>
+              <p style={{ fontSize: 12, fontWeight: 600, color: MUTED, margin: '0 0 1px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{activeReq.service_name}</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--forest)', margin: 0 }}>
+                {statusCopy[activeReq.status] || activeReq.status.replace(/_/g, ' ')}
+              </p>
+            </div>
+            <ChevronRight size={16} color="var(--forest)" style={{ flexShrink: 0 }} />
+          </Link>
+        )}
 
-      {/* ── Ask Close Eye shortcut (personalised for Tier 1+) ── */}
-      <Link to="/dashboard/ask" className="ce-press" style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '12px 16px 24px', background: 'var(--cream-dark)', borderRadius: 'var(--radius-card)', padding: '18px 20px', textDecoration: 'none' }}>
-        <span style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--forest)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <MessageCircle size={20} color="#fff" />
-        </span>
-        <span style={{ flex: 1 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)' }}>Ask Close Eye</span>
-            {isFounder && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: 'var(--forest)', background: 'rgba(14,42,31,0.08)', borderRadius: 100, padding: '2px 8px' }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sage-2)', flexShrink: 0 }} />
-                Personalised
-              </span>
-            )}
-          </span>
-          <span style={{ display: 'block', fontSize: 13, color: 'var(--gray-mid)', marginTop: 2 }}>{pcopy.askShortcutSub}</span>
-        </span>
-        <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--forest)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: 'var(--shadow-btn)' }}>
-          <ChevronRight size={18} color="#fff" />
-        </span>
-      </Link>
-
-      <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--gray-mid)', padding: '0 24px 8px' }}>Signed in as {profile?.full_name || 'you'}</p>
+      </div>
     </div>
   )
 }
 
 /* ================================================================== */
-/*  SOCIETY MEMBER HOME                                                */
+/*  SOCIETY MEMBER HOME (unchanged)                                    */
 /* ================================================================== */
 
 function SocietyHome() {
@@ -443,6 +437,8 @@ function SocietyHome() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   if (loading) return <><CardSkeleton h={170} /><CardSkeleton h={200} /></>
+
+  const FOREST_GRADIENT = { background: 'linear-gradient(135deg, #0E2A1F 0%, #1B4332 100%)' }
 
   return (
     <div className="ce-slide-up">
