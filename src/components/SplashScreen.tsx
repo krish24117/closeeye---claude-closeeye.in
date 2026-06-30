@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 
 const SESSION_KEY = 'ce_splash_shown'
-const MIN_MS      = 2000   // minimum visible time (lets animation play)
-const MAX_MS      = 5000   // hard ceiling — never hangs the app
+const MIN_MS      = 5000   // 5s minimum — lets the full animation sequence play
+const MAX_MS      = 8000   // hard ceiling — never hangs the app
 const FADE_MS     = 300    // fade-out duration
 
 const alreadyShown =
@@ -17,9 +17,9 @@ export function SplashScreen() {
   const { loading } = useAuth()
 
   // Start in 'out' immediately if this session already saw the splash
-  const [phase, setPhase]             = useState<'in' | 'fading' | 'out'>(alreadyShown ? 'out' : 'in')
-  const [authReady, setAuthReady]     = useState(alreadyShown || !loading)
-  const [minPassed, setMinPassed]     = useState(alreadyShown)
+  const [phase, setPhase]         = useState<'in' | 'fading' | 'out'>(alreadyShown ? 'out' : 'in')
+  const [authReady, setAuthReady] = useState(alreadyShown || !loading)
+  const [minPassed, setMinPassed] = useState(alreadyShown)
 
   // Min-time + max-timeout timers — run once on mount
   useEffect(() => {
@@ -68,9 +68,18 @@ export function SplashScreen() {
             80% { opacity: 0;  transform: translate(-50%,-50%) scale(2.6); }
             100%{ opacity: 0;  transform: translate(-50%,-50%) scale(2.6); }
           }
-          @keyframes ce-sp-wordmark {
-            from { opacity: 0; transform: translateY(10px); }
-            to   { opacity: 1; transform: translateY(0); }
+          @keyframes ce-sp-rise {
+            to { opacity: 1; transform: none; }
+          }
+          @keyframes ce-sp-grow {
+            to { opacity: 1; transform: scaleX(1); }
+          }
+          @keyframes ce-sp-fade {
+            to { opacity: 1; }
+          }
+          @keyframes ce-sp-dot {
+            0%,100% { opacity: .3; transform: scale(.8); }
+            50%     { opacity: 1;  transform: scale(1); }
           }
         `}</style>
       )}
@@ -81,11 +90,9 @@ export function SplashScreen() {
           position: 'fixed', inset: 0, zIndex: 9999,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
-          // Forest radial gradient — matches splash HTML Forest variant
           background: 'radial-gradient(120% 80% at 50% 38%, #1c4a35 0%, #123524 42%, #0E2A1F 100%)',
           opacity: phase === 'fading' ? 0 : 1,
           transition: phase === 'fading' && !reduced ? `opacity ${FADE_MS}ms ease` : 'none',
-          // Don't block interaction once fading starts
           pointerEvents: phase === 'fading' ? 'none' : 'auto',
           userSelect: 'none',
           WebkitTapHighlightColor: 'transparent',
@@ -115,7 +122,7 @@ export function SplashScreen() {
           </>
         )}
 
-        {/* Logo mark — /logo-mark.png (512 px, cropped to 128 display) */}
+        {/* Logo mark */}
         <img
           src="/logo-mark.png"
           alt=""
@@ -138,29 +145,59 @@ export function SplashScreen() {
           }}
         />
 
-        {/* Wordmark + tagline */}
-        <div style={{
-          marginTop: 22, textAlign: 'center', position: 'relative', zIndex: 2,
+        {/* Wordmark */}
+        <p style={{
+          fontFamily: "'Open Sauce One', system-ui, sans-serif",
+          fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em',
+          color: '#FAF7F2', margin: '22px 0 0',
+          position: 'relative', zIndex: 2,
           ...(reduced
             ? { opacity: 1 }
-            : { opacity: 0, animation: 'ce-sp-wordmark .7s ease .9s forwards' }),
+            : { opacity: 0, transform: 'translateY(8px)', animation: 'ce-sp-rise .7s ease .9s forwards' }),
         }}>
-          <p style={{
-            fontFamily: "'Open Sauce One', system-ui, sans-serif",
-            fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em',
-            color: '#FAF7F2', margin: 0,
+          close eye
+        </p>
+
+        {/* Divider — lime-to-deep-green gradient bar, matching reference HTML */}
+        <div style={{
+          width: 32, height: 3, borderRadius: 3,
+          margin: '16px 0 12px',
+          background: 'linear-gradient(90deg, #7ED321, #1B7A3E)',
+          position: 'relative', zIndex: 2,
+          ...(reduced
+            ? { opacity: 1 }
+            : { opacity: 0, transform: 'scaleX(0)', animation: 'ce-sp-grow 1s ease-out 1.5s forwards' }),
+        }} />
+
+        {/* Tagline */}
+        <p style={{
+          fontFamily: "'Open Sauce One', system-ui, sans-serif",
+          fontSize: 13, fontStyle: 'italic', letterSpacing: '0.02em',
+          color: '#9fdcae',
+          margin: 0, position: 'relative', zIndex: 2,
+          ...(reduced
+            ? { opacity: 1 }
+            : { opacity: 0, animation: 'ce-sp-fade 1.1s ease-out 1.7s forwards' }),
+        }}>
+          Your Trusted Presence in India
+        </p>
+
+        {/* Loading dots — appear at 2.1s, visible for the remainder of the 5s */}
+        {!reduced && (
+          <div style={{
+            display: 'flex', gap: 7,
+            position: 'absolute', bottom: 54,
+            opacity: 0, animation: 'ce-sp-fade 1s ease-out 2.1s forwards',
           }}>
-            close eye
-          </p>
-          <p style={{
-            fontFamily: "'Open Sauce One', system-ui, sans-serif",
-            fontSize: 13, fontWeight: 400,
-            color: 'rgba(168,213,181,.70)',
-            margin: '5px 0 0', letterSpacing: '0.01em',
-          }}>
-            care, close to home
-          </p>
-        </div>
+            {[0, .28, .56].map((delay, i) => (
+              <span key={i} style={{
+                display: 'block', width: 6, height: 6, borderRadius: '50%',
+                background: 'rgba(159,220,174,.55)',
+                animation: `ce-sp-dot 1s ease-in-out ${delay}s infinite`,
+              }} />
+            ))}
+          </div>
+        )}
       </div>
     </>
   )
