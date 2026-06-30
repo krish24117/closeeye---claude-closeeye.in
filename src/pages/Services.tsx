@@ -57,13 +57,12 @@ export function ServicesPage() {
         image: '/favicon.svg',
         theme: { color: '#0E2A1F' },
         prefill: { name: profile?.full_name || '', email: user?.email || '', contact: profile?.whatsapp_number || '' },
-        handler: () => navigate('/dashboard/subscription'),
-        modal: { backdropclose: false },
+        handler: () => { setBusy(null); navigate('/dashboard/subscription') },
+        modal: { ondismiss: () => setBusy(null), backdropclose: false },
       })
       rzp.open()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
-    } finally {
       setBusy(null)
     }
   }
@@ -94,22 +93,27 @@ export function ServicesPage() {
         prefill: { name: profile?.full_name || '', email: user?.email || '', contact: profile?.whatsapp_number || '' },
         // Membership is marked paid ONLY after server-side signature verification.
         handler: async (resp: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
-          const { error: vErr } = await supabase.functions.invoke('razorpay-verify-membership', {
-            body: {
-              razorpay_payment_id: resp.razorpay_payment_id,
-              razorpay_order_id: resp.razorpay_order_id,
-              razorpay_signature: resp.razorpay_signature,
-            },
-          })
-          if (vErr) { setError('Payment received — verifying took longer than expected. We will confirm by WhatsApp.'); return }
-          navigate('/dashboard')
+          try {
+            const { error: vErr } = await supabase.functions.invoke('razorpay-verify-membership', {
+              body: {
+                razorpay_payment_id: resp.razorpay_payment_id,
+                razorpay_order_id: resp.razorpay_order_id,
+                razorpay_signature: resp.razorpay_signature,
+              },
+            })
+            if (vErr) { setError('Payment received — verifying took longer than expected. We will confirm by WhatsApp.'); return }
+            navigate('/dashboard')
+          } catch {
+            setError('Payment received — verifying took longer than expected. We will confirm by WhatsApp.')
+          } finally {
+            setBusy(null)
+          }
         },
-        modal: { backdropclose: false },
+        modal: { ondismiss: () => setBusy(null), backdropclose: false },
       })
       rzp.open()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
-    } finally {
       setBusy(null)
     }
   }

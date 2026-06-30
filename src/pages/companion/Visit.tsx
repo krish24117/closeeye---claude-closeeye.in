@@ -575,13 +575,14 @@ function ChecklistPhase({
       if (visErr) throw visErr
 
       const checkOutGps = await getCurrentPosition()
-      await supabase.from('bookings').update({
+      const { error: bkErr } = await supabase.from('bookings').update({
         checked_out_at: endIso,
         check_out_lat: checkOutGps?.lat ?? null,
         check_out_lng: checkOutGps?.lng ?? null,
         status: 'completed',
         completed_at: endIso,
       }).eq('id', booking.id)
+      if (bkErr) throw new Error('Could not record check-out — please tap Submit again.')
 
       // Append continuity note for the next companion
       if (continuity.trim() && elder?.id) {
@@ -611,14 +612,16 @@ function ChecklistPhase({
       const { error: upErr } = await supabase.storage.from('visit-pdfs').upload(pdfPath, blob, { contentType: 'application/pdf', upsert: true })
       if (upErr) throw new Error('Report upload failed — please tap Submit again.')
       if (visRow?.id) {
-        await supabase.from('visits').update({ pdf_path: pdfPath }).eq('id', visRow.id)
+        const { error: pdfStampErr } = await supabase.from('visits').update({ pdf_path: pdfPath }).eq('id', visRow.id)
+        if (pdfStampErr) throw new Error('Could not save report — please tap Submit again.')
         const { data: signed } = await supabase.storage.from('visit-pdfs').createSignedUrl(pdfPath, 60 * 60 * 24 * 7)
         if (!signed?.signedUrl) throw new Error('Could not generate report link — please tap Submit again.')
         const { error: waErr } = await supabase.functions.invoke('send-visit-whatsapp', {
           body: { booking_id: booking.id, pdf_url: signed.signedUrl },
         })
         if (waErr) throw new Error('WhatsApp report could not be sent — please tap Submit again.')
-        await supabase.from('visits').update({ report_sent: true, report_sent_at: new Date().toISOString() }).eq('id', visRow.id)
+        const { error: rptErr } = await supabase.from('visits').update({ report_sent: true, report_sent_at: new Date().toISOString() }).eq('id', visRow.id)
+        if (rptErr) throw new Error('Could not confirm delivery — please tap Submit again.')
       }
 
       window.dispatchEvent(new Event('closeeye:active-booking-changed'))

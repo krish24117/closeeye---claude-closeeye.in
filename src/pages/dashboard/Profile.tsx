@@ -132,7 +132,7 @@ export function DashboardProfile() {
     }
   }, [user, isNri, profile])
 
-  async function handleSignOut() { await signOut(); navigate('/') }
+  async function handleSignOut() { await signOut(); window.location.replace('/auth') }
 
   async function handleSave() {
     if (!lovedOneId || !user) return
@@ -142,8 +142,10 @@ export function DashboardProfile() {
     const needsConsent = !!(form.medical_conditions.trim() || form.medications_text.trim())
     if (needsConsent && !consentChecked) { setSaveErr('Please check the consent box before saving health details.'); return }
     setSaving(true); setSaveErr(''); setSaveOk(false)
+    try {
 
-    await supabase.from('loved_ones').update({ full_name: form.loved_one_name.trim() }).eq('id', lovedOneId)
+    const { error: loErr } = await supabase.from('loved_ones').update({ full_name: form.loved_one_name.trim() }).eq('id', lovedOneId)
+    if (loErr) throw loErr
 
     const ec: Contact[] = []
     if (form.ec1_name.trim()) ec.push({ name: form.ec1_name.trim(), relationship: form.ec1_relationship.trim(), phone: form.ec1_phone.trim() })
@@ -165,17 +167,20 @@ export function DashboardProfile() {
     }
 
     if (elderProfileId) {
-      await supabase.from('elder_profiles').update(elderData).eq('id', elderProfileId)
+      const { error: epErr } = await supabase.from('elder_profiles').update(elderData).eq('id', elderProfileId)
+      if (epErr) throw epErr
     } else {
-      const { data: newEp } = await supabase.from('elder_profiles').insert(elderData).select('id').single()
+      const { data: newEp, error: epErr } = await supabase.from('elder_profiles').insert(elderData).select('id').single()
+      if (epErr) throw epErr
       if (newEp?.id) setElderProfileId(newEp.id)
     }
 
-    await supabase.from('profiles').update({
+    const { error: profErr } = await supabase.from('profiles').update({
       full_name: profileForm.full_name.trim() || null,
       whatsapp_number: profileForm.whatsapp_number.trim(),
       country: profileForm.country.trim() || null,
     }).eq('id', user.id)
+    if (profErr) throw profErr
 
     // deno-lint-ignore no-explicit-any
     setElder((prev: any) => ({
@@ -185,6 +190,11 @@ export function DashboardProfile() {
       age: form.age ? parseInt(form.age, 10) : prev?.age,
     }))
     setSaving(false); setSaveOk(true); setEditing(false); setConsentChecked(false)
+    } catch (err) {
+      console.error('[Profile] save failed:', err)
+      setSaveErr('Could not save — please try again.')
+      setSaving(false)
+    }
   }
 
   const meds: string[] = Array.isArray(elder?.current_medications) ? elder.current_medications.map(medLabel).filter(Boolean) : []

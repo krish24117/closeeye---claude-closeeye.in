@@ -97,25 +97,30 @@ export function BookingDrawer({ service, onClose, onSubmitted }: Props) {
     if (!service) return
     if (needsVariant) { setError('Please choose an option for this service.'); return }
     setSubmitting(true); setError('')
-    // REQUEST flow: no payment here. We save an unpaid request; ops confirm a
-    // companion, then send a payment link. Persisted server-side.
-    const { error: fnErr } = await supabase.functions.invoke('submit-booking-request', {
-      body: {
-        service_id: service.id,
-        service_name: service.name,
-        variant_id: selectedVariant?.id ?? null,
-        amount_paise: amountPaise,
-        scheduled_at_ist: when ? `${when}:00+05:30` : null,
-        recipient_name: recipientName.trim(),
-        recipient_address: recipientAddress.trim(),
-        requester_whatsapp: requesterWhatsapp.trim(),
-        notes: notes.trim() || null,
-      },
-    })
-    setSubmitting(false)
-    if (fnErr) { setError("Couldn't send your request. Please try again or WhatsApp us."); return }
-    onSubmitted(service)
-    onClose()
+    try {
+      // REQUEST flow: no payment here. We save an unpaid request; ops confirm a
+      // companion, then send a payment link. Persisted server-side.
+      const { error: fnErr } = await supabase.functions.invoke('submit-booking-request', {
+        body: {
+          service_id: service.id,
+          service_name: service.name,
+          variant_id: selectedVariant?.id ?? null,
+          amount_paise: amountPaise,
+          scheduled_at_ist: when ? `${when}:00+05:30` : null,
+          recipient_name: recipientName.trim(),
+          recipient_address: recipientAddress.trim(),
+          requester_whatsapp: requesterWhatsapp.trim(),
+          notes: notes.trim() || null,
+        },
+      })
+      if (fnErr) throw fnErr
+      onSubmitted(service)
+      onClose()
+    } catch {
+      setError("Couldn't send your request. Please try again or WhatsApp us.")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
