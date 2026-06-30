@@ -19,6 +19,23 @@ const SERVICES: Service[] = [
 const TIME_SLOTS = [['Morning', ['09:00', '10:00', '11:00']], ['Afternoon', ['14:00', '15:00', '16:00']]] as const
 const slotLabel = (s: string) => { const h = +s.slice(0, 2); return `${((h + 11) % 12) + 1}${h < 12 ? 'am' : 'pm'}` }
 
+// IST = UTC+5:30, no DST
+function istNow() {
+  const d = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
+  return {
+    min: d.getUTCHours() * 60 + d.getUTCMinutes(),
+    dateStr: `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`,
+  }
+}
+
+function slotIsPast(selectedDate: Date | null, slotStr: string): boolean {
+  if (!selectedDate) return false
+  const ist = istNow()
+  const selStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
+  if (selStr !== ist.dateStr) return false
+  return ist.min >= +slotStr.slice(0, 2) * 60 + +slotStr.slice(3, 5)
+}
+
 const INPUT_STYLE: React.CSSProperties = {
   width: '100%', background: 'var(--cream)', border: '1.5px solid var(--gray-light)', borderRadius: 12,
   padding: '12px 14px', fontSize: 15, fontFamily: 'inherit', boxSizing: 'border-box',
@@ -77,6 +94,9 @@ export function DashboardBook() {
         .then(({ data }) => setRecipient({ name: data?.name || profile?.full_name || '', address: [data?.flat_number, data?.society_name, data?.area].filter(Boolean).join(', ') }))
     }
   }, [user, isNri, profile])
+
+  // Clear slot if it's now past (e.g. user re-opens sheet or switches to today)
+  useEffect(() => { if (slot && slotIsPast(date, slot)) setSlot('') }, [date])
 
   const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return d })
 
@@ -282,10 +302,14 @@ export function DashboardBook() {
                       <div style={{ display: 'flex', gap: 8 }}>
                         {slots.map(s => {
                           const sel = slot === s
+                          const past = slotIsPast(date, s)
                           return (
-                            <button key={s} onClick={() => setSlot(s)} style={{
-                              flex: 1, borderRadius: 8, padding: '10px 0', cursor: 'pointer', fontSize: 13, fontWeight: sel ? 600 : 400,
-                              background: sel ? 'var(--forest)' : 'var(--cream)', color: sel ? '#fff' : 'var(--gray-dark)', border: sel ? 'none' : '1px solid var(--gray-light)',
+                            <button key={s} onClick={() => { if (!past) setSlot(s) }} disabled={past} style={{
+                              flex: 1, borderRadius: 8, padding: '10px 0', cursor: past ? 'default' : 'pointer', fontSize: 13, fontWeight: sel ? 600 : 400,
+                              background: past ? 'var(--gray-light)' : sel ? 'var(--forest)' : 'var(--cream)',
+                              color: past ? 'var(--gray-mid)' : sel ? '#fff' : 'var(--gray-dark)',
+                              border: past || sel ? 'none' : '1px solid var(--gray-light)',
+                              opacity: past ? 0.55 : 1,
                             }}>{slotLabel(s)}</button>
                           )
                         })}
