@@ -88,7 +88,7 @@ export function Navbar() {
                 </button>
                 <div className="w-px h-4 bg-gray-200" />
                 <button
-                  onClick={signOut}
+                  onClick={async () => { await signOut(); window.location.replace('/auth') }}
                   className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   Sign out
@@ -162,7 +162,7 @@ export function Navbar() {
                 <Bell size={16} /> Dashboard
               </Link>
               <button
-                onClick={signOut}
+                onClick={async () => { await signOut(); window.location.replace('/auth') }}
                 className="py-2.5 text-sm text-gray-400 text-center hover:text-gray-600"
               >
                 Sign out

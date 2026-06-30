@@ -158,7 +158,10 @@ export function AuthPage() {
     setError('')
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth` },
+      options: {
+        redirectTo: `${window.location.origin}/auth`,
+        queryParams: { prompt: 'select_account' },
+      },
     })
     if (error) setError(error.message)
   }

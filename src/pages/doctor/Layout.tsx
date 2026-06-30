@@ -30,7 +30,7 @@ export function DoctorLayout() {
 
   const handleSignOut = async () => {
     await signOut()
-    navigate('/')
+    window.location.replace('/auth')
   }
 
   return (

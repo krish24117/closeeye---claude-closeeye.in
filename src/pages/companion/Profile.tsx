@@ -65,7 +65,7 @@ export function CompanionProfile() {
 
   async function handleSignOut() {
     await signOut()
-    navigate('/')
+    window.location.replace('/auth')
   }
 
   async function enableNotifications() {
