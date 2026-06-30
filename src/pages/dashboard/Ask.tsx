@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Loader2, Send } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/ui/Logo'
@@ -20,22 +21,43 @@ interface Query {
   status: string; created_at: string; reviewed_by: string | null
 }
 
-// ── Render markdown-style bold + newlines safely (no dangerouslySetInnerHTML) ──
+// ── Strip emoji — safety net on top of the "no emojis" system prompt rule ─────
+const EMOJI_RE = /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FEFF}]/gu
+function stripEmoji(t: string) { return t.replace(EMOJI_RE, '').replace(/ {2,}/g, ' ').trim() }
 
-function RichText({ text, style }: { text: string; style?: React.CSSProperties }) {
-  const lines = text.split('\n')
+// ── Markdown renderer — used for all AI answer text ───────────────────────────
+function MarkdownAnswer({ text, fontSize = 14 }: { text: string; fontSize?: number }) {
   return (
-    <p style={{ margin: 0, lineHeight: 1.7, ...style }}>
-      {lines.map((line, li) => {
-        const parts = line.split(/\*\*(.+?)\*\*/g)
-        return (
-          <span key={li}>
-            {parts.map((part, pi) => pi % 2 === 1 ? <strong key={pi}>{part}</strong> : part)}
-            {li < lines.length - 1 && <br />}
-          </span>
-        )
-      })}
-    </p>
+    <div style={{ fontSize, color: 'var(--gray-dark)', lineHeight: 1.65 }}>
+      <ReactMarkdown
+        components={{
+          p:      ({ children }) => (
+            <p style={{ margin: '0 0 7px', lineHeight: 1.65, lastChild: undefined } as React.CSSProperties}>{children}</p>
+          ),
+          ul:     ({ children }) => (
+            <ul style={{ margin: '4px 0 7px', paddingLeft: 20 }}>{children}</ul>
+          ),
+          ol:     ({ children }) => (
+            <ol style={{ margin: '4px 0 7px', paddingLeft: 20 }}>{children}</ol>
+          ),
+          li:     ({ children }) => (
+            <li style={{ margin: '4px 0', lineHeight: 1.55 }}>{children}</li>
+          ),
+          strong: ({ children }) => (
+            <strong style={{ fontWeight: 700, color: 'var(--black)' }}>{children}</strong>
+          ),
+          em:     ({ children }) => (
+            <em style={{ color: 'var(--gray-mid)', fontStyle: 'italic' }}>{children}</em>
+          ),
+          // Flatten headings — model shouldn't produce them, but handle gracefully
+          h1: ({ children }) => <p style={{ margin: '0 0 7px', fontWeight: 700 }}>{children}</p>,
+          h2: ({ children }) => <p style={{ margin: '0 0 7px', fontWeight: 700 }}>{children}</p>,
+          h3: ({ children }) => <p style={{ margin: '0 0 5px', fontWeight: 600 }}>{children}</p>,
+        }}
+      >
+        {stripEmoji(text)}
+      </ReactMarkdown>
+    </div>
   )
 }
 
@@ -81,7 +103,9 @@ function EscalationCard({ message, ambulanceNumber }: { message: string; ambulan
         <span style={{ fontSize: 20 }}>⚠</span>
         <span style={{ fontSize: 14, fontWeight: 700, color: '#7a1f1f' }}>This needs urgent attention</span>
       </div>
-      <RichText text={message} style={{ fontSize: 14, color: '#3d1010', marginBottom: 14 }} />
+      <div style={{ marginBottom: 14 }}>
+        <MarkdownAnswer text={message} fontSize={14} />
+      </div>
       <a
         href={`tel:${number}`}
         style={{
@@ -105,7 +129,7 @@ function StatusBadge({ status, reviewedBy }: { status: string; reviewedBy?: stri
   if (status === 'doctor_reviewed')
     return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: 'var(--forest)', background: 'rgba(14,42,31,0.06)', borderRadius: 100, padding: '4px 12px' }}>✓ Reviewed by {reviewedBy || 'Close Eye medical team'}</span>
   if (status === 'ai_answered')
-    return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 500, color: 'var(--gray-mid)' }}>AI guidance — guided by our medical team</span>
+    return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 500, color: 'var(--gray-mid)' }}>Guided by our medical team</span>
   return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 400, color: 'var(--gray-mid)' }}>⏳ Our medical team is reviewing this</span>
 }
 
@@ -176,7 +200,6 @@ export function DashboardAsk() {
 
     const userText = inputText.trim()
     setInputText('')
-    // Reset textarea height
     if (inputRef.current) { inputRef.current.style.height = 'auto' }
 
     const thinkingId = `thinking-${Date.now()}`
@@ -188,7 +211,6 @@ export function DashboardAsk() {
     ])
     setThinking(true)
 
-    // Build full conversation history for Claude context
     const historyMessages = messages
       .filter(m => m.text && !m.pending && m.lane !== 'escalate')
       .map(m => ({ role: m.role as 'user' | 'assistant', content: m.text as string }))
@@ -243,7 +265,6 @@ export function DashboardAsk() {
   const firstRealAssistantId = messages.find(m => m.role === 'assistant' && !m.pending && m.text)?.id
 
   return (
-    // Extra padding-bottom: input bar (~72px) + bottom nav (~76px) + safe area + gap
     <div style={{ paddingBottom: 'calc(160px + env(safe-area-inset-bottom))' }}>
 
       {/* Header */}
@@ -270,7 +291,7 @@ export function DashboardAsk() {
       {/* Chat thread */}
       <div style={{ padding: '0 12px' }}>
 
-        {/* Welcome bubble — shown before the first message */}
+        {/* Welcome bubble */}
         {messages.length === 0 && (
           <div className="ce-slide-up" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
             <div style={{ flexShrink: 0, marginTop: 3 }}><Logo className="w-5 h-5" /></div>
@@ -317,11 +338,11 @@ export function DashboardAsk() {
           }
 
           return (
-            <div key={msg.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+            <div key={msg.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14 }}>
               <div style={{ flexShrink: 0, marginTop: 3 }}><Logo className="w-5 h-5" /></div>
               <div style={{
                 background: '#fff', borderRadius: '4px 18px 18px 18px',
-                padding: '12px 16px', maxWidth: '85%', boxShadow: 'var(--shadow-card)',
+                padding: '14px 16px', maxWidth: '85%', boxShadow: 'var(--shadow-card)',
               }}>
                 {msg.pending ? (
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -330,14 +351,10 @@ export function DashboardAsk() {
                   </div>
                 ) : (
                   <>
-                    <RichText
-                      text={msg.text || 'Our medical team will review this and reply shortly. For anything urgent, call 108.'}
-                      style={{ fontSize: 15, color: 'var(--gray-dark)' }}
+                    {/* Markdown renders bold bullets, italic disclaimer — no raw asterisks */}
+                    <MarkdownAnswer
+                      text={msg.text || 'Our medical team will review this shortly. For anything urgent, call 108.'}
                     />
-                    <p style={{ fontSize: 11, color: 'var(--gray-mid)', fontStyle: 'italic', margin: '8px 0 0' }}>
-                      General guidance — not a diagnosis. For emergencies, call 108.
-                    </p>
-                    {/* Upgrade nudge — show only once, on the first real answer, for non-founders */}
                     {!isFounder && msg.id === firstRealAssistantId && (
                       <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--gray-light)', fontSize: 12.5, color: 'var(--forest)' }}>
                         Want this personalised to your parent's conditions?{' '}
@@ -363,19 +380,31 @@ export function DashboardAsk() {
           </div>
         )}
 
-        {/* Previous questions — shown only in the empty-chat state */}
+        {/* Previous questions — visible only in the empty-chat state */}
         {messages.length === 0 && history.length > 0 && (
           <div style={{ marginTop: 16 }}>
-            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.06em', margin: '0 4px 8px' }}>
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.06em', margin: '0 4px 10px' }}>
               PREVIOUS QUESTIONS
             </p>
             {history.map(q => (
-              <div key={q.id} style={{ background: '#fff', borderRadius: 'var(--radius-card)', padding: 14, boxShadow: 'var(--shadow-card)', marginBottom: 8 }}>
-                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)', margin: 0 }}>{q.question}</p>
-                <p style={{ fontSize: 13, color: 'var(--gray-dark)', lineHeight: 1.6, margin: '6px 0 0' }}>
-                  {q.answer || q.ai_answer || 'Our medical team is reviewing…'}
+              <div key={q.id} style={{
+                background: '#fff', borderRadius: 'var(--radius-card)',
+                padding: '16px 16px 12px', boxShadow: 'var(--shadow-card)', marginBottom: 10,
+              }}>
+                {/* Question title */}
+                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)', margin: '0 0 10px', lineHeight: 1.4 }}>
+                  {q.question}
                 </p>
-                <div style={{ marginTop: 8 }}>
+                {/* Answer — rendered as markdown */}
+                {(q.answer || q.ai_answer) ? (
+                  <MarkdownAnswer text={q.answer || q.ai_answer!} />
+                ) : (
+                  <p style={{ fontSize: 13, color: 'var(--gray-mid)', margin: 0, fontStyle: 'italic' }}>
+                    Our medical team is reviewing this…
+                  </p>
+                )}
+                {/* Footer */}
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--gray-light)' }}>
                   <StatusBadge status={q.status} reviewedBy={q.reviewed_by} />
                 </div>
               </div>
@@ -386,7 +415,7 @@ export function DashboardAsk() {
         <div ref={bottomRef} />
       </div>
 
-      {/* ── Fixed input bar — sits above the bottom nav ──────────────────────── */}
+      {/* ── Fixed input bar ───────────────────────────────────────────────────── */}
       <div style={{
         position: 'fixed',
         bottom: 'calc(64px + env(safe-area-inset-bottom))',
