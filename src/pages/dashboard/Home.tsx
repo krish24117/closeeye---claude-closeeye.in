@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { Calendar, ChevronRight, MessageCircle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
+import { isOnboardingDismissed } from '@/pages/Onboarding'
+import { getPersona, getPersonaCopy } from '@/lib/persona'
 
 /* ------------------------------------------------------------------ */
 /*  Shared helpers                                                     */
@@ -44,6 +46,7 @@ function NriHome() {
   const { user, profile } = useAuth()
   const [loading, setLoading] = useState(true)
   const [elderName, setElderName] = useState<string>('')
+  const [elderCity, setElderCity] = useState<string>('')
   const [visit, setVisit] = useState<VisitRow | null>(null)
   const [nextBooking, setNextBooking] = useState<{ scheduled_at: string } | null>(null)
   const [activeRequest, setActiveRequest] = useState<{ id: string; service_name: string; status: string } | null>(null)
@@ -53,10 +56,11 @@ function NriHome() {
     let active = true
     ;(async () => {
       const { data: lo } = await supabase
-        .from('loved_ones').select('id, full_name').eq('family_user_id', user.id)
+        .from('loved_ones').select('id, full_name, city').eq('family_user_id', user.id)
         .order('created_at', { ascending: true }).limit(1).maybeSingle()
       if (!active) return
       setElderName(lo?.full_name || 'Your loved one')
+      setElderCity((lo as any)?.city || '')
 
       if (lo?.id) {
         const { data: ep } = await supabase
@@ -94,11 +98,51 @@ function NriHome() {
 
   const state: 'A' | 'B' | 'C' = !visit ? 'B' : visit.flags && visit.flags !== 'none' ? 'C' : 'A'
   const firstName = profile?.full_name?.split(' ')[0] || 'there'
+  const isFounder = !!profile?.is_founding_member
   const visitMins = durationMin(visit?.start_time, visit?.end_time)
   const moodGood = (visit?.mood_score ?? 4) >= 4
 
+  // Persona — derived from where user lives vs where parent is
+  const persona = getPersona(profile?.country, elderCity)
+  const pcopy = getPersonaCopy(persona, {
+    parentName: elderName,
+    parentCity: elderCity,
+    userCity: profile?.country ?? undefined,
+  })
+
+  // Show resume card if onboarding was dismissed mid-way (no whatsapp yet = Step 1 never finished)
+  const showSetupCard = !profile?.whatsapp_number && isOnboardingDismissed()
+
   return (
     <div className="ce-slide-up">
+      {/* ── Welcome + setup resume card ───────────────────────── */}
+      {showSetupCard && (
+        <div style={{
+          margin: '16px 16px 0',
+          background: 'linear-gradient(135deg, #0E2A1F 0%, #1B4332 100%)',
+          borderRadius: 20, padding: '20px 20px 16px',
+        }}>
+          <p style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>
+            Welcome, {firstName} 🌿
+          </p>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', margin: '0 0 16px', lineHeight: 1.5 }}>
+            Finish setting up your parent's care — takes under 2 minutes.
+          </p>
+          <Link
+            to="/onboarding"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: 'var(--sage)', color: 'var(--forest)',
+              borderRadius: 100, padding: '12px 22px',
+              fontSize: 14, fontWeight: 700, textDecoration: 'none',
+              minHeight: 44,
+            }}
+          >
+            Continue setup <ChevronRight size={16} />
+          </Link>
+        </div>
+      )}
+
       {/* ── Wellbeing status card ─────────────────────────────── */}
       <section style={{ margin: 16, borderRadius: 20, overflow: 'hidden' }}>
         <div style={{
@@ -108,7 +152,14 @@ function NriHome() {
             : { background: 'linear-gradient(135deg, #3d2000 0%, #2a1500 100%)' }),
         }}>
           <div className="flex items-center justify-between">
-            <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{elderName}</span>
+            <div>
+              <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{elderName}</span>
+              {isFounder && profile.founding_number && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginLeft: 10, background: 'rgba(127,191,148,0.14)', border: '1px solid rgba(127,191,148,0.4)', borderRadius: 100, padding: '2px 10px', fontSize: 11, fontWeight: 600, color: '#7FBF94', verticalAlign: 'middle' }}>
+                  ★ Founding Member #{String(profile.founding_number).padStart(4, '0')}
+                </div>
+              )}
+            </div>
             <span style={{
               width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
               background: 'rgba(168,213,181,0.20)', border: '2px solid var(--sage)',
@@ -126,16 +177,28 @@ function NriHome() {
               {state === 'A' && <span className="ce-pulse-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80' }} />}
               {state === 'C' && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }} />}
               <span style={{ fontSize: 16, fontWeight: 600, color: state === 'A' ? '#fff' : state === 'B' ? 'var(--sage)' : '#FFA500' }}>
-                {state === 'A' ? 'All well today' : state === 'B' ? (nextBooking ? 'Visit being arranged' : `Welcome, ${firstName}`) : 'Needs your attention'}
+                {state === 'A' ? 'All well today'
+                  : state === 'B' ? (nextBooking ? 'Visit being arranged' : isFounder ? 'Account active' : `Welcome, ${firstName}`)
+                  : 'Needs your attention'}
               </span>
             </span>
           </div>
 
           <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0 }}>
             {state === 'A' && `Visited ${istTime(visit?.start_time || visit?.created_at)}${visitMins ? ` · ${visitMins} min` : ''}`}
-            {state === 'B' && (nextBooking ? `We'll confirm the time for ${elderName}'s visit shortly` : `Let's arrange ${elderName}'s first visit`)}
+            {state === 'B' && (nextBooking
+              ? `We'll confirm the time for ${elderName}'s visit shortly`
+              : isFounder
+                ? `Your place is locked in — book the first visit whenever you're ready`
+                : pcopy.emptyStateSub)}
             {state === 'C' && `Noticed ${istTime(visit?.created_at)}`}
           </p>
+          {/* Persona tag — visible in state B only */}
+          {state === 'B' && (
+            <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(168,213,181,0.7)', margin: '6px 0 0', fontStyle: 'italic' }}>
+              {pcopy.heroSub}
+            </p>
+          )}
 
           {state === 'B' && !nextBooking && (
             <div style={{ textAlign: 'center', marginTop: 20 }}>
@@ -223,7 +286,7 @@ function NriHome() {
 
       {/* ── How it works / What's next strip ────────────────── */}
       {state === 'B' && !nextBooking && (() => {
-        const isMember = !!profile?.is_founding_member
+        const isMember = isFounder
         const steps = isMember
           ? [
               { done: true,  label: '✓', title: `Founding Member${profile?.founding_number ? ` #${profile.founding_number}` : ''}`, desc: 'Your place is reserved — we launch visits on 15 August' },
@@ -298,7 +361,7 @@ function NriHome() {
         </span>
         <span style={{ flex: 1 }}>
           <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--black)' }}>Have a health question?</span>
-          <span style={{ display: 'block', fontSize: 13, color: 'var(--gray-mid)' }}>Ask Close Eye — guided by our medical team</span>
+          <span style={{ display: 'block', fontSize: 13, color: 'var(--gray-mid)' }}>{pcopy.askShortcutSub}</span>
         </span>
         <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--forest)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: 'var(--shadow-btn)' }}>
           <ChevronRight size={18} color="#fff" />

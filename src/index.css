@@ -303,26 +303,53 @@
 /* ---- Hero ---- */
 .ce-hero {
   min-height: 100vh;
-  background: var(--cream);
+  background: radial-gradient(120% 90% at 80% 0%, #1c4a35 0%, #0E2A1F 55%);
   display: grid;
   grid-template-columns: 55fr 45fr;
   align-items: center;
   gap: 64px;
-  padding: 72px 64px;
+  padding: 72px 64px 120px;   /* extra bottom so Ask card overlaps cleanly */
+  position: relative;
 }
-.ce-hero-h1-cont { color: var(--forest); }
+/* Text adapts to dark hero */
+.ce-hero .ce-eyebrow { color: var(--sage); }
+.ce-hero .ce-h1 { color: #FAF7F2; }
+.ce-hero-h1-cont { color: #7FBF94; }  /* sage-2 on dark bg */
 .ce-hero-body {
   font-size: 18px;
-  color: var(--gray-dark);
+  color: rgba(250,247,242,.72);
   line-height: 1.75;
   max-width: 480px;
   margin: 32px 0 40px;
 }
 .ce-hero-body p { margin: 0 0 12px; }
 .ce-hero-buttons { display: flex; gap: 16px; flex-wrap: wrap; }
+/* Primary CTA on dark hero = sage fill */
+.ce-hero .ce-btn-primary {
+  background: #7FBF94;
+  color: #0E2A1F;
+  box-shadow: 0 8px 20px rgba(127,191,148,.25);
+}
+.ce-hero .ce-btn-primary:hover { background: #93c9a3; transform: translateY(-2px); }
+/* Secondary CTA on dark hero = subtle ghost */
+.ce-hero .ce-btn-secondary {
+  color: rgba(250,247,242,.8);
+  border-color: rgba(250,247,242,.3);
+}
+.ce-hero .ce-btn-secondary:hover { background: rgba(250,247,242,.06); border-color: rgba(250,247,242,.6); }
 .ce-trust-row { margin-top: 32px; display: flex; gap: 24px; flex-wrap: wrap; }
-.ce-trust-item { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gray-mid); }
-.ce-trust-item svg { color: var(--forest); flex-shrink: 0; }
+.ce-trust-item { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(250,247,242,.5); }
+.ce-trust-item svg { color: #7FBF94; flex-shrink: 0; }
+
+/* Ask section overlaps hero bottom */
+.ce-hero-ask-overlap {
+  position: relative;
+  z-index: 2;
+  margin-top: -64px;
+  background: transparent;
+  padding: 0 20px 40px;
+}
+.ce-hero-ask-overlap > div { max-width: 520px; margin: 0 auto; }
 
 /* ---- WhatsApp mockup ---- */
 .ce-phone-wrap { width: 300px; max-width: 100%; margin: 0 auto; position: relative; }
@@ -946,8 +973,8 @@
 }
 
 /* ---- Booking bottom sheet + success check ---- */
-.ce-sheet-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.45); display: flex; align-items: flex-end; justify-content: center; }
-.ce-sheet { width: 100%; max-width: 480px; background: #fff; border-radius: 20px 20px 0 0; padding: 16px 20px calc(24px + env(safe-area-inset-bottom)); max-height: 88vh; overflow-y: auto; animation: ce-sheet-up 300ms ease-out; }
+.ce-sheet-overlay { position: fixed; top: 0; left: 0; right: 0; height: 100dvh; z-index: 200; background: rgba(0,0,0,0.45); display: flex; align-items: flex-end; justify-content: center; }
+.ce-sheet { width: 100%; max-width: 480px; background: #fff; border-radius: 20px 20px 0 0; padding: 16px 20px calc(24px + env(safe-area-inset-bottom)); max-height: 88dvh; overflow-y: auto; animation: ce-sheet-up 300ms ease-out; }
 @keyframes ce-sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .ce-sheet-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--gray-light); margin: 0 auto 16px; }
 @keyframes ce-check-pop { 0% { transform: scale(0); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
@@ -964,7 +991,7 @@
   .ce-fam-tab .ce-fam-dot { display: none; }
   .ce-fam-tab.is-active { background: var(--cream-dark); }
   .ce-fam-tab-label { font-size: 14px; }
-  .ce-fam-main { max-width: 700px; margin: 0 0 0 220px; padding-bottom: 40px; }
+  .ce-fam-main { max-width: 700px; margin: 0 0 0 max(220px, calc(220px + (100vw - 920px) / 2)); padding-bottom: 40px; }
   .ce-sheet { max-width: 520px; border-radius: 20px; margin-bottom: 5vh; }
   .ce-sheet-overlay { align-items: center; }
 }
