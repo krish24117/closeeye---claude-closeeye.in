@@ -623,16 +623,16 @@ export function HomePage() {
         <div className="ce-hero-left animate-on-scroll">
           <p className="ce-eyebrow">Your trusted presence in India</p>
           <h1 className="ce-h1">
-            Your mother made tea<br />
-            for two this morning.<br />
-            <span className="ce-hero-h1-cont">Someone was there to share it.</span>
+            Care for your parents<br />
+            in India,{' '}
+            <span className="ce-hero-h1-cont">even from afar.</span>
           </h1>
-          <p style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--forest)', marginTop: '1.25rem', marginBottom: '1rem', lineHeight: 1.4 }}>
+          <p style={{ fontSize: '1.1rem', fontWeight: 500, color: 'rgba(250,247,242,.7)', marginTop: '1.25rem', marginBottom: '1rem', lineHeight: 1.5 }}>
             When you can't be there, Close Eye can.
           </p>
           <div className="ce-hero-body">
-            <p>Close Eye visits your parents — or any loved one — personally. We check their health, medicines, and home. We send you a WhatsApp report within the hour.</p>
-            <p>Every time. So you always know.</p>
+            <p>Close Eye visits your parents personally — checking health, medicines, and home — and sends you a WhatsApp report within the hour.</p>
+            <p>So you always know they're safe, even from 10,000 miles away.</p>
           </div>
           <div className="ce-hero-buttons">
             <Link to="/founding-member" className="ce-btn ce-btn-primary">
@@ -643,8 +643,8 @@ export function HomePage() {
             </Link>
             <a href="#ask-free" className="ce-btn ce-btn-secondary">Or ask us anything — free</a>
           </div>
-          <p style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '12px', fontWeight: 500, color: 'var(--forest)', background: 'rgba(168,213,181,0.15)', border: '1px solid var(--sage)', borderRadius: '100px', padding: '5px 13px', marginTop: '10px' }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--sage)', flexShrink: 0 }} />
+          <p style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '12px', fontWeight: 500, color: 'rgba(168,213,181,.9)', background: 'rgba(127,191,148,0.12)', border: '1px solid rgba(127,191,148,0.35)', borderRadius: '100px', padding: '5px 13px', marginTop: '10px' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#7FBF94', flexShrink: 0 }} />
             Now serving founding families · Public launch 15 August
           </p>
           <div className="ce-trust-row">
@@ -684,11 +684,12 @@ export function HomePage() {
       </section>
 
       {/* ── ASK CLOSE EYE — Tier 0 public hook ──────────────────── */}
-      <section style={{ background: '#FAF7F2', padding: '0 20px 40px' }}>
-        <div style={{ maxWidth: 520, margin: '0 auto' }}>
+      {/* Negative margin-top overlaps the hero bottom to create a card-float effect */}
+      <div className="ce-hero-ask-overlap">
+        <div>
           <HomeAskWidget />
         </div>
-      </section>
+      </div>
 
       {/* ── PROBLEM ──────────────────────────────────────────────── */}
       <section className="ce-section ce-bg-forest">

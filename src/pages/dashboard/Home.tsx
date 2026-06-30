@@ -98,6 +98,7 @@ function NriHome() {
 
   const state: 'A' | 'B' | 'C' = !visit ? 'B' : visit.flags && visit.flags !== 'none' ? 'C' : 'A'
   const firstName = profile?.full_name?.split(' ')[0] || 'there'
+  const isFounder = !!profile?.is_founding_member
   const visitMins = durationMin(visit?.start_time, visit?.end_time)
   const moodGood = (visit?.mood_score ?? 4) >= 4
 
@@ -151,7 +152,14 @@ function NriHome() {
             : { background: 'linear-gradient(135deg, #3d2000 0%, #2a1500 100%)' }),
         }}>
           <div className="flex items-center justify-between">
-            <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{elderName}</span>
+            <div>
+              <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{elderName}</span>
+              {isFounder && profile.founding_number && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginLeft: 10, background: 'rgba(127,191,148,0.14)', border: '1px solid rgba(127,191,148,0.4)', borderRadius: 100, padding: '2px 10px', fontSize: 11, fontWeight: 600, color: '#7FBF94', verticalAlign: 'middle' }}>
+                  ★ Founding Member #{String(profile.founding_number).padStart(4, '0')}
+                </div>
+              )}
+            </div>
             <span style={{
               width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
               background: 'rgba(168,213,181,0.20)', border: '2px solid var(--sage)',
@@ -169,14 +177,20 @@ function NriHome() {
               {state === 'A' && <span className="ce-pulse-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80' }} />}
               {state === 'C' && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }} />}
               <span style={{ fontSize: 16, fontWeight: 600, color: state === 'A' ? '#fff' : state === 'B' ? 'var(--sage)' : '#FFA500' }}>
-                {state === 'A' ? 'All well today' : state === 'B' ? (nextBooking ? 'Visit being arranged' : `Welcome, ${firstName}`) : 'Needs your attention'}
+                {state === 'A' ? 'All well today'
+                  : state === 'B' ? (nextBooking ? 'Visit being arranged' : isFounder ? 'Account active' : `Welcome, ${firstName}`)
+                  : 'Needs your attention'}
               </span>
             </span>
           </div>
 
           <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0 }}>
             {state === 'A' && `Visited ${istTime(visit?.start_time || visit?.created_at)}${visitMins ? ` · ${visitMins} min` : ''}`}
-            {state === 'B' && (nextBooking ? `We'll confirm the time for ${elderName}'s visit shortly` : pcopy.emptyStateSub)}
+            {state === 'B' && (nextBooking
+              ? `We'll confirm the time for ${elderName}'s visit shortly`
+              : isFounder
+                ? `Your place is locked in — book the first visit whenever you're ready`
+                : pcopy.emptyStateSub)}
             {state === 'C' && `Noticed ${istTime(visit?.created_at)}`}
           </p>
           {/* Persona tag — visible in state B only */}
@@ -272,7 +286,7 @@ function NriHome() {
 
       {/* ── How it works / What's next strip ────────────────── */}
       {state === 'B' && !nextBooking && (() => {
-        const isMember = !!profile?.is_founding_member
+        const isMember = isFounder
         const steps = isMember
           ? [
               { done: true,  label: '✓', title: `Founding Member${profile?.founding_number ? ` #${profile.founding_number}` : ''}`, desc: 'Your place is reserved — we launch visits on 15 August' },
