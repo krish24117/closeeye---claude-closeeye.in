@@ -27,7 +27,7 @@ const SECTIONS: NavSection[] = [
   { label: 'People', items: [
     { to: '/admin/founding-members', icon: TbStar, label: 'Founding members' },
     { to: '/admin/families', icon: TbUsers, label: 'Families' },
-    { to: '/admin/societies', icon: TbBuildingCommunity, label: 'Societies' },
+    // { to: '/admin/societies', icon: TbBuildingCommunity, label: 'Societies' }, // disabled
     { to: '/admin/companions', icon: TbUserHeart, label: 'Companions' },
     { to: '/admin/elders', icon: TbWheelchair, label: 'Elders' },
     { to: '/admin/settings', icon: TbStethoscope, label: 'Doctors' },
@@ -228,7 +228,7 @@ function GlobalSearch({ onClose, navigate }: { onClose: () => void; navigate: (t
       if (fam.data?.length) g.push({ label: 'Families', items: fam.data.map((f: any) => ({ title: f.full_name, sub: f.city || 'Family', to: `/admin/families/${f.family_user_id}` })) })
       if (eld.data?.length) g.push({ label: 'Elders', items: eld.data.map((e: any) => ({ title: e.name || 'Elder', sub: 'Elder profile', to: e.loved_ones?.family_user_id ? `/admin/families/${e.loved_ones.family_user_id}` : '/admin/elders' })) })
       if (qr.data?.length) g.push({ label: 'Health queries', items: qr.data.map((x: any) => ({ title: (x.question || '').slice(0, 50), sub: x.subject_label || 'Query', to: '/admin/queries' })) })
-      if (soc.data?.length) g.push({ label: 'Society members', items: soc.data.map((s: any) => ({ title: s.name, sub: s.society_name || 'Society', to: `/admin/societies/${encodeURIComponent(s.society_name || '')}` })) })
+      // societies disabled — if (soc.data?.length) g.push({ label: 'Society members', ... })
       setGroups(g); setLoading(false)
     }, 250)
     return () => clearTimeout(t)

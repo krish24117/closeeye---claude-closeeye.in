@@ -17,7 +17,7 @@ const NAV_LINKS: { label: string; href?: string; to?: string }[] = [
   { href: '#how-it-works', label: 'How It Works' },
   { href: '#services', label: 'Services' },
   { href: '#pricing', label: 'Pricing' },
-  { to: '/for-societies', label: 'For Societies' },
+  // { to: '/for-societies', label: 'For Societies' }, // disabled — re-enable when societies feature launches
   { to: '/companions', label: 'Companions' },
 ]
 
@@ -966,7 +966,7 @@ export function HomePage() {
               <a href="#how-it-works">How It Works</a>
               <a href="#services">Services</a>
               <a href="#pricing">Pricing</a>
-              <Link to="/for-societies">For Societies</Link>
+              {/* <Link to="/for-societies">For Societies</Link> */}
               <Link to="/companions">Companions</Link>
               <Link to="/join-as-companion">Become a Companion</Link>
               <Link to="/about">About Us</Link>

@@ -169,22 +169,12 @@ export function AdminHome() {
           ))}
         </Card>
 
+        {/* Societies overview card disabled — re-enable when feature launches
         <Card>
           <div className="adm-card-head"><span className="adm-card-title">Societies overview</span><Link className="adm-link" to="/admin/societies">View all →</Link></div>
-          {d.socList.length === 0 ? <EmptyState title="No societies yet" /> : d.socList.slice(0, 5).map(([name, count]: any) => (
-            <div key={name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '0.5px solid var(--gray-light)' }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
-                <div style={{ fontSize: 11, color: 'var(--gray-mid)' }}>{count} member{count > 1 ? 's' : ''}</div>
-              </div>
-              <Badge tone="green">Live</Badge>
-            </div>
-          ))}
-          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '0.5px solid var(--gray-light)' }}>
-            <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--forest)' }}>{d.socTotal}</div>
-            <div style={{ fontSize: 11, color: 'var(--gray-mid)' }}>registered members across {d.socList.length} societ{d.socList.length === 1 ? 'y' : 'ies'}</div>
-          </div>
+          ...
         </Card>
+        */}
       </div>
     </>
   )
