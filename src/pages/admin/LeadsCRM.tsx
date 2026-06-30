@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Loader2, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { MessageCircle } from 'lucide-react'
+import { Badge, EmptyState, ErrorBox, Skeleton } from './_shared'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -30,13 +31,21 @@ interface Lead {
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const STATUS_OPTIONS: { value: LeadStatus; label: string; color: string }[] = [
-  { value: 'new',            label: 'New',            color: 'bg-blue-100 text-blue-800'   },
-  { value: 'contacted',      label: 'Contacted',      color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'interested',     label: 'Interested',     color: 'bg-purple-100 text-purple-800' },
-  { value: 'converted',      label: 'Converted',      color: 'bg-green-100 text-green-800' },
-  { value: 'not_interested', label: 'Not interested', color: 'bg-gray-100 text-gray-500'   },
+const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
+  { value: 'new',            label: 'New'           },
+  { value: 'contacted',      label: 'Contacted'     },
+  { value: 'interested',     label: 'Interested'    },
+  { value: 'converted',      label: 'Converted'     },
+  { value: 'not_interested', label: 'Not interested'},
 ]
+
+const STATUS_TONE: Record<string, string> = {
+  new: 'blue',
+  contacted: 'amber',
+  interested: 'purple',
+  converted: 'green',
+  not_interested: 'gray',
+}
 
 const TABLE_MAP: Record<LeadType, string> = {
   waitlist:     'waitlist',
@@ -57,10 +66,6 @@ function fmt(dt: string) {
     hour: '2-digit', minute: '2-digit', hour12: true,
     timeZone: 'Asia/Kolkata',
   })
-}
-
-function statusColor(s: LeadStatus) {
-  return STATUS_OPTIONS.find(o => o.value === s)?.color ?? 'bg-gray-100 text-gray-500'
 }
 
 function urgencyLabel(u: string) {
@@ -85,11 +90,9 @@ function SurveyPanel({ lead }: { lead: Lead }) {
       label: 'What worries them most',
       value: lead.q3_worries?.length
         ? (
-          <div className="flex flex-wrap gap-1.5 mt-1">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
             {lead.q3_worries.map(w => (
-              <span key={w} className="text-xs bg-amber-50 text-amber-700 border border-amber-100 px-2 py-0.5 rounded-full">
-                {w}
-              </span>
+              <Badge key={w} tone="amber">{w}</Badge>
             ))}
           </div>
         )
@@ -106,12 +109,22 @@ function SurveyPanel({ lead }: { lead: Lead }) {
   ]
 
   return (
-    <div className="bg-green-50 border border-green-100 rounded-xl p-3 space-y-3">
-      <p className="text-[10px] font-bold text-green-800 uppercase tracking-widest">Survey answers</p>
+    <div style={{
+      background: 'rgba(168,213,181,0.12)',
+      border: '1px solid rgba(168,213,181,0.4)',
+      borderRadius: 'var(--radius-card)',
+      padding: 12,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10,
+    }}>
+      <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--forest)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+        Survey answers
+      </p>
       {rows.map(r => (
         <div key={r.label}>
-          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">{r.label}</p>
-          <div className="text-sm text-gray-800 mt-0.5">{r.value}</div>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 2px' }}>{r.label}</p>
+          <div style={{ fontSize: 13, color: 'var(--black)' }}>{r.value}</div>
         </div>
       ))}
     </div>
@@ -185,18 +198,16 @@ async function fetchLeads(): Promise<Lead[]> {
 // ── TypeBadge ─────────────────────────────────────────────────────────────────
 
 function TypeBadge({ type }: { type: LeadType }) {
-  const map: Record<LeadType, string> = {
-    waitlist:     'bg-indigo-100 text-indigo-700',
-    survey:       'bg-green-100 text-green-700',
-    consultation: 'bg-orange-100 text-orange-700',
+  const toneMap: Record<LeadType, string> = {
+    waitlist:     'purple',
+    survey:       'green',
+    consultation: 'amber',
   }
   const labels: Record<LeadType, string> = {
     waitlist: 'Waitlist', survey: 'Survey', consultation: 'Consult',
   }
   return (
-    <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${map[type]}`}>
-      {labels[type]}
-    </span>
+    <Badge tone={toneMap[type] as any}>{labels[type]}</Badge>
   )
 }
 
@@ -229,67 +240,71 @@ function LeadRow({ lead, onUpdate }: { lead: Lead; onUpdate: (id: string, patch:
 
   return (
     <>
-      <tr className="border-b border-gray-100 hover:bg-gray-50 align-top">
-        <td className="px-4 py-3 min-w-[160px]">
-          <div className="flex items-start gap-2">
+      <tr style={{ borderBottom: '1px solid var(--gray-light)' }}>
+        <td style={{ padding: '10px 14px', minWidth: 160, verticalAlign: 'top' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
             {hasSurvey ? (
               <button
                 onClick={() => setExpanded(v => !v)}
-                className="mt-0.5 flex-shrink-0 text-gray-400 hover:text-green-700 transition-colors"
                 title="View survey answers"
+                style={{ marginTop: 2, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-mid)', padding: 0, fontSize: 14, lineHeight: 1 }}
               >
-                {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                {expanded ? '▲' : '▼'}
               </button>
             ) : (
-              <span className="w-[14px] flex-shrink-0" />
+              <span style={{ width: 14, flexShrink: 0 }} />
             )}
             <div>
-              <p className="font-semibold text-green-900 text-sm">{lead.name}</p>
-              <p className="text-xs text-gray-400">{lead.email}</p>
+              <p style={{ fontWeight: 600, color: 'var(--forest)', fontSize: 13, margin: 0 }}>{lead.name}</p>
+              <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: 0 }}>{lead.email}</p>
             </div>
           </div>
         </td>
-        <td className="px-4 py-3 whitespace-nowrap">
+        <td style={{ padding: '10px 14px', whiteSpace: 'nowrap', verticalAlign: 'top' }}>
           <a
             href={waLink(lead.whatsapp)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sm text-green-700 hover:text-green-900 font-medium"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--forest)', fontWeight: 500, textDecoration: 'none' }}
           >
             <MessageCircle size={13} />
             {lead.whatsapp}
           </a>
         </td>
-        <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{lead.parent_city}</td>
-        <td className="px-4 py-3">
-          <span className="text-xs text-gray-500">{lead.source}</span>
-          {lead.country && <p className="text-xs text-gray-400">{lead.country}</p>}
+        <td style={{ padding: '10px 14px', fontSize: 13, color: 'var(--black)', whiteSpace: 'nowrap', verticalAlign: 'top' }}>{lead.parent_city}</td>
+        <td style={{ padding: '10px 14px', verticalAlign: 'top' }}>
+          <span style={{ fontSize: 12, color: 'var(--muted)' }}>{lead.source}</span>
+          {lead.country && <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: 0 }}>{lead.country}</p>}
         </td>
-        <td className="px-4 py-3"><TypeBadge type={lead.type} /></td>
-        <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{fmt(lead.created_at)}</td>
-        <td className="px-4 py-3">
+        <td style={{ padding: '10px 14px', verticalAlign: 'top' }}>
+          <TypeBadge type={lead.type} />
+        </td>
+        <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--gray-mid)', whiteSpace: 'nowrap', verticalAlign: 'top' }}>{fmt(lead.created_at)}</td>
+        <td style={{ padding: '10px 14px', verticalAlign: 'top' }}>
           <select
             value={lead.status}
             onChange={e => save({ status: e.target.value as LeadStatus })}
-            className={`text-xs font-semibold px-2 py-1 rounded-lg border-0 outline-none cursor-pointer appearance-none pr-5 ${statusColor(lead.status)}`}
+            className={`adm-badge ${STATUS_TONE[lead.status] || 'gray'}`}
+            style={{ border: 'none', outline: 'none', cursor: 'pointer', appearance: 'none', paddingRight: 4, fontWeight: 600, fontSize: 12 }}
           >
             {STATUS_OPTIONS.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
         </td>
-        <td className="px-4 py-3 min-w-[180px]">
-          <div className="relative">
+        <td style={{ padding: '10px 14px', minWidth: 180, verticalAlign: 'top' }}>
+          <div style={{ position: 'relative' }}>
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
               onBlur={() => notes !== lead.admin_notes && save({ admin_notes: notes })}
               rows={1}
               placeholder="Add note…"
-              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 resize-none focus:outline-none focus:border-green-500 placeholder-gray-300"
+              className="adm-textarea"
+              style={{ width: '100%', fontSize: 12, resize: 'none' }}
             />
             {(saving || saved) && (
-              <span className="absolute right-1.5 top-1.5 text-[10px] text-green-600 font-semibold">
+              <span style={{ position: 'absolute', right: 6, top: 6, fontSize: 10, color: 'var(--forest)', fontWeight: 700 }}>
                 {saving ? '…' : '✓'}
               </span>
             )}
@@ -297,10 +312,9 @@ function LeadRow({ lead, onUpdate }: { lead: Lead; onUpdate: (id: string, patch:
         </td>
       </tr>
 
-      {/* Expandable survey row */}
       {expanded && hasSurvey && (
-        <tr className="bg-green-50/40">
-          <td colSpan={8} className="px-6 py-3 border-b border-green-100">
+        <tr style={{ background: 'rgba(168,213,181,0.06)' }}>
+          <td colSpan={8} style={{ padding: '10px 20px', borderBottom: '1px solid rgba(168,213,181,0.3)' }}>
             <SurveyPanel lead={lead} />
           </td>
         </tr>
@@ -319,83 +333,82 @@ function LeadCard({ lead, onUpdate }: { lead: Lead; onUpdate: (id: string, patch
   const hasSurvey = lead.type === 'survey'
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
-      {/* Name + type */}
-      <div className="flex items-start justify-between gap-2">
+    <div className="adm-card adm-card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
         <div>
-          <p className="font-semibold text-green-900">{lead.name}</p>
-          <p className="text-xs text-gray-400">{lead.email}</p>
+          <p style={{ fontWeight: 600, color: 'var(--forest)', margin: 0 }}>{lead.name}</p>
+          <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: 0 }}>{lead.email}</p>
         </div>
         <TypeBadge type={lead.type} />
       </div>
 
-      {/* Contact + city */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <a
           href={waLink(lead.whatsapp)}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-sm text-green-700 font-medium"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--forest)', fontWeight: 500, textDecoration: 'none' }}
         >
           <MessageCircle size={13} /> {lead.whatsapp}
         </a>
-        <span className="text-xs text-gray-400">{lead.parent_city}</span>
+        <span style={{ fontSize: 12, color: 'var(--gray-mid)' }}>{lead.parent_city}</span>
         {lead.source !== 'website' && (
-          <span className="text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg px-2 py-0.5">
-            {lead.source}
-          </span>
+          <Badge tone="blue">{lead.source}</Badge>
         )}
       </div>
 
-      {/* Status + date */}
-      <div className="flex items-center justify-between gap-3">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <select
           value={lead.status}
           onChange={e => save({ status: e.target.value as LeadStatus })}
-          className={`text-xs font-semibold px-2 py-1 rounded-lg border-0 outline-none cursor-pointer ${statusColor(lead.status)}`}
+          className={`adm-badge ${STATUS_TONE[lead.status] || 'gray'}`}
+          style={{ border: 'none', outline: 'none', cursor: 'pointer', appearance: 'none', fontWeight: 600, fontSize: 12 }}
         >
           {STATUS_OPTIONS.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
-        <span className="text-xs text-gray-400">{fmt(lead.created_at)}</span>
+        <span style={{ fontSize: 12, color: 'var(--gray-mid)' }}>{fmt(lead.created_at)}</span>
       </div>
 
-      {/* Survey answers toggle */}
       {hasSurvey && (
         <button
           onClick={() => setSurveyOpen(v => !v)}
-          className="w-full flex items-center justify-between text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-100 rounded-xl px-3 py-2 transition-colors"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            width: '100%', fontSize: 12, fontWeight: 600, color: 'var(--forest)',
+            background: 'rgba(168,213,181,0.12)', border: '1px solid rgba(168,213,181,0.4)',
+            borderRadius: 'var(--radius-card)', padding: '6px 10px', cursor: 'pointer',
+          }}
         >
           <span>{surveyOpen ? 'Hide survey answers' : 'View survey answers'}</span>
-          {surveyOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          <span style={{ fontSize: 11 }}>{surveyOpen ? '▲' : '▼'}</span>
         </button>
       )}
 
-      {/* Survey panel */}
       {hasSurvey && surveyOpen && <SurveyPanel lead={lead} />}
 
-      {/* Notes toggle */}
       <button
         onClick={() => setNotesOpen(v => !v)}
-        className="text-xs text-gray-400 flex items-center gap-1"
+        style={{ fontSize: 12, color: 'var(--gray-mid)', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
       >
-        {notesOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+        <span style={{ fontSize: 11 }}>{notesOpen ? '▲' : '▼'}</span>
         {notesOpen ? 'Hide notes' : 'Add note'}
       </button>
 
       {notesOpen && (
-        <div className="relative">
+        <div style={{ position: 'relative' }}>
           <textarea
             value={notes}
             onChange={e => setNotes(e.target.value)}
             onBlur={() => notes !== lead.admin_notes && save({ admin_notes: notes })}
             rows={2}
             placeholder="Add a note after your call…"
-            className="w-full text-xs border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-green-500 placeholder-gray-300"
+            className="adm-textarea"
+            style={{ width: '100%', fontSize: 12, resize: 'none' }}
           />
           {(saving || saved) && (
-            <span className="absolute right-2 top-2 text-[10px] text-green-600 font-semibold">
+            <span style={{ position: 'absolute', right: 8, top: 8, fontSize: 10, color: 'var(--forest)', fontWeight: 700 }}>
               {saving ? '…' : '✓ Saved'}
             </span>
           )}
@@ -458,144 +471,140 @@ export function AdminLeadsCRM() {
   ).sort((a, b) => b[1] - a[1])
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h1 className="font-serif text-2xl text-green-900">Waitlist & Leads</h1>
-          <p className="text-gray-400 text-sm mt-1">All inbound leads — waitlist, survey, consultation</p>
+          <h1 className="adm-page-h">Waitlist &amp; Leads</h1>
+          <p className="adm-page-sub" style={{ marginTop: 4 }}>All inbound leads — waitlist, survey, consultation</p>
         </div>
-        <button
-          onClick={load}
-          className="text-xs font-semibold text-green-700 border border-green-200 rounded-xl px-3 py-2 hover:bg-green-50 transition-colors"
-        >
+        <button onClick={load} className="adm-btn" style={{ fontSize: 12 }}>
           Refresh
         </button>
       </div>
 
       {/* Stats */}
       {!loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white rounded-2xl border border-gray-100 p-4">
-            <p className="text-2xl font-bold text-green-900">{total}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Total leads</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
+          <div className="adm-card adm-card-pad">
+            <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--forest)', margin: 0 }}>{total}</p>
+            <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 2 }}>Total leads</p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-4">
-            <p className="text-2xl font-bold text-indigo-700">{byType.waitlist}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Waitlist signups</p>
+          <div className="adm-card adm-card-pad">
+            <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--forest)', margin: 0 }}>{byType.waitlist}</p>
+            <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 2 }}>Waitlist signups</p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-4">
-            <p className="text-2xl font-bold text-green-700">{byType.survey}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Survey responses</p>
+          <div className="adm-card adm-card-pad">
+            <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--forest)', margin: 0 }}>{byType.survey}</p>
+            <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 2 }}>Survey responses</p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-4">
-            <p className="text-2xl font-bold text-orange-600">{byType.consultation}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Consultation requests</p>
+          <div className="adm-card adm-card-pad">
+            <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--forest)', margin: 0 }}>{byType.consultation}</p>
+            <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 2 }}>Consultation requests</p>
           </div>
         </div>
       )}
 
       {/* Source breakdown */}
       {!loading && sourceBreakdown.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">By source</p>
-          <div className="flex flex-wrap gap-2">
+        <div className="adm-card adm-card-pad">
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' }}>By source</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {sourceBreakdown.map(([src, count]) => (
               <button
                 key={src}
                 onClick={() => setSourceFilter(sourceFilter === src ? 'all' : src)}
-                className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors ${
-                  sourceFilter === src ? 'bg-green-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                className={`adm-pill-f${sourceFilter === src ? ' is-active' : ''}`}
               >
-                {src} <span className="opacity-70">({count})</span>
+                {src} <span style={{ opacity: 0.7 }}>({count})</span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between">
-          {error}
-          <button onClick={load} className="font-semibold underline">Retry</button>
-        </div>
-      )}
+      {error && <ErrorBox onRetry={load} />}
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-          className="text-sm border-2 border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-green-600 bg-white">
+      <div className="adm-filterbar">
+        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="adm-input" style={{ fontSize: 13 }}>
           <option value="all">All types</option>
           <option value="waitlist">Waitlist</option>
           <option value="survey">Survey</option>
           <option value="consultation">Consultation</option>
         </select>
-        <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
-          className="text-sm border-2 border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-green-600 bg-white">
+        <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="adm-input" style={{ fontSize: 13 }}>
           {sources.map(s => <option key={s} value={s}>{s === 'all' ? 'All sources' : s}</option>)}
         </select>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          className="text-sm border-2 border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-green-600 bg-white">
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="adm-input" style={{ fontSize: 13 }}>
           <option value="all">All statuses</option>
           {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
         <button
           onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}
-          className="flex items-center gap-1.5 text-sm font-medium text-gray-600 border-2 border-gray-200 rounded-xl px-3 py-2 hover:border-green-400 transition-colors bg-white"
+          className="adm-btn"
+          style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500 }}
         >
-          {sortDir === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+          <span style={{ fontSize: 11 }}>{sortDir === 'desc' ? '▼' : '▲'}</span>
           {sortDir === 'desc' ? 'Newest first' : 'Oldest first'}
         </button>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 size={26} className="animate-spin text-green-600" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <Skeleton h={88} />
+          <Skeleton h={88} />
+          <Skeleton h={88} />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 bg-green-50 rounded-2xl">
-          <p className="text-3xl mb-3">📋</p>
-          <p className="font-semibold text-green-900">No leads match your filters</p>
-          <button onClick={() => { setSourceFilter('all'); setStatusFilter('all'); setTypeFilter('all') }}
-            className="mt-3 text-sm text-green-600 underline">
-            Clear filters
-          </button>
+        <div className="adm-card adm-card-pad">
+          <EmptyState
+            title="No leads match your filters"
+            sub="Try clearing the filters to see all leads"
+          />
+          <div style={{ textAlign: 'center', marginTop: 8 }}>
+            <button
+              onClick={() => { setSourceFilter('all'); setStatusFilter('all'); setTypeFilter('all') }}
+              className="adm-btn"
+              style={{ fontSize: 13 }}
+            >
+              Clear filters
+            </button>
+          </div>
         </div>
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  <th className="px-4 py-3 text-left">Name / Email</th>
-                  <th className="px-4 py-3 text-left">WhatsApp</th>
-                  <th className="px-4 py-3 text-left">Parent's City</th>
-                  <th className="px-4 py-3 text-left">Source</th>
-                  <th className="px-4 py-3 text-left">Type</th>
-                  <th className="px-4 py-3 text-left">Date</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-left">Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(lead => (
-                  <LeadRow key={`${lead.type}-${lead.id}`} lead={lead} onUpdate={onUpdate} />
-                ))}
-              </tbody>
-            </table>
+          <div className="adm-table-wrap" style={{ display: 'none' }}>
+            <style>{`@media(min-width:768px){.leads-table-wrap{display:block!important}}`}</style>
+            <div className="leads-table-wrap adm-table-wrap">
+              <table className="adm-table" style={{ width: '100%', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--gray-light)', background: 'var(--cream)' }}>
+                    {['Name / Email', 'WhatsApp', "Parent's City", 'Source', 'Type', 'Date', 'Status', 'Notes'].map(h => (
+                      <th key={h} style={{ padding: '8px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(lead => (
+                    <LeadRow key={`${lead.type}-${lead.id}`} lead={lead} onUpdate={onUpdate} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Mobile cards */}
-          <div className="md:hidden space-y-3">
+          <div className="leads-mobile-cards" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <style>{`@media(min-width:768px){.leads-mobile-cards{display:none!important}}`}</style>
             {filtered.map(lead => (
               <LeadCard key={`${lead.type}-${lead.id}`} lead={lead} onUpdate={onUpdate} />
             ))}
           </div>
 
-          <p className="text-xs text-gray-400 text-center">
+          <p style={{ fontSize: 12, color: 'var(--gray-mid)', textAlign: 'center' }}>
             Showing {filtered.length} of {total} leads
           </p>
         </>

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Spinner } from '@/components/ui/Skeleton'
 import { formatDistanceToNow } from 'date-fns'
 import { LiveMap, LiveMapMarker } from '@/components/ui/LiveMap'
+import { Skeleton, EmptyState, ErrorBox, Avatar } from './_shared'
 
 export function AdminLiveMap() {
   const [locations, setLocations] = useState<any[]>([])
@@ -44,39 +44,37 @@ export function AdminLiveMap() {
     label: l.companions?.full_name,
   }))
 
-  if (loading) return <Spinner />
+  if (loading) return <Skeleton h={400} />
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="font-serif text-2xl text-green-900">Live Map</h1>
-        <p className="text-gray-400 text-sm mt-1">Companions currently on an active visit.</p>
+    <div>
+      <div style={{ marginBottom: 20 }}>
+        <h1 className="adm-page-h">Live Map</h1>
+        <p className="adm-page-sub" style={{ marginTop: 4 }}>Companions currently on an active visit.</p>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
-          {error}
-          <button onClick={() => load(true)} className="font-semibold underline whitespace-nowrap">Retry</button>
-        </div>
+        <ErrorBox onRetry={() => load(true)} />
       )}
 
       <LiveMap markers={markers} height="400px" />
 
       {locations.length === 0 ? (
-        <div className="text-center py-12 bg-green-50 rounded-2xl">
-          <p className="text-4xl mb-3">🗺️</p>
-          <p className="font-semibold text-green-900">No active visits</p>
-          <p className="text-sm text-gray-400 mt-1">Companion locations will appear here while a visit is in progress.</p>
+        <div style={{ marginTop: 20 }}>
+          <EmptyState title="No active visits" sub="Companion locations will appear here while a visit is in progress." />
         </div>
       ) : (
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20 }}>
           {locations.map(l => (
-            <div key={l.companion_id} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <p className="font-semibold text-green-900 text-sm">{l.companions?.full_name}</p>
-                <p className="text-xs text-gray-400">Visiting {l.bookings?.loved_ones?.full_name}</p>
+            <div key={l.companion_id} className="adm-card adm-card-pad" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Avatar name={l.companions?.full_name} size={28} />
+                <div>
+                  <p style={{ fontWeight: 600, color: 'var(--forest)', fontSize: 13, margin: 0 }}>{l.companions?.full_name}</p>
+                  <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: 0 }}>Visiting {l.bookings?.loved_ones?.full_name}</p>
+                </div>
               </div>
-              <p className="text-xs text-gray-400">Updated {formatDistanceToNow(new Date(l.updated_at), { addSuffix: true })}</p>
+              <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: 0 }}>Updated {formatDistanceToNow(new Date(l.updated_at), { addSuffix: true })}</p>
             </div>
           ))}
         </div>

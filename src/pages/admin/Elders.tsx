@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/Toast'
-import { CardSkeleton } from '@/components/ui/Skeleton'
-import { Plus, Pencil, UserCheck, CalendarClock } from 'lucide-react'
+import { Pencil, UserCheck, CalendarClock } from 'lucide-react'
 import { format } from 'date-fns'
 import { ElderProfileModal } from './ElderProfileModal'
+import { Badge, Skeleton, EmptyState, ErrorBox } from './_shared'
 
 interface LovedOneOption {
   id: string
@@ -17,8 +17,8 @@ export function AdminElders() {
   const { showToast } = useToast()
   const [elders, setElders]         = useState<any[]>([])
   const [lovedOnes, setLovedOnes]   = useState<LovedOneOption[]>([])
-  const [lastVisit, setLastVisit]   = useState<Record<string, string>>({})   // elder_id -> ISO
-  const [companionByLO, setCompanionByLO] = useState<Record<string, string>>({}) // loved_one_id -> companion name
+  const [lastVisit, setLastVisit]   = useState<Record<string, string>>({})
+  const [companionByLO, setCompanionByLO] = useState<Record<string, string>>({})
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState<string | null>(null)
   const [search, setSearch]         = useState('')
@@ -42,7 +42,6 @@ export function AdminElders() {
       setElders(eldersRes.data || [])
       setLovedOnes(lovedOnesRes.data || [])
 
-      // Latest visit per elder
       const lv: Record<string, string> = {}
       ;(visitsRes.data || []).forEach((v: any) => {
         if (!v.elder_id) return
@@ -51,7 +50,6 @@ export function AdminElders() {
       })
       setLastVisit(lv)
 
-      // Most recent assigned companion per loved one
       const compNames: Record<string, string> = {}
       ;(companionsRes.data || []).forEach((c: any) => { compNames[c.id] = c.full_name })
       const byLO: Record<string, string> = {}
@@ -91,81 +89,83 @@ export function AdminElders() {
   })
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 className="font-serif text-2xl text-green-900">Elders</h1>
-          <p className="text-gray-400 text-sm mt-0.5">{elders.length} elder profile{elders.length === 1 ? '' : 's'}</p>
+          <h1 className="adm-page-h">Elders</h1>
+          <p className="adm-page-sub">{elders.length} elder profile{elders.length === 1 ? '' : 's'}</p>
         </div>
-        <button onClick={openAdd}
-          className="flex items-center gap-1.5 text-sm font-semibold bg-green-800 text-white px-4 py-2.5 rounded-xl hover:bg-green-700 transition-colors">
-          <Plus size={16} /> Add New Elder
+        <button onClick={openAdd} className="adm-btn adm-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> Add New Elder
         </button>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
-          {error}
-          <button onClick={load} className="font-semibold underline">Retry</button>
-        </div>
-      )}
+      {error && <ErrorBox onRetry={load} />}
 
       <input
         value={search}
         onChange={e => setSearch(e.target.value)}
         placeholder="Search by name or city…"
-        className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+        className="adm-input"
+        style={{ width: '100%' }}
       />
 
       {loading ? (
-        <div className="space-y-2">{[...Array(4)].map((_, i) => <CardSkeleton key={i} />)}</div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-12 bg-green-50 rounded-2xl">
-          <p className="text-4xl mb-3">👵</p>
-          <p className="font-semibold text-green-900">{elders.length === 0 ? 'No elder profiles yet' : 'No matches'}</p>
-          <p className="text-sm text-gray-400 mt-1">
-            {elders.length === 0 ? 'Add the first elder profile above.' : 'Try a different search.'}
-          </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[...Array(4)].map((_, i) => <Skeleton key={i} h={88} />)}
         </div>
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          title={elders.length === 0 ? 'No elder profiles yet' : 'No matches'}
+          sub={elders.length === 0 ? 'Add the first elder profile above.' : 'Try a different search.'}
+        />
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="adm-table-wrap" style={{ display: 'none' }} data-desktop>
+            <style>{`@media (min-width: 768px) { [data-desktop] { display: block !important; } [data-mobile] { display: none !important; } }`}</style>
+            <table className="adm-table">
               <thead>
-                <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100">
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Age</th>
-                  <th className="px-4 py-3">City</th>
-                  <th className="px-4 py-3">Last visit</th>
-                  <th className="px-4 py-3">Companion</th>
-                  <th className="px-4 py-3 text-right">Edit</th>
+                <tr>
+                  <th>Name</th>
+                  <th>Age</th>
+                  <th>City</th>
+                  <th>Last visit</th>
+                  <th>Companion</th>
+                  <th style={{ textAlign: 'right' }}>Edit</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody>
                 {filtered.map(e => {
                   const name = e.name || e.loved_ones?.full_name || '—'
                   const rawCity = e.city || e.loved_ones?.city || ''
                   const lv   = lastVisit[e.id]
                   const comp = e.loved_one_id ? companionByLO[e.loved_one_id] : null
                   return (
-                    <tr key={e.id} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-3 font-semibold text-green-900">
+                    <tr key={e.id}>
+                      <td style={{ fontWeight: 600, color: 'var(--forest)' }}>
                         {name}
-                        {!e.loved_one_id && <span className="ml-2 text-[10px] font-semibold bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full">Unlinked</span>}
+                        {!e.loved_one_id && (
+                          <span style={{ marginLeft: 8 }}><Badge tone="amber">Unlinked</Badge></span>
+                        )}
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{e.age ?? '—'}</td>
-                      <td className="px-4 py-3">
+                      <td style={{ color: 'var(--muted)' }}>{e.age ?? '—'}</td>
+                      <td>
                         {rawCity
-                          ? <span className="text-gray-600">{rawCity}</span>
-                          : <span className="text-[11px] font-semibold bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full">City missing</span>
+                          ? <span style={{ color: 'var(--muted)' }}>{rawCity}</span>
+                          : <Badge tone="amber">City missing</Badge>
                         }
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{lv ? format(new Date(lv), 'dd MMM yyyy') : <span className="text-gray-300">No visits</span>}</td>
-                      <td className="px-4 py-3 text-gray-600">{comp || <span className="text-gray-300">—</span>}</td>
-                      <td className="px-4 py-3 text-right">
-                        <button onClick={() => openEdit(e)} className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-900">
+                      <td style={{ color: 'var(--muted)' }}>
+                        {lv ? format(new Date(lv), 'dd MMM yyyy') : <span style={{ color: 'var(--gray-light)' }}>No visits</span>}
+                      </td>
+                      <td style={{ color: 'var(--muted)' }}>{comp || <span style={{ color: 'var(--gray-light)' }}>—</span>}</td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button
+                          onClick={() => openEdit(e)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: 'var(--forest)', background: 'none', border: 'none', cursor: 'pointer' }}
+                        >
                           <Pencil size={13} /> Edit
                         </button>
                       </td>
@@ -177,30 +177,41 @@ export function AdminElders() {
           </div>
 
           {/* Mobile cards */}
-          <div className="md:hidden space-y-2">
+          <div data-mobile style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {filtered.map(e => {
               const name = e.name || e.loved_ones?.full_name || '—'
               const rawCity = e.city || e.loved_ones?.city || ''
               const lv   = lastVisit[e.id]
               const comp = e.loved_one_id ? companionByLO[e.loved_one_id] : null
               return (
-                <div key={e.id} className="bg-white rounded-2xl border border-gray-100 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-green-900">{name}{e.age ? <span className="text-gray-400 font-normal">, {e.age}</span> : ''}</p>
+                <div key={e.id} className="adm-card adm-card-pad">
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontWeight: 600, color: 'var(--forest)', margin: 0 }}>
+                        {name}{e.age ? <span style={{ color: 'var(--gray-mid)', fontWeight: 400 }}>, {e.age}</span> : ''}
+                      </p>
                       {rawCity
-                        ? <p className="text-xs text-gray-400 mt-0.5">{rawCity}</p>
-                        : <span className="mt-1 inline-block text-[11px] font-semibold bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full">City missing</span>
+                        ? <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 2 }}>{rawCity}</p>
+                        : <p style={{ marginTop: 4 }}><Badge tone="amber">City missing</Badge></p>
                       }
                     </div>
-                    <button onClick={() => openEdit(e)} className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-green-700 border border-green-200 rounded-xl px-2.5 py-1.5">
+                    <button
+                      onClick={() => openEdit(e)}
+                      style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: 'var(--forest)', border: '1px solid var(--sage)', borderRadius: 'var(--radius-card)', padding: '6px 10px', background: 'none', cursor: 'pointer' }}
+                    >
                       <Pencil size={12} /> Edit
                     </button>
                   </div>
-                  <div className="flex flex-wrap gap-3 mt-3 text-xs text-gray-500">
-                    <span className="flex items-center gap-1"><CalendarClock size={12} /> {lv ? format(new Date(lv), 'dd MMM yyyy') : 'No visits'}</span>
-                    {comp && <span className="flex items-center gap-1"><UserCheck size={12} /> {comp}</span>}
-                    {!e.loved_one_id && <span className="text-[10px] font-semibold bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full">Unlinked</span>}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 12, fontSize: 12, color: 'var(--muted)' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <CalendarClock size={12} /> {lv ? format(new Date(lv), 'dd MMM yyyy') : 'No visits'}
+                    </span>
+                    {comp && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <UserCheck size={12} /> {comp}
+                      </span>
+                    )}
+                    {!e.loved_one_id && <Badge tone="amber">Unlinked</Badge>}
                   </div>
                 </div>
               )

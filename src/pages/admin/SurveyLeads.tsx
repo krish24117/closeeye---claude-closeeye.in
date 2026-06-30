@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Loader2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
+import { Badge, EmptyState, ErrorBox, Skeleton } from './_shared'
 
 interface SurveyResponse {
   id: string
@@ -26,45 +26,58 @@ function fmt(dt: string) {
 }
 
 function ValueBadge({ value }: { value: string | null }) {
-  if (!value) return <span className="text-gray-300">—</span>
+  if (!value) return <span style={{ color: 'var(--gray-mid)' }}>—</span>
   const hot = value.includes("Very valuable") || value.includes("want this")
   return (
-    <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${
-      hot ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-    }`}>
+    <Badge tone={hot ? 'green' : 'gray'}>
       {hot ? '🔥 ' : ''}{value}
-    </span>
+    </Badge>
   )
 }
 
 function ExpandedRow({ r }: { r: SurveyResponse }) {
   return (
-    <div className="bg-green-50 border-t border-green-100 px-4 sm:px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+    <div style={{
+      background: 'rgba(168,213,181,0.12)',
+      borderTop: '1px solid var(--line)',
+      padding: '14px 20px',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: 12,
+      fontSize: 13,
+    }}>
       <div>
-        <p className="text-xs font-semibold text-gray-500 mb-0.5">Q1 — Has elderly family in India?</p>
-        <p className="text-gray-800">{r.q1_location || '—'}</p>
+        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', marginBottom: 2 }}>Q1 — Has elderly family in India?</p>
+        <p style={{ color: 'var(--black)' }}>{r.q1_location || '—'}</p>
       </div>
       <div>
-        <p className="text-xs font-semibold text-gray-500 mb-0.5">Q2 — Where they live</p>
-        <p className="text-gray-800">{r.q2_residence || '—'}</p>
+        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', marginBottom: 2 }}>Q2 — Where they live</p>
+        <p style={{ color: 'var(--black)' }}>{r.q2_residence || '—'}</p>
       </div>
-      <div className="sm:col-span-2">
-        <p className="text-xs font-semibold text-gray-500 mb-0.5">Q3 — Worries (multi-select)</p>
+      <div style={{ gridColumn: '1 / -1' }}>
+        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', marginBottom: 2 }}>Q3 — Worries (multi-select)</p>
         {r.q3_worries && r.q3_worries.length > 0
-          ? <div className="flex flex-wrap gap-1.5 mt-1">
+          ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
               {r.q3_worries.map(w => (
-                <span key={w} className="text-xs bg-white border border-gray-200 rounded-lg px-2 py-0.5 text-gray-700">{w}</span>
+                <span key={w} style={{
+                  fontSize: 11,
+                  background: '#fff',
+                  border: '1px solid var(--line)',
+                  borderRadius: 8,
+                  padding: '2px 8px',
+                  color: 'var(--gray-dark)',
+                }}>{w}</span>
               ))}
             </div>
-          : <p className="text-gray-400">—</p>
+          : <p style={{ color: 'var(--gray-mid)' }}>—</p>
         }
       </div>
       <div>
-        <p className="text-xs font-semibold text-gray-500 mb-0.5">Q4 — How they check in</p>
-        <p className="text-gray-800">{r.q4_check_method || '—'}</p>
+        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', marginBottom: 2 }}>Q4 — How they check in</p>
+        <p style={{ color: 'var(--black)' }}>{r.q4_check_method || '—'}</p>
       </div>
       <div>
-        <p className="text-xs font-semibold text-gray-500 mb-0.5">Q5 — Value of companion visit</p>
+        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', marginBottom: 2 }}>Q5 — Value of companion visit</p>
         <ValueBadge value={r.q5_value_perception} />
       </div>
     </div>
@@ -117,11 +130,11 @@ export function AdminSurveyLeads() {
   const hotLeads = leads.filter(l => l.q5_value_perception?.includes('Very valuable')).length
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h1 className="font-serif text-2xl text-green-900">Survey Leads</h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <h1 className="adm-page-h">Survey Leads</h1>
+          <p className="adm-page-sub" style={{ marginTop: 4 }}>
             {leads.length} total · {hotLeads} hot leads 🔥
           </p>
         </div>
@@ -129,53 +142,75 @@ export function AdminSurveyLeads() {
           href="/survey"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 border border-green-200 rounded-xl px-3 py-2 hover:bg-green-50 transition-colors"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            color: 'var(--forest)',
+            border: '1px solid var(--sage)',
+            borderRadius: 10,
+            padding: '6px 12px',
+            textDecoration: 'none',
+            background: 'transparent',
+          }}
         >
-          <ExternalLink size={13} /> View survey
+          ↗ View survey
         </a>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 flex items-center justify-between gap-3">
-          {error}
-          <button onClick={load} className="font-semibold underline whitespace-nowrap">Retry</button>
-        </div>
+        <ErrorBox onRetry={load} />
       )}
 
-      <div className="flex gap-3 flex-wrap">
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search by name, city, source…"
-          className="flex-1 min-w-[200px] border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+          className="adm-input"
+          style={{ flex: 1, minWidth: 200 }}
         />
         <button
           onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}
-          className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 border-2 border-gray-200 rounded-xl px-3 py-2 hover:border-green-400 transition-colors"
+          className="adm-btn"
+          style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600 }}
         >
-          {sortDir === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+          {sortDir === 'desc' ? '↓' : '↑'}
           {sortDir === 'desc' ? 'Newest first' : 'Oldest first'}
         </button>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 size={24} className="animate-spin text-green-600" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Skeleton h={56} />
+          <Skeleton h={56} />
+          <Skeleton h={56} />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 bg-green-50 rounded-2xl">
-          <p className="text-3xl mb-3">📋</p>
-          <p className="font-semibold text-green-900 mb-1">{leads.length === 0 ? 'No leads yet' : 'No results'}</p>
-          <p className="text-sm text-gray-400">
-            {leads.length === 0
-              ? 'Share the survey link to start collecting responses.'
-              : 'Try a different search term.'}
-          </p>
-        </div>
+        <EmptyState
+          title={leads.length === 0 ? 'No leads yet' : 'No results'}
+          sub={leads.length === 0
+            ? 'Share the survey link to start collecting responses.'
+            : 'Try a different search term.'}
+        />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="adm-card" style={{ overflow: 'hidden', padding: 0 }}>
           {/* Desktop header */}
-          <div className="hidden sm:grid grid-cols-[1fr_130px_120px_100px_80px_130px] gap-3 px-5 py-3 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 130px 120px 100px 80px 130px',
+            gap: 12,
+            padding: '10px 20px',
+            background: 'var(--gray-light)',
+            borderBottom: '1px solid var(--line)',
+            fontSize: 11,
+            fontWeight: 700,
+            color: 'var(--gray-mid)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          }}>
             <span>Name / Contact</span>
             <span>Parent's city</span>
             <span>Source</span>
@@ -185,50 +220,41 @@ export function AdminSurveyLeads() {
           </div>
 
           {filtered.map(r => (
-            <div key={r.id} className="border-b border-gray-100 last:border-0">
-              {/* Row */}
+            <div key={r.id} style={{ borderBottom: '1px solid var(--line)' }}>
               <button
                 onClick={() => toggleExpand(r.id)}
-                className="w-full text-left px-4 sm:px-5 py-4 hover:bg-gray-50 transition-colors"
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '14px 20px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'block',
+                }}
               >
-                {/* Mobile layout */}
-                <div className="sm:hidden space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-green-900 text-sm">{r.name}</p>
-                    <div className="flex items-center gap-1 text-gray-400">
-                      {expanded === r.id ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                    </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 130px 120px 100px 80px 130px',
+                  gap: 12,
+                  alignItems: 'center',
+                }}>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontWeight: 600, color: 'var(--forest)', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{r.name}</p>
+                    <p style={{ fontSize: 11, color: 'var(--gray-mid)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: '2px 0 0' }}>{r.whatsapp}</p>
+                    <p style={{ fontSize: 11, color: 'var(--gray-mid)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: '1px 0 0' }}>{r.email}</p>
                   </div>
-                  <p className="text-xs text-gray-500">{r.whatsapp} · {r.email}</p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-medium text-green-700 bg-green-50 rounded-lg px-2 py-0.5">{r.parent_city}</span>
-                    {r.source && <span className="text-xs text-gray-400">via {r.source}</span>}
-                    <span className="text-xs text-gray-400">{fmt(r.created_at)}</span>
-                  </div>
-                  {r.q5_value_perception?.includes('Very valuable') && (
-                    <span className="text-xs text-green-700 font-semibold">🔥 Hot lead</span>
-                  )}
-                </div>
-
-                {/* Desktop layout */}
-                <div className="hidden sm:grid grid-cols-[1fr_130px_120px_100px_80px_130px] gap-3 items-center">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-green-900 text-sm truncate">{r.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{r.whatsapp}</p>
-                    <p className="text-xs text-gray-400 truncate">{r.email}</p>
-                  </div>
-                  <span className="text-sm text-gray-700 truncate">{r.parent_city}</span>
-                  <span className="text-xs text-gray-500 truncate">{r.source || '—'}</span>
+                  <span style={{ fontSize: 13, color: 'var(--gray-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.parent_city}</span>
+                  <span style={{ fontSize: 11, color: 'var(--gray-mid)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.source || '—'}</span>
                   <ValueBadge value={r.q5_value_perception} />
-                  <span className="text-xs text-gray-500 truncate">{r.q2_residence ? r.q2_residence.replace('Outside India (NRI)', 'NRI') : '—'}</span>
-                  <div className="text-right flex items-center justify-end gap-1">
-                    <span className="text-xs text-gray-400">{fmt(r.created_at)}</span>
-                    {expanded === r.id ? <ChevronUp size={13} className="text-gray-400" /> : <ChevronDown size={13} className="text-gray-400" />}
+                  <span style={{ fontSize: 11, color: 'var(--gray-mid)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.q2_residence ? r.q2_residence.replace('Outside India (NRI)', 'NRI') : '—'}</span>
+                  <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                    <span style={{ fontSize: 11, color: 'var(--gray-mid)' }}>{fmt(r.created_at)}</span>
+                    <span style={{ fontSize: 13, color: 'var(--gray-mid)' }}>{expanded === r.id ? '▲' : '▼'}</span>
                   </div>
                 </div>
               </button>
 
-              {/* Expanded survey answers */}
               {expanded === r.id && <ExpandedRow r={r} />}
             </div>
           ))}
@@ -236,7 +262,7 @@ export function AdminSurveyLeads() {
       )}
 
       {filtered.length > 0 && (
-        <p className="text-xs text-gray-400 text-center">
+        <p style={{ fontSize: 11, color: 'var(--gray-mid)', textAlign: 'center' }}>
           Showing {filtered.length} of {leads.length} leads
         </p>
       )}

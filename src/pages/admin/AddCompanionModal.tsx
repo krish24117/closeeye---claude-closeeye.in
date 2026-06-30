@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { LANGUAGES, SKILLS, AVAILABILITY_OPTIONS } from '@/lib/companion-options'
 
@@ -100,74 +99,151 @@ export function AddCompanionModal({ onClose, onAdded }: { onClose: () => void, o
     onAdded(data)
   }
 
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: 11,
+    fontWeight: 600,
+    color: 'var(--forest)',
+    marginBottom: 6,
+  }
+
+  const pillBase: React.CSSProperties = {
+    fontSize: 12,
+    fontWeight: 500,
+    padding: '6px 12px',
+    borderRadius: 999,
+    border: '2px solid var(--line)',
+    display: 'inline-block',
+    cursor: 'pointer',
+    transition: 'border-color 0.15s, background 0.15s, color 0.15s',
+  }
+
+  const pillActive: React.CSSProperties = {
+    borderColor: 'var(--forest)',
+    background: 'rgba(14,42,31,0.07)',
+    color: 'var(--forest)',
+  }
+
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
+    <>
+      <div className="adm-overlay" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-companion-title"
-        className="bg-white rounded-2xl max-w-lg w-full my-8 max-h-[90vh] overflow-y-auto"
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%,-50%)',
+          width: 560,
+          maxWidth: '92vw',
+          background: '#fff',
+          borderRadius: 'var(--radius-card)',
+          padding: 24,
+          zIndex: 90,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+          maxHeight: '85vh',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+        }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-          <h2 id="add-companion-title" className="font-serif text-xl text-green-900">Add Companion</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-green-800 transition-colors" aria-label="Close">
-            <X size={20} />
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingBottom: 14,
+          borderBottom: '1px solid var(--line)',
+          position: 'sticky',
+          top: -24,
+          background: '#fff',
+          marginTop: -24,
+          paddingTop: 20,
+          marginLeft: -24,
+          marginRight: -24,
+          paddingLeft: 24,
+          paddingRight: 24,
+          zIndex: 1,
+        }}>
+          <h2 id="add-companion-title" className="adm-page-h" style={{ fontSize: 18, margin: 0 }}>Add Companion</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-dark)', padding: 4, fontSize: 22, lineHeight: 1 }}
+          >
+            ×
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="p-5 space-y-5">
+        <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3">{error}</div>
+            <div style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: '#b91c1c',
+              fontSize: 13,
+              borderRadius: 'var(--radius-card)',
+              padding: '10px 14px',
+            }}>
+              {error}
+            </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
-              <label className="block text-xs font-semibold text-green-900 mb-1.5">Full name *</label>
+              <label style={labelStyle}>Full name *</label>
               <input
                 ref={firstFieldRef}
                 required
                 value={form.full_name}
                 onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
-                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600"
+                className="adm-input"
+                style={{ width: '100%' }}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-green-900 mb-1.5">Phone number *</label>
+              <label style={labelStyle}>Phone number *</label>
               <input
                 required
                 value={form.phone}
                 onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                 placeholder="+91..."
-                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600"
+                className="adm-input"
+                style={{ width: '100%' }}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-green-900 mb-1.5">Email address</label>
+              <label style={labelStyle}>Email address</label>
               <input
                 type="email"
                 value={form.email}
                 onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600"
+                className="adm-input"
+                style={{ width: '100%' }}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-green-900 mb-1.5">Age</label>
+              <label style={labelStyle}>Age</label>
               <input
                 type="number"
                 min={18}
                 max={100}
                 value={form.age}
                 onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
-                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600"
+                className="adm-input"
+                style={{ width: '100%' }}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-green-900 mb-1.5">Gender</label>
+              <label style={labelStyle}>Gender</label>
               <select
                 value={form.gender}
                 onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}
-                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 bg-white"
+                className="adm-input"
+                style={{ width: '100%' }}
               >
                 <option value="">Select...</option>
                 <option value="female">Female</option>
@@ -176,72 +252,124 @@ export function AddCompanionModal({ onClose, onAdded }: { onClose: () => void, o
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-green-900 mb-1.5">City / Area in Hyderabad *</label>
+              <label style={labelStyle}>City / Area in Hyderabad *</label>
               <input
                 required
                 value={form.city}
                 onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
                 placeholder="e.g. Banjara Hills"
-                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600"
+                className="adm-input"
+                style={{ width: '100%' }}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-green-900 mb-2">Languages spoken</label>
-            <div className="flex flex-wrap gap-2">
+            <label style={labelStyle}>Languages spoken</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {LANGUAGES.map(l => (
-                <label key={l} className="cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" checked={languages.includes(l)} onChange={() => toggle(languages, setLanguages, l)} />
-                  <span className="text-xs font-medium px-3 py-1.5 rounded-full border-2 border-gray-200 peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-700 transition-colors inline-block">{l}</span>
+                <label key={l} style={{ cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+                    checked={languages.includes(l)}
+                    onChange={() => toggle(languages, setLanguages, l)}
+                  />
+                  <span style={{ ...pillBase, ...(languages.includes(l) ? pillActive : {}) }}>{l}</span>
                 </label>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-green-900 mb-2">Skills / Services</label>
-            <div className="flex flex-wrap gap-2">
+            <label style={labelStyle}>Skills / Services</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {SKILLS.map(s => (
-                <label key={s} className="cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" checked={skills.includes(s)} onChange={() => toggle(skills, setSkills, s)} />
-                  <span className="text-xs font-medium px-3 py-1.5 rounded-full border-2 border-gray-200 peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-700 transition-colors inline-block">{s}</span>
+                <label key={s} style={{ cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+                    checked={skills.includes(s)}
+                    onChange={() => toggle(skills, setSkills, s)}
+                  />
+                  <span style={{ ...pillBase, ...(skills.includes(s) ? pillActive : {}) }}>{s}</span>
                 </label>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-green-900 mb-2">Availability</label>
-            <div className="flex gap-2">
+            <label style={labelStyle}>Availability</label>
+            <div style={{ display: 'flex', gap: 8 }}>
               {AVAILABILITY_OPTIONS.map(opt => (
-                <label key={opt.value} className="flex-1 cursor-pointer">
-                  <input type="radio" name="availability" className="sr-only peer" checked={form.availability === opt.value} onChange={() => setForm(f => ({ ...f, availability: opt.value }))} />
-                  <span className="block text-center text-xs font-medium px-3 py-2 rounded-xl border-2 border-gray-200 peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-700 transition-colors">{opt.label}</span>
+                <label key={opt.value} style={{ flex: 1, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="availability"
+                    style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+                    checked={form.availability === opt.value}
+                    onChange={() => setForm(f => ({ ...f, availability: opt.value }))}
+                  />
+                  <span style={{
+                    display: 'block',
+                    textAlign: 'center',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius-card)',
+                    border: '2px solid',
+                    borderColor: form.availability === opt.value ? 'var(--forest)' : 'var(--line)',
+                    background: form.availability === opt.value ? 'rgba(14,42,31,0.07)' : 'transparent',
+                    color: form.availability === opt.value ? 'var(--forest)' : 'var(--muted)',
+                    transition: 'border-color 0.15s, background 0.15s, color 0.15s',
+                  }}>
+                    {opt.label}
+                  </span>
                 </label>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
-              <label className="block text-xs font-semibold text-green-900 mb-1.5">ID proof (Aadhaar/PAN)</label>
-              <input type="file" accept="image/*,application/pdf" onChange={handleIdProofChange} className="w-full text-xs text-gray-500" />
-              {idProof && <p className="text-xs text-gray-400 mt-1 truncate">{idProof.name}</p>}
+              <label style={labelStyle}>ID proof (Aadhaar/PAN)</label>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={handleIdProofChange}
+                style={{ width: '100%', fontSize: 12, color: 'var(--gray-mid)' }}
+              />
+              {idProof && (
+                <p style={{ fontSize: 11, color: 'var(--gray-mid)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {idProof.name}
+                </p>
+              )}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-green-900 mb-1.5">Profile photo</label>
-              <input type="file" accept="image/*" onChange={handlePhotoChange} className="w-full text-xs text-gray-500" />
-              {photoPreview && <img src={photoPreview} alt="Profile photo preview" className="w-12 h-12 rounded-full object-cover mt-2" />}
+              <label style={labelStyle}>Profile photo</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                style={{ width: '100%', fontSize: 12, color: 'var(--gray-mid)' }}
+              />
+              {photoPreview && (
+                <img
+                  src={photoPreview}
+                  alt="Profile photo preview"
+                  style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', marginTop: 8 }}
+                />
+              )}
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-green-900 mb-1.5">Status</label>
+            <label style={labelStyle}>Status</label>
             <select
               value={form.status}
               onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 bg-white"
+              className="adm-input"
+              style={{ width: '100%' }}
             >
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
@@ -249,16 +377,25 @@ export function AddCompanionModal({ onClose, onAdded }: { onClose: () => void, o
             </select>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="text-sm font-medium text-gray-500 hover:text-green-800 px-4 py-2.5 transition-colors">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, paddingTop: 4 }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{ fontSize: 13, fontWeight: 500, color: 'var(--gray-mid)', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 16px' }}
+            >
               Cancel
             </button>
-            <button type="submit" disabled={saving} className="text-sm font-semibold bg-green-800 text-white px-5 py-2.5 rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors">
+            <button
+              type="submit"
+              disabled={saving}
+              className="adm-btn adm-btn-primary"
+              style={{ opacity: saving ? 0.5 : 1 }}
+            >
               {saving ? 'Saving...' : 'Add Companion'}
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </>
   )
 }

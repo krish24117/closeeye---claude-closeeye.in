@@ -30,17 +30,17 @@ const SECTIONS: NavSection[] = [
     // { to: '/admin/societies', icon: TbBuildingCommunity, label: 'Societies' }, // disabled
     { to: '/admin/companions', icon: TbUserHeart, label: 'Companions' },
     { to: '/admin/elders', icon: TbWheelchair, label: 'Elders' },
-    { to: '/admin/settings', icon: TbStethoscope, label: 'Doctors' },
+    { to: '/admin/doctors', icon: TbStethoscope, label: 'Doctors' },
   ] },
   { label: 'Finance', items: [
     { to: '/admin/revenue', icon: TbCash, label: 'Revenue' },
     { to: '/admin/payments', icon: TbReceipt, label: 'Payments' },
-    { to: '/admin/settings', icon: TbCreditCard, label: 'Plans' },
+    { to: '/admin/plans', icon: TbCreditCard, label: 'Plans' },
   ] },
   { label: 'Reports', items: [
     { to: '/admin/reports', icon: TbClipboardText, label: 'Visit reports' },
-    { to: '/admin/queries', icon: TbFileText, label: 'Health reports' },
-    { to: '/admin/revenue', icon: TbDownload, label: 'Export data' },
+    { to: '/admin/health-reports', icon: TbFileText, label: 'Health reports' },
+    { to: '/admin/export', icon: TbDownload, label: 'Export data' },
   ] },
   { label: 'Settings', items: [
     { to: '/admin/settings', icon: TbSettings, label: 'Settings' },
@@ -59,6 +59,10 @@ const TITLES: { match: string; title: string; crumb: string }[] = [
   { match: '/admin/revenue', title: 'Revenue', crumb: 'Finance / Revenue' },
   { match: '/admin/payments', title: 'Payments', crumb: 'Finance / Payments' },
   { match: '/admin/reports', title: 'Visit reports', crumb: 'Reports / Visit reports' },
+  { match: '/admin/health-reports', title: 'Health reports', crumb: 'Reports / Health reports' },
+  { match: '/admin/export', title: 'Export data', crumb: 'Reports / Export data' },
+  { match: '/admin/doctors', title: 'Doctors', crumb: 'People / Doctors' },
+  { match: '/admin/plans', title: 'Plans', crumb: 'Finance / Plans' },
   { match: '/admin/live-map', title: 'Schedules', crumb: 'Operations / Schedules' },
   { match: '/admin/settings', title: 'Settings', crumb: 'Settings' },
   { match: '/admin', title: 'Dashboard', crumb: 'Operations / Dashboard' },
@@ -144,7 +148,7 @@ export function AdminLayout() {
                   const Icon = it.icon
                   const badgeVal = it.badge ? counts[it.badge] : 0
                   return (
-                    <NavLink key={it.to + i} to={it.to} end={it.end}
+                    <NavLink key={it.to + i} to={it.to} end={it.end ?? true}
                       className={({ isActive }) => `adm-nav-item${isActive ? ' is-active' : ''}`}>
                       <Icon size={16} />
                       <span className="adm-nav-label">{it.label}</span>
@@ -178,11 +182,10 @@ export function AdminLayout() {
             </div>
             <div className="adm-top-actions">
               <span className="adm-date">{today}</span>
-              <button className="adm-icon-btn" onClick={() => setSearchOpen(true)} aria-label="Search"><TbSearch size={19} /></button>
+              <button className="adm-icon-btn" onClick={() => setSearchOpen(true)} aria-label="Search"><TbSearch size={18} /></button>
               <button className="adm-icon-btn" onClick={() => { setNotifOpen(true); setHasNotifs(false) }} aria-label="Notifications">
-                <TbBell size={19} />{hasNotifs && <span className="adm-dot" />}
+                <TbBell size={18} />{hasNotifs && <span className="adm-dot" />}
               </button>
-              <button className="adm-new-btn" onClick={() => navigate('/admin/bookings')}><TbPlus size={15} /> New visit</button>
             </div>
           </header>
 
