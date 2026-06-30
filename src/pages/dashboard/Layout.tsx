@@ -3,6 +3,7 @@ import { Home, FileText, MessageCircle, CalendarPlus, User, Bell, LogOut, Calend
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { Logo } from '@/components/ui/Logo'
+import { isOnboardingDismissed } from '@/pages/Onboarding'
 
 const NRI_TABS = [
   { to: '/dashboard', icon: Home, label: 'Home', end: true },
@@ -31,8 +32,15 @@ export function DashboardLayout() {
   const [menu, setMenu] = useState(false)
 
   useEffect(() => {
-    // Redirect to onboarding only if they are neither a founding member nor a waitlister
-    if (!loading && profile && profile.role === 'family' && !profile.is_founding_member && !profile.is_waitlisted) {
+    // Send brand-new family users to onboarding unless they've already dismissed it.
+    // "New" = no whatsapp_number set yet (Step 1 of onboarding writes this field).
+    if (
+      !loading && profile &&
+      profile.role === 'family' &&
+      !profile.is_founding_member && !profile.is_waitlisted &&
+      !profile.whatsapp_number &&
+      !isOnboardingDismissed()
+    ) {
       navigate('/onboarding', { replace: true })
     }
   }, [loading, profile, navigate])

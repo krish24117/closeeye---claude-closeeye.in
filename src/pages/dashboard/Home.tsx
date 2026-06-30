@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Calendar, ChevronRight, MessageCircle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
+import { isOnboardingDismissed } from '@/pages/Onboarding'
 
 /* ------------------------------------------------------------------ */
 /*  Shared helpers                                                     */
@@ -97,8 +98,39 @@ function NriHome() {
   const visitMins = durationMin(visit?.start_time, visit?.end_time)
   const moodGood = (visit?.mood_score ?? 4) >= 4
 
+  // Show resume card if onboarding was dismissed mid-way (no whatsapp yet = Step 1 never finished)
+  const showSetupCard = !profile?.whatsapp_number && isOnboardingDismissed()
+
   return (
     <div className="ce-slide-up">
+      {/* ── Welcome + setup resume card ───────────────────────── */}
+      {showSetupCard && (
+        <div style={{
+          margin: '16px 16px 0',
+          background: 'linear-gradient(135deg, #0E2A1F 0%, #1B4332 100%)',
+          borderRadius: 20, padding: '20px 20px 16px',
+        }}>
+          <p style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>
+            Welcome, {firstName} 🌿
+          </p>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', margin: '0 0 16px', lineHeight: 1.5 }}>
+            Finish setting up your parent's care — takes under 2 minutes.
+          </p>
+          <Link
+            to="/onboarding"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: 'var(--sage)', color: 'var(--forest)',
+              borderRadius: 100, padding: '12px 22px',
+              fontSize: 14, fontWeight: 700, textDecoration: 'none',
+              minHeight: 44,
+            }}
+          >
+            Continue setup <ChevronRight size={16} />
+          </Link>
+        </div>
+      )}
+
       {/* ── Wellbeing status card ─────────────────────────────── */}
       <section style={{ margin: 16, borderRadius: 20, overflow: 'hidden' }}>
         <div style={{

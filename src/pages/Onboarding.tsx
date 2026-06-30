@@ -1,666 +1,634 @@
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { Loader2, CheckCircle2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
-import { loadRazorpayScript } from '@/lib/razorpay'
 import { Logo } from '@/components/ui/Logo'
 
-const F = 'var(--forest)'
+// ── Brand tokens (matching reference design) ───────────────────────────────────
+const T = {
+  forest:  '#0E2A1F',
+  forest2: '#163b2c',
+  cream:   '#FAF7F2',
+  cream2:  '#f1ece2',
+  sage:    '#A8D5B5',
+  sage2:   '#7FBF94',
+  muted:   '#5c6b62',
+  line:    '#e3ddd1',
+  req:     '#c0734f',   // terracotta, not red
+}
 
-// ── Field ──────────────────────────────────────────────────────────────────────
+// ── localStorage ──────────────────────────────────────────────────────────────
+
+const DRAFT_KEY     = 'ce_onboarding_draft'
+const DISMISSED_KEY = 'ce_onboarding_dismissed'
+
+interface Draft {
+  step: 1 | 2 | 3
+  s1: { name: string; whatsapp: string; country: string }
+  s2: { lovedName: string; relationship: string; city: string; phone: string; age: string }
+}
+
+function loadDraft(userId?: string): Draft {
+  try {
+    const raw = localStorage.getItem(`${DRAFT_KEY}_${userId || 'x'}`)
+    if (raw) return JSON.parse(raw) as Draft
+  } catch { /* ignore */ }
+  return { step: 1, s1: { name: '', whatsapp: '', country: '' }, s2: { lovedName: '', relationship: '', city: '', phone: '', age: '' } }
+}
+
+function saveDraft(d: Partial<Draft>, userId?: string) {
+  try {
+    const cur = loadDraft(userId)
+    localStorage.setItem(`${DRAFT_KEY}_${userId || 'x'}`, JSON.stringify({ ...cur, ...d }))
+  } catch { /* ignore */ }
+}
+
+function clearDraft(userId?: string) {
+  try { localStorage.removeItem(`${DRAFT_KEY}_${userId || 'x'}`) } catch { /* ignore */ }
+}
+
+export function markOnboardingDismissed() {
+  try { localStorage.setItem(DISMISSED_KEY, '1') } catch { /* ignore */ }
+}
+
+export function isOnboardingDismissed() {
+  try { return !!localStorage.getItem(DISMISSED_KEY) } catch { return false }
+}
+
+// ── Shared primitives ─────────────────────────────────────────────────────────
+
+const inputStyle = (error?: string, focused?: boolean): React.CSSProperties => ({
+  width: '100%', boxSizing: 'border-box',
+  fontFamily: 'inherit', fontSize: 14,
+  padding: '12px 13px',
+  border: `1px solid ${error ? T.req : focused ? T.sage2 : T.line}`,
+  borderRadius: 11,
+  background: '#fff', color: T.forest,
+  outline: 'none',
+  marginBottom: error ? 4 : 0,
+  minHeight: 46,
+  transition: 'border-color .15s',
+})
 
 function Field({
-  label, required, error, ...rest
-}: { label: string; required?: boolean; error?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  id, label, required, optional, hint, prefill, error, children,
+}: {
+  id: string; label: string; required?: boolean; optional?: boolean
+  hint?: string; prefill?: string; error?: string; children: React.ReactNode
+}) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: F, marginBottom: 5 }}>
-        {label}{required && <span style={{ color: '#EF4444', marginLeft: 2 }}>*</span>}
+    <div style={{ marginBottom: hint || prefill || error ? 0 : 14 }}>
+      <label htmlFor={id} style={{ display: 'block', fontSize: 13.5, fontWeight: 600, marginBottom: 6 }}>
+        {label}
+        {required && <span style={{ color: T.req }}> *</span>}
+        {optional && <span style={{ color: T.muted, fontWeight: 500, fontSize: 12 }}> (optional)</span>}
       </label>
-      <input
-        {...rest}
-        style={{
-          width: '100%', boxSizing: 'border-box', display: 'block',
-          border: `1.5px solid ${error ? '#FCA5A5' : 'rgba(168,213,181,0.55)'}`,
-          borderRadius: 10, padding: '13px 14px',
-          fontSize: 16, color: F,
-          background: rest.readOnly ? 'rgba(0,0,0,0.02)' : '#FAFAF9',
-          outline: 'none', fontFamily: 'inherit',
-          opacity: rest.readOnly ? 0.6 : 1,
-        }}
-      />
-      {error && <p style={{ fontSize: 12, color: '#EF4444', marginTop: 4, marginBottom: 0 }}>{error}</p>}
-    </div>
-  )
-}
-
-// ── Step bar ────────────────────────────────────────────────────────────────────
-
-function StepBar({ step }: { step: 1 | 2 | 3 }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 28 }}>
-      {[1, 2, 3].map((n) => (
-        <div key={n} style={{ display: 'flex', alignItems: 'center' }}>
-          {n > 1 && (
-            <div style={{ width: 36, height: 2, background: n <= step ? F : '#E5E7EB', transition: 'background .3s' }} />
-          )}
-          <div style={{
-            width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 12, fontWeight: 700,
-            background: n <= step ? F : '#E5E7EB',
-            color: n <= step ? '#fff' : '#9CA3AF',
-            transition: 'background .3s',
-          }}>
-            {n < step ? '✓' : n}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ── Section label ───────────────────────────────────────────────────────────────
-
-function SLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p style={{
-      fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
-      color: F, textTransform: 'uppercase', opacity: 0.5,
-      margin: '22px 0 14px',
-    }}>
       {children}
-    </p>
+      {prefill && <div style={{ fontSize: 11, color: '#2c6b43', background: '#eaf5ee', border: '1px solid #cfe6d7', display: 'inline-block', padding: '2px 8px', borderRadius: 999, marginBottom: 14, marginTop: 2 }}>{prefill}</div>}
+      {error && <p role="alert" style={{ fontSize: 11.5, color: T.req, marginBottom: 14, marginTop: 4 }}>{error}</p>}
+      {hint && !error && <div style={{ fontSize: 11.5, color: T.muted, marginBottom: 14, marginTop: 4 }}>{hint}</div>}
+    </div>
   )
 }
 
-// ── Error banner ────────────────────────────────────────────────────────────────
+function Inp({ id, error, ...rest }: { id: string; error?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  const [focused, setFocused] = useState(false)
+  return (
+    <input
+      id={id}
+      {...rest}
+      aria-invalid={!!error}
+      style={inputStyle(error, focused)}
+      onFocus={e => { setFocused(true); rest.onFocus?.(e) }}
+      onBlur={e => { setFocused(false); rest.onBlur?.(e) }}
+    />
+  )
+}
 
 function ErrBanner({ msg }: { msg: string }) {
   return (
-    <div style={{
-      background: '#FEF2F2', border: '1px solid #FCA5A5',
-      borderRadius: 10, padding: '11px 14px', marginBottom: 18,
-      fontSize: 13, color: '#B91C1C',
-    }}>
+    <div role="alert" style={{ background: '#FEF2F2', border: `1px solid ${T.req}`, borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#8b2222' }}>
       {msg}
     </div>
   )
 }
 
-// ── Primary button ──────────────────────────────────────────────────────────────
+// ── Stepper ────────────────────────────────────────────────────────────────────
 
-function Btn({ children, onClick, disabled, outline }: {
-  children: React.ReactNode
-  onClick?: () => void
-  disabled?: boolean
-  outline?: boolean
-}) {
+function Stepper({ step }: { step: 1 | 2 | 3 }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        width: '100%', padding: '15px 20px', marginTop: 4,
-        background: outline ? 'transparent' : disabled ? '#9CA3AF' : F,
-        color: outline ? F : '#fff',
-        border: outline ? `1.5px solid ${F}` : 'none',
-        borderRadius: 12, fontSize: 16, fontWeight: 600,
-        cursor: disabled ? 'default' : 'pointer', fontFamily: 'inherit',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-      }}
-    >
-      {children}
-    </button>
+    <div role="list" aria-label="Setup steps" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px 0 4px' }}>
+      {[1, 2, 3].map((n, i) => {
+        const done   = n < step
+        const active = n === step
+        return (
+          <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {i > 0 && (
+              <div style={{ width: 26, height: 2, background: done || active ? T.sage2 : T.line, borderRadius: 2, transition: 'background .3s' }} />
+            )}
+            <div
+              role="listitem"
+              aria-current={active ? 'step' : undefined}
+              style={{
+                width: 26, height: 26, borderRadius: '50%',
+                display: 'grid', placeItems: 'center',
+                fontSize: 12, fontWeight: 700,
+                border: `1px solid ${done ? T.sage2 : active ? T.forest : T.line}`,
+                background: done ? T.sage2 : active ? T.forest : T.cream2,
+                color: done ? T.forest : active ? T.sage : T.muted,
+                transition: 'all .3s',
+              }}
+            >
+              {done ? '✓' : n}
+            </div>
+          </div>
+        )
+      })}
+    </div>
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Step 1 — Profile
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Step 1 — About you ────────────────────────────────────────────────────────
 
-function ProfileStep({ onNext }: { onNext: () => void }) {
+function Step1Body({ draft, onSave, saving, formErr }: {
+  draft: Draft['s1']
+  onSave: (d: Draft['s1']) => void
+  saving: boolean
+  formErr: string
+}) {
   const { user, profile } = useAuth()
-  const [name, setName] = useState(profile?.full_name || '')
-  const [phone, setPhone] = useState(profile?.whatsapp_number || '')
-  const [address, setAddress] = useState(profile?.address || '')
-  const [lovedName, setLovedName] = useState('')
-  const [lovedCity, setLovedCity] = useState('')
-  const [lovedAddress, setLovedAddress] = useState('')
-  const [lovedAge, setLovedAge] = useState('')
-  const [lovedRel, setLovedRel] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [name, setName] = useState(draft.name || profile?.full_name || '')
+  const [whatsapp, setWhatsapp] = useState(draft.whatsapp || profile?.whatsapp_number || '')
+  const [country, setCountry] = useState(draft.country || '')
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Pre-fill if user has a loved one from a prior visit
+  function validate() {
+    const e: Record<string, string> = {}
+    if (!name.trim()) e.name = 'Your name is required'
+    if (!whatsapp.trim()) e.whatsapp = 'WhatsApp number is required'
+    return e
+  }
+
+  function submit() {
+    const errs = validate()
+    if (Object.keys(errs).length) { setErrors(errs); return }
+    onSave({ name: name.trim(), whatsapp: whatsapp.trim(), country: country.trim() })
+  }
+
+  // Expose submit via ref trick — footer calls it
   useEffect(() => {
-    if (!user) return
+    (window as any).__ob_submit = submit
+    return () => { delete (window as any).__ob_submit }
+  })
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 23, letterSpacing: '-.01em', lineHeight: 1.12 }}>About you</h2>
+      <p style={{ fontSize: 13, color: T.muted, marginTop: 5, marginBottom: 14 }}>
+        So we know who to keep updated. Saved once — we'll never ask again.
+      </p>
+
+      {formErr && <ErrBanner msg={formErr} />}
+
+      <Field id="ob-name" label="Your name" required error={errors.name}>
+        <Inp id="ob-name" value={name} onChange={e => { setName(e.target.value); setErrors(v => ({ ...v, name: '' })) }} placeholder="e.g. Arjun Kumar" autoComplete="name" error={errors.name} />
+      </Field>
+
+      <Field id="ob-email" label="Email" prefill="✓ From your Google account">
+        <input id="ob-email" value={user?.email || ''} readOnly style={{ ...inputStyle(), background: T.cream2, color: T.muted, opacity: 1, marginBottom: 0 }} />
+      </Field>
+
+      <Field id="ob-whatsapp" label="WhatsApp number" required hint="This is where you'll get visit updates and alerts." error={errors.whatsapp}>
+        <Inp id="ob-whatsapp" type="tel" value={whatsapp} onChange={e => { setWhatsapp(e.target.value); setErrors(v => ({ ...v, whatsapp: '' })) }} placeholder="+65 9123 4567" autoComplete="tel" error={errors.whatsapp} />
+      </Field>
+
+      <Field id="ob-country" label="Where you live" optional hint="Helps us time calls to your timezone.">
+        <Inp id="ob-country" value={country} onChange={e => setCountry(e.target.value)} placeholder="City, country — e.g. Singapore" autoComplete="country-name" />
+      </Field>
+    </div>
+  )
+}
+
+// ── Step 2 — Your parent in India ─────────────────────────────────────────────
+
+const RELS = ['Mother', 'Father', 'Grandparent', 'Other'] as const
+
+function Step2Body({ draft, onSave, saving, formErr }: {
+  draft: Draft['s2']
+  onSave: (d: Draft['s2']) => void
+  saving: boolean
+  formErr: string
+}) {
+  const { user } = useAuth()
+  const [lovedName, setLovedName] = useState(draft.lovedName || '')
+  const [relationship, setRelationship] = useState(draft.relationship || '')
+  const [city, setCity] = useState(draft.city || '')
+  const [phone, setPhone] = useState(draft.phone || '')
+  const [age, setAge] = useState(draft.age || '')
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (!user || draft.lovedName) return
     supabase.from('loved_ones')
-      .select('full_name, city, address, age, relationship')
+      .select('full_name,city,relationship,age,phone_number')
       .eq('family_user_id', user.id).limit(1).maybeSingle()
       .then(({ data }) => {
         if (!data) return
-        setLovedName(data.full_name || '')
-        setLovedCity(data.city || '')
-        setLovedAddress(data.address || '')
-        setLovedAge(data.age != null ? String(data.age) : '')
-        setLovedRel(data.relationship || '')
+        if (data.full_name) setLovedName(data.full_name)
+        if (data.city) setCity(data.city)
+        if (data.relationship) setRelationship(data.relationship)
+        if (data.age != null) setAge(String(data.age))
+        if (data.phone_number) setPhone(data.phone_number)
       })
-  }, [user])
+  }, [user, draft.lovedName])
 
-  async function save() {
-    const errs: Record<string, string> = {}
-    if (!name.trim()) errs.name = 'Required'
-    if (!phone.trim()) errs.phone = 'Required'
-    if (!address.trim()) errs.address = 'Required'
-    if (!lovedName.trim()) errs.lovedName = 'Required'
-    if (!lovedAddress.trim()) errs.lovedAddress = 'Required'
+  function validate() {
+    const e: Record<string, string> = {}
+    if (!lovedName.trim()) e.lovedName = 'Their name is required'
+    if (!relationship) e.relationship = 'Please choose your relationship'
+    if (!city.trim()) e.city = 'City is required'
+    return e
+  }
+
+  function submit() {
+    const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
+    onSave({ lovedName: lovedName.trim(), relationship, city: city.trim(), phone: phone.trim(), age: age.trim() })
+  }
 
-    setSaving(true)
+  useEffect(() => {
+    (window as any).__ob_submit = submit
+    return () => { delete (window as any).__ob_submit }
+  })
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 23, letterSpacing: '-.01em', lineHeight: 1.12 }}>Your parent in India</h2>
+      <p style={{ fontSize: 13, color: T.muted, marginTop: 5, marginBottom: 14 }}>
+        The loved one Close Eye will be looking after.
+      </p>
+
+      {formErr && <ErrBanner msg={formErr} />}
+
+      <Field id="ob-loved-name" label="Their name" required error={errors.lovedName}>
+        <Inp id="ob-loved-name" value={lovedName} onChange={e => { setLovedName(e.target.value); setErrors(v => ({ ...v, lovedName: '' })) }} placeholder="e.g. Kamala Kumar" error={errors.lovedName} />
+      </Field>
+
+      <div style={{ marginBottom: errors.relationship ? 0 : 14 }}>
+        <label style={{ display: 'block', fontSize: 13.5, fontWeight: 600, marginBottom: 6 }}>
+          Your relationship <span style={{ color: T.req }}>*</span>
+        </label>
+        <div role="group" aria-label="Relationship" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: errors.relationship ? 4 : 14 }}>
+          {RELS.map(r => (
+            <button
+              key={r}
+              type="button"
+              aria-pressed={relationship === r}
+              onClick={() => { setRelationship(r); setErrors(v => ({ ...v, relationship: '' })) }}
+              style={{
+                fontSize: 13, fontWeight: 600, color: T.forest2,
+                background: relationship === r ? T.sage : '#fff',
+                border: `1px solid ${relationship === r ? T.sage2 : T.line}`,
+                borderRadius: 999, padding: '9px 14px', cursor: 'pointer',
+                minHeight: 44, fontFamily: 'inherit', transition: 'all .15s',
+              }}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+        {errors.relationship && <p role="alert" style={{ fontSize: 11.5, color: T.req, marginBottom: 14 }}>{errors.relationship}</p>}
+      </div>
+
+      <Field id="ob-city" label="City in India" required hint="So we can match a vetted companion nearby." error={errors.city}>
+        <Inp id="ob-city" value={city} onChange={e => { setCity(e.target.value); setErrors(v => ({ ...v, city: '' })) }} placeholder="e.g. Hyderabad" error={errors.city} />
+      </Field>
+
+      <Field id="ob-phone" label="Their phone" optional hint="">
+        <Inp id="ob-phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 ..." />
+      </Field>
+
+      <Field id="ob-age" label="Their age" optional hint="">
+        <Inp id="ob-age" type="number" min={50} max={110} value={age} onChange={e => setAge(e.target.value)} placeholder="e.g. 72" />
+      </Field>
+    </div>
+  )
+}
+
+// ── Step 3 — Confirm ──────────────────────────────────────────────────────────
+
+function Step3Body({ s1, s2 }: { s1: Draft['s1']; s2: Draft['s2'] }) {
+  const parentLabel = s2.relationship ? `your ${s2.relationship.toLowerCase()}` : 'your parent'
+  return (
+    <div>
+      <h2 style={{ fontSize: 23, letterSpacing: '-.01em', lineHeight: 1.12 }}>All set to begin</h2>
+      <p style={{ fontSize: 13, color: T.muted, marginTop: 5, marginBottom: 14 }}>
+        Quick check — does this look right?
+      </p>
+
+      <div style={{ background: '#fff', border: `1px solid ${T.line}`, borderRadius: 14, padding: '14px 16px', marginBottom: 14 }}>
+        {[
+          ['You', s1.name],
+          ['Updates to', 'WhatsApp'],
+          ['Caring for', s2.lovedName || parentLabel],
+          ['In', s2.city || 'India'],
+        ].map(([lbl, val]) => (
+          <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, padding: '7px 0', borderBottom: `1px solid ${T.cream2}` }}>
+            <span style={{ color: T.muted }}>{lbl}</span>
+            <strong style={{ color: T.forest }}>{val}</strong>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: `linear-gradient(100deg,${T.forest},${T.forest2})`, color: T.cream, borderRadius: 14, padding: '15px 16px', fontSize: 13, lineHeight: 1.5 }}>
+        <strong style={{ color: T.sage2 }}>What happens next: </strong>
+        our care team reaches out within 24–48 hours to set up your parent's care and answer any questions. You can add their health details any time from your dashboard.
+      </div>
+    </div>
+  )
+}
+
+// ── Done ──────────────────────────────────────────────────────────────────────
+
+function DoneScreen({ name }: { name: string }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '30px 10px' }}>
+      <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#eaf5ee', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+          <path d="M5 13l4 4 10-10" stroke="#2c6b43" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <h2 style={{ fontSize: 24, fontWeight: 800, color: T.forest, marginBottom: 8 }}>You're in.</h2>
+      <p style={{ fontSize: 14, color: T.muted, maxWidth: '30ch', marginInline: 'auto', lineHeight: 1.55 }}>
+        Welcome to Close Eye, {name.split(' ')[0]}. We'll be in touch soon — and your dashboard is ready whenever you are.
+      </p>
+    </div>
+  )
+}
+
+// ── Root ──────────────────────────────────────────────────────────────────────
+
+export function OnboardingPage() {
+  const { user, profile, loading } = useAuth()
+  const navigate = useNavigate()
+
+  const [draft, setDraft] = useState<Draft>({ step: 1, s1: { name: '', whatsapp: '', country: '' }, s2: { lovedName: '', relationship: '', city: '', phone: '', age: '' } })
+  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [done, setDone] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [formErr, setFormErr] = useState('')
+  const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Load draft once user is known
+  useEffect(() => {
+    if (!user) return
+    const d = loadDraft(user.id)
+    setDraft(d)
+    setStep(d.step as 1 | 2 | 3)
+  }, [user?.id])
+
+  useEffect(() => () => { if (doneTimerRef.current) clearTimeout(doneTimerRef.current) }, [])
+
+  function goToDashboard() {
+    markOnboardingDismissed()
+    navigate('/dashboard', { replace: true })
+  }
+
+  function handleLater() { goToDashboard() }
+  function handleClose() { goToDashboard() }
+
+  // ── Step advance handlers ────────────────────────────────────────────────────
+
+  async function handleStep1(s1: Draft['s1']) {
+    setSaving(true); setFormErr('')
     try {
-      const { error: pErr } = await supabase.from('profiles').update({
-        full_name: name.trim(),
-        whatsapp_number: phone.trim(),
-        address: address.trim(),
+      const { error } = await supabase.from('profiles').update({
+        full_name: s1.name,
+        whatsapp_number: s1.whatsapp,
+        address: s1.country || null,
         user_type: 'nri',
       }).eq('id', user!.id)
-      if (pErr) throw pErr
-
-      const { data: existingLO } = await supabase.from('loved_ones')
-        .select('id').eq('family_user_id', user!.id).limit(1).maybeSingle()
-
-      const loPayload = {
-        full_name: lovedName.trim(),
-        city: lovedCity.trim() || null,
-        address: lovedAddress.trim(),
-        age: lovedAge ? parseInt(lovedAge, 10) : null,
-        relationship: lovedRel || null,
-      }
-      if (existingLO) {
-        const { error: loErr } = await supabase.from('loved_ones').update(loPayload).eq('id', existingLO.id)
-        if (loErr) throw loErr
-      } else {
-        const { error: loErr } = await supabase.from('loved_ones').insert({ ...loPayload, family_user_id: user!.id })
-        if (loErr) throw loErr
-      }
-
-      onNext()
-    } catch (err) {
-      console.error('[ProfileStep] save failed:', err)
-      setErrors({ form: 'Something went wrong — please try again.' })
+      if (error) throw error
+      const next: Draft = { ...draft, s1, step: 2 }
+      setDraft(next)
+      saveDraft(next, user!.id)
+      setStep(2)
+    } catch {
+      setFormErr('Could not save — please try again.')
     } finally {
       setSaving(false)
     }
   }
 
-  const inputSx = (err?: string): React.CSSProperties => ({
-    width: '100%', boxSizing: 'border-box', display: 'block',
-    border: `1.5px solid ${err ? '#FCA5A5' : 'rgba(168,213,181,0.55)'}`,
-    borderRadius: 10, padding: '13px 14px',
-    fontSize: 16, color: F, background: '#FAFAF9',
-    outline: 'none', fontFamily: 'inherit',
-  })
-
-  return (
-    <div>
-      <h2 style={{ fontSize: 22, fontWeight: 700, color: F, margin: '0 0 6px' }}>Tell us about yourself</h2>
-      <p style={{ fontSize: 14, color: '#6B7280', margin: '0 0 4px', lineHeight: 1.5 }}>
-        Saved once — we'll never ask again.
-      </p>
-
-      {errors.form && <ErrBanner msg={errors.form} />}
-
-      <SLabel>Your account</SLabel>
-
-      <Field label="Your name" required value={name} onChange={e => setName(e.target.value)} error={errors.name} placeholder="e.g. Arjun Kumar" autoComplete="name" />
-      <Field label="WhatsApp number" required value={phone} onChange={e => setPhone(e.target.value)} error={errors.phone} placeholder="+65 9123 4567" type="tel" autoComplete="tel" />
-      <Field label="Email" value={user?.email || ''} readOnly autoComplete="email" />
-      <Field label="Where you live" required value={address} onChange={e => setAddress(e.target.value)} error={errors.address} placeholder="City, country — e.g. Singapore" />
-
-      <SLabel>Your loved one in India</SLabel>
-
-      <Field label="Their name" required value={lovedName} onChange={e => setLovedName(e.target.value)} error={errors.lovedName} placeholder="e.g. Kamala Kumar" />
-      <Field label="City in India" value={lovedCity} onChange={e => setLovedCity(e.target.value)} placeholder="e.g. Hyderabad, Chennai, Pune" />
-
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: F, marginBottom: 5 }}>
-          Their full address <span style={{ color: '#EF4444' }}>*</span>
-        </label>
-        <textarea
-          value={lovedAddress}
-          onChange={e => setLovedAddress(e.target.value)}
-          placeholder="Flat/house, street, area, city, pincode"
-          rows={3}
-          style={{
-            ...inputSx(errors.lovedAddress),
-            resize: 'none', lineHeight: 1.55,
-          }}
-        />
-        {errors.lovedAddress && <p style={{ fontSize: 12, color: '#EF4444', marginTop: 4 }}>{errors.lovedAddress}</p>}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 8 }}>
-        <div>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: F, marginBottom: 5 }}>Age</label>
-          <input
-            type="number" min={50} max={120} placeholder="e.g. 72"
-            value={lovedAge} onChange={e => setLovedAge(e.target.value)}
-            style={inputSx()}
-          />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: F, marginBottom: 5 }}>Relationship</label>
-          <select
-            value={lovedRel} onChange={e => setLovedRel(e.target.value)}
-            style={{ ...inputSx(), color: lovedRel ? F : '#9CA3AF', appearance: 'none' }}
-          >
-            <option value="">Select…</option>
-            {['Mother', 'Father', 'Grandmother', 'Grandfather', 'Other'].map(r => <option key={r}>{r}</option>)}
-          </select>
-        </div>
-      </div>
-
-      <Btn onClick={save} disabled={saving}>
-        {saving && <Loader2 size={17} className="animate-spin" />}
-        {saving ? 'Saving…' : 'Save and continue →'}
-      </Btn>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Step 2 — Payment
-// ─────────────────────────────────────────────────────────────────────────────
-
-type PayState = 'idle' | 'creating' | 'open' | 'verifying' | 'verify_error' | 'polling' | 'processing'
-
-function PayStep({ onConfirmed }: { onConfirmed: () => Promise<void> }) {
-  const { user } = useAuth()
-  const [payState, setPayState] = useState<PayState>('idle')
-  const [payError, setPayError] = useState('')
-  // Store the Razorpay response so we can retry verification without re-paying
-  const pendingPayRef = useRef<{
-    razorpay_payment_id: string
-    razorpay_order_id: string
-    razorpay_signature: string
-  } | null>(null)
-  const handlerFiredRef = useRef(false)
-  const mountedRef = useRef(true)
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  useEffect(() => () => {
-    mountedRef.current = false
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-  }, [])
-
-  // On mount: if user already activated (webhook fired after a prior polling timeout), skip straight to confirmed
-  useEffect(() => {
-    if (!user) return
-    supabase.from('profiles').select('is_founding_member').eq('id', user.id).maybeSingle()
-      .then(({ data }) => { if (data?.is_founding_member && mountedRef.current) onConfirmed() })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Poll for webhook-triggered activation (UPI app-switch — handler never fires)
-  useEffect(() => {
-    if (payState !== 'polling') return
-    let count = 0
-    const interval = setInterval(async () => {
-      count++
-      if (count > 40) { // ~2 min — Razorpay webhooks can take time
-        clearInterval(interval)
-        // Final check before stopping
-        const { data: final } = await supabase
-          .from('profiles').select('is_founding_member').eq('id', user!.id).maybeSingle()
-        if (final?.is_founding_member && mountedRef.current) {
-          await onConfirmed()
-        } else if (mountedRef.current) {
-          setPayState('processing') // Do NOT go to idle — user might re-pay accidentally
-        }
-        return
-      }
-      const { data } = await supabase
-        .from('profiles').select('is_founding_member').eq('id', user!.id).maybeSingle()
-      if (data?.is_founding_member && mountedRef.current) {
-        clearInterval(interval)
-        await onConfirmed()
-      }
-    }, 3000)
-    pollIntervalRef.current = interval
-    return () => clearInterval(interval)
-  }, [payState, user, onConfirmed])
-
-  async function checkAgain() {
-    const { data } = await supabase
-      .from('profiles').select('is_founding_member').eq('id', user!.id).maybeSingle()
-    if (data?.is_founding_member && mountedRef.current) {
-      await onConfirmed()
-    } else if (mountedRef.current) {
-      setPayState('polling')
-    }
-  }
-
-  async function doVerify(resp: NonNullable<typeof pendingPayRef.current>) {
-    if (!mountedRef.current) return
-    setPayState('verifying')
+  async function handleStep2(s2: Draft['s2']) {
+    setSaving(true); setFormErr('')
     try {
-      const { error } = await supabase.functions.invoke('razorpay-verify-membership', {
-        body: {
-          razorpay_payment_id: resp.razorpay_payment_id,
-          razorpay_order_id: resp.razorpay_order_id,
-          razorpay_signature: resp.razorpay_signature,
-        },
-      })
-      if (error) throw error
-      if (mountedRef.current) await onConfirmed()
-    } catch (err) {
-      console.error('[PayStep] verify-membership failed:', err)
-      if (mountedRef.current) setPayState('verify_error')
-    }
-  }
-
-  async function pay() {
-    if (!user) return
-    setPayError('')
-    setPayState('creating')
-    handlerFiredRef.current = false
-
-    try {
-      const loaded = await loadRazorpayScript()
-      if (!loaded) {
-        setPayError('Could not load payment — check your connection and try again.')
-        setPayState('idle')
-        return
+      const payload = {
+        full_name: s2.lovedName,
+        relationship: s2.relationship || null,
+        city: s2.city || null,
+        phone_number: s2.phone || null,
+        age: s2.age ? parseInt(s2.age, 10) : null,
       }
-
-      const { data, error } = await supabase.functions.invoke('razorpay-create-membership')
-      if (error || !data?.order_id) {
-        setPayError('Could not start payment — please try again.')
-        setPayState('idle')
-        return
+      const { data: existing } = await supabase.from('loved_ones')
+        .select('id').eq('family_user_id', user!.id).limit(1).maybeSingle()
+      if (existing) {
+        const { error } = await supabase.from('loved_ones').update(payload).eq('id', existing.id)
+        if (error) throw error
+      } else {
+        const { error } = await supabase.from('loved_ones').insert({ ...payload, family_user_id: user!.id })
+        if (error) throw error
       }
-
-      setPayState('open')
-
-      const rzp = new window.Razorpay({
-        key: data.key_id,
-        order_id: data.order_id,
-        amount: data.amount,
-        currency: 'INR',
-        name: 'Close Eye',
-        description: 'Founding Membership · ₹100',
-        theme: { color: '#0E2A1F' },
-        modal: {
-          ondismiss: () => {
-            if (!handlerFiredRef.current && mountedRef.current) {
-              // UPI app-switch: modal closes before handler fires. Poll for webhook activation.
-              setPayState('polling')
-            }
-          },
-        },
-        handler: (resp: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
-          handlerFiredRef.current = true
-          pendingPayRef.current = resp
-          doVerify(resp)
-        },
-      }) as { open(): void; on(event: string, cb: (r: unknown) => void): void }
-
-      rzp.on('payment.failed', () => {
-        if (mountedRef.current) {
-          setPayState('idle')
-          setPayError('Payment failed — please try again.')
-        }
-      })
-
-      rzp.open()
+      const next: Draft = { ...draft, s2, step: 3 }
+      setDraft(next)
+      saveDraft(next, user!.id)
+      setStep(3)
     } catch {
-      setPayError('Something went wrong — please try again.')
-      setPayState('idle')
+      setFormErr('Could not save — please try again.')
+    } finally {
+      setSaving(false)
     }
   }
 
-  // ── Polling (UPI app-switch — waiting for webhook to activate) ───────────────
-  if (payState === 'polling') {
-    return (
-      <div style={{ textAlign: 'center', padding: '48px 16px' }}>
-        <Loader2 size={36} className="animate-spin" style={{ color: F, margin: '0 auto 20px', display: 'block' }} />
-        <p style={{ fontSize: 18, fontWeight: 700, color: F, margin: '0 0 8px' }}>Checking your payment…</p>
-        <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6, maxWidth: 300, margin: '0 auto 24px' }}>
-          If you approved the UPI request, we're confirming your membership — hang on a moment.
-        </p>
-        <Btn outline onClick={() => {
-          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-          setPayState('idle')
-        }}>
-          I haven't paid yet
-        </Btn>
-      </div>
-    )
+  function handleFinish() {
+    clearDraft(user?.id)
+    markOnboardingDismissed()
+    setDone(true)
+    doneTimerRef.current = setTimeout(() => navigate('/dashboard', { replace: true }), 2500)
   }
 
-  // ── Processing (UPI confirmed on phone, webhook taking longer than 2 min) ────
-  if (payState === 'processing') {
-    return (
-      <div style={{ textAlign: 'center', padding: '36px 16px 24px' }}>
-        <div style={{
-          width: 60, height: 60, borderRadius: '50%',
-          background: 'rgba(168,213,181,0.15)',
-          border: '1.5px solid rgba(168,213,181,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 20px',
-        }}>
-          <CheckCircle2 size={28} style={{ color: F }} />
-        </div>
-        <p style={{ fontSize: 20, fontWeight: 700, color: F, margin: '0 0 12px' }}>Payment received ✓</p>
-        <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.65, maxWidth: 290, margin: '0 auto 8px' }}>
-          Your UPI payment went through. We're still confirming your membership — it can take a minute.
-        </p>
-        <p style={{ fontSize: 13, color: '#9CA3AF', lineHeight: 1.5, maxWidth: 260, margin: '0 auto 28px' }}>
-          <strong style={{ color: '#6B7280' }}>Do not pay again.</strong> Tap below to check your status.
-        </p>
-        <Btn onClick={checkAgain}>Check my membership →</Btn>
-      </div>
-    )
+  function handleContinue() {
+    if (done) return
+    if (step === 3) { handleFinish(); return }
+    // Step 1 and 2 validate via the window global the step component registered
+    const submit = (window as any).__ob_submit
+    if (typeof submit === 'function') submit()
   }
 
-  // ── Verifying ────────────────────────────────────────────────────────────────
-  if (payState === 'verifying') {
-    return (
-      <div style={{ textAlign: 'center', padding: '48px 16px' }}>
-        <Loader2 size={36} className="animate-spin" style={{ color: F, margin: '0 auto 20px', display: 'block' }} />
-        <p style={{ fontSize: 18, fontWeight: 700, color: F, margin: '0 0 8px' }}>Confirming your membership…</p>
-        <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6, maxWidth: 260, margin: '0 auto' }}>
-          Verifying payment — this takes just a second.
-        </p>
-      </div>
-    )
+  function goBack() {
+    if (step === 2) setStep(1)
+    else if (step === 3) setStep(2)
   }
 
-  // ── Verification failed (payment went through but confirmation errored) ───────
-  if (payState === 'verify_error') {
-    return (
-      <div style={{ textAlign: 'center', padding: '36px 16px 24px' }}>
-        <div style={{
-          width: 60, height: 60, borderRadius: '50%',
-          background: 'rgba(168,213,181,0.15)',
-          border: '1.5px solid rgba(168,213,181,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 20px',
-        }}>
-          <CheckCircle2 size={28} style={{ color: F }} />
-        </div>
-        <p style={{ fontSize: 20, fontWeight: 700, color: F, margin: '0 0 12px' }}>Payment received ✓</p>
-        <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.65, maxWidth: 290, margin: '0 auto 8px' }}>
-          We received your payment but couldn't confirm the membership yet.
-        </p>
-        <p style={{ fontSize: 13, color: '#9CA3AF', lineHeight: 1.5, maxWidth: 260, margin: '0 auto 28px' }}>
-          <strong style={{ color: '#6B7280' }}>Do not pay again.</strong> Tap below to retry confirmation.
-        </p>
-        <Btn onClick={() => pendingPayRef.current && doVerify(pendingPayRef.current)}>
-          Retry confirmation →
-        </Btn>
-      </div>
-    )
-  }
-
-  // ── Idle / creating / open ───────────────────────────────────────────────────
-  return (
-    <div>
-      <h2 style={{ fontSize: 22, fontWeight: 700, color: F, margin: '0 0 6px' }}>Become a Founding Member</h2>
-      <p style={{ fontSize: 14, color: '#6B7280', margin: '0 0 22px', lineHeight: 1.5 }}>
-        One-time payment. No subscription, ever.
-      </p>
-
-      <div style={{
-        background: 'rgba(168,213,181,0.1)',
-        border: '1.5px solid rgba(168,213,181,0.5)',
-        borderRadius: 16, padding: '20px', marginBottom: 24,
-      }}>
-        <p style={{ fontSize: 30, fontWeight: 800, color: F, margin: '0 0 2px', letterSpacing: '-0.5px' }}>₹100</p>
-        <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 18px' }}>Founding Member · one-time</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {[
-            'Priority visits when we launch on 15 August',
-            'Ask Close Eye — health guidance from our medical team',
-            "Your loved one's details on file, ready to go",
-          ].map(item => (
-            <div key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-              <span style={{ color: F, fontWeight: 700, flexShrink: 0, lineHeight: '1.5rem' }}>✓</span>
-              <span style={{ fontSize: 14, color: '#374151', lineHeight: 1.55 }}>{item}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {payError && <ErrBanner msg={payError} />}
-
-      <Btn onClick={pay} disabled={payState !== 'idle'}>
-        {(payState === 'creating' || payState === 'open') && <Loader2 size={17} className="animate-spin" />}
-        {payState === 'creating' ? 'Setting up payment…'
-          : payState === 'open' ? 'Complete payment above'
-          : 'Pay ₹100 →'}
-      </Btn>
-
-      <p style={{ fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 12, lineHeight: 1.5 }}>
-        Secured by Razorpay · UPI, cards, and net banking accepted
-      </p>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Step 3 — Confirmed
-// ─────────────────────────────────────────────────────────────────────────────
-
-const FOUNDING_BENEFITS = [
-  'Priority companion matching on launch day — 15 August',
-  '10% off every Close Eye service — forever',
-  'Medical team Q&A — 5 free questions/month, starting today',
-  'Price locked at ₹1,500/month when companion visits launch',
-  'Founding Member badge — your number never changes',
-]
-
-function ConfirmStep() {
-  const { profile } = useAuth()
-  const navigate = useNavigate()
-  const num = profile?.founding_number
-
-  return (
-    <div style={{ textAlign: 'center', padding: '16px 8px 8px' }}>
-      <div style={{ fontSize: 52, marginBottom: 12, lineHeight: 1 }}>🌿</div>
-      {num && (
-        <div style={{
-          display: 'inline-block', background: 'rgba(168,213,181,0.15)',
-          border: '1.5px solid rgba(168,213,181,0.6)',
-          borderRadius: 100, padding: '5px 16px', fontSize: 13,
-          fontWeight: 700, color: F, marginBottom: 16, letterSpacing: '0.02em',
-        }}>
-          Founding Member #{num}
-        </div>
-      )}
-      <h2 style={{ fontSize: 24, fontWeight: 800, color: F, margin: '0 0 12px', letterSpacing: '-0.3px' }}>
-        You're a Founding Member
-      </h2>
-      <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.65, maxWidth: 290, margin: '0 auto 20px' }}>
-        We launch companion visits on <strong style={{ color: F }}>15 August</strong>. You'll be first — matched, scheduled, and WhatsApp-ready.
-      </p>
-
-      <div style={{ background: 'rgba(168,213,181,0.08)', border: '1px solid rgba(168,213,181,0.3)', borderRadius: 14, padding: '16px', marginBottom: 20, textAlign: 'left' }}>
-        {FOUNDING_BENEFITS.map(b => (
-          <div key={b} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
-            <span style={{ color: F, fontWeight: 700, flexShrink: 0, lineHeight: '1.5rem', fontSize: 14 }}>✓</span>
-            <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{b}</span>
-          </div>
-        ))}
-      </div>
-
-      <Btn onClick={() => navigate('/dashboard/ask', { replace: true })}>
-        Open Ask Close Eye →
-      </Btn>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Root
-// ─────────────────────────────────────────────────────────────────────────────
-
-export function OnboardingPage() {
-  const { user, profile, loading, reloadProfile } = useAuth()
-  const navigate = useNavigate()
-  const [step, setStep] = useState<1 | 2 | 3>(1)
-  // Set true before reloadProfile() so the useEffect below can't redirect while
-  // the confirmation screen is rendering (profile change fires before setStep(3)).
-  const payConfirmedRef = useRef(false)
-
-  useEffect(() => {
-    if (!loading && profile?.is_founding_member && !payConfirmedRef.current) {
-      navigate('/dashboard/ask', { replace: true })
-    }
-  }, [loading, profile, navigate])
+  // ─────────────────────────────────────────────────────────────────────────────
 
   if (loading || (user && !profile)) {
     return (
-      <div style={{ minHeight: '100svh', background: 'var(--cream)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader2 size={28} className="animate-spin" style={{ color: F }} />
+      <div style={{ minHeight: '100svh', background: T.cream, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 size={28} className="animate-spin" style={{ color: T.forest }} />
       </div>
     )
   }
 
   if (!user) return <Navigate to="/auth" replace />
 
-  async function handlePayConfirmed() {
-    payConfirmedRef.current = true
-    await reloadProfile()
-    setStep(3)
-  }
-
   return (
     <div style={{
-      minHeight: '100svh', background: 'var(--cream)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: 'max(28px, calc(16px + env(safe-area-inset-top, 0px))) 16px max(56px, calc(40px + env(safe-area-inset-bottom, 0px)))',
+      minHeight: '100svh', display: 'flex', flexDirection: 'column',
+      background: T.cream, paddingTop: 'env(safe-area-inset-top,0px)',
     }}>
-      {/* Logo */}
-      <div style={{ marginBottom: 28, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Logo className="w-8 h-8" />
-        <span style={{ fontSize: 18, fontWeight: 700, color: F, letterSpacing: '-0.3px' }}>close eye</span>
+      {/* ── Top chrome ──────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 4px', flexShrink: 0 }}>
+        {/* Exit button */}
+        {!done ? (
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Exit to dashboard"
+            style={{
+              width: 34, height: 34, borderRadius: '50%',
+              border: `1px solid ${T.line}`, background: '#fff',
+              display: 'grid', placeItems: 'center', cursor: 'pointer',
+              fontSize: 17, color: T.forest, minWidth: 44, minHeight: 44,
+            }}
+          >
+            ✕
+          </button>
+        ) : <div style={{ width: 44 }} />}
+
+        {/* Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13, color: T.forest }}>
+          <Logo className="w-4 h-4" />
+          close eye
+        </div>
+
+        {/* Step count */}
+        {!done ? (
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, minWidth: 34, textAlign: 'right' }}>
+            {step} / 3
+          </div>
+        ) : <div style={{ width: 34 }} />}
       </div>
 
-      {/* Card */}
-      <div style={{
-        width: '100%', maxWidth: 440,
-        background: '#fff', borderRadius: 20,
-        boxShadow: '0 2px 20px rgba(14,42,31,0.07)',
-        padding: '28px 24px',
-      }}>
-        {step < 3 && <StepBar step={step} />}
-        {step === 1 && <ProfileStep onNext={() => setStep(2)} />}
-        {step === 2 && <PayStep onConfirmed={handlePayConfirmed} />}
-        {step === 3 && <ConfirmStep />}
+      {/* ── Stepper ─────────────────────────────────────────────────────────── */}
+      {!done && <Stepper step={step} />}
+
+      {/* ── Scrollable body ─────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 20px 8px' }}>
+        {done && <DoneScreen name={draft.s1.name || profile?.full_name || 'there'} />}
+
+        {!done && step === 1 && (
+          <Step1Body
+            key="s1"
+            draft={draft.s1}
+            onSave={handleStep1}
+            saving={saving}
+            formErr={formErr}
+          />
+        )}
+        {!done && step === 2 && (
+          <Step2Body
+            key="s2"
+            draft={draft.s2}
+            onSave={handleStep2}
+            saving={saving}
+            formErr={formErr}
+          />
+        )}
+        {!done && step === 3 && (
+          <Step3Body s1={draft.s1} s2={draft.s2} />
+        )}
       </div>
+
+      {/* ── Sticky footer ───────────────────────────────────────────────────── */}
+      {!done && (
+        <div style={{
+          padding: '12px 20px',
+          paddingBottom: `calc(18px + env(safe-area-inset-bottom,0px))`,
+          borderTop: `1px solid ${T.line}`,
+          background: T.cream,
+          flexShrink: 0,
+        }}>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {step > 1 && (
+              <button
+                type="button"
+                onClick={goBack}
+                aria-label="Go back"
+                style={{
+                  flex: '0 0 auto', width: 54,
+                  background: '#fff', border: `1px solid ${T.line}`,
+                  color: T.forest, fontSize: 18,
+                  borderRadius: 13, cursor: 'pointer',
+                  fontFamily: 'inherit', minHeight: 52,
+                  display: 'grid', placeItems: 'center',
+                }}
+              >
+                ←
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleContinue}
+              disabled={saving}
+              style={{
+                flex: 1, fontFamily: 'inherit', fontSize: 15, fontWeight: 700,
+                padding: '14px', borderRadius: 13, cursor: saving ? 'default' : 'pointer',
+                border: 0, minHeight: 52,
+                background: saving ? '#9CA3AF' : T.forest,
+                color: T.cream,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+            >
+              {saving && <Loader2 size={16} className="animate-spin" />}
+              {saving ? 'Saving…' : step === 3 ? 'Finish' : 'Continue'}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleLater}
+            style={{
+              display: 'block', width: '100%', textAlign: 'center',
+              marginTop: 11, fontSize: 13, color: T.muted, fontWeight: 600,
+              background: 'none', border: 0, cursor: 'pointer',
+              fontFamily: 'inherit', minHeight: 44,
+            }}
+          >
+            <u style={{ textDecoration: 'none', borderBottom: `1px solid ${T.line}`, paddingBottom: 1 }}>
+              I'll do this later
+            </u>
+          </button>
+        </div>
+      )}
+
+      {/* Done CTA */}
+      {done && (
+        <div style={{ padding: '12px 20px', paddingBottom: `calc(18px + env(safe-area-inset-bottom,0px))`, borderTop: `1px solid ${T.line}`, background: T.cream, flexShrink: 0 }}>
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard', { replace: true })}
+            style={{
+              width: '100%', fontFamily: 'inherit', fontSize: 15, fontWeight: 700,
+              padding: '14px', borderRadius: 13, cursor: 'pointer', border: 0, minHeight: 52,
+              background: T.forest, color: T.cream,
+            }}
+          >
+            Go to my dashboard
+          </button>
+        </div>
+      )}
     </div>
   )
 }
