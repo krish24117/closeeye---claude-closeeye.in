@@ -4,10 +4,11 @@ import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/components/ui/Toast'
 import {
   Card, Badge, EmptyState, ErrorBox, Skeleton,
-  timeAgo, istDate, istTime,
+  timeAgo, istDate, useAdmin,
 } from './_shared'
 
 type Filter = 'all' | 'unassigned' | 'assigned' | 'reviewed' | 'verified'
+type Urgency = 'urgent' | 'watch' | 'routine'
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -21,9 +22,83 @@ function isVerified(q: any) {
   return q.verification_status === 'verified' || q.doctor_verified
 }
 
+function formatMs(ms: number): string {
+  const h = Math.floor(ms / 3600000)
+  const m = Math.floor((ms % 3600000) / 60000)
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
+}
+
+type SlaInfo = { state: 'on-track' | 'due-soon' | 'overdue'; label: string; pct: number }
+
+function slaInfo(q: any): SlaInfo | null {
+  if (!q.sla_deadline || isVerified(q)) return null
+  const now = Date.now()
+  const deadline = new Date(q.sla_deadline).getTime()
+  const created = new Date(q.created_at).getTime()
+  const total = deadline - created
+  const elapsed = now - created
+  const pct = total > 0 ? elapsed / total : 1
+
+  if (deadline <= now) {
+    return { state: 'overdue', label: `Overdue ${formatMs(now - deadline)}`, pct: Math.min(pct, 2) }
+  }
+  if (pct >= 0.75) {
+    return { state: 'due-soon', label: `${formatMs(deadline - now)} left`, pct }
+  }
+  return { state: 'on-track', label: `${formatMs(deadline - now)} left`, pct }
+}
+
+function SlaChip({ info }: { info: SlaInfo | null }) {
+  if (!info) return null
+  const colors: Record<string, { bg: string; color: string }> = {
+    overdue: { bg: '#FEE2E2', color: '#B91C1C' },
+    'due-soon': { bg: '#FEF3C7', color: '#B45309' },
+    'on-track': { bg: '#DCFCE7', color: '#15803D' },
+  }
+  const c = colors[info.state]
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100,
+      background: c.bg, color: c.color, whiteSpace: 'nowrap',
+    }}>
+      {info.label}
+    </span>
+  )
+}
+
+function UrgencyBadge({ urgency }: { urgency: Urgency | undefined }) {
+  if (!urgency || urgency === 'routine') return null
+  return urgency === 'urgent'
+    ? <Badge tone="red">Urgent</Badge>
+    : <Badge tone="amber">Watch</Badge>
+}
+
+function slaOrder(q: any, now: number): number {
+  if (isVerified(q)) return 10
+  if (!q.sla_deadline) return 5
+  const deadline = new Date(q.sla_deadline).getTime()
+  const created = new Date(q.created_at).getTime()
+  const total = deadline - created
+  const elapsed = now - created
+  const pct = total > 0 ? elapsed / total : 1
+  if (pct >= 1) return 0
+  if (pct >= 0.75) return 1
+  return 2
+}
+
+function urgencyOrder(q: any): number {
+  switch (q.urgency) {
+    case 'urgent': return 0
+    case 'watch': return 1
+    default: return 2
+  }
+}
+
 export function AdminQueries() {
   const { profile } = useAuth()
   const { showToast } = useToast()
+  const { adminRole } = useAdmin()
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -36,12 +111,19 @@ export function AdminQueries() {
   const [filter, setFilter] = useState<Filter>('all')
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  // slide-panel local UI state
   const [pickDoctor, setPickDoctor] = useState('')
   const [note, setNote] = useState('')
   const [reassigning, setReassigning] = useState(false)
   const [saving, setSaving] = useState(false)
   const [publishing, setPublishing] = useState(false)
+  const [escalating, setEscalating] = useState(false)
+
+  // tick every 60s to refresh SLA countdowns
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 60_000)
+    return () => clearInterval(id)
+  }, [])
 
   async function load() {
     setLoading(true)
@@ -54,7 +136,6 @@ export function AdminQueries() {
       if (err) { setError(true); setLoading(false); return }
 
       const list = data || []
-
       const ids = [...new Set(list.map((q: any) => q.user_id).filter(Boolean))]
       let authorMap: Record<string, any> = {}
       if (ids.length) {
@@ -73,10 +154,7 @@ export function AdminQueries() {
       const docList = docs || []
       const byId: Record<string, any> = {}
       const byUser: Record<string, any> = {}
-      docList.forEach((d: any) => {
-        byId[d.id] = d
-        if (d.user_id) byUser[d.user_id] = d
-      })
+      docList.forEach((d: any) => { byId[d.id] = d; if (d.user_id) byUser[d.user_id] = d })
 
       setRows(list)
       setAuthors(authorMap)
@@ -90,20 +168,17 @@ export function AdminQueries() {
   }
   useEffect(() => { load() }, [])
 
-  const selected = useMemo(
-    () => rows.find(r => r.id === selectedId) || null,
-    [rows, selectedId],
-  )
+  const selected = useMemo(() => rows.find(r => r.id === selectedId) || null, [rows, selectedId])
 
-  // reset panel-local state when opening a different query
-  useEffect(() => {
-    setPickDoctor('')
-    setNote('')
-    setReassigning(false)
-  }, [selectedId])
+  useEffect(() => { setPickDoctor(''); setNote(''); setReassigning(false) }, [selectedId])
 
   const awaitingCount = useMemo(
     () => rows.filter(q => q.verification_status !== 'verified' && q.status !== 'doctor_reviewed').length,
+    [rows],
+  )
+
+  const urgentCount = useMemo(
+    () => rows.filter(q => q.urgency === 'urgent' && !isVerified(q)).length,
     [rows],
   )
 
@@ -119,11 +194,22 @@ export function AdminQueries() {
     })
   }, [rows, filter])
 
+  const sorted = useMemo(() => {
+    const now = Date.now()
+    return [...filtered].sort((a, b) => {
+      const sa = slaOrder(a, now); const sb = slaOrder(b, now)
+      if (sa !== sb) return sa - sb
+      const ua = urgencyOrder(a); const ub = urgencyOrder(b)
+      if (ua !== ub) return ua - ub
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, tick])
+
   function patchRow(id: string, patch: any) {
     setRows(rs => rs.map(r => (r.id === id ? { ...r, ...patch } : r)))
   }
 
-  // doctor lookup for a query's assigned doctor (assigned_doctor_id holds doctor's auth user_id)
   function assignedDoctor(q: any) {
     if (!q?.assigned_doctor_id) return null
     return doctorsByUserId[q.assigned_doctor_id] || null
@@ -131,6 +217,36 @@ export function AdminQueries() {
 
   function familyNameOf(q: any) {
     return authors[q.user_id]?.full_name || 'A family'
+  }
+
+  /* ---------- run escalation (manual trigger) ---------- */
+  async function runEscalation(simulate?: string) {
+    setEscalating(true)
+    try {
+      const body: any = simulate ? { simulate } : {}
+      const { data, error: err } = await supabase.functions.invoke('sla-escalation', { body })
+      if (err) { showToast('Escalation failed: ' + err.message, 'error'); return }
+      const d = data as any
+      const actCount = d.actions?.length || 0
+      if (simulate) {
+        const adminSent = d.actions?.find((a: any) => a.action === 'simulate_admin_alert')?.sent
+        const famSent = d.actions?.find((a: any) => a.action === 'simulate_interim_msg')?.sent
+        showToast(
+          `Simulation: admin alert ${adminSent ? 'sent' : 'not sent (no WhatsApp configured)'} · family interim msg ${famSent ? 'sent' : 'not sent'}`,
+          actCount > 0 ? 'success' : 'info',
+        )
+      } else {
+        showToast(
+          actCount > 0 ? `Escalation: ${actCount} action(s) taken` : 'Escalation checked — no actions needed',
+          actCount > 0 ? 'success' : 'info',
+        )
+      }
+      load() // refresh to show updated timestamps
+    } catch (e: any) {
+      showToast('Escalation error: ' + e.message, 'error')
+    } finally {
+      setEscalating(false)
+    }
   }
 
   /* ---------- mutations ---------- */
@@ -141,17 +257,9 @@ export function AdminQueries() {
     const assigned_at = new Date().toISOString()
     const { error: err } = await supabase
       .from('member_queries')
-      .update({
-        assigned_doctor_id: d.user_id || null,
-        assigned_at,
-        verification_status: 'assigned',
-      })
+      .update({ assigned_doctor_id: d.user_id || null, assigned_at, verification_status: 'assigned' })
       .eq('id', q.id)
-    if (err) {
-      setSaving(false)
-      showToast(err.message || 'Could not assign', 'error')
-      return
-    }
+    if (err) { setSaving(false); showToast(err.message || 'Could not assign', 'error'); return }
 
     let notified = false
     if (d.whatsapp) {
@@ -167,10 +275,7 @@ export function AdminQueries() {
     }
 
     patchRow(q.id, { assigned_doctor_id: d.user_id || null, assigned_at, verification_status: 'assigned' })
-    setSaving(false)
-    setReassigning(false)
-    setPickDoctor('')
-    setNote('')
+    setSaving(false); setReassigning(false); setPickDoctor(''); setNote('')
     if (!d.user_id) {
       showToast(`Assigned — note: Dr. ${d.name} has no linked login account yet`, 'info')
     } else {
@@ -190,20 +295,12 @@ export function AdminQueries() {
     const { error: err } = await supabase
       .from('member_queries')
       .update({
-        doctor_verified: true,
-        verified_at: now,
-        verification_status: 'verified',
-        status: 'doctor_reviewed',
-        answer: q.doctor_response,
-        reviewed_by: `Dr. ${doctorName}`,
-        answered_at: now,
+        doctor_verified: true, verified_at: now, verification_status: 'verified',
+        status: 'doctor_reviewed', answer: q.doctor_response,
+        reviewed_by: `Dr. ${doctorName}`, answered_at: now,
       })
       .eq('id', q.id)
-    if (err) {
-      setPublishing(false)
-      showToast(err.message || 'Could not publish', 'error')
-      return
-    }
+    if (err) { setPublishing(false); showToast(err.message || 'Could not publish', 'error'); return }
 
     const fam = authors[q.user_id]
     if (fam?.whatsapp_number) {
@@ -218,13 +315,9 @@ export function AdminQueries() {
     }
 
     patchRow(q.id, {
-      doctor_verified: true,
-      verified_at: now,
-      verification_status: 'verified',
-      status: 'doctor_reviewed',
-      answer: q.doctor_response,
-      reviewed_by: `Dr. ${doctorName}`,
-      answered_at: now,
+      doctor_verified: true, verified_at: now, verification_status: 'verified',
+      status: 'doctor_reviewed', answer: q.doctor_response,
+      reviewed_by: `Dr. ${doctorName}`, answered_at: now,
     })
     setPublishing(false)
     showToast('Published — family notified', 'success')
@@ -239,7 +332,7 @@ export function AdminQueries() {
     showToast('Deleted', 'info')
   }
 
-  /* ---------- card status badge ---------- */
+  /* ---------- card helpers ---------- */
   function cardBadge(q: any) {
     if (isVerified(q)) return <Badge tone="green">Verified</Badge>
     if (q.verification_status === 'reviewed') return <Badge tone="blue">Under review</Badge>
@@ -251,6 +344,9 @@ export function AdminQueries() {
   }
 
   function cardBorder(q: any) {
+    const info = slaInfo(q)
+    if (info?.state === 'overdue') return '#EF4444'
+    if (info?.state === 'due-soon') return '#F59E0B'
     if (isVerified(q)) return 'var(--forest)'
     if (q.verification_status === 'reviewed') return '#2563EB'
     if (q.verification_status === 'assigned') return '#F59E0B'
@@ -263,9 +359,20 @@ export function AdminQueries() {
         <div>
           <h1 className="adm-page-h">Health Queries</h1>
           <p className="adm-page-sub" style={{ margin: 0 }}>
-            {awaitingCount} awaiting doctor review
+            {awaitingCount} awaiting review
+            {urgentCount > 0 && <span style={{ color: '#B91C1C', fontWeight: 600 }}> · {urgentCount} urgent</span>}
           </p>
         </div>
+        {adminRole === 'super_admin' && (
+          <button
+            className="adm-btn"
+            style={{ fontSize: 12 }}
+            disabled={escalating}
+            onClick={() => runEscalation()}
+          >
+            {escalating ? 'Running…' : 'Run SLA escalation'}
+          </button>
+        )}
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
@@ -286,34 +393,40 @@ export function AdminQueries() {
         </div>
       ) : error ? (
         <ErrorBox onRetry={load} />
-      ) : filtered.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <Card><EmptyState title="No queries here" sub="Nothing matches this filter right now." /></Card>
       ) : (
-        filtered.map(q => (
-          <div
-            key={q.id}
-            className="adm-card adm-card-pad"
-            onClick={() => setSelectedId(q.id)}
-            style={{ borderLeft: `3px solid ${cardBorder(q)}`, marginBottom: 10, cursor: 'pointer' }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--black)' }}>
-                {familyNameOf(q)}{q.subject_label ? ` — for ${q.subject_label}` : ''}
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                <span style={{ fontSize: 11, color: 'var(--gray-mid)' }}>{timeAgo(q.created_at)}</span>
-                {cardBadge(q)}
+        sorted.map(q => {
+          const info = slaInfo(q)
+          return (
+            <div
+              key={q.id}
+              className="adm-card adm-card-pad"
+              onClick={() => setSelectedId(q.id)}
+              style={{ borderLeft: `3px solid ${cardBorder(q)}`, marginBottom: 10, cursor: 'pointer' }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--black)' }}>
+                    {familyNameOf(q)}{q.subject_label ? ` — for ${q.subject_label}` : ''}
+                  </span>
+                  <UrgencyBadge urgency={q.urgency} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  <SlaChip info={info} />
+                  <span style={{ fontSize: 11, color: 'var(--gray-mid)' }}>{timeAgo(q.created_at)}</span>
+                  {cardBadge(q)}
+                </div>
               </div>
+              <p style={{
+                fontSize: 14, color: 'var(--gray-dark)', lineHeight: 1.6, margin: '8px 0 0',
+                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+              }}>
+                {q.question}
+              </p>
             </div>
-            <p style={{
-              fontSize: 14, color: 'var(--gray-dark)', lineHeight: 1.6, margin: '8px 0 0',
-              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}>
-              {q.question}
-            </p>
-          </div>
-        ))
+          )
+        })
       )}
 
       {selected && (
@@ -330,9 +443,11 @@ export function AdminQueries() {
           setReassigning={setReassigning}
           saving={saving}
           publishing={publishing}
+          escalating={escalating}
           onAssign={() => assign(selected)}
           onPublish={() => publish(selected)}
           onDelete={() => remove(selected)}
+          onSimulate={() => runEscalation(selected.id)}
           onClose={() => setSelectedId(null)}
         />
       )}
@@ -344,16 +459,16 @@ export function AdminQueries() {
 function QueryPanel({
   q, familyName, assignedDoc, doctorList,
   pickDoctor, setPickDoctor, note, setNote,
-  reassigning, setReassigning, saving, publishing,
-  onAssign, onPublish, onDelete, onClose,
+  reassigning, setReassigning, saving, publishing, escalating,
+  onAssign, onPublish, onDelete, onSimulate, onClose,
 }: any) {
   const verified = isVerified(q)
+  const info = slaInfo(q)
   const label11 = { fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', textTransform: 'uppercase' as const, letterSpacing: 0.4 }
   const label13 = { fontSize: 13, fontWeight: 600, color: 'var(--black)' }
 
   const showSelector = !assignedDoc || q.verification_status === 'pending' || reassigning
-  const docForResp = assignedDoc
-  const doctorName = docForResp?.name || 'the doctor'
+  const doctorName = assignedDoc?.name || 'the doctor'
 
   return (
     <>
@@ -364,8 +479,40 @@ function QueryPanel({
           aria-label="Close"
           style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-dark)', padding: 4, fontSize: 22, lineHeight: 1 }}
         >
-          ×
+          x
         </button>
+
+        {/* SLA banner */}
+        {info && !verified && (
+          <div style={{
+            marginBottom: 16, padding: '10px 14px', borderRadius: 8,
+            background: info.state === 'overdue' ? '#FEE2E2' : info.state === 'due-soon' ? '#FEF3C7' : '#DCFCE7',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div>
+              <div style={{
+                fontSize: 12, fontWeight: 700,
+                color: info.state === 'overdue' ? '#991B1B' : info.state === 'due-soon' ? '#92400E' : '#166534',
+              }}>
+                {info.state === 'overdue' ? 'SLA BREACHED' : info.state === 'due-soon' ? 'DUE SOON' : 'ON TRACK'}
+              </div>
+              <div style={{ fontSize: 12, color: info.state === 'overdue' ? '#B91C1C' : info.state === 'due-soon' ? '#B45309' : '#15803D' }}>
+                {info.label}
+                {q.urgency && q.urgency !== 'routine' && <> · {q.urgency === 'urgent' ? 'Urgent 2h SLA' : 'Watch 12h SLA'}</>}
+              </div>
+            </div>
+            {info.state !== 'on-track' && (
+              <button
+                className="adm-btn"
+                style={{ fontSize: 11, padding: '5px 10px' }}
+                disabled={escalating}
+                onClick={onSimulate}
+              >
+                {escalating ? 'Running…' : 'Simulate breach'}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* SECTION 1 — query info */}
         <div style={{ paddingRight: 28 }}>
@@ -374,6 +521,9 @@ function QueryPanel({
             <div><strong>Who asked:</strong> {familyName}</div>
             <div><strong>For:</strong> {q.subject_label || '—'}</div>
             <div><strong>Asked:</strong> {timeAgo(q.created_at)}</div>
+            {q.urgency && <div><strong>Urgency:</strong> {q.urgency.charAt(0).toUpperCase() + q.urgency.slice(1)}</div>}
+            {q.admin_alerted_at && <div style={{ color: '#B91C1C' }}><strong>Admin alerted:</strong> {timeAgo(q.admin_alerted_at)}</div>}
+            {q.interim_msg_sent_at && <div style={{ color: '#B45309' }}><strong>Family interim msg sent:</strong> {timeAgo(q.interim_msg_sent_at)}</div>}
           </div>
         </div>
 
