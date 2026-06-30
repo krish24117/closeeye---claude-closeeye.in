@@ -1,17 +1,45 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Send } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/ui/Logo'
 import { getPersona, getPersonaCopy } from '@/lib/persona'
+
+interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant'
+  text: string | null
+  pending?: boolean
+  lane?: string
+  ambulanceNumber?: string
+}
 
 interface Query {
   id: string; question: string; answer: string | null; ai_answer: string | null
   status: string; created_at: string; reviewed_by: string | null
 }
 
-// ── Tier badge ─────────────────────────────────────────────────────────────
+// ── Render markdown-style bold + newlines safely (no dangerouslySetInnerHTML) ──
+
+function RichText({ text, style }: { text: string; style?: React.CSSProperties }) {
+  const lines = text.split('\n')
+  return (
+    <p style={{ margin: 0, lineHeight: 1.7, ...style }}>
+      {lines.map((line, li) => {
+        const parts = line.split(/\*\*(.+?)\*\*/g)
+        return (
+          <span key={li}>
+            {parts.map((part, pi) => pi % 2 === 1 ? <strong key={pi}>{part}</strong> : part)}
+            {li < lines.length - 1 && <br />}
+          </span>
+        )
+      })}
+    </p>
+  )
+}
+
+// ── Tier badge ─────────────────────────────────────────────────────────────────
 
 function TierBadge({ isFounder, parentName }: { isFounder: boolean; parentName?: string | null }) {
   if (isFounder) {
@@ -32,7 +60,7 @@ function TierBadge({ isFounder, parentName }: { isFounder: boolean; parentName?:
       background: 'var(--cream)', border: '1px solid var(--gray-light)',
       borderRadius: 999, padding: '5px 13px', fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)',
     }}>
-      General guidance ·
+      General guidance ·{' '}
       <Link to="/founding-member" style={{ color: 'var(--forest)', fontWeight: 700, textDecoration: 'none' }}>
         Unlock personalised →
       </Link>
@@ -40,22 +68,20 @@ function TierBadge({ isFounder, parentName }: { isFounder: boolean; parentName?:
   )
 }
 
-// ── Escalation response ────────────────────────────────────────────────────
+// ── Escalation card ────────────────────────────────────────────────────────────
 
 function EscalationCard({ message, ambulanceNumber }: { message: string; ambulanceNumber?: string }) {
   const number = ambulanceNumber ?? '108'
   return (
     <div style={{
       background: '#FEF2F2', border: '1px solid #c0734f',
-      borderRadius: 14, padding: '16px 18px', marginBottom: 12,
+      borderRadius: 14, padding: '16px 18px', margin: '4px 0 8px',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
         <span style={{ fontSize: 20 }}>⚠</span>
         <span style={{ fontSize: 14, fontWeight: 700, color: '#7a1f1f' }}>This needs urgent attention</span>
       </div>
-      <p style={{ fontSize: 14, color: '#3d1010', lineHeight: 1.6, margin: '0 0 14px' }}
-        dangerouslySetInnerHTML={{ __html: message.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') }}
-      />
+      <RichText text={message} style={{ fontSize: 14, color: '#3d1010', marginBottom: 14 }} />
       <a
         href={`tel:${number}`}
         style={{
@@ -73,7 +99,7 @@ function EscalationCard({ message, ambulanceNumber }: { message: string; ambulan
   )
 }
 
-// ── Status badge ──────────────────────────────────────────────────────────
+// ── Status badge ───────────────────────────────────────────────────────────────
 
 function StatusBadge({ status, reviewedBy }: { status: string; reviewedBy?: string | null }) {
   if (status === 'doctor_reviewed')
@@ -83,22 +109,23 @@ function StatusBadge({ status, reviewedBy }: { status: string; reviewedBy?: stri
   return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 400, color: 'var(--gray-mid)' }}>⏳ Our medical team is reviewing this</span>
 }
 
-// ── Main component ────────────────────────────────────────────────────────
+// ── Main component ─────────────────────────────────────────────────────────────
 
 export function DashboardAsk() {
   const { user, profile } = useAuth()
   const isFounder = !!profile?.is_founding_member
   const isNri     = profile?.user_type === 'nri'
 
-  const [elder, setElder]         = useState<{ id: string; full_name: string; city?: string } | null>(null)
-  const [subject, setSubject]     = useState('Myself')
-  const [text, setText]           = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [answer, setAnswer]       = useState<{
-    text: string | null; pending: boolean; lane?: string; ambulanceNumber?: string
-  } | null>(null)
-  const [history, setHistory]     = useState<Query[]>([])
+  const [elder, setElder]               = useState<{ id: string; full_name: string; city?: string } | null>(null)
+  const [subject, setSubject]           = useState('Myself')
+  const [messages, setMessages]         = useState<ChatMessage[]>([])
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [inputText, setInputText]       = useState('')
+  const [thinking, setThinking]         = useState(false)
+  const [history, setHistory]           = useState<Query[]>([])
   const [monthlyCount, setMonthlyCount] = useState(0)
+  const bottomRef   = useRef<HTMLDivElement>(null)
+  const inputRef    = useRef<HTMLTextAreaElement>(null)
 
   const SOCIETY_SUBJECTS = ['Myself', 'My Child', 'My Parent', 'Partner']
 
@@ -112,11 +139,15 @@ export function DashboardAsk() {
     loadHistory()
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
   async function loadHistory() {
     if (!user) return
     const { data } = await supabase.from('member_queries')
       .select('id,question,answer,ai_answer,status,reviewed_by,created_at')
-      .eq('user_id', user.id).order('created_at', { ascending: false }).limit(20)
+      .eq('user_id', user.id).order('created_at', { ascending: false }).limit(10)
     if (data) setHistory(data)
 
     const now = new Date()
@@ -127,181 +158,294 @@ export function DashboardAsk() {
     setMonthlyCount(count ?? 0)
   }
 
-  async function submit() {
-    if (!user || !text.trim()) return
-    setSubmitting(true); setAnswer(null)
-    const subjectLabel = isNri ? (elder?.full_name || 'my parent') : subject
-    const { data, error } = await supabase.functions.invoke('ask-health', {
-      body: { question: text.trim(), subject_label: subjectLabel, loved_one_id: isNri ? elder?.id ?? null : null },
-    })
-    setSubmitting(false)
-    if (error) {
-      setAnswer({ text: null, pending: true })
-      return
-    }
-    // Handle escalation responses
-    if (data?.lane === 'escalate') {
-      setAnswer({ text: data.message ?? null, pending: false, lane: 'escalate', ambulanceNumber: data.escalation?.ambulanceNumber })
-    } else {
-      setAnswer({ text: data?.ai_answer ?? data?.message ?? null, pending: !data?.ai_answer && !data?.message })
-    }
-    setText('')
-    loadHistory()
-  }
+  const atCap       = !isFounder && monthlyCount >= 5
+  const nearCap     = !isFounder && monthlyCount === 4
+  const subjectLabel = isNri ? (elder?.full_name || 'my parent') : subject
 
-  // Persona copy — affects placeholder text only
   const persona = isNri ? getPersona(profile?.country, elder?.city) : null
-  const pcopy = isNri && persona
+  const pcopy   = isNri && persona
     ? getPersonaCopy(persona, { parentName: elder?.full_name, parentCity: elder?.city, userCity: profile?.country ?? undefined })
     : null
 
-  // Free cap: 5/month for non-founders; founders have no cap (edge function handles it)
-  const atCap = !isFounder && monthlyCount >= 5
-  const nearCap = !isFounder && monthlyCount === 4
+  const placeholder = isNri
+    ? (pcopy?.askInputHint || (elder ? `e.g. Is it okay to give ${elder.full_name.split(' ')[0]} paracetamol with BP medicine?` : 'Ask about your parent\'s health…'))
+    : `Ask about ${subject.toLowerCase()}'s health…`
+
+  async function sendMessage() {
+    if (!user || !inputText.trim() || thinking || atCap) return
+
+    const userText = inputText.trim()
+    setInputText('')
+    // Reset textarea height
+    if (inputRef.current) { inputRef.current.style.height = 'auto' }
+
+    const thinkingId = `thinking-${Date.now()}`
+
+    setMessages(prev => [
+      ...prev,
+      { id: `u-${Date.now()}`, role: 'user', text: userText },
+      { id: thinkingId, role: 'assistant', text: null, pending: true },
+    ])
+    setThinking(true)
+
+    // Build full conversation history for Claude context
+    const historyMessages = messages
+      .filter(m => m.text && !m.pending && m.lane !== 'escalate')
+      .map(m => ({ role: m.role as 'user' | 'assistant', content: m.text as string }))
+    historyMessages.push({ role: 'user', content: userText })
+
+    const { data, error } = await supabase.functions.invoke('ask-health', {
+      body: {
+        question: userText,
+        subject_label: subjectLabel,
+        loved_one_id: isNri ? elder?.id ?? null : null,
+        ...(conversationId ? { conversation_id: conversationId } : {}),
+        messages: historyMessages,
+      },
+    })
+
+    setThinking(false)
+    setMessages(prev => prev.filter(m => m.id !== thinkingId))
+
+    if (error) {
+      setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: 'assistant', text: null, pending: true }])
+      return
+    }
+
+    if (data?.lane === 'escalate') {
+      setMessages(prev => [...prev, {
+        id: `a-${Date.now()}`, role: 'assistant',
+        text: data.message ?? null, lane: 'escalate',
+        ambulanceNumber: data.escalation?.ambulanceNumber,
+      }])
+    } else {
+      setMessages(prev => [...prev, {
+        id: `a-${Date.now()}`, role: 'assistant',
+        text: data?.ai_answer ?? null,
+        pending: !data?.ai_answer && !data?.message,
+      }])
+      if (!conversationId && data?.query_id) setConversationId(data.query_id)
+    }
+
+    loadHistory()
+  }
+
+  function handleKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
+  }
+
+  function autoResize(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setInputText(e.target.value)
+    e.target.style.height = 'auto'
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
+  }
+
+  const firstRealAssistantId = messages.find(m => m.role === 'assistant' && !m.pending && m.text)?.id
 
   return (
-    <div className="ce-slide-up" style={{ paddingBottom: 8 }}>
+    // Extra padding-bottom: input bar (~72px) + bottom nav (~76px) + safe area + gap
+    <div style={{ paddingBottom: 'calc(160px + env(safe-area-inset-bottom))' }}>
 
-      {/* Header + tier badge */}
+      {/* Header */}
       <div style={{ margin: '16px 16px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700 }}>Ask Close Eye</h1>
         <TierBadge isFounder={isFounder} parentName={isNri ? elder?.full_name : null} />
       </div>
 
-      {/* Ask box */}
-      <div style={{ margin: '0 16px', background: '#fff', borderRadius: 'var(--radius-card)', padding: 16, boxShadow: 'var(--shadow-card)' }}>
-
-        {/* Tier context */}
-        {isNri && elder ? (
-          <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: '0 0 10px' }}>
-            {isFounder
-              ? `Asking about ${elder.full_name} — personalised to their history`
-              : `General guidance about ${elder.full_name} · Register as a Founding Member for personalised answers`}
-          </p>
-        ) : !isNri && (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-            {SOCIETY_SUBJECTS.map(s => (
-              <button key={s} onClick={() => setSubject(s)} style={{
-                borderRadius: 100, padding: '8px 16px', fontSize: 13, cursor: 'pointer', fontWeight: subject === s ? 600 : 400,
-                background: subject === s ? 'var(--forest)' : 'var(--cream)', color: subject === s ? '#fff' : 'var(--gray-dark)',
-                border: subject === s ? 'none' : '1px solid var(--gray-light)',
-              }}>{s}</button>
-            ))}
-          </div>
-        )}
-
-        <textarea
-          value={text} onChange={e => setText(e.target.value)}
-          placeholder={isNri
-            ? (pcopy?.askInputHint || (elder ? `e.g. Is it okay to give ${elder.full_name.split(' ')[0]} paracetamol with BP medicine?` : 'e.g. Is it okay to give paracetamol with BP medicine?'))
-            : 'e.g. My child has had a fever for 2 days…'
-          }
-          disabled={atCap}
-          style={{ width: '100%', minHeight: 90, resize: 'none', background: 'var(--cream)', border: '1px solid var(--gray-light)', borderRadius: 12, padding: '14px 16px', fontSize: 16, fontFamily: 'inherit', opacity: atCap ? 0.6 : 1 }}
-        />
-        <p style={{ fontSize: 11, color: 'var(--gray-mid)', fontStyle: 'italic', margin: '8px 0 12px' }}>
-          General guidance only — not a diagnosis. For emergencies, call 108.
-        </p>
-
-        {/* Near-cap warning */}
-        {nearCap && (
-          <div style={{ background: 'rgba(168,213,181,0.15)', border: '1px solid rgba(168,213,181,0.4)', borderRadius: 12, padding: '10px 14px', fontSize: 13, color: 'var(--forest)', marginBottom: 10 }}>
-            You have <strong>1 question left</strong> this month.{' '}
-            <Link to="/founding-member" style={{ color: 'var(--forest)', fontWeight: 600 }}>Become a Founding Member →</Link>{' '}
-            for unlimited personalised answers.
-          </div>
-        )}
-
-        {/* Cap reached */}
-        {atCap ? (
-          <div style={{ background: 'var(--cream)', border: '1px solid var(--gray-light)', borderRadius: 12, padding: '16px', textAlign: 'center' }}>
-            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--black)', margin: '0 0 4px' }}>
-              You've used your 5 free questions this month
-            </p>
-            <p style={{ fontSize: 13, color: 'var(--gray-mid)', margin: '0 0 12px', lineHeight: 1.5 }}>
-              Founding Members get personalised answers, unlimited questions, and priority care — for ₹100 once.
-            </p>
-            <Link to="/founding-member" className="ce-btn ce-btn-primary" style={{ display: 'inline-block', padding: '10px 24px', textDecoration: 'none', fontSize: 14 }}>
-              Become a Founding Member →
-            </Link>
-          </div>
-        ) : (
-          <button
-            onClick={submit}
-            disabled={submitting || !text.trim()}
-            className="ce-btn ce-btn-primary ce-btn-full"
-            style={{ padding: 14, opacity: submitting || !text.trim() ? 0.6 : 1 }}
-          >
-            {submitting ? <><Loader2 size={16} className="ce-spin" /> Thinking…</> : 'Ask Close Eye →'}
-          </button>
-        )}
-      </div>
-
-      {/* Latest response */}
-      {answer && (
-        <div className="ce-slide-up" style={{ margin: '12px 16px 0' }}>
-          {answer.lane === 'escalate' ? (
-            <EscalationCard message={answer.text ?? ''} ambulanceNumber={answer.ambulanceNumber} />
-          ) : (
-            <div style={{ background: '#fff', borderRadius: 'var(--radius-card)', padding: 20, boxShadow: 'var(--shadow-card)', borderLeft: '3px solid var(--sage)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                <Logo className="w-5 h-5" />
-                <span style={{ fontSize: 13, color: 'var(--gray-mid)' }}>
-                  Close Eye{isFounder && elder ? ` · for ${elder.full_name}` : ''}
-                </span>
-              </div>
-              <p style={{ fontSize: 15, color: 'var(--gray-dark)', lineHeight: 1.7, margin: 0 }}>
-                {answer.text || 'Thanks — our medical team will review your question and reply shortly. For anything urgent, call 108.'}
-              </p>
-              <div style={{ marginTop: 12 }}>
-                <StatusBadge status={answer.text ? 'ai_answered' : 'pending'} />
-              </div>
-              <p style={{ fontSize: 11, color: 'var(--gray-mid)', fontStyle: 'italic', margin: '8px 0 0' }}>
-                General guidance, not a diagnosis. For emergencies or serious concerns, please contact a doctor.
-              </p>
-              {/* Upgrade nudge for non-founders */}
-              {!isFounder && (
-                <div style={{ marginTop: 12, padding: '10px 12px', background: 'rgba(168,213,181,.1)', border: '1px solid rgba(168,213,181,.4)', borderRadius: 10, fontSize: 12.5, color: 'var(--forest)' }}>
-                  Want this answer personalised to your parent's conditions and medicines?{' '}
-                  <Link to="/founding-member" style={{ fontWeight: 700, color: 'var(--forest)' }}>
-                    Become a Founding Member for ₹100 →
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* History */}
-      {history.length > 0 && (
-        <div style={{ margin: '16px 16px 0' }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.06em', margin: '0 0 8px' }}>PREVIOUS QUESTIONS</p>
-          {history.map(q => (
-            <div key={q.id} style={{ background: '#fff', borderRadius: 'var(--radius-card)', padding: 16, boxShadow: 'var(--shadow-card)', marginBottom: 10 }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)', margin: 0 }}>{q.question}</p>
-              <p style={{ fontSize: 13, color: 'var(--gray-dark)', lineHeight: 1.6, margin: '8px 0 0' }}>
-                {q.answer || q.ai_answer || 'Our medical team is reviewing…'}
-              </p>
-              <div style={{ marginTop: 10 }}><StatusBadge status={q.status} reviewedBy={q.reviewed_by} /></div>
-              <p style={{ fontSize: 11, color: 'var(--gray-mid)', fontStyle: 'italic', margin: '8px 0 0' }}>General guidance, not a diagnosis.</p>
-            </div>
+      {/* Society subject selector */}
+      {!isNri && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 16px', marginBottom: 10 }}>
+          {SOCIETY_SUBJECTS.map(s => (
+            <button key={s} onClick={() => setSubject(s)} style={{
+              borderRadius: 100, padding: '7px 15px', fontSize: 13, cursor: 'pointer',
+              fontWeight: subject === s ? 600 : 400,
+              background: subject === s ? 'var(--forest)' : 'var(--cream)',
+              color: subject === s ? '#fff' : 'var(--gray-dark)',
+              border: subject === s ? 'none' : '1px solid var(--gray-light)',
+            }}>{s}</button>
           ))}
         </div>
       )}
 
-      {/* Empty state */}
-      {history.length === 0 && !answer && (
-        <div style={{ textAlign: 'center', padding: '40px 24px' }}>
-          <div style={{ fontSize: 40 }}>💬</div>
-          <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--black)', margin: '8px 0 0' }}>Ask your first health question</p>
-          <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: '4px 0 0' }}>
-            {isFounder
-              ? `Personalised guidance for ${elder?.full_name ?? 'your loved one'}, in plain language.`
-              : 'Get clear, caring guidance from our medical team — in plain language.'}
-          </p>
-        </div>
-      )}
+      {/* Chat thread */}
+      <div style={{ padding: '0 12px' }}>
+
+        {/* Welcome bubble — shown before the first message */}
+        {messages.length === 0 && (
+          <div className="ce-slide-up" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+            <div style={{ flexShrink: 0, marginTop: 3 }}><Logo className="w-5 h-5" /></div>
+            <div style={{
+              background: '#fff', borderRadius: '4px 18px 18px 18px',
+              padding: '13px 16px', boxShadow: 'var(--shadow-card)',
+              borderLeft: '3px solid var(--sage)', maxWidth: '85%',
+            }}>
+              <p style={{ fontSize: 15, color: 'var(--gray-dark)', lineHeight: 1.6, margin: 0 }}>
+                {isFounder && elder?.full_name
+                  ? `Hi — ask me anything about ${elder.full_name}'s health, medications, or daily wellbeing. I'm here to help.`
+                  : 'Hi — ask me anything about your loved one\'s health, medications, or daily wellbeing. I\'m here to help.'}
+              </p>
+              {!isFounder && (
+                <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '8px 0 0' }}>
+                  General guidance ·{' '}
+                  <Link to="/founding-member" style={{ color: 'var(--forest)', fontWeight: 600 }}>
+                    Get personalised answers →
+                  </Link>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Messages */}
+        {messages.map(msg => {
+          if (msg.role === 'user') {
+            return (
+              <div key={msg.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                <div style={{
+                  background: 'var(--forest)', color: '#fff',
+                  borderRadius: '18px 18px 4px 18px',
+                  padding: '11px 16px', maxWidth: '80%', fontSize: 15, lineHeight: 1.5,
+                }}>
+                  {msg.text}
+                </div>
+              </div>
+            )
+          }
+
+          if (msg.lane === 'escalate') {
+            return <EscalationCard key={msg.id} message={msg.text ?? ''} ambulanceNumber={msg.ambulanceNumber} />
+          }
+
+          return (
+            <div key={msg.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+              <div style={{ flexShrink: 0, marginTop: 3 }}><Logo className="w-5 h-5" /></div>
+              <div style={{
+                background: '#fff', borderRadius: '4px 18px 18px 18px',
+                padding: '12px 16px', maxWidth: '85%', boxShadow: 'var(--shadow-card)',
+              }}>
+                {msg.pending ? (
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <Loader2 size={14} className="ce-spin" style={{ color: 'var(--sage)' }} />
+                    <span style={{ fontSize: 13, color: 'var(--gray-mid)' }}>Thinking…</span>
+                  </div>
+                ) : (
+                  <>
+                    <RichText
+                      text={msg.text || 'Our medical team will review this and reply shortly. For anything urgent, call 108.'}
+                      style={{ fontSize: 15, color: 'var(--gray-dark)' }}
+                    />
+                    <p style={{ fontSize: 11, color: 'var(--gray-mid)', fontStyle: 'italic', margin: '8px 0 0' }}>
+                      General guidance — not a diagnosis. For emergencies, call 108.
+                    </p>
+                    {/* Upgrade nudge — show only once, on the first real answer, for non-founders */}
+                    {!isFounder && msg.id === firstRealAssistantId && (
+                      <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--gray-light)', fontSize: 12.5, color: 'var(--forest)' }}>
+                        Want this personalised to your parent's conditions?{' '}
+                        <Link to="/founding-member" style={{ fontWeight: 700, color: 'var(--forest)' }}>
+                          Founding Member →
+                        </Link>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Near-cap warning */}
+        {nearCap && messages.length > 0 && (
+          <div style={{ background: 'rgba(168,213,181,0.15)', border: '1px solid rgba(168,213,181,0.4)', borderRadius: 12, padding: '10px 14px', fontSize: 13, color: 'var(--forest)', marginBottom: 8 }}>
+            <strong>1 question left</strong> this month.{' '}
+            <Link to="/founding-member" style={{ color: 'var(--forest)', fontWeight: 600 }}>
+              Become a Founding Member →
+            </Link>{' '}for unlimited personalised answers.
+          </div>
+        )}
+
+        {/* Previous questions — shown only in the empty-chat state */}
+        {messages.length === 0 && history.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.06em', margin: '0 4px 8px' }}>
+              PREVIOUS QUESTIONS
+            </p>
+            {history.map(q => (
+              <div key={q.id} style={{ background: '#fff', borderRadius: 'var(--radius-card)', padding: 14, boxShadow: 'var(--shadow-card)', marginBottom: 8 }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)', margin: 0 }}>{q.question}</p>
+                <p style={{ fontSize: 13, color: 'var(--gray-dark)', lineHeight: 1.6, margin: '6px 0 0' }}>
+                  {q.answer || q.ai_answer || 'Our medical team is reviewing…'}
+                </p>
+                <div style={{ marginTop: 8 }}>
+                  <StatusBadge status={q.status} reviewedBy={q.reviewed_by} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div ref={bottomRef} />
+      </div>
+
+      {/* ── Fixed input bar — sits above the bottom nav ──────────────────────── */}
+      <div style={{
+        position: 'fixed',
+        bottom: 'calc(64px + env(safe-area-inset-bottom))',
+        left: 0, right: 0,
+        background: '#fff',
+        borderTop: '1px solid var(--gray-light)',
+        padding: '8px 12px 6px',
+        zIndex: 200,
+        boxShadow: '0 -2px 16px rgba(14,42,31,0.07)',
+      }}>
+        {atCap ? (
+          <div style={{ textAlign: 'center', padding: '10px 0' }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--black)', margin: '0 0 5px' }}>
+              5 free questions used this month
+            </p>
+            <Link to="/founding-member" style={{ fontSize: 13, color: 'var(--forest)', fontWeight: 700 }}>
+              Become a Founding Member for unlimited questions →
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+              <textarea
+                ref={inputRef}
+                value={inputText}
+                onChange={autoResize}
+                onKeyDown={handleKey}
+                placeholder={placeholder}
+                rows={1}
+                style={{
+                  flex: 1, resize: 'none', overflow: 'hidden',
+                  background: 'var(--cream)', border: '1px solid var(--gray-light)',
+                  borderRadius: 20, padding: '10px 16px',
+                  fontSize: 15, fontFamily: 'inherit', lineHeight: 1.4,
+                  outline: 'none', minHeight: 42,
+                }}
+              />
+              <button
+                onClick={sendMessage}
+                disabled={!inputText.trim() || thinking}
+                aria-label="Send"
+                style={{
+                  width: 42, height: 42, borderRadius: '50%', border: 'none',
+                  cursor: inputText.trim() && !thinking ? 'pointer' : 'default',
+                  background: inputText.trim() && !thinking ? 'var(--forest)' : 'var(--gray-light)',
+                  color: inputText.trim() && !thinking ? '#fff' : 'var(--gray-mid)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 0.18s, color 0.18s', flexShrink: 0,
+                }}
+              >
+                {thinking ? <Loader2 size={18} className="ce-spin" /> : <Send size={18} />}
+              </button>
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--gray-mid)', fontStyle: 'italic', margin: '5px 4px 0' }}>
+              General guidance only — not a diagnosis. For emergencies, call 108.
+            </p>
+          </>
+        )}
+      </div>
     </div>
   )
 }

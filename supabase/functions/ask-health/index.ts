@@ -92,10 +92,19 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: userErr } = await callerSb.auth.getUser();
   if (userErr || !user) return json({ error: "Unauthorized" }, 401);
 
-  let body: { question?: string; subject_label?: string; loved_one_id?: string | null };
+  let body: {
+    question?: string; subject_label?: string; loved_one_id?: string | null;
+    conversation_id?: string;
+    messages?: { role: string; content: string }[];
+  };
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
   const question = (body.question || "").trim();
   if (!question) return json({ error: "Question is required" }, 400);
+
+  // conversation_id present → follow-up turn; skip cap + DB insert for this turn
+  const conversationId = body.conversation_id ?? null;
+  const isFollowUp = !!conversationId;
+  const clientMessages = body.messages ?? null;
 
   // ── Red-flag check — runs BEFORE cap and BEFORE any model call.
   //    Emergencies bypass the monthly cap entirely — a safety question is never blocked.
@@ -111,8 +120,8 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
   const isExempt = !!memberProf?.is_founding_member;
 
-  // ── Monthly cap — free-tier users only, non-emergencies only ─────────────
-  if (!isExempt && !redFlag.matched) {
+  // ── Monthly cap — free-tier users only, non-emergencies only, first turn only ─
+  if (!isExempt && !redFlag.matched && !isFollowUp) {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const { count: monthCount } = await sb
@@ -138,24 +147,29 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // ── Persist the question (pending) ───────────────────────────────────────
-  const { data: row, error: insErr } = await sb.from("member_queries").insert({
-    user_id: user.id,
-    question,
-    subject_label: body.subject_label || null,
-    loved_one_id: body.loved_one_id || null,
-    status: "pending",
-  }).select("id").single();
-
-  if (insErr || !row) {
-    console.error("member_queries insert error:", insErr);
-    return json({ error: "Could not save your question" }, 500);
+  // ── Persist the question — only on the first turn of a conversation ─────
+  let queryId: string;
+  if (!isFollowUp) {
+    const { data: row, error: insErr } = await sb.from("member_queries").insert({
+      user_id: user.id,
+      question,
+      subject_label: body.subject_label || null,
+      loved_one_id: body.loved_one_id || null,
+      status: "pending",
+    }).select("id").single();
+    if (insErr || !row) {
+      console.error("member_queries insert error:", insErr);
+      return json({ error: "Could not save your question" }, 500);
+    }
+    queryId = row.id;
+  } else {
+    queryId = conversationId!;
   }
 
   // ── Red-flag escalation — bypass Claude entirely; send fixed emergency response.
   //    Care-team alert is non-fatal: the family gets the 108 message regardless.
   if (redFlag.matched) {
-    console.log(`[ask-health] escalation: category=${redFlag.category} query_id=${row.id}`);
+    console.log(`[ask-health] escalation: category=${redFlag.category} query_id=${queryId}`);
     try {
       const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
       const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
@@ -172,7 +186,7 @@ Deno.serve(async (req: Request) => {
               headers: { Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`, "Content-Type": "application/x-www-form-urlencoded" },
               body: new URLSearchParams({
                 From: fromNum, To: waTo,
-                Body: `🚨 EMERGENCY — Ask Close Eye\nCategory: ${redFlag.category}\nQuery: "${question.slice(0, 140)}"\nUser: ${user.id} | Query: ${row.id}\nAction: contact this family now.`,
+                Body: `🚨 EMERGENCY — Ask Close Eye\nCategory: ${redFlag.category}\nQuery: "${question.slice(0, 140)}"\nUser: ${user.id} | Query: ${queryId}\nAction: contact this family now.`,
               }),
             },
           );
@@ -184,7 +198,7 @@ Deno.serve(async (req: Request) => {
     }
 
     return json({
-      query_id: row.id,
+      query_id: queryId,
       lane: "escalate",
       message: `**Call ${AMBULANCE_NUMBER} now.** This sounds like a medical emergency — please don't wait.\n\nCall **${AMBULANCE_NUMBER}** (ambulance) or take them to the nearest emergency room immediately. Stay on the line with the dispatcher — they will guide you until help arrives.\n\nOur care team has been alerted and will follow up shortly.`,
       escalation: { ambulanceNumber: AMBULANCE_NUMBER },
@@ -195,12 +209,18 @@ Deno.serve(async (req: Request) => {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) {
     console.warn("ANTHROPIC_API_KEY not set — leaving query pending for review");
-    return json({ query_id: row.id, ai_answer: null, pending: true });
+    return json({ query_id: queryId, ai_answer: null, pending: true });
   }
 
   const userContent = body.subject_label
     ? `About: ${body.subject_label}\n\nQuestion: ${question}`
     : question;
+
+  // For multi-turn chat: use the full conversation history supplied by the client.
+  // For first turns: fall back to the single-message format.
+  const claudeMessages = clientMessages
+    ? clientMessages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content }))
+    : [{ role: "user" as const, content: userContent }];
 
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -212,60 +232,63 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 300,
+        max_tokens: 400,
         system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userContent }],
+        messages: claudeMessages,
       }),
     });
 
     if (!res.ok) {
       const t = await res.text();
       console.error("Anthropic error:", res.status, t);
-      return json({ query_id: row.id, ai_answer: null, pending: true });
+      return json({ query_id: queryId, ai_answer: null, pending: true });
     }
 
     const data = await res.json();
     const rawAnswer = (data?.content?.[0]?.text ?? "").trim();
-    if (!rawAnswer) return json({ query_id: row.id, ai_answer: null, pending: true });
+    if (!rawAnswer) return json({ query_id: queryId, ai_answer: null, pending: true });
 
     // Always append disclaimer — do not let the model decide whether to include it
     const aiAnswer = rawAnswer + DISCLAIMER;
 
-    await sb.from("member_queries").update({
-      ai_answer: aiAnswer,
-      status: "ai_answered",
-      answered_at: new Date().toISOString(),
-    }).eq("id", row.id);
+    // Only update DB and notify on the first turn; follow-ups are ephemeral chat turns
+    if (!isFollowUp) {
+      await sb.from("member_queries").update({
+        ai_answer: aiAnswer,
+        status: "ai_answered",
+        answered_at: new Date().toISOString(),
+      }).eq("id", queryId);
 
-    // Non-fatal: notify user their question has been answered
-    try {
-      const { data: prof } = await sb.from("profiles").select("whatsapp_number, full_name").eq("id", user.id).maybeSingle();
-      const waNum = prof?.whatsapp_number?.trim();
-      const accountSid  = Deno.env.get("TWILIO_ACCOUNT_SID");
-      const authToken   = Deno.env.get("TWILIO_AUTH_TOKEN");
-      const fromNum     = Deno.env.get("TWILIO_WHATSAPP_FROM");
-      const templateSid = Deno.env.get("TWILIO_TEMPLATE_QUERY_RESPONSE");
-      if (waNum && accountSid && authToken && fromNum && templateSid) {
-        const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
-        const params = new URLSearchParams({
-          From: fromNum, To: to,
-          ContentSid: templateSid,
-          ContentVariables: JSON.stringify({ "1": prof?.full_name || "there" }),
-        });
-        const waRes = await fetch(
-          `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-          { method: "POST", headers: { Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`, "Content-Type": "application/x-www-form-urlencoded" }, body: params },
-        );
-        if (!waRes.ok) console.error(`[ask-health] query_response Twilio error:`, await waRes.text());
-        else console.log(`[ask-health] query_response sent to ${to}`);
+      // Non-fatal: notify user their question has been answered
+      try {
+        const { data: prof } = await sb.from("profiles").select("whatsapp_number, full_name").eq("id", user.id).maybeSingle();
+        const waNum = prof?.whatsapp_number?.trim();
+        const accountSid  = Deno.env.get("TWILIO_ACCOUNT_SID");
+        const authToken   = Deno.env.get("TWILIO_AUTH_TOKEN");
+        const fromNum     = Deno.env.get("TWILIO_WHATSAPP_FROM");
+        const templateSid = Deno.env.get("TWILIO_TEMPLATE_QUERY_RESPONSE");
+        if (waNum && accountSid && authToken && fromNum && templateSid) {
+          const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
+          const params = new URLSearchParams({
+            From: fromNum, To: to,
+            ContentSid: templateSid,
+            ContentVariables: JSON.stringify({ "1": prof?.full_name || "there" }),
+          });
+          const waRes = await fetch(
+            `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+            { method: "POST", headers: { Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`, "Content-Type": "application/x-www-form-urlencoded" }, body: params },
+          );
+          if (!waRes.ok) console.error(`[ask-health] query_response Twilio error:`, await waRes.text());
+          else console.log(`[ask-health] query_response sent to ${to}`);
+        }
+      } catch (waErr) {
+        console.error("[ask-health] query_response WhatsApp failed (non-fatal):", waErr);
       }
-    } catch (waErr) {
-      console.error("[ask-health] query_response WhatsApp failed (non-fatal):", waErr);
     }
 
-    return json({ query_id: row.id, ai_answer: aiAnswer });
+    return json({ query_id: queryId, ai_answer: aiAnswer });
   } catch (err) {
     console.error("Anthropic call failed:", err);
-    return json({ query_id: row.id, ai_answer: null, pending: true });
+    return json({ query_id: queryId, ai_answer: null, pending: true });
   }
 });
