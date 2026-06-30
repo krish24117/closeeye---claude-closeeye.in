@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { LogOut, Edit2, Save, X, Plus, Phone } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { LogOut, Edit2, Save, X, Plus } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 
@@ -40,6 +40,47 @@ function medLabel(m: any): string {
 function fmt(iso?: string | null) {
   if (!iso) return ''
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function memberEmoji(rel: string | null): string {
+  const r = (rel || '').toLowerCase()
+  if (r.includes('father') || r.includes('grandfather') || r === 'parent') return '👴'
+  if (r.includes('mother') || r.includes('grandmother')) return '👵'
+  if (r.includes('son')) return '👦'
+  if (r.includes('daughter')) return '👧'
+  if (r.includes('spouse')) return '💑'
+  if (r.includes('sibling') || r.includes('brother') || r.includes('sister')) return '👫'
+  return '👤'
+}
+
+const MUTED   = '#5c6b62'
+const LINE    = '#e3ddd1'
+const CLAY    = '#C0734F'
+const CREAM2  = '#f1ece2'
+
+const SEC_LABEL: React.CSSProperties = {
+  fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.12em',
+  color: MUTED, fontWeight: 700, margin: '18px 0 9px',
+}
+const FROW: React.CSSProperties = {
+  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+  padding: '12px 0', borderBottom: `1px solid ${CREAM2}`,
+}
+const MENU_LINK: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 12,
+  background: '#fff', border: `1px solid ${LINE}`,
+  borderRadius: 12, padding: '13px 15px', marginBottom: 8,
+  textDecoration: 'none', color: 'var(--forest)', fontSize: 13.5, fontWeight: 600,
+}
+const CANCEL_BTN: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 5,
+  background: 'none', border: '1px solid var(--gray-light)', borderRadius: 100,
+  padding: '7px 14px', fontSize: 12, color: 'var(--gray-dark)', cursor: 'pointer',
+}
+const SAVE_BTN: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 5,
+  background: 'var(--forest)', border: 'none', borderRadius: 100,
+  padding: '7px 14px', fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer',
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -472,85 +513,53 @@ export function DashboardProfile() {
 
       {isNri ? (
         <>
-          {/* ── Family Members ──────────────────────────────────── */}
+          {/* ── Family in India ─────────────────────────────────── */}
           <div style={{ margin: '20px 16px 0' }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', letterSpacing: '0.08em', margin: '0 0 10px' }}>FAMILY MEMBERS</p>
+            <p style={SEC_LABEL}>FAMILY IN INDIA</p>
 
             {lovedOnes.map(lo => {
               const ep = elderProfiles[lo.id]
               const isEditing = editingId === lo.id
               const form = forms[lo.id]
-              const meds: string[] = Array.isArray(ep?.current_medications) ? ep.current_medications.map(medLabel).filter(Boolean) : []
-              const contacts: Contact[] = Array.isArray(ep?.emergency_contacts) ? ep.emergency_contacts : []
+              const hasHealth = !!(ep?.medical_conditions || (Array.isArray(ep?.current_medications) && ep.current_medications.length > 0))
+              const healthHint = hasHealth
+                ? ep?.medical_conditions?.split(',')[0]?.trim() || 'Health details added'
+                : 'tap to add health details'
+              const sub = [lo.city, healthHint].filter(Boolean).join(' · ')
+
+              // Compact row — view mode
+              if (!isEditing) return (
+                <div key={lo.id} style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 13, padding: '13px 15px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 9 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 11, background: CREAM2, display: 'grid', placeItems: 'center', fontSize: 16, flexShrink: 0 }}>
+                    {memberEmoji(lo.relationship)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--forest)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {lo.full_name}{lo.relationship ? ` · ${lo.relationship}` : ''}
+                    </div>
+                    <div style={{ fontSize: 12, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {sub || 'tap to edit'}
+                    </div>
+                  </div>
+                  <button onClick={() => startEdit(lo.id)} style={{ background: 'none', border: 'none', fontSize: 20, color: MUTED, cursor: 'pointer', flexShrink: 0, padding: 0, lineHeight: 1 }}>›</button>
+                </div>
+              )
+
+              // Full edit card — expanded mode
               return (
                 <div key={lo.id} style={{ background: '#fff', borderRadius: 'var(--radius-card)', padding: 20, boxShadow: 'var(--shadow-card)', marginBottom: 12 }}>
-                  {/* Card header */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: isEditing ? 16 : 0 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--black)', margin: 0 }}>{lo.full_name}</p>
-                        {lo.relationship && (
-                          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--forest)', background: 'rgba(14,42,31,0.07)', borderRadius: 100, padding: '2px 10px' }}>{lo.relationship}</span>
-                        )}
-                      </div>
-                      {!isEditing && (
-                        <p style={{ fontSize: 13, color: 'var(--gray-mid)', margin: '4px 0 0' }}>
-                          {[lo.city && `📍 ${lo.city}`, ep?.age && `${ep.age} yrs`, lo.phone_number && `📞 ${lo.phone_number}`].filter(Boolean).join(' · ') || 'No details yet'}
-                        </p>
-                      )}
-                    </div>
-                    {!isEditing ? (
-                      <button onClick={() => startEdit(lo.id)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: '1px solid var(--gray-light)', borderRadius: 100, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: 'var(--forest)', cursor: 'pointer', flexShrink: 0 }}>
-                        <Edit2 size={11} /> Edit
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)', margin: 0 }}>Edit {lo.full_name}</p>
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                      <button onClick={cancelEdit} style={CANCEL_BTN}><X size={11} /> Cancel</button>
+                      <button onClick={() => saveMember(lo.id)} disabled={savingId === lo.id} style={{ ...SAVE_BTN, opacity: savingId === lo.id ? 0.6 : 1 }}>
+                        <Save size={11} /> {savingId === lo.id ? 'Saving…' : 'Save'}
                       </button>
-                    ) : (
-                      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                        <button onClick={cancelEdit} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: '1px solid var(--gray-light)', borderRadius: 100, padding: '7px 14px', fontSize: 12, fontWeight: 500, color: 'var(--gray-dark)', cursor: 'pointer' }}>
-                          <X size={11} /> Cancel
-                        </button>
-                        <button onClick={() => saveMember(lo.id)} disabled={savingId === lo.id} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'var(--forest)', border: 'none', borderRadius: 100, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', opacity: savingId === lo.id ? 0.6 : 1 }}>
-                          <Save size={11} /> {savingId === lo.id ? 'Saving…' : 'Save'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Edit form */}
-                  {isEditing && form && (
-                    <>
-                      <MemberFormFields form={form} setForm={fn => setMemberForm(lo.id, fn)} />
-                      {memberErrs[lo.id] && <p style={{ fontSize: 13, color: '#b42318', marginTop: 10 }}>{memberErrs[lo.id]}</p>}
-                    </>
-                  )}
-
-                  {/* View: health + contacts summary */}
-                  {!isEditing && (ep?.medical_conditions || meds.length || contacts.length) ? (
-                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--gray-light)' }}>
-                      {ep?.medical_conditions && (
-                        <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '0 0 2px' }}>
-                          <span style={{ fontWeight: 600 }}>Conditions:</span> {ep.medical_conditions}
-                        </p>
-                      )}
-                      {meds.length > 0 && (
-                        <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '0 0 2px' }}>
-                          <span style={{ fontWeight: 600 }}>Medications:</span> {meds.join(', ')}
-                        </p>
-                      )}
-                      {contacts.length > 0 && (
-                        <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-                          {contacts.map((c, i) => c.phone && (
-                            <a key={i} href={`tel:${c.phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: 'var(--forest)', textDecoration: 'none' }}>
-                              <Phone size={12} /> {c.name || `EC${i + 1}`}
-                            </a>
-                          ))}
-                        </div>
-                      )}
                     </div>
-                  ) : null}
-
-                  {memberOk[lo.id] && !isEditing && (
-                    <p style={{ fontSize: 12, color: 'var(--forest)', marginTop: 8 }}>✓ Saved</p>
-                  )}
+                  </div>
+                  {form && <MemberFormFields form={form} setForm={fn => setMemberForm(lo.id, fn)} />}
+                  {memberErrs[lo.id] && <p style={{ fontSize: 13, color: '#b42318', marginTop: 10 }}>{memberErrs[lo.id]}</p>}
+                  {memberOk[lo.id] && <p style={{ fontSize: 12, color: 'var(--forest)', marginTop: 8 }}>✓ Saved</p>}
                 </div>
               )
             })}
@@ -585,96 +594,110 @@ export function DashboardProfile() {
             )}
           </div>
 
-          {/* ── My Account ─────────────────────────────────────── */}
-          <div style={{ margin: '20px 16px 0', background: '#fff', borderRadius: 'var(--radius-card)', padding: 20, boxShadow: 'var(--shadow-card)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--black)', margin: 0 }}>My Account</p>
-              {!editingAccount ? (
-                <button onClick={() => { setEditingAccount(true); setAccountOk(false) }} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: '1px solid var(--gray-light)', borderRadius: 100, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: 'var(--forest)', cursor: 'pointer' }}>
-                  <Edit2 size={11} /> Edit
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => { setEditingAccount(false); setAccountErr('') }} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: '1px solid var(--gray-light)', borderRadius: 100, padding: '7px 14px', fontSize: 12, color: 'var(--gray-dark)', cursor: 'pointer' }}>
-                    <X size={11} /> Cancel
-                  </button>
-                  <button onClick={saveAccount} disabled={savingAccount} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'var(--forest)', border: 'none', borderRadius: 100, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', opacity: savingAccount ? 0.6 : 1 }}>
-                    <Save size={11} /> {savingAccount ? 'Saving…' : 'Save'}
+          {/* ── Your details ───────────────────────────────────── */}
+          <p style={SEC_LABEL}>YOUR DETAILS</p>
+          <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, padding: '0 16px' }}>
+            {!editingAccount ? (
+              <>
+                <div style={FROW}>
+                  <span style={{ fontSize: 12, color: MUTED }}>Name</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 600 }}>{profile?.full_name || '—'}</span>
+                </div>
+                <div style={FROW}>
+                  <span style={{ fontSize: 12, color: MUTED }}>WhatsApp</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 600 }}>{profile?.whatsapp_number || '—'}</span>
+                </div>
+                <div style={FROW}>
+                  <span style={{ fontSize: 12, color: MUTED }}>Email</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 600, maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email || ''}</span>
+                </div>
+                <div style={{ ...FROW, borderBottom: 'none' }}>
+                  <span style={{ fontSize: 12, color: MUTED }}>Where you live</span>
+                  {profile?.country
+                    ? <span style={{ fontSize: 13.5, fontWeight: 600 }}>{profile.country}</span>
+                    : <button onClick={() => { setEditingAccount(true); setAccountOk(false) }} style={{ background: 'none', border: 'none', fontSize: 13.5, fontWeight: 700, color: '#7FBF94', cursor: 'pointer', padding: 0 }}>+ Add address</button>
+                  }
+                </div>
+                {accountOk && <p style={{ fontSize: 12, color: 'var(--forest)', paddingBottom: 10 }}>✓ Saved</p>}
+                <div style={{ borderTop: `1px solid ${LINE}`, padding: '10px 0', textAlign: 'center' }}>
+                  <button onClick={() => { setEditingAccount(true); setAccountOk(false) }} style={{ background: 'none', border: 'none', fontSize: 12, fontWeight: 700, color: '#7FBF94', cursor: 'pointer' }}>
+                    <Edit2 size={11} style={{ verticalAlign: 'middle', marginRight: 4 }} />Edit details
                   </button>
                 </div>
-              )}
-            </div>
-            {editingAccount ? (
-              <div style={{ display: 'grid', gap: 12 }}>
+              </>
+            ) : (
+              <div style={{ padding: '14px 0', display: 'grid', gap: 12 }}>
                 <div><label style={LABEL}>Your name</label><input style={INPUT} value={profileForm.full_name} onChange={e => setProfileForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Your full name" /></div>
                 <div><label style={LABEL}>Email</label><input style={{ ...INPUT, opacity: 0.55, cursor: 'not-allowed' }} value={user?.email || ''} disabled /></div>
-                <div><label style={LABEL}>WhatsApp number *</label><input style={INPUT} value={profileForm.whatsapp_number} onChange={e => setProfileForm(f => ({ ...f, whatsapp_number: e.target.value }))} placeholder="+91 98765 43210" /></div>
-                <div><label style={LABEL}>Where you live</label><input style={INPUT} value={profileForm.country} onChange={e => setProfileForm(f => ({ ...f, country: e.target.value }))} placeholder="e.g. USA, UK, UAE or city in India" /></div>
+                <div><label style={LABEL}>WhatsApp *</label><input style={INPUT} value={profileForm.whatsapp_number} onChange={e => setProfileForm(f => ({ ...f, whatsapp_number: e.target.value }))} placeholder="+1 555 123 4567" /></div>
+                <div><label style={LABEL}>Where you live</label><input style={INPUT} value={profileForm.country} onChange={e => setProfileForm(f => ({ ...f, country: e.target.value }))} placeholder="e.g. USA, UK, UAE" /></div>
                 {accountErr && <p style={{ fontSize: 13, color: '#b42318' }}>{accountErr}</p>}
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gap: 0 }}>
-                {[['Email', user?.email || ''], ['WhatsApp', profile?.whatsapp_number || '—'], ['Location', profile?.country || '—']].map(([label, value]) => (
-                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-                    <span style={{ fontSize: 13, color: 'var(--gray-mid)' }}>{label}</span>
-                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--black)' }}>{value}</span>
-                  </div>
-                ))}
-                {accountOk && <p style={{ fontSize: 12, color: 'var(--forest)', marginTop: 8 }}>✓ Saved</p>}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => { setEditingAccount(false); setAccountErr('') }} style={CANCEL_BTN}><X size={11} /> Cancel</button>
+                  <button onClick={saveAccount} disabled={savingAccount} style={{ ...SAVE_BTN, flex: 1, justifyContent: 'center', opacity: savingAccount ? 0.6 : 1 }}><Save size={11} /> {savingAccount ? 'Saving…' : 'Save'}</button>
+                </div>
               </div>
             )}
           </div>
 
-          {/* ── Membership & Receipts ─────────────────────────── */}
+          {/* ── Membership & billing ───────────────────────────── */}
           {isFounder && (
-            <div style={{ margin: '12px 16px 0', background: '#fff', borderRadius: 'var(--radius-card)', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
-              <div style={{ background: 'linear-gradient(135deg, #0E2A1F, #1B4332)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>★ Founding Member</span>
-                {membership?.status === 'active' && (
-                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--forest)', background: 'var(--sage)', borderRadius: 100, padding: '3px 10px' }}>Active</span>
-                )}
-              </div>
+            <>
+              <p style={SEC_LABEL}>MEMBERSHIP &amp; BILLING</p>
               <div>
-                {[
-                  ['Member number', profile?.founding_number ? `#${String(profile.founding_number).padStart(4, '0')}` : ''],
-                  ['Member since', fmt(membership?.activated_at || (profile as any)?.founding_date)],
-                  ['Plan', 'Founding Membership · ₹100 one-time'],
-                  ['Payment ID', membership?.razorpay_payment_id || ''],
-                ].filter(([, v]) => v).map(([label, value]) => (
-                  <div key={label} style={{ padding: '13px 20px', borderBottom: '1px solid rgba(0,0,0,0.04)', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                    <span style={{ fontSize: 13, color: 'var(--gray-mid)', flexShrink: 0 }}>{label}</span>
-                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--black)', textAlign: 'right', wordBreak: 'break-all' }}>{value}</span>
-                  </div>
-                ))}
-                {membership?.razorpay_payment_id && (
-                  <div style={{ padding: '14px 20px' }}>
-                    <a
-                      href={`https://wa.me/919000221261?text=Hi%2C+I%27d+like+an+invoice+for+my+Founding+Membership+%28Payment+ID%3A+${membership.razorpay_payment_id}%29`}
-                      target="_blank" rel="noopener noreferrer"
-                      style={{ fontSize: 13, fontWeight: 600, color: 'var(--forest)', textDecoration: 'none' }}
-                    >
-                      Request invoice →
-                    </a>
-                  </div>
-                )}
+                <Link to="/dashboard/profile" style={MENU_LINK}>
+                  <span style={{ fontSize: 16 }}>★</span>
+                  Manage membership / plan
+                  {profile?.founding_number && (
+                    <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: MUTED }}>
+                      #{String(profile.founding_number).padStart(4, '0')}
+                    </span>
+                  )}
+                  <span style={{ marginLeft: 'auto', color: MUTED }}>›</span>
+                </Link>
+                <Link to="/dashboard/bookings" style={MENU_LINK}>
+                  <span style={{ fontSize: 16 }}>🧾</span>
+                  Bookings &amp; receipts
+                  <span style={{ marginLeft: 'auto', color: MUTED }}>›</span>
+                </Link>
               </div>
-            </div>
+            </>
           )}
+
+          {/* ── Settings & support ─────────────────────────────── */}
+          <p style={SEC_LABEL}>SETTINGS &amp; SUPPORT</p>
+          <div style={{ marginBottom: 24 }}>
+            <a href="https://wa.me/919000221261" target="_blank" rel="noopener noreferrer" style={MENU_LINK}>
+              <span style={{ fontSize: 16 }}>💬</span>
+              Contact the care team
+              <span style={{ marginLeft: 'auto', color: MUTED }}>›</span>
+            </a>
+            <a href="https://closeeye.in/faq" target="_blank" rel="noopener noreferrer" style={MENU_LINK}>
+              <span style={{ fontSize: 16 }}>❔</span>
+              Help &amp; FAQ
+              <span style={{ marginLeft: 'auto', color: MUTED }}>›</span>
+            </a>
+            <button
+              onClick={handleSignOut}
+              style={{ ...MENU_LINK, width: '100%', justifyContent: 'center', color: CLAY, borderColor: '#ecd3c2', fontWeight: 700, cursor: 'pointer', background: '#fff' }}
+            >
+              <LogOut size={15} style={{ marginRight: 6 }} /> Sign out
+            </button>
+          </div>
         </>
       ) : (
         <>
           <Section title="My Society" rows={[['Society', society?.society_name || ''], ['Flat', society?.flat_number || ''], ['Area', society?.area || '']]} />
           <Section title="My Membership" rows={[['Plan', 'Founding Member'], ['Fee', '₹100 — one-time'], ['Member ID', society?.member_id || '']]} />
           <Section title="Contact" rows={[['Email', user?.email || ''], ['WhatsApp', profile?.whatsapp_number || '']]} />
+          <button onClick={handleSignOut} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '24px 16px 16px', background: 'none', border: '1px solid var(--gray-light)', borderRadius: 'var(--radius-btn)', padding: '12px 24px', fontSize: 14, fontWeight: 500, color: 'var(--gray-dark)', cursor: 'pointer', width: 'calc(100% - 32px)' }}>
+            <LogOut size={16} /> Sign out
+          </button>
         </>
       )}
 
-      <button onClick={handleSignOut} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '24px auto 0', background: 'none', border: '1px solid var(--gray-light)', borderRadius: 'var(--radius-btn)', padding: '12px 24px', fontSize: 14, fontWeight: 500, color: 'var(--gray-dark)', cursor: 'pointer' }}>
-        <LogOut size={16} /> Sign out
-      </button>
-
-      <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--gray-mid)', padding: '12px 24px 0', lineHeight: 1.5 }}>
-        Your family's information is private, encrypted, and used only to provide care.
+      <p style={{ textAlign: 'center', fontSize: 11, color: MUTED, padding: '0 24px 16px', lineHeight: 1.5 }}>
+        Your family's information is private and used only to provide care.
       </p>
     </div>
   )
