@@ -26,6 +26,19 @@ interface Query {
 const EMOJI_RE = /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FEFF}]/gu
 function stripEmoji(t: string) { return t.replace(EMOJI_RE, '').replace(/ {2,}/g, ' ').trim() }
 
+// Strip markdown syntax to produce a plain-text preview — prevents slicing
+// through **unclosed bold** or mid-bullet truncation in collapsed cards.
+function plainPreview(text: string, maxLen = 240): string {
+  const plain = stripEmoji(text)
+    .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold** → bold
+    .replace(/\*(.+?)\*/g, '$1')        // *italic* → italic
+    .replace(/^[-*]\s+/gm, '• ')        // - bullet → • bullet
+    .replace(/#{1,3}\s+/gm, '')         // ## heading → heading
+    .replace(/\n{2,}/g, '\n')           // collapse blank lines
+    .trim()
+  return plain.length > maxLen ? plain.slice(0, maxLen).trimEnd() + '…' : plain
+}
+
 function timeAgo(iso: string): string {
   const d = new Date(iso), now = new Date()
   const diff = now.getTime() - d.getTime()
@@ -115,8 +128,9 @@ function EscalationCard({ message, ambulanceNumber }: { message: string; ambulan
 function HistoryCard({ q }: { q: Query }) {
   const [expanded, setExpanded] = useState(false)
   const answerText = q.answer || q.ai_answer || ''
-  const isLong = answerText.length > 280
-  const displayText = isLong && !expanded ? answerText.slice(0, 280) + '…' : answerText
+  // Collapsed preview: plain text (no raw asterisks). Expanded: full markdown.
+  const isLong = plainPreview(answerText).length >= 240
+  const displayText = isLong && !expanded ? null : answerText  // null = show plain preview
 
   const isReviewed = q.status === 'doctor_reviewed'
   const isPending  = q.status === 'pending'
@@ -159,7 +173,14 @@ function HistoryCard({ q }: { q: Query }) {
           </p>
         ) : answerText ? (
           <>
-            <MarkdownAnswer text={displayText} size={13} />
+            {/* Collapsed: plain text — no raw asterisks. Expanded: full markdown. */}
+            {displayText === null ? (
+              <p style={{ fontSize: 13, color: '#2d3a32', lineHeight: 1.65, margin: 0 }}>
+                {plainPreview(answerText)}
+              </p>
+            ) : (
+              <MarkdownAnswer text={displayText} size={13} />
+            )}
             {isLong && (
               <button
                 onClick={() => setExpanded(e => !e)}
@@ -586,14 +607,14 @@ export function DashboardAsk() {
                 onChange={autoResize}
                 onKeyDown={handleKey}
                 placeholder={placeholder}
-                rows={1}
+                rows={2}
                 style={{
                   flex: 1, resize: 'none', overflow: 'hidden',
                   background: '#f4f6f4',
                   border: '1.5px solid rgba(14,42,31,0.12)',
-                  borderRadius: 14, padding: '10px 14px',
-                  fontSize: 15, fontFamily: 'inherit', lineHeight: 1.45,
-                  outline: 'none', minHeight: 44, color: '#0E2A1F',
+                  borderRadius: 16, padding: '14px 16px',
+                  fontSize: 16, fontFamily: 'inherit', lineHeight: 1.5,
+                  outline: 'none', minHeight: 64, color: '#0E2A1F',
                   transition: 'border-color 0.15s',
                 }}
                 onFocus={e => { e.currentTarget.style.borderColor = '#2FA84F' }}
@@ -604,7 +625,7 @@ export function DashboardAsk() {
                 disabled={!inputText.trim() || thinking}
                 aria-label="Send"
                 style={{
-                  width: 44, height: 44, borderRadius: 12, border: 'none',
+                  width: 52, height: 52, borderRadius: 14, border: 'none',
                   cursor: inputText.trim() && !thinking ? 'pointer' : 'not-allowed',
                   background: inputText.trim() && !thinking ? '#0E2A1F' : 'rgba(14,42,31,0.10)',
                   color: inputText.trim() && !thinking ? '#FAF7F2' : '#9aada3',
