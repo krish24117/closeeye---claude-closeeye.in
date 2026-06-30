@@ -8,16 +8,16 @@ import { InstallPrompt } from '@/components/InstallPrompt'
 
 const NRI_TABS = [
   { to: '/dashboard', icon: Home, label: 'Home', end: true },
-  { to: '/dashboard/bookings', icon: CalendarCheck2, label: 'Bookings' },
-  { to: '/dashboard/reports', icon: FileText, label: 'Reports' },
   { to: '/dashboard/ask', icon: MessageCircle, label: 'Ask' },
   { to: '/dashboard/book', icon: CalendarPlus, label: 'Book' },
+  { to: '/dashboard/bookings', icon: CalendarCheck2, label: 'Bookings' },
+  { to: '/dashboard/reports', icon: FileText, label: 'Reports' },
 ]
 const SOCIETY_TABS = [
   { to: '/dashboard', icon: Home, label: 'Home', end: true },
-  { to: '/dashboard/bookings', icon: CalendarCheck2, label: 'Bookings' },
   { to: '/dashboard/ask', icon: MessageCircle, label: 'Ask' },
   { to: '/dashboard/book', icon: CalendarPlus, label: 'Book' },
+  { to: '/dashboard/bookings', icon: CalendarCheck2, label: 'Bookings' },
   { to: '/dashboard/profile', icon: User, label: 'Profile' },
 ]
 // Waitlisted users get a minimal tab set — Ask + Profile only, no booking
