@@ -9,17 +9,18 @@ import { ChevronDown, AlertTriangle, X, CheckCircle2 } from 'lucide-react'
 const ALL_STATUSES = ['pending', 'confirmed', 'companion_assigned', 'in_progress', 'completed', 'cancelled']
 
 const BADGE: Record<string, string> = {
-  pending:             'bg-amber-100 text-amber-700',
-  confirmed:           'bg-blue-100 text-blue-700',
-  companion_assigned:  'bg-purple-100 text-purple-700',
-  in_progress:         'bg-green-100 text-green-700',
-  completed:           'bg-gray-100 text-gray-500',
-  cancelled:           'bg-red-100 text-red-600',
-  requested:           'bg-amber-100 text-amber-700',
-  needs_details:       'bg-orange-100 text-orange-700',
-  scheduled:           'bg-blue-100 text-blue-700',
-  companion_confirmed: 'bg-blue-100 text-blue-700',
-  paid:                'bg-green-100 text-green-700',
+  pending:              'bg-amber-100 text-amber-700',
+  confirmed:            'bg-blue-100 text-blue-700',
+  companion_assigned:   'bg-purple-100 text-purple-700',
+  in_progress:          'bg-green-100 text-green-700',
+  completed:            'bg-gray-100 text-gray-500',
+  cancelled:            'bg-red-100 text-red-600',
+  requested:            'bg-amber-100 text-amber-700',
+  needs_details:        'bg-orange-100 text-orange-700',
+  needs_reschedule:     'bg-red-100 text-red-700',
+  scheduled:            'bg-blue-100 text-blue-700',
+  companion_confirmed:  'bg-blue-100 text-blue-700',
+  paid:                 'bg-green-100 text-green-700',
 }
 
 const PAYMENT_BADGE: Record<string, string> = {
@@ -32,6 +33,7 @@ const PAYMENT_BADGE: Record<string, string> = {
 const LABEL: Record<string, string> = {
   requested:           'Request received',
   needs_details:       'Needs details',
+  needs_reschedule:    'Awaiting reschedule',
   confirmed:           'Confirmed',
   scheduled:           'Scheduled',
   companion_confirmed: 'Companion confirmed',
@@ -287,13 +289,28 @@ function ConfirmDrawer({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Scheduled date & time</label>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Visit date & time</label>
+            {request.scheduled_at && (
+              <div className="flex items-center gap-1.5 mb-1.5 px-2.5 py-1.5 bg-blue-50 border border-blue-100 rounded-lg">
+                <span className="text-xs text-blue-600">📅</span>
+                <span className="text-xs font-medium text-blue-700">
+                  User requested:{' '}
+                  {new Date(request.scheduled_at).toLocaleString('en-IN', {
+                    weekday: 'short', day: 'numeric', month: 'short',
+                    hour: 'numeric', minute: '2-digit', hour12: true,
+                  })}
+                </span>
+              </div>
+            )}
             <input
               type="datetime-local"
               value={scheduledAt}
               onChange={e => setScheduledAt(e.target.value)}
               className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600"
             />
+            {!scheduledAt && (
+              <p className="text-xs text-amber-600 mt-1">No time set — enter the confirmed visit time.</p>
+            )}
           </div>
 
           <div>
@@ -333,6 +350,145 @@ function ConfirmDrawer({
   )
 }
 
+// ── RescheduleDrawer ──────────────────────────────────────────────────────────
+
+function RescheduleDrawer({
+  request,
+  onClose,
+  onSent,
+}: {
+  request: BookingRequest & { _family_name?: string | null }
+  onClose: () => void
+  onSent: (id: string) => void
+}) {
+  const { showToast } = useToast()
+  const [slot1, setSlot1] = useState('')
+  const [slot2, setSlot2] = useState('')
+  const [slot3, setSlot3] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const familyName = request._family_name || 'there'
+  const elderName  = request.recipient_name || 'your loved one'
+  const waNumber   = request.requester_whatsapp.replace(/\D/g, '')
+  const hasWa      = waNumber.length >= 7
+
+  function formatSlot(dt: string): string {
+    if (!dt) return ''
+    return new Date(dt).toLocaleString('en-IN', {
+      weekday: 'short', day: 'numeric', month: 'short',
+      hour: 'numeric', minute: '2-digit', hour12: true,
+    })
+  }
+
+  function buildMessage(): string {
+    const requested = request.scheduled_at
+      ? new Date(request.scheduled_at).toLocaleString('en-IN', {
+          weekday: 'short', day: 'numeric', month: 'short',
+          hour: 'numeric', minute: '2-digit', hour12: true,
+        })
+      : null
+    const slots = [slot1, slot2, slot3].filter(Boolean).map((s, i) => `  ${i + 1}. ${formatSlot(s)}`)
+    return [
+      `Namaste ${familyName} 🙏`,
+      ``,
+      `We're sorry — we're unable to serve your ${request.service_name} visit${requested ? ` on ${requested}` : ''} as requested.`,
+      ``,
+      `We can offer these alternative times for ${elderName}:`,
+      ...slots,
+      ``,
+      `Please reply with your preferred option (1, 2, or 3) and we'll confirm right away.`,
+      ``,
+      `Warm regards,`,
+      `Team Close Eye`,
+    ].join('\n')
+  }
+
+  async function handleSend() {
+    if (!slot1) { showToast('Add at least one alternative slot', 'error'); return }
+    setSaving(true)
+    try {
+      await supabase.from('booking_requests').update({ status: 'needs_reschedule' }).eq('id', request.id)
+      if (hasWa) {
+        window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(buildMessage())}`, '_blank')
+      }
+      onSent(request.id)
+      onClose()
+      showToast('Reschedule request sent', 'success')
+    } catch {
+      showToast('Could not update — try again', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px]"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div>
+            <p className="font-semibold text-red-800">Can't serve this time</p>
+            <p className="text-xs text-gray-400 mt-0.5">{request.service_name} · {elderName}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700"><X size={18} /></button>
+        </div>
+
+        <div className="flex-1 overflow-auto px-5 py-4 space-y-4">
+          {request.scheduled_at && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+              <span className="text-sm">📅</span>
+              <p className="text-xs text-red-700 font-medium">
+                User requested: {new Date(request.scheduled_at).toLocaleString('en-IN', {
+                  weekday: 'short', day: 'numeric', month: 'short',
+                  hour: 'numeric', minute: '2-digit', hour12: true,
+                })} — unable to serve
+              </p>
+            </div>
+          )}
+
+          <p className="text-xs text-gray-500">Propose up to 3 alternatives. The family will receive a WhatsApp message to choose one.</p>
+
+          {[
+            { label: 'Option 1 *', value: slot1, set: setSlot1 },
+            { label: 'Option 2', value: slot2, set: setSlot2 },
+            { label: 'Option 3', value: slot3, set: setSlot3 },
+          ].map(({ label, value, set }) => (
+            <div key={label}>
+              <label className="block text-xs font-semibold text-gray-500 mb-1">{label}</label>
+              <input
+                type="datetime-local"
+                value={value}
+                onChange={e => set(e.target.value)}
+                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-red-400"
+              />
+            </div>
+          ))}
+
+          {!hasWa && (
+            <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2.5">
+              <AlertTriangle size={13} className="text-orange-600 flex-shrink-0" />
+              <p className="text-xs text-orange-700 font-medium">No WhatsApp number — status will update but message won't send.</p>
+            </div>
+          )}
+        </div>
+
+        <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+          <button
+            onClick={handleSend}
+            disabled={saving || !slot1}
+            className="flex-1 bg-red-700 text-white text-sm font-semibold rounded-xl py-3 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? 'Sending…' : hasWa ? 'Send reschedule request on WhatsApp →' : 'Mark as needs reschedule'}
+          </button>
+          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700 px-4">Cancel</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Requests tab ─────────────────────────────────────────────────────────────
 
 interface BookingRequest {
@@ -359,8 +515,9 @@ function RequestsTab() {
   const [requests, setRequests]           = useState<BookingRequest[]>([])
   const [loading, setLoading]             = useState(true)
   const [error, setError]                 = useState<string | null>(null)
-  const [confirmTarget, setConfirmTarget] = useState<BookingRequest | null>(null)
-  const [drawerTarget, setDrawerTarget]   = useState<BookingRequest | null>(null)
+  const [confirmTarget, setConfirmTarget]       = useState<BookingRequest | null>(null)
+  const [drawerTarget, setDrawerTarget]         = useState<BookingRequest | null>(null)
+  const [rescheduleTarget, setRescheduleTarget] = useState<BookingRequest | null>(null)
 
   useEffect(() => { loadRequests() }, [])
 
@@ -431,20 +588,22 @@ function RequestsTab() {
       {requests.map(r => {
         const missingAddress  = !r.recipient_address.trim()
         const missingWhatsapp = !r.requester_whatsapp.trim()
-        const isNeedsDetails  = r.status === 'needs_details'
-        const isPaid          = r.status === 'paid'
-        const isCancelled     = r.status === 'cancelled'
-        const isCompConfirmed = r.status === 'companion_confirmed'
-        const needsConfirm    = r.status === 'requested' || isNeedsDetails
+        const isNeedsDetails    = r.status === 'needs_details'
+        const isPaid            = r.status === 'paid'
+        const isCancelled       = r.status === 'cancelled'
+        const isCompConfirmed   = r.status === 'companion_confirmed'
+        const isNeedsReschedule = r.status === 'needs_reschedule'
+        const needsConfirm      = r.status === 'requested' || isNeedsDetails
 
         return (
           <div
             key={r.id}
             className={`bg-white rounded-2xl border transition-all ${
-              isNeedsDetails  ? 'border-orange-300 border-l-4 border-l-orange-400'
-              : isPaid        ? 'border-green-200 border-l-4 border-l-green-500'
+              isNeedsDetails    ? 'border-orange-300 border-l-4 border-l-orange-400'
+              : isNeedsReschedule ? 'border-red-300 border-l-4 border-l-red-400'
+              : isPaid          ? 'border-green-200 border-l-4 border-l-green-500'
               : isCompConfirmed ? 'border-blue-200 border-l-4 border-l-blue-400'
-              : isCancelled   ? 'border-gray-100 opacity-60'
+              : isCancelled     ? 'border-gray-100 opacity-60'
               : 'border-gray-100'
             }`}
           >
@@ -461,6 +620,12 @@ function RequestsTab() {
               <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-t-2xl border-b border-green-100">
                 <CheckCircle2 size={13} className="text-green-600 flex-shrink-0" />
                 <p className="text-xs font-semibold text-green-700">Payment received · Visit confirmed</p>
+              </div>
+            )}
+            {isNeedsReschedule && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-red-50 rounded-t-2xl border-b border-red-100">
+                <AlertTriangle size={13} className="text-red-600 flex-shrink-0" />
+                <p className="text-xs font-semibold text-red-700">Awaiting reschedule — family has been contacted</p>
               </div>
             )}
 
@@ -512,6 +677,14 @@ function RequestsTab() {
                   Confirm booking →
                 </button>
               )}
+              {(needsConfirm || isNeedsReschedule) && (
+                <button
+                  onClick={() => setRescheduleTarget(r)}
+                  className="text-xs font-semibold text-red-700 border border-red-200 hover:bg-red-50 rounded-xl px-3 py-1.5 transition-colors"
+                >
+                  Can't serve this time
+                </button>
+              )}
 
               {isCompConfirmed && (
                 <button
@@ -542,6 +715,17 @@ function RequestsTab() {
           onConfirmed={(id, updates) => {
             setRequests(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r))
             setDrawerTarget(null)
+          }}
+        />
+      )}
+
+      {rescheduleTarget && (
+        <RescheduleDrawer
+          request={rescheduleTarget}
+          onClose={() => setRescheduleTarget(null)}
+          onSent={id => {
+            setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'needs_reschedule' } : r))
+            setRescheduleTarget(null)
           }}
         />
       )}
