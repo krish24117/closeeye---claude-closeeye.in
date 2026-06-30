@@ -315,7 +315,7 @@ function HomeAskWidget() {
             <div style={{ marginTop: 11, background: 'linear-gradient(100deg,#0E2A1F,#163b2c)', color: '#FAF7F2', borderRadius: 13, padding: '12px 13px' }}>
               <p style={{ fontSize: 13, fontWeight: 700 }}>Want answers specific to your parent?</p>
               <Link
-                to="/founding-member"
+                to="/founding-member/checkout"
                 style={{ display: 'inline-block', marginTop: 9, background: '#7FBF94', color: '#0E2A1F', textDecoration: 'none', fontWeight: 700, fontSize: 12, padding: '7px 13px', borderRadius: 999 }}
               >
                 Register your parent →
@@ -333,7 +333,7 @@ function HomeAskWidget() {
             Register your parent for unlimited personalised answers — specific to their health history.
           </p>
           <Link
-            to="/founding-member"
+            to="/founding-member/checkout"
             style={{ display: 'inline-block', background: '#7FBF94', color: '#0E2A1F', textDecoration: 'none', fontWeight: 700, fontSize: 13, padding: '9px 16px', borderRadius: 999 }}
           >
             Claim founding spot · ₹100 →
@@ -601,7 +601,7 @@ export function HomePage() {
           🌿 Founding Membership open · Launching 15 August
         </span>
         <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
-          <Link to="/founding-member" style={{
+          <Link to="/founding-member/checkout" style={{
             background: 'var(--sage)', color: 'var(--forest)', fontWeight: 700,
             padding: '6px 16px', borderRadius: 100, fontSize: 13, textDecoration: 'none',
             whiteSpace: 'nowrap',
@@ -635,7 +635,7 @@ export function HomePage() {
             <p>So you always know they're safe, even from 10,000 miles away.</p>
           </div>
           <div className="ce-hero-buttons">
-            <Link to="/founding-member" className="ce-btn ce-btn-primary">
+            <Link to="/founding-member/checkout" className="ce-btn ce-btn-primary">
               Claim your founding spot
               <span style={{ fontSize: 12, fontWeight: 700, background: '#0E2A1F', color: '#7FBF94', padding: '3px 9px', borderRadius: 999, marginLeft: 4 }}>
                 Start ₹100
@@ -865,7 +865,7 @@ export function HomePage() {
               <ul className="ce-benefits">
                 {FOUNDING_BENEFITS.map(b => <li key={b}><Check size={18} /> {b}</li>)}
               </ul>
-              <Link to="/auth?mode=signup" className="ce-btn ce-btn-primary ce-btn-full">Register for ₹100 <ArrowRight size={18} /></Link>
+              <Link to="/founding-member/checkout" className="ce-btn ce-btn-primary ce-btn-full">Register for ₹100 <ArrowRight size={18} /></Link>
             </div>
 
             {/* Monthly (featured) */}

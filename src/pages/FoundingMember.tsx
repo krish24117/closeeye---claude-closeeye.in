@@ -1,12 +1,7 @@
-import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Check, ArrowRight, Shield, Heart, Clock, Loader2 } from 'lucide-react'
+import { Check, ArrowRight, Shield, Heart, Clock } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
-import { supabase } from '@/lib/supabase'
-import { loadRazorpayScript } from '@/lib/razorpay'
 import { Logo } from '@/components/ui/Logo'
-
-type PayState = 'idle' | 'creating' | 'verifying' | 'success' | 'error'
 
 const PROBLEM_QUOTES = [
   { text: "I call every day. But I still don't know if she actually ate. Or if she took her BP medicine.", attr: 'NRI family, Houston TX' },
@@ -37,229 +32,20 @@ const BENEFITS = [
 
 // ── Success screen ────────────────────────────────────────────────────────────
 
-function SuccessScreen({ foundingNumber }: { foundingNumber: number }) {
-  const navigate = useNavigate()
-  const paddedNum = String(foundingNumber).padStart(4, '0')
-  return (
-    <div style={{
-      minHeight: '100vh', background: 'var(--cream)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'flex-start', padding: '0 20px 60px',
-    }}>
-      {/* Slim nav */}
-      <nav style={{
-        width: '100%', maxWidth: 480,
-        display: 'flex', alignItems: 'center', height: 56, paddingTop: 'env(safe-area-inset-top, 0px)',
-      }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 7, textDecoration: 'none', color: 'var(--forest)', fontWeight: 700, fontSize: 15 }}>
-          <Logo className="w-7 h-7" /> close eye
-        </Link>
-      </nav>
-
-      <div style={{ width: '100%', maxWidth: 480, marginTop: 24, textAlign: 'center' }}>
-
-        {/* Tick */}
-        <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#eaf5ee', display: 'grid', placeItems: 'center', margin: '0 auto 18px' }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-            <path d="M5 13l4 4 10-10" stroke="#2c6b43" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--forest)', margin: '0 0 6px', lineHeight: 1.1 }}>
-          You're a Founding Member
-        </h1>
-        <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: '0 0 14px' }}>
-          Welcome to Close Eye. Thank you for trusting us.
-        </p>
-
-        {/* Founding badge */}
-        <div style={{
-          display: 'inline-block', background: 'var(--forest)', color: 'var(--sage)',
-          fontWeight: 800, fontSize: 14, padding: '8px 20px', borderRadius: 999, letterSpacing: '.02em',
-          marginBottom: 22,
-        }}>
-          Founding Member #{paddedNum}
-        </div>
-
-        {/* What happens next */}
-        <div style={{ background: '#fff', border: '1px solid var(--gray-light)', borderRadius: 16, padding: '16px 18px', textAlign: 'left', marginBottom: 14 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', color: 'var(--gray-mid)', textTransform: 'uppercase', margin: '0 0 12px' }}>
-            What happens next
-          </p>
-          {[
-            'Our care team reaches out within 24–48 hours to set up your parent\'s visits.',
-            'Ask Close Eye is now personalised to your parent — unlimited questions.',
-            'You\'ll get a WhatsApp report after every visit, within one hour.',
-          ].map((item, i) => (
-            <div key={i} style={{ display: 'flex', gap: 10, fontSize: 13.5, color: '#243831', padding: '7px 0', borderBottom: i < 2 ? '1px solid rgba(14,42,31,.06)' : 'none' }}>
-              <span style={{ fontWeight: 700, color: 'var(--forest)', flexShrink: 0 }}>{i + 1}.</span>
-              {item}
-            </div>
-          ))}
-        </div>
-
-        {/* WhatsApp confirmation */}
-        <div style={{
-          background: '#e7f6ec', border: '1px solid #c4e7d1', borderRadius: 14,
-          padding: '13px 14px', display: 'flex', gap: 10, textAlign: 'left', marginBottom: 20,
-        }}>
-          <span style={{
-            flexShrink: 0, width: 28, height: 28, borderRadius: '50%',
-            background: '#25d366', display: 'grid', placeItems: 'center',
-            color: '#fff', fontWeight: 800, fontSize: 13,
-          }}>✓</span>
-          <p style={{ fontSize: 13, color: '#1d3a2a', margin: 0, lineHeight: 1.55 }}>
-            <strong>WhatsApp welcome sent</strong> — check your WhatsApp. Save the number so you never miss an update.
-          </p>
-        </div>
-
-        {/* Dashboard CTA */}
-        <button
-          onClick={() => navigate('/dashboard')}
-          style={{
-            width: '100%', background: 'var(--forest)', color: '#FAF7F2',
-            border: 0, borderRadius: 14, padding: '15px', fontFamily: 'inherit',
-            fontWeight: 800, fontSize: 16, cursor: 'pointer', marginBottom: 14, minHeight: 52,
-          }}
-        >
-          Go to my dashboard
-        </button>
-
-        {/* Tagline */}
-        <p style={{ fontSize: 13, color: 'var(--sage-2)', fontStyle: 'italic', fontWeight: 600 }}>
-          Your Trusted Presence in India.
-        </p>
-      </div>
-    </div>
-  )
-}
-
-// ── Verifying overlay ─────────────────────────────────────────────────────────
-
-function VerifyingScreen() {
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 999,
-      background: 'var(--cream)', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: 18,
-    }}>
-      <div style={{
-        width: 52, height: 52, borderRadius: '50%',
-        border: '4px solid rgba(168,213,181,.3)',
-        borderTopColor: 'var(--sage-2)',
-        animation: 'fm-spin 1s linear infinite',
-      }} />
-      <div style={{ textAlign: 'center' }}>
-        <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--forest)', margin: '0 0 5px' }}>
-          Confirming your payment…
-        </p>
-        <p style={{ fontSize: 13, color: 'var(--gray-mid)', margin: 0 }}>
-          Activating your founding membership securely.
-        </p>
-      </div>
-      <style>{`@keyframes fm-spin { to { transform: rotate(360deg) } }`}</style>
-    </div>
-  )
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function FoundingMemberPage() {
-  const { user, profile } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
 
-  const [payState, setPayState]           = useState<PayState>('idle')
-  const [foundingNumber, setFoundingNumber] = useState<number | null>(null)
-  const [errMsg, setErrMsg]               = useState<string | null>(null)
-
-  // If already a founding member, show success immediately
-  useEffect(() => {
-    if (profile?.is_founding_member && profile.founding_number) {
-      setFoundingNumber(profile.founding_number)
-      setPayState('success')
-    }
-  }, [profile])
-
-  // Resume a pending membership checkout if user just signed up
-  useEffect(() => {
-    if (!user || !profile || profile.is_founding_member) return
-    const raw = sessionStorage.getItem('pendingCheckout')
-    if (!raw) return
-    try {
-      if (JSON.parse(raw)?.type === 'membership') {
-        sessionStorage.removeItem('pendingCheckout')
-        handlePay()
-      }
-    } catch { /* ignore */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, profile])
-
-  async function handlePay() {
-    setErrMsg(null)
-    if (!user) {
+  function goToCheckout() {
+    if (user) {
+      navigate('/founding-member/checkout')
+    } else {
       sessionStorage.setItem('pendingCheckout', JSON.stringify({ type: 'membership' }))
       navigate('/auth?mode=signup')
-      return
-    }
-    setPayState('creating')
-    try {
-      const { data, error: fnErr } = await supabase.functions.invoke('razorpay-create-membership', { body: {} })
-      if (fnErr || !data?.order_id) throw new Error(data?.error || 'Could not start checkout.')
-
-      const loaded = await loadRazorpayScript()
-      if (!loaded) throw new Error('Could not load payment gateway. Please refresh and try again.')
-
-      const rzp = new window.Razorpay({
-        key: data.key_id,
-        order_id: data.order_id,
-        amount: data.amount,
-        currency: 'INR',
-        name: 'Close Eye',
-        description: 'Founding Membership',
-        image: '/favicon.svg',
-        theme: { color: '#0E2A1F' },
-        prefill: {
-          name: profile?.full_name || '',
-          email: user.email || '',
-          contact: profile?.whatsapp_number || '',
-        },
-        handler: async (resp: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
-          setPayState('verifying')
-          try {
-            const { data: vData, error: vErr } = await supabase.functions.invoke('razorpay-verify-membership', {
-              body: {
-                razorpay_payment_id: resp.razorpay_payment_id,
-                razorpay_order_id:   resp.razorpay_order_id,
-                razorpay_signature:  resp.razorpay_signature,
-              },
-            })
-            if (vErr) throw new Error('Verification failed')
-            setFoundingNumber(vData?.founding_number ?? 1)
-            setPayState('success')
-          } catch {
-            // Payment received but verification failed — non-fatal, we'll confirm via WhatsApp
-            setErrMsg("Payment received — verifying took longer than expected. We'll confirm your membership by WhatsApp within a few minutes.")
-            setPayState('error')
-          }
-        },
-        modal: {
-          ondismiss: () => setPayState('idle'),
-          backdropclose: false,
-        },
-      })
-      rzp.open()
-    } catch (err) {
-      setErrMsg(err instanceof Error ? err.message : 'Something went wrong.')
-      setPayState('error')
     }
   }
-
-  // ── Overlay states ──────────────────────────────────────────────────────────
-
-  if (payState === 'verifying') return <VerifyingScreen />
-  if (payState === 'success' && foundingNumber) return <SuccessScreen foundingNumber={foundingNumber} />
-
-  const isBusy = payState === 'creating'
 
   // ── Marketing page ──────────────────────────────────────────────────────────
 
@@ -289,17 +75,15 @@ export function FoundingMemberPage() {
             Join waitlist
           </Link>
           <button
-            onClick={handlePay}
-            disabled={isBusy}
+            onClick={goToCheckout}
             style={{
               background: 'var(--forest)', color: '#fff', fontSize: 13, fontWeight: 600,
-              padding: '8px 16px', borderRadius: 100, border: 0, cursor: isBusy ? 'default' : 'pointer',
-              whiteSpace: 'nowrap', fontFamily: 'inherit', opacity: isBusy ? 0.7 : 1,
+              padding: '8px 16px', borderRadius: 100, border: 0, cursor: 'pointer',
+              whiteSpace: 'nowrap', fontFamily: 'inherit',
               display: 'flex', alignItems: 'center', gap: 5,
             }}
           >
-            {isBusy && <Loader2 size={13} className="animate-spin" />}
-            {isBusy ? 'Starting…' : 'Become a Member →'}
+            Become a Member →
           </button>
         </div>
       </nav>
@@ -323,18 +107,15 @@ export function FoundingMemberPage() {
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button
-            onClick={handlePay}
-            disabled={isBusy}
+            onClick={goToCheckout}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               background: 'var(--sage)', color: 'var(--forest)', fontWeight: 700,
               padding: '16px 28px', borderRadius: 14, fontSize: 16, border: 0,
-              cursor: isBusy ? 'default' : 'pointer', fontFamily: 'inherit',
-              opacity: isBusy ? 0.7 : 1,
+              cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
-            {isBusy && <Loader2 size={17} className="animate-spin" />}
-            {isBusy ? 'Starting checkout…' : <>Become a Founding Member — ₹100 <ArrowRight size={18} /></>}
+            Become a Founding Member — ₹100 <ArrowRight size={18} />
           </button>
           <Link to="/waitlist" style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -348,11 +129,6 @@ export function FoundingMemberPage() {
         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 16 }}>
           ₹100 one-time · Founding benefits locked in forever · Cancel anytime after launch
         </p>
-        {errMsg && (
-          <p style={{ marginTop: 14, background: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: '12px 18px', fontSize: 13, color: 'rgba(255,255,255,0.85)', maxWidth: 440, marginLeft: 'auto', marginRight: 'auto' }}>
-            {errMsg}
-          </p>
-        )}
       </section>
 
       {/* ── THE PROBLEM ──────────────────────────────────────────── */}
@@ -482,27 +258,19 @@ export function FoundingMemberPage() {
           </div>
 
           <button
-            onClick={handlePay}
-            disabled={isBusy}
+            onClick={goToCheckout}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 10, justifyContent: 'center', width: '100%',
               background: 'var(--sage)', color: 'var(--forest)', fontWeight: 700,
               padding: '18px 28px', borderRadius: 14, fontSize: 17, border: 0,
-              cursor: isBusy ? 'default' : 'pointer', fontFamily: 'inherit',
-              opacity: isBusy ? 0.7 : 1,
+              cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
-            {isBusy && <Loader2 size={18} className="animate-spin" />}
-            {isBusy ? 'Starting checkout…' : <>Become a Founding Member <ArrowRight size={20} /></>}
+            Become a Founding Member <ArrowRight size={20} />
           </button>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 14 }}>
             Secure payment via Razorpay · INR · International cards accepted
           </p>
-          {errMsg && (
-            <p style={{ marginTop: 12, background: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: '12px 18px', fontSize: 13, color: 'rgba(255,255,255,.85)' }}>
-              {errMsg}
-            </p>
-          )}
         </div>
       </section>
 
