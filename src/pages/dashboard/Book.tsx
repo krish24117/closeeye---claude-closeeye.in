@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Loader2, Check, X, AlertTriangle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -27,9 +28,25 @@ export function DashboardBook() {
   const { user, profile } = useAuth()
   const isNri = profile?.user_type === 'nri'
   const isFoundingMember = !!((profile as unknown) as Record<string, unknown>)?.is_founding_member
+  const foundingNumber = ((profile as unknown) as Record<string, unknown>)?.founding_number as number | undefined
   const [recipient, setRecipient] = useState<{ name: string; address: string }>({ name: '', address: '' })
 
   const [active, setActive] = useState<Service | null>(null)
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  // iOS <15.4 fallback: resize overlay to visual viewport so sheet stays above keyboard
+  useEffect(() => {
+    if (!active) return
+    const vv = window.visualViewport
+    if (!vv) return
+    const el = overlayRef.current
+    if (!el) return
+    const sync = () => { el.style.height = `${vv.height}px` }
+    vv.addEventListener('resize', sync)
+    sync()
+    return () => { vv.removeEventListener('resize', sync); el.style.height = '' }
+  }, [active])
+
   const [date, setDate] = useState<Date | null>(null)
   const [slot, setSlot] = useState<string>('')
   const [notes, setNotes] = useState('')
@@ -77,11 +94,16 @@ export function DashboardBook() {
   const showWhatsappInput = !profile?.whatsapp_number?.trim()
 
   async function confirm() {
-    if (!active || !date || !slot) { setErr('Please pick a date and time.'); return }
+    if (!active) return
+    const isEmergency = active.id === 'emergency_support_visit'
+    if (!isEmergency && (!date || !slot)) { setErr('Please pick a date and time.'); return }
     if (showAddressInput && !tempAddress.trim()) { setErr('Please add an address so we can send a companion.'); return }
     setSubmitting(true); setErr('')
-    const y = date.getFullYear(), m = String(date.getMonth() + 1).padStart(2, '0'), d = String(date.getDate()).padStart(2, '0')
-    const scheduled_at_ist = `${y}-${m}-${d}T${slot}:00+05:30`
+    let scheduled_at_ist: string | null = null
+    if (!isEmergency && date) {
+      const y = date.getFullYear(), mo = String(date.getMonth() + 1).padStart(2, '0'), d = String(date.getDate()).padStart(2, '0')
+      scheduled_at_ist = `${y}-${mo}-${d}T${slot}:00+05:30`
+    }
     const { data: result, error } = await supabase.functions.invoke('submit-booking-request', {
       body: {
         service_id: active.id, service_name: active.name, amount_paise: active.paise,
@@ -89,6 +111,7 @@ export function DashboardBook() {
         recipient_address: effectiveAddress,
         requester_whatsapp: effectiveWhatsapp,
         notes: notes.trim() || null,
+        is_emergency: isEmergency,
       },
     })
     setSubmitting(false)
@@ -105,41 +128,18 @@ export function DashboardBook() {
         {isNri ? `For ${recipient.name || 'your loved one'} · Hyderabad` : 'For your family · Hyderabad'}
       </p>
 
-      {/* Founding Membership card */}
-      <div style={{ margin: '0 16px 16px', borderRadius: 20, overflow: 'hidden', background: 'linear-gradient(135deg, #0E2A1F 0%, #1B4332 100%)' }}>
-        <div style={{ padding: '20px 20px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Founding Membership</span>
-            <span style={{ background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '3px 10px', fontSize: 10, fontWeight: 700 }}>FOUNDING MEMBER</span>
+      {/* Compact founding member status — small chip so services appear above fold */}
+      {isFoundingMember && (
+        <div style={{ margin: '0 16px 12px', background: 'rgba(14,42,31,0.07)', border: '1px solid rgba(14,42,31,0.14)', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--forest)', color: '#fff', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✓</span>
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--forest)', margin: 0 }}>Founding Member{foundingNumber ? ` #${foundingNumber}` : ''}</p>
+            <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '1px 0 0' }}>Your place is secured — book any service below.</p>
           </div>
-          <p style={{ fontSize: 28, fontWeight: 700, color: 'var(--sage)', margin: '0 0 14px' }}>₹100 <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.65)' }}>· one-time</span></p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
-            {['Health assistant — ask us anything, anytime', 'Priority emergency response for your family', 'Founding member benefits as we grow'].map(item => (
-              <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                <span style={{ color: 'var(--sage)', fontWeight: 700, fontSize: 14, lineHeight: 1.4, flexShrink: 0 }}>✓</span>
-                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>{item}</span>
-              </div>
-            ))}
-          </div>
-          {isFoundingMember ? (
-            <div style={{ background: 'rgba(168,213,181,0.15)', border: '1px solid rgba(168,213,181,0.4)', borderRadius: 12, padding: '12px 16px', textAlign: 'center', fontSize: 14, fontWeight: 600, color: 'var(--sage)' }}>
-              ✓ You're a Founding Member
-            </div>
-          ) : (
-            <a
-              href="https://wa.me/919000221261?text=Hi%2C%20I'd%20like%20to%20become%20a%20Founding%20Member%20of%20Close%20Eye"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'block', background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '13px 20px', fontSize: 15, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}
-            >
-              Become a Founding Member →
-            </a>
-          )}
         </div>
-      </div>
+      )}
 
-      <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '0 16px 12px' }}>Membership is a one-time join — services below are booked separately as needed.</p>
-
+      {/* Service cards — first so they're always visible above the fold */}
       {SERVICES.map(s => (
         <div key={s.id} style={{ margin: '0 16px 10px', background: '#fff', borderRadius: 'var(--radius-card)', padding: '18px 20px', boxShadow: 'var(--shadow-card)', display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ fontSize: 28 }}>{s.emoji}</span>
@@ -154,112 +154,201 @@ export function DashboardBook() {
         </div>
       ))}
 
+      {/* Founding membership upsell — shown below services for non-members */}
+      {!isFoundingMember && (
+        <>
+          <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '8px 16px 12px' }}>Membership is a one-time join — services above are booked separately as needed.</p>
+          <div style={{ margin: '0 16px 16px', borderRadius: 20, overflow: 'hidden', background: 'linear-gradient(135deg, #0E2A1F 0%, #1B4332 100%)' }}>
+            <div style={{ padding: '20px 20px 18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Founding Membership</span>
+                <span style={{ background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '3px 10px', fontSize: 10, fontWeight: 700 }}>FOUNDING MEMBER</span>
+              </div>
+              <p style={{ fontSize: 28, fontWeight: 700, color: 'var(--sage)', margin: '0 0 14px' }}>₹100 <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.65)' }}>· one-time</span></p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
+                {['Health assistant — ask us anything, anytime', 'Priority emergency response for your family', 'Founding member benefits as we grow'].map(item => (
+                  <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <span style={{ color: 'var(--sage)', fontWeight: 700, fontSize: 14, lineHeight: 1.4, flexShrink: 0 }}>✓</span>
+                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+              <a
+                href="https://wa.me/919000221261?text=Hi%2C%20I'd%20like%20to%20become%20a%20Founding%20Member%20of%20Close%20Eye"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'block', background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '13px 20px', fontSize: 15, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}
+              >
+                Become a Founding Member →
+              </a>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Plan card */}
       <section style={{ margin: '12px 16px 24px', borderRadius: 20, padding: 24, background: 'linear-gradient(135deg, #0E2A1F 0%, #1B4332 100%)' }}>
         <p style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: 0 }}>{isNri ? 'Switch to Monthly Plan' : 'Add Elder Care Plan'}</p>
         <p style={{ fontSize: 32, fontWeight: 700, color: 'var(--sage)', margin: '6px 0 0' }}>₹1,500<span style={{ fontSize: 15, fontWeight: 500 }}>/month</span></p>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', margin: '8px 0 0' }}>1 visit + weekly calls + WhatsApp reports + medicine reminders.</p>
-        <a href="/services" className="ce-btn ce-btn-white ce-btn-full" style={{ marginTop: 18, padding: 14 }}>{isNri ? 'Upgrade Now →' : 'Add Elder Care →'}</a>
+        <Link to="/services" className="ce-btn ce-btn-white ce-btn-full" style={{ marginTop: 18, padding: 14 }}>{isNri ? 'Upgrade Now →' : 'Add Elder Care →'}</Link>
       </section>
 
       {/* Bottom sheet */}
       {active && (
-        <div className="ce-sheet-overlay" onClick={e => { if (e.target === e.currentTarget) close() }}>
+        <div ref={overlayRef} className="ce-sheet-overlay" onClick={e => { if (e.target === e.currentTarget) close() }}>
           <div className="ce-sheet">
             {!done ? (
-              <>
-                <div className="ce-sheet-handle" />
-                <div className="flex items-center justify-between">
-                  <span style={{ fontSize: 18, fontWeight: 700 }}>{active.name}</span>
-                  <button onClick={close} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-mid)' }}><X size={22} /></button>
-                </div>
-                <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--forest)', margin: '2px 0 16px' }}>{active.price}</p>
-
-                <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', margin: '0 0 8px' }}>PICK A DAY</p>
-                <div className="ce-noscroll" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-                  {days.map(d => {
-                    const sel = date?.toDateString() === d.toDateString()
-                    return (
-                      <button key={d.toISOString()} onClick={() => setDate(d)} style={{
-                        flexShrink: 0, borderRadius: 12, padding: '10px 14px', cursor: 'pointer', textAlign: 'center',
-                        background: sel ? 'var(--forest)' : '#fff', color: sel ? '#fff' : 'var(--gray-dark)', border: sel ? 'none' : '1px solid var(--gray-light)',
-                      }}>
-                        <div style={{ fontSize: 11, fontWeight: 600 }}>{d.toLocaleDateString('en-IN', { weekday: 'short' })}</div>
-                        <div style={{ fontSize: 16, fontWeight: 700 }}>{d.getDate()}</div>
-                      </button>
-                    )
-                  })}
-                </div>
-
-                <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', margin: '16px 0 8px' }}>PICK A TIME (IST)</p>
-                {TIME_SLOTS.map(([label, slots]) => (
-                  <div key={label} style={{ marginBottom: 10 }}>
-                    <p style={{ fontSize: 11, color: 'var(--gray-mid)', margin: '0 0 6px' }}>{label}</p>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      {slots.map(s => {
-                        const sel = slot === s
-                        return (
-                          <button key={s} onClick={() => setSlot(s)} style={{
-                            flex: 1, borderRadius: 8, padding: '10px 0', cursor: 'pointer', fontSize: 13, fontWeight: sel ? 600 : 400,
-                            background: sel ? 'var(--forest)' : 'var(--cream)', color: sel ? '#fff' : 'var(--gray-dark)', border: sel ? 'none' : '1px solid var(--gray-light)',
-                          }}>{slotLabel(s)}</button>
-                        )
-                      })}
-                    </div>
+              active.id === 'emergency_support_visit' ? (
+                /* ── EMERGENCY: no scheduling, immediate dispatch ── */
+                <>
+                  <div className="ce-sheet-handle" />
+                  <div className="flex items-center justify-between">
+                    <span style={{ fontSize: 18, fontWeight: 700 }}>🚨 Emergency Visit</span>
+                    <button onClick={close} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-mid)' }}><X size={22} /></button>
                   </div>
-                ))}
+                  <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--forest)', margin: '2px 0 20px' }}>₹3,000 · Response within 2 hours</p>
 
-                <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any specific instructions? (optional)"
-                  style={{ width: '100%', minHeight: 64, resize: 'none', background: 'var(--cream)', border: '1px solid var(--gray-light)', borderRadius: 12, padding: '12px 14px', fontSize: 15, fontFamily: 'inherit', marginTop: 8 }} />
+                  {/* Primary: call us first */}
+                  <a
+                    href="tel:+919000221261"
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                      background: '#b91c1c', color: '#fff', borderRadius: 14, padding: '16px 20px',
+                      fontSize: 17, fontWeight: 700, textDecoration: 'none', minHeight: 52,
+                    }}
+                  >
+                    📞 Call +91 90002 21261
+                  </a>
+                  <p style={{ fontSize: 12, color: 'var(--gray-mid)', textAlign: 'center', margin: '8px 0 20px' }}>
+                    Call first if this is urgent — we'll dispatch immediately.
+                  </p>
 
-                {/* Collect missing fields inline */}
-                {(showAddressInput || showWhatsappInput) && (
-                  <div style={{ marginTop: 14, background: '#FFF7ED', border: '1.5px solid #F59E0B', borderRadius: 14, padding: '14px 16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                      <AlertTriangle size={14} color="#B45309" />
-                      <p style={{ fontSize: 13, fontWeight: 700, color: '#B45309', margin: 0 }}>We need a few details to confirm your visit</p>
-                    </div>
-                    {showAddressInput && (
-                      <div style={{ marginBottom: 10 }}>
-                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>ADDRESS IN HYDERABAD</label>
-                        <input
-                          value={tempAddress}
-                          onChange={e => setTempAddress(e.target.value)}
-                          placeholder="Flat / house, area, landmark…"
-                          style={INPUT_STYLE}
-                        />
-                      </div>
-                    )}
-                    {showWhatsappInput && (
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>YOUR WHATSAPP NUMBER</label>
-                        <input
-                          value={tempWhatsapp}
-                          onChange={e => setTempWhatsapp(e.target.value)}
-                          placeholder="+91 98765 43210"
-                          type="tel"
-                          style={INPUT_STYLE}
-                        />
-                        <p style={{ fontSize: 11, color: 'var(--gray-mid)', margin: '4px 0 0' }}>We'll send confirmation and the visit report here.</p>
-                      </div>
-                    )}
+                  {/* Optional note */}
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 6 }}>
+                    DESCRIBE WHAT'S HAPPENING (OPTIONAL)
+                  </label>
+                  <input
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    placeholder="e.g. Chest pain, fell at home, needs hospital…"
+                    style={INPUT_STYLE}
+                  />
+
+                  {err && <p style={{ color: '#b42318', fontSize: 13, margin: '8px 0 0' }}>{err}</p>}
+
+                  <button
+                    onClick={confirm}
+                    disabled={submitting}
+                    className="ce-btn ce-btn-full"
+                    style={{ marginTop: 14, padding: 16, background: '#b91c1c', color: '#fff', border: 'none', borderRadius: 'var(--radius-btn)', fontSize: 16, fontWeight: 700, cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.7 : 1 }}
+                  >
+                    {submitting ? <><Loader2 size={16} className="ce-spin" /> Alerting team…</> : 'Request emergency visit →'}
+                  </button>
+                  <p style={{ fontSize: 11, color: 'var(--gray-mid)', textAlign: 'center', margin: '10px 0 0' }}>
+                    Our team is alerted immediately — a companion will contact you within 30 minutes.
+                  </p>
+                </>
+              ) : (
+                /* ── REGULAR BOOKING: date + slot picker ── */
+                <>
+                  <div className="ce-sheet-handle" />
+                  <div className="flex items-center justify-between">
+                    <span style={{ fontSize: 18, fontWeight: 700 }}>{active.name}</span>
+                    <button onClick={close} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-mid)' }}><X size={22} /></button>
                   </div>
-                )}
+                  <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--forest)', margin: '2px 0 16px' }}>{active.price}</p>
 
-                {err && <p style={{ color: '#b42318', fontSize: 13, margin: '8px 0 0' }}>{err}</p>}
+                  <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', margin: '0 0 8px' }}>PICK A DAY</p>
+                  <div className="ce-noscroll" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+                    {days.map(d => {
+                      const sel = date?.toDateString() === d.toDateString()
+                      return (
+                        <button key={d.toISOString()} onClick={() => setDate(d)} style={{
+                          flexShrink: 0, borderRadius: 12, padding: '10px 14px', cursor: 'pointer', textAlign: 'center',
+                          background: sel ? 'var(--forest)' : '#fff', color: sel ? '#fff' : 'var(--gray-dark)', border: sel ? 'none' : '1px solid var(--gray-light)',
+                        }}>
+                          <div style={{ fontSize: 11, fontWeight: 600 }}>{d.toLocaleDateString('en-IN', { weekday: 'short' })}</div>
+                          <div style={{ fontSize: 16, fontWeight: 700 }}>{d.getDate()}</div>
+                        </button>
+                      )
+                    })}
+                  </div>
 
-                <button onClick={confirm} disabled={submitting} className="ce-btn ce-btn-primary ce-btn-full" style={{ marginTop: 14, padding: 16 }}>
-                  {submitting ? <><Loader2 size={16} className="ce-spin" /> Sending…</> : 'Confirm Booking →'}
-                </button>
-                <p style={{ fontSize: 11, color: 'var(--gray-mid)', textAlign: 'center', margin: '10px 0 0' }}>No charge now — we confirm a companion, then send a payment link.</p>
-              </>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', margin: '16px 0 8px' }}>PICK A TIME (IST)</p>
+                  {TIME_SLOTS.map(([label, slots]) => (
+                    <div key={label} style={{ marginBottom: 10 }}>
+                      <p style={{ fontSize: 11, color: 'var(--gray-mid)', margin: '0 0 6px' }}>{label}</p>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {slots.map(s => {
+                          const sel = slot === s
+                          return (
+                            <button key={s} onClick={() => setSlot(s)} style={{
+                              flex: 1, borderRadius: 8, padding: '10px 0', cursor: 'pointer', fontSize: 13, fontWeight: sel ? 600 : 400,
+                              background: sel ? 'var(--forest)' : 'var(--cream)', color: sel ? '#fff' : 'var(--gray-dark)', border: sel ? 'none' : '1px solid var(--gray-light)',
+                            }}>{slotLabel(s)}</button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+
+                  <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any specific instructions? (optional)"
+                    style={{ width: '100%', minHeight: 64, resize: 'none', background: 'var(--cream)', border: '1px solid var(--gray-light)', borderRadius: 12, padding: '12px 14px', fontSize: 15, fontFamily: 'inherit', marginTop: 8 }} />
+
+                  {/* Collect missing fields inline */}
+                  {(showAddressInput || showWhatsappInput) && (
+                    <div style={{ marginTop: 14, background: '#FFF7ED', border: '1.5px solid #F59E0B', borderRadius: 14, padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                        <AlertTriangle size={14} color="#B45309" />
+                        <p style={{ fontSize: 13, fontWeight: 700, color: '#B45309', margin: 0 }}>We need a few details to confirm your visit</p>
+                      </div>
+                      {showAddressInput && (
+                        <div style={{ marginBottom: 10 }}>
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>ADDRESS IN HYDERABAD</label>
+                          <input
+                            value={tempAddress}
+                            onChange={e => setTempAddress(e.target.value)}
+                            placeholder="Flat / house, area, landmark…"
+                            style={INPUT_STYLE}
+                          />
+                        </div>
+                      )}
+                      {showWhatsappInput && (
+                        <div>
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>YOUR WHATSAPP NUMBER</label>
+                          <input
+                            value={tempWhatsapp}
+                            onChange={e => setTempWhatsapp(e.target.value)}
+                            placeholder="+91 98765 43210"
+                            type="tel"
+                            style={INPUT_STYLE}
+                          />
+                          <p style={{ fontSize: 11, color: 'var(--gray-mid)', margin: '4px 0 0' }}>We'll send confirmation and the visit report here.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {err && <p style={{ color: '#b42318', fontSize: 13, margin: '8px 0 0' }}>{err}</p>}
+
+                  <button onClick={confirm} disabled={submitting} className="ce-btn ce-btn-primary ce-btn-full" style={{ marginTop: 14, padding: 16 }}>
+                    {submitting ? <><Loader2 size={16} className="ce-spin" /> Sending…</> : 'Confirm Booking →'}
+                  </button>
+                  <p style={{ fontSize: 11, color: 'var(--gray-mid)', textAlign: 'center', margin: '10px 0 0' }}>No charge now — we confirm a companion, then send a payment link.</p>
+                </>
+              )
             ) : (
               <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
                 <span className="ce-check-pop" style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--sage)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Check size={32} color="var(--forest)" strokeWidth={3} />
                 </span>
                 <p style={{ fontSize: 22, fontWeight: 700, color: 'var(--black)', margin: '16px 0 4px' }}>Request sent</p>
-                {doneNeedsDetails ? (
+                {active.id === 'emergency_support_visit' ? (
+                  <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: 0 }}>
+                    Our team has been alerted. A companion will contact you within 30 minutes.
+                  </p>
+                ) : doneNeedsDetails ? (
                   <>
                     <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: '0 0 10px' }}>
                       Your booking is saved. We'll call to confirm{doneMissing.address ? ' — our team will verify the address' : ''} before dispatching a companion.
