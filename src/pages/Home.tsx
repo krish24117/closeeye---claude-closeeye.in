@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Check, Menu, X, ArrowRight, Shield, Stethoscope, User } from 'lucide-react'
+import { Check, Menu, X, ArrowRight, Shield, Stethoscope, User, Send, Loader2 } from 'lucide-react'
 import { FaWhatsapp } from 'react-icons/fa'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/ui/Logo'
@@ -126,6 +126,234 @@ const ONDEMAND_EXAMPLES = [
   { name: 'Emergency Response', price: '₹3,000' },
   { name: 'Grocery & Medicine', price: '₹500' },
 ]
+
+/* ------------------------------------------------------------------ */
+/*  Public Ask widget (Tier 0 — no login required)                    */
+/* ------------------------------------------------------------------ */
+
+const PUBLIC_CAP_KEY   = 'ce_pub_ask_count'
+const PUBLIC_CAP_LIMIT = 3
+
+const SAMPLE_QUESTIONS = [
+  'Is it normal for him to sleep more in the day?',
+  'Foods that help with constipation?',
+  'How to make the bathroom safer?',
+]
+
+const DISCLAIMER = 'General guidance from Ask Close Eye, guided by our medical team. Not a substitute for professional medical advice.'
+
+interface PublicAskResponse {
+  lane: 'escalate' | 'inform'
+  message: string
+  ambulanceNumber?: string
+  disclaimer?: string
+  nudge?: string
+  requiresHuman?: boolean
+}
+
+function HomeAskWidget() {
+  const [question, setQuestion]         = useState('')
+  const [answer, setAnswer]             = useState<PublicAskResponse | null>(null)
+  const [typing, setTyping]             = useState(false)
+  const [capReached, setCapReached]     = useState(() => {
+    try { return Number(localStorage.getItem(PUBLIC_CAP_KEY) ?? '0') >= PUBLIC_CAP_LIMIT } catch { return false }
+  })
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function bumpCap() {
+    try {
+      const n = Number(localStorage.getItem(PUBLIC_CAP_KEY) ?? '0') + 1
+      localStorage.setItem(PUBLIC_CAP_KEY, String(n))
+      if (n >= PUBLIC_CAP_LIMIT) setCapReached(true)
+    } catch { /* ignore */ }
+  }
+
+  const ask = useCallback(async (q: string) => {
+    const text = q.trim()
+    if (!text || typing) return
+    setTyping(true); setAnswer(null)
+    try {
+      const { data, error } = await supabase.functions.invoke('ask-health-public', { body: { question: text } })
+      if (error) throw error
+      setAnswer(data as PublicAskResponse)
+      bumpCap()
+    } catch {
+      setAnswer({ lane: 'inform', message: "We couldn't reach our medical team right now. For anything urgent, please call 108.", disclaimer: DISCLAIMER, requiresHuman: false })
+    } finally {
+      setTyping(false)
+    }
+  }, [typing])
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    ask(question)
+  }
+
+  function handleChip(q: string) {
+    setQuestion(q)
+    inputRef.current?.focus()
+    ask(q)
+  }
+
+  const isEscalate = answer?.lane === 'escalate'
+
+  return (
+    <div id="ask-free" style={{ background: '#fff', border: '1px solid #e3ddd1', borderRadius: 18, padding: '18px 18px 20px', boxShadow: '0 14px 34px rgba(14,42,31,.1)' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 800, color: '#0E2A1F' }}>
+          <Logo className="w-4 h-4" />
+          Or, ask us anything — free
+        </div>
+        <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: '#2c6b43', background: '#eaf5ee', border: '1px solid #cfe6d7', padding: '4px 9px', borderRadius: 999 }}>
+          Try now
+        </span>
+      </div>
+      <p style={{ fontSize: 12.5, color: '#5c6b62', marginBottom: 13 }}>
+        A health question about your parent? Ask Close Eye, guided by our medical team.
+      </p>
+
+      {/* Sample chips */}
+      {!answer && !typing && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 13 }}>
+          {SAMPLE_QUESTIONS.map(q => (
+            <button
+              key={q}
+              type="button"
+              onClick={() => handleChip(q)}
+              style={{
+                fontSize: 12, fontWeight: 600, color: '#163b2c',
+                background: '#FAF7F2', border: '1px solid #A8D5B5',
+                borderRadius: 999, padding: '7px 11px', cursor: 'pointer',
+                fontFamily: 'inherit', lineHeight: 1.2, textAlign: 'left',
+              }}
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Input row */}
+      {!capReached && (
+        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8, marginBottom: 0 }}>
+          <input
+            ref={inputRef}
+            value={question}
+            onChange={e => setQuestion(e.target.value)}
+            placeholder="Ask about your parent's health…"
+            disabled={typing}
+            aria-label="Ask a health question"
+            style={{
+              flex: 1, fontFamily: 'inherit', fontSize: 13.5,
+              padding: '11px 13px', border: '1px solid #e3ddd1',
+              borderRadius: 12, background: '#FAF7F2', color: '#0E2A1F',
+              outline: 'none', minHeight: 44,
+            }}
+          />
+          <button
+            type="submit"
+            disabled={typing || !question.trim()}
+            aria-label="Ask"
+            style={{
+              flex: '0 0 auto', background: '#0E2A1F', color: '#FAF7F2',
+              border: 0, borderRadius: 12, padding: '0 15px',
+              fontWeight: 700, fontSize: 13.5, cursor: typing || !question.trim() ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', gap: 5, minHeight: 44,
+              opacity: typing || !question.trim() ? 0.5 : 1,
+            }}
+          >
+            {typing ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+          </button>
+        </form>
+      )}
+
+      {/* Typing animation */}
+      {typing && (
+        <div style={{ margin: '12px 0', display: 'flex', gap: 5, padding: '4px 2px' }}>
+          {[0, 150, 300].map(d => (
+            <span key={d} style={{
+              width: 7, height: 7, borderRadius: '50%', background: '#7FBF94',
+              display: 'inline-block',
+              animation: 'pub-bounce 1s infinite',
+              animationDelay: `${d}ms`,
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Answer */}
+      {answer && (
+        <div style={{ marginTop: 13 }}>
+          {isEscalate ? (
+            <div style={{ background: '#FEF2F2', border: '1px solid #c0734f', borderRadius: 12, padding: '13px 14px' }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: '#7a1f1f', marginBottom: 6 }}>
+                ⚠ This needs urgent attention
+              </p>
+              <p style={{ fontSize: 13.5, color: '#3d1010', lineHeight: 1.55, margin: 0 }}
+                dangerouslySetInnerHTML={{ __html: answer.message.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') }}
+              />
+              <a
+                href={`tel:${answer.ambulanceNumber ?? '108'}`}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, background: '#c0734f', color: '#fff', fontWeight: 700, fontSize: 14, padding: '10px 18px', borderRadius: 999, textDecoration: 'none', minHeight: 44 }}
+              >
+                Call {answer.ambulanceNumber ?? '108'} — Ambulance
+              </a>
+            </div>
+          ) : (
+            <div style={{ background: '#FAF7F2', border: '1px solid #e3ddd1', borderRadius: 12, padding: '13px 14px' }}>
+              <p style={{ fontSize: 13, lineHeight: 1.55, color: '#243831', margin: 0 }}>{answer.message}</p>
+              <p style={{ fontSize: 10.5, color: '#7e8b83', fontStyle: 'italic', marginTop: 8, borderTop: '1px solid #e7e2d7', paddingTop: 6 }}>
+                {answer.disclaimer ?? DISCLAIMER}
+              </p>
+            </div>
+          )}
+
+          {/* Nudge */}
+          {!isEscalate && (
+            <div style={{ marginTop: 11, background: 'linear-gradient(100deg,#0E2A1F,#163b2c)', color: '#FAF7F2', borderRadius: 13, padding: '12px 13px' }}>
+              <p style={{ fontSize: 13, fontWeight: 700 }}>Want answers specific to your parent?</p>
+              <Link
+                to="/founding-member"
+                style={{ display: 'inline-block', marginTop: 9, background: '#7FBF94', color: '#0E2A1F', textDecoration: 'none', fontWeight: 700, fontSize: 12, padding: '7px 13px', borderRadius: 999 }}
+              >
+                Register your parent →
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Cap reached */}
+      {capReached && !answer && (
+        <div style={{ marginTop: 8, background: 'linear-gradient(100deg,#0E2A1F,#163b2c)', color: '#FAF7F2', borderRadius: 13, padding: '14px 15px' }}>
+          <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>You've tried 3 free questions.</p>
+          <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,.65)', marginBottom: 11, lineHeight: 1.5 }}>
+            Register your parent for unlimited personalised answers — specific to their health history.
+          </p>
+          <Link
+            to="/founding-member"
+            style={{ display: 'inline-block', background: '#7FBF94', color: '#0E2A1F', textDecoration: 'none', fontWeight: 700, fontSize: 13, padding: '9px 16px', borderRadius: 999 }}
+          >
+            Claim founding spot · ₹100 →
+          </Link>
+        </div>
+      )}
+
+      {/* Trust line */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 13, fontSize: 11, color: '#5c6b62' }}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2l8 4v6c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-4z" stroke="#7FBF94" strokeWidth="1.8" strokeLinejoin="round"/>
+          <path d="M9 12l2 2 4-4" stroke="#7FBF94" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Guided by our medical team · General guidance, not a diagnosis
+      </div>
+
+      <style>{`@keyframes pub-bounce{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}`}</style>
+    </div>
+  )
+}
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                             */
@@ -407,8 +635,13 @@ export function HomePage() {
             <p>Every time. So you always know.</p>
           </div>
           <div className="ce-hero-buttons">
-            <Link to="/auth?mode=signup" className="ce-btn ce-btn-primary">Register Your Family <ArrowRight size={18} /></Link>
-            <a href="#how-it-works" className="ce-btn ce-btn-secondary">See How It Works</a>
+            <Link to="/founding-member" className="ce-btn ce-btn-primary">
+              Claim your founding spot
+              <span style={{ fontSize: 12, fontWeight: 700, background: '#0E2A1F', color: '#7FBF94', padding: '3px 9px', borderRadius: 999, marginLeft: 4 }}>
+                Start ₹100
+              </span>
+            </Link>
+            <a href="#ask-free" className="ce-btn ce-btn-secondary">Or ask us anything — free</a>
           </div>
           <p style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '12px', fontWeight: 500, color: 'var(--forest)', background: 'rgba(168,213,181,0.15)', border: '1px solid var(--sage)', borderRadius: '100px', padding: '5px 13px', marginTop: '10px' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--sage)', flexShrink: 0 }} />
@@ -447,6 +680,13 @@ export function HomePage() {
             </div>
             <p className="ce-phone-caption">What your family receives after every Close Eye visit</p>
           </div>
+        </div>
+      </section>
+
+      {/* ── ASK CLOSE EYE — Tier 0 public hook ──────────────────── */}
+      <section style={{ background: '#FAF7F2', padding: '0 20px 40px' }}>
+        <div style={{ maxWidth: 520, margin: '0 auto' }}>
+          <HomeAskWidget />
         </div>
       </section>
 
