@@ -81,6 +81,34 @@ function looksLikeInjection(text: string): boolean {
   return INJECTION_SIGNALS.some((sig) => lower.includes(sig));
 }
 
+// Out-of-scope detection — conservative (prefers false negatives so Claude handles edge cases).
+// Child query: unambiguous infant/child markers, or explicit age ≤ 14 years.
+// Off-topic: clearly non-health subjects (recipes, finance, sports, etc.).
+function looksLikeChildQuery(text: string): boolean {
+  const lower = text.toLowerCase();
+  // If the question is clearly about an elderly person, don't flag even if "baby" appears in passing
+  const elderlyContext = /\b(elderly|senior|older adult|aged|grandfather|grandmother|dadi|nani|dada|nana|thatha|paati|ajja|ajji|appa|amma|pitaji|mataji)\b/.test(lower);
+  if (elderlyContext) return false;
+  // Strong unambiguous child markers
+  if (/\b(infant|newborn|baby|toddler|paediatric(?:ian)?|pediatric(?:ian)?|neonatal)\b/.test(lower)) return true;
+  // Explicit age clearly signals a child (≤ 14 years old)
+  if (/\b([0-9]|1[0-4])\s*years?\s*old\b/.test(lower)) return true;
+  // Age in months or weeks signals an infant
+  if (/\b\d{1,2}\s*(month|week)s?\s*old\b/.test(lower)) return true;
+  return false;
+}
+
+function looksOffTopic(text: string): boolean {
+  const lower = text.toLowerCase();
+  return [
+    /\b(recipe|how to cook|how to bake|biryani|dal recipe|curry recipe)\b/,
+    /\b(cricket score|ipl\b|football match|sports news|film review|movie review)\b/,
+    /\b(invest(?:ment)?|stock market|mutual fund|nse|bse|sensex|share price)\b/,
+    /\b(legal advice|property dispute|divorce proceeding|court case|will and testament)\b/,
+    /\b(job hunt|resume tip|linkedin profile|interview prep|college admission)\b/,
+  ].some((p) => p.test(lower));
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS_HEADERS });
 
@@ -150,6 +178,31 @@ Deno.serve(async (req: Request) => {
       ai_answer: "I'm only here to help with questions about the health and wellbeing of elderly family members. Is there something about your loved one I can help with? 🌿" + DISCLAIMER,
       pending: false,
     });
+  }
+
+  // ── Out-of-scope boundary — warm redirect, no DB insert, no cap consumed ─
+  // Runs after red-flag so genuine emergencies still reach the escalation path.
+  // Only applied to first-turn questions; follow-up turns pass through to Claude.
+  if (!redFlag.matched && !isFollowUp) {
+    if (looksLikeChildQuery(question)) {
+      const seemsUrgent = /\b(urgent|emergency|help|not breathing|unconscious|seiz|convuls|won.?t wake|not waking)\b/i.test(question);
+      return json({
+        query_id: null,
+        out_of_scope: true,
+        ai_answer:
+          `Close Eye is designed for families caring for elderly parents — we aren't set up for child or infant care. For your child's health concerns, please consult a paediatrician.${seemsUrgent ? " If this is an emergency right now, please call **108** immediately." : " For any emergency, call 108."}\n\nIf you have a question about an elderly parent or loved one, we are right here to help.` +
+          DISCLAIMER,
+      });
+    }
+    if (looksOffTopic(question)) {
+      return json({
+        query_id: null,
+        out_of_scope: true,
+        ai_answer:
+          "Close Eye is here for questions about the health and wellbeing of elderly parents and older adults — I'm not able to help with this one.\n\nIf you have a question about a loved one who is elderly, I'm right here. For medical emergencies, call 108." +
+          DISCLAIMER,
+      });
+    }
   }
 
   // ── Persist the question — only on the first turn of a conversation ─────
