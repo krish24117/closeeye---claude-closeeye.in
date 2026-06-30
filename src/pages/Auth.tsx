@@ -97,7 +97,7 @@ export function AuthPage() {
               // Already paid — clear the stale flag and fall through to dashboard
               sessionStorage.removeItem('pendingCheckout')
             } else {
-              navigate('/founding-member', { replace: true })
+              navigate('/founding-member/checkout', { replace: true })
               return
             }
           }

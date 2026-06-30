@@ -16,6 +16,7 @@ import { FAQPage } from '@/pages/FAQ'
 import { ContactPage } from '@/pages/Contact'
 import { WaitlistPage } from '@/pages/Waitlist'
 import { FoundingMemberPage } from '@/pages/FoundingMember'
+import { FoundingMemberCheckoutPage } from '@/pages/FoundingMemberCheckout'
 import { PrivacyPage } from '@/pages/Privacy'
 import { TermsPage } from '@/pages/Terms'
 import { RefundPage } from '@/pages/Refund'
@@ -266,6 +267,7 @@ export default function App() {
             <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
             <Route path="/waitlist" element={<WaitlistPage />} />
             <Route path="/founding-member" element={<FoundingMemberPage />} />
+            <Route path="/founding-member/checkout" element={<FoundingMemberCheckoutPage />} />
             <Route path="/for-societies" element={<PublicLayout><ForSocietiesPage /></PublicLayout>} />
             <Route path="/companions" element={<PublicLayout><CompanionsPage /></PublicLayout>} />
             <Route path="/join-as-companion" element={<JoinAsCompanionPage />} />
