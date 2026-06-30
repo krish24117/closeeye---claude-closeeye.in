@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Loader2, Send } from 'lucide-react'
+import { Loader2, Send, ChevronDown, ChevronUp } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -21,71 +21,50 @@ interface Query {
   status: string; created_at: string; reviewed_by: string | null
 }
 
-// ── Strip emoji — safety net on top of the "no emojis" system prompt rule ─────
+// ── Utilities ──────────────────────────────────────────────────────────────────
+
 const EMOJI_RE = /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FEFF}]/gu
 function stripEmoji(t: string) { return t.replace(EMOJI_RE, '').replace(/ {2,}/g, ' ').trim() }
 
-// ── Markdown renderer — used for all AI answer text ───────────────────────────
-function MarkdownAnswer({ text, fontSize = 14 }: { text: string; fontSize?: number }) {
-  return (
-    <div style={{ fontSize, color: 'var(--gray-dark)', lineHeight: 1.65 }}>
-      <ReactMarkdown
-        components={{
-          p:      ({ children }) => (
-            <p style={{ margin: '0 0 7px', lineHeight: 1.65, lastChild: undefined } as React.CSSProperties}>{children}</p>
-          ),
-          ul:     ({ children }) => (
-            <ul style={{ margin: '4px 0 7px', paddingLeft: 20 }}>{children}</ul>
-          ),
-          ol:     ({ children }) => (
-            <ol style={{ margin: '4px 0 7px', paddingLeft: 20 }}>{children}</ol>
-          ),
-          li:     ({ children }) => (
-            <li style={{ margin: '4px 0', lineHeight: 1.55 }}>{children}</li>
-          ),
-          strong: ({ children }) => (
-            <strong style={{ fontWeight: 700, color: 'var(--black)' }}>{children}</strong>
-          ),
-          em:     ({ children }) => (
-            <em style={{ color: 'var(--gray-mid)', fontStyle: 'italic' }}>{children}</em>
-          ),
-          // Flatten headings — model shouldn't produce them, but handle gracefully
-          h1: ({ children }) => <p style={{ margin: '0 0 7px', fontWeight: 700 }}>{children}</p>,
-          h2: ({ children }) => <p style={{ margin: '0 0 7px', fontWeight: 700 }}>{children}</p>,
-          h3: ({ children }) => <p style={{ margin: '0 0 5px', fontWeight: 600 }}>{children}</p>,
-        }}
-      >
-        {stripEmoji(text)}
-      </ReactMarkdown>
-    </div>
-  )
+function timeAgo(iso: string): string {
+  const d = new Date(iso), now = new Date()
+  const diff = now.getTime() - d.getTime()
+  const mins = Math.floor(diff / 60000)
+  const hours = Math.floor(mins / 60)
+  const days = Math.floor(hours / 24)
+  if (mins < 2) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  if (hours < 24) return `${hours}h ago`
+  if (days === 1) return 'Yesterday'
+  if (days < 7) return `${days} days ago`
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 
-// ── Tier badge ─────────────────────────────────────────────────────────────────
+// ── Markdown renderer ──────────────────────────────────────────────────────────
 
-function TierBadge({ isFounder, parentName }: { isFounder: boolean; parentName?: string | null }) {
-  if (isFounder) {
-    return (
-      <div style={{
-        display: 'inline-flex', alignItems: 'center', gap: 7,
-        background: 'rgba(14,42,31,.06)', border: '1px solid rgba(168,213,181,.5)',
-        borderRadius: 999, padding: '5px 13px', fontSize: 12, fontWeight: 600, color: 'var(--forest)',
-      }}>
-        <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--sage-2)', flexShrink: 0 }} />
-        {parentName ? `Personalised for ${parentName}` : 'Personalised · Founding member'}
-      </div>
-    )
-  }
+function MarkdownAnswer({ text, size = 14 }: { text: string; size?: number }) {
   return (
-    <div style={{
-      display: 'inline-flex', alignItems: 'center', gap: 7,
-      background: 'var(--cream)', border: '1px solid var(--gray-light)',
-      borderRadius: 999, padding: '5px 13px', fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)',
-    }}>
-      General guidance ·{' '}
-      <Link to="/founding-member" style={{ color: 'var(--forest)', fontWeight: 700, textDecoration: 'none' }}>
-        Unlock personalised →
-      </Link>
+    <div style={{ fontSize: size, color: '#2d3a32', lineHeight: 1.7 }}>
+      <style>{`
+        .ce-md-answer ul { margin: 5px 0 8px; padding-left: 18px; list-style-type: disc; }
+        .ce-md-answer ol { margin: 5px 0 8px; padding-left: 18px; list-style-type: decimal; }
+        .ce-md-answer li { margin: 4px 0; line-height: 1.55; }
+        .ce-md-answer p  { margin: 0 0 8px; }
+        .ce-md-answer p:last-child { margin-bottom: 0; }
+        .ce-md-answer strong { font-weight: 700; color: #0E2A1F; }
+        .ce-md-answer em { color: #7a8c82; font-style: italic; }
+      `}</style>
+      <div className="ce-md-answer">
+        <ReactMarkdown
+          components={{
+            h1: ({ children }) => <p style={{ fontWeight: 700, marginBottom: 6 }}>{children}</p>,
+            h2: ({ children }) => <p style={{ fontWeight: 700, marginBottom: 6 }}>{children}</p>,
+            h3: ({ children }) => <p style={{ fontWeight: 600, marginBottom: 4 }}>{children}</p>,
+          }}
+        >
+          {stripEmoji(text)}
+        </ReactMarkdown>
+      </div>
     </div>
   )
 }
@@ -96,41 +75,164 @@ function EscalationCard({ message, ambulanceNumber }: { message: string; ambulan
   const number = ambulanceNumber ?? '108'
   return (
     <div style={{
-      background: '#FEF2F2', border: '1px solid #c0734f',
-      borderRadius: 14, padding: '16px 18px', margin: '4px 0 8px',
+      background: 'linear-gradient(135deg, #fff5f5 0%, #fff9f7 100%)',
+      border: '1.5px solid #e8a090', borderRadius: 18,
+      padding: '18px 18px 16px', margin: '4px 0 12px',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <span style={{ fontSize: 20 }}>⚠</span>
-        <span style={{ fontSize: 14, fontWeight: 700, color: '#7a1f1f' }}>This needs urgent attention</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: '50%',
+          background: '#c0734f', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18, flexShrink: 0,
+        }}>⚠</div>
+        <div>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#7a1f1f', margin: 0 }}>Urgent attention needed</p>
+          <p style={{ fontSize: 12, color: '#a05540', margin: '2px 0 0' }}>Please act on this immediately</p>
+        </div>
       </div>
-      <div style={{ marginBottom: 14 }}>
-        <MarkdownAnswer text={message} fontSize={14} />
+      <div style={{ marginBottom: 16 }}>
+        <MarkdownAnswer text={message} size={14} />
       </div>
       <a
         href={`tel:${number}`}
         style={{
-          display: 'inline-flex', alignItems: 'center', gap: 7,
-          background: '#c0734f', color: '#fff', fontWeight: 700, fontSize: 14,
-          padding: '11px 20px', borderRadius: 999, textDecoration: 'none', minHeight: 44,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          background: '#c0734f', color: '#fff', fontWeight: 700, fontSize: 15,
+          padding: '13px 20px', borderRadius: 12, textDecoration: 'none', minHeight: 48,
         }}
       >
-        Call {number} — Ambulance
+        <span style={{ fontSize: 20 }}>📞</span> Call {number} now
       </a>
-      <p style={{ fontSize: 11, color: '#7a4a32', fontStyle: 'italic', marginTop: 10, marginBottom: 0 }}>
-        For any emergency, call professional help immediately. Don't wait.
+      <p style={{ fontSize: 11, color: '#9a6050', fontStyle: 'italic', textAlign: 'center', margin: '10px 0 0' }}>
+        Don't wait — call now and stay on the line.
       </p>
     </div>
   )
 }
 
-// ── Status badge ───────────────────────────────────────────────────────────────
+// ── History question card ──────────────────────────────────────────────────────
 
-function StatusBadge({ status, reviewedBy }: { status: string; reviewedBy?: string | null }) {
-  if (status === 'doctor_reviewed')
-    return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: 'var(--forest)', background: 'rgba(14,42,31,0.06)', borderRadius: 100, padding: '4px 12px' }}>✓ Reviewed by {reviewedBy || 'Close Eye medical team'}</span>
-  if (status === 'ai_answered')
-    return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 500, color: 'var(--gray-mid)' }}>Guided by our medical team</span>
-  return <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 400, color: 'var(--gray-mid)' }}>⏳ Our medical team is reviewing this</span>
+function HistoryCard({ q }: { q: Query }) {
+  const [expanded, setExpanded] = useState(false)
+  const answerText = q.answer || q.ai_answer || ''
+  const isLong = answerText.length > 280
+  const displayText = isLong && !expanded ? answerText.slice(0, 280) + '…' : answerText
+
+  const isReviewed = q.status === 'doctor_reviewed'
+  const isPending  = q.status === 'pending'
+
+  return (
+    <div style={{
+      background: '#fff',
+      borderRadius: 18,
+      border: '1px solid rgba(14,42,31,0.08)',
+      boxShadow: '0 1px 6px rgba(14,42,31,0.06)',
+      marginBottom: 12,
+      overflow: 'hidden',
+    }}>
+      {/* Question row */}
+      <div style={{ padding: '14px 16px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+          <p style={{
+            fontSize: 14, fontWeight: 700, color: '#0E2A1F',
+            margin: 0, lineHeight: 1.4, flex: 1,
+          }}>
+            {q.question}
+          </p>
+          <span style={{
+            fontSize: 11, color: '#9aada3', fontWeight: 500,
+            whiteSpace: 'nowrap', marginTop: 2,
+          }}>
+            {timeAgo(q.created_at)}
+          </span>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div style={{ height: 1, background: 'rgba(14,42,31,0.06)', margin: '0 16px' }} />
+
+      {/* Answer */}
+      <div style={{ padding: '12px 16px 0' }}>
+        {isPending ? (
+          <p style={{ fontSize: 13, color: '#9aada3', fontStyle: 'italic', margin: 0 }}>
+            Our medical team is reviewing this…
+          </p>
+        ) : answerText ? (
+          <>
+            <MarkdownAnswer text={displayText} size={13} />
+            {isLong && (
+              <button
+                onClick={() => setExpanded(e => !e)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  fontSize: 12, fontWeight: 600, color: '#2FA84F',
+                  background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer',
+                }}
+              >
+                {expanded ? <><ChevronUp size={13} /> Show less</> : <><ChevronDown size={13} /> Read full answer</>}
+              </button>
+            )}
+          </>
+        ) : null}
+      </div>
+
+      {/* Footer strip */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '10px 16px', marginTop: 12,
+        background: isReviewed ? 'rgba(47,168,79,0.06)' : 'rgba(250,247,242,0.9)',
+        borderTop: '1px solid rgba(14,42,31,0.06)',
+      }}>
+        {isReviewed ? (
+          <>
+            <span style={{ fontSize: 13, color: '#2FA84F' }}>✓</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#2FA84F' }}>
+              Reviewed by {q.reviewed_by || 'Close Eye medical team'}
+            </span>
+          </>
+        ) : (
+          <>
+            <div style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: isPending ? '#e8c07a' : '#2FA84F',
+            }} />
+            <span style={{ fontSize: 11, fontWeight: 500, color: '#7a8c82' }}>
+              {isPending ? 'Pending review' : 'AI guidance · Close Eye medical team'}
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Tier badge ─────────────────────────────────────────────────────────────────
+
+function TierBadge({ isFounder, parentName }: { isFounder: boolean; parentName?: string | null }) {
+  if (isFounder) {
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        background: 'rgba(47,168,79,0.10)', border: '1px solid rgba(47,168,79,0.25)',
+        borderRadius: 999, padding: '5px 12px', fontSize: 12, fontWeight: 600, color: '#1B7A3E',
+      }}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2FA84F', flexShrink: 0 }} />
+        {parentName ? `For ${parentName}` : 'Founding member'}
+      </div>
+    )
+  }
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      background: 'var(--cream)', border: '1px solid var(--gray-light)',
+      borderRadius: 999, padding: '5px 12px', fontSize: 12, fontWeight: 500, color: 'var(--gray-mid)',
+    }}>
+      Free tier ·{' '}
+      <Link to="/founding-member" style={{ color: 'var(--forest)', fontWeight: 700, textDecoration: 'none' }}>
+        Upgrade →
+      </Link>
+    </div>
+  )
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -141,7 +243,7 @@ export function DashboardAsk() {
   const isNri     = profile?.user_type === 'nri'
 
   const [elder, setElder]               = useState<{ id: string; full_name: string; city?: string } | null>(null)
-  const [subject, setSubject]           = useState('Myself')
+  const [subject, setSubject]           = useState('My Parent')
   const [messages, setMessages]         = useState<ChatMessage[]>([])
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [inputText, setInputText]       = useState('')
@@ -151,7 +253,7 @@ export function DashboardAsk() {
   const bottomRef   = useRef<HTMLDivElement>(null)
   const inputRef    = useRef<HTMLTextAreaElement>(null)
 
-  const SOCIETY_SUBJECTS = ['Myself', 'My Child', 'My Parent', 'Partner']
+  const SOCIETY_SUBJECTS = ['Myself', 'My Parent', 'Partner', 'Other']
 
   useEffect(() => {
     if (!user) return
@@ -171,7 +273,7 @@ export function DashboardAsk() {
     if (!user) return
     const { data } = await supabase.from('member_queries')
       .select('id,question,answer,ai_answer,status,reviewed_by,created_at')
-      .eq('user_id', user.id).order('created_at', { ascending: false }).limit(10)
+      .eq('user_id', user.id).order('created_at', { ascending: false }).limit(8)
     if (data) setHistory(data)
 
     const now = new Date()
@@ -191,8 +293,9 @@ export function DashboardAsk() {
     ? getPersonaCopy(persona, { parentName: elder?.full_name, parentCity: elder?.city, userCity: profile?.country ?? undefined })
     : null
 
+  const firstName = profile?.full_name?.split(' ')[0] || ''
   const placeholder = isNri
-    ? (pcopy?.askInputHint || (elder ? `e.g. Is it okay to give ${elder.full_name.split(' ')[0]} paracetamol with BP medicine?` : 'Ask about your parent\'s health…'))
+    ? (pcopy?.askInputHint || (elder ? `e.g. Can ${elder.full_name.split(' ')[0]} take paracetamol with BP meds?` : 'Ask about your parent\'s health…'))
     : `Ask about ${subject.toLowerCase()}'s health…`
 
   async function sendMessage() {
@@ -203,7 +306,6 @@ export function DashboardAsk() {
     if (inputRef.current) { inputRef.current.style.height = 'auto' }
 
     const thinkingId = `thinking-${Date.now()}`
-
     setMessages(prev => [
       ...prev,
       { id: `u-${Date.now()}`, role: 'user', text: userText },
@@ -264,54 +366,81 @@ export function DashboardAsk() {
 
   const firstRealAssistantId = messages.find(m => m.role === 'assistant' && !m.pending && m.text)?.id
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ paddingBottom: 'calc(160px + env(safe-area-inset-bottom))' }}>
+    <div style={{ paddingBottom: 'calc(152px + env(safe-area-inset-bottom))', minHeight: '100%', background: '#f4f6f4' }}>
 
-      {/* Header */}
-      <div style={{ margin: '16px 16px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700 }}>Ask Close Eye</h1>
+      {/* ── Page header ─────────────────────────────────────────────────────── */}
+      <div style={{
+        background: '#fff',
+        padding: '14px 16px 14px',
+        borderBottom: '1px solid rgba(14,42,31,0.07)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+      }}>
+        <div>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: '#0E2A1F', margin: 0, letterSpacing: '-0.01em' }}>
+            Ask Close Eye
+          </h1>
+          {firstName && (
+            <p style={{ fontSize: 12, color: '#7a8c82', margin: '2px 0 0' }}>
+              {isFounder ? `Personalised guidance for your family` : `General guidance · 5 questions/month`}
+            </p>
+          )}
+        </div>
         <TierBadge isFounder={isFounder} parentName={isNri ? elder?.full_name : null} />
       </div>
 
-      {/* Society subject selector */}
+      {/* ── Subject selector (society users) ────────────────────────────────── */}
       {!isNri && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 16px', marginBottom: 10 }}>
+        <div style={{ display: 'flex', gap: 6, padding: '12px 16px 0', overflowX: 'auto' }}>
           {SOCIETY_SUBJECTS.map(s => (
             <button key={s} onClick={() => setSubject(s)} style={{
-              borderRadius: 100, padding: '7px 15px', fontSize: 13, cursor: 'pointer',
-              fontWeight: subject === s ? 600 : 400,
-              background: subject === s ? 'var(--forest)' : 'var(--cream)',
-              color: subject === s ? '#fff' : 'var(--gray-dark)',
-              border: subject === s ? 'none' : '1px solid var(--gray-light)',
+              borderRadius: 100, padding: '7px 16px', fontSize: 13,
+              cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: subject === s ? 700 : 400,
+              background: subject === s ? '#0E2A1F' : '#fff',
+              color: subject === s ? '#fff' : '#4a6255',
+              border: subject === s ? 'none' : '1px solid rgba(14,42,31,0.15)',
+              flexShrink: 0,
             }}>{s}</button>
           ))}
         </div>
       )}
 
-      {/* Chat thread */}
-      <div style={{ padding: '0 12px' }}>
+      {/* ── Chat thread ─────────────────────────────────────────────────────── */}
+      <div style={{ padding: '14px 14px 0' }}>
 
-        {/* Welcome bubble */}
+        {/* Welcome bubble — before first message */}
         {messages.length === 0 && (
-          <div className="ce-slide-up" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
-            <div style={{ flexShrink: 0, marginTop: 3 }}><Logo className="w-5 h-5" /></div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 16 }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: '50%', background: '#0E2A1F',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <div style={{ filter: 'brightness(0) invert(1)' }}><Logo className="w-4 h-4" /></div>
+            </div>
             <div style={{
               background: '#fff', borderRadius: '4px 18px 18px 18px',
-              padding: '13px 16px', boxShadow: 'var(--shadow-card)',
-              borderLeft: '3px solid var(--sage)', maxWidth: '85%',
+              padding: '13px 16px', flex: 1,
+              boxShadow: '0 1px 4px rgba(14,42,31,0.08)',
+              border: '1px solid rgba(14,42,31,0.07)',
             }}>
-              <p style={{ fontSize: 15, color: 'var(--gray-dark)', lineHeight: 1.6, margin: 0 }}>
+              <p style={{ fontSize: 14, color: '#2d3a32', lineHeight: 1.6, margin: 0 }}>
                 {isFounder && elder?.full_name
-                  ? `Hi — ask me anything about ${elder.full_name}'s health, medications, or daily wellbeing. I'm here to help.`
-                  : 'Hi — ask me anything about your loved one\'s health, medications, or daily wellbeing. I\'m here to help.'}
+                  ? `Hi — ask me anything about ${elder.full_name}'s health, medications, or wellbeing. I'll give you a clear, direct answer.`
+                  : `Hi${firstName ? ` ${firstName}` : ''} — ask me about your loved one's health or medications. I give clear, concise guidance.`}
               </p>
               {!isFounder && (
-                <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '8px 0 0' }}>
-                  General guidance ·{' '}
-                  <Link to="/founding-member" style={{ color: 'var(--forest)', fontWeight: 600 }}>
-                    Get personalised answers →
+                <div style={{
+                  marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(14,42,31,0.07)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}>
+                  <span style={{ fontSize: 12, color: '#9aada3' }}>
+                    {5 - monthlyCount} of 5 questions remaining
+                  </span>
+                  <Link to="/founding-member" style={{ fontSize: 12, fontWeight: 700, color: '#2FA84F', textDecoration: 'none' }}>
+                    Get unlimited →
                   </Link>
-                </p>
+                </div>
               )}
             </div>
           </div>
@@ -321,11 +450,12 @@ export function DashboardAsk() {
         {messages.map(msg => {
           if (msg.role === 'user') {
             return (
-              <div key={msg.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+              <div key={msg.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
                 <div style={{
-                  background: 'var(--forest)', color: '#fff',
+                  background: '#0E2A1F', color: '#FAF7F2',
                   borderRadius: '18px 18px 4px 18px',
-                  padding: '11px 16px', maxWidth: '80%', fontSize: 15, lineHeight: 1.5,
+                  padding: '11px 16px', maxWidth: '78%',
+                  fontSize: 15, lineHeight: 1.5,
                 }}>
                   {msg.text}
                 </div>
@@ -338,28 +468,47 @@ export function DashboardAsk() {
           }
 
           return (
-            <div key={msg.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14 }}>
-              <div style={{ flexShrink: 0, marginTop: 3 }}><Logo className="w-5 h-5" /></div>
+            <div key={msg.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: '50%', background: '#0E2A1F',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2,
+              }}>
+                <div style={{ filter: 'brightness(0) invert(1)' }}><Logo className="w-4 h-4" /></div>
+              </div>
               <div style={{
                 background: '#fff', borderRadius: '4px 18px 18px 18px',
-                padding: '14px 16px', maxWidth: '85%', boxShadow: 'var(--shadow-card)',
+                padding: '14px 16px', maxWidth: '83%',
+                boxShadow: '0 1px 4px rgba(14,42,31,0.08)',
+                border: '1px solid rgba(14,42,31,0.07)',
               }}>
                 {msg.pending ? (
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <Loader2 size={14} className="ce-spin" style={{ color: 'var(--sage)' }} />
-                    <span style={{ fontSize: 13, color: 'var(--gray-mid)' }}>Thinking…</span>
+                  /* Typing indicator */
+                  <div style={{ display: 'flex', gap: 5, alignItems: 'center', padding: '2px 0' }}>
+                    {[0, 0.2, 0.4].map((d, i) => (
+                      <div key={i} style={{
+                        width: 7, height: 7, borderRadius: '50%', background: '#b0c8b8',
+                        animation: `ce-dot-bounce 1.2s ease-in-out ${d}s infinite`,
+                      }} />
+                    ))}
+                    <style>{`
+                      @keyframes ce-dot-bounce {
+                        0%,80%,100% { transform: scale(.7); opacity:.5; }
+                        40%         { transform: scale(1);   opacity:1; }
+                      }
+                    `}</style>
                   </div>
                 ) : (
                   <>
-                    {/* Markdown renders bold bullets, italic disclaimer — no raw asterisks */}
-                    <MarkdownAnswer
-                      text={msg.text || 'Our medical team will review this shortly. For anything urgent, call 108.'}
-                    />
+                    <MarkdownAnswer text={msg.text || 'Our medical team will review this shortly. For anything urgent, call 108.'} />
                     {!isFounder && msg.id === firstRealAssistantId && (
-                      <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--gray-light)', fontSize: 12.5, color: 'var(--forest)' }}>
-                        Want this personalised to your parent's conditions?{' '}
-                        <Link to="/founding-member" style={{ fontWeight: 700, color: 'var(--forest)' }}>
-                          Founding Member →
+                      <div style={{
+                        marginTop: 12, paddingTop: 10,
+                        borderTop: '1px solid rgba(14,42,31,0.08)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      }}>
+                        <span style={{ fontSize: 12, color: '#7a8c82' }}>Personalise this for your parent</span>
+                        <Link to="/founding-member" style={{ fontSize: 12, fontWeight: 700, color: '#2FA84F', textDecoration: 'none' }}>
+                          Upgrade →
                         </Link>
                       </div>
                     )}
@@ -372,43 +521,29 @@ export function DashboardAsk() {
 
         {/* Near-cap warning */}
         {nearCap && messages.length > 0 && (
-          <div style={{ background: 'rgba(168,213,181,0.15)', border: '1px solid rgba(168,213,181,0.4)', borderRadius: 12, padding: '10px 14px', fontSize: 13, color: 'var(--forest)', marginBottom: 8 }}>
-            <strong>1 question left</strong> this month.{' '}
-            <Link to="/founding-member" style={{ color: 'var(--forest)', fontWeight: 600 }}>
-              Become a Founding Member →
-            </Link>{' '}for unlimited personalised answers.
+          <div style={{
+            background: 'rgba(47,168,79,0.08)', borderRadius: 14,
+            padding: '12px 16px', marginBottom: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <span style={{ fontSize: 13, color: '#1B7A3E', fontWeight: 600 }}>Last free question this month</span>
+            <Link to="/founding-member" style={{ fontSize: 13, fontWeight: 700, color: '#1B7A3E', textDecoration: 'none' }}>
+              Upgrade →
+            </Link>
           </div>
         )}
 
-        {/* Previous questions — visible only in the empty-chat state */}
+        {/* ── Recent history — shown in empty state ────────────────────────── */}
         {messages.length === 0 && history.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.06em', margin: '0 4px 10px' }}>
-              PREVIOUS QUESTIONS
-            </p>
-            {history.map(q => (
-              <div key={q.id} style={{
-                background: '#fff', borderRadius: 'var(--radius-card)',
-                padding: '16px 16px 12px', boxShadow: 'var(--shadow-card)', marginBottom: 10,
-              }}>
-                {/* Question title */}
-                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)', margin: '0 0 10px', lineHeight: 1.4 }}>
-                  {q.question}
-                </p>
-                {/* Answer — rendered as markdown */}
-                {(q.answer || q.ai_answer) ? (
-                  <MarkdownAnswer text={q.answer || q.ai_answer!} />
-                ) : (
-                  <p style={{ fontSize: 13, color: 'var(--gray-mid)', margin: 0, fontStyle: 'italic' }}>
-                    Our medical team is reviewing this…
-                  </p>
-                )}
-                {/* Footer */}
-                <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--gray-light)' }}>
-                  <StatusBadge status={q.status} reviewedBy={q.reviewed_by} />
-                </div>
-              </div>
-            ))}
+          <div style={{ marginTop: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(14,42,31,0.10)' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#9aada3', letterSpacing: '0.06em' }}>
+                RECENT QUESTIONS
+              </span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(14,42,31,0.10)' }} />
+            </div>
+            {history.map(q => <HistoryCard key={q.id} q={q} />)}
           </div>
         )}
 
@@ -418,26 +553,33 @@ export function DashboardAsk() {
       {/* ── Fixed input bar ───────────────────────────────────────────────────── */}
       <div style={{
         position: 'fixed',
-        bottom: 'calc(64px + env(safe-area-inset-bottom))',
+        bottom: 'calc(60px + env(safe-area-inset-bottom))',
         left: 0, right: 0,
         background: '#fff',
-        borderTop: '1px solid var(--gray-light)',
-        padding: '8px 12px 6px',
+        borderTop: '1px solid rgba(14,42,31,0.09)',
+        padding: '10px 14px 8px',
         zIndex: 200,
-        boxShadow: '0 -2px 16px rgba(14,42,31,0.07)',
+        boxShadow: '0 -4px 24px rgba(14,42,31,0.08)',
       }}>
         {atCap ? (
-          <div style={{ textAlign: 'center', padding: '10px 0' }}>
-            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--black)', margin: '0 0 5px' }}>
+          <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#0E2A1F', margin: '0 0 6px' }}>
               5 free questions used this month
             </p>
-            <Link to="/founding-member" style={{ fontSize: 13, color: 'var(--forest)', fontWeight: 700 }}>
-              Become a Founding Member for unlimited questions →
+            <p style={{ fontSize: 12, color: '#7a8c82', margin: '0 0 8px' }}>
+              Renew on the 1st, or unlock unlimited now.
+            </p>
+            <Link to="/founding-member" style={{
+              display: 'inline-block', background: '#0E2A1F', color: '#FAF7F2',
+              fontWeight: 700, fontSize: 14, padding: '10px 24px', borderRadius: 999,
+              textDecoration: 'none',
+            }}>
+              Become a Founding Member →
             </Link>
           </div>
         ) : (
           <>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
               <textarea
                 ref={inputRef}
                 value={inputText}
@@ -447,30 +589,34 @@ export function DashboardAsk() {
                 rows={1}
                 style={{
                   flex: 1, resize: 'none', overflow: 'hidden',
-                  background: 'var(--cream)', border: '1px solid var(--gray-light)',
-                  borderRadius: 20, padding: '10px 16px',
-                  fontSize: 15, fontFamily: 'inherit', lineHeight: 1.4,
-                  outline: 'none', minHeight: 42,
+                  background: '#f4f6f4',
+                  border: '1.5px solid rgba(14,42,31,0.12)',
+                  borderRadius: 14, padding: '10px 14px',
+                  fontSize: 15, fontFamily: 'inherit', lineHeight: 1.45,
+                  outline: 'none', minHeight: 44, color: '#0E2A1F',
+                  transition: 'border-color 0.15s',
                 }}
+                onFocus={e => { e.currentTarget.style.borderColor = '#2FA84F' }}
+                onBlur={e => { e.currentTarget.style.borderColor = 'rgba(14,42,31,0.12)' }}
               />
               <button
                 onClick={sendMessage}
                 disabled={!inputText.trim() || thinking}
                 aria-label="Send"
                 style={{
-                  width: 42, height: 42, borderRadius: '50%', border: 'none',
-                  cursor: inputText.trim() && !thinking ? 'pointer' : 'default',
-                  background: inputText.trim() && !thinking ? 'var(--forest)' : 'var(--gray-light)',
-                  color: inputText.trim() && !thinking ? '#fff' : 'var(--gray-mid)',
+                  width: 44, height: 44, borderRadius: 12, border: 'none',
+                  cursor: inputText.trim() && !thinking ? 'pointer' : 'not-allowed',
+                  background: inputText.trim() && !thinking ? '#0E2A1F' : 'rgba(14,42,31,0.10)',
+                  color: inputText.trim() && !thinking ? '#FAF7F2' : '#9aada3',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'background 0.18s, color 0.18s', flexShrink: 0,
+                  transition: 'background 0.15s, color 0.15s', flexShrink: 0,
                 }}
               >
-                {thinking ? <Loader2 size={18} className="ce-spin" /> : <Send size={18} />}
+                {thinking ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={18} />}
               </button>
             </div>
-            <p style={{ fontSize: 11, color: 'var(--gray-mid)', fontStyle: 'italic', margin: '5px 4px 0' }}>
-              General guidance only — not a diagnosis. For emergencies, call 108.
+            <p style={{ fontSize: 11, color: '#9aada3', margin: '7px 2px 0', textAlign: 'center' }}>
+              General guidance only · not a diagnosis · call 108 for emergencies
             </p>
           </>
         )}
