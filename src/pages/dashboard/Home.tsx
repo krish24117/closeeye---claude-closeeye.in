@@ -40,6 +40,8 @@ interface VisitRow {
   id: string; start_time: string | null; end_time: string | null; created_at: string
   flags: string; flag_notes: string | null; one_moment: string | null; mood_score: number | null
   checklist_data: Record<string, unknown> | null
+  photo_urls: string[]
+  pdf_path: string | null
 }
 
 function NriHome() {
@@ -48,6 +50,7 @@ function NriHome() {
   const [elderName, setElderName] = useState<string>('')
   const [elderCity, setElderCity] = useState<string>('')
   const [visit, setVisit] = useState<VisitRow | null>(null)
+  const [visitPhotoUrl, setVisitPhotoUrl] = useState<string | null>(null)
   const [nextBooking, setNextBooking] = useState<{ scheduled_at: string } | null>(null)
   const [activeRequest, setActiveRequest] = useState<{ id: string; service_name: string; status: string } | null>(null)
 
@@ -67,9 +70,16 @@ function NriHome() {
           .from('elder_profiles').select('id').eq('loved_one_id', lo.id).maybeSingle()
         if (ep?.id) {
           const { data: v } = await supabase
-            .from('visits').select('id,start_time,end_time,created_at,flags,flag_notes,one_moment,mood_score,checklist_data')
+            .from('visits').select('id,start_time,end_time,created_at,flags,flag_notes,one_moment,mood_score,checklist_data,photo_urls,pdf_path')
             .eq('elder_id', ep.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
-          if (active && v) setVisit(v as VisitRow)
+          if (active && v) {
+            setVisit(v as VisitRow)
+            if (v.photo_urls?.length) {
+              const { data: signed } = await supabase.storage
+                .from('visit-photos').createSignedUrl(v.photo_urls[0], 3600)
+              if (active && signed?.signedUrl) setVisitPhotoUrl(signed.signedUrl)
+            }
+          }
         }
       }
 
@@ -200,42 +210,79 @@ function NriHome() {
             </p>
           )}
 
+          {/* State B — no visit yet */}
           {state === 'B' && !nextBooking && (
             <div style={{ textAlign: 'center', marginTop: 20 }}>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 12px' }}>
+                No visits yet — book the first one
+              </p>
               <Link to="/dashboard/book" style={{ display: 'inline-block', background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '12px 28px', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
                 Book the first visit →
               </Link>
             </div>
           )}
 
-          {state === 'A' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
-              {[
-                ['😊', 'Mood', moodGood ? 'Good' : 'Okay'],
-                ['🍽️', 'Eating', 'Normal'],
-                ['💊', 'Medicines', 'Taken'],
-                ['🏠', 'Home', 'Safe'],
-              ].map(([emoji, label, value]) => (
-                <div key={label} style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>{emoji}</span>
-                  <div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{label}</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>{value}</div>
+          {/* State A — mini checklist + visit preview (photo, quote, report link) */}
+          {state === 'A' && visit && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
+                {[
+                  ['😊', 'Mood', moodGood ? 'Good' : 'Okay'],
+                  ['🍽️', 'Eating', 'Normal'],
+                  ['💊', 'Medicines', 'Taken'],
+                  ['🏠', 'Home', 'Safe'],
+                ].map(([emoji, label, value]) => (
+                  <div key={label} style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 16 }}>{emoji}</span>
+                    <div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{label}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>{value}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.10)' }}>
+                {visitPhotoUrl && (
+                  <img
+                    src={visitPhotoUrl}
+                    alt="Visit photo"
+                    style={{ width: '100%', borderRadius: 12, marginBottom: 12, maxHeight: 180, objectFit: 'cover' }}
+                  />
+                )}
+                {visit.one_moment && (
+                  <>
+                    <span style={{ fontSize: 26, fontWeight: 700, color: 'var(--sage)', opacity: 0.5, lineHeight: 0.5, display: 'block' }}>"</span>
+                    <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', lineHeight: 1.65, fontStyle: 'italic', margin: '6px 0 12px' }}>
+                      {visit.one_moment}
+                    </p>
+                  </>
+                )}
+                <Link
+                  to="/dashboard/reports"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 700, color: 'var(--sage)', textDecoration: 'none' }}
+                >
+                  View full report →
+                </Link>
+              </div>
+            </>
           )}
 
+          {/* State C — flag notes + action links */}
           {state === 'C' && (
             <>
               <div style={{ background: 'rgba(255,165,0,0.10)', border: '1px solid rgba(255,165,0,0.30)', borderRadius: 12, padding: '12px 16px', fontSize: 14, color: '#FFA500', marginTop: 12 }}>
                 {visit?.flag_notes || 'Your companion flagged something from the last visit. We will reach out.'}
               </div>
-              <a href="https://wa.me/919000221261?text=Hi%2C%20I%20saw%20a%20flag%20on%20my%20dashboard" target="_blank" rel="noopener noreferrer"
-                style={{ display: 'inline-block', border: '1px solid #FFA500', color: '#FFA500', borderRadius: 'var(--radius-btn)', padding: '10px 20px', fontSize: 14, fontWeight: 600, marginTop: 12, textDecoration: 'none' }}>
-                Call us about this →
-              </a>
+              <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+                <a href="https://wa.me/919000221261?text=Hi%2C%20I%20saw%20a%20flag%20on%20my%20dashboard" target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'inline-block', border: '1px solid #FFA500', color: '#FFA500', borderRadius: 'var(--radius-btn)', padding: '10px 20px', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+                  Call us about this →
+                </a>
+                <Link to="/dashboard/reports"
+                  style={{ display: 'inline-block', border: '1px solid rgba(255,165,0,0.4)', color: 'rgba(255,165,0,0.7)', borderRadius: 'var(--radius-btn)', padding: '10px 20px', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
+                  View report →
+                </Link>
+              </div>
             </>
           )}
         </div>
@@ -243,14 +290,18 @@ function NriHome() {
 
       {/* ── Quick actions ─────────────────────────────────────── */}
       <div className="ce-noscroll" style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '0 16px', marginTop: 12 }}>
-        {[
-          { label: '📋 View Report', to: '/dashboard/reports' },
-          { label: '📅 Book Visit', to: '/dashboard/book' },
-          { label: '💬 Ask Health', to: '/dashboard/ask' },
-        ].map(p => (
-          <Link key={p.label} to={p.to} className="ce-press" style={{ background: '#fff', border: '1px solid var(--gray-light)', borderRadius: 100, padding: '10px 18px', fontSize: 13, fontWeight: 600, color: 'var(--forest)', boxShadow: 'var(--shadow-card)', whiteSpace: 'nowrap', flexShrink: 0, textDecoration: 'none' }}>{p.label}</Link>
-        ))}
-        <a href="https://wa.me/919000221261" target="_blank" rel="noopener noreferrer" className="ce-press" style={{ background: '#fff', border: '1px solid var(--gray-light)', borderRadius: 100, padding: '10px 18px', fontSize: 13, fontWeight: 600, color: 'var(--forest)', boxShadow: 'var(--shadow-card)', whiteSpace: 'nowrap', flexShrink: 0, textDecoration: 'none' }}>📞 Call Us</a>
+        {(() => {
+          const pill: React.CSSProperties = { background: '#fff', border: '1px solid var(--gray-light)', borderRadius: 100, padding: '10px 18px', fontSize: 13, fontWeight: 600, color: 'var(--forest)', boxShadow: 'var(--shadow-card)', whiteSpace: 'nowrap', flexShrink: 0, textDecoration: 'none' }
+          const emergencyPill: React.CSSProperties = { ...pill, background: '#b91c1c', color: '#fff', border: '1px solid transparent' }
+          return (
+            <>
+              <Link to="/dashboard/book" className="ce-press" style={pill}>📅 Book a service</Link>
+              <a href="https://wa.me/919000221261?text=Hi%2C+I%27d+like+to+request+a+call" target="_blank" rel="noopener noreferrer" className="ce-press" style={pill}>📞 Request a call</a>
+              <Link to="/dashboard/profile" className="ce-press" style={pill}>👤 Parent's profile</Link>
+              <a href="tel:+919000221261" className="ce-press" style={emergencyPill}>🆘 Get help now</a>
+            </>
+          )
+        })()}
       </div>
 
       {/* ── Active booking status line ────────────────────────── */}
@@ -321,30 +372,6 @@ function NriHome() {
         )
       })()}
 
-      {/* ── Last visit preview ────────────────────────────────── */}
-      {visit && (
-        <div style={{ margin: '12px 16px 0', background: '#fff', borderRadius: 'var(--radius-card)', padding: 20, boxShadow: 'var(--shadow-card)' }}>
-          <div className="flex items-center justify-between">
-            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-mid)', letterSpacing: '0.08em' }}>LAST VISIT</span>
-            <Link to="/dashboard/reports" style={{ fontSize: 12, fontWeight: 500, color: 'var(--forest)', textDecoration: 'none' }}>Full report →</Link>
-          </div>
-          <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--black)', margin: '8px 0 0' }}>{elderName}</p>
-          <p style={{ fontSize: 13, color: 'var(--gray-mid)', margin: '2px 0 0' }}>{istTime(visit.start_time || visit.created_at)}{visitMins ? ` · ${visitMins} min` : ''}</p>
-          {visit.one_moment && (
-            <>
-              <hr style={{ border: 'none', borderTop: '1px solid var(--gray-light)', margin: '14px 0' }} />
-              <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--sage)', opacity: 0.5, lineHeight: 0.5 }}>“</span>
-              <p style={{ fontSize: 15, color: 'var(--gray-dark)', lineHeight: 1.7, fontStyle: 'italic', margin: '6px 0 0' }}>{visit.one_moment}</p>
-            </>
-          )}
-          <hr style={{ border: 'none', borderTop: '1px solid var(--gray-light)', margin: '14px 0' }} />
-          <div className="flex items-center" style={{ gap: 8 }}>
-            <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--forest)', color: '#fff', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>K</span>
-            <span style={{ fontSize: 12, color: 'var(--gray-mid)' }}>Krishna · Companion</span>
-          </div>
-        </div>
-      )}
-
       {/* ── Upcoming visit ────────────────────────────────────── */}
       {nextBooking && (
         <div style={{ margin: '12px 16px 0', background: '#fff', borderRadius: 'var(--radius-card)', padding: '16px 20px', boxShadow: 'var(--shadow-card)', display: 'flex', alignItems: 'center' }}>
@@ -354,14 +381,22 @@ function NriHome() {
         </div>
       )}
 
-      {/* ── Health query shortcut ─────────────────────────────── */}
+      {/* ── Ask Close Eye shortcut (personalised for Tier 1+) ── */}
       <Link to="/dashboard/ask" className="ce-press" style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '12px 16px 24px', background: 'var(--cream-dark)', borderRadius: 'var(--radius-card)', padding: '18px 20px', textDecoration: 'none' }}>
         <span style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--forest)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <MessageCircle size={20} color="#fff" />
         </span>
         <span style={{ flex: 1 }}>
-          <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--black)' }}>Have a health question?</span>
-          <span style={{ display: 'block', fontSize: 13, color: 'var(--gray-mid)' }}>{pcopy.askShortcutSub}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)' }}>Ask Close Eye</span>
+            {isFounder && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: 'var(--forest)', background: 'rgba(14,42,31,0.08)', borderRadius: 100, padding: '2px 8px' }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sage-2)', flexShrink: 0 }} />
+                Personalised
+              </span>
+            )}
+          </span>
+          <span style={{ display: 'block', fontSize: 13, color: 'var(--gray-mid)', marginTop: 2 }}>{pcopy.askShortcutSub}</span>
         </span>
         <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--forest)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: 'var(--shadow-btn)' }}>
           <ChevronRight size={18} color="#fff" />
