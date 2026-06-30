@@ -50,6 +50,13 @@
   --shadow-btn:   0 4px 12px rgba(14,42,31,0.20);
   --radius-card:  16px;
   --radius-btn:   12px;
+
+  /* NRI dashboard tokens (not in base palette — flagged in audit) */
+  --muted:   #5c6b62;  /* green-gray secondary text */
+  --line:    #e3ddd1;  /* warm cream dividers / borders */
+  --cream-2: #f1ece2;  /* avatar / chip backgrounds */
+  --clay:    #C0734F;  /* emergency CTAs, destructive actions */
+  --sage-2:  #7FBF94;  /* interactive sage green */
 }
 
 /* ---- Base + typography ---- */

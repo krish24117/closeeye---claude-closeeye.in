@@ -22,10 +22,10 @@ function CardSkeleton({ h = 180 }: { h?: number }) {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const MUTED  = '#5c6b62'
-const LINE   = '#e3ddd1'
-const CREAM2 = '#f1ece2'
-const CLAY   = '#C0734F'
+const MUTED  = 'var(--muted)'
+const LINE   = 'var(--line)'
+const CREAM2 = 'var(--cream-2)'
+const CLAY   = 'var(--clay)'
 
 const SEC: React.CSSProperties = {
   fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.12em',
@@ -165,7 +165,7 @@ function NriHome() {
     <div className="ce-slide-up" style={{ paddingBottom: 24 }}>
 
       {/* ── Forest greeting header ─────────────────────────────── */}
-      <div style={{ background: '#0E2A1F', color: 'var(--cream)', padding: '14px 18px 28px' }}>
+      <div style={{ background: 'var(--forest)', color: 'var(--cream)', padding: '14px 18px 28px' }}>
         {showSetupCard ? (
           <div>
             <p style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Welcome, {firstName}</p>
@@ -316,25 +316,25 @@ function NriHome() {
         <p style={SEC}>Quick actions</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {/* Book a service — forest bg */}
-          <Link to="/dashboard/book" style={{ background: 'var(--forest)', color: 'var(--cream)', borderRadius: 13, padding: 14, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <Link to="/dashboard/book" className="ce-press" style={{ background: 'var(--forest)', color: 'var(--cream)', borderRadius: 13, padding: 14, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 7 }}>
             <span style={{ width: 30, height: 30, borderRadius: 9, background: 'rgba(168,213,181,.18)', display: 'grid', placeItems: 'center', fontSize: 15 }}>＋</span>
             <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>Book a service</span>
-            <span style={{ fontSize: 11, color: '#c8d5cb' }}>Visit, doctor, errands</span>
+            <span style={{ fontSize: 11, color: 'rgba(200,213,203,0.9)' }}>Visit, doctor, errands</span>
           </Link>
           {/* Request a call */}
-          <a href="https://wa.me/919000221261?text=Hi%2C+I%27d+like+to+request+a+wellbeing+call" target="_blank" rel="noopener noreferrer" style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 13, padding: 14, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 7, color: 'var(--forest)' }}>
+          <a href="https://wa.me/919000221261?text=Hi%2C+I%27d+like+to+request+a+wellbeing+call" target="_blank" rel="noopener noreferrer" className="ce-press" style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 13, padding: 14, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 7, color: 'var(--forest)' }}>
             <span style={{ width: 30, height: 30, borderRadius: 9, background: CREAM2, display: 'grid', placeItems: 'center', fontSize: 15 }}>📞</span>
             <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>Request a call</span>
             <span style={{ fontSize: 11, color: MUTED }}>Weekly wellbeing call</span>
           </a>
           {/* Parent's profile */}
-          <Link to="/dashboard/profile" style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 13, padding: 14, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 7, color: 'var(--forest)' }}>
+          <Link to="/dashboard/profile" className="ce-press" style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 13, padding: 14, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 7, color: 'var(--forest)' }}>
             <span style={{ width: 30, height: 30, borderRadius: 9, background: CREAM2, display: 'grid', placeItems: 'center', fontSize: 15 }}>👤</span>
             <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>{relTitle}'s profile</span>
             <span style={{ fontSize: 11, color: MUTED }}>Health &amp; details</span>
           </Link>
-          {/* Get help now — clay left border */}
-          <a href="tel:+919000221261" style={{ background: '#fff', border: `1px solid ${LINE}`, borderLeft: `3px solid ${CLAY}`, borderRadius: 13, padding: 14, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 7, color: 'var(--forest)' }}>
+          {/* Get help now — clay left border, always tel: link */}
+          <a href="tel:+919000221261" className="ce-press" style={{ background: '#fff', border: `1px solid ${LINE}`, borderLeft: `3px solid ${CLAY}`, borderRadius: 13, padding: 14, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 7, color: 'var(--forest)' }}>
             <span style={{ width: 30, height: 30, borderRadius: 9, background: CREAM2, display: 'grid', placeItems: 'center', fontSize: 15 }}>⚠</span>
             <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2, color: CLAY }}>Get help now</span>
             <span style={{ fontSize: 11, color: MUTED }}>Emergency response</span>
@@ -438,7 +438,7 @@ function SocietyHome() {
 
   if (loading) return <><CardSkeleton h={170} /><CardSkeleton h={200} /></>
 
-  const FOREST_GRADIENT = { background: 'linear-gradient(135deg, #0E2A1F 0%, #1B4332 100%)' }
+  const FOREST_GRADIENT = { background: 'linear-gradient(135deg, var(--forest) 0%, var(--forest-mid) 100%)' }
 
   return (
     <div className="ce-slide-up">

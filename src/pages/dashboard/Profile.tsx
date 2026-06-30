@@ -53,10 +53,10 @@ function memberEmoji(rel: string | null): string {
   return '👤'
 }
 
-const MUTED   = '#5c6b62'
-const LINE    = '#e3ddd1'
-const CLAY    = '#C0734F'
-const CREAM2  = '#f1ece2'
+const MUTED   = 'var(--muted)'
+const LINE    = 'var(--line)'
+const CLAY    = 'var(--clay)'
+const CREAM2  = 'var(--cream-2)'
 
 const SEC_LABEL: React.CSSProperties = {
   fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.12em',
@@ -496,7 +496,7 @@ export function DashboardProfile() {
     <div className="ce-slide-up" style={{ paddingBottom: 24 }}>
 
       {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #0E2A1F, #1B4332)', padding: '28px 20px', textAlign: 'center' }}>
+      <div style={{ background: 'linear-gradient(135deg, var(--forest), var(--forest-mid))', padding: '28px 20px', textAlign: 'center' }}>
         <span style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '3px solid var(--sage)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#fff' }}>
           {initials(profile?.full_name)}
         </span>
@@ -541,7 +541,7 @@ export function DashboardProfile() {
                       {sub || 'tap to edit'}
                     </div>
                   </div>
-                  <button onClick={() => startEdit(lo.id)} style={{ background: 'none', border: 'none', fontSize: 20, color: MUTED, cursor: 'pointer', flexShrink: 0, padding: 0, lineHeight: 1 }}>›</button>
+                  <button onClick={() => startEdit(lo.id)} style={{ background: 'none', border: 'none', fontSize: 20, color: MUTED, cursor: 'pointer', flexShrink: 0, padding: '12px 8px', lineHeight: 1, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
                 </div>
               )
 
@@ -594,7 +594,8 @@ export function DashboardProfile() {
             )}
           </div>
 
-          {/* ── Your details ───────────────────────────────────── */}
+          {/* ── Your details / Membership / Settings ─────────── */}
+          <div style={{ padding: '0 16px' }}>
           <p style={SEC_LABEL}>YOUR DETAILS</p>
           <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, padding: '0 16px' }}>
             {!editingAccount ? (
@@ -615,12 +616,12 @@ export function DashboardProfile() {
                   <span style={{ fontSize: 12, color: MUTED }}>Where you live</span>
                   {profile?.country
                     ? <span style={{ fontSize: 13.5, fontWeight: 600 }}>{profile.country}</span>
-                    : <button onClick={() => { setEditingAccount(true); setAccountOk(false) }} style={{ background: 'none', border: 'none', fontSize: 13.5, fontWeight: 700, color: '#7FBF94', cursor: 'pointer', padding: 0 }}>+ Add address</button>
+                    : <button onClick={() => { setEditingAccount(true); setAccountOk(false) }} style={{ background: 'none', border: 'none', fontSize: 13.5, fontWeight: 700, color: 'var(--sage-2)', cursor: 'pointer', padding: 0 }}>+ Add address</button>
                   }
                 </div>
                 {accountOk && <p style={{ fontSize: 12, color: 'var(--forest)', paddingBottom: 10 }}>✓ Saved</p>}
                 <div style={{ borderTop: `1px solid ${LINE}`, padding: '10px 0', textAlign: 'center' }}>
-                  <button onClick={() => { setEditingAccount(true); setAccountOk(false) }} style={{ background: 'none', border: 'none', fontSize: 12, fontWeight: 700, color: '#7FBF94', cursor: 'pointer' }}>
+                  <button onClick={() => { setEditingAccount(true); setAccountOk(false) }} style={{ background: 'none', border: 'none', fontSize: 12, fontWeight: 700, color: 'var(--sage-2)', cursor: 'pointer' }}>
                     <Edit2 size={11} style={{ verticalAlign: 'middle', marginRight: 4 }} />Edit details
                   </button>
                 </div>
@@ -679,11 +680,12 @@ export function DashboardProfile() {
             </a>
             <button
               onClick={handleSignOut}
-              style={{ ...MENU_LINK, width: '100%', justifyContent: 'center', color: CLAY, borderColor: '#ecd3c2', fontWeight: 700, cursor: 'pointer', background: '#fff' }}
+              style={{ ...MENU_LINK, width: '100%', justifyContent: 'center', color: CLAY, borderColor: 'rgba(192,115,79,0.25)', fontWeight: 700, cursor: 'pointer', background: '#fff' }}
             >
               <LogOut size={15} style={{ marginRight: 6 }} /> Sign out
             </button>
           </div>
+          </div>{/* end padding wrapper */}
         </>
       ) : (
         <>
