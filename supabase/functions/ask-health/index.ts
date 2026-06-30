@@ -1,8 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { detectRedFlag } from "./redflags.ts";
 
 // Ask Close Eye — health guidance for families caring for elderly parents.
 // Restricted to: elderly health, wellbeing, medication, elder-care topics, Close Eye services.
-// Monthly cap: 5 questions per user (server-enforced).
+// Monthly cap: 5 questions per user (free tier only). Founding/paying members are exempt.
+// Emergencies detected by detectRedFlag() bypass the cap entirely and never reach Claude.
 // Every response appends a standard disclaimer.
 
 const CORS_HEADERS = {
@@ -66,6 +68,9 @@ const INJECTION_SIGNALS = [
 const DISCLAIMER =
   "\n\n*This is general guidance, not a medical diagnosis. For any serious concerns or emergencies, please contact a qualified doctor or call 108.*";
 
+// Override via CLOSEEYE_AMBULANCE_NUMBER secret if region/project needs a different number
+const AMBULANCE_NUMBER = Deno.env.get("CLOSEEYE_AMBULANCE_NUMBER") ?? "108";
+
 function looksLikeInjection(text: string): boolean {
   const lower = text.toLowerCase();
   return INJECTION_SIGNALS.some((sig) => lower.includes(sig));
@@ -92,22 +97,36 @@ Deno.serve(async (req: Request) => {
   const question = (body.question || "").trim();
   if (!question) return json({ error: "Question is required" }, 400);
 
+  // ── Red-flag check — runs BEFORE cap and BEFORE any model call.
+  //    Emergencies bypass the monthly cap entirely — a safety question is never blocked.
+  const redFlag = detectRedFlag(question);
+
   const sb = createClient(supabaseUrl, supabaseServiceKey);
 
-  // ── Monthly cap (server-enforced) ─────────────────────────────────────────
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const { count: monthCount } = await sb
-    .from("member_queries")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .gte("created_at", startOfMonth);
+  // ── Founding / paying-member exemption ────────────────────────────────────
+  const { data: memberProf } = await sb
+    .from("profiles")
+    .select("is_founding_member")
+    .eq("id", user.id)
+    .maybeSingle();
+  const isExempt = !!memberProf?.is_founding_member;
 
-  if ((monthCount ?? 0) >= MONTHLY_LIMIT) {
-    return json({
-      error: "monthly_limit_reached",
-      message: "You've used your 5 free questions this month. They refresh on the 1st. For urgent health concerns, please contact a doctor or call 108.",
-    }, 429);
+  // ── Monthly cap — free-tier users only, non-emergencies only ─────────────
+  if (!isExempt && !redFlag.matched) {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const { count: monthCount } = await sb
+      .from("member_queries")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", startOfMonth);
+
+    if ((monthCount ?? 0) >= MONTHLY_LIMIT) {
+      return json({
+        error: "monthly_limit_reached",
+        message: "You've used your 5 free questions this month. They refresh on the 1st. For urgent health concerns, please contact a doctor or call 108.",
+      }, 429);
+    }
   }
 
   // ── Prompt injection guardrail ────────────────────────────────────────────
@@ -131,6 +150,45 @@ Deno.serve(async (req: Request) => {
   if (insErr || !row) {
     console.error("member_queries insert error:", insErr);
     return json({ error: "Could not save your question" }, 500);
+  }
+
+  // ── Red-flag escalation — bypass Claude entirely; send fixed emergency response.
+  //    Care-team alert is non-fatal: the family gets the 108 message regardless.
+  if (redFlag.matched) {
+    console.log(`[ask-health] escalation: category=${redFlag.category} query_id=${row.id}`);
+    try {
+      const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+      const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
+      const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM");
+      const careTeam   = Deno.env.get("CARE_TEAM_WHATSAPP");
+      if (accountSid && authToken && fromNum && careTeam) {
+        const numbers = careTeam.split(",").map((n: string) => n.trim()).filter(Boolean);
+        await Promise.all(numbers.map(async (to) => {
+          const waTo = to.startsWith("whatsapp:") ? to : `whatsapp:${to.startsWith("+") ? to : "+" + to}`;
+          const res = await fetch(
+            `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+            {
+              method: "POST",
+              headers: { Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`, "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({
+                From: fromNum, To: waTo,
+                Body: `🚨 EMERGENCY — Ask Close Eye\nCategory: ${redFlag.category}\nQuery: "${question.slice(0, 140)}"\nUser: ${user.id} | Query: ${row.id}\nAction: contact this family now.`,
+              }),
+            },
+          );
+          if (!res.ok) console.error("[ask-health] care-team alert failed:", res.status, await res.text());
+        }));
+      }
+    } catch (alertErr) {
+      console.error("[ask-health] care-team alert error (non-fatal):", alertErr);
+    }
+
+    return json({
+      query_id: row.id,
+      lane: "escalate",
+      message: `**Call ${AMBULANCE_NUMBER} now.** This sounds like a medical emergency — please don't wait.\n\nCall **${AMBULANCE_NUMBER}** (ambulance) or take them to the nearest emergency room immediately. Stay on the line with the dispatcher — they will guide you until help arrives.\n\nOur care team has been alerted and will follow up shortly.`,
+      escalation: { ambulanceNumber: AMBULANCE_NUMBER },
+    });
   }
 
   // ── Claude call ───────────────────────────────────────────────────────────
