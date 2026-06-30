@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { Logo } from '@/components/ui/Logo'
 import { isOnboardingDismissed } from '@/pages/Onboarding'
+import { InstallPrompt } from '@/components/InstallPrompt'
 
 const NRI_TABS = [
   { to: '/dashboard', icon: Home, label: 'Home', end: true },
@@ -93,6 +94,8 @@ export function DashboardLayout() {
       <main className="ce-fam-main">
         <Outlet />
       </main>
+
+      <InstallPrompt />
 
       {/* Bottom nav */}
       <nav className="ce-fam-bottom" aria-label="Primary">
