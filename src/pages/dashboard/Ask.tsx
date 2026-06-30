@@ -249,7 +249,7 @@ function TierBadge({ isFounder, parentName }: { isFounder: boolean; parentName?:
       borderRadius: 999, padding: '5px 12px', fontSize: 12, fontWeight: 500, color: 'var(--gray-mid)',
     }}>
       Free tier ·{' '}
-      <Link to="/founding-member" style={{ color: 'var(--forest)', fontWeight: 700, textDecoration: 'none' }}>
+      <Link to="/founding-member/checkout" style={{ color: 'var(--forest)', fontWeight: 700, textDecoration: 'none' }}>
         Upgrade →
       </Link>
     </div>
@@ -458,7 +458,7 @@ export function DashboardAsk() {
                   <span style={{ fontSize: 12, color: '#9aada3' }}>
                     {5 - monthlyCount} of 5 questions remaining
                   </span>
-                  <Link to="/founding-member" style={{ fontSize: 12, fontWeight: 700, color: '#2FA84F', textDecoration: 'none' }}>
+                  <Link to="/founding-member/checkout" style={{ fontSize: 12, fontWeight: 700, color: '#2FA84F', textDecoration: 'none' }}>
                     Get unlimited →
                   </Link>
                 </div>
@@ -528,7 +528,7 @@ export function DashboardAsk() {
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       }}>
                         <span style={{ fontSize: 12, color: '#7a8c82' }}>Personalise this for your parent</span>
-                        <Link to="/founding-member" style={{ fontSize: 12, fontWeight: 700, color: '#2FA84F', textDecoration: 'none' }}>
+                        <Link to="/founding-member/checkout" style={{ fontSize: 12, fontWeight: 700, color: '#2FA84F', textDecoration: 'none' }}>
                           Upgrade →
                         </Link>
                       </div>
@@ -548,7 +548,7 @@ export function DashboardAsk() {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
             <span style={{ fontSize: 13, color: '#1B7A3E', fontWeight: 600 }}>Last free question this month</span>
-            <Link to="/founding-member" style={{ fontSize: 13, fontWeight: 700, color: '#1B7A3E', textDecoration: 'none' }}>
+            <Link to="/founding-member/checkout" style={{ fontSize: 13, fontWeight: 700, color: '#1B7A3E', textDecoration: 'none' }}>
               Upgrade →
             </Link>
           </div>
@@ -590,7 +590,7 @@ export function DashboardAsk() {
             <p style={{ fontSize: 12, color: '#7a8c82', margin: '0 0 8px' }}>
               Renew on the 1st, or unlock unlimited now.
             </p>
-            <Link to="/founding-member" style={{
+            <Link to="/founding-member/checkout" style={{
               display: 'inline-block', background: '#0E2A1F', color: '#FAF7F2',
               fontWeight: 700, fontSize: 14, padding: '10px 24px', borderRadius: 999,
               textDecoration: 'none',

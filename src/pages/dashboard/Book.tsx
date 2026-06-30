@@ -193,14 +193,12 @@ export function DashboardBook() {
                   </div>
                 ))}
               </div>
-              <a
-                href="https://wa.me/919000221261?text=Hi%2C%20I'd%20like%20to%20become%20a%20Founding%20Member%20of%20Close%20Eye"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/founding-member/checkout"
                 style={{ display: 'block', background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '13px 20px', fontSize: 15, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}
               >
                 Become a Founding Member →
-              </a>
+              </Link>
             </div>
           </div>
         </>
