@@ -204,11 +204,15 @@ function HomeAskWidget() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 800, color: '#0E2A1F' }}>
           <Logo className="w-4 h-4" />
-          Or, ask us anything — free
+          Ask about your parent's health — free
         </div>
-        <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: '#2c6b43', background: '#eaf5ee', border: '1px solid #cfe6d7', padding: '4px 9px', borderRadius: 999 }}>
+        <button
+          type="button"
+          onClick={() => { inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); inputRef.current?.focus() }}
+          style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: '#2c6b43', background: '#eaf5ee', border: '1px solid #cfe6d7', padding: '4px 9px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit' }}
+        >
           Try now
-        </span>
+        </button>
       </div>
       <p style={{ fontSize: 12.5, color: '#5c6b62', marginBottom: 13 }}>
         A health question about your parent? Ask Close Eye, guided by our medical team.
