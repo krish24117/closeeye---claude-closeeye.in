@@ -449,16 +449,16 @@
   position: fixed;
   bottom: 0; left: 0; right: 0;
   z-index: 500;
-  background: var(--white);
-  border-top: 1px solid var(--cream-dark);
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  background: rgba(255,255,255,0.96);
+  border-top: 0.5px solid rgba(0,0,0,0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding-bottom: env(safe-area-inset-bottom, 8px);
 }
 .ce-bottom-nav-inner {
   display: flex;
-  height: 60px;
-  max-width: 480px;
-  margin: 0 auto;
+  height: 78px;
+  align-items: stretch;
 }
 .ce-bottom-nav-item {
   flex: 1;
@@ -466,29 +466,27 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
   text-decoration: none;
-  color: var(--gray-mid);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  transition: color 200ms ease;
+  color: #8E8E93;
+  transition: color 180ms ease;
   cursor: pointer;
   background: none;
   border: none;
   font-family: inherit;
   -webkit-tap-highlight-color: transparent;
+  padding: 0;
+  min-width: 0;
 }
-.ce-bottom-nav-item:hover,
-.ce-bottom-nav-item:active { color: var(--forest); }
-.ce-bottom-nav-icon {
-  font-size: 20px;
+.ce-bottom-nav-item:active { opacity: 0.6; }
+.ce-bottom-nav-item.is-active { color: var(--forest); }
+.ce-bottom-nav-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
   line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px; height: 24px;
+  color: inherit;
 }
 
 /* ---- Hero ---- */
@@ -1050,7 +1048,7 @@
   .ce-vision-grid { grid-template-columns: 1fr; }
   .ce-bottom-nav { display: flex; }
   .ce-sticky-cta { display: block; }
-  .ce-footer { padding: 48px 24px calc(60px + env(safe-area-inset-bottom, 0px) + 64px + 24px); }
+  .ce-footer { padding: 48px 24px calc(78px + env(safe-area-inset-bottom, 0px) + 64px + 24px); }
   /* Raise the floating WA button above the sticky CTA + bottom nav */
   .ce-wa-float { bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 64px + 12px); right: 16px; }
 
@@ -1610,11 +1608,7 @@
 }
 .ce-btn-forest-ghost:hover { background: rgba(250,247,242,.07); border-color: rgba(250,247,242,.6); }
 
-/* Bottom nav — Ask tab highlighted */
-.ce-bottom-nav-item-ask { background: var(--forest); border-radius: 12px; padding: 6px 4px; }
-.ce-bottom-nav-item-ask .ce-bottom-nav-icon { color: var(--sage) !important; }
-.ce-bottom-nav-item-ask .ce-bottom-nav-label { color: var(--sage) !important; }
-.ce-bottom-nav-label { font-size: inherit; }
+/* ce-bottom-nav-label defined above in base nav block */
 
 /* Responsive — tablet */
 @media (max-width: 1024px) {

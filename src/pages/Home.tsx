@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Check, Menu, X, ArrowRight, Stethoscope, User, Send, Loader2, MessageCircle, ShieldCheck, PhoneCall, Lock, UserCheck, House, Building2, Globe, HeartHandshake, Bell, LayoutGrid } from 'lucide-react'
+import { Check, Menu, X, ArrowRight, Stethoscope, User, Send, Loader2, MessageCircle, ShieldCheck, PhoneCall, Lock, UserCheck, House, Home, Building2, Globe, HeartHandshake, ClipboardList } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/ui/Logo'
 import { useAuth } from '@/lib/auth-context'
@@ -1111,24 +1111,24 @@ export function HomePage() {
       {!menuOpen && (
         <nav className="ce-bottom-nav" aria-label="Quick navigation">
           <div className="ce-bottom-nav-inner">
-            <Link to="/" className="ce-bottom-nav-item">
-              <span className="ce-bottom-nav-icon"><House size={20} strokeWidth={2} /></span>
+            <Link to="/" className={`ce-bottom-nav-item${location.pathname === '/' ? ' is-active' : ''}`}>
+              <Home size={24} strokeWidth={1.8} />
               <span className="ce-bottom-nav-label">Home</span>
             </Link>
-            <a href="#ask" className="ce-bottom-nav-item ce-bottom-nav-item-ask">
-              <span className="ce-bottom-nav-icon"><MessageCircle size={20} strokeWidth={2} /></span>
+            <a href="#ask" className="ce-bottom-nav-item">
+              <MessageCircle size={24} strokeWidth={1.8} />
               <span className="ce-bottom-nav-label">Ask</span>
             </a>
-            <Link to="/services" className="ce-bottom-nav-item">
-              <span className="ce-bottom-nav-icon"><LayoutGrid size={20} strokeWidth={2} /></span>
+            <Link to="/services" className={`ce-bottom-nav-item${location.pathname === '/services' ? ' is-active' : ''}`}>
+              <HeartHandshake size={24} strokeWidth={1.8} />
               <span className="ce-bottom-nav-label">Services</span>
             </Link>
             <a href="#wa-report" className="ce-bottom-nav-item">
-              <span className="ce-bottom-nav-icon"><Bell size={20} strokeWidth={2} /></span>
+              <ClipboardList size={24} strokeWidth={1.8} />
               <span className="ce-bottom-nav-label">Updates</span>
             </a>
-            <Link to="/auth" className="ce-bottom-nav-item">
-              <span className="ce-bottom-nav-icon"><User size={22} /></span>
+            <Link to="/auth" className={`ce-bottom-nav-item${location.pathname.startsWith('/auth') || location.pathname.startsWith('/dashboard') ? ' is-active' : ''}`}>
+              <User size={24} strokeWidth={1.8} />
               <span className="ce-bottom-nav-label">Profile</span>
             </Link>
           </div>
