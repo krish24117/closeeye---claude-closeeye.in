@@ -14,10 +14,10 @@
 //      there is no user — this is the free public hook.
 
 const AMBULANCE_NUMBER = Deno.env.get("CLOSEEYE_AMBULANCE_NUMBER") ?? "108";
-const ALLOWED_ORIGIN = Deno.env.get("CLOSEEYE_ALLOWED_ORIGIN") ?? "*";
 
+// Public endpoint — all browser origins must be allowed so www. and non-www both work.
 const CORS = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
