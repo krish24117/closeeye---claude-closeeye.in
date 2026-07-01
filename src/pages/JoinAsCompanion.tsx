@@ -241,11 +241,12 @@ export function JoinAsCompanionPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--cream)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--cream)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       {/* ── Sticky header ───────────────────────────────────── */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 10, background: 'var(--white)',
-        borderBottom: '0.5px solid var(--gray-light)', padding: '14px 20px',
+        borderBottom: '0.5px solid var(--gray-light)',
+        padding: '14px 20px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
@@ -275,7 +276,7 @@ export function JoinAsCompanionPage() {
       </header>
 
       {/* ── Form container ──────────────────────────────────── */}
-      <div style={{ maxWidth: 520, margin: '0 auto', padding: '28px 20px' }}>
+      <div style={{ maxWidth: 520, margin: '0 auto', padding: '28px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 40px)' }}>
 
         {/* STEP 1 ── About you */}
         {step === 1 && (
