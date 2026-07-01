@@ -10,6 +10,13 @@ import {
 
 /* ─── helpers ─────────────────────────────────────────────────────── */
 
+function medsToText(meds?: any): string[] {
+  if (!Array.isArray(meds)) return []
+  return meds.map((m: any) =>
+    typeof m === 'string' ? m : [m?.name, m?.timing || m?.dose].filter(Boolean).join(' ')
+  ).filter(Boolean)
+}
+
 function waLink(number: string | null, name: string | null, num: number | null): string {
   if (!number) return 'https://wa.me/'
   const digits = number.replace(/\D/g, '')
@@ -43,10 +50,10 @@ interface ElderProfileRow {
   id: string
   name: string | null
   age: number | null
-  conditions: string | null
-  medications: string | null
+  medical_conditions: string | null
+  current_medications: any
   doctor_name: string | null
-  notes: string | null
+  continuity_notes: string | null
 }
 
 interface MembershipRow {
@@ -232,7 +239,7 @@ export function AdminFoundingMemberDetail() {
       if (loIds.length) {
         const { data } = await supabase
           .from('elder_profiles')
-          .select('id, loved_one_id, name, age, conditions, medications, doctor_name, notes')
+          .select('id, loved_one_id, name, age, medical_conditions, current_medications, doctor_name, continuity_notes')
           .in('loved_one_id', loIds)
         elderProfiles = data || []
       }
@@ -327,10 +334,10 @@ export function AdminFoundingMemberDetail() {
         <Card>
           <div className="adm-card-head"><span className="adm-card-title">Elder profile</span></div>
           <DetailTable rows={[
-            ['Conditions',  ep.conditions  || '—'],
-            ['Medications', ep.medications || '—'],
+            ['Conditions',  ep.medical_conditions || '—'],
+            ['Medications', medsToText(ep.current_medications).join(', ') || '—'],
             ['Doctor',      ep.doctor_name || '—'],
-            ['Notes',       ep.notes       || '—'],
+            ['Notes',       ep.continuity_notes || '—'],
           ]} />
         </Card>
       ) : lo ? (
