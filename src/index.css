@@ -741,14 +741,15 @@
   .ce-nav-center, .ce-nav-textlink, .ce-nav-register { display: none; }
   .ce-hamburger { display: inline-flex; }
 
-  .ce-hero { padding: 80px 24px; min-height: auto; gap: 40px; }
+  /* padding-top uses env(safe-area-inset-top) so the top feature row clears
+     the notch on iPhones; max(24px,…) keeps a minimum gap on non-notched devices. */
+  .ce-hero { padding: max(24px, env(safe-area-inset-top, 0px)) 24px 80px; min-height: auto; gap: 40px; }
 
-  /* Phone mockup: fit all messages without internal scroll.
-     82vh covers the frame; min(500px,82vh) prevents overflow on tiny screens.
-     overflow-y: visible means no clipping — all report lines show in one view. */
+  /* Phone mockup: 78vh cap keeps the frame inside the viewport with breathing
+     room above and below; chat scrolls internally only when content exceeds cap. */
   .ce-phone-wrap { width: min(300px, 100%); margin: 0 auto; }
-  .ce-phone { max-height: min(500px, 82vh); }
-  .ce-wa-chat { overflow-y: visible; }
+  .ce-phone { max-height: 78vh; }
+  .ce-wa-chat { overflow-y: auto; }
   .ce-section { padding: 64px 24px; }
   .ce-footer { padding: 48px 24px 24px; }
 
