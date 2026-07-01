@@ -590,6 +590,8 @@ export function HomePage() {
         </div>
       </div>
 
+      <main>
+
       {/* ── LAUNCH BAND ─────────────────────────────────────────── */}
       <div style={{
         background: 'var(--forest)', color: '#fff',
@@ -950,6 +952,8 @@ export function HomePage() {
           <p className="ce-cta-reassure">No spam. No commitment. We respond within 2 hours.</p>
         </div>
       </section>
+
+      </main>
 
       {/* ── FOOTER ───────────────────────────────────────────────── */}
       <footer className="ce-footer">

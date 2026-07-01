@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "https://www.closeeye.in",
+      "localStorage": [
+        {
+          "name": "sb-kghwmiriboavmyswcqnr-auth-token",
+          "value": "{\"access_token\":\"eyJhbGciOiJFUzI1NiIsImtpZCI6IjgyMjllYTdhLTdjZmMtNGIyNS1iM2RiLTBiMjUxZjM3MzAxYiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2tnaHdtaXJpYm9hdm15c3djcW5yLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI3YTljNTg5Ny1mOWUyLTQxYWItYjFmMy05YjRjZjgwZjkzYTQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgyODU0OTYyLCJpYXQiOjE3ODI4NTEzNjIsImVtYWlsIjoic2VlZC1mYW1pbHlAY2xvc2VleWUudGVzdCIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnsiZnVsbF9uYW1lIjoiU2VlZCBGYW1pbHkifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4Mjg1MTM2Mn1dLCJzZXNzaW9uX2lkIjoiYmE2MmUyOTYtNDgyMy00N2Y5LWJmMWYtNmU1YzZiNmM2ZjUwIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.rnn9hksucT-Fe1ccFk5BFJUMwkrjCuD0lEPZ5HkHu7dQ8sK52w2KbOMRjUr2ugrQgM3Inlq-f3JoTtI8Rym8eA\",\"token_type\":\"bearer\",\"expires_in\":3600,\"expires_at\":1782854962,\"refresh_token\":\"2qztdl46kzbn\",\"user\":{\"id\":\"7a9c5897-f9e2-41ab-b1f3-9b4cf80f93a4\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"seed-family@closeeye.test\",\"email_confirmed_at\":\"2026-06-30T20:01:30.201331Z\",\"phone\":\"\",\"confirmed_at\":\"2026-06-30T20:01:30.201331Z\",\"last_sign_in_at\":\"2026-06-30T20:29:22.708491416Z\",\"app_metadata\":{\"provider\":\"email\",\"providers\":[\"email\"]},\"user_metadata\":{\"full_name\":\"Seed Family\"},\"identities\":[],\"created_at\":\"2026-06-17T03:15:18.290752Z\",\"updated_at\":\"2026-06-30T20:29:22.733611Z\",\"is_anonymous\":false},\"weak_password\":null}"
+        }
+      ]
+    }
+  ]
+}

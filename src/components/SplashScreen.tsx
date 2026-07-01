@@ -123,7 +123,9 @@ export function SplashScreen() {
         )}
 
         {/* Logo mark */}
-        <img
+        <picture>
+          <source srcSet="/logo-mark.webp" type="image/webp" />
+          <img
           src="/logo-mark.png"
           alt=""
           width={128}
@@ -144,6 +146,7 @@ export function SplashScreen() {
                 }),
           }}
         />
+        </picture>
 
         {/* Wordmark */}
         <p style={{
