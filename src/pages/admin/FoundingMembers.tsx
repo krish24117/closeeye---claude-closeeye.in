@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { TbArrowLeft, TbBrandWhatsapp } from 'react-icons/tb'
+import { ArrowLeft, MessageCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
   Avatar, Badge, Card, PageHeader, EmptyState, ErrorBox, Skeleton,
@@ -194,7 +194,7 @@ export function AdminFoundingMembers() {
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <a href={waLink(m.whatsapp_number, m.full_name, m.founding_number)} target="_blank" rel="noopener noreferrer"
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#25D366', color: '#fff', borderRadius: 100, padding: '8px 14px', fontSize: 13, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
-                    <TbBrandWhatsapp size={15} /> Message
+                    <MessageCircle size={15} /> Message
                   </a>
                   <button onClick={() => navigate(`/admin/founding-members/${m.id}`)}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--cream)', border: '0.5px solid var(--gray-light)', color: 'var(--forest)', borderRadius: 100, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
@@ -261,7 +261,7 @@ export function AdminFoundingMemberDetail() {
   const backBtn = (
     <button onClick={() => navigate('/admin/founding-members')}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--gray-mid)', fontSize: 13, cursor: 'pointer', marginBottom: 12, padding: 0 }}>
-      <TbArrowLeft size={16} /> Founding Members
+      <ArrowLeft size={16} /> Founding Members
     </button>
   )
 
@@ -308,7 +308,7 @@ export function AdminFoundingMemberDetail() {
         <div style={{ marginTop: 14 }}>
           <a href={waLink(data.whatsapp_number, data.full_name, data.founding_number)} target="_blank" rel="noopener noreferrer"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#25D366', color: '#fff', borderRadius: 100, padding: '8px 16px', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-            <TbBrandWhatsapp size={15} /> Message on WhatsApp
+            <MessageCircle size={15} /> Message on WhatsApp
           </a>
         </div>
       </Card>

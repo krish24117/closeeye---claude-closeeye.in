@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  TbClock, TbArrowRight, TbFileText, TbCalendarOff, TbPin, TbHistory, TbPill,
-} from 'react-icons/tb'
+  Clock, ArrowRight, FileText, CalendarOff, Pin, History, Pill,
+} from 'lucide-react'
 import { format, differenceInMinutes, startOfMonth, endOfMonth } from 'date-fns'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -78,9 +78,9 @@ function VisitCard({ b, elder }: { b: Booking; elder: Elder | undefined }) {
           <>
             <div className="h-px bg-[#E5E5EA] my-3" />
             <p className="text-[10px] font-semibold text-[#6E6E73] uppercase tracking-[0.06em] mb-1.5 flex items-center gap-1.5">
-              {note.kind === 'pinned' ? <TbPin size={12} className="text-[#F59E0B]" />
-                : note.kind === 'continuity' ? <TbHistory size={12} className="text-[#16a34a]" />
-                : <TbPill size={12} className="text-[#0E2A1F]" />}
+              {note.kind === 'pinned' ? <Pin size={12} className="text-[#F59E0B]" />
+                : note.kind === 'continuity' ? <History size={12} className="text-[#16a34a]" />
+                : <Pill size={12} className="text-[#0E2A1F]" />}
               Pre-visit note
             </p>
             <p
@@ -107,7 +107,7 @@ function ActionButton({ b }: { b: Booking }) {
     return (
       <Link to={`/companion/visit/${b.id}`}
         className="mt-3 flex items-center justify-center gap-2 w-full min-h-[48px] rounded-xl bg-[#A8D5B5] text-[#0E2A1F] text-[14px] font-semibold">
-        Continue visit <TbArrowRight size={17} />
+        Continue visit <ArrowRight size={17} />
       </Link>
     )
   }
@@ -115,14 +115,14 @@ function ActionButton({ b }: { b: Booking }) {
     return (
       <Link to="/companion/visits"
         className="mt-3 flex items-center justify-center gap-2 w-full min-h-[48px] rounded-xl border-[0.5px] border-[#E5E5EA] text-[#6E6E73] text-[14px] font-semibold">
-        <TbFileText size={16} /> View report
+        <FileText size={16} /> View report
       </Link>
     )
   }
   return (
     <Link to={`/companion/visit/${b.id}`}
       className="mt-3 flex items-center justify-center gap-2 w-full min-h-[48px] rounded-xl bg-[#0E2A1F] text-white text-[14px] font-semibold">
-      Start visit <TbArrowRight size={17} />
+      Start visit <ArrowRight size={17} />
     </Link>
   )
 }
@@ -253,7 +253,7 @@ export function CompanionHome() {
       {/* ── Next visit alert ──────────────────────────────────────────── */}
       {nextSoon && (
         <div className="mx-4 mt-3 bg-[#A8D5B5]/15 border border-[#A8D5B5] rounded-[14px] px-4 py-3.5 flex items-center gap-3">
-          <TbClock size={20} className="text-[#0E2A1F] flex-shrink-0" />
+          <Clock size={20} className="text-[#0E2A1F] flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-[13px] font-bold text-[#0E2A1F]">
               Next visit in {nextSoon.mins < 1 ? 'under a minute' : `${nextSoon.mins} minute${nextSoon.mins === 1 ? '' : 's'}`}
@@ -288,7 +288,7 @@ export function CompanionHome() {
         </div>
       ) : todayTotal === 0 ? (
         <div className="mx-4 mt-12 flex flex-col items-center text-center">
-          <TbCalendarOff size={48} className="text-[#E5E5EA] mb-4" />
+          <CalendarOff size={48} className="text-[#E5E5EA] mb-4" />
           <p className="text-[18px] font-bold text-[#1D1D1F]">No visits today</p>
           <p className="text-[14px] text-[#6E6E73] mt-1.5 max-w-[240px]">Your schedule is clear. Enjoy your day.</p>
         </div>

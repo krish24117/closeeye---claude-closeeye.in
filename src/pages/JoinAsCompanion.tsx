@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { TbArrowLeft, TbCheck, TbUpload, TbLoader2 } from 'react-icons/tb'
+import { ArrowLeft, Check, Upload, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/Toast'
 
@@ -99,8 +99,8 @@ function UploadTile({ label, file, onPick }: { label: string; file: File | null;
         display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',
       }}>
         {file
-          ? <TbCheck size={22} color="var(--forest)" style={{ flexShrink: 0 }} />
-          : <TbUpload size={22} color="var(--gray-mid)" style={{ flexShrink: 0 }} />}
+          ? <Check size={22} color="var(--forest)" style={{ flexShrink: 0 }} />
+          : <Upload size={22} color="var(--gray-mid)" style={{ flexShrink: 0 }} />}
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--black)' }}>{label}</div>
           <div style={{ fontSize: 12, color: file ? 'var(--forest)' : 'var(--gray-mid)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -223,7 +223,7 @@ export function JoinAsCompanionPage() {
       <div style={{ minHeight: '100vh', background: 'var(--cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 20px' }}>
         <div style={{ maxWidth: 420, width: '100%', background: 'var(--white)', borderRadius: 'var(--radius-card)', boxShadow: 'var(--shadow-card)', padding: '36px 28px', textAlign: 'center' }}>
           <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--sage)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-            <TbCheck size={38} color="var(--forest)" strokeWidth={3} />
+            <Check size={38} color="var(--forest)" strokeWidth={3} />
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--black)', margin: '0 0 12px' }}>Application received 🌿</h1>
           <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--gray-mid)', margin: '0 0 28px' }}>
@@ -252,7 +252,7 @@ export function JoinAsCompanionPage() {
           <button type="button" onClick={back} aria-label="Go back" style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: 'var(--black)',
           }}>
-            <TbArrowLeft size={22} />
+            <ArrowLeft size={22} />
           </button>
           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--black)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             Join as a companion
@@ -478,7 +478,7 @@ export function JoinAsCompanionPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             }}>
               {submitting
-                ? <><TbLoader2 size={18} className="ce-spin" style={{ animation: 'spin 1s linear infinite' }} /> Submitting…</>
+                ? <><Loader2 size={18} className="ce-spin" style={{ animation: 'spin 1s linear infinite' }} /> Submitting…</>
                 : 'Submit application'}
             </button>
           )}

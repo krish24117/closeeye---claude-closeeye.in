@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Loader2, ArrowRight, Siren, ShieldCheck, Clock, X, HeartHandshake } from 'lucide-react'
-import { FaWhatsapp } from 'react-icons/fa'
+import { Check, Loader2, ArrowRight, Siren, ShieldCheck, Clock, X, HeartHandshake, MessageCircle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { loadRazorpayScript } from '@/lib/razorpay'
@@ -228,7 +227,7 @@ export function ServicesPage() {
       <section className="ce-trust-strip">
         <span><ShieldCheck size={16} /> Verified companions</span>
         <span><Clock size={16} /> Report within the hour</span>
-        <span><FaWhatsapp size={16} /> Updates on WhatsApp</span>
+        <span><MessageCircle size={16} strokeWidth={2} /> Updates on WhatsApp</span>
       </section>
 
       <p className="ce-pp-foot">

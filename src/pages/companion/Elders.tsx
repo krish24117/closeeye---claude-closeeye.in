@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import {
-  TbChevronRight, TbHistory, TbCalendar, TbWheelchair, TbArrowLeft,
-  TbHeartRateMonitor, TbPill, TbHeart, TbPhoneCall, TbPhone,
-} from 'react-icons/tb'
+  ChevronRight, History, Calendar, Accessibility, ArrowLeft,
+  Activity, Pill, Heart, PhoneCall, Phone,
+} from 'lucide-react'
 import { differenceInDays, format } from 'date-fns'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -103,7 +103,7 @@ export function CompanionElders() {
         <div className="px-4 space-y-2.5">{[0, 1, 2].map(i => <div key={i} className="skeleton h-[104px] rounded-2xl" />)}</div>
       ) : rows.length === 0 ? (
         <div className="flex flex-col items-center text-center px-6 py-20">
-          <TbWheelchair size={48} className="text-[#E5E5EA] mb-4" />
+          <Accessibility size={48} className="text-[#E5E5EA] mb-4" />
           <p className="text-[18px] font-bold text-[#1D1D1F]">No elders assigned yet</p>
           <p className="text-[14px] text-[#6E6E73] mt-1.5 max-w-[260px]">
             Your elder profiles will appear here once visits are scheduled.
@@ -121,15 +121,15 @@ export function CompanionElders() {
                   {[r.age ? `${r.age} yrs` : null, r.address || r.city].filter(Boolean).join(' · ') || '—'}
                 </p>
               </div>
-              <TbChevronRight size={16} className="text-[#6E6E73] flex-shrink-0" />
+              <ChevronRight size={16} className="text-[#6E6E73] flex-shrink-0" />
             </div>
             <div className="h-px bg-[#E5E5EA] my-3" />
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-[12px] text-[#6E6E73]">
-                <TbHistory size={13} /> Last visit: {lastLabel(r.lastVisit)}
+                <History size={13} /> Last visit: {lastLabel(r.lastVisit)}
               </span>
               <span className="flex items-center gap-1.5 text-[12px] font-semibold text-[#0E2A1F]">
-                <TbCalendar size={13} /> {r.nextVisit ? `Next: ${format(new Date(r.nextVisit), 'EEE d MMM')}` : 'Not scheduled'}
+                <Calendar size={13} /> {r.nextVisit ? `Next: ${format(new Date(r.nextVisit), 'EEE d MMM')}` : 'Not scheduled'}
               </span>
             </div>
           </Link>
@@ -198,7 +198,7 @@ export function CompanionElderDetail() {
       {/* Header card */}
       <div className="bg-[#0E2A1F] px-4 pt-4 pb-6">
         <button onClick={() => navigate('/companion/elders')} className="flex items-center gap-1.5 text-white/70 text-[13px] mb-3">
-          <TbArrowLeft size={16} /> Elders
+          <ArrowLeft size={16} /> Elders
         </button>
         <div className="flex items-center gap-3.5">
           <div className="w-[52px] h-[52px] rounded-full bg-[#A8D5B5]/15 border-2 border-[#A8D5B5] flex items-center justify-center flex-shrink-0">
@@ -214,7 +214,7 @@ export function CompanionElderDetail() {
 
       <div className="px-4 py-3 space-y-2.5">
         {/* Health info */}
-        <Section icon={<TbHeartRateMonitor size={16} className="text-[#0E2A1F]" />} title="Health info">
+        <Section icon={<Activity size={16} className="text-[#0E2A1F]" />} title="Health info">
           <InfoRow label="Medical condition" value={conditions} />
           <InfoRow label="Allergies" value={elder?.allergies} />
           <InfoRow label="Doctor" value={elder?.doctor_name} />
@@ -228,7 +228,7 @@ export function CompanionElderDetail() {
 
         {/* Medicines */}
         {meds.length > 0 && (
-          <Section icon={<TbPill size={16} className="text-[#0E2A1F]" />} title="Medicines">
+          <Section icon={<Pill size={16} className="text-[#0E2A1F]" />} title="Medicines">
             {meds.map((m, i) => (
               <div key={i} className="flex items-center justify-between py-2 border-b-[0.5px] border-[#F5F5F5] last:border-0">
                 <span className="text-[14px] font-medium text-[#1D1D1F]">{m.name}{m.dosage ? ` · ${m.dosage}` : ''}</span>
@@ -240,7 +240,7 @@ export function CompanionElderDetail() {
 
         {/* Preferences */}
         {(prefs.length > 0 || elder?.things_to_avoid) && (
-          <Section icon={<TbHeart size={16} className="text-[#0E2A1F]" />} title="Preferences">
+          <Section icon={<Heart size={16} className="text-[#0E2A1F]" />} title="Preferences">
             {prefs.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
                 {prefs.flatMap(p => String(p).split(',')).map(p => p.trim()).filter(Boolean).map((p, i) => (
@@ -263,7 +263,7 @@ export function CompanionElderDetail() {
 
         {/* Emergency */}
         {primary && (
-          <Section icon={<TbPhoneCall size={16} className="text-[#EF4444]" />} title="Emergency contacts">
+          <Section icon={<PhoneCall size={16} className="text-[#EF4444]" />} title="Emergency contacts">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[14px] font-semibold text-[#1D1D1F]">{primary.name}</p>
@@ -272,7 +272,7 @@ export function CompanionElderDetail() {
               </div>
               {primary.phone && (
                 <a href={`tel:${primary.phone}`} className="bg-[#0E2A1F] text-white rounded-full px-4 py-2 text-[12px] font-semibold flex items-center gap-1.5">
-                  <TbPhone size={14} /> Call
+                  <Phone size={14} /> Call
                 </a>
               )}
             </div>
@@ -280,7 +280,7 @@ export function CompanionElderDetail() {
         )}
 
         {/* Visit history */}
-        <Section icon={<TbHistory size={16} className="text-[#0E2A1F]" />} title="Visit history">
+        <Section icon={<History size={16} className="text-[#0E2A1F]" />} title="Visit history">
           {visits.length === 0 ? (
             <p className="text-[13px] text-[#6E6E73] py-1">No visits recorded with this elder yet.</p>
           ) : (

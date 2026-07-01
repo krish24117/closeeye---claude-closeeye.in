@@ -1,15 +1,15 @@
 import { Link } from 'react-router-dom'
 import { Logo } from '@/components/ui/Logo'
-import { FaInstagram, FaLinkedin, FaFacebook, FaWhatsapp } from 'react-icons/fa'
+import { Instagram, Linkedin, Facebook, MessageCircle } from 'lucide-react'
 
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '919000221261'
 const WHATSAPP_MESSAGE = "Hi, I'm interested in Close Eye companion visits for my parents"
 
 const SOCIAL = [
-  { icon: FaInstagram, href: 'https://www.instagram.com/closeeyeglobal/',          label: 'Instagram' },
-  { icon: FaLinkedin,  href: 'https://www.linkedin.com/company/closeeye/',         label: 'LinkedIn'  },
-  { icon: FaFacebook,  href: 'https://www.facebook.com/closeeyeglobal',            label: 'Facebook'  },
-  { icon: FaWhatsapp,  href: `https://wa.me/${WHATSAPP_NUMBER}`,                   label: 'WhatsApp'  },
+  { icon: Instagram,    href: 'https://www.instagram.com/closeeyeglobal/',          label: 'Instagram' },
+  { icon: Linkedin,     href: 'https://www.linkedin.com/company/closeeye/',         label: 'LinkedIn'  },
+  { icon: Facebook,     href: 'https://www.facebook.com/closeeyeglobal',            label: 'Facebook'  },
+  { icon: MessageCircle, href: `https://wa.me/${WHATSAPP_NUMBER}`,                  label: 'WhatsApp'  },
 ]
 
 export function Footer() {

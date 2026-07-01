@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { TbDownload } from 'react-icons/tb'
+import { Download } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
   Card, StatCard, Badge, EmptyState, ErrorBox, Skeleton,
@@ -170,7 +170,7 @@ export function AdminRevenue() {
                       <td><Badge tone={pt.tone}>{pt.label}</Badge></td>
                       <td>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--gray-mid)', cursor: 'not-allowed' }}>
-                          <TbDownload size={14} /> Download
+                          <Download size={14} /> Download
                         </span>
                       </td>
                     </tr>

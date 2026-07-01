@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { TbArrowLeft, TbBrandWhatsapp, TbCalendarPlus, TbFileText } from 'react-icons/tb'
+import { ArrowLeft, MessageCircle, CalendarPlus, FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
   Card, Badge, Avatar, EmptyState, ErrorBox, Skeleton,
@@ -306,7 +306,7 @@ export function AdminFamilyDetail() {
     return (
       <>
         <Link className="adm-link" to="/admin/families" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 16 }}>
-          <TbArrowLeft size={16} /> Families
+          <ArrowLeft size={16} /> Families
         </Link>
         <Card><EmptyState title="Family not found" sub="This family may have been removed." /></Card>
       </>
@@ -321,7 +321,7 @@ export function AdminFamilyDetail() {
   return (
     <>
       <Link className="adm-link" to="/admin/families" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 16 }}>
-        <TbArrowLeft size={16} /> Families
+        <ArrowLeft size={16} /> Families
       </Link>
 
       {/* Header */}
@@ -343,14 +343,14 @@ export function AdminFamilyDetail() {
           {waDigits && (
             <a className="adm-btn adm-btn-primary" href={`https://wa.me/${waDigits}`} target="_blank" rel="noreferrer"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <TbBrandWhatsapp size={16} /> Send WhatsApp
+              <MessageCircle size={16} /> Send WhatsApp
             </a>
           )}
           <Link className="adm-btn" to="/admin/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <TbCalendarPlus size={16} /> Schedule visit
+            <CalendarPlus size={16} /> Schedule visit
           </Link>
           <Link className="adm-btn" to="/admin/reports" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <TbFileText size={16} /> View reports
+            <FileText size={16} /> View reports
           </Link>
         </div>
       </Card>

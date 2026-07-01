@@ -1,23 +1,23 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  TbCheck,
-  TbEye,
-  TbPhone,
-  TbUsers,
-  TbShieldCheck,
-  TbCertificate,
-  TbUserCheck,
-  TbRosetteDiscountCheck,
-  TbId,
-  TbMapPin,
-  TbHeartHandshake,
-  TbStethoscope,
-  TbEmergencyBed,
-  TbFileReport,
-  TbMessageCircle,
-  TbPlus,
-} from 'react-icons/tb'
+  Check,
+  Eye,
+  Phone,
+  Users,
+  ShieldCheck,
+  Award,
+  UserCheck,
+  BadgeCheck,
+  Contact,
+  MapPin,
+  HeartHandshake,
+  Stethoscope,
+  Hospital,
+  FileText,
+  MessageCircle,
+  Plus,
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 const STAGES = [
@@ -25,71 +25,71 @@ const STAGES = [
     title: 'Online application',
     description:
       'Every applicant fills a detailed form covering their background, motivation, and why they want to work with elders. We read every application personally — not a bot, not a filter.',
-    PillIcon: TbEye,
+    PillIcon: Eye,
     pill: 'Read personally by Krishna and Aishwarya',
   },
   {
     title: 'Phone screening with Aishwarya',
     description:
       'A 30-minute call with our Chief of Care. We assess compassion, reliability, and genuine motivation. The majority of applications stop at this stage.',
-    PillIcon: TbPhone,
+    PillIcon: Phone,
     pill: 'Conducted by co-founder Aishwarya',
   },
   {
     title: 'In-person interview',
     description:
       "Meet Krishna and Aishwarya face to face. Scenario-based conversations. Reference checks begin. We look for people who'd treat our own parents the way we would.",
-    PillIcon: TbUsers,
+    PillIcon: Users,
     pill: 'Both founders present',
   },
   {
     title: 'Background verification',
     description:
       'Police clearance certificate. Aadhaar verification. Address confirmation. Previous employer reference check. Every document verified before proceeding.',
-    PillIcon: TbShieldCheck,
+    PillIcon: ShieldCheck,
     pill: 'Government-verified identity and criminal record',
   },
   {
     title: 'Close Eye training — 3 days',
     description:
       'Elder care fundamentals. Health observation. Emergency protocols. WhatsApp reporting system. Training curriculum designed by our medical co-founder Dr. Sidharth.',
-    PillIcon: TbCertificate,
+    PillIcon: Award,
     pill: 'Curriculum by Dr. Sidharth, MBBS',
   },
   {
     title: 'Supervised visits — first 5',
     description:
       'Krishna accompanies the companion on their first five visits. We assess quality on every visit. Families give feedback after each one before the companion goes solo.',
-    PillIcon: TbUserCheck,
+    PillIcon: UserCheck,
     pill: 'Founder-supervised before independent visits',
   },
   {
     title: 'Close Eye certified ✓',
     description:
       'Only after clearing all seven stages does a companion receive certification and begin independent visits. The verified badge on every companion profile means they passed everything.',
-    PillIcon: TbRosetteDiscountCheck,
+    PillIcon: BadgeCheck,
     pill: 'Trusted to visit independently',
   },
 ]
 
 const CARRY = [
   {
-    Icon: TbId,
+    Icon: Contact,
     title: 'Aadhaar verified',
     desc: 'Government ID confirmed, photographed, and on file with Close Eye permanently.',
   },
   {
-    Icon: TbShieldCheck,
+    Icon: ShieldCheck,
     title: 'Police clearance',
     desc: 'No criminal record. Certificate verified and stored. Re-checked annually.',
   },
   {
-    Icon: TbMapPin,
+    Icon: MapPin,
     title: 'GPS on every visit',
     desc: 'Check-in timestamped and location recorded the moment companion arrives at the door.',
   },
   {
-    Icon: TbCertificate,
+    Icon: Award,
     title: 'Close Eye certified',
     desc: '3-day training completed, 5 supervised visits passed, and personally assessed by our founding team.',
   },
@@ -97,32 +97,32 @@ const CARRY = [
 
 const TRAINED = [
   {
-    Icon: TbHeartHandshake,
+    Icon: HeartHandshake,
     title: 'Elder dignity',
     body: 'How to treat every elder as a person with pride, stories, and preferences — not as a patient.',
   },
   {
-    Icon: TbStethoscope,
+    Icon: Stethoscope,
     title: 'Health observation',
     body: 'What signs to look for. Medicine checking. When to escalate and who to call.',
   },
   {
-    Icon: TbEmergencyBed,
+    Icon: Hospital,
     title: 'Emergency response',
     body: 'Falls, sudden illness, chest pain. Exactly what to do in every scenario.',
   },
   {
-    Icon: TbFileReport,
+    Icon: FileText,
     title: 'Report writing',
     body: 'How to write a WhatsApp report that makes an NRI family feel fully informed and reassured.',
   },
   {
-    Icon: TbMessageCircle,
+    Icon: MessageCircle,
     title: 'Family communication',
     body: 'What to share and how to share it with empathy, accuracy, and genuine care.',
   },
   {
-    Icon: TbMapPin,
+    Icon: MapPin,
     title: 'Safety protocols',
     body: 'GPS check-in. Photo documentation. Escalation chain. Every visit tracked and timestamped.',
   },
@@ -316,7 +316,7 @@ export function CompanionsPage() {
                       zIndex: 1,
                     }}
                   >
-                    {isSeven ? <TbCheck size={20} style={{ color: 'var(--forest)' }} /> : i + 1}
+                    {isSeven ? <Check size={20} style={{ color: 'var(--forest)' }} /> : i + 1}
                   </div>
                   <div style={{ paddingTop: 8 }}>
                     <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--black)' }}>{stage.title}</div>
@@ -517,7 +517,7 @@ export function CompanionsPage() {
                       justifyContent: 'center',
                     }}
                   >
-                    <TbCheck size={12} style={{ color: 'var(--forest)' }} />
+                    <Check size={12} style={{ color: 'var(--forest)' }} />
                   </div>
                 </div>
                 <div>
@@ -642,7 +642,7 @@ export function CompanionsPage() {
                 padding: 22,
               }}
             >
-              <TbPlus size={36} style={{ color: 'var(--gray-mid)' }} />
+              <Plus size={36} style={{ color: 'var(--gray-mid)' }} />
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)', marginTop: 12 }}>
                 We are growing
               </div>

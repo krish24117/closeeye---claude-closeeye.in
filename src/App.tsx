@@ -2,11 +2,11 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { useEffect, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from '@/lib/auth-context'
 import { ToastProvider } from '@/components/ui/Toast'
+import { SplashScreen } from '@/components/SplashScreen'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { IOSInstallBanner } from '@/components/IOSInstallBanner'
-import { SplashScreen } from '@/components/SplashScreen'
 
 // Public pages — eagerly bundled (landing page must render without waiting for chunks)
 import { HomePage } from '@/pages/Home'
@@ -254,8 +254,8 @@ export default function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <SplashScreen />
       <BrowserRouter>
+        <SplashScreen />
         <ScrollToTop />
         <SEOManager />
         <Suspense fallback={<RouteSpinner />}>

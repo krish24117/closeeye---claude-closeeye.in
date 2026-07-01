@@ -2,7 +2,7 @@
 // otherwise the next upcoming visit, otherwise shows an empty state.
 import { useEffect, useState } from 'react'
 import { Navigate, Link } from 'react-router-dom'
-import { TbWalk, TbLoader2 } from 'react-icons/tb'
+import { PersonStanding, Loader2 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 
@@ -39,7 +39,7 @@ export function CompanionActiveVisit() {
   if (state === 'loading') {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-[#6E6E73]">
-        <TbLoader2 size={26} className="animate-spin text-[#0E2A1F]" />
+        <Loader2 size={26} className="animate-spin text-[#0E2A1F]" />
         <p className="text-sm mt-3">Finding your visit…</p>
       </div>
     )
@@ -47,7 +47,7 @@ export function CompanionActiveVisit() {
 
   return (
     <div className="flex flex-col items-center text-center px-6 py-24">
-      <TbWalk size={48} className="text-[#E5E5EA] mb-4" />
+      <PersonStanding size={48} className="text-[#E5E5EA] mb-4" />
       <p className="text-[18px] font-bold text-[#1D1D1F]">No active visit</p>
       <p className="text-[14px] text-[#6E6E73] mt-1.5 max-w-[240px]">
         You have no visit in progress or scheduled. Your next visit will appear here.

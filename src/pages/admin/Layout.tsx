@@ -1,11 +1,11 @@
 import { Outlet, NavLink, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import {
-  TbLayoutDashboard, TbWalk, TbMessageCircle, TbCalendar, TbClock, TbUsers,
-  TbBuildingCommunity, TbUserHeart, TbWheelchair, TbStethoscope, TbCash, TbReceipt,
-  TbCreditCard, TbClipboardText, TbFileText, TbDownload, TbSettings, TbSearch,
-  TbBell, TbMenu2, TbX, TbPlus, TbChevronRight, TbHome, TbStar,
-} from 'react-icons/tb'
+  LayoutDashboard, PersonStanding, MessageCircle, Calendar, Clock, Users,
+  Building2, HeartHandshake, Accessibility, Stethoscope, Banknote, Receipt,
+  CreditCard, ClipboardList, FileText, Download, Settings, Search,
+  Bell, Menu, X, Plus, ChevronRight, Home, Star,
+} from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/ui/Logo'
@@ -13,37 +13,37 @@ import {
   AdminContext, AdminRole, Avatar, timeAgo, inr, serviceLabel,
 } from './_shared'
 
-type NavItem = { to: string; icon: React.ComponentType<{ size?: number }>; label: string; badge?: 'pendingVisits' | 'unreviewedQueries'; badgeTone?: 'red' | 'amber'; end?: boolean }
+type NavItem = { to: string; icon: React.ComponentType<{ size?: number | string }>; label: string; badge?: 'pendingVisits' | 'unreviewedQueries'; badgeTone?: 'red' | 'amber'; end?: boolean }
 type NavSection = { label: string; items: NavItem[] }
 
 const SECTIONS: NavSection[] = [
   { label: 'Operations', items: [
-    { to: '/admin', icon: TbLayoutDashboard, label: 'Dashboard', end: true },
-    { to: '/admin/visits', icon: TbWalk, label: 'Visits', badge: 'pendingVisits', badgeTone: 'amber' },
-    { to: '/admin/queries', icon: TbMessageCircle, label: 'Health queries', badge: 'unreviewedQueries', badgeTone: 'red' },
-    { to: '/admin/bookings', icon: TbCalendar, label: 'Bookings' },
-    { to: '/admin/live-map', icon: TbClock, label: 'Schedules' },
+    { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
+    { to: '/admin/visits', icon: PersonStanding, label: 'Visits', badge: 'pendingVisits', badgeTone: 'amber' },
+    { to: '/admin/queries', icon: MessageCircle, label: 'Health queries', badge: 'unreviewedQueries', badgeTone: 'red' },
+    { to: '/admin/bookings', icon: Calendar, label: 'Bookings' },
+    { to: '/admin/live-map', icon: Clock, label: 'Schedules' },
   ] },
   { label: 'People', items: [
-    { to: '/admin/founding-members', icon: TbStar, label: 'Founding members' },
-    { to: '/admin/families', icon: TbUsers, label: 'Families' },
-    // { to: '/admin/societies', icon: TbBuildingCommunity, label: 'Societies' }, // disabled
-    { to: '/admin/companions', icon: TbUserHeart, label: 'Companions' },
-    { to: '/admin/elders', icon: TbWheelchair, label: 'Elders' },
-    { to: '/admin/doctors', icon: TbStethoscope, label: 'Doctors' },
+    { to: '/admin/founding-members', icon: Star, label: 'Founding members' },
+    { to: '/admin/families', icon: Users, label: 'Families' },
+    // { to: '/admin/societies', icon: Building2, label: 'Societies' }, // disabled
+    { to: '/admin/companions', icon: HeartHandshake, label: 'Companions' },
+    { to: '/admin/elders', icon: Accessibility, label: 'Elders' },
+    { to: '/admin/doctors', icon: Stethoscope, label: 'Doctors' },
   ] },
   { label: 'Finance', items: [
-    { to: '/admin/revenue', icon: TbCash, label: 'Revenue' },
-    { to: '/admin/payments', icon: TbReceipt, label: 'Payments' },
-    { to: '/admin/plans', icon: TbCreditCard, label: 'Plans' },
+    { to: '/admin/revenue', icon: Banknote, label: 'Revenue' },
+    { to: '/admin/payments', icon: Receipt, label: 'Payments' },
+    { to: '/admin/plans', icon: CreditCard, label: 'Plans' },
   ] },
   { label: 'Reports', items: [
-    { to: '/admin/reports', icon: TbClipboardText, label: 'Visit reports' },
-    { to: '/admin/health-reports', icon: TbFileText, label: 'Health reports' },
-    { to: '/admin/export', icon: TbDownload, label: 'Export data' },
+    { to: '/admin/reports', icon: ClipboardList, label: 'Visit reports' },
+    { to: '/admin/health-reports', icon: FileText, label: 'Health reports' },
+    { to: '/admin/export', icon: Download, label: 'Export data' },
   ] },
   { label: 'Settings', items: [
-    { to: '/admin/settings', icon: TbSettings, label: 'Settings' },
+    { to: '/admin/settings', icon: Settings, label: 'Settings' },
   ] },
 ]
 
@@ -173,7 +173,7 @@ export function AdminLayout() {
           <header className="adm-topbar">
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
               <button className="adm-hamburger" onClick={() => setOpen(o => !o)} aria-label="Menu">
-                {open ? <TbX size={22} /> : <TbMenu2 size={22} />}
+                {open ? <X size={22} /> : <Menu size={22} />}
               </button>
               <div style={{ minWidth: 0 }}>
                 <div className="adm-title">{meta.title}</div>
@@ -182,9 +182,9 @@ export function AdminLayout() {
             </div>
             <div className="adm-top-actions">
               <span className="adm-date">{today}</span>
-              <button className="adm-icon-btn" onClick={() => setSearchOpen(true)} aria-label="Search"><TbSearch size={18} /></button>
+              <button className="adm-icon-btn" onClick={() => setSearchOpen(true)} aria-label="Search"><Search size={18} /></button>
               <button className="adm-icon-btn" onClick={() => { setNotifOpen(true); setHasNotifs(false) }} aria-label="Notifications">
-                <TbBell size={18} />{hasNotifs && <span className="adm-dot" />}
+                <Bell size={18} />{hasNotifs && <span className="adm-dot" />}
               </button>
             </div>
           </header>
@@ -194,11 +194,11 @@ export function AdminLayout() {
 
         {/* Mobile bottom bar */}
         <nav className="adm-bottombar">
-          <NavLink to="/admin" end className={({ isActive }) => isActive ? 'is-active' : ''}><TbHome size={20} /> Home</NavLink>
-          <NavLink to="/admin/visits" className={({ isActive }) => isActive ? 'is-active' : ''}><TbWalk size={20} /> Visits</NavLink>
-          <NavLink to="/admin/queries" className={({ isActive }) => isActive ? 'is-active' : ''}><TbMessageCircle size={20} /> Queries</NavLink>
-          <NavLink to="/admin/families" className={({ isActive }) => isActive ? 'is-active' : ''}><TbUsers size={20} /> Families</NavLink>
-          <button onClick={() => setOpen(true)} style={{ flex: 1, background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, color: 'var(--gray-mid)', fontSize: 10, cursor: 'pointer' }}><TbMenu2 size={20} /> More</button>
+          <NavLink to="/admin" end className={({ isActive }) => isActive ? 'is-active' : ''}><Home size={20} /> Home</NavLink>
+          <NavLink to="/admin/visits" className={({ isActive }) => isActive ? 'is-active' : ''}><PersonStanding size={20} /> Visits</NavLink>
+          <NavLink to="/admin/queries" className={({ isActive }) => isActive ? 'is-active' : ''}><MessageCircle size={20} /> Queries</NavLink>
+          <NavLink to="/admin/families" className={({ isActive }) => isActive ? 'is-active' : ''}><Users size={20} /> Families</NavLink>
+          <button onClick={() => setOpen(true)} style={{ flex: 1, background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, color: 'var(--gray-mid)', fontSize: 10, cursor: 'pointer' }}><Menu size={20} /> More</button>
         </nav>
 
         {searchOpen && <GlobalSearch onClose={() => setSearchOpen(false)} navigate={navigate} />}
@@ -241,7 +241,7 @@ function GlobalSearch({ onClose, navigate }: { onClose: () => void; navigate: (t
     <div className="adm-search-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="adm-search-box">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', borderBottom: '0.5px solid var(--gray-light)' }}>
-          <TbSearch size={18} color="var(--gray-mid)" />
+          <Search size={18} color="var(--gray-mid)" />
           <input autoFocus className="adm-input" style={{ border: 'none', flex: 1, padding: 0, fontSize: 15 }}
             placeholder="Search families, elders, queries…" value={q} onChange={e => setQ(e.target.value)}
             onKeyDown={e => { if (e.key === 'Escape') onClose() }} />
@@ -296,7 +296,7 @@ function NotifPanel({ onClose, navigate }: { onClose: () => void; navigate: (to:
       <div className="adm-notif">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px', borderBottom: '0.5px solid var(--gray-light)' }}>
           <span style={{ fontSize: 15, fontWeight: 700 }}>Notifications</span>
-          <button className="adm-icon-btn" onClick={onClose}><TbX size={20} /></button>
+          <button className="adm-icon-btn" onClick={onClose}><X size={20} /></button>
         </div>
         {items === null && <p style={{ padding: 18, fontSize: 13, color: 'var(--gray-mid)' }}>Loading…</p>}
         {items && items.length === 0 && <p style={{ padding: 18, fontSize: 13, color: 'var(--gray-mid)' }}>You’re all caught up.</p>}
@@ -309,7 +309,7 @@ function NotifPanel({ onClose, navigate }: { onClose: () => void; navigate: (to:
               <span style={{ display: 'block', fontSize: 12, color: 'var(--gray-mid)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.sub}</span>
               <span style={{ display: 'block', fontSize: 11, color: 'var(--gray-light)' }}>{timeAgo(n.time)}</span>
             </span>
-            <TbChevronRight size={16} color="var(--gray-mid)" />
+            <ChevronRight size={16} color="var(--gray-mid)" />
           </button>
         ))}
       </div>

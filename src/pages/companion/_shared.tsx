@@ -1,7 +1,7 @@
 // Shared helpers + primitives for the companion dashboard (mobile-first PWA).
 // Kept small and self-contained so each screen file stays readable.
 import { useCallback, useRef, useState } from 'react'
-import { TbReload } from 'react-icons/tb'
+import { RefreshCw } from 'lucide-react'
 
 // ── Display helpers ────────────────────────────────────────────────────────
 
@@ -94,7 +94,7 @@ export function usePullToRefresh(onRefresh: () => Promise<void> | void) {
 
   const indicator = (distance > 0 || refreshing) ? (
     <div className="ce-comp-ptr" style={{ height: distance }}>
-      <TbReload size={20} style={{ opacity: Math.min(distance / THRESHOLD, 1) }} />
+      <RefreshCw size={20} style={{ opacity: Math.min(distance / THRESHOLD, 1) }} />
     </div>
   ) : null
 

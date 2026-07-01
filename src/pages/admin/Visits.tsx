@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TbX } from 'react-icons/tb'
+import { X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/Toast'
 import {
@@ -261,7 +261,7 @@ function VisitDrawer({ booking, visit, onClose, onReport, onAssign }: any) {
           aria-label="Close"
           style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-dark)', padding: 4 }}
         >
-          <TbX size={20} />
+          <X size={20} />
         </button>
 
         <div style={{ paddingRight: 24 }}>

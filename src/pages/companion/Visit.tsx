@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  TbArrowLeft, TbArrowRight, TbMapPin, TbCheck, TbPhone, TbPill, TbHeart,
-  TbHistory, TbPin, TbPhoneCall, TbCamera, TbNotes, TbSend, TbAlertTriangle, TbLoader2, TbX,
-} from 'react-icons/tb'
+  ArrowLeft, ArrowRight, MapPin, Check, Phone, Pill, Heart,
+  History, Pin, PhoneCall, Camera, StickyNote, Send, AlertTriangle, Loader2, X,
+} from 'lucide-react'
 import { format, differenceInMinutes } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
@@ -79,7 +79,7 @@ function ToggleRow({
 function ConcernNote({ text }: { text: string }) {
   return (
     <div className="mt-1.5 bg-[#FEF2F2] rounded-lg px-3 py-2.5 flex items-center gap-1.5 text-[12px] text-[#B91C1C]">
-      <TbAlertTriangle size={13} className="flex-shrink-0" /> {text}
+      <AlertTriangle size={13} className="flex-shrink-0" /> {text}
     </div>
   )
 }
@@ -219,7 +219,7 @@ function VisitFrame({
         style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="h-14 px-4 flex items-center justify-between">
           <button onClick={onBack} className="p-2 -ml-2 text-white/70" aria-label="Back">
-            <TbArrowLeft size={20} />
+            <ArrowLeft size={20} />
           </button>
           <p className="text-[14px] font-semibold text-white truncate px-2">{title}</p>
           <div className="min-w-[40px] flex justify-end">{right || (timer ? <span className="text-[12px] font-medium text-white/60 tabular-nums">{timer}</span> : null)}</div>
@@ -327,7 +327,7 @@ function BriefingPhase({
         {/* Continuity */}
         <div>
           <p className="text-[10px] font-semibold text-[#6E6E73] uppercase tracking-[0.06em] mb-2 flex items-center gap-1.5">
-            <TbHistory size={14} /> From last visit
+            <History size={14} /> From last visit
           </p>
           {entries.length ? (
             <div className="bg-[#F0FDF4] border-l-[3px] border-[#A8D5B5] rounded-r-[10px] px-4 py-3.5 text-[14px] text-[#3A3A3C] leading-[1.65] italic">
@@ -344,7 +344,7 @@ function BriefingPhase({
         {elder?.pinned_note && (
           <div>
             <p className="text-[10px] font-semibold text-[#F59E0B] uppercase tracking-[0.06em] mb-2 flex items-center gap-1.5">
-              <TbPin size={14} /> Important note
+              <Pin size={14} /> Important note
             </p>
             <div className="bg-[#FFFBEB] border-l-[3px] border-[#F59E0B] rounded-r-[10px] px-4 py-3.5 text-[14px] text-[#3A3A3C] leading-[1.65]">
               {elder.pinned_note}
@@ -356,7 +356,7 @@ function BriefingPhase({
         {meds.length > 0 && (
           <div className="pt-4 border-t-[0.5px] border-[#E5E5EA]">
             <p className="text-[10px] font-semibold text-[#6E6E73] uppercase tracking-[0.06em] mb-2.5 flex items-center gap-1.5">
-              <TbPill size={14} className="text-[#0E2A1F]" /> Medicines to check
+              <Pill size={14} className="text-[#0E2A1F]" /> Medicines to check
             </p>
             {meds.map((m, i) => (
               <div key={i} className="flex items-center gap-2.5 py-2 border-b-[0.5px] border-[#F5F5F5] last:border-0">
@@ -372,7 +372,7 @@ function BriefingPhase({
         {(prefs || elder?.things_to_avoid) && (
           <div className="pt-4 border-t-[0.5px] border-[#E5E5EA]">
             <p className="text-[10px] font-semibold text-[#6E6E73] uppercase tracking-[0.06em] mb-2.5 flex items-center gap-1.5">
-              <TbHeart size={14} className="text-[#0E2A1F]" /> Elder preferences
+              <Heart size={14} className="text-[#0E2A1F]" /> Elder preferences
             </p>
             <div className="flex flex-wrap gap-2">
               {prefs.split(',').map(p => p.trim()).filter(Boolean).map((p, i) => (
@@ -396,7 +396,7 @@ function BriefingPhase({
         {primaryContact && (
           <div className="pt-4 border-t-[0.5px] border-[#E5E5EA]">
             <p className="text-[10px] font-semibold text-[#6E6E73] uppercase tracking-[0.06em] mb-2.5 flex items-center gap-1.5">
-              <TbPhoneCall size={14} className="text-[#EF4444]" /> Emergency contacts
+              <PhoneCall size={14} className="text-[#EF4444]" /> Emergency contacts
             </p>
             <div className="flex items-center justify-between">
               <div>
@@ -406,7 +406,7 @@ function BriefingPhase({
               {primaryContact.phone && (
                 <a href={`tel:${primaryContact.phone}`}
                   className="bg-[#0E2A1F] text-white rounded-full px-4 py-2 text-[12px] font-semibold flex items-center gap-1.5">
-                  <TbPhone size={14} /> Call
+                  <Phone size={14} /> Call
                 </a>
               )}
             </div>
@@ -433,14 +433,14 @@ function BriefingPhase({
           {gpsState === 'done' ? (
             <>
               <div className="w-full min-h-[56px] rounded-[16px] border-[1.5px] border-[#A8D5B5] flex items-center justify-center gap-2.5 px-5 py-4">
-                <TbCheck size={20} className="text-[#A8D5B5]" />
+                <Check size={20} className="text-[#A8D5B5]" />
                 <span className="text-[14px] font-semibold text-[#A8D5B5]">
                   Checked in at {checkInTime ? format(new Date(checkInTime), 'h:mm a') : 'now'}
                 </span>
               </div>
               <button onClick={() => onCheckedIn(checkInTime || new Date().toISOString())}
                 className="mt-3 w-full min-h-[52px] rounded-[16px] bg-[#0E2A1F] text-white text-[15px] font-semibold flex items-center justify-center gap-2">
-                Begin visit checklist <TbArrowRight size={17} />
+                Begin visit checklist <ArrowRight size={17} />
               </button>
             </>
           ) : (
@@ -448,8 +448,8 @@ function BriefingPhase({
               <button onClick={handleCheckIn} disabled={gpsState === 'loading'}
                 className="w-full min-h-[56px] rounded-[16px] bg-[#0E2A1F] text-white text-[16px] font-bold flex items-center justify-center gap-2.5 shadow-[var(--shadow-btn)] disabled:opacity-80">
                 {gpsState === 'loading'
-                  ? <><TbLoader2 size={20} className="animate-spin" /> Getting your location…</>
-                  : <><TbMapPin size={20} /> I have arrived — Check in</>}
+                  ? <><Loader2 size={20} className="animate-spin" /> Getting your location…</>
+                  : <><MapPin size={20} /> I have arrived — Check in</>}
               </button>
               {gpsState === 'error' && (
                 <p className="mt-2 text-[12px] text-[#EF4444] text-center">
@@ -691,7 +691,7 @@ function ChecklistPhase({
         {/* Photo */}
         <section className="bg-white rounded-[16px] p-4 border-[0.5px] border-[#E5E5EA]">
           <p className="text-[11px] font-semibold text-[#6E6E73] uppercase tracking-[0.08em] mb-1 flex items-center gap-2">
-            <TbCamera size={16} className="text-[#0E2A1F]" /> Add a photo
+            <Camera size={16} className="text-[#0E2A1F]" /> Add a photo
           </p>
           <p className="text-[12px] text-[#6E6E73] mb-3">Optional — families love seeing a photo from each visit</p>
           {photo ? (
@@ -699,12 +699,12 @@ function ChecklistPhase({
               <img src={photo.url} alt="Visit photo preview" className="w-20 h-20 object-cover rounded-[10px] border-2 border-[#A8D5B5]" />
               <button onClick={() => { URL.revokeObjectURL(photo.url); setPhoto(null) }}
                 className="absolute -top-2 -right-2 bg-white border border-gray-200 rounded-full p-1 shadow-sm" aria-label="Remove photo">
-                <TbX size={12} />
+                <X size={12} />
               </button>
             </div>
           ) : (
             <label className="relative block bg-[#FAF7F2] border-[1.5px] border-dashed border-[#E5E5EA] rounded-[12px] px-4 py-6 text-center cursor-pointer min-h-[48px]">
-              <TbCamera size={28} className="text-[#6E6E73] mx-auto" />
+              <Camera size={28} className="text-[#6E6E73] mx-auto" />
               <p className="text-[13px] font-medium text-[#3A3A3C] mt-2">Take photo or choose from gallery</p>
               <p className="text-[11px] text-[#6E6E73]">JPG or PNG · Max 5MB</p>
               <input type="file" accept="image/*" capture="environment"
@@ -718,7 +718,7 @@ function ChecklistPhase({
         {/* Additional notes */}
         <section className="bg-white rounded-[16px] p-4 border-[0.5px] border-[#E5E5EA]">
           <p className="text-[11px] font-semibold text-[#6E6E73] uppercase tracking-[0.08em] mb-1 flex items-center gap-1.5">
-            <TbNotes size={14} className="text-[#0E2A1F]" /> Additional notes
+            <StickyNote size={14} className="text-[#0E2A1F]" /> Additional notes
           </p>
           <p className="text-[12px] text-[#6E6E73] mb-2.5">Anything else the family or team should know</p>
           <textarea value={additional} onChange={e => setAdditional(e.target.value)}
@@ -729,7 +729,7 @@ function ChecklistPhase({
         {/* Continuity for next visit */}
         <section className="bg-white rounded-[16px] p-4 border-[0.5px] border-[#E5E5EA]">
           <p className="text-[11px] font-semibold text-[#6E6E73] uppercase tracking-[0.08em] mb-1 flex items-center gap-1.5">
-            <TbHistory size={14} className="text-[#0E2A1F]" /> Note for next companion
+            <History size={14} className="text-[#0E2A1F]" /> Note for next companion
           </p>
           <p className="text-[12px] text-[#6E6E73] mb-2.5">What should the next companion know before their visit?</p>
           <textarea value={continuity} onChange={e => setContinuity(e.target.value)}
@@ -739,7 +739,7 @@ function ChecklistPhase({
 
         {saveError && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 flex items-center gap-2">
-            <TbAlertTriangle size={15} className="flex-shrink-0" /> {saveError}
+            <AlertTriangle size={15} className="flex-shrink-0" /> {saveError}
           </div>
         )}
       </div>
@@ -748,7 +748,7 @@ function ChecklistPhase({
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] px-4 pb-[calc(16px+env(safe-area-inset-bottom))] pt-2 bg-gradient-to-t from-[#F5F5F7] via-[#F5F5F7] to-transparent">
         <button onClick={submit} disabled={!canSubmit || saving}
           className={`w-full min-h-[56px] rounded-[16px] text-[16px] font-bold flex items-center justify-center gap-2.5 ${canSubmit && !saving ? 'bg-[#0E2A1F] text-white shadow-[var(--shadow-btn)]' : 'bg-[#0E2A1F]/45 text-white cursor-not-allowed'}`}>
-          {saving ? <><TbLoader2 size={18} className="animate-spin" /> Submitting…</> : <>Submit visit report <TbSend size={18} /></>}
+          {saving ? <><Loader2 size={18} className="animate-spin" /> Submitting…</> : <>Submit visit report <Send size={18} /></>}
         </button>
       </div>
     </VisitFrame>
@@ -807,7 +807,7 @@ function SuccessScreen({ booking, onDone }: { booking: any; onDone: () => void }
       {flagged && (
         <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-[12px] px-4 py-3.5 mt-5 w-full max-w-[320px] text-left">
           <p className="text-[13px] font-bold text-[#EF4444] flex items-center gap-1.5">
-            <TbAlertTriangle size={16} /> Admin has been notified
+            <AlertTriangle size={16} /> Admin has been notified
           </p>
           <p className="text-[12px] text-[#991B1B] mt-1">
             A concern was flagged and the Close Eye team will follow up with the family.

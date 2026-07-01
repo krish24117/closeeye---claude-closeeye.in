@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { TbUserPlus, TbBrandWhatsapp, TbBuildingCommunity, TbPlus, TbStethoscope } from 'react-icons/tb'
+import { UserPlus, MessageCircle, Building2, Plus, Stethoscope } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/components/ui/Toast'
@@ -225,7 +225,7 @@ export function AdminSettings() {
           subtitle="Staff with admin access — adjust what each person can do."
           right={
             <button className="adm-btn adm-btn-primary" onClick={() => showToast('Invites coming soon', 'info')}>
-              <TbUserPlus size={15} style={{ marginRight: 6, verticalAlign: '-2px' }} />Invite team member
+              <UserPlus size={15} style={{ marginRight: 6, verticalAlign: '-2px' }} />Invite team member
             </button>
           }
         >
@@ -271,7 +271,7 @@ export function AdminSettings() {
           subtitle="The roster families' health queries can be assigned to."
           right={
             <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--sage)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <TbStethoscope size={20} color="var(--forest)" />
+              <Stethoscope size={20} color="var(--forest)" />
             </span>
           }
         >
@@ -357,7 +357,7 @@ export function AdminSettings() {
                 </div>
                 <div style={{ marginTop: 12 }}>
                   <button className="adm-btn adm-btn-primary" onClick={addDoctor}>
-                    <TbPlus size={15} style={{ marginRight: 6, verticalAlign: '-2px' }} />Add doctor
+                    <Plus size={15} style={{ marginRight: 6, verticalAlign: '-2px' }} />Add doctor
                   </button>
                 </div>
                 <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '12px 0 0' }}>
@@ -377,7 +377,7 @@ export function AdminSettings() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--sage)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <TbBrandWhatsapp size={20} color="var(--forest)" />
+                <MessageCircle size={20} color="var(--forest)" />
               </span>
               <div>
                 <div style={{ fontSize: 11, color: 'var(--gray-mid)' }}>Configured number</div>
@@ -455,13 +455,13 @@ export function AdminSettings() {
           subtitle="Communities served by Close Eye."
           right={
             <button className="adm-btn adm-btn-primary" onClick={() => showToast('Add society — coming soon', 'info')}>
-              <TbPlus size={15} style={{ marginRight: 6, verticalAlign: '-2px' }} />Add new society
+              <Plus size={15} style={{ marginRight: 6, verticalAlign: '-2px' }} />Add new society
             </button>
           }
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <TbBuildingCommunity size={20} color="var(--forest)" />
+              <Building2 size={20} color="var(--forest)" />
             </span>
             <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: 0 }}>
               Societies are auto-created from member registrations — add one manually only for outreach.

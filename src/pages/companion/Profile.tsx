@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  TbRosetteDiscountCheck, TbCertificate, TbCheck, TbChevronRight, TbHistory,
-  TbPhone, TbBrandWhatsapp, TbWallet, TbCalendarEvent, TbBell,
-} from 'react-icons/tb'
+  BadgeCheck, Award, Check, ChevronRight, History,
+  Phone, MessageCircle, Wallet, CalendarDays, Bell,
+} from 'lucide-react'
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -89,7 +89,7 @@ export function CompanionProfile() {
         <div className="mt-3">
           {isVerified ? (
             <span className="inline-flex items-center gap-1.5 bg-[#A8D5B5]/15 border border-[#A8D5B5] rounded-full px-4 py-1.5">
-              <TbRosetteDiscountCheck size={14} className="text-[#A8D5B5]" />
+              <BadgeCheck size={14} className="text-[#A8D5B5]" />
               <span className="text-[12px] font-semibold text-[#A8D5B5]">Close Eye Certified</span>
             </span>
           ) : status === 'approved' ? (
@@ -123,7 +123,7 @@ export function CompanionProfile() {
       <div className="bg-white rounded-[14px] mx-4 mt-2.5 p-4 border-[0.5px] border-[#E5E5EA]">
         <div className="flex items-center justify-between mb-3">
           <span className="text-[14px] font-bold text-[#1D1D1F] flex items-center gap-2">
-            <TbCertificate size={16} className="text-[#0E2A1F]" /> Training
+            <Award size={16} className="text-[#0E2A1F]" /> Training
           </span>
           <span className="text-[12px] text-[#6E6E73]">{trainingDone} of 3 complete</span>
         </div>
@@ -135,7 +135,7 @@ export function CompanionProfile() {
           return (
             <div key={m} className="flex items-center gap-3 py-2.5 border-b-[0.5px] border-[#F5F5F5] last:border-0">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${done ? 'bg-[#0E2A1F]' : 'bg-[#F5F5F5]'}`}>
-                {done ? <TbCheck size={12} className="text-white" /> : <span className="text-[12px] text-[#6E6E73]">{i + 1}</span>}
+                {done ? <Check size={12} className="text-white" /> : <span className="text-[12px] text-[#6E6E73]">{i + 1}</span>}
               </div>
               <span className={`text-[13px] font-semibold flex-1 ${done ? 'text-[#6E6E73]' : 'text-[#1D1D1F]'}`}>{m}</span>
               <span className={`text-[12px] font-medium ${done ? 'text-[#0E2A1F]' : 'text-[#6E6E73]'}`}>{done ? 'Complete' : 'Pending'}</span>
@@ -148,7 +148,7 @@ export function CompanionProfile() {
       <div className="bg-white rounded-[14px] mx-4 mt-2.5 p-4 border-[0.5px] border-[#E5E5EA]">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[14px] font-bold text-[#1D1D1F] flex items-center gap-2">
-            <TbHistory size={16} className="text-[#0E2A1F]" /> Recent visits
+            <History size={16} className="text-[#0E2A1F]" /> Recent visits
           </span>
           <Link to="/companion/visits" className="text-[12px] font-semibold text-[#0E2A1F]">View all →</Link>
         </div>
@@ -172,11 +172,11 @@ export function CompanionProfile() {
       {/* Quick links to retained features */}
       <div className="grid grid-cols-2 gap-2 mx-4 mt-2.5">
         <Link to="/companion/earnings" className="bg-white rounded-[12px] p-4 border-[0.5px] border-[#E5E5EA] flex items-center gap-2.5 ce-press">
-          <TbWallet size={18} className="text-[#0E2A1F]" />
+          <Wallet size={18} className="text-[#0E2A1F]" />
           <span className="text-[13px] font-semibold text-[#1D1D1F]">Earnings</span>
         </Link>
         <Link to="/companion/schedule" className="bg-white rounded-[12px] p-4 border-[0.5px] border-[#E5E5EA] flex items-center gap-2.5 ce-press">
-          <TbCalendarEvent size={18} className="text-[#0E2A1F]" />
+          <CalendarDays size={18} className="text-[#0E2A1F]" />
           <span className="text-[13px] font-semibold text-[#1D1D1F]">Schedule</span>
         </Link>
       </div>
@@ -185,14 +185,14 @@ export function CompanionProfile() {
       <div className="bg-[#FAF7F2] rounded-[14px] mx-4 mt-2.5 p-4">
         <p className="text-[14px] font-bold text-[#1D1D1F] mb-3">Need help?</p>
         <a href={`tel:${SUPPORT_PHONE}`} className="flex items-center gap-3 bg-white border-[0.5px] border-[#E5E5EA] rounded-[12px] p-3.5 mb-2 ce-press min-h-[48px]">
-          <span className="w-9 h-9 rounded-full bg-[#0E2A1F] flex items-center justify-center flex-shrink-0"><TbPhone size={16} className="text-white" /></span>
+          <span className="w-9 h-9 rounded-full bg-[#0E2A1F] flex items-center justify-center flex-shrink-0"><Phone size={16} className="text-white" /></span>
           <span>
             <span className="block text-[14px] font-semibold text-[#1D1D1F]">Call Krishna</span>
             <span className="block text-[12px] text-[#6E6E73]">+91 90002 21261</span>
           </span>
         </a>
         <a href={`https://wa.me/919000221261`} target="_blank" rel="noreferrer" className="flex items-center gap-3 bg-white border-[0.5px] border-[#E5E5EA] rounded-[12px] p-3.5 ce-press min-h-[48px]">
-          <span className="w-9 h-9 rounded-full bg-[#25D366] flex items-center justify-center flex-shrink-0"><TbBrandWhatsapp size={16} className="text-white" /></span>
+          <span className="w-9 h-9 rounded-full bg-[#25D366] flex items-center justify-center flex-shrink-0"><MessageCircle size={16} className="text-white" /></span>
           <span>
             <span className="block text-[14px] font-semibold text-[#1D1D1F]">WhatsApp support</span>
             <span className="block text-[12px] text-[#6E6E73]">Usually responds quickly</span>
@@ -202,12 +202,12 @@ export function CompanionProfile() {
         {/* Visit alerts (kept from the previous portal) */}
         {PUSH_SUPPORTED && permission !== 'granted' && permission !== 'denied' && (
           <button onClick={enableNotifications} className="flex items-center gap-3 bg-white border-[0.5px] border-[#E5E5EA] rounded-[12px] p-3.5 mt-2 w-full text-left ce-press min-h-[48px]">
-            <span className="w-9 h-9 rounded-full bg-[#A8D5B5]/30 flex items-center justify-center flex-shrink-0"><TbBell size={16} className="text-[#0E2A1F]" /></span>
+            <span className="w-9 h-9 rounded-full bg-[#A8D5B5]/30 flex items-center justify-center flex-shrink-0"><Bell size={16} className="text-[#0E2A1F]" /></span>
             <span>
               <span className="block text-[14px] font-semibold text-[#1D1D1F]">Enable visit alerts</span>
               <span className="block text-[12px] text-[#6E6E73]">Get notified of new assignments</span>
             </span>
-            <TbChevronRight size={16} className="text-[#6E6E73] ml-auto" />
+            <ChevronRight size={16} className="text-[#6E6E73] ml-auto" />
           </button>
         )}
         {permission === 'granted' && (

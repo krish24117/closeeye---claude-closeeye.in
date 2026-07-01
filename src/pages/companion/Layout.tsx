@@ -5,17 +5,17 @@
 // visit and realtime new-assignment notifications run here at the shell level.
 import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
-import { TbCalendarEvent, TbWalk, TbWheelchair, TbUser, TbBell, TbCalendarPlus, TbArrowRight } from 'react-icons/tb'
+import { CalendarDays, PersonStanding, Accessibility, User, Bell, CalendarPlus, ArrowRight } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { useGeolocation } from '@/lib/useGeolocation'
 import { initialsOf } from './_shared'
 
 const NAV = [
-  { to: '/companion',              icon: TbCalendarEvent, label: 'Today',  match: (p: string) => p === '/companion' },
-  { to: '/companion/visit/active', icon: TbWalk,          label: 'Visit',  match: (p: string) => p.startsWith('/companion/visit') },
-  { to: '/companion/elders',       icon: TbWheelchair,    label: 'Elders', match: (p: string) => p.startsWith('/companion/elder') },
-  { to: '/companion/me',           icon: TbUser,          label: 'Me',     match: (p: string) => p === '/companion/me' || p === '/companion/profile' },
+  { to: '/companion',              icon: CalendarDays, label: 'Today',  match: (p: string) => p === '/companion' },
+  { to: '/companion/visit/active', icon: PersonStanding,          label: 'Visit',  match: (p: string) => p.startsWith('/companion/visit') },
+  { to: '/companion/elders',       icon: Accessibility,    label: 'Elders', match: (p: string) => p.startsWith('/companion/elder') },
+  { to: '/companion/me',           icon: User,          label: 'Me',     match: (p: string) => p === '/companion/me' || p === '/companion/profile' },
 ]
 
 export function CompanionLayout() {
@@ -117,7 +117,7 @@ export function CompanionLayout() {
             onClick={() => { setHasNew(false); navigate('/companion') }}
             className="relative p-0.5 text-white" aria-label="Notifications"
           >
-            <TbBell size={20} />
+            <Bell size={20} />
             {hasNew && <span className="absolute -top-px -right-px w-[7px] h-[7px] rounded-full bg-[#EF4444]" />}
           </button>
           <Link to="/companion/me" aria-label="My profile"
@@ -135,13 +135,13 @@ export function CompanionLayout() {
             onClick={() => { setBanner(null); navigate(`/companion/visit/${banner.id}`) }}
             className="ce-comp-banner w-full bg-[#1B4332] rounded-b-2xl px-4 py-3 flex items-center gap-3 text-left shadow-lg"
           >
-            <TbCalendarPlus size={18} className="text-[#A8D5B5] flex-shrink-0" />
+            <CalendarPlus size={18} className="text-[#A8D5B5] flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-bold text-white leading-tight">New visit assigned</p>
               <p className="text-[12px] text-white/70 truncate">{banner.name}</p>
             </div>
             <span className="text-[12px] font-semibold text-[#A8D5B5] flex items-center gap-0.5 flex-shrink-0">
-              View <TbArrowRight size={13} />
+              View <ArrowRight size={13} />
             </span>
           </button>
         </div>

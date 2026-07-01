@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Check, Menu, X, ArrowRight, Shield, Stethoscope, User, Send, Loader2 } from 'lucide-react'
-import { FaWhatsapp } from 'react-icons/fa'
+import { Check, Menu, X, ArrowRight, Shield, Stethoscope, User, Send, Loader2, MessageCircle, Leaf, IndianRupee } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/ui/Logo'
 import { useAuth } from '@/lib/auth-context'
+import { DiscoveryCallModal } from '@/components/DiscoveryCallModal'
 
 /* ------------------------------------------------------------------ */
 /*  Constants + data                                                    */
@@ -61,7 +61,7 @@ const PROBLEM_QUOTES = [
     attr: '— NRI family, Dubai',
   },
   {
-    text: 'The worst part is not the distance. It’s the not knowing.',
+    text: "The worst part is not the distance. It’s the not knowing.",
     attr: '— NRI family, London',
   },
 ]
@@ -125,6 +125,37 @@ const ONDEMAND_EXAMPLES = [
   { name: 'Doctor Visit Support', price: '₹1,500' },
   { name: 'Emergency Response', price: '₹3,000' },
   { name: 'Grocery & Medicine', price: '₹500' },
+]
+
+const FAQ_ITEMS = [
+  {
+    q: 'Which cities do you currently serve?',
+    a: 'We currently serve Hyderabad. Expansion to Bangalore, Chennai, and Mumbai is planned — join the waitlist and we\'ll notify you when we launch in your city.',
+  },
+  {
+    q: 'How are your companions vetted?',
+    a: 'Every companion is background-verified, personally interviewed by our founder, and trained before their first visit. GPS check-in is mandatory on every visit — no exceptions.',
+  },
+  {
+    q: 'How quickly do I receive the WhatsApp report after a visit?',
+    a: 'Within 1 hour of every visit — a warm, detailed message with a health snapshot, medicine check, meals, and one personal moment we always capture.',
+  },
+  {
+    q: 'Do I need a subscription, or can I pay per visit?',
+    a: 'Both options are available. The ₹1,500/month plan is best for regular care, but you can also book one-off visits — from ₹1,000 for a home visit to ₹3,000 for emergency response.',
+  },
+  {
+    q: 'Can I pay from abroad using an international card?',
+    a: 'Yes. We accept international credit/debit cards and UPI. An invoice is provided for every transaction. No hidden fees.',
+  },
+  {
+    q: 'What if my parent has a medical emergency during a visit?',
+    a: 'Your companion is trained to act immediately — they call emergency services, coordinate with the nearest hospital, and keep you updated in real time via WhatsApp.',
+  },
+  {
+    q: 'Is my parent\'s health information private?',
+    a: 'Absolutely. All health information is stored securely and shared only with you and your family — never with third parties.',
+  },
 ]
 
 /* ------------------------------------------------------------------ */
@@ -411,6 +442,9 @@ export function HomePage() {
   const navigate = useNavigate()
   const { user, profile } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showStickyCTA, setShowStickyCTA] = useState(false)
+  const [showDiscovery, setShowDiscovery] = useState(false)
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   // When launched from the home screen (standalone PWA), send authenticated
   // family users straight to their dashboard — no marketing page flash.
@@ -422,6 +456,15 @@ export function HomePage() {
       navigate('/dashboard', { replace: true })
     }
   }, [user, profile, navigate])
+
+  // Sticky CTA: show after user scrolls past ~80% of viewport height
+  useEffect(() => {
+    const threshold = window.innerHeight * 0.8
+    const onScroll = () => setShowStickyCTA(window.scrollY > threshold)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   const hamburgerRef = useRef<HTMLButtonElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
 
@@ -660,35 +703,24 @@ export function HomePage() {
         <div className="ce-hero-left animate-on-scroll">
           <p className="ce-eyebrow">Your trusted presence in India</p>
           <h1 className="ce-h1">
-            Care for your parents<br />
-            in India,{' '}
-            <span className="ce-hero-h1-cont">even from afar.</span>
+            Know they&rsquo;re okay.<br />
+            <span className="ce-hero-h1-cont">Every single day.</span>
           </h1>
-          <p style={{ fontSize: '1.1rem', fontWeight: 500, color: 'rgba(250,247,242,.7)', marginTop: '1.25rem', marginBottom: '1rem', lineHeight: 1.5 }}>
-            When you can't be there, Close Eye can.
+          <p className="ce-hero-sub">
+            When you can&rsquo;t be there, Close Eye becomes your trusted presence in India.
           </p>
-          <div className="ce-hero-body">
-            <p>Close Eye visits your parents personally — checking health, medicines, and home — and sends you a WhatsApp report within the hour.</p>
-            <p>So you always know they're safe, even from 10,000 miles away.</p>
-          </div>
           <div className="ce-hero-buttons">
-            <Link to="/founding-member/checkout" className="ce-btn ce-btn-primary">
-              Claim your founding spot
-              <span style={{ fontSize: 12, fontWeight: 700, background: '#0E2A1F', color: '#7FBF94', padding: '3px 9px', borderRadius: 999, marginLeft: 4 }}>
-                Start ₹100
-              </span>
-            </Link>
-            <a href="#ask-free" className="ce-btn ce-btn-secondary">Or ask us anything — free</a>
+            <button type="button" onClick={() => setShowDiscovery(true)} className="ce-btn ce-btn-primary">
+              Book Free Discovery Call
+            </button>
+            <a href="#wa-report" className="ce-btn ce-btn-secondary">
+              See Sample Report
+            </a>
           </div>
           <p style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '12px', fontWeight: 500, color: 'rgba(168,213,181,.9)', background: 'rgba(127,191,148,0.12)', border: '1px solid rgba(127,191,148,0.35)', borderRadius: '100px', padding: '5px 13px', marginTop: '10px' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#7FBF94', flexShrink: 0 }} />
             Now serving founding families · Public launch 15 August
           </p>
-          <div className="ce-trust-row">
-            {TRUST_SIGNALS.map(t => (
-              <span key={t} className="ce-trust-item"><Check size={15} /> {t}</span>
-            ))}
-          </div>
         </div>
 
         <div className="ce-hero-right">
@@ -720,29 +752,43 @@ export function HomePage() {
         </div>
       </section>
 
+      {/* ── TRUST BAR ────────────────────────────────────────────── */}
+      <div className="ce-trust-bar">
+        <div className="ce-trust-bar-inner">
+          {[...TRUST_SIGNALS, ...TRUST_SIGNALS].map((t, i) => (
+            <span key={i} className="ce-trust-bar-item">
+              <Check size={13} style={{ color: '#7FBF94', flexShrink: 0 }} /> {t}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* ── ASK CLOSE EYE — Tier 0 public hook ──────────────────── */}
-      {/* Negative margin-top overlaps the hero bottom to create a card-float effect */}
+      {/* Negative margin-top overlaps the trust bar to create a card-float effect */}
       <div className="ce-hero-ask-overlap">
         <div>
           <HomeAskWidget />
         </div>
       </div>
 
-      {/* ── PROBLEM ──────────────────────────────────────────────── */}
-      <section className="ce-section ce-bg-forest">
+      {/* ── WHATSAPP REPORT SECTION ──────────────────────────────── */}
+      <section id="wa-report" className="ce-section ce-bg-cream" style={{ scrollMarginTop: '72px' }}>
         <div className="ce-container">
-          <p className="ce-eyebrow ce-eyebrow-sage animate-on-scroll">Why families choose Close Eye</p>
-          <h2 className="ce-h2 animate-on-scroll" style={{ color: 'var(--white)' }}>Every NRI knows this feeling.</h2>
-          <div className="ce-quote-grid">
-            {PROBLEM_QUOTES.map((q, i) => (
-              <div key={i} className="ce-quote-card animate-on-scroll" style={{ transitionDelay: `${i * 100}ms` }}>
-                <span className="ce-quote-mark" aria-hidden>&ldquo;</span>
-                <p className="ce-quote-text">{q.text}</p>
-                <p className="ce-quote-attr">{q.attr}</p>
+          <p className="ce-eyebrow animate-on-scroll">What your family receives</p>
+          <h2 className="ce-h2 animate-on-scroll">A report that feels<br />like being there.</h2>
+          <p className="ce-subtitle animate-on-scroll" style={{ maxWidth: 540 }}>
+            Within 1 hour of every visit — a warm, personal WhatsApp message with a health snapshot, medicines check, and one small moment we always capture just for you.
+          </p>
+          <div className="ce-wa-moments">
+            {WA_MESSAGES.slice(0, 3).map((m, i) => (
+              <div key={i} className="ce-wa-moment-card animate-on-scroll" style={{ transitionDelay: `${i * 100}ms` }}>
+                <div className="ce-wa-moment-bubble">
+                  {renderWa(m.text)}
+                  <div className="ce-wa-time" style={{ marginTop: 8 }}>{m.time} <Ticks /></div>
+                </div>
               </div>
             ))}
           </div>
-          <p className="ce-problem-close animate-on-scroll">Close Eye exists for exactly this.</p>
         </div>
       </section>
 
@@ -794,100 +840,8 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ── SERVICES (teaser → full pricing page) ─────────────────── */}
-      <section id="services" className="ce-section ce-bg-cream" style={{ scrollMarginTop: '72px' }}>
-        <div className="ce-container">
-          <p className="ce-eyebrow animate-on-scroll">What we offer</p>
-          <h2 className="ce-h2 animate-on-scroll">For every family.<br />Whatever the distance.</h2>
-          <p className="ce-subtitle animate-on-scroll" style={{ maxWidth: '560px' }}>
-            Start with a ₹100 founding membership, move to the ₹1,500/month companion plan,
-            or book any one-off visit — home visits, doctor and hospital support, emergencies,
-            grocery &amp; medicine. One simple page, prices the same for everyone.
-          </p>
-          <div className="animate-on-scroll" style={{ marginTop: '28px' }}>
-            <Link to="/services" className="ce-btn ce-btn-primary">See all services &amp; pricing <ArrowRight size={18} /></Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── TRUST & TEAM ─────────────────────────────────────────── */}
-      <section className="ce-section ce-bg-white">
-        <div className="ce-container">
-          <p className="ce-eyebrow animate-on-scroll">Why trust us</p>
-          <h2 className="ce-h2 animate-on-scroll" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>Built on presence.<br />Not promises.</h2>
-
-          <div className="ce-pillars">
-            {PILLARS.map((p, i) => (
-              <div key={p.title} className="animate-left ce-pillar" style={{ transitionDelay: `${i * 120}ms` }}>
-                <div className="ce-pillar-icon"><p.icon size={22} /></div>
-                <h3 className="ce-pillar-title">{p.title}</h3>
-                <p className="ce-pillar-body">{p.body}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Founders */}
-          <div className="ce-founders-wrap">
-            <p className="ce-founder-label">A note from the founders</p>
-            <div className="ce-founders">
-              <div className="ce-founder-card animate-on-scroll">
-                <img
-                  src="/krishna.jpg"
-                  alt="Krishna — Founder & MD, Close Eye"
-                  className="ce-founder-photo"
-                  width={280}
-                  height={280}
-                  loading="lazy"
-                />
-                <p className="ce-founder-name">Krishna</p>
-                <p className="ce-founder-role">Founder &amp; MD, Close Eye Companion</p>
-                <p className="ce-founder-role">Stexa Products &amp; Services Pvt. Ltd.</p>
-                <div className="ce-founder-quote">
-                  <p>&ldquo;I do every visit myself.</p>
-                  <p>Not because we don&rsquo;t have a team — but because before I ask any family to trust us with their parents, I need to earn that trust personally.</p>
-                  <p>One visit. One family. One report. That is how Close Eye was built.&rdquo;</p>
-                </div>
-              </div>
-
-              <div className="ce-founder-card animate-on-scroll" style={{ transitionDelay: '100ms' }}>
-                <img
-                  src="/aishwarya.jpg"
-                  alt="Aishwarya — Co-Founder & Chief of Care, Close Eye"
-                  className="ce-founder-photo"
-                  style={{ objectPosition: 'center top' }}
-                  width={280}
-                  height={280}
-                  loading="lazy"
-                />
-                <p className="ce-founder-name">Aishwarya</p>
-                <p className="ce-founder-role">Co-Founder &amp; Chief of Care</p>
-                <div className="ce-founder-quote">
-                  <p>&ldquo;I care for my parents as a daughter. I became a mother this year. I built Close Eye so every elder feels that same love — even when family cannot be there.&rdquo;</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Advisory board */}
-          <div className="ce-advisory animate-on-scroll">
-            <p className="ce-advisory-label">Advisory Board</p>
-            <div className="ce-advisor-row">
-              {ADVISORS.filter(a => a.enabled).map(a => (
-                <div key={a.name} className="ce-advisor-pill">
-                  <span className="ce-advisor-avatar">{a.initials}</span>
-                  <div>
-                    <div className="ce-advisor-name">{a.name}</div>
-                    <div className="ce-advisor-role">{a.role} · {a.detail}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── PRICING ──────────────────────────────────────────────── */}
-      <section id="pricing" className="ce-section ce-bg-cream" style={{ scrollMarginTop: '72px' }}>
+      <section id="pricing" className="ce-section ce-bg-white" style={{ scrollMarginTop: '72px' }}>
         <div className="ce-container">
           <p className="ce-eyebrow animate-on-scroll">Pricing</p>
           <h2 className="ce-h2 animate-on-scroll" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>Honest pricing.<br />No surprises.</h2>
@@ -940,51 +894,115 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ── FINAL CTA ────────────────────────────────────────────── */}
-      <section className="ce-section ce-bg-forest">
-        <div className="ce-container ce-cta">
-          <h2 className="ce-h2 animate-on-scroll" style={{ color: 'var(--white)', fontSize: 'clamp(28px, 5vw, 52px)' }}>
-            Your parent deserves someone<br />who genuinely cares.
-          </h2>
-          <p className="ce-cta-sub animate-on-scroll">Let someone be there when you can&rsquo;t.</p>
+      {/* ── TRUST & TEAM ─────────────────────────────────────────── */}
+      <section className="ce-section ce-bg-cream">
+        <div className="ce-container">
+          <p className="ce-eyebrow animate-on-scroll">Why trust us</p>
+          <h2 className="ce-h2 animate-on-scroll" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>Built on presence.<br />Not promises.</h2>
 
-          {status === 'success' ? (
-            <div className="ce-cta-form">
-              <p className="ce-cta-success">
-                You&rsquo;re registered. We&rsquo;ll reach out on WhatsApp within 2 hours to set up your first visit. 🌿
-              </p>
+          <div className="ce-pillars">
+            {PILLARS.map((p, i) => (
+              <div key={p.title} className="animate-left ce-pillar" style={{ transitionDelay: `${i * 120}ms` }}>
+                <div className="ce-pillar-icon"><p.icon size={22} /></div>
+                <h3 className="ce-pillar-title">{p.title}</h3>
+                <p className="ce-pillar-body">{p.body}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Advisory board */}
+          <div className="ce-advisory animate-on-scroll">
+            <p className="ce-advisory-label">Advisory Board</p>
+            <div className="ce-advisor-row">
+              {ADVISORS.filter(a => a.enabled).map(a => (
+                <div key={a.name} className="ce-advisor-pill">
+                  <span className="ce-advisor-avatar">{a.initials}</span>
+                  <div>
+                    <div className="ce-advisor-name">{a.name}</div>
+                    <div className="ce-advisor-role">{a.role} · {a.detail}</div>
+                  </div>
+                </div>
+              ))}
             </div>
-          ) : (
-            <form className="ce-cta-form animate-on-scroll" onSubmit={handleSubmit}>
-              <input
-                className="ce-input"
-                type="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="Email address"
-                aria-label="Email address"
-              />
-              <input
-                className="ce-input"
-                type="tel"
-                value={whatsapp}
-                onChange={e => setWhatsapp(e.target.value)}
-                placeholder="WhatsApp number (optional)"
-                aria-label="WhatsApp number (optional)"
-              />
-              <button type="submit" disabled={status === 'submitting'} className="ce-btn ce-btn-white ce-btn-full" style={{ padding: '18px' }}>
-                {status === 'submitting' ? 'Registering…' : <>Register Your Family <ArrowRight size={18} /></>}
-              </button>
-              {status === 'error' && <p style={{ color: '#ffb4b4', fontSize: '13px', marginTop: '10px' }}>{errMsg}</p>}
-            </form>
-          )}
+          </div>
+        </div>
+      </section>
 
-          <p className="ce-cta-or">or</p>
-          <a href={WA_LINK} target="_blank" rel="noopener noreferrer" className="ce-cta-wa">
-            <FaWhatsapp size={20} /> WhatsApp us: +91 9000221261
-          </a>
-          <p className="ce-cta-reassure">No spam. No commitment. We respond within 2 hours.</p>
+      {/* ── FOUNDERS ─────────────────────────────────────────────── */}
+      <section className="ce-section ce-bg-white">
+        <div className="ce-container">
+          <p className="ce-founder-label animate-on-scroll">A note from the founders</p>
+          <h2 className="ce-h2 animate-on-scroll" style={{ fontSize: 'clamp(28px, 4vw, 40px)', marginTop: 16 }}>
+            Built from love,<br />not a business plan.
+          </h2>
+          <div className="ce-founders" style={{ marginTop: 48 }}>
+            <div className="ce-founder-card animate-on-scroll">
+              <img
+                src="/krishna.jpg"
+                alt="Krishna, Founder, Close Eye"
+                className="ce-founder-photo"
+                width={280}
+                height={280}
+                loading="lazy"
+              />
+              <p className="ce-founder-name">Krishna</p>
+              <p className="ce-founder-role">Founder</p>
+              <div className="ce-founder-quote">
+                <p>&ldquo;Before asking families to trust Close Eye, I wanted to earn that trust personally. Every early visit taught me something no spreadsheet ever could.&rdquo;</p>
+              </div>
+            </div>
+
+            <div className="ce-founder-card animate-on-scroll" style={{ transitionDelay: '100ms' }}>
+              <img
+                src="/aishwarya.jpg"
+                alt="Aishwarya, Co-Founder, Close Eye"
+                className="ce-founder-photo"
+                style={{ objectPosition: 'center top' }}
+                width={280}
+                height={280}
+                loading="lazy"
+              />
+              <p className="ce-founder-name">Aishwarya</p>
+              <p className="ce-founder-role">Co-Founder &amp; Chief of Care</p>
+              <div className="ce-founder-quote">
+                <p>&ldquo;I care for my parents as a daughter. I became a mother this year. I built Close Eye so every elder feels that same love — even when family cannot be there.&rdquo;</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQs ─────────────────────────────────────────────────── */}
+      <section id="faqs" className="ce-section ce-bg-cream" style={{ scrollMarginTop: '72px' }}>
+        <div className="ce-container" style={{ maxWidth: '720px' }}>
+          <p className="ce-eyebrow animate-on-scroll">FAQs</p>
+          <h2 className="ce-h2 animate-on-scroll" style={{ fontSize: 'clamp(28px, 4vw, 40px)', marginBottom: 48 }}>
+            Common questions,<br />honest answers.
+          </h2>
+          <div className="ce-faq-list" role="list">
+            {FAQ_ITEMS.map((item, i) => (
+              <div
+                key={i}
+                className={`ce-faq-item animate-on-scroll${openFaq === i ? ' is-open' : ''}`}
+                style={{ transitionDelay: `${i * 50}ms` }}
+                role="listitem"
+              >
+                <button
+                  type="button"
+                  className="ce-faq-q"
+                  aria-expanded={openFaq === i}
+                  aria-controls={`faq-a-${i}`}
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                >
+                  <span>{item.q}</span>
+                  <span className="ce-faq-icon" aria-hidden>+</span>
+                </button>
+                <div className="ce-faq-a-wrap" id={`faq-a-${i}`} role="region">
+                  <p className="ce-faq-a">{item.a}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -1045,9 +1063,50 @@ export function HomePage() {
           aria-label="Chat with Close Eye on WhatsApp"
           title="Chat on WhatsApp"
         >
-          <FaWhatsapp size={28} />
+          <MessageCircle size={22} strokeWidth={2} />
         </a>
       )}
+
+      {/* ── STICKY MOBILE CTA ────────────────────────────────────── */}
+      {!menuOpen && (
+        <div className={`ce-sticky-cta${showStickyCTA ? '' : ' is-hidden'}`}>
+          <button type="button" onClick={() => setShowDiscovery(true)} className="ce-sticky-cta-btn">
+            Book Free Consultation
+          </button>
+        </div>
+      )}
+
+      {/* ── BOTTOM MOBILE NAV ────────────────────────────────────── */}
+      {!menuOpen && (
+        <nav className="ce-bottom-nav" aria-label="Quick navigation">
+          <div className="ce-bottom-nav-inner">
+            <a href="#ask-free" className="ce-bottom-nav-item">
+              <span className="ce-bottom-nav-icon"><Stethoscope size={20} strokeWidth={2} /></span>
+              <span>Ask</span>
+            </a>
+            <Link to="/services" className="ce-bottom-nav-item">
+              <span className="ce-bottom-nav-icon"><Leaf size={20} strokeWidth={2} /></span>
+              <span>Services</span>
+            </Link>
+            <a href="#pricing" className="ce-bottom-nav-item">
+              <span className="ce-bottom-nav-icon"><IndianRupee size={20} strokeWidth={2} color="var(--forest)" /></span>
+              <span>Pricing</span>
+            </a>
+            <a href={WA_LINK} target="_blank" rel="noopener noreferrer" className="ce-bottom-nav-item">
+              <span className="ce-bottom-nav-icon" style={{ color: '#25D366' }}>
+                <MessageCircle size={20} strokeWidth={2} />
+              </span>
+              <span>WhatsApp</span>
+            </a>
+            <Link to="/auth" className="ce-bottom-nav-item">
+              <span className="ce-bottom-nav-icon"><User size={22} /></span>
+              <span>Profile</span>
+            </Link>
+          </div>
+        </nav>
+      )}
+
+      <DiscoveryCallModal open={showDiscovery} onClose={() => setShowDiscovery(false)} />
     </div>
   )
 }

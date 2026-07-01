@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { TbStar, TbPhone, TbMapPin } from 'react-icons/tb'
+import { Star, Phone, MapPin } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/Toast'
 import {
@@ -154,7 +154,7 @@ export function AdminCompanions() {
                       <Badge tone={statusTone(c.status)}>{statusLabel(c.status)}</Badge>
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--gray-mid)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <TbPhone size={11} /> {c.phone || '—'}{wa && wa !== c.phone ? ` · wa ${wa}` : ''}
+                      <Phone size={11} /> {c.phone || '—'}{wa && wa !== c.phone ? ` · wa ${wa}` : ''}
                     </div>
                   </div>
                 </div>
@@ -167,7 +167,7 @@ export function AdminCompanions() {
                   </div>
                   <div>
                     <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--forest)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                      <TbStar size={14} /> {c.rating != null ? Number(c.rating).toFixed(1) : '—'}
+                      <Star size={14} /> {c.rating != null ? Number(c.rating).toFixed(1) : '—'}
                     </div>
                     <div style={{ fontSize: 10, color: 'var(--gray-mid)' }}>Rating</div>
                   </div>
@@ -277,10 +277,10 @@ export function AdminCompanionDetail() {
               <Badge tone={statusTone(companion.status)}>{statusLabel(companion.status)}</Badge>
             </div>
             <div style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 4, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><TbPhone size={12} /> {companion.phone || '—'}</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><TbMapPin size={12} /> {companion.city || '—'}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Phone size={12} /> {companion.phone || '—'}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {companion.city || '—'}</span>
               {companion.rating != null && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><TbStar size={12} /> {Number(companion.rating).toFixed(1)}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Star size={12} /> {Number(companion.rating).toFixed(1)}</span>
               )}
             </div>
           </div>

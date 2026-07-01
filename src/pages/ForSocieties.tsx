@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ShieldCheck, Siren, Wallet, UserRound, Check, ArrowRight } from 'lucide-react'
-import { FaWhatsapp } from 'react-icons/fa'
+import { ShieldCheck, Siren, Wallet, UserRound, Check, ArrowRight, MessageCircle } from 'lucide-react'
 
 const WA = import.meta.env.VITE_WHATSAPP_NUMBER || '919000221261'
 const WA_SOCIETY = `https://wa.me/${WA}?text=${encodeURIComponent(
@@ -84,7 +83,7 @@ export function ForSocietiesPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 bg-white text-green-900 font-semibold px-7 py-3.5 rounded-xl hover:bg-green-200 transition-colors text-sm sm:text-base"
             >
-              <FaWhatsapp size={18} className="text-[#25D366]" /> Book a society demo
+              <MessageCircle size={18} className="text-[#25D366]" /> Book a society demo
             </a>
             <a
               href={WA_OVERVIEW}
@@ -198,7 +197,7 @@ export function ForSocietiesPage() {
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 bg-white text-green-900 font-semibold px-7 py-3.5 rounded-xl hover:bg-green-200 transition-colors text-sm sm:text-base"
           >
-            <FaWhatsapp size={18} className="text-[#25D366]" /> Book a society demo
+            <MessageCircle size={18} className="text-[#25D366]" /> Book a society demo
           </a>
           <Link
             to="/services"

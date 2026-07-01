@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { TbBuildingCommunity, TbSpeakerphone, TbUsers } from 'react-icons/tb'
+import { Building2, Megaphone, Users } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/Toast'
 import {
@@ -43,7 +43,7 @@ function ComposeModal({
           style={{ width: '100%', marginBottom: 12 }}
         />
         <button className="adm-btn adm-btn-primary" onClick={send} style={{ width: '100%' }}>
-          <TbSpeakerphone size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} />
+          <Megaphone size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} />
           Send via WhatsApp
         </button>
         <p style={{ fontSize: 11, color: 'var(--gray-mid)', margin: '10px 0 0', textAlign: 'center' }}>
@@ -125,7 +125,7 @@ export function AdminSocieties() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <TbBuildingCommunity size={18} color="var(--forest)" style={{ flexShrink: 0 }} />
+                      <Building2 size={18} color="var(--forest)" style={{ flexShrink: 0 }} />
                       <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--black)' }}>{s.name}</span>
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 3 }}>
@@ -180,7 +180,7 @@ export function AdminSocieties() {
       )}
 
       <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--gray-mid)', fontSize: 13 }}>
-        <TbUsers size={16} />
+        <Users size={16} />
         <span>
           <strong style={{ color: 'var(--black)' }}>{totalMembers}</strong> member{totalMembers === 1 ? '' : 's'} across{' '}
           <strong style={{ color: 'var(--black)' }}>{societies.length}</strong> societ{societies.length === 1 ? 'y' : 'ies'}
@@ -253,7 +253,7 @@ export function AdminSocietyDetail() {
           <p className="adm-page-sub" style={{ margin: '2px 0 0', color: 'var(--gray-mid)', fontSize: 13 }}>{area}</p>
         </div>
         <button className="adm-btn adm-btn-primary" onClick={() => setCompose(true)}>
-          <TbSpeakerphone size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} />
+          <Megaphone size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} />
           Send WhatsApp announcement
         </button>
       </div>

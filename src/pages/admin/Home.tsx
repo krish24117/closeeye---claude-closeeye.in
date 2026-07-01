@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { TbChevronRight } from 'react-icons/tb'
+import { ChevronRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
   StatCard, Card, Avatar, Badge, EmptyState, Skeleton,
@@ -176,7 +176,7 @@ export function AdminHome() {
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--forest)' }}>{a.title}</div>
                 <div style={{ fontSize: 11, color: 'var(--muted)' }}>{a.sub}</div>
               </div>
-              <TbChevronRight size={14} color="var(--muted)" />
+              <ChevronRight size={14} color="var(--muted)" />
             </Link>
           ))}
         </Card>
