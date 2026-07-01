@@ -208,8 +208,11 @@ function HomeAskWidget() {
         </div>
         <button
           type="button"
-          onClick={() => { inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); inputRef.current?.focus() }}
-          style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: '#2c6b43', background: '#eaf5ee', border: '1px solid #cfe6d7', padding: '4px 9px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit' }}
+          onClick={() => {
+            inputRef.current?.focus()
+            inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          }}
+          style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: '#2c6b43', background: '#eaf5ee', border: '1px solid #cfe6d7', padding: '10px 14px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44, minWidth: 44, display: 'inline-flex', alignItems: 'center' }}
         >
           Try now
         </button>
