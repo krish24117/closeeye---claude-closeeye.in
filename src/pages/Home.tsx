@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Check, Menu, X, ArrowRight, Stethoscope, User, Send, Loader2, MessageCircle, ShieldCheck, PhoneCall, Lock, UserCheck, House, Home, Building2, Globe, HeartHandshake, ClipboardList } from 'lucide-react'
+import { Check, Menu, X, ArrowRight, Stethoscope, User, Send, Loader2, MessageCircle, ShieldCheck, PhoneCall, Lock, UserCheck, House, Home, Building2, Globe, HeartHandshake, ClipboardList, Mail, Instagram, Linkedin } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/ui/Logo'
 import { useAuth } from '@/lib/auth-context'
@@ -1043,44 +1043,60 @@ export function HomePage() {
 
       {/* ── FOOTER ───────────────────────────────────────────────── */}
       <footer className="ce-footer">
-        <div className="ce-footer-grid">
-          <div>
-            <Link to="/" className="ce-footer-logo"><Logo className="w-8 h-8" /> close eye</Link>
+        <div className="ce-footer-inner">
+
+          {/* Brand */}
+          <div className="ce-footer-brand">
+            <Link to="/" className="ce-footer-logo">
+              <Logo className="w-7 h-7" /> close eye
+            </Link>
             <p className="ce-footer-tagline">Your trusted presence in India.</p>
-            <p className="ce-footer-company">Operated by Stexa Products &amp; Services Pvt. Ltd., Hyderabad</p>
           </div>
 
-          <div>
-            <p className="ce-footer-label">Quick Links</p>
-            <div className="ce-footer-links">
-              <a href="#how-it-works">How It Works</a>
-              <a href="#services">Services</a>
-              <a href="#pricing">Pricing</a>
-              <Link to="/companions">Companions</Link>
-              <Link to="/join-as-companion">Become a Companion</Link>
-              <Link to="/about">About Us</Link>
+          {/* Link columns */}
+          <div className="ce-footer-cols">
+            <div>
+              <p className="ce-footer-label">Product</p>
+              <nav className="ce-footer-links">
+                <a href="#how-it-works">How It Works</a>
+                <a href="#services">Services</a>
+                <a href="#pricing">Pricing</a>
+                <Link to="/companions">Companions</Link>
+                <Link to="/about">About</Link>
+              </nav>
+            </div>
+            <div>
+              <p className="ce-footer-label">Company</p>
+              <nav className="ce-footer-links">
+                <Link to="/join-as-companion">Become a Companion</Link>
+                <Link to="/privacy-policy">Privacy Policy</Link>
+                <Link to="/terms">Terms of Service</Link>
+                <Link to="/refund-policy">Refund Policy</Link>
+              </nav>
             </div>
           </div>
 
-          <div>
-            <p className="ce-footer-label">Contact</p>
-            <div className="ce-footer-contact">
-              <a href="mailto:hello@closeeye.in">📧 hello@closeeye.in</a>
-              <a href={`tel:+${WA_NUMBER}`}>📱 +91 9000221261</a>
-              <a href={WA_LINK} target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>
-              <a href="https://www.instagram.com/closeeyeglobal/" target="_blank" rel="noopener noreferrer">📸 @closeeyeglobal</a>
-              <a href="https://www.linkedin.com/company/closeeye/" target="_blank" rel="noopener noreferrer">💼 LinkedIn</a>
+          {/* Divider + social + copyright */}
+          <div className="ce-footer-bottom">
+            <div className="ce-footer-social">
+              <a href="mailto:hello@closeeye.in" aria-label="Email us">
+                <Mail size={17} strokeWidth={1.8} />
+              </a>
+              <a href={WA_LINK} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                <MessageCircle size={17} strokeWidth={1.8} />
+              </a>
+              <a href="https://www.instagram.com/closeeyeglobal/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <Instagram size={17} strokeWidth={1.8} />
+              </a>
+              <a href="https://www.linkedin.com/company/closeeye/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                <Linkedin size={17} strokeWidth={1.8} />
+              </a>
             </div>
+            <p className="ce-footer-copy">
+              © 2025 Close Eye · Stexa Products &amp; Services Pvt. Ltd., Hyderabad
+            </p>
           </div>
-        </div>
 
-        <div className="ce-footer-bottom">
-          <span>© 2025 Close Eye Companion. All rights reserved.</span>
-          <span>
-            <Link to="/privacy-policy">Privacy Policy</Link>
-            {'  ·  '}
-            <Link to="/terms">Terms of Service</Link>
-          </span>
         </div>
       </footer>
 

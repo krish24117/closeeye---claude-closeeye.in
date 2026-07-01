@@ -871,27 +871,30 @@
 .ce-cta-success { background: rgba(168,213,181,0.15); border: 1px solid var(--sage); border-radius: var(--radius-btn); padding: 18px; color: var(--white); font-size: 15px; }
 
 /* ---- Footer ---- */
-.ce-footer { background: var(--forest-dark); padding: 64px 64px 32px; }
-.ce-footer-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 48px; }
+.ce-footer { background: var(--forest-dark); padding: 64px 64px 0; }
+.ce-footer-inner { max-width: 1200px; margin: 0 auto; }
+.ce-footer-brand { margin-bottom: 48px; }
 .ce-footer-logo { display: inline-flex; align-items: center; gap: 8px; font-family: 'Open Sauce One', system-ui, sans-serif; font-weight: 800; letter-spacing: -0.02em; font-size: 20px; color: var(--white); text-decoration: none; }
-.ce-footer-tagline { font-size: 14px; color: rgba(255,255,255,0.6); margin: 12px 0 0; }
-.ce-footer-company { font-size: 12px; color: rgba(255,255,255,0.65); margin: 8px 0 0; line-height: 1.5; }
+.ce-footer-tagline { font-size: 14px; color: rgba(255,255,255,0.5); margin: 10px 0 0; }
+.ce-footer-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-bottom: 56px; }
 .ce-footer-label { font-size: 11px; color: var(--sage); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 16px; font-weight: 600; }
-.ce-footer-links { display: flex; flex-direction: column; gap: 12px; }
-.ce-footer-links a, .ce-footer-contact a {
-  font-size: 14px; color: rgba(255,255,255,0.7); text-decoration: none; transition: color 200ms ease;
-  display: inline-flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; font-family: inherit; padding: 0; text-align: left;
+.ce-footer-links { display: flex; flex-direction: column; gap: 11px; }
+.ce-footer-links a {
+  font-size: 14px; color: rgba(255,255,255,0.6); text-decoration: none; transition: color 180ms ease;
 }
-.ce-footer-links a:hover, .ce-footer-contact a:hover { color: var(--white); }
-.ce-footer-contact { display: flex; flex-direction: column; gap: 12px; }
+.ce-footer-links a:hover { color: var(--white); }
 .ce-footer-bottom {
-  max-width: 1200px; margin: 48px auto 0;
   border-top: 1px solid rgba(255,255,255,0.08);
-  padding-top: 24px;
-  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  padding: 24px 0 32px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
 }
-.ce-footer-bottom span, .ce-footer-bottom a { font-size: 12px; color: rgba(255,255,255,0.65); text-decoration: none; }
-.ce-footer-bottom a:hover { color: var(--white); }
+.ce-footer-social { display: flex; gap: 20px; }
+.ce-footer-social a {
+  color: rgba(255,255,255,0.45); transition: color 180ms ease;
+  display: flex; align-items: center;
+}
+.ce-footer-social a:hover { color: var(--sage); }
+.ce-footer-copy { font-size: 12px; color: rgba(255,255,255,0.35); margin: 0; }
 
 /* ---- Floating WhatsApp ---- */
 .ce-wa-float {
@@ -1021,7 +1024,7 @@
 @media (max-width: 1024px) {
   .ce-section { padding: 96px 40px; }
   .ce-hero { padding: 64px 40px; }
-  .ce-footer { padding: 56px 40px 28px; }
+  .ce-footer { padding: 56px 40px 0; }
   .ce-nav-inner { padding: 0 24px; }
 }
 
@@ -1048,15 +1051,16 @@
   .ce-vision-grid { grid-template-columns: 1fr; }
   .ce-bottom-nav { display: flex; }
   .ce-sticky-cta { display: block; }
-  .ce-footer { padding: 48px 24px calc(78px + env(safe-area-inset-bottom, 0px) + 64px + 24px); }
+  .ce-footer { padding: 48px 24px 0; }
+  .ce-footer-cols { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .ce-footer-bottom { flex-direction: column; align-items: flex-start; gap: 16px; padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px) + 24px); }
   /* Raise the floating WA button above the sticky CTA + bottom nav */
   .ce-wa-float { bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 64px + 12px); right: 16px; }
 
   .ce-quote-grid,
   .ce-svc-grid,
   .ce-pillars,
-  .ce-price-cards,
-  .ce-footer-grid { grid-template-columns: 1fr; }
+  .ce-price-cards { grid-template-columns: 1fr; }
 
   .ce-how-cols { grid-template-columns: 1fr; gap: 40px; }
   .ce-how-connector { display: none; }
@@ -1067,8 +1071,6 @@
   .ce-advisor-pill { flex: 1 1 100%; min-width: 0; }
   .ce-advisory { padding: 28px 20px; }
   .ce-society-card { padding: 32px 24px; }
-
-  .ce-footer-bottom { flex-direction: column; align-items: flex-start; }
 
   /* WhatsApp float — smaller on mobile, raised above bottom nav */
   .ce-wa-float { width: 44px; height: 44px; bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 64px + 10px); right: 12px; }
@@ -1092,7 +1094,8 @@
   .ce-price-card { padding: 24px 20px; }
   .ce-founders { gap: 40px; }
   .ce-founder-photo { width: 140px; height: 140px; }
-  .ce-footer { padding: 48px 20px calc(60px + env(safe-area-inset-bottom, 0px) + 64px + 24px); }
+  .ce-footer { padding: 48px 20px 0; }
+  .ce-footer-cols { grid-template-columns: 1fr; gap: 32px; }
   .ce-hero-ask-overlap { padding: 40px 16px 48px; }
 }
 
