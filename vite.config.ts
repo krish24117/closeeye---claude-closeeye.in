@@ -16,7 +16,7 @@ export default defineConfig({
           'vendor-react':    ['react', 'react-dom', 'react-router-dom'],
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-dates':    ['date-fns'],
-          'vendor-icons':    ['lucide-react', 'react-icons'],
+          'vendor-icons':    ['lucide-react'],
           'vendor-forms':    ['react-hook-form', '@hookform/resolvers', 'zod'],
           'vendor-md':       ['react-markdown'],
           'vendor-pdf':      ['@react-pdf/renderer'],
