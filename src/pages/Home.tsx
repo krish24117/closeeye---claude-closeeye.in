@@ -288,10 +288,12 @@ function HomeAskWidget() {
             onKeyDown={e => {
               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(question) }
             }}
+            onFocus={e => e.currentTarget.classList.remove('ce-ask-pulse')}
             placeholder="Ask about your parent's health…"
             disabled={typing}
             rows={1}
             aria-label="Ask a health question"
+            className={question || typing ? '' : 'ce-ask-pulse'}
             style={{
               flex: 1, fontFamily: 'inherit', fontSize: 13.5,
               padding: '11px 13px', border: '1px solid #e3ddd1',
