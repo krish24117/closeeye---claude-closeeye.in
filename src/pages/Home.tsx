@@ -618,9 +618,12 @@ export function HomePage() {
       <main>
 
       {/* ── LAUNCH BAND ─────────────────────────────────────────── */}
+      {/* padding-top uses max() so the dark band absorbs safe-area-inset-top in
+          PWA/standalone mode — the forest background hides the extra space */}
       <div style={{
         background: 'var(--forest)', color: '#fff',
-        padding: '12px 20px', textAlign: 'center',
+        padding: 'max(12px, env(safe-area-inset-top, 0px)) 20px 12px',
+        textAlign: 'center',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexWrap: 'wrap', gap: '10px 20px',
       }}>
