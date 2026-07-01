@@ -475,18 +475,23 @@
   border: none;
   font-family: inherit;
   -webkit-tap-highlight-color: transparent;
-  padding: 0;
+  padding: 0 4px;
   min-width: 0;
+  overflow: hidden;
 }
 .ce-bottom-nav-item:active { opacity: 0.6; }
 .ce-bottom-nav-item.is-active { color: var(--forest); }
 .ce-bottom-nav-label {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
   line-height: 1;
   color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* ---- Hero ---- */
