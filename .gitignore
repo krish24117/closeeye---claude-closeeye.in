@@ -8,9 +8,11 @@ dist
 .vercel
 supabase/.temp/
 
-# Playwright
+# Playwright / E2E
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+/e2e/.auth/
+/e2e-report/
