@@ -6,6 +6,7 @@ import { SplashScreen } from '@/components/SplashScreen'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
+import { BottomNav } from '@/components/layout/BottomNav'
 import { IOSInstallBanner } from '@/components/IOSInstallBanner'
 
 // Public pages — eagerly bundled (landing page must render without waiting for chunks)
@@ -238,6 +239,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
       <Navbar />
       {children}
       <Footer />
+      <BottomNav />
     </>
   )
 }
