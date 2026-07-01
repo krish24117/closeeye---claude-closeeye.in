@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { detectRedFlag } from "./redflags.ts";
+import { answerService } from "./service.ts";
 
 // Ask Close Eye — health guidance for families caring for elderly parents.
 // Restricted to: elderly health, wellbeing, medication, elder-care topics, Close Eye services.
@@ -79,6 +80,31 @@ const AMBULANCE_NUMBER = Deno.env.get("CLOSEEYE_AMBULANCE_NUMBER") ?? "108";
 function looksLikeInjection(text: string): boolean {
   const lower = text.toLowerCase();
   return INJECTION_SIGNALS.some((sig) => lower.includes(sig));
+}
+
+// ── Service intent detection ──────────────────────────────────────────────────
+// Mirrors ask-health-public — keep the two in sync if patterns change.
+const SERVICE_TRIGGERS: RegExp[] = [
+  /how (do|will|does|would) (you|close ?eye) (send|assign|find|choose|select|bring|provide|hire|match)/,
+  /how (does|do|will) (the|a|your)? ?(companion|carer|care ?giver|helper|staff|person|someone)/,
+  /(vet|background.?check|screen|verify|train|safe|trusted?|who comes?|who (are|is) (your|the))/,
+  /how much|what (is|are) (the )?charges?|pricing|price|plan cost|fees?|kitna/,
+  /what (is|are|does) (the plan|it) ?(include|cover|offer|contain|come with)/,
+  /what (do|would) (i|we|you) (get|receive|have)/,
+  /which (areas?|cities|locations?|places?|zones?)|where do you (operate|work|serve|cover)/,
+  /do you (come|operate|work|serve|cover) in\b/,
+  /how (do i|do we|can i|to) (start|sign up|register|get started|join|book|subscribe|begin)/,
+  /what (is|does|are) (close ?eye|closeeye)|what do (you|close ?eye) do/,
+  /how (do|does|do) (visit|the visit|visits?) (work|happen|go)/,
+  /what happens (during|in|at) (the|a) visit/,
+  /(can i|can we) (talk|speak|chat|call) (to|with) (you|someone|the team|a person)/,
+  /do you (do|offer|provide|cover|have) (hospital|escort|errand|pickup|transport)/,
+  /how (quickly|fast|soon) (can|do|will) you/,
+];
+
+function isServiceQuestion(text: string): boolean {
+  const q = text.toLowerCase();
+  return SERVICE_TRIGGERS.some((p) => p.test(q));
 }
 
 // Out-of-scope detection — conservative (prefers false negatives so Claude handles edge cases).
@@ -222,6 +248,31 @@ Deno.serve(async (req: Request) => {
     queryId = row.id;
   } else {
     queryId = conversationId!;
+  }
+
+  // ── Service routing — answers "how Close Eye works / pricing / coverage" questions
+  //    from the KB; never reaches the health Claude path for these.
+  //    Only on first turns — follow-up turns are already inside a health conversation.
+  if (!redFlag.matched && !isFollowUp && isServiceQuestion(question)) {
+    const emptyCtx = {
+      parentId: user.id, parentName: "", age: undefined,
+      conditions: [], medications: [], recentVitals: [],
+      city: undefined, location: undefined,
+      tier: (isExempt ? "founding" : "free") as "free" | "founding" | "care",
+    };
+    try {
+      const svc = await answerService(question, emptyCtx);
+      // Persist the service answer back to the query row
+      await sb.from("member_queries").update({
+        ai_answer: svc.message,
+        status: "ai_answered",
+        answered_at: new Date().toISOString(),
+      }).eq("id", queryId);
+      return json({ query_id: queryId, ai_answer: svc.message, track: "service" });
+    } catch (svcErr) {
+      console.error("[ask-health] service routing error, falling through to health path:", svcErr);
+      // Intentional fall-through: the health Claude call acts as a backstop
+    }
   }
 
   // ── Red-flag escalation — bypass Claude entirely; send fixed emergency response.

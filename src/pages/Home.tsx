@@ -143,7 +143,7 @@ const SAMPLE_QUESTIONS = [
 const DISCLAIMER = 'General guidance from Ask Close Eye, guided by our medical team. Not a substitute for professional medical advice.'
 
 interface PublicAskResponse {
-  lane: 'escalate' | 'inform'
+  lane: 'escalate' | 'inform' | 'service'
   message: string
   ambulanceNumber?: string
   disclaimer?: string
@@ -158,7 +158,7 @@ function HomeAskWidget() {
   const [capReached, setCapReached]     = useState(() => {
     try { return Number(localStorage.getItem(PUBLIC_CAP_KEY) ?? '0') >= PUBLIC_CAP_LIMIT } catch { return false }
   })
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   function bumpCap() {
     try {
@@ -178,7 +178,7 @@ function HomeAskWidget() {
       setAnswer(data as PublicAskResponse)
       bumpCap()
     } catch {
-      setAnswer({ lane: 'inform', message: "We couldn't reach our medical team right now. For anything urgent, please call 108.", disclaimer: DISCLAIMER, requiresHuman: false })
+      setAnswer({ lane: 'inform', message: "Something went wrong — please try again, or message us on WhatsApp at +91 90002 21261.", disclaimer: DISCLAIMER, requiresHuman: false })
     } finally {
       setTyping(false)
     }
@@ -237,19 +237,28 @@ function HomeAskWidget() {
 
       {/* Input row */}
       {!capReached && (
-        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8, marginBottom: 0 }}>
-          <input
+        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 0 }}>
+          <textarea
             ref={inputRef}
             value={question}
-            onChange={e => setQuestion(e.target.value)}
+            onChange={e => {
+              setQuestion(e.target.value)
+              e.currentTarget.style.height = 'auto'
+              e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 120) + 'px'
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(question) }
+            }}
             placeholder="Ask about your parent's health…"
             disabled={typing}
+            rows={1}
             aria-label="Ask a health question"
             style={{
               flex: 1, fontFamily: 'inherit', fontSize: 13.5,
               padding: '11px 13px', border: '1px solid #e3ddd1',
               borderRadius: 12, background: '#FAF7F2', color: '#0E2A1F',
-              outline: 'none', minHeight: 44,
+              outline: 'none', minHeight: 44, maxHeight: 120,
+              resize: 'none', overflowY: 'hidden', lineHeight: '1.4',
             }}
           />
           <button
@@ -304,23 +313,39 @@ function HomeAskWidget() {
           ) : (
             <div style={{ background: '#FAF7F2', border: '1px solid #e3ddd1', borderRadius: 12, padding: '13px 14px' }}>
               <p style={{ fontSize: 13, lineHeight: 1.55, color: '#243831', margin: 0 }}>{answer.message}</p>
-              <p style={{ fontSize: 10.5, color: '#7e8b83', fontStyle: 'italic', marginTop: 8, borderTop: '1px solid #e7e2d7', paddingTop: 6 }}>
-                {answer.disclaimer ?? DISCLAIMER}
-              </p>
+              {answer.lane !== 'service' && (
+                <p style={{ fontSize: 10.5, color: '#7e8b83', fontStyle: 'italic', marginTop: 8, borderTop: '1px solid #e7e2d7', paddingTop: 6 }}>
+                  {answer.disclaimer ?? DISCLAIMER}
+                </p>
+              )}
             </div>
           )}
 
           {/* Nudge */}
           {!isEscalate && (
-            <div style={{ marginTop: 11, background: 'linear-gradient(100deg,#0E2A1F,#163b2c)', color: '#FAF7F2', borderRadius: 13, padding: '12px 13px' }}>
-              <p style={{ fontSize: 13, fontWeight: 700 }}>Want answers specific to your parent?</p>
-              <Link
-                to="/founding-member/checkout"
-                style={{ display: 'inline-block', marginTop: 9, background: '#7FBF94', color: '#0E2A1F', textDecoration: 'none', fontWeight: 700, fontSize: 12, padding: '7px 13px', borderRadius: 999 }}
-              >
-                Register your parent →
-              </Link>
-            </div>
+            answer.lane === 'service' ? (
+              <div style={{ marginTop: 11, background: 'linear-gradient(100deg,#0E2A1F,#163b2c)', color: '#FAF7F2', borderRadius: 13, padding: '12px 13px' }}>
+                <p style={{ fontSize: 13, fontWeight: 700 }}>Have more questions? We're on WhatsApp.</p>
+                <a
+                  href="https://wa.me/919000221261"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: 'inline-block', marginTop: 9, background: '#7FBF94', color: '#0E2A1F', textDecoration: 'none', fontWeight: 700, fontSize: 12, padding: '7px 13px', borderRadius: 999 }}
+                >
+                  Message us on WhatsApp →
+                </a>
+              </div>
+            ) : (
+              <div style={{ marginTop: 11, background: 'linear-gradient(100deg,#0E2A1F,#163b2c)', color: '#FAF7F2', borderRadius: 13, padding: '12px 13px' }}>
+                <p style={{ fontSize: 13, fontWeight: 700 }}>Want answers specific to your parent?</p>
+                <Link
+                  to="/founding-member/checkout"
+                  style={{ display: 'inline-block', marginTop: 9, background: '#7FBF94', color: '#0E2A1F', textDecoration: 'none', fontWeight: 700, fontSize: 12, padding: '7px 13px', borderRadius: 999 }}
+                >
+                  Register your parent →
+                </Link>
+              </div>
+            )
           )}
         </div>
       )}

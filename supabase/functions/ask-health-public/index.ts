@@ -162,6 +162,69 @@ function detectRedFlag(rawMessage: string): { matched: boolean; category?: strin
   return { matched: false };
 }
 
+// ── Service intent detection ─────────────────────────────────────────────────
+// Patterns that signal the user is asking about Close Eye itself — not a health question.
+const SERVICE_TRIGGERS: RegExp[] = [
+  /how (do|will|does|would) (you|close ?eye) (send|assign|find|choose|select|bring|provide|hire|match)/,
+  /how (does|do|will) (the|a|your)? ?(companion|carer|care ?giver|helper|staff|person|someone)/,
+  /(vet|background.?check|screen|verify|train|safe|trusted?|who comes?|who (are|is) (your|the))/,
+  /how much|what (is|are) (the )?charges?|pricing|price|plan cost|fees?|kitna/,
+  /what (is|are|does) (the plan|it) ?(include|cover|offer|contain|come with)/,
+  /what (do|would) (i|we|you) (get|receive|have)/,
+  /which (areas?|cities|locations?|places?|zones?)|where do you (operate|work|serve|cover)/,
+  /do you (come|operate|work|serve|cover) in\b/,
+  /how (do i|do we|can i|to) (start|sign up|register|get started|join|book|subscribe|begin)/,
+  /what (is|does|are) (close ?eye|closeeye)|what do (you|close ?eye) do/,
+  /how (do|does|do) (visit|the visit|visits?) (work|happen|go)/,
+  /what happens (during|in|at) (the|a) visit/,
+  /(can i|can we) (talk|speak|chat|call) (to|with) (you|someone|the team|a person)/,
+  /do you (do|offer|provide|cover|have) (hospital|escort|errand|pickup|transport)/,
+  /how (quickly|fast|soon) (can|do|will) you/,
+  /what (areas?|location|city|cities|zone)/,
+];
+
+function isServiceQuestion(text: string): boolean {
+  const q = text.toLowerCase();
+  return SERVICE_TRIGGERS.some((p) => p.test(q));
+}
+
+// Inline KB context — mirrors service-kb.ts answers. Keep in sync.
+const SERVICE_KB_CONTEXT = `
+WHAT WE DO: Close Eye is your trusted presence in India when you can't be there. A trained companion visits your parent regularly for wellness check-ins and company. You get a WhatsApp update — often with a photo — after every visit. A dedicated care coordinator helps with doctor appointments, medicines and daily needs, and steps in quickly in an emergency. Ask Close Eye is here any time you have a health question.
+
+HOW COMPANIONS ARE SENT / FOUND: Every Close Eye companion is identity- and background-verified, interviewed in person, and trained under our Chief of Care with guidance from our medical advisors. We match a companion to your parent's needs and personality, supervise every visit, and act on your feedback. You are never handing your parent to a stranger.
+
+PRICING: You can start as a Founding Member for ₹100. Our NRI elder-care plan is ₹1,500/month and includes regular companion visits, check-ins, WhatsApp updates and coordinator support, with on-demand services available as add-ons.
+
+WHAT'S INCLUDED: Regular in-person companion visits, wellness check-ins, a WhatsApp update after each visit, a dedicated care coordinator, help coordinating doctor visits, medication reminders, and access to Ask Close Eye.
+
+WHERE WE WORK: We currently serve families in Hyderabad. Message us on WhatsApp at +91 90002 21261 if your parent is in a different area and we'll let you know our plans.
+
+HOW TO START: Sign up at closeeye.in or message us on WhatsApp (+91 90002 21261), share a few details about your parent, and our team sets up their care within a couple of days.
+
+HOW VISITS WORK: A companion visits in person, spends time with your parent — health check, conversation, helping with daily needs — and sends you a WhatsApp report with a summary and often a photo within the hour.
+
+EMERGENCIES: If something urgent happens, your care coordinator is alerted immediately and helps arrange care, including getting your parent to a nearby hospital, while keeping you informed across time zones.
+`.trim();
+
+async function generateServiceAnswer(question: string): Promise<string> {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set");
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 200,
+      system: `You are Ask Close Eye, the warm voice of an NRI elder-care service. Answer the question using ONLY the facts in the knowledge base below. Be brief (2-3 sentences), warm, and direct. If the knowledge base doesn't cover it, say warmly you'll connect them to the team via WhatsApp at +91 90002 21261. Never give medical advice. Never invent prices, policies, or facts.\n\nKNOWLEDGE BASE:\n${SERVICE_KB_CONTEXT}`,
+      messages: [{ role: "user", content: question }],
+    }),
+  });
+  if (!res.ok) throw new Error(`Claude API ${res.status}`);
+  const data = await res.json() as { content?: { text?: string }[] };
+  return data.content?.[0]?.text?.trim() ?? "";
+}
+
 // ── Claude call (general guidance; NO parent context) ────────────────────────
 async function generateGeneralAnswer(question: string): Promise<string> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
@@ -219,7 +282,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
   }
 
-  // General guidance (no parent context — Tier 0)
+  // ── Service intent — runs after red-flag so real emergencies still escalate ─
+  if (isServiceQuestion(question)) {
+    let svcMessage: string;
+    try {
+      svcMessage = await generateServiceAnswer(question);
+      if (!svcMessage) throw new Error("empty");
+    } catch {
+      svcMessage = "I'm not sure — please message us on WhatsApp at +91 90002 21261 and our team will answer right away.";
+    }
+    return json({ lane: "service", message: svcMessage, requiresHuman: false });
+  }
+
+  // General health guidance (no parent context — Tier 0)
   let message: string;
   try {
     message = await generateGeneralAnswer(question);
