@@ -741,7 +741,13 @@
   .ce-nav-center, .ce-nav-textlink, .ce-nav-register { display: none; }
   .ce-hamburger { display: inline-flex; }
 
-  .ce-hero { padding: 80px 24px; min-height: auto; gap: 48px; }
+  .ce-hero { padding: 80px 24px; min-height: auto; gap: 40px; }
+
+  /* Re-constrain phone mockup so it fits inside the mobile viewport.
+     The ≤1000px rule removed max-height; put it back for phones. */
+  .ce-phone-wrap { width: min(300px, 100%); }
+  .ce-phone { max-height: 60vh; }
+  .ce-wa-chat { overflow-y: auto; }
   .ce-section { padding: 64px 24px; }
   .ce-footer { padding: 48px 24px 24px; }
 
