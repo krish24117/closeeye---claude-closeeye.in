@@ -24,7 +24,7 @@ const TRUST_SIGNALS = [
   'GPS-verified visits',
   'Doctor-reviewed reports',
   'WhatsApp delivered',
-  'Apollo Hospital nearby',
+  'Emergency-ready companions',
 ]
 
 const WA_MESSAGES = [
@@ -683,7 +683,7 @@ export function HomePage() {
       {/* ── TRUST BAR ────────────────────────────────────────────── */}
       <div className="ce-trust-bar">
         <div className="ce-trust-bar-inner">
-          {[...TRUST_SIGNALS, ...TRUST_SIGNALS].map((t, i) => (
+          {TRUST_SIGNALS.map((t, i) => (
             <span key={i} className="ce-trust-bar-item">
               <Check size={13} style={{ color: '#7FBF94', flexShrink: 0 }} /> {t}
             </span>
