@@ -1076,20 +1076,24 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Divider + social + copyright */}
+          {/* Contact + copyright */}
           <div className="ce-footer-bottom">
             <div className="ce-footer-social">
-              <a href="mailto:hello@closeeye.in" aria-label="Email us">
-                <Mail size={17} strokeWidth={1.8} />
+              <a href="mailto:hello@closeeye.in" className="ce-footer-social-link">
+                <Mail size={16} strokeWidth={1.8} />
+                <span>hello@closeeye.in</span>
               </a>
-              <a href={WA_LINK} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-                <MessageCircle size={17} strokeWidth={1.8} />
+              <a href={WA_LINK} target="_blank" rel="noopener noreferrer" className="ce-footer-social-link">
+                <MessageCircle size={16} strokeWidth={1.8} />
+                <span>WhatsApp</span>
               </a>
-              <a href="https://www.instagram.com/closeeyeglobal/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                <Instagram size={17} strokeWidth={1.8} />
+              <a href="https://www.instagram.com/closeeyeglobal/" target="_blank" rel="noopener noreferrer" className="ce-footer-social-link">
+                <Instagram size={16} strokeWidth={1.8} />
+                <span>@closeeyeglobal</span>
               </a>
-              <a href="https://www.linkedin.com/company/closeeye/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-                <Linkedin size={17} strokeWidth={1.8} />
+              <a href="https://www.linkedin.com/company/closeeye/" target="_blank" rel="noopener noreferrer" className="ce-footer-social-link">
+                <Linkedin size={16} strokeWidth={1.8} />
+                <span>LinkedIn</span>
               </a>
             </div>
             <p className="ce-footer-copy">
