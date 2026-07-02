@@ -11,3 +11,26 @@ verify_jwt = false
 
 [functions.care-intelligence-scan]
 verify_jwt = false
+
+# Public endpoints — no JWT required
+[functions.ask-health-public]
+verify_jwt = false
+
+[functions.waitlist-signup]
+verify_jwt = false
+
+# Booking requests accept optional auth (guests may book)
+[functions.submit-booking-request]
+verify_jwt = false
+
+# Test function — admin-auth enforced in-function; remove after smoke testing
+[functions.send-whatsapp-test]
+verify_jwt = false
+
+# Status lifecycle
+[functions.update-booking-status]
+verify_jwt = true
+
+# Cron — called by pg_cron / Supabase scheduled jobs with service-role key
+[functions.check-overdue-bookings]
+verify_jwt = false

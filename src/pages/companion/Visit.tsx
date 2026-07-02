@@ -258,6 +258,18 @@ function BriefingPhase({
 
   const [gpsState, setGpsState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [checkInTime, setCheckInTime] = useState<string | null>(null)
+  const [onTheWayState, setOnTheWayState] = useState<'idle' | 'loading' | 'done'>(
+    booking.status === 'on_the_way' ? 'done' : 'idle'
+  )
+
+  async function handleOnTheWay() {
+    setOnTheWayState('loading')
+    const { error } = await supabase.functions.invoke('update-booking-status', {
+      body: { booking_id: booking.id, new_status: 'on_the_way' },
+    })
+    if (error) { setOnTheWayState('idle'); return }
+    setOnTheWayState('done')
+  }
 
   async function handleCheckIn() {
     setGpsState('loading')
@@ -272,8 +284,13 @@ function BriefingPhase({
       check_in_lat: coords?.lat ?? null,
       check_in_lng: coords?.lng ?? null,
       status: 'in_progress',
+      attention_needed: false,
     }).eq('id', booking.id)
     if (error) { setGpsState('error'); return }
+    // Record in history (non-blocking — check-in already succeeded above)
+    void supabase.from('booking_status_history').insert({
+      booking_id: booking.id, status: 'in_progress', note: 'Companion checked in',
+    })
     setCheckInTime(at)
     setGpsState('done')
     window.dispatchEvent(new Event('closeeye:active-booking-changed'))
@@ -425,6 +442,27 @@ function BriefingPhase({
                 </p>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ── On the way ── notify family before arriving */}
+        {!['in_progress', 'completed'].includes(booking.status) && (
+          <div className="pt-2">
+            <button
+              onClick={handleOnTheWay}
+              disabled={onTheWayState !== 'idle'}
+              className={`w-full min-h-[52px] rounded-[16px] text-[15px] font-semibold flex items-center justify-center gap-2 transition-colors ${
+                onTheWayState === 'done'
+                  ? 'bg-[#A8D5B5]/30 text-[#2c6b43] border border-[#A8D5B5]'
+                  : 'bg-[#FAF7F2] border border-[#A8D5B5] text-[#0E2A1F]'
+              }`}
+            >
+              {onTheWayState === 'loading'
+                ? <><Loader2 size={17} className="animate-spin" /> Notifying family…</>
+                : onTheWayState === 'done'
+                ? <><Check size={17} /> Family notified — on the way</>
+                : <>🚗 I am on the way — notify family</>}
+            </button>
           </div>
         )}
 

@@ -7,15 +7,24 @@ import { Badge, EmptyState, ErrorBox, Skeleton } from './_shared'
 
 type Tone = 'green' | 'amber' | 'red' | 'blue' | 'purple' | 'gray'
 
-const ALL_STATUSES = ['pending', 'confirmed', 'companion_assigned', 'in_progress', 'completed', 'cancelled']
+const ALL_STATUSES = [
+  'pending', 'confirmed', 'companion_assigned', 'on_the_way',
+  'in_progress', 'completed', 'delayed', 'rescheduled', 'cancelled',
+]
+
+// Statuses that require a note/reschedule-time before confirming
+const NEEDS_NOTE = new Set(['delayed', 'rescheduled', 'cancelled'])
 
 function statusTone(status: string): Tone {
   switch (status) {
     case 'pending':            return 'amber'
     case 'confirmed':          return 'blue'
     case 'companion_assigned': return 'purple'
+    case 'on_the_way':         return 'purple'
     case 'in_progress':        return 'green'
     case 'completed':          return 'gray'
+    case 'delayed':            return 'amber'
+    case 'rescheduled':        return 'amber'
     case 'cancelled':          return 'red'
     case 'requested':          return 'amber'
     case 'needs_details':      return 'amber'
@@ -37,10 +46,17 @@ function paymentTone(status: string): Tone {
 }
 
 const LABEL: Record<string, string> = {
+  pending:             'Pending',
   requested:           'Request received',
   needs_details:       'Needs details',
   needs_reschedule:    'Awaiting reschedule',
   confirmed:           'Confirmed',
+  companion_assigned:  'Companion assigned',
+  on_the_way:          'On the way',
+  in_progress:         'In progress',
+  completed:           'Completed',
+  delayed:             'Delayed',
+  rescheduled:         'Rescheduled',
   scheduled:           'Scheduled',
   companion_confirmed: 'Companion confirmed',
   paid:                'Visit confirmed',
@@ -765,6 +781,10 @@ export function AdminBookings() {
   const [search, setSearch] = useState('')
   const [savingId, setSavingId] = useState<string | null>(null)
   const [payoutInputs, setPayoutInputs] = useState<Record<string, string>>({})
+  // Pending status change — waits for a note before calling the edge function
+  const [pendingStatus, setPendingStatus] = useState<{
+    bookingId: string; status: string; note: string; rescheduleTime: string
+  } | null>(null)
 
   useEffect(() => { if (tab === 'bookings') load() }, [tab])
 
@@ -774,7 +794,7 @@ export function AdminBookings() {
     try {
       const [bookingsRes, companionsRes] = await Promise.all([
         supabase.from('bookings')
-          .select('*, loved_ones(full_name,city), companions(full_name,phone)')
+          .select('*, loved_ones(full_name,city), companions(full_name,phone), booking_status_history(status,changed_at,note)')
           .order('created_at', { ascending: false }),
         supabase.from('companions').select('id,full_name,phone').order('full_name'),
       ])
@@ -818,15 +838,36 @@ export function AdminBookings() {
     }
   }
 
-  async function updateStatus(b: any, status: string) {
-    setSavingId(b.id)
+  // Called when admin picks from the status dropdown
+  function handleStatusSelect(b: any, newStatus: string) {
+    if (newStatus === b.status) return
+    if (NEEDS_NOTE.has(newStatus)) {
+      setPendingStatus({ bookingId: b.id, status: newStatus, note: '', rescheduleTime: '' })
+    } else {
+      updateStatusViaEdge(b.id, b.status, newStatus)
+    }
+  }
+
+  async function updateStatusViaEdge(
+    bookingId: string,
+    _prevStatus: string,
+    newStatus: string,
+    note?: string,
+    rescheduleTime?: string,
+  ) {
+    setSavingId(bookingId)
     try {
-      const { error } = await supabase.from('bookings').update({ status }).eq('id', b.id)
-      if (error) throw error
-      setBookings(prev => prev.map(x => x.id === b.id ? { ...x, status } : x))
-      showToast('Status updated', 'success')
-    } catch {
-      showToast('Could not update status — try again', 'error')
+      const { data, error } = await supabase.functions.invoke('update-booking-status', {
+        body: { booking_id: bookingId, new_status: newStatus, note, reschedule_time: rescheduleTime || undefined },
+      })
+      if (error || !data?.ok) throw new Error(data?.error || error?.message || 'Unknown error')
+      setBookings(prev => prev.map(x => x.id === bookingId
+        ? { ...x, status: newStatus, attention_needed: false, scheduled_at: rescheduleTime || x.scheduled_at }
+        : x))
+      setPendingStatus(null)
+      showToast('Status updated — family notified', 'success')
+    } catch (e: any) {
+      showToast(`Could not update: ${e?.message || 'try again'}`, 'error')
     } finally {
       setSavingId(null)
     }
@@ -870,6 +911,7 @@ export function AdminBookings() {
 
   const filtered = bookings
     .filter(b => {
+      if (statusFilter === 'needs_attention') return b.attention_needed
       if (statusFilter !== 'all' && b.status !== statusFilter) return false
       if (search) {
         const q = search.toLowerCase()
@@ -879,6 +921,9 @@ export function AdminBookings() {
       return true
     })
     .sort((a, b) => {
+      // Overdue first, then unassigned, then by date
+      if (a.attention_needed && !b.attention_needed) return -1
+      if (!a.attention_needed && b.attention_needed) return 1
       const aUnassigned = !a.companion_id && !['completed', 'cancelled'].includes(a.status)
       const bUnassigned = !b.companion_id && !['completed', 'cancelled'].includes(b.status)
       if (aUnassigned && !bUnassigned) return -1
@@ -886,7 +931,8 @@ export function AdminBookings() {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
 
-  const unassignedCount = bookings.filter(b => !b.companion_id && !['completed', 'cancelled'].includes(b.status)).length
+  const unassignedCount  = bookings.filter(b => !b.companion_id && !['completed', 'cancelled'].includes(b.status)).length
+  const overdueCount     = bookings.filter(b => b.attention_needed).length
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -927,7 +973,10 @@ export function AdminBookings() {
               className="adm-input"
             >
               <option value="all">All statuses</option>
-              {ALL_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+              <option value="needs_attention">⚠ Needs attention{overdueCount > 0 ? ` (${overdueCount})` : ''}</option>
+              {ALL_STATUSES.map(s => (
+                <option key={s} value={s}>{LABEL[s] || s.replace(/_/g, ' ')}</option>
+              ))}
             </select>
             <input
               value={search}
@@ -949,6 +998,8 @@ export function AdminBookings() {
               {filtered.map(b => {
                 const isUnassigned = !b.companion_id && !['completed', 'cancelled'].includes(b.status)
                 const isSaving = savingId === b.id
+                const isOverdue = b.attention_needed
+                const hasPending = pendingStatus?.bookingId === b.id
                 const payoutRupees = b.companion_payout_paise != null ? `₹${(b.companion_payout_paise / 100).toLocaleString('en-IN')}` : null
                 const amountRupees = b.amount_paise ? `₹${(b.amount_paise / 100).toLocaleString('en-IN')}` : '—'
 
@@ -957,7 +1008,7 @@ export function AdminBookings() {
                     key={b.id}
                     className="adm-card"
                     style={{
-                      borderLeft: isUnassigned ? '3px solid var(--gold)' : undefined,
+                      borderLeft: isOverdue ? '3px solid #EF4444' : isUnassigned ? '3px solid var(--gold)' : undefined,
                       overflow: 'hidden',
                     }}
                   >
@@ -967,7 +1018,10 @@ export function AdminBookings() {
                           {SERVICE_NAMES[b.service_type] || b.service_type}
                         </p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                          {isUnassigned && (
+                          {isOverdue && (
+                            <Badge tone="red">⚠ NEEDS ATTENTION</Badge>
+                          )}
+                          {isUnassigned && !isOverdue && (
                             <Badge tone="amber">NEEDS COMPANION</Badge>
                           )}
                           <Badge tone={statusTone(b.status)}>
@@ -1015,16 +1069,69 @@ export function AdminBookings() {
                         </select>
                       </div>
 
-                      <div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <select
-                          value={b.status}
-                          onChange={e => updateStatus(b, e.target.value)}
+                          value={hasPending ? pendingStatus!.status : b.status}
+                          onChange={e => handleStatusSelect(b, e.target.value)}
                           disabled={isSaving}
                           className="adm-input"
                           style={{ fontSize: 12, padding: '6px 10px', opacity: isSaving ? 0.5 : 1 }}
                         >
-                          {ALL_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+                          {ALL_STATUSES.map(s => (
+                            <option key={s} value={s}>{LABEL[s] || s.replace(/_/g, ' ')}</option>
+                          ))}
                         </select>
+
+                        {/* Inline note form for delayed / rescheduled / cancelled */}
+                        {hasPending && (
+                          <div style={{
+                            background: '#FFF8F0', border: '1px solid #FBD5A5', borderRadius: 10,
+                            padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6,
+                          }}>
+                            {pendingStatus!.status === 'rescheduled' && (
+                              <input
+                                type="datetime-local"
+                                className="adm-input"
+                                style={{ fontSize: 12, padding: '6px 8px' }}
+                                value={pendingStatus!.rescheduleTime}
+                                onChange={e => setPendingStatus(p => p && ({ ...p, rescheduleTime: e.target.value }))}
+                              />
+                            )}
+                            <textarea
+                              placeholder={
+                                pendingStatus!.status === 'delayed'      ? 'Reason for delay (sent to family)…' :
+                                pendingStatus!.status === 'rescheduled'  ? 'Reason for reschedule (optional)…' :
+                                'Reason for cancellation (sent to family)…'
+                              }
+                              rows={2}
+                              className="adm-input"
+                              style={{ fontSize: 12, padding: '6px 8px', resize: 'none', fontFamily: 'inherit' }}
+                              value={pendingStatus!.note}
+                              onChange={e => setPendingStatus(p => p && ({ ...p, note: e.target.value }))}
+                            />
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <button
+                                onClick={() => updateStatusViaEdge(
+                                  b.id, b.status, pendingStatus!.status,
+                                  pendingStatus!.note,
+                                  pendingStatus!.rescheduleTime || undefined,
+                                )}
+                                disabled={isSaving}
+                                className="adm-btn adm-btn-primary"
+                                style={{ fontSize: 11, padding: '4px 12px', opacity: isSaving ? 0.5 : 1 }}
+                              >
+                                {isSaving ? '…' : 'Confirm & notify family'}
+                              </button>
+                              <button
+                                onClick={() => setPendingStatus(null)}
+                                className="adm-btn"
+                                style={{ fontSize: 11, padding: '4px 10px', color: 'var(--gray-mid)' }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

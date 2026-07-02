@@ -3,10 +3,22 @@ import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/components/ui/Toast'
-import { Calendar, CheckCircle, Clock, AlertCircle, XCircle, ChevronRight, Plus } from 'lucide-react'
+import { Calendar, CheckCircle, Clock, AlertCircle, XCircle, ChevronRight, Plus, Car, UserCheck, AlertTriangle } from 'lucide-react'
 import { loadRazorpayScript } from '@/lib/razorpay'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
+
+interface ActiveVisit {
+  id: string
+  service_type: string
+  status: string
+  scheduled_at: string | null
+  reschedule_time: string | null
+  attention_needed: boolean
+  loved_ones: { full_name: string | null } | null
+  companions: { full_name: string | null } | null
+  booking_status_history: { status: string; changed_at: string; note: string | null }[]
+}
 
 interface BookingRequest {
   id: string
@@ -108,6 +120,141 @@ function BookingsSkeleton() {
           <div style={{ height: 12, width: 120, background: '#f3f4f6', borderRadius: 8 }} />
         </div>
       ))}
+    </div>
+  )
+}
+
+// ── Visit status timeline ─────────────────────────────────────────────────────
+
+const TIMELINE_STEPS: { key: string; label: string; icon: React.ReactNode }[] = [
+  { key: 'confirmed',          label: 'Confirmed',         icon: <CheckCircle size={14} /> },
+  { key: 'companion_assigned', label: 'Companion assigned',icon: <UserCheck size={14} /> },
+  { key: 'on_the_way',         label: 'On the way',        icon: <Car size={14} /> },
+  { key: 'in_progress',        label: 'Visit in progress', icon: <Clock size={14} /> },
+  { key: 'completed',          label: 'Visit done',        icon: <CheckCircle size={14} /> },
+]
+
+const STATUS_ORDER = ['confirmed','companion_assigned','on_the_way','in_progress','completed']
+
+function visitStatusLabel(status: string): string {
+  const map: Record<string, string> = {
+    pending:            'Pending',
+    confirmed:          'Confirmed',
+    companion_assigned: 'Companion assigned',
+    on_the_way:         'Companion on the way',
+    in_progress:        'Visit in progress',
+    completed:          'Visit complete',
+    delayed:            'Delayed',
+    rescheduled:        'Rescheduled',
+    cancelled:          'Cancelled',
+  }
+  return map[status] ?? status.replace(/_/g, ' ')
+}
+
+function StatusTimeline({ visit }: { visit: ActiveVisit }) {
+  const currentIdx = STATUS_ORDER.indexOf(visit.status)
+  const isException = ['delayed', 'rescheduled', 'cancelled'].includes(visit.status)
+  const latestNote = [...visit.booking_status_history]
+    .sort((a, b) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime())[0]
+  const scheduledAt = visit.reschedule_time || visit.scheduled_at
+  const timeStr = scheduledAt
+    ? new Date(scheduledAt).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
+    : null
+
+  return (
+    <div style={{
+      background: '#fff',
+      border: `1px solid ${visit.attention_needed ? '#FECACA' : '#E8F4EC'}`,
+      borderLeft: `4px solid ${visit.attention_needed ? '#EF4444' : visit.status === 'completed' ? '#22c55e' : '#0E2A1F'}`,
+      borderRadius: 16,
+      padding: '14px 16px',
+      marginBottom: 12,
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div>
+          <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--forest)', margin: 0 }}>
+            {visit.loved_ones?.full_name || 'Visit'}
+            {timeStr && <span style={{ fontWeight: 400, color: '#6b7280', fontSize: 13 }}> · {timeStr}</span>}
+          </p>
+          {visit.companions?.full_name && (
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '2px 0 0' }}>
+              👤 {visit.companions.full_name}
+            </p>
+          )}
+        </div>
+        <span style={{
+          fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 100,
+          background: visit.status === 'completed' ? '#dcfce7' :
+                      isException ? '#fef3c7' :
+                      visit.status === 'in_progress' ? '#dbeafe' : '#f3f4f6',
+          color: visit.status === 'completed' ? '#15803d' :
+                 isException ? '#92400e' :
+                 visit.status === 'in_progress' ? '#1d4ed8' : '#374151',
+        }}>
+          {visitStatusLabel(visit.status)}
+        </span>
+      </div>
+
+      {/* Exception state */}
+      {isException && (
+        <div style={{
+          background: '#fffbeb', border: '1px solid #fde68a',
+          borderRadius: 10, padding: '8px 12px', marginBottom: 12,
+          display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#78350f',
+        }}>
+          <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+          <span>
+            {visit.status === 'delayed' && 'Your visit has been delayed.'}
+            {visit.status === 'rescheduled' && `Visit rescheduled${scheduledAt ? ` to ${new Date(scheduledAt).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}` : ''}.`}
+            {visit.status === 'cancelled' && 'This visit has been cancelled.'}
+            {latestNote?.note && ` ${latestNote.note}`}
+          </span>
+        </div>
+      )}
+
+      {/* Timeline steps */}
+      {!isException && visit.status !== 'cancelled' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+          {TIMELINE_STEPS.map((step, i) => {
+            const stepIdx  = STATUS_ORDER.indexOf(step.key)
+            const isDone   = currentIdx > stepIdx || visit.status === 'completed'
+            const isActive = visit.status === step.key || (visit.status === 'delayed' && stepIdx === currentIdx)
+            const isFuture = stepIdx > currentIdx
+
+            return (
+              <div key={step.key} style={{ display: 'flex', alignItems: 'center', flex: i < TIMELINE_STEPS.length - 1 ? 1 : undefined }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <div style={{
+                    width: 26, height: 26, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: isDone ? '#0E2A1F' : isActive ? '#A8D5B5' : '#f3f4f6',
+                    color: isDone ? '#A8D5B5' : isActive ? '#0E2A1F' : '#9ca3af',
+                    flexShrink: 0,
+                    boxShadow: isActive ? '0 0 0 3px rgba(168,213,181,0.35)' : undefined,
+                  }}>
+                    {step.icon}
+                  </div>
+                  <p style={{
+                    fontSize: 9, fontWeight: isActive ? 700 : 500, textAlign: 'center',
+                    color: isDone ? '#0E2A1F' : isActive ? '#0E2A1F' : '#9ca3af',
+                    lineHeight: 1.3, maxWidth: 48, margin: 0,
+                  }}>
+                    {step.label}
+                  </p>
+                </div>
+                {i < TIMELINE_STEPS.length - 1 && (
+                  <div style={{
+                    flex: 1, height: 2, marginBottom: 16,
+                    background: isDone ? '#0E2A1F' : '#e5e7eb',
+                    transition: 'background 0.3s',
+                  }} />
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -339,20 +486,32 @@ function BookingCard({
 export function DashboardBookings() {
   const { user, profile } = useAuth()
   const [bookings, setBookings]               = useState<BookingRequest[]>([])
+  const [activeVisits, setActiveVisits]       = useState<ActiveVisit[]>([])
   const [loading, setLoading]                 = useState(true)
   const [error, setError]                     = useState<string | null>(null)
   const [optimisticPaid, setOptimisticPaid]   = useState<Set<string>>(new Set())
 
   const load = useCallback(async () => {
     if (!user) return
-    const { data, error: err } = await supabase
-      .from('booking_requests')
-      .select('id,service_id,service_name,amount_paise,scheduled_at,recipient_name,recipient_address,requester_whatsapp,notes,status,payment_status,companion_name,confirmed_at,paid_at,razorpay_order_id,created_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
+    const [requestsRes, visitsRes] = await Promise.all([
+      supabase
+        .from('booking_requests')
+        .select('id,service_id,service_name,amount_paise,scheduled_at,recipient_name,recipient_address,requester_whatsapp,notes,status,payment_status,companion_name,confirmed_at,paid_at,razorpay_order_id,created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('bookings')
+        .select('id,service_type,status,scheduled_at,reschedule_time,attention_needed,loved_ones(full_name),companions(full_name),booking_status_history(status,changed_at,note)')
+        .eq('family_user_id', user.id)
+        .not('status', 'in', '("cancelled")')
+        .order('created_at', { ascending: false })
+        .limit(5),
+    ])
 
-    if (err) { setError('Could not load bookings — please try again.'); setLoading(false); return }
-    setBookings(data || [])
+    if (requestsRes.error) { setError('Could not load bookings — please try again.'); setLoading(false); return }
+    setBookings(requestsRes.data || [])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setActiveVisits(((visitsRes.data ?? []) as any[]) as ActiveVisit[])
     setLoading(false)
     setError(null)
   }, [user])
@@ -401,8 +560,16 @@ export function DashboardBookings() {
         </div>
       )}
 
+      {/* ── Active visit tracking (from bookings table) ───────────────────── */}
+      {activeVisits.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: '0.08em', margin: '0 0 10px' }}>VISIT TRACKING</p>
+          {activeVisits.map(v => <StatusTimeline key={v.id} visit={v} />)}
+        </div>
+      )}
+
       {/* Empty state */}
-      {bookings.length === 0 && (
+      {bookings.length === 0 && activeVisits.length === 0 && (
         <div style={{ textAlign: 'center', padding: '64px 20px', background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0' }}>
           <div style={{ width: 56, height: 56, background: '#f0fdf4', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <Calendar size={24} color="#16a34a" />
