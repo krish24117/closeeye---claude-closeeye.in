@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 
 // One-off booking REQUEST (request -> confirm -> pay). No payment taken here.
 // We persist an unpaid request; ops confirm availability, then send a payment link.
@@ -89,7 +90,7 @@ Deno.serve(async (req: Request) => {
       recipient_address: addrClean,
       requester_whatsapp: waClean,
       notes: notes?.trim() || null,
-      status: needsDetails ? "needs_details" : "requested",
+      status: needsDetails ? "needs_details" : "pending_confirmation",
     })
     .select("id")
     .single();
@@ -131,6 +132,7 @@ Deno.serve(async (req: Request) => {
   } catch (waErr) {
     console.error("Admin WhatsApp notify error (non-fatal):", waErr);
   }
+
 
   return json({
     ok: true,

@@ -42,6 +42,7 @@ const DashboardNewBooking = lazy(() => import('@/pages/dashboard/NewBooking').th
 const DashboardMembers = lazy(() => import('@/pages/dashboard/Members').then(m => ({ default: m.DashboardMembers })))
 const DashboardSubscription = lazy(() => import('@/pages/dashboard/Subscription').then(m => ({ default: m.DashboardSubscription })))
 const BookingConfirmationPage = lazy(() => import('@/pages/dashboard/BookingConfirmation').then(m => ({ default: m.BookingConfirmationPage })))
+const BookingReceivedPage = lazy(() => import('@/pages/dashboard/BookingReceived').then(m => ({ default: m.BookingReceived })))
 
 const CompanionLayout = lazy(() => import('@/pages/companion/Layout').then(m => ({ default: m.CompanionLayout })))
 const CompanionHome = lazy(() => import('@/pages/companion/Home').then(m => ({ default: m.CompanionHome })))
@@ -337,6 +338,7 @@ export default function App() {
               <Route path="members" element={<DashboardMembers />} />
               <Route path="subscription" element={<DashboardSubscription />} />
               <Route path="booking-confirmation" element={<BookingConfirmationPage />} />
+              <Route path="booking-received" element={<BookingReceivedPage />} />
             </Route>
             <Route path="/companion" element={<ProtectedRoute role="companion"><CompanionLayout /></ProtectedRoute>}>
               <Route index element={<CompanionHome />} />

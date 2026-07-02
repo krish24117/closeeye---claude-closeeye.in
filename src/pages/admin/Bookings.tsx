@@ -27,6 +27,7 @@ function statusTone(status: string): Tone {
     case 'delayed':            return 'amber'
     case 'rescheduled':        return 'amber'
     case 'cancelled':          return 'red'
+    case 'pending_confirmation': return 'amber'
     case 'requested':          return 'amber'
     case 'needs_details':      return 'amber'
     case 'needs_reschedule':   return 'red'
@@ -47,9 +48,10 @@ function paymentTone(status: string): Tone {
 }
 
 const LABEL: Record<string, string> = {
-  pending:             'Pending',
-  requested:           'Request received',
-  needs_details:       'Needs details',
+  pending:              'Pending',
+  pending_confirmation: 'Pending confirmation',
+  requested:            'Request received',
+  needs_details:        'Needs details',
   needs_reschedule:    'Awaiting reschedule',
   confirmed:           'Confirmed',
   companion_assigned:  'Companion assigned',
@@ -380,6 +382,7 @@ function ConfirmDrawer({
   const [availability,        setAvailability]       = useState<'idle' | 'checking' | 'available' | 'conflict'>('idle')
   const [conflictWith,        setConflictWith]       = useState<string | null>(null)
   const [saving,              setSaving]             = useState(false)
+  const [paymentLink,         setPaymentLink]        = useState<{ url: string; id: string } | null>(null)
 
   const familyName = request._family_name || 'there'
   const elderName  = request.recipient_name || 'your loved one'
@@ -447,33 +450,59 @@ function ConfirmDrawer({
       confirmedAt.setHours(selectedHour, selectedMinute, 0, 0)
 
       const amountPaise = amountRupees ? Math.round(parseFloat(amountRupees) * 100) : request.amount_paise
-      const updates: Record<string, unknown> = {
-        status:         'companion_confirmed',
-        companion_name: selectedCompanion.full_name,
-        confirmed_at:   new Date().toISOString(),
-        scheduled_at:   confirmedAt.toISOString(),
-        ...(amountPaise ? { amount_paise: amountPaise } : {}),
-      }
 
-      // Auto-link user_id if this was a guest booking — makes it visible on family dashboard
-      if (!request.user_id && request.requester_whatsapp) {
-        const phone = request.requester_whatsapp.replace(/\D/g, '').slice(-10)
-        const { data: matched } = await supabase
-          .from('profiles').select('id').ilike('whatsapp_number', `%${phone}`).limit(1).maybeSingle()
-        if (matched) updates.user_id = matched.id
-      }
+      const { data, error } = await supabase.functions.invoke('confirm-booking-and-send-payment', {
+        body: {
+          booking_request_id: request.id,
+          companion_name: selectedCompanion.full_name,
+          scheduled_at: confirmedAt.toISOString(),
+          amount_paise: amountPaise,
+        },
+      })
 
-      const { error } = await supabase.from('booking_requests').update(updates).eq('id', request.id)
       if (error) throw error
+      if (!data?.ok) throw new Error(data?.error || 'Unknown error from edge function')
 
-      onConfirmed(request.id, updates as Partial<BookingRequest>)
-      if (hasWa) {
-        window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(buildWaMessage(confirmedAt, selectedCompanion.full_name))}`, '_blank')
-      }
-      showToast('Booking confirmed — WhatsApp ready to send', 'success')
-      onClose()
-    } catch {
-      showToast('Could not confirm — try again', 'error')
+      const linkUrl = data.payment_link_url as string
+      setPaymentLink({ url: linkUrl, id: data.payment_link_id as string })
+
+      onConfirmed(request.id, {
+        status: 'companion_confirmed',
+        companion_name: selectedCompanion.full_name,
+        confirmed_at: new Date().toISOString(),
+        scheduled_at: confirmedAt.toISOString(),
+        ...(amountPaise ? { amount_paise: amountPaise } : {}),
+        payment_link_url: linkUrl,
+      } as Partial<BookingRequest>)
+
+      showToast('Companion confirmed — payment link sent via Razorpay', 'success')
+    } catch (err) {
+      console.error('[ConfirmDrawer] handleConfirm error:', err)
+      showToast('Could not confirm — check console and try again', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleResendLink() {
+    if (!request.payment_link_url) return
+    // Razorpay Payment Link resend via API
+    setSaving(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('confirm-booking-and-send-payment', {
+        body: {
+          booking_request_id: request.id,
+          companion_name: request.companion_name || selectedCompanion?.full_name || '',
+          scheduled_at: request.scheduled_at,
+          amount_paise: request.amount_paise,
+        },
+      })
+      if (error || !data?.ok) throw new Error(data?.error || 'Resend failed')
+      setPaymentLink({ url: data.payment_link_url, id: data.payment_link_id })
+      showToast('New payment link created and sent', 'success')
+    } catch (err) {
+      console.error('[ConfirmDrawer] resend error:', err)
+      showToast('Could not resend link — try again', 'error')
     } finally {
       setSaving(false)
     }
@@ -602,27 +631,73 @@ function ConfirmDrawer({
           )}
         </div>
 
+        {/* Payment link success banner */}
+        {paymentLink && (
+          <div style={{ margin: '0 20px 12px', padding: '12px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: '#15803D', margin: '0 0 6px' }}>✓ Payment link created — Razorpay will notify customer via WhatsApp</p>
+            <a
+              href={paymentLink.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: 12, color: '#0E2A1F', wordBreak: 'break-all', display: 'block', marginBottom: 8 }}
+            >
+              {paymentLink.url}
+            </a>
+            <button
+              onClick={() => { navigator.clipboard.writeText(paymentLink.url); showToast('Link copied', 'success') }}
+              style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: '#DCFCE7', border: '1px solid #BBF7D0', color: '#15803D', cursor: 'pointer' }}
+            >
+              Copy link
+            </button>
+          </div>
+        )}
+
         {/* Footer */}
         <div style={{ borderTop: '1px solid #F3F4F6', padding: '14px 20px', display: 'flex', gap: 10 }}>
-          <button
-            onClick={handleConfirm}
-            disabled={saving || !canConfirm}
-            style={{
-              flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', fontSize: 14, fontWeight: 700,
-              cursor: (saving || !canConfirm) ? 'not-allowed' : 'pointer',
-              background: (saving || !canConfirm) ? '#F3F4F6' : 'var(--forest)',
-              color: (saving || !canConfirm) ? '#9CA3AF' : '#fff',
-              transition: 'background 150ms ease',
-            }}
-          >
-            {saving ? 'Saving…' : availability === 'conflict' ? 'Pick a different slot first' : hasWa ? 'Confirm & notify on WhatsApp →' : 'Confirm booking'}
-          </button>
-          <button
-            onClick={onClose}
-            style={{ padding: '12px 16px', borderRadius: 10, border: '1px solid #E5E7EB', background: '#fff', color: '#6B7280', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
-          >
-            Cancel
-          </button>
+          {paymentLink ? (
+            <>
+              <button
+                onClick={handleResendLink}
+                disabled={saving}
+                style={{
+                  flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', fontSize: 14, fontWeight: 700,
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  background: saving ? '#F3F4F6' : '#1D4ED8',
+                  color: saving ? '#9CA3AF' : '#fff',
+                }}
+              >
+                {saving ? 'Creating…' : 'Resend payment link'}
+              </button>
+              <button
+                onClick={onClose}
+                style={{ padding: '12px 16px', borderRadius: 10, border: '1px solid #E5E7EB', background: '#fff', color: '#6B7280', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+              >
+                Done
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleConfirm}
+                disabled={saving || !canConfirm}
+                style={{
+                  flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', fontSize: 14, fontWeight: 700,
+                  cursor: (saving || !canConfirm) ? 'not-allowed' : 'pointer',
+                  background: (saving || !canConfirm) ? '#F3F4F6' : 'var(--forest)',
+                  color: (saving || !canConfirm) ? '#9CA3AF' : '#fff',
+                  transition: 'background 150ms ease',
+                }}
+              >
+                {saving ? 'Creating payment link…' : availability === 'conflict' ? 'Pick a different slot first' : 'Confirm & send payment link →'}
+              </button>
+              <button
+                onClick={onClose}
+                style={{ padding: '12px 16px', borderRadius: 10, border: '1px solid #E5E7EB', background: '#fff', color: '#6B7280', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </>
+          )}
         </div>
       </div>
     </>
@@ -843,6 +918,7 @@ interface BookingRequest {
   companion_name?: string | null
   payment_status?: string | null
   confirmed_at?: string | null
+  payment_link_url?: string | null
   _family_name?: string | null
 }
 
@@ -924,7 +1000,7 @@ function RequestsTab() {
         const isCancelled       = r.status === 'cancelled'
         const isCompConfirmed   = r.status === 'companion_confirmed'
         const isNeedsReschedule = r.status === 'needs_reschedule'
-        const needsConfirm      = r.status === 'requested' || isNeedsDetails
+        const needsConfirm      = r.status === 'requested' || r.status === 'pending_confirmation' || isNeedsDetails
 
         const borderLeftStyle = isNeedsDetails
           ? '3px solid var(--gold)'
@@ -1037,13 +1113,13 @@ function RequestsTab() {
 
               {isCompConfirmed && (
                 <button
-                  onClick={() => setConfirmTarget(r)}
+                  onClick={() => setDrawerTarget(r)}
                   style={{
                     fontSize: 12, padding: '7px 14px', borderRadius: 8, border: '1.5px solid #93C5FD',
                     background: '#EFF6FF', color: '#1D4ED8', fontWeight: 700, cursor: 'pointer',
                   }}
                 >
-                  ✉️ Send payment reminder
+                  🔁 Resend payment link
                 </button>
               )}
 

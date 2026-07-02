@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendWhatsAppTemplate, normalisePhone } from "../_shared/whatsapp.ts";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -377,6 +378,85 @@ Deno.serve(async (req: Request) => {
     }
     // payment.captured for unrecognised order — nothing to do
     return json({ ok: true });
+  }
+
+  // ── Handle payment_link.paid ─────────────────────────────────────────────────
+  // Fires when a customer pays via a Razorpay Payment Link.
+  // Match booking by payment_link_id stored in notes, update status → paid, notify customer.
+  if (event === "payment_link.paid") {
+    // deno-lint-ignore no-explicit-any
+    const plEntity = (payload.payload as any)?.payment_link?.entity as Record<string, unknown> | undefined;
+    // deno-lint-ignore no-explicit-any
+    const plPayment = (payload.payload as any)?.payment?.entity as Record<string, unknown> | undefined;
+
+    const paymentLinkId = plEntity?.id as string | undefined;
+    const paymentId     = plPayment?.id as string | undefined;
+    const amountPaise   = typeof plEntity?.amount === "number" ? plEntity.amount as number : null;
+
+    console.log(`[razorpay-webhook] payment_link.paid — linkId=${paymentLinkId} paymentId=${paymentId}`);
+
+    if (!paymentLinkId) {
+      console.error("[razorpay-webhook] payment_link.paid missing payment_link id");
+      return json({ ok: true });
+    }
+
+    const { data: br } = await sb
+      .from("booking_requests")
+      .select("id, status, service_name, recipient_name, requester_whatsapp, scheduled_at, amount_paise, user_id")
+      .eq("razorpay_payment_link_id", paymentLinkId)
+      .maybeSingle();
+
+    if (!br) {
+      console.warn(`[razorpay-webhook] payment_link.paid — no booking found for link ${paymentLinkId}`);
+      return json({ ok: true });
+    }
+
+    if (br.status === "paid") {
+      console.log(`[razorpay-webhook] payment_link.paid — booking ${br.id} already paid, skipping`);
+      return json({ ok: true });
+    }
+
+    const { error: updateErr } = await sb.from("booking_requests").update({
+      status:              "paid",
+      payment_status:      "paid",
+      razorpay_payment_id: paymentId ?? null,
+      paid_at:             new Date().toISOString(),
+    }).eq("id", br.id as string);
+
+    if (updateErr) {
+      console.error(`[razorpay-webhook] payment_link.paid DB update failed for ${br.id}:`, updateErr);
+      return json({ error: "DB update failed" }, 500);
+    }
+
+    console.log(`[razorpay-webhook] booking ${br.id} marked paid via payment link ${paymentLinkId}`);
+
+    // Send payment_received WhatsApp — non-fatal
+    try {
+      const waRaw = (br.requester_whatsapp as string | null) ?? "";
+      const amountStr = amountPaise
+        ? `₹${Math.round(amountPaise / 100).toLocaleString("en-IN")}`
+        : `₹${Math.round((br.amount_paise as number ?? 0) / 100).toLocaleString("en-IN")}`;
+
+      let requesterName = "there";
+      const brUserId = br.user_id as string | null;
+      if (brUserId) {
+        const { data: prof } = await sb.from("profiles").select("full_name").eq("id", brUserId).maybeSingle();
+        if (prof?.full_name) requesterName = prof.full_name as string;
+      }
+
+      if (waRaw) {
+        await sendWhatsAppTemplate({
+          to: normalisePhone(waRaw),
+          template: "payment_received",
+          variables: [requesterName, amountStr, br.service_name as string],
+          sb,
+        });
+      }
+    } catch (waErr) {
+      console.error("[razorpay-webhook] payment_received WhatsApp failed (non-fatal):", waErr);
+    }
+
+    return json({ ok: true, handled: "payment_link_paid" });
   }
 
   if (!rzSub?.id) {

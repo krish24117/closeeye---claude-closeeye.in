@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Loader2, Check, X, AlertTriangle, MapPin } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -86,6 +86,7 @@ function loadGooglePlaces(cb: () => void) {
 // ── Component ─────────────────────────────────────────────────────────────────
 export function DashboardBook() {
   const { user, profile } = useAuth()
+  const navigate = useNavigate()
   const isNri = profile?.user_type === 'nri'
   const isFoundingMember = !!((profile as unknown) as Record<string, unknown>)?.is_founding_member
   const foundingNumber = ((profile as unknown) as Record<string, unknown>)?.founding_number as number | undefined
@@ -214,9 +215,8 @@ export function DashboardBook() {
     })
     setSubmitting(false)
     if (error) { setErr("Couldn't send your request. Please try again."); return }
-    setDoneNeedsDetails(!!(result as any)?.needs_details)
-    setDoneMissing((result as any)?.missing ?? { address: false, whatsapp: false })
-    setDone(true)
+    const requestId = (result as any)?.request_id as string | undefined
+    navigate(`/dashboard/booking-received?id=${requestId ?? ''}`, { replace: true })
   }
 
   const availableGroups = getAvailableGroups(date)

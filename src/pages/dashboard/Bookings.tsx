@@ -43,6 +43,12 @@ interface BookingRequest {
 // ── Status config ──────────────────────────────────────────────────────────────
 
 const STATUS_CFG: Record<string, { label: string; sub: string; pill: string; icon: React.ReactNode }> = {
+  pending_confirmation: {
+    label: 'Pending confirmation',
+    sub:   'We\'re confirming a companion. You\'ll get a WhatsApp payment link shortly.',
+    pill:  'bg-amber-100 text-amber-700',
+    icon:  <Clock size={13} />,
+  },
   requested: {
     label: 'Request received',
     sub:   'Confirming a companion — usually within 2 hours.',
@@ -62,8 +68,8 @@ const STATUS_CFG: Record<string, { label: string; sub: string; pill: string; ico
     icon:  <CheckCircle size={13} />,
   },
   companion_confirmed: {
-    label: 'Companion confirmed',
-    sub:   'Pay to lock in your visit.',
+    label: 'Payment link sent',
+    sub:   'Check your WhatsApp — your secure payment link is there.',
     pill:  'bg-blue-100 text-blue-700',
     icon:  <CheckCircle size={13} />,
   },
@@ -435,9 +441,16 @@ function BookingCard({
           </p>
         )}
 
-        {/* Pay CTA */}
+        {/* Payment link notice — companion confirmed, link sent via WhatsApp */}
         {isComp && !optimisticPaid && (
-          <PayButton booking={booking} profile={profile} onPaid={onPaid} />
+          <div style={{
+            marginTop: 14, padding: '12px 14px',
+            background: '#eff6ff', borderRadius: 12,
+            border: '1px solid #bfdbfe',
+            fontSize: 13, color: '#1d4ed8', lineHeight: 1.5,
+          }}>
+            💳 A secure payment link has been sent to your WhatsApp. Pay there to lock in your visit.
+          </div>
         )}
 
         {booking.recipient_address && (
