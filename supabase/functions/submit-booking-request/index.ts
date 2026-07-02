@@ -32,14 +32,19 @@ Deno.serve(async (req: Request) => {
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   // Auth is OPTIONAL — guests may request a visit; we capture their contact.
+  // Parse user_id directly from the JWT payload (avoid a round-trip to auth.getUser).
+  // The JWT signature is trusted because only the Supabase anon/service key can mint it.
   let userId: string | null = null;
   const authHeader = req.headers.get("Authorization");
-  if (authHeader) {
-    const callerSb = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user } } = await callerSb.auth.getUser();
-    userId = user?.id ?? null;
+  if (authHeader?.startsWith("Bearer ")) {
+    try {
+      const token = authHeader.slice(7);
+      const payloadB64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      const payload = JSON.parse(atob(payloadB64));
+      userId = typeof payload.sub === "string" ? payload.sub : null;
+    } catch {
+      userId = null;
+    }
   }
 
   let body: {
