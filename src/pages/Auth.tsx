@@ -339,10 +339,11 @@ export function AuthPage() {
       minHeight: '100svh',
       background: 'radial-gradient(ellipse at top center, #FAFAF8 0%, #F3F2EC 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center',
-      padding: 'max(env(safe-area-inset-top, 0px), 40px) 20px max(env(safe-area-inset-bottom, 0px), 40px)',
+      justifyContent: 'flex-start',
+      padding: 'max(env(safe-area-inset-top, 0px), 64px) 20px max(env(safe-area-inset-bottom, 0px), 48px)',
     }}>
       <style>{`
+        html, body { background: #F3F2EC; }
         @keyframes ce-spin { to { transform: rotate(360deg); } }
         @keyframes ce-fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes ce-fade { from { opacity: 0; } to { opacity: 1; } }

@@ -54,7 +54,7 @@ export function LogoLockup({
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 9,
+        gap: 6,
         textDecoration: 'none',
         ...style,
       }}
