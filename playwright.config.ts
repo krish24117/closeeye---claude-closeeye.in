@@ -35,5 +35,11 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
       dependencies: ['setup-admin'],
     },
+    {
+      name: 'booking-flow',
+      testMatch: /booking-flow\.spec\.ts/,
+      use: { ...devices['Mobile Safari'], storageState: 'e2e/.auth/family.json' },
+      dependencies: ['setup-family'],
+    },
   ],
 })

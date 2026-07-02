@@ -172,7 +172,7 @@ export function BookServicePage() {
       scheduled_at_ist = `${y}-${mo}-${d}T${slot}:00+05:30`
     }
 
-    const { error } = await supabase.functions.invoke('submit-booking-request', {
+    const { data: result, error } = await supabase.functions.invoke('submit-booking-request', {
       body: {
         service_id: service.id,
         service_name: service.name,
@@ -187,7 +187,12 @@ export function BookServicePage() {
     })
 
     setSubmitting(false)
-    if (error) { setErr("Couldn't send your request. Please try again."); return }
+    if (error || !(result as any)?.ok) {
+      console.error('[BookService] submit-booking-request failed:', error, result)
+      setErr("Couldn't send your request. Please try again.")
+      return
+    }
+    console.info('[BookService] booking saved, request_id:', (result as any)?.request_id)
     navigate('/dashboard/bookings', { replace: true })
   }
 
