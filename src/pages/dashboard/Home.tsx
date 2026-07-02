@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { isOnboardingDismissed } from '@/pages/Onboarding'
 import { getPersona, getPersonaCopy } from '@/lib/persona'
+import { formatIsoTime } from '@/lib/formatTime'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -149,7 +150,7 @@ function NriHome() {
   const nextDate    = nextBooking?.scheduled_at ? new Date(nextBooking.scheduled_at) : null
   const nextDay     = nextDate?.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric' })
   const nextMon     = nextDate?.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short' })?.toUpperCase()
-  const nextTime    = nextDate?.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })
+  const nextTime    = nextBooking?.scheduled_at ? formatIsoTime(nextBooking.scheduled_at) : null
   const nextShort   = nextDate?.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })
   const nextLabel   = (nextBooking?.service_type && SERVICE_LABELS[nextBooking.service_type]) || 'Upcoming visit'
 

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { CheckCircle, Calendar, User, MessageCircle, Loader2, ArrowRight } from 'lucide-react'
-import { format } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { SERVICE_NAMES } from '@/lib/booking-labels'
 import { formatIsoTime } from '@/lib/formatTime'
@@ -63,7 +62,7 @@ export function BookingConfirmationPage() {
     ? booking.loved_ones[0]?.full_name ?? '—'
     : (booking.loved_ones as { full_name: string } | null)?.full_name ?? '—'
   const scheduledDisplay = booking.scheduled_at
-    ? `${format(new Date(booking.scheduled_at), 'd MMM yyyy')}, ${formatIsoTime(booking.scheduled_at)}`
+    ? `${new Date(booking.scheduled_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })}, ${formatIsoTime(booking.scheduled_at)}`
     : '—'
 
   return (
