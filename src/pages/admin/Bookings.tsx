@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/Toast'
 import { format } from 'date-fns'
@@ -193,7 +194,155 @@ function ConfirmModal({
   )
 }
 
+// ── CalendarPicker ────────────────────────────────────────────────────────────
+
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const DAY_NAMES   = ['Su','Mo','Tu','We','Th','Fr','Sa']
+
+function CalendarPicker({
+  value,
+  onChange,
+  requestedDate,
+}: {
+  value: Date | null
+  onChange: (d: Date) => void
+  requestedDate: Date | null
+}) {
+  const today = new Date(); today.setHours(0,0,0,0)
+  const init  = value ?? requestedDate ?? today
+  const [viewMonth, setViewMonth] = useState(init.getMonth())
+  const [viewYear,  setViewYear]  = useState(init.getFullYear())
+
+  const firstDay    = new Date(viewYear, viewMonth, 1).getDay()
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+
+  const prevMonth = () => { if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y-1) } else setViewMonth(m => m-1) }
+  const nextMonth = () => { if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y+1) } else setViewMonth(m => m+1) }
+
+  const reqFlat = requestedDate ? new Date(requestedDate.getFullYear(), requestedDate.getMonth(), requestedDate.getDate()).getTime() : null
+
+  return (
+    <div style={{ borderRadius: 14, border: '1px solid #E5E7EB', overflow: 'hidden', background: '#fff' }}>
+      {/* Month nav */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid #F3F4F6' }}>
+        <button onClick={prevMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 4, display: 'flex', alignItems: 'center' }}>
+          <ChevronLeft size={16} />
+        </button>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{MONTH_NAMES[viewMonth]} {viewYear}</span>
+        <button onClick={nextMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 4, display: 'flex', alignItems: 'center' }}>
+          <ChevronRight size={16} />
+        </button>
+      </div>
+      {/* Day headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '8px 8px 0' }}>
+        {DAY_NAMES.map(d => (
+          <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 600, color: '#9CA3AF', padding: '2px 0', letterSpacing: '0.04em' }}>{d}</div>
+        ))}
+      </div>
+      {/* Day cells */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '2px 8px 10px', gap: '2px 0' }}>
+        {Array.from({ length: firstDay }, (_, i) => <div key={`pad${i}`} />)}
+        {Array.from({ length: daysInMonth }, (_, i) => {
+          const day     = i + 1
+          const thisDay = new Date(viewYear, viewMonth, day)
+          const flatTime = thisDay.getTime()
+          const isPast   = flatTime < today.getTime()
+          const isSel    = value ? new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime() === flatTime : false
+          const isToday  = flatTime === today.getTime()
+          const isReq    = reqFlat === flatTime
+
+          return (
+            <button
+              key={day}
+              onClick={() => !isPast && onChange(thisDay)}
+              disabled={isPast}
+              style={{
+                width: 34, height: 34, margin: '0 auto', borderRadius: '50%',
+                border: isReq && !isSel ? '2px solid #3B82F6' : isToday && !isSel ? '2px solid #0E2A1F' : '2px solid transparent',
+                background: isSel ? '#0E2A1F' : 'transparent',
+                color: isPast ? '#D1D5DB' : isSel ? '#A8D5B5' : isToday ? '#0E2A1F' : '#111827',
+                fontSize: 13, fontWeight: isSel || isToday ? 700 : 400,
+                cursor: isPast ? 'default' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 140ms ease',
+              }}
+            >
+              {day}
+            </button>
+          )
+        })}
+      </div>
+      {reqFlat !== null && (
+        <p style={{ fontSize: 10, color: '#3B82F6', padding: '0 12px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', border: '2px solid #3B82F6', display: 'inline-block', flexShrink: 0 }} />
+          Family requested date
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ── TimeSlots ─────────────────────────────────────────────────────────────────
+
+const ALL_SLOTS: { h: number; m: number }[] = []
+for (let h = 7; h <= 20; h++) {
+  for (const m of [0, 30]) {
+    if (h === 20 && m === 30) break
+    ALL_SLOTS.push({ h, m })
+  }
+}
+
+function fmtSlot(h: number, m: number) {
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const h12  = h > 12 ? h - 12 : h === 0 ? 12 : h
+  return `${h12}:${m === 0 ? '00' : '30'} ${ampm}`
+}
+
+function TimeSlots({
+  selectedHour, selectedMinute, requestedHour, requestedMinute,
+  onChange,
+}: {
+  selectedHour: number; selectedMinute: number
+  requestedHour: number | null; requestedMinute: number | null
+  onChange: (h: number, m: number) => void
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    // Auto-scroll to selected slot
+    const el = scrollRef.current?.querySelector('[data-selected]') as HTMLElement | null
+    el?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
+  }, [])
+
+  return (
+    <div ref={scrollRef} style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '2px 0 6px', scrollbarWidth: 'none' }}>
+      {ALL_SLOTS.map(({ h, m }) => {
+        const isSel  = selectedHour === h && selectedMinute === m
+        const isReq  = requestedHour === h && requestedMinute === m
+        return (
+          <button
+            key={`${h}:${m}`}
+            data-selected={isSel ? '' : undefined}
+            onClick={() => onChange(h, m)}
+            style={{
+              flexShrink: 0, padding: '7px 14px', borderRadius: 100,
+              border: isSel ? '2px solid #0E2A1F' : isReq ? '2px solid #3B82F6' : '1.5px solid #E5E7EB',
+              background: isSel ? '#0E2A1F' : 'transparent',
+              color: isSel ? '#A8D5B5' : isReq ? '#2563EB' : '#374151',
+              fontSize: 12, fontWeight: isSel || isReq ? 700 : 400,
+              cursor: 'pointer', transition: 'all 140ms ease',
+            }}
+          >
+            {fmtSlot(h, m)}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── ConfirmDrawer ─────────────────────────────────────────────────────────────
+
+interface Companion { id: string; full_name: string; phone: string | null }
 
 function ConfirmDrawer({
   request,
@@ -205,161 +354,258 @@ function ConfirmDrawer({
   onConfirmed: (id: string, updates: Partial<BookingRequest>) => void
 }) {
   const { showToast } = useToast()
-  const [companionName, setCompanionName] = useState(request.companion_name || '')
-  const [scheduledAt, setScheduledAt]     = useState(
-    request.scheduled_at ? request.scheduled_at.slice(0, 16) : ''
-  )
-  const [amountRupees, setAmountRupees] = useState(
+
+  // ── Parse the user-requested time ─────────────────────────────────────────
+  const reqDate = request.scheduled_at ? new Date(request.scheduled_at) : null
+  const reqH    = reqDate?.getHours() ?? null
+  const reqM    = reqDate?.getMinutes() ?? null
+  const reqDay  = reqDate ? new Date(reqDate.getFullYear(), reqDate.getMonth(), reqDate.getDate()) : null
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [companions,          setCompanions]         = useState<Companion[]>([])
+  const [selectedCompanion,   setSelectedCompanion]  = useState<Companion | null>(null)
+  const [selectedDate,        setSelectedDate]       = useState<Date | null>(reqDay)
+  const [selectedHour,        setSelectedHour]       = useState<number>(reqH ?? 10)
+  const [selectedMinute,      setSelectedMinute]     = useState<number>(reqM ?? 0)
+  const [amountRupees,        setAmountRupees]       = useState(
     request.amount_paise ? String(Math.round(request.amount_paise / 100)) : ''
   )
-  const [saving, setSaving] = useState(false)
+  const [availability,        setAvailability]       = useState<'idle' | 'checking' | 'available' | 'conflict'>('idle')
+  const [conflictWith,        setConflictWith]       = useState<string | null>(null)
+  const [saving,              setSaving]             = useState(false)
 
   const familyName = request._family_name || 'there'
   const elderName  = request.recipient_name || 'your loved one'
   const waNumber   = request.requester_whatsapp.replace(/\D/g, '')
   const hasWa      = waNumber.length >= 7
 
-  function buildWhatsAppMessage(): string {
-    const dateStr = scheduledAt
-      ? new Date(scheduledAt).toLocaleDateString('en-IN', {
-          weekday: 'long', day: 'numeric', month: 'long',
-          hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata',
-        })
-      : '—'
+  // ── Load companions ────────────────────────────────────────────────────────
+  useEffect(() => {
+    supabase.from('companions').select('id,full_name,phone').order('full_name')
+      .then(({ data }) => setCompanions((data || []) as Companion[]))
+  }, [])
+
+  // ── Availability check ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!selectedCompanion || !selectedDate) { setAvailability('idle'); return }
+    const t = new Date(selectedDate); t.setHours(selectedHour, selectedMinute, 0, 0)
+    const window90 = 90 * 60 * 1000
+    setAvailability('checking')
+    supabase.from('bookings')
+      .select('id, scheduled_at, loved_ones(full_name)')
+      .eq('companion_id', selectedCompanion.id)
+      .gte('scheduled_at', new Date(t.getTime() - window90).toISOString())
+      .lte('scheduled_at', new Date(t.getTime() + window90).toISOString())
+      .not('status', 'in', '("cancelled","completed")')
+      .then(({ data }) => {
+        if (data?.length) {
+          const elder = (data[0].loved_ones as unknown as { full_name: string } | null)?.full_name
+          setConflictWith(elder ? `${elder}'s visit` : 'another visit')
+          setAvailability('conflict')
+        } else {
+          setConflictWith(null)
+          setAvailability('available')
+        }
+      })
+  }, [selectedCompanion, selectedDate, selectedHour, selectedMinute])
+
+  function buildWaMessage(confirmedAt: Date, companionName: string): string {
+    const dateStr = confirmedAt.toLocaleDateString('en-IN', {
+      weekday: 'long', day: 'numeric', month: 'long',
+      hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata',
+    })
     return [
       `Namaste ${familyName} 🌿`,
       ``,
       `Your Close Eye visit has been confirmed!`,
       ``,
       `🏠 ${request.service_name} for ${elderName}`,
-      ...(scheduledAt ? [`📅 ${dateStr} IST`] : []),
-      ...(companionName ? [`👤 Companion: ${companionName}`] : []),
+      `📅 ${dateStr} IST`,
+      `👤 Companion: ${companionName}`,
       ...(amountRupees ? [`💳 Amount: ₹${amountRupees}`] : []),
       ``,
-      `To complete your booking, open the Close Eye app and pay now. Once paid, your visit is locked.`,
+      `To lock in your visit, open the Close Eye app and complete payment.`,
       ``,
-      `Warm regards,`,
-      `Team Close Eye`,
+      `Warm regards,\nTeam Close Eye`,
       `When you can't be there, Close Eye can.`,
     ].join('\n')
   }
 
   async function handleConfirm() {
-    if (!companionName.trim()) { showToast('Enter a companion name', 'error'); return }
+    if (!selectedCompanion) { showToast('Select a companion', 'error'); return }
+    if (!selectedDate) { showToast('Select a visit date', 'error'); return }
     setSaving(true)
     try {
+      const confirmedAt = new Date(selectedDate)
+      confirmedAt.setHours(selectedHour, selectedMinute, 0, 0)
+
       const amountPaise = amountRupees ? Math.round(parseFloat(amountRupees) * 100) : request.amount_paise
       const updates: Record<string, unknown> = {
-        status: 'companion_confirmed',
-        companion_name: companionName.trim(),
-        confirmed_at: new Date().toISOString(),
-        ...(scheduledAt ? { scheduled_at: new Date(scheduledAt).toISOString() } : {}),
+        status:         'companion_confirmed',
+        companion_name: selectedCompanion.full_name,
+        confirmed_at:   new Date().toISOString(),
+        scheduled_at:   confirmedAt.toISOString(),
         ...(amountPaise ? { amount_paise: amountPaise } : {}),
       }
+
+      // Auto-link user_id if this was a guest booking — makes it visible on family dashboard
+      if (!request.user_id && request.requester_whatsapp) {
+        const phone = request.requester_whatsapp.replace(/\D/g, '').slice(-10)
+        const { data: matched } = await supabase
+          .from('profiles').select('id').ilike('whatsapp_number', `%${phone}`).limit(1).maybeSingle()
+        if (matched) updates.user_id = matched.id
+      }
+
       const { error } = await supabase.from('booking_requests').update(updates).eq('id', request.id)
       if (error) throw error
+
       onConfirmed(request.id, updates as Partial<BookingRequest>)
-      // Open WhatsApp with pre-filled payment-prompt message
       if (hasWa) {
-        window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(buildWhatsAppMessage())}`, '_blank')
+        window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(buildWaMessage(confirmedAt, selectedCompanion.full_name))}`, '_blank')
       }
+      showToast('Booking confirmed — WhatsApp ready to send', 'success')
       onClose()
     } catch {
-      showToast('Could not confirm booking — try again', 'error')
+      showToast('Could not confirm — try again', 'error')
     } finally {
       setSaving(false)
     }
   }
 
+  const canConfirm = !!selectedCompanion && !!selectedDate && availability !== 'conflict'
+  const confirmedDateStr = selectedDate
+    ? (() => {
+        const d = new Date(selectedDate); d.setHours(selectedHour, selectedMinute)
+        return d.toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })
+      })()
+    : null
+
   return (
     <>
       <div className="adm-overlay" onClick={onClose} />
-      <div className="adm-slideover" style={{ display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
-        <button
-          onClick={onClose}
-          style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-dark)', padding: 4, fontSize: 22, lineHeight: 1 }}
-        >×</button>
+      <div className="adm-slideover" style={{ display: 'flex', flexDirection: 'column', maxHeight: '92vh' }}>
+        {/* Close */}
+        <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: 4, fontSize: 22, lineHeight: 1, zIndex: 1 }}>×</button>
 
-        <div style={{ borderBottom: '1px solid var(--line)', padding: '16px 20px' }}>
-          <p style={{ fontWeight: 700, color: 'var(--forest)' }}>Confirm booking</p>
-          <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 2 }}>
-            {request.service_name} for {elderName}
-            {familyName !== 'there' ? ` · ${familyName}` : ''}
+        {/* Header */}
+        <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid #F3F4F6' }}>
+          <p style={{ fontWeight: 800, fontSize: 16, color: 'var(--forest)', margin: 0 }}>Confirm booking</p>
+          <p style={{ fontSize: 12, color: '#6B7280', marginTop: 3 }}>
+            {request.service_name} for {elderName}{familyName !== 'there' ? ` · ${familyName}` : ''}
           </p>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>Companion name *</label>
-            <input
-              type="text"
-              value={companionName}
-              onChange={e => setCompanionName(e.target.value)}
-              placeholder="e.g. Priya Sharma"
-              className="adm-input"
-              style={{ width: '100%' }}
-            />
-          </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 20px' }}>
 
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>Visit date & time</label>
-            {request.scheduled_at && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, padding: '6px 10px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8 }}>
-                <span style={{ fontSize: 12, color: '#2563EB' }}>📅</span>
-                <span style={{ fontSize: 12, fontWeight: 500, color: '#1D4ED8' }}>
-                  User requested:{' '}
-                  {new Date(request.scheduled_at).toLocaleString('en-IN', {
-                    weekday: 'short', day: 'numeric', month: 'short',
-                    hour: 'numeric', minute: '2-digit', hour12: true,
-                  })}
-                </span>
+          {/* Requested time banner */}
+          {reqDate && (
+            <div style={{ margin: '14px 0', display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12 }}>
+              <span style={{ fontSize: 16 }}>📅</span>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Family requested</p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#1E40AF', margin: '1px 0 0' }}>
+                  {reqDate.toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Companion */}
+          <div style={{ marginBottom: 18 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Companion *</p>
+            <select
+              value={selectedCompanion?.id || ''}
+              onChange={e => {
+                const c = companions.find(x => x.id === e.target.value) ?? null
+                setSelectedCompanion(c)
+              }}
+              className="adm-input"
+              style={{ width: '100%', fontSize: 14, fontWeight: selectedCompanion ? 600 : 400 }}
+            >
+              <option value="">Select a companion…</option>
+              {companions.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+            </select>
+
+            {/* Availability pill */}
+            {availability !== 'idle' && selectedDate && (
+              <div style={{
+                marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px',
+                borderRadius: 100, fontSize: 12, fontWeight: 600,
+                background: availability === 'available' ? '#DCFCE7' : availability === 'conflict' ? '#FEF3C7' : '#F3F4F6',
+                color: availability === 'available' ? '#15803D' : availability === 'conflict' ? '#92400E' : '#6B7280',
+              }}>
+                <span style={{
+                  width: 7, height: 7, borderRadius: '50%', display: 'inline-block', flexShrink: 0,
+                  background: availability === 'available' ? '#22C55E' : availability === 'conflict' ? '#F59E0B' : '#9CA3AF',
+                  ...(availability === 'checking' ? { animation: 'pulse 1.4s infinite' } : {}),
+                }} />
+                {availability === 'checking'  && 'Checking availability…'}
+                {availability === 'available' && `✓ Available at ${confirmedDateStr}`}
+                {availability === 'conflict'  && `⚠ Conflict with ${conflictWith}`}
               </div>
             )}
-            <input
-              type="datetime-local"
-              value={scheduledAt}
-              onChange={e => setScheduledAt(e.target.value)}
-              className="adm-input"
-              style={{ width: '100%' }}
-            />
-            {!scheduledAt && (
-              <p style={{ fontSize: 12, color: 'var(--gold)', marginTop: 4 }}>No time set — enter the confirmed visit time.</p>
+
+            {availability === 'conflict' && (
+              <div style={{ marginTop: 8, padding: '10px 14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, fontSize: 12, color: '#78350F' }}>
+                {selectedCompanion?.full_name} is already assigned to {conflictWith} within 90 min of this time.
+                Please pick a different slot below.
+              </div>
             )}
           </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>Amount (₹)</label>
+          {/* Calendar */}
+          <div style={{ marginBottom: 12 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Visit date</p>
+            <CalendarPicker
+              value={selectedDate}
+              onChange={d => setSelectedDate(d)}
+              requestedDate={reqDay}
+            />
+          </div>
+
+          {/* Time slots */}
+          <div style={{ marginBottom: 18 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Visit time</p>
+            <TimeSlots
+              selectedHour={selectedHour} selectedMinute={selectedMinute}
+              requestedHour={reqH} requestedMinute={reqM}
+              onChange={(h, m) => { setSelectedHour(h); setSelectedMinute(m) }}
+            />
+          </div>
+
+          {/* Amount */}
+          <div style={{ marginBottom: 8 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Amount (₹)</p>
             <input
-              type="number"
-              min="1"
-              step="1"
+              type="number" min="1" step="1"
               value={amountRupees}
               onChange={e => setAmountRupees(e.target.value)}
               placeholder="e.g. 999"
               className="adm-input"
               style={{ width: '100%' }}
             />
-            <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 4 }}>Family will see this amount in the app and be asked to pay.</p>
+            <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>Family pays this to lock in the visit.</p>
           </div>
 
           {!hasWa && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 10, padding: '10px 12px' }}>
-              <span style={{ fontSize: 13, color: '#D97706', flexShrink: 0 }}>⚠</span>
-              <p style={{ fontSize: 12, color: '#92400E', fontWeight: 500 }}>No WhatsApp number — status will still be updated, but notification won't send.</p>
+            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 12 }}>
+              <span style={{ color: '#D97706', flexShrink: 0 }}>⚠</span>
+              <p style={{ fontSize: 12, color: '#92400E', fontWeight: 500, margin: 0 }}>No WhatsApp number — status will update but notification won't send.</p>
             </div>
           )}
         </div>
 
-        <div style={{ borderTop: '1px solid var(--line)', padding: '16px 20px', display: 'flex', gap: 12 }}>
+        {/* Footer */}
+        <div style={{ borderTop: '1px solid #F3F4F6', padding: '14px 20px', display: 'flex', gap: 10 }}>
           <button
             onClick={handleConfirm}
-            disabled={saving || !companionName.trim()}
+            disabled={saving || !canConfirm}
             className="adm-btn adm-btn-primary"
-            style={{ flex: 1, opacity: (saving || !companionName.trim()) ? 0.5 : 1, cursor: (saving || !companionName.trim()) ? 'not-allowed' : 'pointer' }}
+            style={{ flex: 1, opacity: (saving || !canConfirm) ? 0.45 : 1, cursor: (saving || !canConfirm) ? 'not-allowed' : 'pointer', fontSize: 14 }}
           >
-            {saving ? 'Saving…' : hasWa ? 'Confirm & notify on WhatsApp →' : 'Confirm booking'}
+            {saving ? 'Saving…' : availability === 'conflict' ? 'Pick a different slot first' : hasWa ? 'Confirm & notify on WhatsApp →' : 'Confirm booking'}
           </button>
-          <button onClick={onClose} className="adm-btn" style={{ color: 'var(--gray-mid)' }}>Cancel</button>
+          <button onClick={onClose} className="adm-btn" style={{ color: '#6B7280' }}>Cancel</button>
         </div>
       </div>
     </>

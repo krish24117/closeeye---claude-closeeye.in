@@ -493,11 +493,19 @@ export function DashboardBookings() {
 
   const load = useCallback(async () => {
     if (!user) return
+
+    // Build OR filter: match by user_id OR by requester_whatsapp (handles guest bookings
+    // that didn't have user_id set at submission time but were later linked by admin confirm).
+    const phone10 = profile?.whatsapp_number?.replace(/\D/g, '').slice(-10) ?? ''
+    const orFilter = phone10
+      ? `user_id.eq.${user.id},requester_whatsapp.ilike.%${phone10}`
+      : `user_id.eq.${user.id}`
+
     const [requestsRes, visitsRes] = await Promise.all([
       supabase
         .from('booking_requests')
         .select('id,service_id,service_name,amount_paise,scheduled_at,recipient_name,recipient_address,requester_whatsapp,notes,status,payment_status,companion_name,confirmed_at,paid_at,razorpay_order_id,created_at')
-        .eq('user_id', user.id)
+        .or(orFilter)
         .order('created_at', { ascending: false }),
       supabase
         .from('bookings')
