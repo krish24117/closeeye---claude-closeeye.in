@@ -39,8 +39,10 @@ Deno.serve(async (req: Request) => {
   if (authHeader?.startsWith("Bearer ")) {
     try {
       const token = authHeader.slice(7);
-      const payloadB64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-      const payload = JSON.parse(atob(payloadB64));
+      // Convert base64url → base64 and add padding so atob() never throws
+      const raw = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      const padded = raw + "=".repeat((4 - (raw.length % 4)) % 4);
+      const payload = JSON.parse(atob(padded));
       userId = typeof payload.sub === "string" ? payload.sub : null;
     } catch {
       userId = null;

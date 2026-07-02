@@ -486,7 +486,7 @@ export function DashboardBookings() {
     setActiveVisits(((visitsRes.data ?? []) as any[]) as ActiveVisit[])
     setLoading(false)
     setError(null)
-  }, [user])
+  }, [user, profile?.whatsapp_number])
 
   useEffect(() => {
     load()
