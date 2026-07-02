@@ -826,6 +826,7 @@
 }
 .ce-tag { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; border-radius: 100px; padding: 4px 12px; margin-bottom: 20px; }
 .ce-tag-sage { background: var(--sage); color: var(--forest); }
+.ce-tag-outline { background: transparent; color: var(--forest); border: 1.5px solid var(--forest-mid); }
 .ce-price-big { font-family: 'Open Sauce One', system-ui, sans-serif; font-weight: 800; letter-spacing: -0.02em; font-size: 52px; color: var(--forest); margin: 0; line-height: 1; }
 .ce-price-card-featured .ce-price-big { color: var(--white); }
 .ce-price-range { font-family: 'Open Sauce One', system-ui, sans-serif; font-weight: 800; letter-spacing: -0.02em; font-size: 36px; color: var(--forest); margin: 0; line-height: 1.1; }

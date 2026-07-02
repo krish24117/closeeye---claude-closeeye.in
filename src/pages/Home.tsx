@@ -969,11 +969,12 @@ export function HomePage() {
             </div>
 
             <div className="ce-price-card animate-on-scroll" style={{ transitionDelay: '200ms' }}>
-              <p className="ce-price-range">₹500 – ₹4,000</p>
-              <p className="ce-price-period">Pay per service</p>
+              <span className="ce-tag ce-tag-outline">Pay as you go</span>
+              <p className="ce-price-big">₹500</p>
+              <p className="ce-price-period">onwards · per service</p>
               <hr className="ce-divider" />
               <p className="ce-price-body" style={{ marginBottom: '16px' }}>
-                No subscription needed. Book any service when you need it. Cancel or change anytime.
+                No subscription needed. Book any service when you need it.
               </p>
               <ul className="ce-benefits">
                 {ONDEMAND_EXAMPLES.map(s => (
