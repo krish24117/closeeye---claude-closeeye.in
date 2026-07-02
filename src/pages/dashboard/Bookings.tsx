@@ -515,18 +515,8 @@ export function DashboardBookings() {
   return (
     <div style={{ padding: '0 16px 80px' }} className="ce-slide-up">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20, marginTop: 4 }}>
+      <div style={{ marginBottom: 20, marginTop: 4 }}>
         <h1 style={{ fontWeight: 700, fontSize: 22, color: 'var(--forest)', margin: 0, letterSpacing: '-0.02em' }}>My bookings</h1>
-        <Link
-          to="/dashboard/book"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: 'var(--forest)', color: '#FAF7F2', borderRadius: 100,
-            padding: '10px 18px', fontSize: 13, fontWeight: 700, textDecoration: 'none',
-          }}
-        >
-          <Plus size={14} /> New visit
-        </Link>
       </div>
 
       {/* Error */}
