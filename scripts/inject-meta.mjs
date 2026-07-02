@@ -64,6 +64,10 @@ const META = {
     title: 'Refund & Cancellation Policy — Close Eye',
     description: 'Cancellation and refund policy for Close Eye companion visits and monthly plans.',
   },
+  '/ask': {
+    title: 'Ask Close Eye — Free health guidance for your elderly parents',
+    description: "Get free, instant guidance on your elderly parent's health, medications, and wellbeing — from Close Eye's AI guided by our medical team. No login needed.",
+  },
 }
 
 function escapeForAttr(str) {

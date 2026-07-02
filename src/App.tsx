@@ -82,6 +82,7 @@ const DoctorHome = lazy(() => import('@/pages/doctor/Home').then(m => ({ default
 
 const SurveyPage = lazy(() => import('@/pages/Survey').then(m => ({ default: m.SurveyPage })))
 const OnboardingPage = lazy(() => import('@/pages/Onboarding').then(m => ({ default: m.OnboardingPage })))
+const PublicAskPage = lazy(() => import('@/pages/PublicAsk').then(m => ({ default: m.PublicAskPage })))
 
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Close Eye — Trusted Elder Care Companion for NRI Families | Hyderabad',
@@ -94,6 +95,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/for-societies': 'For Societies — Close Eye',
   '/companions': 'How We Verify Companions — Close Eye',
   '/join-as-companion': 'Join as a Companion — Close Eye',
+  '/ask': 'Ask Close Eye — Free health guidance for your elderly parents',
   '/auth': 'Sign In — Close Eye',
   '/privacy-policy': 'Privacy Policy — Close Eye',
   '/terms': 'Terms of Service — Close Eye',
@@ -136,6 +138,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/for-societies': 'Partner with Close Eye to bring verified elder-care companions, wellbeing visits, and a real emergency plan to your residents — at no cost to the society.',
   '/companions': 'Every Close Eye companion is verified at seven levels — application, interviews, police clearance, Aadhaar, training, and supervised visits — before they ever visit your parent alone.',
   '/join-as-companion': 'Apply to become a verified Close Eye companion in Hyderabad. Meaningful work caring for elders, with training and support from our founding team.',
+  '/ask': 'Get free, instant guidance on your elderly parent\'s health, medications, and wellbeing — from Close Eye\'s AI guided by our medical team. No login needed.',
   '/auth': 'Sign in or create a Close Eye account to book and manage companion visits for your loved ones.',
   '/privacy-policy': "How Close Eye collects, uses, and protects your family's data.",
   '/terms': 'Terms of service for booking and using Close Eye companion visits.',
@@ -277,6 +280,7 @@ export default function App() {
             <Route path="/privacy-policy" element={<PublicLayout><PrivacyPage /></PublicLayout>} />
             <Route path="/terms" element={<PublicLayout><TermsPage /></PublicLayout>} />
             <Route path="/refund-policy" element={<PublicLayout><RefundPage /></PublicLayout>} />
+            <Route path="/ask" element={<PublicAskPage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/onboarding" element={<ProtectedRoute role="family"><OnboardingPage /></ProtectedRoute>} />
             <Route path="/survey" element={<SurveyPage />} />
