@@ -28,12 +28,15 @@ function istNow() {
   }
 }
 
+const BOOKING_BUFFER_MIN = 180 // 3 hours minimum notice
+
 function slotIsPast(selectedDate: Date | null, slotStr: string): boolean {
   if (!selectedDate) return false
   const ist = istNow()
   const selStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
   if (selStr !== ist.dateStr) return false
-  return ist.min >= +slotStr.slice(0, 2) * 60 + +slotStr.slice(3, 5)
+  const slotMin = +slotStr.slice(0, 2) * 60 + +slotStr.slice(3, 5)
+  return ist.min + BOOKING_BUFFER_MIN >= slotMin
 }
 
 const INPUT_STYLE: React.CSSProperties = {
@@ -98,7 +101,14 @@ export function DashboardBook() {
   // Clear slot if it's now past (e.g. user re-opens sheet or switches to today)
   useEffect(() => { if (slot && slotIsPast(date, slot)) setSlot('') }, [date])
 
-  const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return d })
+  // If today has no bookable slots (all within 3h buffer), start the date row from tomorrow
+  const LAST_SLOT_MIN = 16 * 60 // 16:00 is the latest slot
+  const todayHasSlots = istNow().min + BOOKING_BUFFER_MIN < LAST_SLOT_MIN
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() + i + (todayHasSlots ? 0 : 1))
+    return d
+  })
 
   function openSheet(s: Service) {
     setActive(s); setDate(null); setSlot(''); setNotes(''); setDone(false); setErr('')

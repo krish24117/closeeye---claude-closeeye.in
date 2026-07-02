@@ -180,12 +180,19 @@ function ConfirmModal({
           <button
             onClick={handleSend}
             disabled={!hasNumber || sending}
-            className="adm-btn adm-btn-primary"
-            style={{ flex: 1, opacity: (!hasNumber || sending) ? 0.5 : 1, cursor: (!hasNumber || sending) ? 'not-allowed' : 'pointer' }}
+            style={{
+              flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', fontWeight: 700, fontSize: 14,
+              cursor: (!hasNumber || sending) ? 'not-allowed' : 'pointer',
+              background: (!hasNumber || sending) ? '#F3F4F6' : 'var(--forest)',
+              color: (!hasNumber || sending) ? '#9CA3AF' : '#fff',
+            }}
           >
             {sending ? 'Opening…' : 'Open in WhatsApp →'}
           </button>
-          <button onClick={onClose} className="adm-btn" style={{ color: 'var(--gray-mid)' }}>
+          <button
+            onClick={onClose}
+            style={{ padding: '12px 16px', borderRadius: 10, border: '1px solid #E5E7EB', background: '#fff', color: '#6B7280', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+          >
             Cancel
           </button>
         </div>
@@ -600,12 +607,22 @@ function ConfirmDrawer({
           <button
             onClick={handleConfirm}
             disabled={saving || !canConfirm}
-            className="adm-btn adm-btn-primary"
-            style={{ flex: 1, opacity: (saving || !canConfirm) ? 0.45 : 1, cursor: (saving || !canConfirm) ? 'not-allowed' : 'pointer', fontSize: 14 }}
+            style={{
+              flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', fontSize: 14, fontWeight: 700,
+              cursor: (saving || !canConfirm) ? 'not-allowed' : 'pointer',
+              background: (saving || !canConfirm) ? '#F3F4F6' : 'var(--forest)',
+              color: (saving || !canConfirm) ? '#9CA3AF' : '#fff',
+              transition: 'background 150ms ease',
+            }}
           >
             {saving ? 'Saving…' : availability === 'conflict' ? 'Pick a different slot first' : hasWa ? 'Confirm & notify on WhatsApp →' : 'Confirm booking'}
           </button>
-          <button onClick={onClose} className="adm-btn" style={{ color: '#6B7280' }}>Cancel</button>
+          <button
+            onClick={onClose}
+            style={{ padding: '12px 16px', borderRadius: 10, border: '1px solid #E5E7EB', background: '#fff', color: '#6B7280', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </>
@@ -613,6 +630,8 @@ function ConfirmDrawer({
 }
 
 // ── RescheduleDrawer ──────────────────────────────────────────────────────────
+
+interface SlotState { date: Date | null; hour: number; minute: number }
 
 function RescheduleDrawer({
   request,
@@ -624,9 +643,12 @@ function RescheduleDrawer({
   onSent: (id: string) => void
 }) {
   const { showToast } = useToast()
-  const [slot1, setSlot1] = useState('')
-  const [slot2, setSlot2] = useState('')
-  const [slot3, setSlot3] = useState('')
+  const [activeSlot, setActiveSlot] = useState<0 | 1 | 2>(0)
+  const [slots, setSlots] = useState<SlotState[]>([
+    { date: null, hour: 10, minute: 0 },
+    { date: null, hour: 10, minute: 0 },
+    { date: null, hour: 10, minute: 0 },
+  ])
   const [saving, setSaving] = useState(false)
 
   const familyName = request._family_name || 'there'
@@ -634,45 +656,45 @@ function RescheduleDrawer({
   const waNumber   = request.requester_whatsapp.replace(/\D/g, '')
   const hasWa      = waNumber.length >= 7
 
-  function formatSlot(dt: string): string {
-    if (!dt) return ''
-    return new Date(dt).toLocaleString('en-IN', {
-      weekday: 'short', day: 'numeric', month: 'short',
-      hour: 'numeric', minute: '2-digit', hour12: true,
-    })
+  function setSlotField(idx: number, patch: Partial<SlotState>) {
+    setSlots(prev => prev.map((s, i) => i === idx ? { ...s, ...patch } : s))
+  }
+
+  function slotLabel(s: SlotState) {
+    if (!s.date) return null
+    const d = new Date(s.date)
+    d.setHours(s.hour, s.minute, 0, 0)
+    return d.toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })
   }
 
   function buildMessage(): string {
     const requested = request.scheduled_at
-      ? new Date(request.scheduled_at).toLocaleString('en-IN', {
-          weekday: 'short', day: 'numeric', month: 'short',
-          hour: 'numeric', minute: '2-digit', hour12: true,
-        })
+      ? new Date(request.scheduled_at).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })
       : null
-    const slots = [slot1, slot2, slot3].filter(Boolean).map((s, i) => `  ${i + 1}. ${formatSlot(s)}`)
+    const filled = slots
+      .map((s, i) => ({ s, i }))
+      .filter(({ s }) => s.date !== null)
+      .map(({ s, i }) => `  ${i + 1}. ${slotLabel(s)}`)
     return [
       `Namaste ${familyName} 🙏`,
       ``,
       `We're sorry — we're unable to serve your ${request.service_name} visit${requested ? ` on ${requested}` : ''} as requested.`,
       ``,
       `We can offer these alternative times for ${elderName}:`,
-      ...slots,
+      ...filled,
       ``,
-      `Please reply with your preferred option (1, 2, or 3) and we'll confirm right away.`,
+      `Please reply with your preferred option and we'll confirm right away.`,
       ``,
-      `Warm regards,`,
-      `Team Close Eye`,
+      `Warm regards,\nTeam Close Eye`,
     ].join('\n')
   }
 
   async function handleSend() {
-    if (!slot1) { showToast('Add at least one alternative slot', 'error'); return }
+    if (!slots[0].date) { showToast('Add at least one alternative slot', 'error'); return }
     setSaving(true)
     try {
       await supabase.from('booking_requests').update({ status: 'needs_reschedule' }).eq('id', request.id)
-      if (hasWa) {
-        window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(buildMessage())}`, '_blank')
-      }
+      if (hasWa) window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(buildMessage())}`, '_blank')
       onSent(request.id)
       onClose()
       showToast('Reschedule request sent', 'success')
@@ -683,70 +705,120 @@ function RescheduleDrawer({
     }
   }
 
+  const cur = slots[activeSlot]
+
   return (
     <>
       <div className="adm-overlay" onClick={onClose} />
-      <div className="adm-slideover" style={{ display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
-        <button
-          onClick={onClose}
-          style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-dark)', padding: 4, fontSize: 22, lineHeight: 1 }}
-        >×</button>
+      <div className="adm-slideover" style={{ display: 'flex', flexDirection: 'column', maxHeight: '92vh' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: 4, fontSize: 22, lineHeight: 1, zIndex: 1 }}>×</button>
 
-        <div style={{ borderBottom: '1px solid var(--line)', padding: '16px 20px' }}>
-          <p style={{ fontWeight: 700, color: '#991B1B' }}>Can't serve this time</p>
-          <p style={{ fontSize: 12, color: 'var(--gray-mid)', marginTop: 2 }}>{request.service_name} · {elderName}</p>
+        <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid #F3F4F6' }}>
+          <p style={{ fontWeight: 800, fontSize: 16, color: '#B91C1C', margin: 0 }}>Can't serve this time</p>
+          <p style={{ fontSize: 12, color: '#6B7280', marginTop: 3 }}>{request.service_name} · {elderName}</p>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 20px' }}>
           {request.scheduled_at && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '10px 12px' }}>
-              <span style={{ fontSize: 14 }}>📅</span>
-              <p style={{ fontSize: 12, color: '#991B1B', fontWeight: 500 }}>
-                User requested: {new Date(request.scheduled_at).toLocaleString('en-IN', {
-                  weekday: 'short', day: 'numeric', month: 'short',
-                  hour: 'numeric', minute: '2-digit', hour12: true,
-                })} — unable to serve
-              </p>
+            <div style={{ margin: '14px 0', display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 12 }}>
+              <span style={{ fontSize: 16 }}>📅</span>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#B91C1C', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Unable to serve</p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#991B1B', margin: '1px 0 0' }}>
+                  {new Date(request.scheduled_at).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}
+                </p>
+              </div>
             </div>
           )}
 
-          <p style={{ fontSize: 12, color: 'var(--gray-mid)' }}>Propose up to 3 alternatives. The family will receive a WhatsApp message to choose one.</p>
+          <p style={{ fontSize: 12, color: '#6B7280', marginBottom: 12 }}>Propose up to 3 alternative slots. Family will choose one via WhatsApp.</p>
 
-          {[
-            { label: 'Option 1 *', value: slot1, set: setSlot1 },
-            { label: 'Option 2', value: slot2, set: setSlot2 },
-            { label: 'Option 3', value: slot3, set: setSlot3 },
-          ].map(({ label, value, set }) => (
-            <div key={label}>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 4 }}>{label}</label>
-              <input
-                type="datetime-local"
-                value={value}
-                onChange={e => set(e.target.value)}
-                className="adm-input"
-                style={{ width: '100%' }}
-              />
+          {/* Slot tabs */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+            {(['Option 1', 'Option 2', 'Option 3'] as const).map((label, i) => {
+              const filled = slots[i].date !== null
+              const isActive = activeSlot === i
+              return (
+                <button
+                  key={label}
+                  onClick={() => setActiveSlot(i as 0 | 1 | 2)}
+                  style={{
+                    flex: 1, padding: '8px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                    background: isActive ? '#0E2A1F' : filled ? '#F0FDF4' : '#F3F4F6',
+                    color: isActive ? '#A8D5B5' : filled ? '#15803D' : '#6B7280',
+                    fontSize: 11, fontWeight: 700,
+                    transition: 'all 140ms ease',
+                  }}
+                >
+                  <div>{label}{i === 0 ? ' *' : ''}</div>
+                  {filled && !isActive && (
+                    <div style={{ fontSize: 9, marginTop: 2, color: '#16A34A', fontWeight: 600 }}>
+                      {slotLabel(slots[i])?.split(',')[0]}
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Active slot picker */}
+          <div style={{ marginBottom: 12 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Date</p>
+            <CalendarPicker
+              value={cur.date}
+              onChange={d => setSlotField(activeSlot, { date: d })}
+              requestedDate={null}
+            />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Time</p>
+            <TimeSlots
+              selectedHour={cur.hour} selectedMinute={cur.minute}
+              requestedHour={null} requestedMinute={null}
+              onChange={(h, m) => setSlotField(activeSlot, { hour: h, minute: m })}
+            />
+          </div>
+
+          {/* Slots summary */}
+          {slots.some(s => s.date) && (
+            <div style={{ background: '#F9FAFB', borderRadius: 12, padding: '10px 14px', marginTop: 4 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Proposing</p>
+              {slots.map((s, i) => s.date ? (
+                <p key={i} style={{ fontSize: 12, color: '#111', margin: '4px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#0E2A1F', color: '#A8D5B5', fontSize: 10, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                  {slotLabel(s)}
+                </p>
+              ) : null)}
             </div>
-          ))}
+          )}
 
           {!hasWa && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 10, padding: '10px 12px' }}>
-              <span style={{ fontSize: 13, color: '#D97706', flexShrink: 0 }}>⚠</span>
-              <p style={{ fontSize: 12, color: '#92400E', fontWeight: 500 }}>No WhatsApp number — status will update but message won't send.</p>
+            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 12, marginTop: 12 }}>
+              <span style={{ color: '#D97706', flexShrink: 0 }}>⚠</span>
+              <p style={{ fontSize: 12, color: '#92400E', fontWeight: 500, margin: 0 }}>No WhatsApp number — status will update but message won't send.</p>
             </div>
           )}
         </div>
 
-        <div style={{ borderTop: '1px solid var(--line)', padding: '16px 20px', display: 'flex', gap: 12 }}>
+        <div style={{ borderTop: '1px solid #F3F4F6', padding: '14px 20px', display: 'flex', gap: 10 }}>
           <button
             onClick={handleSend}
-            disabled={saving || !slot1}
-            className="adm-btn"
-            style={{ flex: 1, background: '#B91C1C', color: '#fff', fontWeight: 700, opacity: (saving || !slot1) ? 0.5 : 1, cursor: (saving || !slot1) ? 'not-allowed' : 'pointer' }}
+            disabled={saving || !slots[0].date}
+            style={{
+              flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', cursor: slots[0].date ? 'pointer' : 'not-allowed',
+              background: slots[0].date ? '#B91C1C' : '#F3F4F6',
+              color: slots[0].date ? '#fff' : '#9CA3AF',
+              fontWeight: 700, fontSize: 14,
+            }}
           >
-            {saving ? 'Sending…' : hasWa ? 'Send reschedule request on WhatsApp →' : 'Mark as needs reschedule'}
+            {saving ? 'Sending…' : hasWa ? 'Send reschedule options on WhatsApp →' : 'Mark as needs reschedule'}
           </button>
-          <button onClick={onClose} className="adm-btn" style={{ color: 'var(--gray-mid)' }}>Cancel</button>
+          <button
+            onClick={onClose}
+            style={{ padding: '12px 16px', borderRadius: 10, border: '1px solid #E5E7EB', background: '#fff', color: '#6B7280', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </>
@@ -889,6 +961,12 @@ function RequestsTab() {
                 <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--forest)' }}>Payment received · Visit confirmed</p>
               </div>
             )}
+            {isCompConfirmed && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: '#EFF6FF', borderBottom: '1px solid #BFDBFE' }}>
+                <span style={{ fontSize: 13, color: '#2563EB', flexShrink: 0 }}>✓</span>
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#1D4ED8' }}>Companion confirmed · Awaiting payment</p>
+              </div>
+            )}
             {isNeedsReschedule && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: '#FEE2E2', borderBottom: '1px solid #FCA5A5' }}>
                 <span style={{ fontSize: 13, color: '#DC2626', flexShrink: 0 }}>⚠</span>
@@ -960,8 +1038,10 @@ function RequestsTab() {
               {isCompConfirmed && (
                 <button
                   onClick={() => setConfirmTarget(r)}
-                  className="adm-btn"
-                  style={{ fontSize: 12, padding: '6px 12px', color: 'var(--forest)', border: '2px solid var(--sage)' }}
+                  style={{
+                    fontSize: 12, padding: '7px 14px', borderRadius: 8, border: '1.5px solid #93C5FD',
+                    background: '#EFF6FF', color: '#1D4ED8', fontWeight: 700, cursor: 'pointer',
+                  }}
                 >
                   ✉️ Send payment reminder
                 </button>

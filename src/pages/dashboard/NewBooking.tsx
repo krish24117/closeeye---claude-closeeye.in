@@ -66,7 +66,23 @@ export function DashboardNewBooking() {
   const [error, setError] = useState<string | null>(null)
   const [emergencyDone, setEmergencyDone] = useState(false)
 
-  const todayStr = new Date().toISOString().slice(0, 10)
+  function istDateStr(offsetDays = 0): string {
+    const d = new Date(Date.now() + (5.5 + offsetDays * 24) * 60 * 60 * 1000)
+    return d.toISOString().slice(0, 10)
+  }
+  function istNowMin(): number {
+    const d = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
+    return d.getUTCHours() * 60 + d.getUTCMinutes()
+  }
+  const BUFFER_MIN = 180 // 3-hour minimum booking notice
+  const todayStr   = istDateStr()
+  // If past 17:00 IST (last slot 20:00 minus 3h buffer), no slots remain today — require tomorrow
+  const minDateStr = istNowMin() + BUFFER_MIN >= 20 * 60 ? istDateStr(1) : todayStr
+  function availableSlots(dateStr: string): string[] {
+    if (dateStr !== todayStr) return TIME_SLOTS
+    const cutoff = istNowMin() + BUFFER_MIN
+    return TIME_SLOTS.filter(t => +t.slice(0, 2) * 60 + +t.slice(3, 5) > cutoff)
+  }
 
   useEffect(() => {
     ;(async () => {
@@ -452,8 +468,8 @@ export function DashboardNewBooking() {
                   <input
                     type="date"
                     value={visitDate}
-                    onChange={e => setVisitDate(e.target.value)}
-                    min={todayStr}
+                    onChange={e => { setVisitDate(e.target.value); setVisitTime('') }}
+                    min={minDateStr}
                     required
                     className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 bg-white"
                   />
@@ -467,13 +483,13 @@ export function DashboardNewBooking() {
                     className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-600 bg-white"
                   >
                     <option value="">— Pick a time —</option>
-                    {TIME_SLOTS.map(t => (
+                    {availableSlots(visitDate).map(t => (
                       <option key={t} value={t}>{formatTimeLabel(t)}</option>
                     ))}
                   </select>
                 </div>
               </div>
-              <p className="text-xs text-gray-400">Our coordinator will confirm the exact time when they call.</p>
+              <p className="text-xs text-gray-400">Bookings require at least 3 hours notice. Our coordinator will confirm the exact time.</p>
             </div>
           )}
 
