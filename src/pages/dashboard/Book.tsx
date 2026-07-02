@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { Loader2, Check, X, AlertTriangle, MapPin } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
@@ -97,22 +98,42 @@ export function DashboardBook() {
   const addressInputRef = useRef<HTMLInputElement>(null)
   const autocompleteRef = useRef<any>(null)
 
-  // Lock body scroll while sheet is open so the page can't scroll behind the backdrop
+  // iOS-safe scroll lock: position:fixed prevents rubber-band scroll behind sheet
   useEffect(() => {
-    if (active) { document.body.style.overflow = 'hidden' }
-    return () => { document.body.style.overflow = '' }
+    if (!active) return
+    const scrollY = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+    return () => {
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      window.scrollTo(0, scrollY)
+    }
   }, [active])
 
-  // iOS <15.4 fallback: resize overlay to visual viewport so sheet stays above keyboard
+  // Pin overlay to visual viewport so sheet stays above iOS keyboard
   useEffect(() => {
     if (!active) return
     const vv = window.visualViewport
     if (!vv) return
     const el = overlayRef.current
     if (!el) return
-    const sync = () => { el.style.height = `${vv.height}px` }
-    vv.addEventListener('resize', sync); sync()
-    return () => { vv.removeEventListener('resize', sync); el.style.height = '' }
+    const sync = () => {
+      el.style.top = `${vv.offsetTop}px`
+      el.style.left = `${vv.offsetLeft ?? 0}px`
+      el.style.width = `${vv.width}px`
+      el.style.height = `${vv.height}px`
+    }
+    vv.addEventListener('resize', sync)
+    vv.addEventListener('scroll', sync)
+    sync()
+    return () => {
+      vv.removeEventListener('resize', sync)
+      vv.removeEventListener('scroll', sync)
+      el.style.top = ''; el.style.left = ''; el.style.width = ''; el.style.height = ''
+    }
   }, [active])
 
   const [date, setDate]               = useState<Date | null>(null)
@@ -304,7 +325,7 @@ export function DashboardBook() {
         <Link to="/services" className="ce-btn ce-btn-white ce-btn-full" style={{ marginTop: 18, padding: 14 }}>{isNri ? 'Upgrade Now →' : 'Add Elder Care →'}</Link>
       </section>
 
-      {active && (
+      {active && createPortal(
         <div
           ref={overlayRef}
           className="ce-sheet-overlay"
@@ -330,12 +351,14 @@ export function DashboardBook() {
                   <p style={{ fontSize: 12, color: 'var(--gray-mid)', textAlign: 'center', margin: '8px 0 20px' }}>Call first if this is urgent — we'll dispatch immediately.</p>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 6 }}>DESCRIBE WHAT'S HAPPENING (OPTIONAL)</label>
                   <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Chest pain, fell at home, needs hospital…" style={INPUT_STYLE} />
-                  {err && <p style={{ color: '#b42318', fontSize: 13, margin: '8px 0 0' }}>{err}</p>}
-                  <button onClick={confirm} disabled={submitting} className="ce-btn ce-btn-full" style={{ marginTop: 14, padding: 16, background: '#b91c1c', color: '#fff', border: 'none', borderRadius: 'var(--radius-btn)', fontSize: 16, fontWeight: 700, cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
+                  </div>
+                <div className="ce-sheet-footer">
+                  {err && <p style={{ color: '#b42318', fontSize: 13, margin: '0 0 10px' }}>{err}</p>}
+                  <button onClick={confirm} disabled={submitting} className="ce-btn ce-btn-full" style={{ padding: 16, background: '#b91c1c', color: '#fff', border: 'none', borderRadius: 'var(--radius-btn)', fontSize: 16, fontWeight: 700, cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
                     {submitting ? <><Loader2 size={16} className="ce-spin" /> Alerting team…</> : 'Request emergency visit →'}
                   </button>
-                  <p style={{ fontSize: 11, color: 'var(--gray-mid)', textAlign: 'center', margin: '10px 0 0' }}>Our team is alerted immediately — a companion will contact you within 30 minutes.</p>
-                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--gray-mid)', textAlign: 'center', margin: '8px 0 0' }}>Our team is alerted immediately — a companion will contact you within 30 minutes.</p>
+                </div>
                 </>
               ) : (
                 /* ── REGULAR BOOKING ── */
@@ -480,18 +503,19 @@ export function DashboardBook() {
                     </div>
                   )}
 
-                  {err && <p style={{ color: '#b42318', fontSize: 13, margin: '8px 0 0' }}>{err}</p>}
-
-                  <button onClick={confirm} disabled={submitting} className="ce-btn ce-btn-primary ce-btn-full" style={{ marginTop: 16, padding: 16 }}>
+                  </div>{/* end ce-sheet-body */}
+                <div className="ce-sheet-footer">
+                  {err && <p style={{ color: '#b42318', fontSize: 13, margin: '0 0 10px' }}>{err}</p>}
+                  <button onClick={confirm} disabled={submitting} className="ce-btn ce-btn-primary ce-btn-full" style={{ padding: 16 }}>
                     {submitting ? <><Loader2 size={16} className="ce-spin" /> Sending…</> : 'Confirm Booking →'}
                   </button>
-                  <p style={{ fontSize: 11, color: 'var(--gray-mid)', textAlign: 'center', margin: '10px 0 0' }}>No charge now — we confirm a companion, then send a payment link.</p>
-                  </div>{/* end ce-sheet-body */}
+                  <p style={{ fontSize: 11, color: 'var(--gray-mid)', textAlign: 'center', margin: '8px 0 0' }}>No charge now — we confirm a companion, then send a payment link.</p>
+                </div>
                 </>
               )
             ) : (
               /* ── Success state ── */
-              <div style={{ textAlign: 'center', padding: '24px 20px 8px' }}>
+              <div style={{ textAlign: 'center', padding: '24px 20px', paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
                 <span className="ce-check-pop" style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--sage)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Check size={32} color="var(--forest)" strokeWidth={3} />
                 </span>
@@ -515,7 +539,7 @@ export function DashboardBook() {
             )}
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   )
 }
