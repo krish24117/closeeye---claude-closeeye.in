@@ -53,7 +53,7 @@ export function Navbar() {
             className="inline-flex items-center gap-1.5 font-serif text-xl text-green-900 tracking-tight flex-shrink-0"
             onClick={() => setOpen(false)}
           >
-            <Logo className="w-8 h-8" />
+            <Logo className="w-5 h-5" style={{ display: 'block', flexShrink: 0 }} />
             close <span className="text-green-600">eye</span>
           </Link>
 

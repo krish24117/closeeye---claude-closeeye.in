@@ -546,7 +546,7 @@ export function HomePage() {
       <nav className="ce-nav">
         <div className="ce-nav-inner">
           <Link to="/" className="ce-nav-logo">
-            <Logo className="w-8 h-8" />
+            <Logo className="w-5 h-5" style={{ display: 'block', flexShrink: 0 }} />
             close eye
           </Link>
 
@@ -589,7 +589,7 @@ export function HomePage() {
         <div className="ce-mobile-inner">
           <div className="ce-mobile-top">
             <Link to="/" className="ce-mobile-logo" onClick={() => setMenuOpen(false)}>
-              <Logo className="w-7 h-7" /> close eye
+              <Logo className="w-5 h-5" style={{ display: 'block', flexShrink: 0 }} /> close eye
             </Link>
             <button className="ce-mobile-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>
               <X size={24} />
@@ -1053,7 +1053,7 @@ export function HomePage() {
           {/* Brand */}
           <div className="ce-footer-brand">
             <Link to="/" className="ce-footer-logo">
-              <Logo className="w-7 h-7" /> close eye
+              <Logo className="w-5 h-5" style={{ display: 'block', flexShrink: 0 }} /> close eye
             </Link>
             <p className="ce-footer-tagline">Your trusted presence in India.</p>
           </div>

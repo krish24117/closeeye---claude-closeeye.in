@@ -356,8 +356,8 @@ export function AuthPage() {
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <div className="ce-auth-hero" style={{ textAlign: 'center', marginBottom: 28, maxWidth: 420 }}>
         <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 20 }}>
-          <Logo className="w-12 h-12" />
-          <span style={{ fontFamily: "'Open Sauce One', system-ui, sans-serif", fontWeight: 800, fontSize: 22, color: '#0E2A1F', letterSpacing: '-.02em' }}>
+          <Logo style={{ width: 24, height: 24, display: 'block', flexShrink: 0 }} />
+          <span style={{ fontFamily: "'Open Sauce One', system-ui, sans-serif", fontWeight: 800, fontSize: 22, color: '#0E2A1F', letterSpacing: '-.02em', lineHeight: 1 }}>
             close eye
           </span>
         </Link>

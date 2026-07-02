@@ -2,10 +2,10 @@ import { useId } from 'react'
 
 // Same mark used on the splash screen (index.html) and favicon - traced from
 // CLOSEEYELOGO.PNG.jpeg. Keep in sync with public/favicon.svg.
-export function Logo({ className }: { className?: string }) {
+export function Logo({ className, style }: { className?: string; style?: React.CSSProperties }) {
   const gradientId = useId()
   return (
-    <svg viewBox="6.2 27.95 229.6 229.6" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <svg viewBox="6.2 27.95 229.6 229.6" xmlns="http://www.w3.org/2000/svg" className={className} style={style}>
       <defs>
         <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#a8ff3e" />
