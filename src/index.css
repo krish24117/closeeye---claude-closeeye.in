@@ -1334,8 +1334,10 @@
 }
 
 /* ---- Booking bottom sheet + success check ---- */
-.ce-sheet-overlay { position: fixed; top: 0; left: 0; right: 0; height: 100dvh; z-index: 500; background: rgba(0,0,0,0.55); display: flex; align-items: flex-end; justify-content: center; }
-.ce-sheet { width: 100%; max-width: 480px; background: #fff; border-radius: 20px 20px 0 0; padding: 16px 20px calc(24px + env(safe-area-inset-bottom)); max-height: 88dvh; overflow-y: auto; animation: ce-sheet-up 300ms ease-out; }
+.ce-sheet-overlay { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.55); display: flex; align-items: flex-end; justify-content: center; }
+.ce-sheet { width: 100%; max-width: 480px; background: #fff; border-radius: 20px 20px 0 0; padding: 0 0 calc(24px + env(safe-area-inset-bottom)); max-height: 88dvh; overflow-y: auto; animation: ce-sheet-up 300ms ease-out; display: flex; flex-direction: column; }
+.ce-sheet-sticky-head { position: sticky; top: 0; background: #fff; z-index: 1; padding: 16px 20px 0; box-shadow: 0 1px 0 var(--gray-light); }
+.ce-sheet-body { padding: 12px 20px; flex: 1; }
 @keyframes ce-sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .ce-sheet-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--gray-light); margin: 0 auto 16px; }
 @keyframes ce-check-pop { 0% { transform: scale(0); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }

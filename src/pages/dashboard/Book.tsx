@@ -96,6 +96,12 @@ export function DashboardBook() {
   const addressInputRef = useRef<HTMLInputElement>(null)
   const autocompleteRef = useRef<any>(null)
 
+  // Lock body scroll while sheet is open so the page can't scroll behind the backdrop
+  useEffect(() => {
+    if (active) { document.body.style.overflow = 'hidden' }
+    return () => { document.body.style.overflow = '' }
+  }, [active])
+
   // iOS <15.4 fallback: resize overlay to visual viewport so sheet stays above keyboard
   useEffect(() => {
     if (!active) return
@@ -233,7 +239,7 @@ export function DashboardBook() {
       )}
 
       {SERVICES.map(s => (
-        <div key={s.id} style={{ margin: '0 16px 10px', background: '#fff', borderRadius: 'var(--radius-card)', padding: '18px 20px', boxShadow: 'var(--shadow-card)', display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div key={s.id} style={{ margin: '0 16px 10px', background: '#fff', borderRadius: 'var(--radius-card)', padding: '18px 20px', boxShadow: 'var(--shadow-card)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
           <span style={{ fontSize: 28 }}>{s.emoji}</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--black)', margin: 0 }}>{s.name}</p>
@@ -296,12 +302,15 @@ export function DashboardBook() {
               active.id === 'emergency_support_visit' ? (
                 /* ── EMERGENCY ── */
                 <>
-                  <div className="ce-sheet-handle" />
-                  <div className="flex items-center justify-between">
-                    <span style={{ fontSize: 18, fontWeight: 700 }}>🚨 Emergency Visit</span>
-                    <button onClick={close} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-mid)' }}><X size={22} /></button>
+                  <div className="ce-sheet-sticky-head">
+                    <div className="ce-sheet-handle" />
+                    <div className="flex items-center justify-between">
+                      <span style={{ fontSize: 18, fontWeight: 700 }}>🚨 Emergency Visit</span>
+                      <button onClick={close} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-mid)' }}><X size={22} /></button>
+                    </div>
+                    <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--forest)', margin: '2px 0 12px' }}>₹3,000 · Response within 2 hours</p>
                   </div>
-                  <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--forest)', margin: '2px 0 20px' }}>₹3,000 · Response within 2 hours</p>
+                  <div className="ce-sheet-body">
                   <a href="tel:+919000221261" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: '#b91c1c', color: '#fff', borderRadius: 14, padding: '16px 20px', fontSize: 17, fontWeight: 700, textDecoration: 'none', minHeight: 52 }}>
                     📞 Call +91 90002 21261
                   </a>
@@ -313,33 +322,38 @@ export function DashboardBook() {
                     {submitting ? <><Loader2 size={16} className="ce-spin" /> Alerting team…</> : 'Request emergency visit →'}
                   </button>
                   <p style={{ fontSize: 11, color: 'var(--gray-mid)', textAlign: 'center', margin: '10px 0 0' }}>Our team is alerted immediately — a companion will contact you within 30 minutes.</p>
+                  </div>
                 </>
               ) : (
                 /* ── REGULAR BOOKING ── */
                 <>
-                  <div className="ce-sheet-handle" />
-                  <div className="flex items-center justify-between">
-                    <span style={{ fontSize: 18, fontWeight: 700 }}>{active.name}</span>
-                    <button onClick={close} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-mid)' }}><X size={22} /></button>
+                  <div className="ce-sheet-sticky-head">
+                    <div className="ce-sheet-handle" />
+                    <div className="flex items-center justify-between">
+                      <span style={{ fontSize: 18, fontWeight: 700 }}>{active.name}</span>
+                      <button onClick={close} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-mid)' }}><X size={22} /></button>
+                    </div>
+                    <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--forest)', margin: '2px 0 12px' }}>{active.price}</p>
                   </div>
-                  <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--forest)', margin: '2px 0 16px' }}>{active.price}</p>
-
+                  <div className="ce-sheet-body">
                   {/* ── Date picker ── */}
                   <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', margin: '0 0 8px' }}>PICK A DAY</p>
-                  <div className="ce-noscroll" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+                  <div className="ce-noscroll" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
                     {days.map(d => {
                       const sel = date?.toDateString() === d.toDateString()
                       return (
                         <button
                           key={d.toISOString()}
                           onClick={() => setDate(d)}
-                          style={{ flexShrink: 0, borderRadius: 12, padding: '10px 14px', cursor: 'pointer', textAlign: 'center', background: sel ? 'var(--forest)' : '#fff', color: sel ? '#fff' : 'var(--gray-dark)', border: sel ? 'none' : '1px solid var(--gray-light)' }}
+                          style={{ flexShrink: 0, minWidth: 52, borderRadius: 12, padding: '10px 16px', cursor: 'pointer', textAlign: 'center', background: sel ? 'var(--forest)' : '#fff', color: sel ? '#fff' : 'var(--gray-dark)', border: sel ? 'none' : '1px solid var(--gray-light)' }}
                         >
                           <div style={{ fontSize: 11, fontWeight: 600 }}>{d.toLocaleDateString('en-IN', { weekday: 'short' })}</div>
                           <div style={{ fontSize: 16, fontWeight: 700 }}>{d.getDate()}</div>
                         </button>
                       )
                     })}
+                    {/* trailing spacer so last card isn't flush against the scroll edge */}
+                    <div style={{ flexShrink: 0, width: 4 }} />
                   </div>
 
                   {/* ── Dynamic time slots ── */}
@@ -459,11 +473,12 @@ export function DashboardBook() {
                     {submitting ? <><Loader2 size={16} className="ce-spin" /> Sending…</> : 'Confirm Booking →'}
                   </button>
                   <p style={{ fontSize: 11, color: 'var(--gray-mid)', textAlign: 'center', margin: '10px 0 0' }}>No charge now — we confirm a companion, then send a payment link.</p>
+                  </div>{/* end ce-sheet-body */}
                 </>
               )
             ) : (
               /* ── Success state ── */
-              <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
+              <div style={{ textAlign: 'center', padding: '24px 20px 8px' }}>
                 <span className="ce-check-pop" style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--sage)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Check size={32} color="var(--forest)" strokeWidth={3} />
                 </span>

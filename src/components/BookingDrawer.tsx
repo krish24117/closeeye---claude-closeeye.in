@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { X, Loader2, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { paiseToUsdApprox, type ServiceItem } from '@/lib/services-catalog'
+import { formatSlot } from '@/lib/formatTime'
 
 interface Props {
   service: ServiceItem | null
@@ -27,8 +28,8 @@ function formatIst(value: string): string {
   const [hh, mm] = t.split(':').map(Number)
   const date = new Date(y, m - 1, day, hh, mm)
   const ds = date.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
-  const ts = date.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
-  return `${ds}, ${ts} IST`
+  const slotStr = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+  return `${ds}, ${formatSlot(slotStr)} IST`
 }
 
 export function BookingDrawer({ service, onClose, onSubmitted }: Props) {
