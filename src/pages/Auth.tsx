@@ -354,8 +354,8 @@ export function AuthPage() {
       `}</style>
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <div className="ce-auth-hero" style={{ textAlign: 'center', marginBottom: 28, maxWidth: 420 }}>
-        <Link to="/" style={{ textDecoration: 'none', display: 'inline-block', marginBottom: 20 }}>
+      <div className="ce-auth-hero" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 28, width: '100%', maxWidth: 420 }}>
+        <Link to="/" style={{ textDecoration: 'none', marginBottom: 20 }}>
           <LogoLockup fontSize={22} color="dark" />
         </Link>
         {mode !== 'update-password' && (
@@ -399,8 +399,8 @@ export function AuthPage() {
         {mode === 'update-password' && (
           <div className="ce-auth-form-inner" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0E2A1F', margin: '0 0 6px', letterSpacing: '-.02em' }}>Set a new password</h2>
-              <p style={{ fontSize: 13, color: '#6B7A72', margin: 0, lineHeight: 1.6 }}>Enter a new password for your account.</p>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0E2A1F', margin: '0 0 6px', letterSpacing: '-.02em', textAlign: 'center' }}>Set a new password</h2>
+              <p style={{ fontSize: 13, color: '#6B7A72', margin: 0, lineHeight: 1.6, textAlign: 'center' }}>Enter a new password for your account.</p>
             </div>
             <form onSubmit={updatePasswordForm.handleSubmit(handleUpdatePassword)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <InputField
@@ -437,8 +437,8 @@ export function AuthPage() {
               >
                 ← Back to sign in
               </button>
-              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0E2A1F', margin: '0 0 6px', letterSpacing: '-.02em' }}>Forgot your password?</h2>
-              <p style={{ fontSize: 13, color: '#6B7A72', margin: 0, lineHeight: 1.6 }}>Enter your email and we'll send a reset link.</p>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0E2A1F', margin: '0 0 6px', letterSpacing: '-.02em', textAlign: 'center' }}>Forgot your password?</h2>
+              <p style={{ fontSize: 13, color: '#6B7A72', margin: 0, lineHeight: 1.6, textAlign: 'center' }}>Enter your email and we'll send a reset link.</p>
             </div>
             {resetSent ? (
               <div style={{ background: '#F0FAF4', border: '1px solid #B7E4C7', borderRadius: 18, padding: '24px 20px', textAlign: 'center' }}>
@@ -467,8 +467,8 @@ export function AuthPage() {
         {/* LOGIN ──────────────────────────────────────────────────────── */}
         {mode === 'login' && (
           <div key="login" className="ce-auth-form-inner" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div style={{ padding: 0 }}>
-              <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0E2A1F', margin: '0 0 5px', padding: 0, letterSpacing: '-.02em', lineHeight: 1.15 }}>Welcome back</h2>
+            <div style={{ textAlign: 'center', padding: 0 }}>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0E2A1F', margin: '0 0 6px', padding: 0, letterSpacing: '-.02em', lineHeight: 1.15 }}>Welcome back</h2>
               <p style={{ fontSize: 13, color: '#6B7A72', margin: 0, padding: 0, lineHeight: 1.5 }}>Sign in to your family's care dashboard.</p>
             </div>
             <GoogleButton onClick={handleGoogleSignIn} />
@@ -564,8 +564,8 @@ export function AuthPage() {
               </div>
             ) : (
               <>
-                <div style={{ padding: 0 }}>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0E2A1F', margin: '0 0 5px', padding: 0, letterSpacing: '-.02em', lineHeight: 1.15 }}>Create your account</h2>
+                <div style={{ textAlign: 'center', padding: 0 }}>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0E2A1F', margin: '0 0 6px', padding: 0, letterSpacing: '-.02em', lineHeight: 1.15 }}>Create your account</h2>
                   <p style={{ fontSize: 13, color: '#6B7A72', margin: 0, padding: 0, lineHeight: 1.5 }}>Set up your family's care dashboard in minutes.</p>
                 </div>
                 <GoogleButton onClick={handleGoogleSignIn} label="Sign up with Google" />
