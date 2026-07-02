@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { LogOut, Edit2, Save, X, Plus } from 'lucide-react'
+import { LogOut, Edit2, Save, X, Plus, ChevronRight } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 
@@ -53,25 +53,21 @@ function memberEmoji(rel: string | null): string {
   return '👤'
 }
 
-const MUTED   = 'var(--muted)'
-const LINE    = 'var(--line)'
 const CLAY    = 'var(--clay)'
-const CREAM2  = 'var(--cream-2)'
+const LINE    = 'var(--line)'
 
-const SEC_LABEL: React.CSSProperties = {
-  fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.12em',
-  color: MUTED, fontWeight: 700, margin: '18px 0 9px',
+// ── Form styles (used by MemberFormFields) ─────────────────────────────────
+
+const INPUT: React.CSSProperties = {
+  width: '100%', background: 'var(--cream)', border: '1px solid var(--gray-light)',
+  borderRadius: 10, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit',
+  outline: 'none', boxSizing: 'border-box',
 }
-const FROW: React.CSSProperties = {
-  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-  padding: '12px 0', borderBottom: `1px solid ${CREAM2}`,
+const LABEL: React.CSSProperties = {
+  display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', marginBottom: 4,
 }
-const MENU_LINK: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', gap: 12,
-  background: '#fff', border: `1px solid ${LINE}`,
-  borderRadius: 12, padding: '13px 15px', marginBottom: 8,
-  textDecoration: 'none', color: 'var(--forest)', fontSize: 13.5, fontWeight: 600,
-}
+
+// Keep these for compatibility with existing callers
 const CANCEL_BTN: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 5,
   background: 'none', border: '1px solid var(--gray-light)', borderRadius: 100,
@@ -111,17 +107,6 @@ const BLANK_FORM: MemberForm = {
 }
 
 const RELATIONSHIPS = ['Son', 'Daughter', 'Parent', 'Spouse', 'Sibling', 'Other']
-
-// ── Styles ─────────────────────────────────────────────────────────────────
-
-const INPUT: React.CSSProperties = {
-  width: '100%', background: 'var(--cream)', border: '1px solid var(--gray-light)',
-  borderRadius: 10, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit',
-  outline: 'none', boxSizing: 'border-box',
-}
-const LABEL: React.CSSProperties = {
-  display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', marginBottom: 4,
-}
 
 // ── Member form (shared between edit and add-new) ──────────────────────────
 
@@ -488,34 +473,37 @@ export function DashboardProfile() {
     }
   }
 
-  // ── JSX ───────────────────────────────────────────────────────────────
+  // ── JSX ────────────────────────────────────────────────────────────────
 
   const isFounder = !!profile?.is_founding_member
 
   return (
-    <div className="ce-slide-up" style={{ paddingBottom: 24 }}>
+    <div className="ce-slide-up" style={{ paddingBottom: 32 }}>
 
-      {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, var(--forest), var(--forest-mid))', padding: '28px 20px', textAlign: 'center' }}>
-        <span style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '3px solid var(--sage)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#fff' }}>
-          {initials(profile?.full_name)}
-        </span>
-        <p style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '12px 0 0' }}>{profile?.full_name || 'Your account'}</p>
-        <p style={{ fontSize: 14, color: 'var(--sage)', margin: '2px 0 0' }}>
-          {isNri ? `${lovedOnes.length || ''} parent${lovedOnes.length !== 1 ? 's' : ''} in care` : [society?.flat_number, society?.society_name].filter(Boolean).join(' · ') || 'Society Member'}
+      {/* ── Hero ─────────────────────────────────────────────────────── */}
+      <div className="ce-pr-hero">
+        <div className="ce-pr-avatar">{initials(profile?.full_name)}</div>
+        <p className="ce-pr-name">{profile?.full_name || 'Your account'}</p>
+        <p className="ce-pr-hero-sub">
+          {isNri
+            ? `${lovedOnes.length || 0} family member${lovedOnes.length !== 1 ? 's' : ''} in care`
+            : [society?.flat_number, society?.society_name].filter(Boolean).join(' · ') || 'Society Member'
+          }
         </p>
         {isFounder && (
-          <span style={{ display: 'inline-block', marginTop: 10, background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '4px 14px', fontSize: 11, fontWeight: 700 }}>
-            ★ Founding Member{profile?.founding_number ? ` #${String(profile.founding_number).padStart(4, '0')}` : ''}
-          </span>
+          <div>
+            <span className="ce-pr-badge">
+              ★ Founding Member{profile?.founding_number ? ` #${String(profile.founding_number).padStart(4, '0')}` : ''}
+            </span>
+          </div>
         )}
       </div>
 
       {isNri ? (
         <>
-          {/* ── Family in India ─────────────────────────────────── */}
-          <div style={{ margin: '20px 16px 0' }}>
-            <p style={SEC_LABEL}>FAMILY IN INDIA</p>
+          {/* ── Family in India ──────────────────────────────────────── */}
+          <div className="ce-pr-section">
+            <p className="ce-pr-sec-lbl">Family in India</p>
 
             {lovedOnes.map(lo => {
               const ep = elderProfiles[lo.id]
@@ -524,181 +512,184 @@ export function DashboardProfile() {
               const hasHealth = !!(ep?.medical_conditions || (Array.isArray(ep?.current_medications) && ep.current_medications.length > 0))
               const healthHint = hasHealth
                 ? ep?.medical_conditions?.split(',')[0]?.trim() || 'Health details added'
-                : 'tap to add health details'
+                : 'Tap to add health details'
               const sub = [lo.city, healthHint].filter(Boolean).join(' · ')
 
-              // Compact row — view mode
               if (!isEditing) return (
-                <div key={lo.id} style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 13, padding: '13px 15px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 9 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 11, background: CREAM2, display: 'grid', placeItems: 'center', fontSize: 16, flexShrink: 0 }}>
-                    {memberEmoji(lo.relationship)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--forest)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {lo.full_name}{lo.relationship ? ` · ${lo.relationship}` : ''}
+                <button key={lo.id} className="ce-pr-member" onClick={() => startEdit(lo.id)}>
+                  <div className="ce-pr-member-emoji">{memberEmoji(lo.relationship)}</div>
+                  <div className="ce-pr-member-content">
+                    <div className="ce-pr-member-name">
+                      {lo.full_name}{lo.relationship ? <span style={{ fontWeight: 400, color: 'var(--gray-mid)' }}> · {lo.relationship}</span> : ''}
                     </div>
-                    <div style={{ fontSize: 12, color: MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {sub || 'tap to edit'}
-                    </div>
+                    <div className="ce-pr-member-sub">{sub || 'Tap to edit'}</div>
                   </div>
-                  <button onClick={() => startEdit(lo.id)} style={{ background: 'none', border: 'none', fontSize: 20, color: MUTED, cursor: 'pointer', flexShrink: 0, padding: '12px 8px', lineHeight: 1, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
-                </div>
+                  {memberOk[lo.id] && <span style={{ fontSize: 12, color: 'var(--forest)', fontWeight: 700, flexShrink: 0 }}>✓</span>}
+                  <ChevronRight size={16} className="ce-pr-member-chevron" color="#D0D0D0" />
+                </button>
               )
 
-              // Full edit card — expanded mode
               return (
-                <div key={lo.id} style={{ background: '#fff', borderRadius: 'var(--radius-card)', padding: 20, boxShadow: 'var(--shadow-card)', marginBottom: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)', margin: 0 }}>Edit {lo.full_name}</p>
-                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                      <button onClick={cancelEdit} style={CANCEL_BTN}><X size={11} /> Cancel</button>
-                      <button onClick={() => saveMember(lo.id)} disabled={savingId === lo.id} style={{ ...SAVE_BTN, opacity: savingId === lo.id ? 0.6 : 1 }}>
+                <div key={lo.id} className="ce-pr-edit-card">
+                  <div className="ce-pr-edit-hdr">
+                    <p className="ce-pr-edit-title">Edit {lo.full_name}</p>
+                    <div className="ce-pr-edit-actions">
+                      <button onClick={cancelEdit} className="ce-pr-cancel-btn">
+                        <X size={11} /> Cancel
+                      </button>
+                      <button onClick={() => saveMember(lo.id)} disabled={savingId === lo.id} className="ce-pr-save-btn" style={{ opacity: savingId === lo.id ? 0.6 : 1 }}>
                         <Save size={11} /> {savingId === lo.id ? 'Saving…' : 'Save'}
                       </button>
                     </div>
                   </div>
                   {form && <MemberFormFields form={form} setForm={fn => setMemberForm(lo.id, fn)} />}
-                  {memberErrs[lo.id] && <p style={{ fontSize: 13, color: '#b42318', marginTop: 10 }}>{memberErrs[lo.id]}</p>}
-                  {memberOk[lo.id] && <p style={{ fontSize: 12, color: 'var(--forest)', marginTop: 8 }}>✓ Saved</p>}
+                  {memberErrs[lo.id] && <p style={{ fontSize: 13, color: '#B42318', marginTop: 10 }}>{memberErrs[lo.id]}</p>}
                 </div>
               )
             })}
 
             {/* Add new member form */}
             {editingId === 'new' && forms.new && (
-              <div style={{ background: '#fff', borderRadius: 'var(--radius-card)', padding: 20, boxShadow: 'var(--shadow-card)', marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--black)', margin: 0 }}>Add family member</p>
-                  <button onClick={cancelEdit} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-mid)' }}><X size={18} /></button>
+              <div className="ce-pr-edit-card">
+                <div className="ce-pr-edit-hdr">
+                  <p className="ce-pr-edit-title">Add family member</p>
+                  <button onClick={cancelEdit} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-mid)', padding: 4 }}>
+                    <X size={18} />
+                  </button>
                 </div>
                 <MemberFormFields form={forms.new} setForm={fn => setMemberForm('new', fn)} />
-                {memberErrs.new && <p style={{ fontSize: 13, color: '#b42318', marginTop: 10 }}>{memberErrs.new}</p>}
+                {memberErrs.new && <p style={{ fontSize: 13, color: '#B42318', marginTop: 10 }}>{memberErrs.new}</p>}
                 <button
                   onClick={() => saveMember('new')}
                   disabled={savingId === 'new'}
-                  style={{ marginTop: 16, width: '100%', background: 'var(--forest)', color: '#fff', border: 'none', borderRadius: 'var(--radius-btn)', padding: '13px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: savingId === 'new' ? 0.6 : 1 }}
+                  style={{ marginTop: 16, width: '100%', background: 'var(--forest)', color: '#fff', border: 'none', borderRadius: 'var(--radius-btn)', padding: '13px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: savingId === 'new' ? 0.6 : 1, fontFamily: 'inherit' }}
                 >
                   {savingId === 'new' ? 'Adding…' : 'Add family member →'}
                 </button>
               </div>
             )}
 
-            {/* Add button — shown when not in add mode */}
             {editingId !== 'new' && (
-              <button
-                onClick={startAddNew}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: '1.5px dashed var(--gray-light)', borderRadius: 'var(--radius-card)', padding: '14px 20px', fontSize: 14, fontWeight: 600, color: 'var(--forest)', cursor: 'pointer', justifyContent: 'center' }}
-              >
+              <button onClick={startAddNew} className="ce-pr-add">
                 <Plus size={16} /> Add family member
               </button>
             )}
           </div>
 
-          {/* ── Your details / Membership / Settings ─────────── */}
-          <div style={{ padding: '0 16px' }}>
-          <p style={SEC_LABEL}>YOUR DETAILS</p>
-          <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, padding: '0 16px' }}>
+          {/* ── Your account ─────────────────────────────────────────── */}
+          <div className="ce-pr-section">
+            <p className="ce-pr-sec-lbl">Your account</p>
+
             {!editingAccount ? (
-              <>
-                <div style={FROW}>
-                  <span style={{ fontSize: 12, color: MUTED }}>Name</span>
-                  <span style={{ fontSize: 13.5, fontWeight: 600 }}>{profile?.full_name || '—'}</span>
+              <div className="ce-pr-rows">
+                <div className="ce-pr-row">
+                  <span className="ce-pr-row-label">Name</span>
+                  <span className="ce-pr-row-val">{profile?.full_name || '—'}</span>
                 </div>
-                <div style={FROW}>
-                  <span style={{ fontSize: 12, color: MUTED }}>WhatsApp</span>
-                  <span style={{ fontSize: 13.5, fontWeight: 600 }}>{profile?.whatsapp_number || '—'}</span>
+                <div className="ce-pr-row">
+                  <span className="ce-pr-row-label">WhatsApp</span>
+                  <span className="ce-pr-row-val">{profile?.whatsapp_number || '—'}</span>
                 </div>
-                <div style={FROW}>
-                  <span style={{ fontSize: 12, color: MUTED }}>Email</span>
-                  <span style={{ fontSize: 13.5, fontWeight: 600, maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email || ''}</span>
+                <div className="ce-pr-row">
+                  <span className="ce-pr-row-label">Email</span>
+                  <span className="ce-pr-row-val">{user?.email || ''}</span>
                 </div>
-                <div style={{ ...FROW, borderBottom: 'none' }}>
-                  <span style={{ fontSize: 12, color: MUTED }}>Where you live</span>
+                <div className="ce-pr-row">
+                  <span className="ce-pr-row-label">Country</span>
                   {profile?.country
-                    ? <span style={{ fontSize: 13.5, fontWeight: 600 }}>{profile.country}</span>
-                    : <button onClick={() => { setEditingAccount(true); setAccountOk(false) }} style={{ background: 'none', border: 'none', fontSize: 13.5, fontWeight: 700, color: 'var(--sage-2)', cursor: 'pointer', padding: 0 }}>+ Add address</button>
+                    ? <span className="ce-pr-row-val">{profile.country}</span>
+                    : <button onClick={() => { setEditingAccount(true); setAccountOk(false) }} className="ce-pr-edit-inline-btn">+ Add</button>
                   }
                 </div>
-                {accountOk && <p style={{ fontSize: 12, color: 'var(--forest)', paddingBottom: 10 }}>✓ Saved</p>}
-                <div style={{ borderTop: `1px solid ${LINE}`, padding: '10px 0', textAlign: 'center' }}>
-                  <button onClick={() => { setEditingAccount(true); setAccountOk(false) }} style={{ background: 'none', border: 'none', fontSize: 12, fontWeight: 700, color: 'var(--sage-2)', cursor: 'pointer' }}>
+                {accountOk && (
+                  <div style={{ padding: '10px 16px', fontSize: 12, color: 'var(--forest)', fontWeight: 600 }}>✓ Saved</div>
+                )}
+                <div className="ce-pr-rows-footer">
+                  <button onClick={() => { setEditingAccount(true); setAccountOk(false) }} className="ce-pr-edit-inline-btn">
                     <Edit2 size={11} style={{ verticalAlign: 'middle', marginRight: 4 }} />Edit details
                   </button>
                 </div>
-              </>
+              </div>
             ) : (
-              <div style={{ padding: '14px 0', display: 'grid', gap: 12 }}>
-                <div><label style={LABEL}>Your name</label><input style={INPUT} value={profileForm.full_name} onChange={e => setProfileForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Your full name" /></div>
-                <div><label style={LABEL}>Email</label><input style={{ ...INPUT, opacity: 0.55, cursor: 'not-allowed' }} value={user?.email || ''} disabled /></div>
-                <div><label style={LABEL}>WhatsApp *</label><input style={INPUT} value={profileForm.whatsapp_number} onChange={e => setProfileForm(f => ({ ...f, whatsapp_number: e.target.value }))} placeholder="+1 555 123 4567" /></div>
-                <div><label style={LABEL}>Where you live</label><input style={INPUT} value={profileForm.country} onChange={e => setProfileForm(f => ({ ...f, country: e.target.value }))} placeholder="e.g. USA, UK, UAE" /></div>
-                {accountErr && <p style={{ fontSize: 13, color: '#b42318' }}>{accountErr}</p>}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => { setEditingAccount(false); setAccountErr('') }} style={CANCEL_BTN}><X size={11} /> Cancel</button>
-                  <button onClick={saveAccount} disabled={savingAccount} style={{ ...SAVE_BTN, flex: 1, justifyContent: 'center', opacity: savingAccount ? 0.6 : 1 }}><Save size={11} /> {savingAccount ? 'Saving…' : 'Save'}</button>
+              <div className="ce-pr-edit-card">
+                <div className="ce-pr-edit-hdr">
+                  <p className="ce-pr-edit-title">Edit your details</p>
+                  <div className="ce-pr-edit-actions">
+                    <button onClick={() => { setEditingAccount(false); setAccountErr('') }} className="ce-pr-cancel-btn">
+                      <X size={11} /> Cancel
+                    </button>
+                    <button onClick={saveAccount} disabled={savingAccount} className="ce-pr-save-btn" style={{ opacity: savingAccount ? 0.6 : 1 }}>
+                      <Save size={11} /> {savingAccount ? 'Saving…' : 'Save'}
+                    </button>
+                  </div>
                 </div>
+                <div style={{ display: 'grid', gap: 12 }}>
+                  <div><label style={LABEL}>Your name</label><input style={INPUT} value={profileForm.full_name} onChange={e => setProfileForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Your full name" /></div>
+                  <div><label style={LABEL}>Email</label><input style={{ ...INPUT, opacity: 0.55, cursor: 'not-allowed' }} value={user?.email || ''} disabled /></div>
+                  <div><label style={LABEL}>WhatsApp *</label><input style={INPUT} value={profileForm.whatsapp_number} onChange={e => setProfileForm(f => ({ ...f, whatsapp_number: e.target.value }))} placeholder="+1 555 123 4567" /></div>
+                  <div><label style={LABEL}>Where you live</label><input style={INPUT} value={profileForm.country} onChange={e => setProfileForm(f => ({ ...f, country: e.target.value }))} placeholder="e.g. USA, UK, UAE" /></div>
+                </div>
+                {accountErr && <p style={{ fontSize: 13, color: '#B42318', marginTop: 10 }}>{accountErr}</p>}
               </div>
             )}
           </div>
 
-          {/* ── Membership & billing ───────────────────────────── */}
+          {/* ── Membership & billing ──────────────────────────────────── */}
           {isFounder && (
-            <>
-              <p style={SEC_LABEL}>MEMBERSHIP &amp; BILLING</p>
-              <div>
-                <Link to="/dashboard/profile" style={MENU_LINK}>
-                  <span style={{ fontSize: 16 }}>★</span>
+            <div className="ce-pr-section">
+              <p className="ce-pr-sec-lbl">Membership &amp; billing</p>
+              <Link to="/dashboard/profile" className="ce-pr-link">
+                <div className="ce-pr-link-emoji">★</div>
+                <span className="ce-pr-link-label">
                   Manage membership / plan
                   {profile?.founding_number && (
-                    <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: MUTED }}>
+                    <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)' }}>
                       #{String(profile.founding_number).padStart(4, '0')}
                     </span>
                   )}
-                  <span style={{ marginLeft: 'auto', color: MUTED }}>›</span>
-                </Link>
-                <Link to="/dashboard/bookings" style={MENU_LINK}>
-                  <span style={{ fontSize: 16 }}>🧾</span>
-                  Bookings &amp; receipts
-                  <span style={{ marginLeft: 'auto', color: MUTED }}>›</span>
-                </Link>
-              </div>
-            </>
+                </span>
+                <ChevronRight size={16} className="ce-pr-link-chevron" />
+              </Link>
+              <Link to="/dashboard/bookings" className="ce-pr-link">
+                <div className="ce-pr-link-emoji">🧾</div>
+                <span className="ce-pr-link-label">Bookings &amp; receipts</span>
+                <ChevronRight size={16} className="ce-pr-link-chevron" />
+              </Link>
+            </div>
           )}
 
-          {/* ── Settings & support ─────────────────────────────── */}
-          <p style={SEC_LABEL}>SETTINGS &amp; SUPPORT</p>
-          <div style={{ marginBottom: 24 }}>
-            <a href="https://wa.me/919000221261" target="_blank" rel="noopener noreferrer" style={MENU_LINK}>
-              <span style={{ fontSize: 16 }}>💬</span>
-              Contact the care team
-              <span style={{ marginLeft: 'auto', color: MUTED }}>›</span>
+          {/* ── Settings & support ───────────────────────────────────── */}
+          <div className="ce-pr-section" style={{ marginBottom: 8 }}>
+            <p className="ce-pr-sec-lbl">Settings &amp; support</p>
+            <a href="https://wa.me/919000221261" target="_blank" rel="noopener noreferrer" className="ce-pr-link">
+              <div className="ce-pr-link-emoji">💬</div>
+              <span className="ce-pr-link-label">Contact the care team</span>
+              <ChevronRight size={16} className="ce-pr-link-chevron" />
             </a>
-            <a href="https://closeeye.in/faq" target="_blank" rel="noopener noreferrer" style={MENU_LINK}>
-              <span style={{ fontSize: 16 }}>❔</span>
-              Help &amp; FAQ
-              <span style={{ marginLeft: 'auto', color: MUTED }}>›</span>
+            <a href="https://closeeye.in/faq" target="_blank" rel="noopener noreferrer" className="ce-pr-link">
+              <div className="ce-pr-link-emoji">❔</div>
+              <span className="ce-pr-link-label">Help &amp; FAQ</span>
+              <ChevronRight size={16} className="ce-pr-link-chevron" />
             </a>
-            <button
-              onClick={handleSignOut}
-              style={{ ...MENU_LINK, width: '100%', justifyContent: 'center', color: CLAY, borderColor: 'rgba(192,115,79,0.25)', fontWeight: 700, cursor: 'pointer', background: '#fff' }}
-            >
-              <LogOut size={15} style={{ marginRight: 6 }} /> Sign out
+            <button onClick={handleSignOut} className="ce-pr-link ce-pr-signout">
+              <LogOut size={15} style={{ marginRight: 4 }} /> Sign out
             </button>
           </div>
-          </div>{/* end padding wrapper */}
         </>
       ) : (
         <>
           <Section title="My Society" rows={[['Society', society?.society_name || ''], ['Flat', society?.flat_number || ''], ['Area', society?.area || '']]} />
           <Section title="My Membership" rows={[['Plan', 'Founding Member'], ['Fee', '₹100 — one-time'], ['Member ID', society?.member_id || '']]} />
           <Section title="Contact" rows={[['Email', user?.email || ''], ['WhatsApp', profile?.whatsapp_number || '']]} />
-          <button onClick={handleSignOut} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '24px 16px 16px', background: 'none', border: '1px solid var(--gray-light)', borderRadius: 'var(--radius-btn)', padding: '12px 24px', fontSize: 14, fontWeight: 500, color: 'var(--gray-dark)', cursor: 'pointer', width: 'calc(100% - 32px)' }}>
-            <LogOut size={16} /> Sign out
-          </button>
+          <div style={{ padding: '0 16px', marginTop: 16 }}>
+            <button onClick={handleSignOut} className="ce-pr-link ce-pr-signout">
+              <LogOut size={15} style={{ marginRight: 4 }} /> Sign out
+            </button>
+          </div>
         </>
       )}
 
-      <p style={{ textAlign: 'center', fontSize: 11, color: MUTED, padding: '0 24px 16px', lineHeight: 1.5 }}>
+      <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--gray-mid)', padding: '16px 24px', lineHeight: 1.5 }}>
         Your family's information is private and used only to provide care.
       </p>
     </div>

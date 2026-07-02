@@ -223,13 +223,13 @@ export function DashboardBook() {
 
   return (
     <div className="ce-slide-up" style={{ paddingBottom: 8 }}>
-      <h1 style={{ fontSize: 20, fontWeight: 700, margin: '16px 16px 4px' }}>Book a Service</h1>
+      <h1 style={{ fontSize: 20, fontWeight: 700, margin: '16px 16px 4px', letterSpacing: '-0.02em' }}>Book a Service</h1>
       <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: '0 16px 16px' }}>
         {isNri ? `For ${recipient.name || 'your loved one'} · Hyderabad` : 'For your family · Hyderabad'}
       </p>
 
       {isFoundingMember && (
-        <div style={{ margin: '0 16px 12px', background: 'rgba(14,42,31,0.07)', border: '1px solid rgba(14,42,31,0.14)', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ margin: '0 16px 14px', background: 'rgba(14,42,31,0.06)', border: '1px solid rgba(14,42,31,0.12)', borderRadius: 14, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--forest)', color: '#fff', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✓</span>
           <div>
             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--forest)', margin: 0 }}>Founding Member{foundingNumber ? ` #${foundingNumber}` : ''}</p>
@@ -238,25 +238,38 @@ export function DashboardBook() {
         </div>
       )}
 
-      {SERVICES.map(s => (
-        <div key={s.id} style={{ margin: '0 16px 10px', background: '#fff', borderRadius: 'var(--radius-card)', padding: '18px 20px', boxShadow: 'var(--shadow-card)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-          <span style={{ fontSize: 28 }}>{s.emoji}</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--black)', margin: 0 }}>{s.name}</p>
-            <p style={{ fontSize: 13, color: 'var(--gray-mid)', margin: '2px 0 0' }}>{s.desc}</p>
-          </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--forest)', margin: '0 0 6px' }}>{s.price}</p>
-            <button
-              onClick={() => openSheet(s)}
-              className="ce-press"
-              style={{ background: 'var(--forest)', color: '#fff', border: 'none', borderRadius: 100, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--shadow-btn)' }}
-            >
-              Book
-            </button>
-          </div>
-        </div>
-      ))}
+      {/* ── Service grid — 2 columns, emergency full-width ── */}
+      <div className="ce-sv-grid">
+        {SERVICES.map(s => {
+          const isEmergency = s.id === 'emergency_support_visit'
+          if (isEmergency) {
+            return (
+              <div key={s.id} className="ce-sv-card ce-sv-wide">
+                <span className="ce-sv-emoji">{s.emoji}</span>
+                <div className="ce-sv-info">
+                  <p className="ce-sv-name">{s.name}</p>
+                  <p className="ce-sv-desc">{s.desc}</p>
+                  <p className="ce-sv-price">{s.price}</p>
+                </div>
+                <button onClick={() => openSheet(s)} className="ce-sv-book-btn ce-press">
+                  Book now
+                </button>
+              </div>
+            )
+          }
+          return (
+            <div key={s.id} className="ce-sv-card">
+              <span className="ce-sv-emoji">{s.emoji}</span>
+              <p className="ce-sv-name">{s.name}</p>
+              <p className="ce-sv-desc">{s.desc}</p>
+              <p className="ce-sv-price">{s.price}</p>
+              <button onClick={() => openSheet(s)} className="ce-sv-book-btn ce-press">
+                Book
+              </button>
+            </div>
+          )
+        })}
+      </div>
 
       {!isFoundingMember && (
         <>

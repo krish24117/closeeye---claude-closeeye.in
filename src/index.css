@@ -1670,3 +1670,118 @@
   .ce-trust4-grid { grid-template-columns: 1fr; }
   .ce-svc-groups { grid-template-columns: 1fr; }
 }
+
+/* ======================================================================= */
+/*  DASHBOARD REDESIGN v1 — Bookings · Profile · Book                       */
+/*  Mobile-first. All new classes prefixed ce-bk- / ce-pr- / ce-sv-        */
+/* ======================================================================= */
+
+/* ── Booking cards ─────────────────────────────────────────────────────── */
+.ce-bk-card { background: #fff; border-radius: 20px; overflow: hidden; border: 1px solid #EFEFEF; box-shadow: 0 2px 14px rgba(0,0,0,.055); }
+.ce-bk-top { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; gap: 8px; }
+.ce-bk-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 100px; letter-spacing: .01em; }
+.ce-bk-amount-val { font-size: 17px; font-weight: 700; color: var(--forest); display: block; line-height: 1; text-align: right; }
+.ce-bk-amount-lbl { font-size: 10.5px; font-weight: 600; margin-top: 2px; text-align: right; }
+.ce-bk-body { padding: 14px 16px 12px; border-top: 1px solid #F5F5F5; }
+.ce-bk-svc { font-size: 16px; font-weight: 700; color: #1A1A1A; margin: 0 0 2px; letter-spacing: -.01em; }
+.ce-bk-for { font-size: 13px; color: var(--gray-mid); margin: 0 0 8px; }
+.ce-bk-meta { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #444; padding: 7px 0; border-top: 1px solid #F5F5F5; }
+.ce-bk-sub { font-size: 13px; color: var(--gray-mid); margin: 10px 0 0; line-height: 1.5; }
+.ce-bk-wa-cta { margin: 12px 0 0; padding: 12px 14px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; font-size: 13px; color: #1D4ED8; line-height: 1.55; }
+.ce-bk-pay-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin: 14px 0 0; padding: 15px 20px; background: var(--forest); color: #FAF7F2; border: none; border-radius: 14px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 140ms ease; }
+.ce-bk-pay-btn:disabled { opacity: .55; cursor: not-allowed; }
+.ce-bk-pay-btn:active:not(:disabled) { opacity: .82; }
+.ce-bk-footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid #F5F5F5; }
+.ce-bk-footer-date { font-size: 11px; color: #C8C8C8; }
+.ce-bk-live { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #9CA3AF; }
+.ce-bk-sec { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #AEAEAE; margin: 0 0 10px; }
+.ce-bk-empty { text-align: center; padding: 60px 20px; background: #fff; border-radius: 22px; border: 1px solid #EFEFEF; }
+.ce-bk-empty-icon { width: 60px; height: 60px; background: #F0FDF4; border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+
+/* ── Skeleton ─────────────────────────────────────────────────────────── */
+@keyframes ce-skel-shimmer { 0%,100%{opacity:.45}55%{opacity:1} }
+.ce-bk-skel { background: #fff; border-radius: 20px; border: 1px solid #EFEFEF; overflow: hidden; }
+.ce-bk-skel-bar { background: #F0F0F0; border-radius: 6px; animation: ce-skel-shimmer 1.4s ease-in-out infinite; }
+
+/* ── Visit tracking timeline ──────────────────────────────────────────── */
+.ce-bk-track { background: #fff; border: 1px solid #EBEBEB; border-radius: 20px; padding: 14px 16px 16px; margin-bottom: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.05); }
+.ce-bk-track-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.ce-bk-track-name { font-size: 14px; font-weight: 700; color: var(--forest); }
+.ce-bk-track-time { font-size: 12px; color: var(--gray-mid); margin-top: 2px; }
+.ce-bk-track-badge { font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 100px; white-space: nowrap; }
+.ce-bk-steps { display: flex; align-items: flex-start; }
+.ce-bk-step { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+.ce-bk-dot { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; transition: all 180ms ease; }
+.ce-bk-dot.done { background: var(--forest); color: var(--sage); }
+.ce-bk-dot.active { background: var(--sage); color: var(--forest); box-shadow: 0 0 0 6px rgba(168,213,181,.22); }
+.ce-bk-dot.future { background: #F0F0F0; color: #C8C8C8; }
+.ce-bk-dot-lbl { font-size: 9.5px; text-align: center; max-width: 52px; margin-top: 6px; line-height: 1.3; }
+.ce-bk-dot-lbl.done,.ce-bk-dot-lbl.active { color: var(--forest); font-weight: 700; }
+.ce-bk-dot-lbl.future { color: #C8C8C8; font-weight: 500; }
+.ce-bk-connector { position: absolute; top: 15px; left: calc(50% + 15px); right: calc(-50% + 15px); height: 2px; background: #EBEBEB; }
+.ce-bk-connector.done { background: var(--forest); }
+
+/* ── Profile hero ──────────────────────────────────────────────────────── */
+.ce-pr-hero { background: linear-gradient(150deg, var(--forest) 0%, #1B4332 100%); padding: 36px 20px 28px; text-align: center; }
+.ce-pr-avatar { width: 80px; height: 80px; border-radius: 50%; background: rgba(168,213,181,.15); border: 3px solid rgba(168,213,181,.4); display: inline-flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: #fff; letter-spacing: -.02em; }
+.ce-pr-name { font-size: 22px; font-weight: 700; color: #fff; margin: 12px 0 0; letter-spacing: -.02em; }
+.ce-pr-hero-sub { font-size: 13.5px; color: rgba(168,213,181,.85); margin: 4px 0 0; }
+.ce-pr-badge { display: inline-flex; align-items: center; gap: 5px; margin-top: 12px; background: rgba(168,213,181,.15); border: 1px solid rgba(168,213,181,.3); color: var(--sage); border-radius: 100px; padding: 5px 14px; font-size: 12px; font-weight: 700; }
+
+/* ── Profile sections & rows ───────────────────────────────────────────── */
+.ce-pr-section { padding: 0 16px; margin-top: 20px; }
+.ce-pr-sec-lbl { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #AEAEAE; margin: 0 0 10px; }
+.ce-pr-member { display: flex; align-items: center; gap: 13px; background: #fff; border: 1px solid #F0F0F0; border-radius: 16px; padding: 13px 15px; margin-bottom: 9px; cursor: pointer; width: 100%; text-align: left; font-family: inherit; transition: background 120ms ease; }
+.ce-pr-member:active { background: #FAFAFA; }
+.ce-pr-member-emoji { width: 44px; height: 44px; border-radius: 12px; background: #F3EFE8; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.ce-pr-member-content { flex: 1; min-width: 0; }
+.ce-pr-member-name { font-size: 14.5px; font-weight: 700; color: #1A1A1A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ce-pr-member-sub { font-size: 12px; color: var(--gray-mid); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ce-pr-add { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: none; border: 1.5px dashed #D8D3CA; border-radius: 16px; padding: 14px; font-size: 14px; font-weight: 600; color: var(--forest); cursor: pointer; font-family: inherit; transition: background 120ms ease; }
+.ce-pr-add:active { background: #FAFAFA; }
+
+/* ── Profile info card (account rows) ─────────────────────────────────── */
+.ce-pr-rows { background: #fff; border: 1px solid #F0F0F0; border-radius: 16px; overflow: hidden; }
+.ce-pr-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #F7F5F2; gap: 12px; }
+.ce-pr-row:last-child { border-bottom: none; }
+.ce-pr-row-label { font-size: 13px; color: var(--gray-mid); flex-shrink: 0; }
+.ce-pr-row-val { font-size: 13.5px; font-weight: 600; color: #1A1A1A; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 62%; }
+.ce-pr-edit-inline-btn { font-size: 13px; font-weight: 700; color: var(--forest); background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; }
+.ce-pr-rows-footer { padding: 10px 16px; border-top: 1px solid #F7F5F2; text-align: center; }
+
+/* ── Profile settings links ────────────────────────────────────────────── */
+.ce-pr-link { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #F0F0F0; border-radius: 14px; padding: 13px 16px; margin-bottom: 9px; text-decoration: none; color: #1A1A1A; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; width: 100%; transition: background 120ms ease; }
+.ce-pr-link:active { background: #FAFAFA; }
+.ce-pr-link-emoji { width: 36px; height: 36px; border-radius: 10px; background: #F3F3F3; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.ce-pr-link-label { flex: 1; }
+.ce-pr-link-chevron { color: #D0D0D0; }
+.ce-pr-signout { color: #C53030; border-color: rgba(197,48,48,.2); font-weight: 700; justify-content: center; margin-top: 4px; }
+
+/* ── Profile edit card (expanded form) ────────────────────────────────── */
+.ce-pr-edit-card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,.08); margin-bottom: 12px; }
+.ce-pr-edit-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.ce-pr-edit-title { font-size: 14px; font-weight: 700; color: #1A1A1A; margin: 0; }
+.ce-pr-edit-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.ce-pr-save-btn { display: flex; align-items: center; gap: 4px; background: var(--forest); border: none; border-radius: 100px; padding: 8px 16px; font-size: 12.5px; font-weight: 700; color: #fff; cursor: pointer; font-family: inherit; }
+.ce-pr-save-btn:disabled { opacity: .55; cursor: not-allowed; }
+.ce-pr-cancel-btn { display: flex; align-items: center; gap: 4px; background: none; border: 1px solid #E0DDD8; border-radius: 100px; padding: 8px 14px; font-size: 12.5px; color: var(--gray-dark); cursor: pointer; font-family: inherit; }
+
+/* ── Services / Book grid ──────────────────────────────────────────────── */
+.ce-sv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; margin-bottom: 10px; }
+.ce-sv-card { background: #fff; border-radius: 18px; padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.05); border: 1px solid #F0F0F0; display: flex; flex-direction: column; }
+.ce-sv-emoji { font-size: 26px; margin-bottom: 8px; line-height: 1; }
+.ce-sv-name { font-size: 14px; font-weight: 700; color: #1A1A1A; line-height: 1.3; }
+.ce-sv-desc { font-size: 12px; color: var(--gray-mid); margin-top: 4px; line-height: 1.45; flex: 1; }
+.ce-sv-price { font-size: 15px; font-weight: 700; color: var(--forest); margin-top: 10px; }
+.ce-sv-book-btn { display: flex; align-items: center; justify-content: center; background: var(--forest); color: #FAF7F2; border: none; border-radius: 100px; padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 10px; width: 100%; transition: opacity 140ms ease; }
+.ce-sv-book-btn:active { opacity: .82; }
+.ce-sv-wide { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 14px; }
+.ce-sv-wide .ce-sv-emoji { margin-bottom: 0; font-size: 28px; flex-shrink: 0; }
+.ce-sv-wide .ce-sv-info { flex: 1; min-width: 0; }
+.ce-sv-wide .ce-sv-price { margin-top: 4px; }
+.ce-sv-wide .ce-sv-book-btn { background: #B91C1C; width: auto; white-space: nowrap; flex-shrink: 0; margin-top: 0; }
+@media (max-width: 360px) {
+  .ce-sv-grid { grid-template-columns: 1fr; }
+  .ce-sv-wide { flex-direction: column; }
+  .ce-sv-wide .ce-sv-book-btn { width: 100%; margin-top: 10px; }
+}

@@ -118,13 +118,22 @@ function fmtShort(iso: string) {
 
 function BookingsSkeleton() {
   return (
-    <div className="space-y-4 animate-pulse" style={{ padding: '0 0 80px' }}>
-      <div style={{ height: 32, width: 140, background: '#f3f4f6', borderRadius: 12 }} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 80 }}>
       {[1, 2].map(i => (
-        <div key={i} style={{ background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', padding: 20 }}>
-          <div style={{ height: 16, width: 160, background: '#f3f4f6', borderRadius: 8, marginBottom: 12 }} />
-          <div style={{ height: 12, width: 200, background: '#f3f4f6', borderRadius: 8, marginBottom: 8 }} />
-          <div style={{ height: 12, width: 120, background: '#f3f4f6', borderRadius: 8 }} />
+        <div key={i} className="ce-bk-skel">
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid #F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div className="ce-bk-skel-bar" style={{ height: 24, width: 130, borderRadius: 100 }} />
+            <div className="ce-bk-skel-bar" style={{ height: 22, width: 56 }} />
+          </div>
+          <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="ce-bk-skel-bar" style={{ height: 18, width: '65%' }} />
+            <div className="ce-bk-skel-bar" style={{ height: 13, width: '40%' }} />
+            <div className="ce-bk-skel-bar" style={{ height: 13, width: '55%', marginTop: 4 }} />
+          </div>
+          <div style={{ padding: '10px 16px', borderTop: '1px solid #F5F5F5', display: 'flex', justifyContent: 'space-between' }}>
+            <div className="ce-bk-skel-bar" style={{ height: 11, width: 90 }} />
+            <div className="ce-bk-skel-bar" style={{ height: 11, width: 40 }} />
+          </div>
         </div>
       ))}
     </div>
@@ -135,10 +144,10 @@ function BookingsSkeleton() {
 
 const TIMELINE_STEPS: { key: string; label: string; icon: React.ReactNode }[] = [
   { key: 'confirmed',          label: 'Confirmed',         icon: <CheckCircle size={14} /> },
-  { key: 'companion_assigned', label: 'Companion assigned',icon: <UserCheck size={14} /> },
+  { key: 'companion_assigned', label: 'Assigned',          icon: <UserCheck size={14} /> },
   { key: 'on_the_way',         label: 'On the way',        icon: <Car size={14} /> },
-  { key: 'in_progress',        label: 'Visit in progress', icon: <Clock size={14} /> },
-  { key: 'completed',          label: 'Visit done',        icon: <CheckCircle size={14} /> },
+  { key: 'in_progress',        label: 'In progress',       icon: <Clock size={14} /> },
+  { key: 'completed',          label: 'Done',              icon: <CheckCircle size={14} /> },
 ]
 
 const STATUS_ORDER = ['confirmed','companion_assigned','on_the_way','in_progress','completed']
@@ -148,7 +157,7 @@ function visitStatusLabel(status: string): string {
     pending:            'Pending',
     confirmed:          'Confirmed',
     companion_assigned: 'Companion assigned',
-    on_the_way:         'Companion on the way',
+    on_the_way:         'On the way',
     in_progress:        'Visit in progress',
     completed:          'Visit complete',
     delayed:            'Delayed',
@@ -166,37 +175,36 @@ function StatusTimeline({ visit }: { visit: ActiveVisit }) {
   const scheduledAt = visit.reschedule_time || visit.scheduled_at
   const timeStr = scheduledAt ? formatIsoTime(scheduledAt) : null
 
+  const badgeStyle: React.CSSProperties = {
+    background: visit.status === 'completed' ? '#DCFCE7' :
+                isException ? '#FEF3C7' :
+                visit.status === 'in_progress' ? '#DBEAFE' : '#F3F4F6',
+    color: visit.status === 'completed' ? '#15803D' :
+           isException ? '#92400E' :
+           visit.status === 'in_progress' ? '#1D4ED8' : '#374151',
+  }
+
   return (
-    <div style={{
-      background: '#fff',
-      border: `1px solid ${visit.attention_needed ? '#FECACA' : '#E8F4EC'}`,
-      borderLeft: `4px solid ${visit.attention_needed ? '#EF4444' : visit.status === 'completed' ? '#22c55e' : '#0E2A1F'}`,
-      borderRadius: 16,
-      padding: '14px 16px',
-      marginBottom: 12,
-    }}>
+    <div
+      className="ce-bk-track"
+      style={{
+        borderLeft: `4px solid ${visit.attention_needed ? '#EF4444' : visit.status === 'completed' ? '#22C55E' : 'var(--forest)'}`,
+      }}
+    >
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+      <div className="ce-bk-track-hdr">
         <div>
-          <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--forest)', margin: 0 }}>
+          <p className="ce-bk-track-name">
             {visit.loved_ones?.full_name || 'Visit'}
-            {timeStr && <span style={{ fontWeight: 400, color: '#6b7280', fontSize: 13 }}> · {timeStr}</span>}
           </p>
           {visit.companions?.full_name && (
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '2px 0 0' }}>
-              👤 {visit.companions.full_name}
-            </p>
+            <p className="ce-bk-track-time">👤 {visit.companions.full_name}{timeStr ? ` · ${timeStr}` : ''}</p>
+          )}
+          {!visit.companions?.full_name && timeStr && (
+            <p className="ce-bk-track-time">{timeStr}</p>
           )}
         </div>
-        <span style={{
-          fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 100,
-          background: visit.status === 'completed' ? '#dcfce7' :
-                      isException ? '#fef3c7' :
-                      visit.status === 'in_progress' ? '#dbeafe' : '#f3f4f6',
-          color: visit.status === 'completed' ? '#15803d' :
-                 isException ? '#92400e' :
-                 visit.status === 'in_progress' ? '#1d4ed8' : '#374151',
-        }}>
+        <span className="ce-bk-track-badge" style={badgeStyle}>
           {visitStatusLabel(visit.status)}
         </span>
       </div>
@@ -204,9 +212,9 @@ function StatusTimeline({ visit }: { visit: ActiveVisit }) {
       {/* Exception state */}
       {isException && (
         <div style={{
-          background: '#fffbeb', border: '1px solid #fde68a',
-          borderRadius: 10, padding: '8px 12px', marginBottom: 12,
-          display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#78350f',
+          background: '#FFFBEB', border: '1px solid #FDE68A',
+          borderRadius: 10, padding: '8px 12px', marginBottom: 14,
+          display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#78350F',
         }}>
           <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
           <span>
@@ -220,40 +228,24 @@ function StatusTimeline({ visit }: { visit: ActiveVisit }) {
 
       {/* Timeline steps */}
       {!isException && visit.status !== 'cancelled' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+        <div className="ce-bk-steps">
           {TIMELINE_STEPS.map((step, i) => {
             const stepIdx  = STATUS_ORDER.indexOf(step.key)
             const isDone   = currentIdx > stepIdx || visit.status === 'completed'
             const isActive = visit.status === step.key || (visit.status === 'delayed' && stepIdx === currentIdx)
-            const isFuture = stepIdx > currentIdx
+
+            const dotClass = isDone ? 'done' : isActive ? 'active' : 'future'
 
             return (
-              <div key={step.key} style={{ display: 'flex', alignItems: 'center', flex: i < TIMELINE_STEPS.length - 1 ? 1 : undefined }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <div style={{
-                    width: 26, height: 26, borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: isDone ? '#0E2A1F' : isActive ? '#A8D5B5' : '#f3f4f6',
-                    color: isDone ? '#A8D5B5' : isActive ? '#0E2A1F' : '#9ca3af',
-                    flexShrink: 0,
-                    boxShadow: isActive ? '0 0 0 3px rgba(168,213,181,0.35)' : undefined,
-                  }}>
+              <div key={step.key} style={{ display: 'flex', alignItems: 'flex-start', flex: i < TIMELINE_STEPS.length - 1 ? 1 : undefined, position: 'relative' }}>
+                <div className="ce-bk-step">
+                  <div className={`ce-bk-dot ${dotClass}`}>
                     {step.icon}
                   </div>
-                  <p style={{
-                    fontSize: 9, fontWeight: isActive ? 700 : 500, textAlign: 'center',
-                    color: isDone ? '#0E2A1F' : isActive ? '#0E2A1F' : '#9ca3af',
-                    lineHeight: 1.3, maxWidth: 48, margin: 0,
-                  }}>
-                    {step.label}
-                  </p>
+                  <p className={`ce-bk-dot-lbl ${dotClass}`}>{step.label}</p>
                 </div>
                 {i < TIMELINE_STEPS.length - 1 && (
-                  <div style={{
-                    flex: 1, height: 2, marginBottom: 16,
-                    background: isDone ? '#0E2A1F' : '#e5e7eb',
-                    transition: 'background 0.3s',
-                  }} />
+                  <div className={`ce-bk-connector ${isDone ? 'done' : 'future'}`} />
                 )}
               </div>
             )
@@ -334,19 +326,7 @@ function PayButton({
     <button
       onClick={handlePay}
       disabled={loading}
-      style={{
-        background: 'var(--forest)',
-        color: '#FAF7F2',
-        borderRadius: 100,
-        padding: '13px 28px',
-        fontSize: 15,
-        fontWeight: 700,
-        border: 'none',
-        cursor: loading ? 'not-allowed' : 'pointer',
-        opacity: loading ? 0.7 : 1,
-        width: '100%',
-        marginTop: 16,
-      }}
+      className="ce-bk-pay-btn"
     >
       {loading ? 'Opening payment…' : `Pay ${amountStr} to confirm →`}
     </button>
@@ -368,125 +348,99 @@ function BookingCard({
 }) {
   const status = optimisticPaid ? 'paid' : booking.status
   const { label, sub, pill, icon } = cfg(status)
-  const isPaid = status === 'paid'
-  const isComp = status === 'companion_confirmed'
+  const isPaid       = status === 'paid'
+  const isComp       = status === 'companion_confirmed'
   const isNeedsDetails = status === 'needs_details'
+  const isCancelled  = status === 'cancelled'
   const dateStr = fmtDate(booking.scheduled_at)
 
+  const amountStr = booking.amount_paise
+    ? `₹${Math.round(booking.amount_paise / 100).toLocaleString('en-IN')}`
+    : null
+
+  const topBg = isPaid ? '#F0FDF4' : isComp ? '#EFF6FF' : isCancelled ? '#FAFAFA' : '#FAFAFA'
+
   return (
-    <div style={{
-      background: '#fff',
-      borderRadius: 20,
-      border: `1px solid ${isPaid ? '#bbf7d0' : isComp ? '#bfdbfe' : '#f0f0f0'}`,
-      borderLeft: isPaid ? '4px solid #22c55e' : isComp ? '4px solid #3b82f6' : undefined,
-      overflow: 'hidden',
-    }}>
-      {/* Status strip */}
-      <div style={{
-        padding: '10px 16px',
-        background: isPaid ? '#f0fdf4' : isComp ? '#eff6ff' : '#f9f9f9',
-        display: 'flex', alignItems: 'center', gap: 8,
-      }}>
-        <span
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 100 }}
-          className={pill}
-        >
-          {icon}{label}
+    <div className="ce-bk-card">
+      {/* Status strip + amount */}
+      <div className="ce-bk-top" style={{ background: topBg }}>
+        <span className={`ce-bk-pill ${pill}`}>
+          {icon}&nbsp;{label}
         </span>
-        {optimisticPaid && !booking.paid_at && (
-          <span style={{ fontSize: 11, color: '#6b7280', marginLeft: 2 }}>Confirming…</span>
+        {amountStr && (
+          <div>
+            <span className="ce-bk-amount-val">{amountStr}</span>
+            <div
+              className="ce-bk-amount-lbl"
+              style={{ color: isPaid ? '#16A34A' : isComp ? '#2563EB' : '#9CA3AF' }}
+            >
+              {isPaid ? '✓ Paid' : isComp ? 'Due now' : 'Pending'}
+            </div>
+          </div>
+        )}
+        {optimisticPaid && !booking.paid_at && !amountStr && (
+          <span style={{ fontSize: 11, color: '#6B7280' }}>Confirming…</span>
         )}
       </div>
 
       {/* Body */}
-      <div style={{ padding: '16px 16px 8px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--forest)', margin: 0 }}>
-              {booking.service_name}
-            </p>
-            <p style={{ fontSize: 13, color: '#6b7280', margin: '2px 0 0' }}>
-              For {booking.recipient_name}
-            </p>
-          </div>
-          {booking.amount_paise ? (
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--forest)', margin: 0 }}>
-                ₹{Math.round(booking.amount_paise / 100).toLocaleString('en-IN')}
-              </p>
-              <p style={{ fontSize: 11, color: isPaid ? '#16a34a' : '#9ca3af', margin: '1px 0 0', fontWeight: 600 }}>
-                {isPaid ? '✓ Paid' : isComp ? 'Due now' : 'Pending'}
-              </p>
-            </div>
-          ) : null}
-        </div>
-
-        {booking.companion_name && (
-          <p style={{ fontSize: 13, color: '#374151', marginTop: 10, fontWeight: 500 }}>
-            👤 <span style={{ fontWeight: 700 }}>{booking.companion_name}</span>
-          </p>
-        )}
+      <div className="ce-bk-body">
+        <p className="ce-bk-svc">{booking.service_name}</p>
+        <p className="ce-bk-for">For {booking.recipient_name}</p>
 
         {dateStr && (
-          <p style={{ fontSize: 13, color: '#4b5563', marginTop: 6 }}>📅 {dateStr}</p>
+          <div className="ce-bk-meta">
+            <Calendar size={13} color="#9CA3AF" />
+            <span>{dateStr}</span>
+          </div>
         )}
 
-        {/* Status sub-copy */}
+        {booking.companion_name && (
+          <div className="ce-bk-meta">
+            <UserCheck size={13} color="#9CA3AF" />
+            <span style={{ fontWeight: 600 }}>{booking.companion_name}</span>
+          </div>
+        )}
+
+        {/* Status message */}
         {!isPaid && sub && (
-          <p style={{ fontSize: 13, color: '#9ca3af', marginTop: 8 }}>{sub}</p>
+          <p className="ce-bk-sub">{sub}</p>
         )}
         {isPaid && (
-          <p style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, marginTop: 8 }}>
+          <p className="ce-bk-sub" style={{ color: '#16A34A', fontWeight: 600 }}>
             Your visit is confirmed. We'll be there.
           </p>
         )}
 
-        {/* Payment link notice — companion confirmed, link sent via WhatsApp */}
+        {/* Payment link notice */}
         {isComp && !optimisticPaid && (
-          <div style={{
-            marginTop: 14, padding: '12px 14px',
-            background: '#eff6ff', borderRadius: 12,
-            border: '1px solid #bfdbfe',
-            fontSize: 13, color: '#1d4ed8', lineHeight: 1.5,
-          }}>
+          <div className="ce-bk-wa-cta">
             💳 A secure payment link has been sent to your WhatsApp. Pay there to lock in your visit.
           </div>
         )}
 
-        {booking.recipient_address && (
-          <p style={{ fontSize: 12, color: '#d1d5db', marginTop: 10 }}>
-            📍 {booking.recipient_address}
-          </p>
-        )}
-
-        {booking.notes && (
-          <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4, fontStyle: 'italic' }}>
-            "{booking.notes}"
-          </p>
+        {/* Needs details CTA */}
+        {isNeedsDetails && (
+          <Link
+            to="/dashboard/profile"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 10, fontSize: 13, fontWeight: 700, color: 'var(--forest)', textDecoration: 'none' }}
+          >
+            Update your profile <ChevronRight size={13} />
+          </Link>
         )}
       </div>
 
       {/* Footer */}
-      <div style={{
-        borderTop: '1px solid #f3f4f6', padding: '10px 16px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      }}>
-        <p style={{ fontSize: 11, color: '#d1d5db', margin: 0 }}>
-          Requested {fmtShort(booking.created_at)}
-        </p>
-        {isNeedsDetails && (
-          <Link
-            to="/dashboard/profile"
-            style={{ fontSize: 12, fontWeight: 700, color: 'var(--forest)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}
-          >
-            Update profile <ChevronRight size={12} />
-          </Link>
-        )}
+      <div className="ce-bk-footer">
+        <span className="ce-bk-footer-date">Requested {fmtShort(booking.created_at)}</span>
         {!['paid', 'cancelled', 'needs_details'].includes(status) && (
-          <span style={{ fontSize: 11, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 4 }}>
-            Live tracking
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} className="ce-pulse-dot" />
+          <span className="ce-bk-live">
+            Live&nbsp;
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ADE80', display: 'inline-block' }} className="ce-pulse-dot" />
           </span>
+        )}
+        {optimisticPaid && !booking.paid_at && (
+          <span style={{ fontSize: 11, color: '#6B7280' }}>Confirming…</span>
         )}
       </div>
     </div>
@@ -506,8 +460,6 @@ export function DashboardBookings() {
   const load = useCallback(async () => {
     if (!user) return
 
-    // Build OR filter: match by user_id OR by requester_whatsapp (handles guest bookings
-    // that didn't have user_id set at submission time but were later linked by admin confirm).
     const phone10 = profile?.whatsapp_number?.replace(/\D/g, '').slice(-10) ?? ''
     const orFilter = phone10
       ? `user_id.eq.${user.id},requester_whatsapp.ilike.%${phone10}`
@@ -552,6 +504,10 @@ export function DashboardBookings() {
 
   if (loading) return (
     <div style={{ padding: '0 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, marginTop: 4 }}>
+        <div style={{ height: 28, width: 120, background: '#F0F0F0', borderRadius: 8, animation: 'ce-skel-shimmer 1.4s ease-in-out infinite' }} />
+        <div style={{ height: 38, width: 96, background: '#F0F0F0', borderRadius: 100, animation: 'ce-skel-shimmer 1.4s ease-in-out infinite' }} />
+      </div>
       <BookingsSkeleton />
     </div>
   )
@@ -559,8 +515,8 @@ export function DashboardBookings() {
   return (
     <div style={{ padding: '0 16px 80px' }} className="ce-slide-up">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
-        <h1 style={{ fontWeight: 700, fontSize: 22, color: 'var(--forest)', margin: 0 }}>My bookings</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20, marginTop: 4 }}>
+        <h1 style={{ fontWeight: 700, fontSize: 22, color: 'var(--forest)', margin: 0, letterSpacing: '-0.02em' }}>My bookings</h1>
         <Link
           to="/dashboard/book"
           style={{
@@ -573,32 +529,33 @@ export function DashboardBookings() {
         </Link>
       </div>
 
+      {/* Error */}
       {error && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, fontSize: 14, color: '#dc2626' }}>
+        <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 14, padding: '12px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, fontSize: 14, color: '#DC2626' }}>
           {error}
-          <button onClick={load} style={{ fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', flexShrink: 0 }}>Retry</button>
+          <button onClick={load} style={{ fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', flexShrink: 0 }}>Retry</button>
         </div>
       )}
 
-      {/* ── Active visit tracking (from bookings table) ───────────────────── */}
+      {/* Active visit tracking */}
       {activeVisits.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: '0.08em', margin: '0 0 10px' }}>VISIT TRACKING</p>
+          <p className="ce-bk-sec">Today's visits</p>
           {activeVisits.map(v => <StatusTimeline key={v.id} visit={v} />)}
         </div>
       )}
 
       {/* Empty state */}
       {bookings.length === 0 && activeVisits.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '64px 20px', background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0' }}>
-          <div style={{ width: 56, height: 56, background: '#f0fdf4', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <Calendar size={24} color="#16a34a" />
+        <div className="ce-bk-empty">
+          <div className="ce-bk-empty-icon">
+            <Calendar size={26} color="#16A34A" />
           </div>
-          <p style={{ fontWeight: 700, fontSize: 16, color: 'var(--forest)', margin: '0 0 6px' }}>No bookings yet</p>
-          <p style={{ fontSize: 14, color: '#9ca3af', margin: '0 0 24px' }}>Book a companion visit for your loved one.</p>
+          <p style={{ fontWeight: 700, fontSize: 17, color: 'var(--forest)', margin: '0 0 6px', letterSpacing: '-0.01em' }}>No bookings yet</p>
+          <p style={{ fontSize: 14, color: '#9CA3AF', margin: '0 0 24px', lineHeight: 1.5 }}>Book a companion visit for your loved one — we'll send a WhatsApp report after every visit.</p>
           <Link
             to="/dashboard/book"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--forest)', color: '#FAF7F2', borderRadius: 100, padding: '12px 24px', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--forest)', color: '#FAF7F2', borderRadius: 100, padding: '13px 26px', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}
           >
             <Plus size={14} /> Book a visit
           </Link>
@@ -607,7 +564,7 @@ export function DashboardBookings() {
 
       {/* Active bookings */}
       {active.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: past.length ? 24 : 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: past.length ? 28 : 0 }}>
           {active.map(b => (
             <BookingCard
               key={b.id}
@@ -623,9 +580,7 @@ export function DashboardBookings() {
       {/* Cancelled bookings */}
       {past.length > 0 && (
         <>
-          {active.length > 0 && (
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: '0.08em', margin: '0 0 10px' }}>CANCELLED</p>
-          )}
+          <p className="ce-bk-sec" style={{ marginTop: active.length ? 0 : undefined }}>Cancelled</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {past.map(b => (
               <BookingCard
