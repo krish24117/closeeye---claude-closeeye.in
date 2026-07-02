@@ -151,13 +151,7 @@
 .ce-nav-logo {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-family: 'Open Sauce One', system-ui, sans-serif;
-  font-size: 20px;
-  color: var(--forest);
   text-decoration: none;
-  font-weight: 800;
-  letter-spacing: -0.02em;
   flex-shrink: 0;
 }
 .ce-nav-center { display: flex; align-items: center; gap: 4px; }
@@ -235,12 +229,6 @@
 .ce-mobile-logo {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-family: 'Open Sauce One', system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  font-size: 20px;
-  color: var(--white);
   text-decoration: none;
 }
 .ce-mobile-close {
@@ -876,7 +864,7 @@
 .ce-footer { background: var(--forest-dark); padding: 64px 64px 0; }
 .ce-footer-inner { max-width: 1200px; margin: 0 auto; }
 .ce-footer-brand { margin-bottom: 56px; }
-.ce-footer-logo { display: inline-flex; align-items: center; gap: 8px; font-family: 'Open Sauce One', system-ui, sans-serif; font-weight: 800; letter-spacing: -0.02em; font-size: 20px; color: var(--white); text-decoration: none; }
+.ce-footer-logo { display: inline-flex; align-items: center; text-decoration: none; }
 .ce-footer-tagline { font-size: 14px; color: rgba(255,255,255,0.5); margin: 12px 0 0; }
 .ce-footer-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-bottom: 56px; }
 .ce-footer-label { font-size: 11px; color: var(--sage); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 20px; font-weight: 600; }

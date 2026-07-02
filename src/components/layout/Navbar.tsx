@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X, Bell, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
-import { Logo } from '@/components/ui/Logo'
+import { LogoLockup } from '@/components/ui/Logo'
 import clsx from 'clsx'
 
 const NAV_LINKS = [
@@ -48,13 +48,8 @@ export function Navbar() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-[72px] flex items-center justify-between">
 
           {/* Logo */}
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 font-serif text-xl text-green-900 tracking-tight flex-shrink-0"
-            onClick={() => setOpen(false)}
-          >
-            <Logo className="w-5 h-5" style={{ display: 'block', flexShrink: 0 }} />
-            close <span className="text-green-600">eye</span>
+          <Link to="/" style={{ textDecoration: 'none', flexShrink: 0 }} onClick={() => setOpen(false)}>
+            <LogoLockup fontSize={20} color="dark" />
           </Link>
 
           {/* Desktop nav */}

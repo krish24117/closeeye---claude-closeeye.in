@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Check, Menu, X, ArrowRight, Stethoscope, User, Send, Loader2, MessageCircle, ShieldCheck, PhoneCall, Lock, UserCheck, House, Building2, Globe, HeartHandshake, Mail, Instagram, Linkedin } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { Logo } from '@/components/ui/Logo'
+import { Logo, LogoLockup } from '@/components/ui/Logo'
 import { useAuth } from '@/lib/auth-context'
 import { DiscoveryCallModal } from '@/components/DiscoveryCallModal'
 import { BottomNav } from '@/components/layout/BottomNav'
@@ -546,8 +546,7 @@ export function HomePage() {
       <nav className="ce-nav">
         <div className="ce-nav-inner">
           <Link to="/" className="ce-nav-logo">
-            <Logo className="w-5 h-5" style={{ display: 'block', flexShrink: 0 }} />
-            close eye
+            <LogoLockup fontSize={20} color="dark" />
           </Link>
 
           <div className="ce-nav-center">
@@ -589,7 +588,7 @@ export function HomePage() {
         <div className="ce-mobile-inner">
           <div className="ce-mobile-top">
             <Link to="/" className="ce-mobile-logo" onClick={() => setMenuOpen(false)}>
-              <Logo className="w-5 h-5" style={{ display: 'block', flexShrink: 0 }} /> close eye
+              <LogoLockup fontSize={20} color="dark" />
             </Link>
             <button className="ce-mobile-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>
               <X size={24} />
@@ -672,7 +671,7 @@ export function HomePage() {
           </p>
           <div className="ce-hero-buttons">
             <a href="#ask" className="ce-btn ce-btn-hero-primary">
-              Ask CloseEye <ArrowRight size={17} />
+              Ask Close Eye <ArrowRight size={17} />
             </a>
             <a href="#wa-report" className="ce-btn ce-btn-hero-secondary">
               See a sample report
@@ -701,7 +700,7 @@ export function HomePage() {
         <div className="ce-container ce-ask-inner">
           <div className="ce-ask-greeting">
             <p>{greetingFor()}</p>
-            <h2 className="ce-h2">How can CloseEye help your family today?</h2>
+            <h2 className="ce-h2">How can Close Eye help your family today?</h2>
             <p className="ce-subtitle" style={{ marginBottom: 0 }}>Ask about medication schedules, what a visit includes, costs, coverage — anything.</p>
           </div>
           <HomeAskWidget />
@@ -824,10 +823,10 @@ export function HomePage() {
       <section className="ce-section ce-bg-cream">
         <div className="ce-container">
           <p className="ce-eyebrow animate-on-scroll">The difference</p>
-          <h2 className="ce-h2 animate-on-scroll">Why CloseEye, not just a phone call.</h2>
+          <h2 className="ce-h2 animate-on-scroll">Why Close Eye, not just a phone call.</h2>
           <div className="ce-diff-wrap animate-on-scroll">
             <div className="ce-diff-col ce-diff-old">
-              <h3 className="ce-diff-header">Without CloseEye</h3>
+              <h3 className="ce-diff-header">Without Close Eye</h3>
               {COMPARISON_ROWS.map(([old], i) => (
                 <div key={i} className="ce-diff-row">
                   <X size={14} />
@@ -836,7 +835,7 @@ export function HomePage() {
               ))}
             </div>
             <div className="ce-diff-col ce-diff-new">
-              <h3 className="ce-diff-header">With CloseEye</h3>
+              <h3 className="ce-diff-header">With Close Eye</h3>
               {COMPARISON_ROWS.map(([, ce], i) => (
                 <div key={i} className="ce-diff-row">
                   <Check size={14} />
@@ -894,7 +893,7 @@ export function HomePage() {
       {/* ── FOUNDERS — compact horizontal ────────────────────────── */}
       <section className="ce-section ce-bg-white">
         <div className="ce-container" style={{ textAlign: 'center' }}>
-          <p className="ce-eyebrow animate-on-scroll">The people behind CloseEye</p>
+          <p className="ce-eyebrow animate-on-scroll">The people behind Close Eye</p>
           <h2 className="ce-h2 animate-on-scroll">Built from love,<br />not a business plan.</h2>
           <div className="ce-founders-compact animate-on-scroll">
             <div className="ce-founder-compact-card">
@@ -1001,7 +1000,7 @@ export function HomePage() {
               Register Your Family <ArrowRight size={16} />
             </Link>
             <a href="#ask" className="ce-btn ce-btn-forest-ghost">
-              Chat with CloseEye
+              Chat with Close Eye
             </a>
           </div>
           <button type="button" onClick={() => setShowDiscovery(true)} className="ce-final-cta-link">
@@ -1053,7 +1052,7 @@ export function HomePage() {
           {/* Brand */}
           <div className="ce-footer-brand">
             <Link to="/" className="ce-footer-logo">
-              <Logo className="w-5 h-5" style={{ display: 'block', flexShrink: 0 }} /> close eye
+              <LogoLockup fontSize={20} color="light" />
             </Link>
             <p className="ce-footer-tagline">Your trusted presence in India.</p>
           </div>
@@ -1127,7 +1126,7 @@ export function HomePage() {
       {!menuOpen && (
         <div className={`ce-sticky-cta${showStickyCTA ? '' : ' is-hidden'}`}>
           <a href="#ask" className="ce-sticky-cta-btn">
-            Ask CloseEye
+            Ask Close Eye
           </a>
         </div>
       )}

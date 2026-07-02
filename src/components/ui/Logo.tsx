@@ -1,11 +1,19 @@
 import { useId } from 'react'
 
-// Same mark used on the splash screen (index.html) and favicon - traced from
-// CLOSEEYELOGO.PNG.jpeg. Keep in sync with public/favicon.svg.
+/* ── Mark only ────────────────────────────────────────────────────────────
+   Use <Logo> when you need just the mark (favicon, avatar, standalone icon).
+   Use <LogoLockup> for the full mark + wordmark row shown on every screen. */
+
 export function Logo({ className, style }: { className?: string; style?: React.CSSProperties }) {
   const gradientId = useId()
   return (
-    <svg viewBox="6.2 27.95 229.6 229.6" xmlns="http://www.w3.org/2000/svg" className={className} style={style}>
+    <svg
+      viewBox="6.2 27.95 229.6 229.6"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={style}
+      aria-hidden="true"
+    >
       <defs>
         <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#a8ff3e" />
@@ -16,5 +24,61 @@ export function Logo({ className, style }: { className?: string; style?: React.C
       <path d="M 192.5 62 C 194.25 61.25 198.33 61.17 200 61.5 C 201.67 61.83 201.83 61.5 202.5 64 C 203.17 66.5 201.75 74.42 204 76.5 C 206.25 78.58 213.75 75.92 216 76.5 C 218.25 77.08 217.5 78.17 217.5 80 C 217.5 81.83 218.5 86 216 87.5 C 213.5 89 204.58 87.08 202.5 89 C 200.42 90.92 203.75 96.58 203.5 99 C 203.25 101.42 202.92 102.75 201 103.5 C 199.08 104.25 193.92 104.25 192 103.5 C 190.08 102.75 189.92 101.42 189.5 99 C 189.08 96.58 191.42 90.75 189.5 89 C 187.58 87.25 180.33 89.17 178 88.5 C 175.67 87.83 175.5 87 175.5 85 C 175.5 83 175.67 78 178 76.5 C 180.33 75 187.58 77.75 189.5 76 C 191.42 74.25 189 68.33 189.5 66 C 190 63.67 190.75 62.75 192.5 62 Z" fill="#4ade80" />
       <path d="M 47.5 183 C 53 183 61.33 184.33 66 187.5 C 70.67 190.67 73.92 197.42 75.5 202 C 77.08 206.58 76 211.67 75.5 215 C 75 218.33 74.58 219.25 72.5 222 C 70.42 224.75 66.08 229.42 63 231.5 C 59.92 233.58 58.5 234.5 54 234.5 C 49.5 234.5 40.58 233.58 36 231.5 C 31.42 229.42 28.58 225.08 26.5 222 C 24.42 218.92 24 216.33 23.5 213 C 23 209.67 22.83 205.33 23.5 202 C 24.17 198.67 25.92 195.42 27.5 193 C 29.08 190.58 29.67 189.17 33 187.5 C 36.33 185.83 42 183 47.5 183 Z M 47.5 197 C 50.08 196.58 53.67 196.83 56 198.5 C 58.33 200.17 60.92 204.25 61.5 207 C 62.08 209.75 61.08 212.92 59.5 215 C 57.92 217.08 54.58 218.92 52 219.5 C 49.42 220.08 46.25 219.92 44 218.5 C 41.75 217.08 39.08 213.92 38.5 211 C 37.92 208.08 39 203.33 40.5 201 C 42 198.67 44.92 197.42 47.5 197 Z" fill="#4ade80" fillRule="evenodd" />
     </svg>
+  )
+}
+
+/* ── Lockup (mark + wordmark) ─────────────────────────────────────────────
+   THE single source of truth for the brand lockup. Use this everywhere:
+   auth, navbars, footer, splash. Never recreate the lockup inline.
+
+   Props:
+     fontSize  – wordmark font size in px (mark scales proportionally)
+     color     – 'dark' for light backgrounds, 'light' for dark backgrounds
+
+   Always wrap with <Link> or <a> at the call site if it needs to be a link. */
+
+export function LogoLockup({
+  fontSize = 20,
+  color = 'dark',
+  style,
+}: {
+  fontSize?: number
+  color?: 'dark' | 'light'
+  style?: React.CSSProperties
+}) {
+  /* Mark height = 90% of font-size ≈ 1.3× cap-height for Open Sauce One */
+  const markSize = Math.round(fontSize * 0.9)
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 9,
+        textDecoration: 'none',
+        ...style,
+      }}
+    >
+      <Logo
+        style={{
+          width: markSize,
+          height: markSize,
+          display: 'block',
+          flexShrink: 0,
+        }}
+      />
+      <span
+        style={{
+          fontFamily: "'Open Sauce One', system-ui, sans-serif",
+          fontWeight: 800,
+          fontSize,
+          color: color === 'dark' ? '#0E2A1F' : 'rgba(255,255,255,0.92)',
+          letterSpacing: '-.02em',
+          lineHeight: 1,
+        }}
+      >
+        close eye
+      </span>
+    </span>
   )
 }

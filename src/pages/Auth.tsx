@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { Eye, EyeOff, ShieldCheck, Lock, Users, Loader2 } from 'lucide-react'
 import { signIn, signUp, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
-import { Logo } from '@/components/ui/Logo'
+import { LogoLockup } from '@/components/ui/Logo'
 
 /* ── Schemas (unchanged) ─────────────────────────────────────────────── */
 
@@ -44,7 +44,7 @@ function getRoleHome(profile: { role?: string; admin_role?: string | null } | nu
 }
 
 const WA_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '919000221261'
-const WA_LINK = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('Hi, I need help with my CloseEye account.')}`
+const WA_LINK = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('Hi, I need help with my Close Eye account.')}`
 
 /* ── Shared sub-components ───────────────────────────────────────────── */
 
@@ -355,11 +355,8 @@ export function AuthPage() {
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <div className="ce-auth-hero" style={{ textAlign: 'center', marginBottom: 28, maxWidth: 420 }}>
-        <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 20 }}>
-          <Logo style={{ width: 24, height: 24, display: 'block', flexShrink: 0 }} />
-          <span style={{ fontFamily: "'Open Sauce One', system-ui, sans-serif", fontWeight: 800, fontSize: 22, color: '#0E2A1F', letterSpacing: '-.02em', lineHeight: 1 }}>
-            close eye
-          </span>
+        <Link to="/" style={{ textDecoration: 'none', display: 'inline-block', marginBottom: 20 }}>
+          <LogoLockup fontSize={22} color="dark" />
         </Link>
         {mode !== 'update-password' && (
           <>
@@ -470,9 +467,9 @@ export function AuthPage() {
         {/* LOGIN ──────────────────────────────────────────────────────── */}
         {mode === 'login' && (
           <div key="login" className="ce-auth-form-inner" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div>
-              <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0E2A1F', margin: '0 0 4px', letterSpacing: '-.02em' }}>Welcome back</h2>
-              <p style={{ fontSize: 13, color: '#6B7A72', margin: 0 }}>Sign in to your family's care dashboard.</p>
+            <div style={{ padding: 0 }}>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0E2A1F', margin: '0 0 5px', padding: 0, letterSpacing: '-.02em', lineHeight: 1.15 }}>Welcome back</h2>
+              <p style={{ fontSize: 13, color: '#6B7A72', margin: 0, padding: 0, lineHeight: 1.5 }}>Sign in to your family's care dashboard.</p>
             </div>
             <GoogleButton onClick={handleGoogleSignIn} />
             <Divider />
@@ -528,12 +525,12 @@ export function AuthPage() {
             {/* Security badge */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
               <ShieldCheck size={13} strokeWidth={2} style={{ color: '#8E9E98' }} />
-              <span style={{ fontSize: 11, color: '#8E9E98', letterSpacing: '.03em' }}>Protected by CloseEye Security</span>
+              <span style={{ fontSize: 11, color: '#8E9E98', letterSpacing: '.03em' }}>Protected by Close Eye Security</span>
             </div>
 
             {/* Switch to signup */}
             <p style={{ textAlign: 'center', fontSize: 13, color: '#6B7A72', margin: 0 }}>
-              New to CloseEye?{' '}
+              New to Close Eye?{' '}
               <button
                 type="button"
                 onClick={() => switchMode('signup')}
@@ -567,9 +564,9 @@ export function AuthPage() {
               </div>
             ) : (
               <>
-                <div>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0E2A1F', margin: '0 0 4px', letterSpacing: '-.02em' }}>Create your account</h2>
-                  <p style={{ fontSize: 13, color: '#6B7A72', margin: 0 }}>Set up your family's care dashboard in minutes.</p>
+                <div style={{ padding: 0 }}>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0E2A1F', margin: '0 0 5px', padding: 0, letterSpacing: '-.02em', lineHeight: 1.15 }}>Create your account</h2>
+                  <p style={{ fontSize: 13, color: '#6B7A72', margin: 0, padding: 0, lineHeight: 1.5 }}>Set up your family's care dashboard in minutes.</p>
                 </div>
                 <GoogleButton onClick={handleGoogleSignIn} label="Sign up with Google" />
                 <Divider />

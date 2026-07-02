@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Logo } from '@/components/ui/Logo'
 
 // ─── Config ────────────────────────────────────────────────────────────────
 const SESSION_KEY  = 'ce_splash_v4'
@@ -87,24 +88,19 @@ export function SplashScreen() {
         }} />
 
         {/* ── Logo (fades in at 0 s, scales to 100 % by 0.8 s) ────── */}
-        <picture style={{ position: 'relative', zIndex: 1 }}>
-          <source srcSet="/logo-mark.webp" type="image/webp" />
-          <img
-            src="/logo-mark.png"
-            alt="CloseEye"
-            width={88}
-            height={88}
-            draggable={false}
-            style={{
-              display: 'block',
-              objectFit: 'contain',
-              animation: reducedMotion
-                ? 'sp-fade 300ms ease forwards'
-                : 'sp-logo 800ms cubic-bezier(.45,.05,.55,.95) forwards',
-              willChange: 'transform, opacity',
-            }}
-          />
-        </picture>
+        <Logo
+          style={{
+            width: 88,
+            height: 88,
+            display: 'block',
+            position: 'relative',
+            zIndex: 1,
+            animation: reducedMotion
+              ? 'sp-fade 300ms ease forwards'
+              : 'sp-logo 800ms cubic-bezier(.45,.05,.55,.95) forwards',
+            willChange: 'transform, opacity',
+          }}
+        />
 
         {/* ── Tagline (fades in at 0.8 s) ──────────────────────────── */}
         <p style={{
