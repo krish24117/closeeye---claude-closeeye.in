@@ -65,6 +65,7 @@ export function LogoLockup({
           height: markSize,
           display: 'block',
           flexShrink: 0,
+          transform: 'translateY(-1px)',
         }}
       />
       <span

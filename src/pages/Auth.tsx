@@ -63,7 +63,7 @@ function InputField({
         <input
           {...props}
           style={{
-            width: '100%', height: 56, borderRadius: 18, border: '1.5px solid #E8E4DE',
+            width: '100%', height: 52, borderRadius: 18, border: '1.5px solid #E8E4DE',
             background: '#FAFAF8', padding: suffix ? '0 52px 0 16px' : '0 16px',
             fontSize: 15, color: '#0E2A1F', outline: 'none', boxSizing: 'border-box',
             transition: 'border-color 180ms ease, box-shadow 180ms ease',
@@ -99,7 +99,7 @@ function PrimaryButton({ children, loading, disabled, style: extraStyle, ...prop
       {...props}
       disabled={disabled || loading}
       style={{
-        width: '100%', height: 58, borderRadius: 18,
+        width: '100%', height: 52, borderRadius: 18,
         background: disabled || loading ? '#9ca3af' : 'linear-gradient(180deg, #123B2D 0%, #0E2F22 100%)',
         color: '#fff', fontSize: 15, fontWeight: 700, border: 'none', cursor: disabled || loading ? 'default' : 'pointer',
         boxShadow: disabled || loading ? 'none' : '0 4px 16px rgba(14,42,31,.25)',
@@ -160,7 +160,7 @@ function GoogleButton({ onClick, label = 'Continue with Google' }: { onClick: ()
         type="button"
         onClick={onClick}
         style={{
-          width: '100%', height: 58, borderRadius: 18,
+          width: '100%', height: 52, borderRadius: 18,
           background: '#1a3a2a', color: '#fff',
           fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
@@ -354,33 +354,22 @@ export function AuthPage() {
       `}</style>
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <div className="ce-auth-hero" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 28, width: '100%', maxWidth: 420 }}>
-        <Link to="/" style={{ textDecoration: 'none', marginBottom: 20 }}>
+      <div className="ce-auth-hero" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 16, width: '100%', maxWidth: 420 }}>
+        <Link to="/" style={{ textDecoration: 'none' }}>
           <LogoLockup fontSize={22} color="dark" />
         </Link>
-        {mode !== 'update-password' && (
-          <>
-            <h1 style={{ fontSize: 'clamp(24px, 5vw, 30px)', fontWeight: 800, color: '#0E2A1F', lineHeight: 1.2, letterSpacing: '-.03em', margin: '0 0 10px' }}>
-              Know they're okay.<br />
-              <span style={{ color: '#2c6b43' }}>Every single day.</span>
-            </h1>
-            <p style={{ fontSize: 14, color: '#6B7A72', lineHeight: 1.6, margin: 0 }}>
-              Secure access to your family's care dashboard.
-            </p>
-          </>
-        )}
       </div>
 
       {/* ── Trust badges ──────────────────────────────────────────────── */}
       {(mode === 'login' || mode === 'signup') && (
-        <div className="ce-auth-badges" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px 20px', marginBottom: 24 }}>
+        <div className="ce-auth-badges" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 14px', marginBottom: 16 }}>
           {[
             { icon: ShieldCheck, text: 'Secure Login' },
             { icon: Lock,        text: 'End-to-End Encrypted' },
-            { icon: Users,       text: 'Trusted by Families Across India' },
+            { icon: Users,       text: 'Trusted by Families' },
           ].map(({ icon: Icon, text }) => (
-            <span key={text} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#5A7A65', letterSpacing: '.02em' }}>
-              <Icon size={12} strokeWidth={2.2} style={{ color: '#2c6b43', flexShrink: 0 }} />
+            <span key={text} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#5A7A65', letterSpacing: '.02em' }}>
+              <Icon size={11} strokeWidth={2.2} style={{ color: '#2c6b43', flexShrink: 0 }} />
               {text}
             </span>
           ))}
@@ -392,12 +381,12 @@ export function AuthPage() {
         width: '100%', maxWidth: 420,
         background: '#fff', borderRadius: 28,
         boxShadow: '0 4px 6px rgba(14,42,31,.04), 0 20px 60px rgba(14,42,31,.10)',
-        padding: 32,
+        padding: '20px 24px',
       }}>
 
         {/* UPDATE PASSWORD ───────────────────────────────────────────── */}
         {mode === 'update-password' && (
-          <div className="ce-auth-form-inner" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="ce-auth-form-inner" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0E2A1F', margin: '0 0 6px', letterSpacing: '-.02em', textAlign: 'center' }}>Set a new password</h2>
               <p style={{ fontSize: 13, color: '#6B7A72', margin: 0, lineHeight: 1.6, textAlign: 'center' }}>Enter a new password for your account.</p>
@@ -429,7 +418,7 @@ export function AuthPage() {
 
         {/* RESET PASSWORD ─────────────────────────────────────────────── */}
         {mode === 'reset' && (
-          <div className="ce-auth-form-inner" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="ce-auth-form-inner" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
               <button
                 onClick={() => switchMode('login')}
@@ -466,7 +455,7 @@ export function AuthPage() {
 
         {/* LOGIN ──────────────────────────────────────────────────────── */}
         {mode === 'login' && (
-          <div key="login" className="ce-auth-form-inner" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div key="login" className="ce-auth-form-inner" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ textAlign: 'center', padding: 0 }}>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0E2A1F', margin: '0 0 6px', padding: 0, letterSpacing: '-.02em', lineHeight: 1.15 }}>Welcome back</h2>
               <p style={{ fontSize: 13, color: '#6B7A72', margin: 0, padding: 0, lineHeight: 1.5 }}>Sign in to your family's care dashboard.</p>
@@ -500,7 +489,7 @@ export function AuthPage() {
                     placeholder="••••••••"
                     autoComplete="current-password"
                     style={{
-                      width: '100%', height: 56, borderRadius: 18, border: '1.5px solid #E8E4DE',
+                      width: '100%', height: 52, borderRadius: 18, border: '1.5px solid #E8E4DE',
                       background: '#FAFAF8', padding: '0 52px 0 16px', fontSize: 15, color: '#0E2A1F',
                       outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
                       transition: 'border-color 180ms ease, box-shadow 180ms ease',
@@ -544,7 +533,7 @@ export function AuthPage() {
 
         {/* SIGNUP ─────────────────────────────────────────────────────── */}
         {mode === 'signup' && (
-          <div key="signup" className="ce-auth-form-inner" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div key="signup" className="ce-auth-form-inner" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {signupConfirmSent ? (
               <div style={{ textAlign: 'center', padding: '8px 0' }}>
                 <div style={{ fontSize: 40, marginBottom: 16 }}>✉️</div>
