@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useEffect, lazy, Suspense } from 'react'
+import React, { useEffect, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from '@/lib/auth-context'
 import { ToastProvider } from '@/components/ui/Toast'
 import { SplashScreen } from '@/components/SplashScreen'
@@ -249,14 +249,53 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
 
 function RouteSpinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-green-50">
-      <div className="w-10 h-10 border-2 border-green-800 border-t-transparent rounded-full animate-spin" />
+    <div style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cream)' }}>
+      <div style={{ width: 40, height: 40, border: '2px solid var(--forest)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'ce-spin 0.8s linear infinite' }} />
     </div>
   )
 }
 
+function NotFoundPage() {
+  return (
+    <PublicLayout>
+      <div style={{ minHeight: '60svh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: '60px 24px', textAlign: 'center' }}>
+        <p style={{ fontSize: 80, fontWeight: 800, color: 'var(--forest)', lineHeight: 1, letterSpacing: '-0.04em', margin: 0 }}>404</p>
+        <p style={{ fontSize: 22, fontWeight: 700, color: 'var(--black)', marginTop: 8, marginBottom: 0 }}>Page not found</p>
+        <p style={{ fontSize: 15, color: 'var(--gray-mid)', maxWidth: 320, lineHeight: 1.6, margin: 0 }}>The page you're looking for doesn't exist or has moved.</p>
+        <a href="/" style={{ background: 'var(--forest)', color: 'var(--cream)', padding: '12px 28px', borderRadius: 14, textDecoration: 'none', fontWeight: 600, marginTop: 8, display: 'inline-block' }}>Go home</a>
+      </div>
+    </PublicLayout>
+  )
+}
+
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false }
+  static getDerivedStateFromError() { return { hasError: true } }
+  componentDidCatch(err: Error) { console.error('[ErrorBoundary]', err) }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cream)', flexDirection: 'column', gap: 16, padding: 24, textAlign: 'center' }}>
+          <p style={{ fontWeight: 700, color: 'var(--forest)', fontSize: 18, margin: 0 }}>Something went wrong</p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{ background: 'var(--forest)', color: 'var(--cream)', padding: '10px 24px', borderRadius: 12, border: 'none', cursor: 'pointer', fontWeight: 600 }}
+          >
+            Reload
+          </button>
+        </div>
+      )
+    }
+    return <>{this.props.children}</>
+  }
+}
+
 export default function App() {
   return (
+    <ErrorBoundary>
     <AuthProvider>
       <ToastProvider>
       <BrowserRouter>
@@ -341,11 +380,12 @@ export default function App() {
             <Route path="/doctor" element={<ProtectedRoute adminRole="doctor"><DoctorLayout /></ProtectedRoute>}>
               <Route index element={<DoctorHome />} />
             </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
       </BrowserRouter>
       </ToastProvider>
     </AuthProvider>
+    </ErrorBoundary>
   )
 }

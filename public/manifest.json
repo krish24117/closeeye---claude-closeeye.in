@@ -10,6 +10,7 @@
   "background_color": "#FAF7F2",
   "theme_color": "#0E2A1F",
   "orientation": "portrait-primary",
+  "prefer_related_applications": false,
   "icons": [
     { "src": "/icons/icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any" },
@@ -20,6 +21,29 @@
     { "src": "/icons/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ask CloseEye",
+      "short_name": "Ask",
+      "description": "Ask CloseEye about your loved one's health",
+      "url": "/dashboard/ask",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Book a Visit",
+      "short_name": "Book",
+      "description": "Book a companion visit for your loved one",
+      "url": "/dashboard/book",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Bookings",
+      "short_name": "Bookings",
+      "description": "View and manage your bookings",
+      "url": "/dashboard/bookings",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
   ],
   "screenshots": [
     {

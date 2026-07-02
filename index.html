@@ -17,8 +17,15 @@
     <title>Close Eye — Trusted Elder Care Companion for NRI Families | Hyderabad</title>
     <meta name="description" content="Close Eye provides verified companion visits for elderly parents of NRI families in Hyderabad. We visit, check their health, and send a WhatsApp report within the hour. Register your family today." />
 
+    <!-- Preconnect to critical third-party origins (eliminates connection setup RTT) -->
+    <link rel="preconnect" href="https://kghwmiriboavmyswcqnr.supabase.co" crossorigin />
+    <link rel="preconnect" href="https://maps.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://maps.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+    <link rel="dns-prefetch" href="https://checkout.razorpay.com" />
+
     <!-- Preload splash logo (LCP on homepage) -->
-    <link rel="preload" as="image" href="/logo-mark.webp" type="image/webp" />
+    <link rel="preload" as="image" href="/logo-mark.webp" type="image/webp" fetchpriority="high" />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />

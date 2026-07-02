@@ -6,7 +6,7 @@
 // online) and only fall back to the cached shell when truly offline.
 //
 // Bump CACHE_NAME on any change here so the activate handler purges old caches.
-const CACHE_NAME = 'closeeye-v5'
+const CACHE_NAME = 'closeeye-v6'
 
 // Keep the precache list minimal + known-good. addAll() rejects the whole
 // install if ANY entry 404s, which would leave users on a broken SW — so we

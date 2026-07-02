@@ -38,7 +38,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:w-80 z-[100] space-y-2 pointer-events-none">
+      <div role="status" aria-live="polite" aria-atomic="false" className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:w-80 z-[100] space-y-2 pointer-events-none">
         {toasts.map(t => {
           const Icon = ICONS[t.type]
           return (
