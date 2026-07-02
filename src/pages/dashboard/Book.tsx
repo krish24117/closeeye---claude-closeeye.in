@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Loader2, Check, X, AlertTriangle, MapPin } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
+import { formatSlot } from '@/lib/formatTime'
 
 interface Service { id: string; emoji: string; name: string; price: string; paise: number; desc: string }
 
@@ -32,13 +33,6 @@ const SLOT_GROUPS = [
   { label: 'Afternoon', start: 12, end: 17 },
   { label: 'Evening',   start: 17, end: 21 },
 ]
-
-function slotLabel(s: string) {
-  const h = +s.slice(0, 2), m = +s.slice(3, 5)
-  const ampm = h < 12 ? 'am' : 'pm'
-  const h12 = h % 12 || 12
-  return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2, '0')}${ampm}`
-}
 
 // IST = UTC+5:30, no DST
 function istNow() {
@@ -378,7 +372,7 @@ export function DashboardBook() {
                                   minWidth: 64, textAlign: 'center',
                                 }}
                               >
-                                {slotLabel(s)}
+                                {formatSlot(s)}
                               </button>
                             )
                           })}
@@ -411,6 +405,11 @@ export function DashboardBook() {
                       ref={addressInputRef}
                       value={tempAddress}
                       onChange={e => setTempAddress(e.target.value)}
+                      onFocus={() => {
+                        setTimeout(() => {
+                          addressInputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+                        }, 320)
+                      }}
                       placeholder="Flat / house, area, landmark… (search or type)"
                       style={INPUT_STYLE}
                       autoComplete="off"

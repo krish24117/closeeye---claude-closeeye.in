@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/components/ui/Toast'
 import { Calendar, CheckCircle, Clock, AlertCircle, XCircle, ChevronRight, Plus, Car, UserCheck, AlertTriangle } from 'lucide-react'
 import { loadRazorpayScript } from '@/lib/razorpay'
+import { formatIsoTime } from '@/lib/formatTime'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -93,11 +94,11 @@ function cfg(status: string) {
 
 function fmtDate(iso: string | null) {
   if (!iso) return null
-  return new Date(iso).toLocaleDateString('en-IN', {
+  const date = new Date(iso).toLocaleDateString('en-IN', {
     weekday: 'long', day: 'numeric', month: 'long',
-    hour: 'numeric', minute: '2-digit', hour12: true,
     timeZone: 'Asia/Kolkata',
   })
+  return `${date} at ${formatIsoTime(iso)}`
 }
 
 function fmtShort(iso: string) {
@@ -157,9 +158,7 @@ function StatusTimeline({ visit }: { visit: ActiveVisit }) {
   const latestNote = [...visit.booking_status_history]
     .sort((a, b) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime())[0]
   const scheduledAt = visit.reschedule_time || visit.scheduled_at
-  const timeStr = scheduledAt
-    ? new Date(scheduledAt).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
-    : null
+  const timeStr = scheduledAt ? formatIsoTime(scheduledAt) : null
 
   return (
     <div style={{
@@ -206,7 +205,7 @@ function StatusTimeline({ visit }: { visit: ActiveVisit }) {
           <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
           <span>
             {visit.status === 'delayed' && 'Your visit has been delayed.'}
-            {visit.status === 'rescheduled' && `Visit rescheduled${scheduledAt ? ` to ${new Date(scheduledAt).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}` : ''}.`}
+            {visit.status === 'rescheduled' && `Visit rescheduled${scheduledAt ? ` to ${new Date(scheduledAt).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })} at ${formatIsoTime(scheduledAt)}` : ''}.`}
             {visit.status === 'cancelled' && 'This visit has been cancelled.'}
             {latestNote?.note && ` ${latestNote.note}`}
           </span>

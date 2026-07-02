@@ -31,6 +31,16 @@ export function DashboardLayout() {
   const { profile, loading, signOut } = useAuth()
   const navigate = useNavigate()
   const [menu, setMenu] = useState(false)
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
+
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const threshold = window.innerHeight * 0.75
+    const onResize = () => setKeyboardOpen(vv.height < threshold)
+    vv.addEventListener('resize', onResize)
+    return () => vv.removeEventListener('resize', onResize)
+  }, [])
 
   useEffect(() => {
     // Send brand-new family users to onboarding unless they've already dismissed it.
@@ -97,8 +107,8 @@ export function DashboardLayout() {
 
       <InstallPrompt />
 
-      {/* Bottom nav */}
-      <nav className="ce-fam-bottom" aria-label="Primary">
+      {/* Bottom nav — hidden while keyboard is open to prevent overlap */}
+      <nav className="ce-fam-bottom" aria-label="Primary" style={keyboardOpen ? { display: 'none' } : undefined}>
         {tabs.map(t => (
           <NavLink
             key={t.to}

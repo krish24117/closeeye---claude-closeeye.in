@@ -4,6 +4,7 @@ import { CheckCircle, Calendar, User, MessageCircle, Loader2, ArrowRight } from 
 import { format } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { SERVICE_NAMES } from '@/lib/booking-labels'
+import { formatIsoTime } from '@/lib/formatTime'
 
 interface Booking {
   id: string
@@ -62,7 +63,7 @@ export function BookingConfirmationPage() {
     ? booking.loved_ones[0]?.full_name ?? '—'
     : (booking.loved_ones as { full_name: string } | null)?.full_name ?? '—'
   const scheduledDisplay = booking.scheduled_at
-    ? format(new Date(booking.scheduled_at), 'd MMM yyyy, h:mm a')
+    ? `${format(new Date(booking.scheduled_at), 'd MMM yyyy')}, ${formatIsoTime(booking.scheduled_at)}`
     : '—'
 
   return (

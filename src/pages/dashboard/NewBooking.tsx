@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { ON_DEMAND_SERVICES } from '@/lib/one-time-services'
 import { loadRazorpayScript } from '@/lib/razorpay'
+import { formatSlot } from '@/lib/formatTime'
 
 const RELATIONSHIPS = ['Mother', 'Father', 'Grandmother', 'Grandfather', 'Other']
 
@@ -29,12 +30,6 @@ const TIME_SLOTS = [
   '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00',
 ]
 
-function formatTimeLabel(t: string) {
-  const [h, m] = t.split(':').map(Number)
-  const ampm = h < 12 ? 'AM' : 'PM'
-  const hour = h % 12 || 12
-  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`
-}
 
 export function DashboardNewBooking() {
   const { user, profile } = useAuth()
@@ -484,7 +479,7 @@ export function DashboardNewBooking() {
                   >
                     <option value="">— Pick a time —</option>
                     {availableSlots(visitDate).map(t => (
-                      <option key={t} value={t}>{formatTimeLabel(t)}</option>
+                      <option key={t} value={t}>{formatSlot(t)}</option>
                     ))}
                   </select>
                 </div>
