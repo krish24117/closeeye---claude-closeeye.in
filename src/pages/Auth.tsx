@@ -340,7 +340,7 @@ export function AuthPage() {
       background: 'radial-gradient(ellipse at top center, #FAFAF8 0%, #F3F2EC 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       justifyContent: 'center',
-      padding: 'max(env(safe-area-inset-top, 24px), 24px) 24px calc(env(safe-area-inset-bottom, 24px) + 24px)',
+      padding: 'max(env(safe-area-inset-top, 0px), 40px) 20px max(env(safe-area-inset-bottom, 0px), 40px)',
     }}>
       <style>{`
         @keyframes ce-spin { to { transform: rotate(360deg); } }
@@ -362,17 +362,15 @@ export function AuthPage() {
 
       {/* ── Trust badges ──────────────────────────────────────────────── */}
       {(mode === 'login' || mode === 'signup') && (
-        <div className="ce-auth-badges" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 14px', marginBottom: 16 }}>
-          {[
-            { icon: ShieldCheck, text: 'Secure Login' },
-            { icon: Lock,        text: 'End-to-End Encrypted' },
-            { icon: Users,       text: 'Trusted by Families' },
-          ].map(({ icon: Icon, text }) => (
-            <span key={text} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#5A7A65', letterSpacing: '.02em' }}>
-              <Icon size={11} strokeWidth={2.2} style={{ color: '#2c6b43', flexShrink: 0 }} />
-              {text}
-            </span>
-          ))}
+        <div className="ce-auth-badges" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginBottom: 16, flexWrap: 'nowrap' }}>
+          <ShieldCheck size={11} strokeWidth={2.2} style={{ color: '#2c6b43', flexShrink: 0 }} />
+          <span style={{ fontSize: 10, fontWeight: 600, color: '#5A7A65', letterSpacing: '.02em', whiteSpace: 'nowrap' }}>Secure</span>
+          <span style={{ color: '#C5BDB4', fontSize: 10, flexShrink: 0 }}>·</span>
+          <Lock size={11} strokeWidth={2.2} style={{ color: '#2c6b43', flexShrink: 0 }} />
+          <span style={{ fontSize: 10, fontWeight: 600, color: '#5A7A65', letterSpacing: '.02em', whiteSpace: 'nowrap' }}>Encrypted</span>
+          <span style={{ color: '#C5BDB4', fontSize: 10, flexShrink: 0 }}>·</span>
+          <Users size={11} strokeWidth={2.2} style={{ color: '#2c6b43', flexShrink: 0 }} />
+          <span style={{ fontSize: 10, fontWeight: 600, color: '#5A7A65', letterSpacing: '.02em', whiteSpace: 'nowrap' }}>Trusted by Families</span>
         </div>
       )}
 
