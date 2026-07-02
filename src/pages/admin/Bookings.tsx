@@ -476,17 +476,21 @@ function ConfirmDrawer({
       } as Partial<BookingRequest>)
 
       showToast('Companion confirmed — payment link sent via Razorpay', 'success')
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[ConfirmDrawer] handleConfirm error:', err)
-      showToast('Could not confirm — check console and try again', 'error')
+      // Surface the actual error from the edge function response body
+      let detail = (err as Error)?.message || String(err)
+      try {
+        const body = await (err as any)?.context?.json?.()
+        if (body?.error) detail = body.error
+      } catch { /* ignore parse error */ }
+      showToast(`Confirm failed: ${detail}`, 'error')
     } finally {
       setSaving(false)
     }
   }
 
   async function handleResendLink() {
-    if (!request.payment_link_url) return
-    // Razorpay Payment Link resend via API
     setSaving(true)
     try {
       const { data, error } = await supabase.functions.invoke('confirm-booking-and-send-payment', {
@@ -500,9 +504,14 @@ function ConfirmDrawer({
       if (error || !data?.ok) throw new Error(data?.error || 'Resend failed')
       setPaymentLink({ url: data.payment_link_url, id: data.payment_link_id })
       showToast('New payment link created and sent', 'success')
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[ConfirmDrawer] resend error:', err)
-      showToast('Could not resend link — try again', 'error')
+      let detail = (err as Error)?.message || String(err)
+      try {
+        const body = await (err as any)?.context?.json?.()
+        if (body?.error) detail = body.error
+      } catch { /* ignore */ }
+      showToast(`Resend failed: ${detail}`, 'error')
     } finally {
       setSaving(false)
     }

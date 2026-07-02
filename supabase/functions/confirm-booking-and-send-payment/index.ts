@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
 
   if (brErr || !br) return json({ error: "Booking request not found" }, 404);
 
-  const CONFIRMABLE = ["pending_confirmation", "requested", "needs_details", "confirmed"];
+  const CONFIRMABLE = ["pending_confirmation", "requested", "needs_details", "confirmed", "companion_confirmed"];
   if (!CONFIRMABLE.includes(br.status as string)) {
     return json({ error: `Booking is already ${br.status} — cannot re-confirm` }, 409);
   }
@@ -125,7 +125,7 @@ Deno.serve(async (req: Request) => {
     currency:    "INR",
     accept_partial: false,
     description: `${br.service_name} for ${br.recipient_name}`,
-    reference_id: booking_request_id,
+    reference_id: booking_request_id.replace(/-/g, "").slice(0, 40), // Razorpay: alphanumeric only, max 40 chars
     expire_by:   expiresAt,
     notify: {
       sms:       true,
@@ -163,7 +163,8 @@ Deno.serve(async (req: Request) => {
 
   if (!rzRes.ok) {
     console.error("[confirm-booking] Razorpay Payment Link creation failed:", rzData);
-    return json({ error: "Could not create payment link", details: rzData }, 502);
+    const rzErrDesc = (rzData as any)?.error?.description || (rzData as any)?.error?.reason || JSON.stringify(rzData);
+    return json({ error: `Razorpay error: ${rzErrDesc}`, details: rzData }, 502);
   }
 
   const paymentLinkId  = rzData.id as string;
