@@ -1333,18 +1333,6 @@
   .skeleton, .ce-pulse-dot, .ce-slide-up { animation: none; }
 }
 
-/* ---- Booking bottom sheet + success check ---- */
-.ce-sheet-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; }
-.ce-sheet { width: 100%; max-width: 480px; background: #fff; border-radius: 24px 24px 0 0; max-height: 92dvh; overflow: hidden; animation: ce-sheet-up 300ms cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; }
-.ce-sheet-sticky-head { flex-shrink: 0; background: #fff; padding: 16px 20px 14px; border-bottom: 1px solid var(--gray-light); }
-.ce-sheet-body { padding: 16px 20px; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.ce-sheet-footer { flex-shrink: 0; padding: 12px 20px calc(20px + env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid var(--gray-light); }
-@keyframes ce-sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-.ce-sheet-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--gray-light); margin: 0 auto 16px; }
-@keyframes ce-check-pop { 0% { transform: scale(0); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
-.ce-check-pop { animation: ce-check-pop 400ms ease-out both; }
-/* Google Places autocomplete dropdown must sit above the sheet overlay */
-.pac-container { z-index: 9999 !important; }
 
 /* ---- Desktop: bottom nav becomes a left sidebar ---- */
 @media (min-width: 768px) {
@@ -1358,12 +1346,11 @@
   .ce-fam-tab.is-active { background: var(--cream-dark); }
   .ce-fam-tab-label { font-size: 14px; }
   .ce-fam-main { max-width: 700px; margin: 0 0 0 max(220px, calc(220px + (100vw - 920px) / 2)); padding-bottom: 40px; }
-  .ce-sheet { max-width: 520px; border-radius: 24px; margin-bottom: 5vh; }
-  .ce-sheet-overlay { align-items: center; }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ce-sheet, .ce-check-pop { animation: none; }
+  .ce-check-pop { animation: none; }
 }
 
 /* ==================================================================== */

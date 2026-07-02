@@ -1,90 +1,20 @@
-import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Loader2, Check, X, AlertTriangle, MapPin } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
-import { formatSlot } from '@/lib/formatTime'
 
-interface Service { id: string; emoji: string; name: string; price: string; paise: number; desc: string }
+interface Service { id: string; emoji: string; name: string; price: string; desc: string }
 
 const SERVICES: Service[] = [
-  { id: 'home_visit',                    emoji: '🏠', name: 'Home Visit',            price: '₹1,000', paise: 100000, desc: 'Companion visit + WhatsApp report' },
-  { id: 'doctor_visit_support',          emoji: '👨‍⚕️', name: 'Doctor Visit Support',  price: '₹1,500', paise: 150000, desc: 'Accompanies them to the doctor + notes' },
-  { id: 'hospital_assistance_half_day',  emoji: '🏥', name: 'Hospital Half Day',     price: '₹2,000', paise: 200000, desc: 'Up to 4 hours hospital support' },
-  { id: 'hospital_assistance_full_day',  emoji: '🏥', name: 'Hospital Full Day',     price: '₹4,000', paise: 400000, desc: 'Full day. Updated every 2 hours' },
-  { id: 'emergency_support_visit',       emoji: '🚨', name: 'Emergency Visit',       price: '₹3,000', paise: 300000, desc: 'Response within 2 hours' },
-  { id: 'grocery_medicine_assistance',   emoji: '🛒', name: 'Grocery & Medicine',    price: '₹500',   paise: 50000,  desc: 'Collection and delivery' },
-  { id: 'home_maintenance_coordination', emoji: '🔧', name: 'Home Maintenance',      price: '₹500',   paise: 50000,  desc: 'Coordinate repairs' },
+  { id: 'home_visit',                    emoji: '🏠', name: 'Home Visit',            price: '₹1,000', desc: 'Companion visit + WhatsApp report' },
+  { id: 'doctor_visit_support',          emoji: '👨‍⚕️', name: 'Doctor Visit Support',  price: '₹1,500', desc: 'Accompanies them to the doctor + notes' },
+  { id: 'hospital_assistance_half_day',  emoji: '🏥', name: 'Hospital Half Day',     price: '₹2,000', desc: 'Up to 4 hours hospital support' },
+  { id: 'hospital_assistance_full_day',  emoji: '🏥', name: 'Hospital Full Day',     price: '₹4,000', desc: 'Full day. Updated every 2 hours' },
+  { id: 'emergency_support_visit',       emoji: '🚨', name: 'Emergency Visit',       price: '₹3,000', desc: 'Response within 2 hours' },
+  { id: 'grocery_medicine_assistance',   emoji: '🛒', name: 'Grocery & Medicine',    price: '₹500',   desc: 'Collection and delivery' },
+  { id: 'home_maintenance_coordination', emoji: '🔧', name: 'Home Maintenance',      price: '₹500',   desc: 'Coordinate repairs' },
 ]
 
-// ── Time slot config ──────────────────────────────────────────────────────────
-const LEAD_TIME_MIN = 180 // 3 hours minimum notice — change this to tune
-
-// Generate slots from 8:00 to 20:00, every 30 minutes
-const ALL_TIME_SLOTS: string[] = Array.from({ length: 25 }, (_, i) => {
-  const totalMin = 8 * 60 + i * 30
-  const h = Math.floor(totalMin / 60)
-  const m = totalMin % 60
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-})
-
-const SLOT_GROUPS = [
-  { label: 'Morning',   start: 8,  end: 12 },
-  { label: 'Afternoon', start: 12, end: 17 },
-  { label: 'Evening',   start: 17, end: 21 },
-]
-
-// IST = UTC+5:30, no DST
-function istNow() {
-  const d = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
-  return {
-    min: d.getUTCHours() * 60 + d.getUTCMinutes(),
-    dateStr: `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`,
-  }
-}
-
-function isSlotTooSoon(selectedDate: Date | null, slotStr: string): boolean {
-  if (!selectedDate) return false
-  const ist = istNow()
-  const selStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
-  if (selStr !== ist.dateStr) return false
-  return ist.min + LEAD_TIME_MIN >= +slotStr.slice(0, 2) * 60 + +slotStr.slice(3, 5)
-}
-
-function getAvailableGroups(selectedDate: Date | null) {
-  return SLOT_GROUPS.map(g => ({
-    label: g.label,
-    slots: ALL_TIME_SLOTS.filter(s => {
-      const h = +s.slice(0, 2)
-      return h >= g.start && h < g.end && !isSlotTooSoon(selectedDate, s)
-    }),
-  })).filter(g => g.slots.length > 0)
-}
-
-const INPUT_STYLE: React.CSSProperties = {
-  width: '100%', background: 'var(--cream)', border: '1.5px solid var(--gray-light)', borderRadius: 12,
-  padding: '12px 14px', fontSize: 15, fontFamily: 'inherit', boxSizing: 'border-box',
-}
-
-// ── Google Places autocomplete ────────────────────────────────────────────────
-function loadGooglePlaces(cb: () => void) {
-  const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-  if (!key) return
-  if ((window as any).google?.maps?.places) { cb(); return }
-  const scriptId = 'gm-places'
-  if (document.getElementById(scriptId)) {
-    document.getElementById(scriptId)!.addEventListener('load', cb)
-    return
-  }
-  const s = document.createElement('script')
-  s.id = scriptId
-  s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`
-  s.async = true; s.onload = cb
-  document.head.appendChild(s)
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
 export function DashboardBook() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
@@ -92,161 +22,24 @@ export function DashboardBook() {
   const isFoundingMember = !!((profile as unknown) as Record<string, unknown>)?.is_founding_member
   const foundingNumber = ((profile as unknown) as Record<string, unknown>)?.founding_number as number | undefined
 
-  const [recipient, setRecipient] = useState<{ name: string; address: string }>({ name: '', address: '' })
-  const [active, setActive] = useState<Service | null>(null)
-  const overlayRef = useRef<HTMLDivElement>(null)
-  const addressInputRef = useRef<HTMLInputElement>(null)
-  const autocompleteRef = useRef<any>(null)
+  const [recipientName, setRecipientName] = useState('')
 
-  // iOS-safe scroll lock: position:fixed prevents rubber-band scroll behind sheet
-  useEffect(() => {
-    if (!active) return
-    const scrollY = window.scrollY
-    document.body.style.position = 'fixed'
-    document.body.style.top = `-${scrollY}px`
-    document.body.style.width = '100%'
-    return () => {
-      document.body.style.position = ''
-      document.body.style.top = ''
-      document.body.style.width = ''
-      window.scrollTo(0, scrollY)
-    }
-  }, [active])
-
-  // Pin overlay to visual viewport so sheet stays above iOS keyboard
-  useEffect(() => {
-    if (!active) return
-    const vv = window.visualViewport
-    if (!vv) return
-    const el = overlayRef.current
-    if (!el) return
-    const sync = () => {
-      el.style.top = `${vv.offsetTop}px`
-      el.style.left = `${vv.offsetLeft ?? 0}px`
-      el.style.width = `${vv.width}px`
-      el.style.height = `${vv.height}px`
-    }
-    vv.addEventListener('resize', sync)
-    vv.addEventListener('scroll', sync)
-    sync()
-    return () => {
-      vv.removeEventListener('resize', sync)
-      vv.removeEventListener('scroll', sync)
-      el.style.top = ''; el.style.left = ''; el.style.width = ''; el.style.height = ''
-    }
-  }, [active])
-
-  const [date, setDate]               = useState<Date | null>(null)
-  const [slot, setSlot]               = useState('')
-  const [notes, setNotes]             = useState('')
-  const [tempAddress, setTempAddress] = useState('')
-  const [tempWhatsapp, setTempWhatsapp] = useState('')
-  const [submitting, setSubmitting]   = useState(false)
-  const [done, setDone]               = useState(false)
-  const [doneNeedsDetails, setDoneNeedsDetails] = useState(false)
-  const [doneMissing, setDoneMissing] = useState<{ address: boolean; whatsapp: boolean }>({ address: false, whatsapp: false })
-  const [err, setErr]                 = useState('')
-
-  // Load elder / member address once
   useEffect(() => {
     if (!user) return
     if (isNri) {
-      ;(async () => {
-        const { data: lo } = await supabase.from('loved_ones').select('id, full_name').eq('family_user_id', user.id).order('created_at').limit(1).maybeSingle()
-        let address = ''
-        if (lo?.id) {
-          const { data: ep } = await supabase.from('elder_profiles').select('address').eq('loved_one_id', lo.id).maybeSingle()
-          address = ep?.address || ''
-        }
-        setRecipient({ name: lo?.full_name || profile?.full_name || '', address })
-      })()
+      supabase.from('loved_ones').select('full_name').eq('family_user_id', user.id).order('created_at').limit(1).maybeSingle()
+        .then(({ data }) => setRecipientName(data?.full_name || profile?.full_name || ''))
     } else {
-      supabase.from('society_members').select('name, flat_number, area, society_name').eq('user_id', user.id).maybeSingle()
-        .then(({ data }) => setRecipient({
-          name: data?.name || profile?.full_name || '',
-          address: [data?.flat_number, data?.society_name, data?.area].filter(Boolean).join(', '),
-        }))
+      supabase.from('society_members').select('name').eq('user_id', user.id).maybeSingle()
+        .then(({ data }) => setRecipientName(data?.name || profile?.full_name || ''))
     }
   }, [user, isNri, profile])
-
-  // Wire Google Places autocomplete once the address input is in the DOM
-  useEffect(() => {
-    if (!active || active.id === 'emergency_support_visit') return
-    loadGooglePlaces(() => {
-      if (!addressInputRef.current || !(window as any).google?.maps?.places) return
-      // Don't re-init if already attached
-      if (autocompleteRef.current) return
-      autocompleteRef.current = new (window as any).google.maps.places.Autocomplete(
-        addressInputRef.current,
-        { componentRestrictions: { country: 'in' }, fields: ['formatted_address'], types: ['address'] },
-      )
-      autocompleteRef.current.addListener('place_changed', () => {
-        const place = autocompleteRef.current?.getPlace()
-        if (place?.formatted_address) setTempAddress(place.formatted_address)
-      })
-    })
-    return () => { autocompleteRef.current = null }
-  }, [active])
-
-  // Clear slot when it becomes too soon (e.g. phone was left open)
-  useEffect(() => { if (slot && isSlotTooSoon(date, slot)) setSlot('') }, [date])
-
-  // If today has no slots at all, start date row from tomorrow
-  const LAST_SLOT_MIN = 20 * 60
-  const todayHasSlots = istNow().min + LEAD_TIME_MIN < LAST_SLOT_MIN
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() + i + (todayHasSlots ? 0 : 1))
-    return d
-  })
-
-  function openSheet(s: Service) {
-    setActive(s); setDate(null); setSlot(''); setNotes('')
-    setTempAddress(recipient.address) // pre-fill saved address
-    setTempWhatsapp(''); setDone(false); setErr('')
-    setDoneNeedsDetails(false); setDoneMissing({ address: false, whatsapp: false })
-  }
-  function close() { setActive(null) }
-
-  const effectiveAddress  = tempAddress.trim() || recipient.address
-  const showWhatsappInput = !profile?.whatsapp_number?.trim()
-  const effectiveWhatsapp = tempWhatsapp.trim() || profile?.whatsapp_number || ''
-  const hasSavedAddress   = !!recipient.address.trim()
-
-  async function confirm() {
-    if (!active) return
-    const isEmergency = active.id === 'emergency_support_visit'
-    if (!isEmergency && (!date || !slot)) { setErr('Please pick a date and time.'); return }
-    if (!effectiveAddress.trim()) { setErr('Please add a visiting address so we can send a companion.'); return }
-    setSubmitting(true); setErr('')
-    let scheduled_at_ist: string | null = null
-    if (!isEmergency && date) {
-      const y = date.getFullYear(), mo = String(date.getMonth() + 1).padStart(2, '0'), d = String(date.getDate()).padStart(2, '0')
-      scheduled_at_ist = `${y}-${mo}-${d}T${slot}:00+05:30`
-    }
-    const { data: result, error } = await supabase.functions.invoke('submit-booking-request', {
-      body: {
-        service_id: active.id, service_name: active.name, amount_paise: active.paise,
-        scheduled_at_ist, recipient_name: recipient.name,
-        recipient_address: effectiveAddress,
-        requester_whatsapp: effectiveWhatsapp,
-        notes: notes.trim() || null,
-        is_emergency: isEmergency,
-      },
-    })
-    setSubmitting(false)
-    if (error) { setErr("Couldn't send your request. Please try again."); return }
-    const requestId = (result as any)?.request_id as string | undefined
-    navigate(`/dashboard/booking-received?id=${requestId ?? ''}`, { replace: true })
-  }
-
-  const availableGroups = getAvailableGroups(date)
 
   return (
     <div className="ce-slide-up" style={{ paddingBottom: 8 }}>
       <h1 style={{ fontSize: 20, fontWeight: 700, margin: '16px 16px 4px', letterSpacing: '-0.02em' }}>Book a Service</h1>
       <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: '0 16px 16px' }}>
-        {isNri ? `For ${recipient.name || 'your loved one'} · Hyderabad` : 'For your family · Hyderabad'}
+        {isNri ? `For ${recipientName || 'your loved one'} · Hyderabad` : 'For your family · Hyderabad'}
       </p>
 
       {isFoundingMember && (
@@ -272,7 +65,7 @@ export function DashboardBook() {
                   <p className="ce-sv-desc">{s.desc}</p>
                   <p className="ce-sv-price">{s.price}</p>
                 </div>
-                <button onClick={() => openSheet(s)} className="ce-sv-book-btn ce-press">
+                <button onClick={() => navigate('/dashboard/book/' + s.id)} className="ce-sv-book-btn ce-press">
                   Book now
                 </button>
               </div>
@@ -284,7 +77,7 @@ export function DashboardBook() {
               <p className="ce-sv-name">{s.name}</p>
               <p className="ce-sv-desc">{s.desc}</p>
               <p className="ce-sv-price">{s.price}</p>
-              <button onClick={() => openSheet(s)} className="ce-sv-book-btn ce-press">
+              <button onClick={() => navigate('/dashboard/book/' + s.id)} className="ce-sv-book-btn ce-press">
                 Book
               </button>
             </div>
@@ -324,222 +117,6 @@ export function DashboardBook() {
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', margin: '8px 0 0' }}>1 visit + weekly calls + WhatsApp reports + medicine reminders.</p>
         <Link to="/services" className="ce-btn ce-btn-white ce-btn-full" style={{ marginTop: 18, padding: 14 }}>{isNri ? 'Upgrade Now →' : 'Add Elder Care →'}</Link>
       </section>
-
-      {active && createPortal(
-        <div
-          ref={overlayRef}
-          className="ce-sheet-overlay"
-          onClick={close}
-        >
-          <div className="ce-sheet" onClick={e => e.stopPropagation()}>
-            {!done ? (
-              active.id === 'emergency_support_visit' ? (
-                /* ── EMERGENCY ── */
-                <>
-                  <div className="ce-sheet-sticky-head">
-                    <div className="ce-sheet-handle" />
-                    <div className="flex items-center justify-between">
-                      <span style={{ fontSize: 18, fontWeight: 700 }}>🚨 Emergency Visit</span>
-                      <button onClick={close} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-mid)' }}><X size={22} /></button>
-                    </div>
-                    <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--forest)', margin: '2px 0 12px' }}>₹3,000 · Response within 2 hours</p>
-                  </div>
-                  <div className="ce-sheet-body">
-                  <a href="tel:+919000221261" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: '#b91c1c', color: '#fff', borderRadius: 14, padding: '16px 20px', fontSize: 17, fontWeight: 700, textDecoration: 'none', minHeight: 52 }}>
-                    📞 Call +91 90002 21261
-                  </a>
-                  <p style={{ fontSize: 12, color: 'var(--gray-mid)', textAlign: 'center', margin: '8px 0 20px' }}>Call first if this is urgent — we'll dispatch immediately.</p>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--gray-mid)', marginBottom: 6 }}>DESCRIBE WHAT'S HAPPENING (OPTIONAL)</label>
-                  <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Chest pain, fell at home, needs hospital…" style={INPUT_STYLE} />
-                  </div>
-                <div className="ce-sheet-footer">
-                  {err && <p style={{ color: '#b42318', fontSize: 13, margin: '0 0 10px' }}>{err}</p>}
-                  <button onClick={confirm} disabled={submitting} className="ce-btn ce-btn-full" style={{ padding: 16, background: '#b91c1c', color: '#fff', border: 'none', borderRadius: 'var(--radius-btn)', fontSize: 16, fontWeight: 700, cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
-                    {submitting ? <><Loader2 size={16} className="ce-spin" /> Alerting team…</> : 'Request emergency visit →'}
-                  </button>
-                  <p style={{ fontSize: 11, color: 'var(--gray-mid)', textAlign: 'center', margin: '8px 0 0' }}>Our team is alerted immediately — a companion will contact you within 30 minutes.</p>
-                </div>
-                </>
-              ) : (
-                /* ── REGULAR BOOKING ── */
-                <>
-                  <div className="ce-sheet-sticky-head">
-                    <div className="ce-sheet-handle" />
-                    <div className="flex items-center justify-between">
-                      <span style={{ fontSize: 18, fontWeight: 700 }}>{active.name}</span>
-                      <button onClick={close} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-mid)' }}><X size={22} /></button>
-                    </div>
-                    <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--forest)', margin: '2px 0 12px' }}>{active.price}</p>
-                  </div>
-                  <div className="ce-sheet-body">
-                  {/* ── Date picker ── */}
-                  <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', margin: '0 0 8px' }}>PICK A DAY</p>
-                  <div className="ce-noscroll" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
-                    {days.map(d => {
-                      const sel = date?.toDateString() === d.toDateString()
-                      return (
-                        <button
-                          key={d.toISOString()}
-                          onClick={() => setDate(d)}
-                          style={{ flexShrink: 0, minWidth: 52, borderRadius: 12, padding: '10px 16px', cursor: 'pointer', textAlign: 'center', background: sel ? 'var(--forest)' : '#fff', color: sel ? '#fff' : 'var(--gray-dark)', border: sel ? 'none' : '1px solid var(--gray-light)' }}
-                        >
-                          <div style={{ fontSize: 11, fontWeight: 600 }}>{d.toLocaleDateString('en-IN', { weekday: 'short' })}</div>
-                          <div style={{ fontSize: 16, fontWeight: 700 }}>{d.getDate()}</div>
-                        </button>
-                      )
-                    })}
-                    {/* trailing spacer so last card isn't flush against the scroll edge */}
-                    <div style={{ flexShrink: 0, width: 4 }} />
-                  </div>
-
-                  {/* ── Dynamic time slots ── */}
-                  <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', margin: '16px 0 8px' }}>
-                    PICK A TIME (IST) · <span style={{ fontWeight: 400 }}>min {LEAD_TIME_MIN / 60}h notice required</span>
-                  </p>
-                  {!date ? (
-                    <p style={{ fontSize: 13, color: 'var(--gray-mid)', margin: '0 0 8px' }}>Select a day above to see available times</p>
-                  ) : availableGroups.length === 0 ? (
-                    <div style={{ background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 12, padding: '10px 14px', fontSize: 13, color: '#92400E', marginBottom: 8 }}>
-                      No slots available today — please pick another day.
-                    </div>
-                  ) : (
-                    availableGroups.map(g => (
-                      <div key={g.label} style={{ marginBottom: 12 }}>
-                        <p style={{ fontSize: 11, color: 'var(--gray-mid)', margin: '0 0 6px', fontWeight: 600 }}>{g.label.toUpperCase()}</p>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                          {g.slots.map(s => {
-                            const sel = slot === s
-                            return (
-                              <button
-                                key={s}
-                                onClick={() => setSlot(s)}
-                                style={{
-                                  borderRadius: 10, padding: '9px 14px', cursor: 'pointer',
-                                  fontSize: 13, fontWeight: sel ? 700 : 500,
-                                  background: sel ? 'var(--forest)' : 'var(--cream)',
-                                  color: sel ? '#fff' : 'var(--gray-dark)',
-                                  border: sel ? 'none' : '1px solid var(--gray-light)',
-                                  minWidth: 64, textAlign: 'center',
-                                }}
-                              >
-                                {formatSlot(s)}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ))
-                  )}
-
-                  {/* ── Visiting address ── */}
-                  <div style={{ marginTop: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)' }}>
-                        VISITING ADDRESS
-                      </label>
-                      {hasSavedAddress && tempAddress === recipient.address && (
-                        <span style={{ fontSize: 11, fontWeight: 600, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: 999, display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <MapPin size={10} /> Saved · {recipient.name || 'profile'}
-                        </span>
-                      )}
-                      {hasSavedAddress && tempAddress !== recipient.address && (
-                        <button
-                          onClick={() => setTempAddress(recipient.address)}
-                          style={{ fontSize: 11, fontWeight: 600, color: 'var(--forest)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                        >
-                          Use saved ↩
-                        </button>
-                      )}
-                    </div>
-                    <input
-                      ref={addressInputRef}
-                      value={tempAddress}
-                      onChange={e => setTempAddress(e.target.value)}
-                      onFocus={() => {
-                        setTimeout(() => {
-                          addressInputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-                        }, 320)
-                      }}
-                      placeholder="Flat / house, area, landmark… (search or type)"
-                      style={INPUT_STYLE}
-                      autoComplete="off"
-                    />
-                    <p style={{ fontSize: 11, color: 'var(--gray-mid)', margin: '4px 0 0' }}>
-                      {import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? 'Start typing to search — pincode fills automatically.' : 'Full address including area and landmark.'}
-                    </p>
-                  </div>
-
-                  {/* ── Notes — plain textarea, stopPropagation on pointer events ── */}
-                  <div style={{ marginTop: 12 }}>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--gray-mid)', marginBottom: 6 }}>
-                      SPECIFIC INSTRUCTIONS <span style={{ fontWeight: 400 }}>(optional)</span>
-                    </label>
-                    <textarea
-                      value={notes}
-                      onChange={e => setNotes(e.target.value)}
-                      onClick={e => e.stopPropagation()}
-                      onTouchStart={e => e.stopPropagation()}
-                      placeholder="Access code, gate number, medications to remind, things companion should know…"
-                      rows={3}
-                      style={{ ...INPUT_STYLE, resize: 'none', display: 'block' }}
-                    />
-                  </div>
-
-                  {/* ── WhatsApp (only if missing) ── */}
-                  {showWhatsappInput && (
-                    <div style={{ marginTop: 12, background: '#FFF7ED', border: '1.5px solid #F59E0B', borderRadius: 14, padding: '14px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                        <AlertTriangle size={14} color="#B45309" />
-                        <p style={{ fontSize: 13, fontWeight: 700, color: '#B45309', margin: 0 }}>We need your WhatsApp to send the visit report</p>
-                      </div>
-                      <input
-                        value={tempWhatsapp}
-                        onChange={e => setTempWhatsapp(e.target.value)}
-                        placeholder="+91 98765 43210"
-                        type="tel"
-                        style={INPUT_STYLE}
-                      />
-                      <p style={{ fontSize: 11, color: 'var(--gray-mid)', margin: '4px 0 0' }}>We'll send confirmation and the visit report here.</p>
-                    </div>
-                  )}
-
-                  </div>{/* end ce-sheet-body */}
-                <div className="ce-sheet-footer">
-                  {err && <p style={{ color: '#b42318', fontSize: 13, margin: '0 0 10px' }}>{err}</p>}
-                  <button onClick={confirm} disabled={submitting} className="ce-btn ce-btn-primary ce-btn-full" style={{ padding: 16 }}>
-                    {submitting ? <><Loader2 size={16} className="ce-spin" /> Sending…</> : 'Confirm Booking →'}
-                  </button>
-                  <p style={{ fontSize: 11, color: 'var(--gray-mid)', textAlign: 'center', margin: '8px 0 0' }}>No charge now — we confirm a companion, then send a payment link.</p>
-                </div>
-                </>
-              )
-            ) : (
-              /* ── Success state ── */
-              <div style={{ textAlign: 'center', padding: '24px 20px', paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
-                <span className="ce-check-pop" style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--sage)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Check size={32} color="var(--forest)" strokeWidth={3} />
-                </span>
-                <p style={{ fontSize: 22, fontWeight: 700, color: 'var(--black)', margin: '16px 0 4px' }}>Request sent</p>
-                {active.id === 'emergency_support_visit' ? (
-                  <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: 0 }}>Our team has been alerted. A companion will contact you within 30 minutes.</p>
-                ) : doneNeedsDetails ? (
-                  <>
-                    <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: '0 0 10px' }}>
-                      Your booking is saved. We'll call to confirm{doneMissing.address ? ' — our team will verify the address' : ''} before dispatching a companion.
-                    </p>
-                    <div style={{ background: '#FFF7ED', border: '1px solid #F59E0B', borderRadius: 12, padding: '10px 14px', fontSize: 13, color: '#B45309' }}>
-                      To confirm faster, please message us on WhatsApp with your {[doneMissing.address && 'address', doneMissing.whatsapp && 'contact number'].filter(Boolean).join(' and ')}.
-                    </div>
-                  </>
-                ) : (
-                  <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: 0 }}>We'll confirm a companion within 2 hours.</p>
-                )}
-                <button onClick={close} className="ce-btn ce-btn-primary ce-btn-full" style={{ marginTop: 20, padding: 14 }}>Done</button>
-              </div>
-            )}
-          </div>
-        </div>
-      , document.body)}
     </div>
   )
 }
