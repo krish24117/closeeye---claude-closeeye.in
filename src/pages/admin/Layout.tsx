@@ -195,29 +195,29 @@ export function AdminLayout() {
         {/* Mobile bottom bar */}
         <nav className="adm-bottombar">
           <NavLink to="/admin" end className={({ isActive }) => isActive ? 'is-active' : ''}>
-            <span className="adm-bnav-icon"><Home size={24} strokeWidth={1.8} /></span>
+            <span className="adm-bnav-icon"><Home size={28} strokeWidth={1.7} /></span>
             <span className="adm-bnav-label">Home</span>
           </NavLink>
           <NavLink to="/admin/visits" className={({ isActive }) => isActive ? 'is-active' : ''}>
             <span className="adm-bnav-icon">
-              <Calendar size={24} strokeWidth={1.8} />
+              <Calendar size={28} strokeWidth={1.7} />
               {counts.pendingVisits > 0 && <span className="adm-bnav-badge">{counts.pendingVisits > 9 ? '9+' : counts.pendingVisits}</span>}
             </span>
             <span className="adm-bnav-label">Visits</span>
           </NavLink>
           <NavLink to="/admin/queries" className={({ isActive }) => isActive ? 'is-active' : ''}>
             <span className="adm-bnav-icon">
-              <MessageCircle size={24} strokeWidth={1.8} />
+              <MessageCircle size={28} strokeWidth={1.7} />
               {counts.unreviewedQueries > 0 && <span className="adm-bnav-badge">{counts.unreviewedQueries > 9 ? '9+' : counts.unreviewedQueries}</span>}
             </span>
             <span className="adm-bnav-label">Queries</span>
           </NavLink>
           <NavLink to="/admin/families" className={({ isActive }) => isActive ? 'is-active' : ''}>
-            <span className="adm-bnav-icon"><Users size={24} strokeWidth={1.8} /></span>
+            <span className="adm-bnav-icon"><Users size={28} strokeWidth={1.7} /></span>
             <span className="adm-bnav-label">Families</span>
           </NavLink>
           <button onClick={() => setOpen(true)}>
-            <span className="adm-bnav-icon"><Menu size={24} strokeWidth={1.8} /></span>
+            <span className="adm-bnav-icon"><Menu size={28} strokeWidth={1.7} /></span>
             <span className="adm-bnav-label">More</span>
           </button>
         </nav>
