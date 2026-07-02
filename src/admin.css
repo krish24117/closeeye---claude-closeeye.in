@@ -184,6 +184,9 @@
 
 /* ── Mobile bottom bar ──────────────────────────────────────────── */
 .adm-bottombar { display: none; }
+.adm-bnav-icon { width: 44px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: background 140ms ease; position: relative; }
+.adm-bnav-label { font-size: 11px; font-weight: 600; letter-spacing: 0.01em; line-height: 1; }
+.adm-bnav-badge { position: absolute; top: 0; right: 2px; min-width: 16px; height: 16px; border-radius: 8px; background: #EF4444; border: 2px solid #fff; font-size: 9px; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center; padding: 0 3px; }
 
 /* ── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 767px) {
@@ -192,12 +195,28 @@
   .adm-topbar { height: calc(56px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); padding-left: 16px; padding-right: 16px; }
   .adm-hamburger { display: flex; }
   .adm-date { display: none; }
-  .adm-content { padding: 16px; padding-bottom: 80px; }
+  .adm-content { padding: 16px; padding-bottom: 96px; }
   .adm-grid-4 { grid-template-columns: 1fr 1fr; }
   .adm-grid-3, .adm-grid-2 { grid-template-columns: 1fr; }
-  .adm-bottombar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #fff; border-top: 1px solid var(--line); z-index: 55; padding-bottom: env(safe-area-inset-bottom); }
-  .adm-bottombar a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--muted); text-decoration: none; font-size: 10px; font-weight: 600; }
+  .adm-bottombar {
+    display: flex; position: fixed; bottom: 0; left: 0; right: 0;
+    height: calc(68px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: rgba(255,255,255,0.94);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0,0,0,0.08);
+    z-index: 55;
+  }
+  .adm-bottombar a, .adm-bottombar button {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; color: #9CA3AF; text-decoration: none;
+    border: none; background: none; cursor: pointer;
+    padding: 8px 4px; min-width: 0;
+    transition: color 140ms ease;
+  }
   .adm-bottombar a.is-active { color: var(--forest); }
+  .adm-bottombar a.is-active .adm-bnav-icon { background: rgba(14,42,31,0.09); }
+  .adm-bottombar button:active, .adm-bottombar a:active { opacity: 0.6; }
   .adm-slideover { width: 100%; }
   .adm-filterbar { padding: 12px 16px; }
   .adm-pipe { grid-template-columns: repeat(4, 1fr); }

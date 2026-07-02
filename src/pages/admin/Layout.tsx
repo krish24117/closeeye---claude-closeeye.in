@@ -194,11 +194,32 @@ export function AdminLayout() {
 
         {/* Mobile bottom bar */}
         <nav className="adm-bottombar">
-          <NavLink to="/admin" end className={({ isActive }) => isActive ? 'is-active' : ''}><Home size={20} /> Home</NavLink>
-          <NavLink to="/admin/visits" className={({ isActive }) => isActive ? 'is-active' : ''}><PersonStanding size={20} /> Visits</NavLink>
-          <NavLink to="/admin/queries" className={({ isActive }) => isActive ? 'is-active' : ''}><MessageCircle size={20} /> Queries</NavLink>
-          <NavLink to="/admin/families" className={({ isActive }) => isActive ? 'is-active' : ''}><Users size={20} /> Families</NavLink>
-          <button onClick={() => setOpen(true)} style={{ flex: 1, background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, color: 'var(--gray-mid)', fontSize: 10, cursor: 'pointer' }}><Menu size={20} /> More</button>
+          <NavLink to="/admin" end className={({ isActive }) => isActive ? 'is-active' : ''}>
+            <span className="adm-bnav-icon"><Home size={24} strokeWidth={1.8} /></span>
+            <span className="adm-bnav-label">Home</span>
+          </NavLink>
+          <NavLink to="/admin/visits" className={({ isActive }) => isActive ? 'is-active' : ''}>
+            <span className="adm-bnav-icon">
+              <Calendar size={24} strokeWidth={1.8} />
+              {counts.pendingVisits > 0 && <span className="adm-bnav-badge">{counts.pendingVisits > 9 ? '9+' : counts.pendingVisits}</span>}
+            </span>
+            <span className="adm-bnav-label">Visits</span>
+          </NavLink>
+          <NavLink to="/admin/queries" className={({ isActive }) => isActive ? 'is-active' : ''}>
+            <span className="adm-bnav-icon">
+              <MessageCircle size={24} strokeWidth={1.8} />
+              {counts.unreviewedQueries > 0 && <span className="adm-bnav-badge">{counts.unreviewedQueries > 9 ? '9+' : counts.unreviewedQueries}</span>}
+            </span>
+            <span className="adm-bnav-label">Queries</span>
+          </NavLink>
+          <NavLink to="/admin/families" className={({ isActive }) => isActive ? 'is-active' : ''}>
+            <span className="adm-bnav-icon"><Users size={24} strokeWidth={1.8} /></span>
+            <span className="adm-bnav-label">Families</span>
+          </NavLink>
+          <button onClick={() => setOpen(true)}>
+            <span className="adm-bnav-icon"><Menu size={24} strokeWidth={1.8} /></span>
+            <span className="adm-bnav-label">More</span>
+          </button>
         </nav>
 
         {searchOpen && <GlobalSearch onClose={() => setSearchOpen(false)} navigate={navigate} />}
