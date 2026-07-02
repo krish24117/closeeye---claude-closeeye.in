@@ -180,8 +180,8 @@ export function PublicAskPage() {
         <div style={{
           maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box',
           padding: hasMessages
-            ? 'max(16px, 16px) 16px calc(128px + env(safe-area-inset-bottom, 0px))'
-            : '0 16px calc(128px + env(safe-area-inset-bottom, 0px))',
+            ? 'max(16px, 16px) 16px calc(160px + env(safe-area-inset-bottom, 0px))'
+            : '0 16px calc(160px + env(safe-area-inset-bottom, 0px))',
         }}>
 
           {/* ── Empty state ─────────────────────────────────────────────────── */}
@@ -345,7 +345,7 @@ export function PublicAskPage() {
         boxShadow: '0 -4px 24px rgba(14,42,31,0.08)',
         zIndex: 200,
         padding: `12px 14px`,
-        paddingBottom: `max(env(safe-area-inset-bottom, 0px), 12px)`,
+        paddingBottom: `max(env(safe-area-inset-bottom, 0px), 28px)`,
       }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', maxWidth: 680, margin: '0 auto' }}>
           <textarea
@@ -354,14 +354,14 @@ export function PublicAskPage() {
             onChange={autoResize}
             onKeyDown={handleKey}
             placeholder="Ask about your parent's health or medications…"
-            rows={1}
+            rows={2}
             style={{
               flex: 1, resize: 'none', overflow: 'hidden',
               background: '#F4F6F4',
               border: '1.5px solid rgba(14,42,31,0.12)',
               borderRadius: 16, padding: '12px 14px',
               fontSize: 16, fontFamily: 'inherit', lineHeight: 1.5,
-              outline: 'none', minHeight: 48, maxHeight: 140,
+              outline: 'none', minHeight: 64, maxHeight: 140,
               color: '#0E2A1F', boxSizing: 'border-box',
               transition: 'border-color 0.15s',
             }}
