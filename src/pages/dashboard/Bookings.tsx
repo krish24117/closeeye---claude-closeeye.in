@@ -1,9 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/components/ui/Toast'
-import { Calendar, CheckCircle, Clock, AlertCircle, XCircle, ChevronRight, Plus, Car, UserCheck, AlertTriangle } from 'lucide-react'
+import {
+  Calendar, CheckCircle, Clock, AlertCircle, XCircle,
+  ChevronRight, Plus, Car, UserCheck, AlertTriangle, Loader2,
+} from 'lucide-react'
 import { loadRazorpayScript } from '@/lib/razorpay'
 import { formatIsoTime } from '@/lib/formatTime'
 
@@ -40,129 +43,75 @@ interface BookingRequest {
   created_at: string
 }
 
-// ── Status config ──────────────────────────────────────────────────────────────
+// ── Service emoji ──────────────────────────────────────────────────────────────
 
-const STATUS_CFG: Record<string, { label: string; sub: string; pill: string; icon: React.ReactNode }> = {
-  pending_confirmation: {
-    label: 'Pending confirmation',
-    sub:   'We\'re confirming a companion. You\'ll get a WhatsApp payment link shortly.',
-    pill:  'bg-amber-100 text-amber-700',
-    icon:  <Clock size={13} />,
-  },
-  requested: {
-    label: 'Request received',
-    sub:   'Confirming a companion — usually within 2 hours.',
-    pill:  'bg-amber-100 text-amber-700',
-    icon:  <Clock size={13} />,
-  },
-  needs_details: {
-    label: 'Details needed',
-    sub:   'We need your address or WhatsApp to proceed.',
-    pill:  'bg-orange-100 text-orange-700',
-    icon:  <AlertCircle size={13} />,
-  },
-  confirmed: {
-    label: 'Confirmed',
-    sub:   'Your visit has been confirmed.',
-    pill:  'bg-blue-100 text-blue-700',
-    icon:  <CheckCircle size={13} />,
-  },
-  companion_confirmed: {
-    label: 'Payment link sent',
-    sub:   'Check your WhatsApp — your secure payment link is there.',
-    pill:  'bg-blue-100 text-blue-700',
-    icon:  <CheckCircle size={13} />,
-  },
-  paid: {
-    label: 'Visit confirmed ✓',
-    sub:   "Your visit is locked. We'll be there.",
-    pill:  'bg-green-100 text-green-700',
-    icon:  <CheckCircle size={13} />,
-  },
-  cancelled: {
-    label: 'Cancelled',
-    sub:   'This booking was cancelled.',
-    pill:  'bg-red-100 text-red-600',
-    icon:  <XCircle size={13} />,
-  },
+const SERVICE_EMOJI: Record<string, string> = {
+  home_visit:                    '🏠',
+  doctor_visit_support:          '👨‍⚕️',
+  hospital_assistance_half_day:  '🏥',
+  hospital_assistance_full_day:  '🏥',
+  emergency_support_visit:       '🚨',
+  grocery_medicine_assistance:   '🛒',
+  home_maintenance_coordination: '🔧',
 }
 
-function cfg(status: string) {
-  return STATUS_CFG[status] ?? {
-    label: status.replace(/_/g, ' '),
-    sub: '',
-    pill: 'bg-gray-100 text-gray-500',
-    icon: <Clock size={13} />,
-  }
+// ── Status badge config ────────────────────────────────────────────────────────
+
+const BADGE_MAP: Record<string, { label: string; cls: string }> = {
+  pending_confirmation: { label: 'Pending',        cls: 'ce-mc-badge-amber'  },
+  requested:            { label: 'Received',        cls: 'ce-mc-badge-amber'  },
+  needs_details:        { label: 'Needs details',   cls: 'ce-mc-badge-orange' },
+  confirmed:            { label: 'Confirmed',       cls: 'ce-mc-badge-blue'   },
+  companion_confirmed:  { label: 'Pay now',         cls: 'ce-mc-badge-blue'   },
+  paid:                 { label: 'Confirmed ✓',     cls: 'ce-mc-badge-green'  },
+  completed:            { label: 'Completed',       cls: 'ce-mc-badge-teal'   },
+  cancelled:            { label: 'Cancelled',       cls: 'ce-mc-badge-gray'   },
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function fmtDate(iso: string | null) {
-  if (!iso) return null
-  const date = new Date(iso).toLocaleDateString('en-IN', {
-    weekday: 'long', day: 'numeric', month: 'long',
-    timeZone: 'Asia/Kolkata',
-  })
-  return `${date} at ${formatIsoTime(iso)}`
+function getBadge(status: string) {
+  return BADGE_MAP[status] ?? { label: status.replace(/_/g, ' '), cls: 'ce-mc-badge-gray' }
 }
 
-function fmtShort(iso: string) {
+// ── Date helpers ───────────────────────────────────────────────────────────────
+
+function istDate(iso: string | null): string {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+}
+function todayIst(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+}
+function tomorrowIst(): string {
+  const d = new Date(); d.setDate(d.getDate() + 1)
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+}
+function fmtCompact(iso: string | null): string {
+  if (!iso) return 'Pending schedule'
+  const d = istDate(iso)
+  const time = formatIsoTime(iso)
+  if (d === todayIst()) return `Today · ${time}`
+  if (d === tomorrowIst()) return `Tomorrow · ${time}`
   return new Date(iso).toLocaleDateString('en-IN', {
-    day: 'numeric', month: 'short', year: 'numeric',
-    timeZone: 'Asia/Kolkata',
-  })
+    weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata',
+  }) + ' · ' + time
 }
 
-// ── Skeleton ───────────────────────────────────────────────────────────────────
-
-function BookingsSkeleton() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 80 }}>
-      {[1, 2].map(i => (
-        <div key={i} className="ce-bk-skel">
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid #F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div className="ce-bk-skel-bar" style={{ height: 24, width: 130, borderRadius: 100 }} />
-            <div className="ce-bk-skel-bar" style={{ height: 22, width: 56 }} />
-          </div>
-          <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div className="ce-bk-skel-bar" style={{ height: 18, width: '65%' }} />
-            <div className="ce-bk-skel-bar" style={{ height: 13, width: '40%' }} />
-            <div className="ce-bk-skel-bar" style={{ height: 13, width: '55%', marginTop: 4 }} />
-          </div>
-          <div style={{ padding: '10px 16px', borderTop: '1px solid #F5F5F5', display: 'flex', justifyContent: 'space-between' }}>
-            <div className="ce-bk-skel-bar" style={{ height: 11, width: 90 }} />
-            <div className="ce-bk-skel-bar" style={{ height: 11, width: 40 }} />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ── Visit status timeline ─────────────────────────────────────────────────────
+// ── Active visit timeline (old booking system) ─────────────────────────────────
 
 const TIMELINE_STEPS: { key: string; label: string; icon: React.ReactNode }[] = [
-  { key: 'confirmed',          label: 'Confirmed',         icon: <CheckCircle size={14} /> },
-  { key: 'companion_assigned', label: 'Assigned',          icon: <UserCheck size={14} /> },
-  { key: 'on_the_way',         label: 'On the way',        icon: <Car size={14} /> },
-  { key: 'in_progress',        label: 'In progress',       icon: <Clock size={14} /> },
-  { key: 'completed',          label: 'Done',              icon: <CheckCircle size={14} /> },
+  { key: 'confirmed',          label: 'Confirmed',   icon: <CheckCircle size={12} /> },
+  { key: 'companion_assigned', label: 'Assigned',    icon: <UserCheck size={12} />   },
+  { key: 'on_the_way',         label: 'On the way',  icon: <Car size={12} />         },
+  { key: 'in_progress',        label: 'In progress', icon: <Clock size={12} />       },
+  { key: 'completed',          label: 'Done',        icon: <CheckCircle size={12} /> },
 ]
-
 const STATUS_ORDER = ['confirmed','companion_assigned','on_the_way','in_progress','completed']
 
 function visitStatusLabel(status: string): string {
   const map: Record<string, string> = {
-    pending:            'Pending',
-    confirmed:          'Confirmed',
-    companion_assigned: 'Companion assigned',
-    on_the_way:         'On the way',
-    in_progress:        'Visit in progress',
-    completed:          'Visit complete',
-    delayed:            'Delayed',
-    rescheduled:        'Rescheduled',
-    cancelled:          'Cancelled',
+    pending: 'Pending', confirmed: 'Confirmed', companion_assigned: 'Companion assigned',
+    on_the_way: 'On the way', in_progress: 'Visit in progress',
+    completed: 'Visit complete', delayed: 'Delayed', rescheduled: 'Rescheduled', cancelled: 'Cancelled',
   }
   return map[status] ?? status.replace(/_/g, ' ')
 }
@@ -189,14 +138,12 @@ function StatusTimeline({ visit }: { visit: ActiveVisit }) {
       className="ce-bk-track"
       style={{
         borderLeft: `4px solid ${visit.attention_needed ? '#EF4444' : visit.status === 'completed' ? '#22C55E' : 'var(--forest)'}`,
+        marginBottom: 12,
       }}
     >
-      {/* Header */}
       <div className="ce-bk-track-hdr">
         <div>
-          <p className="ce-bk-track-name">
-            {visit.loved_ones?.full_name || 'Visit'}
-          </p>
+          <p className="ce-bk-track-name">{visit.loved_ones?.full_name || 'Visit'}</p>
           {visit.companions?.full_name && (
             <p className="ce-bk-track-time">👤 {visit.companions.full_name}{timeStr ? ` · ${timeStr}` : ''}</p>
           )}
@@ -204,49 +151,33 @@ function StatusTimeline({ visit }: { visit: ActiveVisit }) {
             <p className="ce-bk-track-time">{timeStr}</p>
           )}
         </div>
-        <span className="ce-bk-track-badge" style={badgeStyle}>
-          {visitStatusLabel(visit.status)}
-        </span>
+        <span className="ce-bk-track-badge" style={badgeStyle}>{visitStatusLabel(visit.status)}</span>
       </div>
-
-      {/* Exception state */}
       {isException && (
-        <div style={{
-          background: '#FFFBEB', border: '1px solid #FDE68A',
-          borderRadius: 10, padding: '8px 12px', marginBottom: 14,
-          display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#78350F',
-        }}>
-          <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+        <div style={{ background:'#FFFBEB', border:'1px solid #FDE68A', borderRadius:10, padding:'8px 12px', marginBottom:14, display:'flex', alignItems:'flex-start', gap:8, fontSize:13, color:'#78350F' }}>
+          <AlertTriangle size={14} style={{ flexShrink:0, marginTop:1 }} />
           <span>
             {visit.status === 'delayed' && 'Your visit has been delayed.'}
-            {visit.status === 'rescheduled' && `Visit rescheduled${scheduledAt ? ` to ${new Date(scheduledAt).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })} at ${formatIsoTime(scheduledAt)}` : ''}.`}
+            {visit.status === 'rescheduled' && `Visit rescheduled${scheduledAt ? ` to ${new Date(scheduledAt).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',timeZone:'Asia/Kolkata'})} at ${formatIsoTime(scheduledAt)}` : ''}.`}
             {visit.status === 'cancelled' && 'This visit has been cancelled.'}
             {latestNote?.note && ` ${latestNote.note}`}
           </span>
         </div>
       )}
-
-      {/* Timeline steps */}
       {!isException && visit.status !== 'cancelled' && (
         <div className="ce-bk-steps">
           {TIMELINE_STEPS.map((step, i) => {
-            const stepIdx  = STATUS_ORDER.indexOf(step.key)
-            const isDone   = currentIdx > stepIdx || visit.status === 'completed'
+            const stepIdx = STATUS_ORDER.indexOf(step.key)
+            const isDone = currentIdx > stepIdx || visit.status === 'completed'
             const isActive = visit.status === step.key || (visit.status === 'delayed' && stepIdx === currentIdx)
-
             const dotClass = isDone ? 'done' : isActive ? 'active' : 'future'
-
             return (
-              <div key={step.key} style={{ display: 'flex', alignItems: 'flex-start', flex: i < TIMELINE_STEPS.length - 1 ? 1 : undefined, position: 'relative' }}>
+              <div key={step.key} style={{ display:'flex', alignItems:'flex-start', flex: i < TIMELINE_STEPS.length - 1 ? 1 : undefined, position:'relative' }}>
                 <div className="ce-bk-step">
-                  <div className={`ce-bk-dot ${dotClass}`}>
-                    {step.icon}
-                  </div>
+                  <div className={`ce-bk-dot ${dotClass}`}>{step.icon}</div>
                   <p className={`ce-bk-dot-lbl ${dotClass}`}>{step.label}</p>
                 </div>
-                {i < TIMELINE_STEPS.length - 1 && (
-                  <div className={`ce-bk-connector ${isDone ? 'done' : 'future'}`} />
-                )}
+                {i < TIMELINE_STEPS.length - 1 && <div className={`ce-bk-connector ${isDone ? 'done' : 'future'}`} />}
               </div>
             )
           })}
@@ -262,10 +193,12 @@ function PayButton({
   booking,
   profile,
   onPaid,
+  compact,
 }: {
   booking: BookingRequest
   profile: { full_name?: string | null; whatsapp_number?: string | null } | null
   onPaid: (id: string) => void
+  compact?: boolean
 }) {
   const { showToast } = useToast()
   const [loading, setLoading] = useState(false)
@@ -276,39 +209,21 @@ function PayButton({
     try {
       const rzLoaded = await loadRazorpayScript()
       if (!rzLoaded) { showToast('Could not load payment gateway — please try again', 'error'); return }
-
       const { data, error } = await supabase.functions.invoke('create-booking-payment-order', {
         body: { booking_request_id: booking.id },
       })
-      if (error || !data?.order_id) {
-        showToast(data?.error || 'Could not start payment — try again', 'error')
-        return
-      }
-
+      if (error || !data?.order_id) { showToast(data?.error || 'Could not start payment — try again', 'error'); return }
       const { order_id, key_id, amount_paise } = data as { order_id: string; key_id: string; amount_paise: number }
-
       const options = {
-        key: key_id,
-        amount: amount_paise,
-        currency: 'INR',
-        order_id,
+        key: key_id, amount: amount_paise, currency: 'INR', order_id,
         name: 'Close Eye',
         description: `${booking.service_name} for ${booking.recipient_name}`,
-        prefill: {
-          name: profile?.full_name || '',
-          contact: booking.requester_whatsapp || profile?.whatsapp_number || '',
-        },
+        prefill: { name: profile?.full_name || '', contact: booking.requester_whatsapp || profile?.whatsapp_number || '' },
         theme: { color: '#0E2A1F' },
-        handler: () => {
-          showToast('Payment received — confirming your visit…', 'success')
-          onPaid(booking.id)
-        },
+        handler: () => { showToast('Payment received — confirming your visit…', 'success'); onPaid(booking.id) },
       }
-
       const rzp = new window.Razorpay(options) as { open(): void; on(event: string, cb: () => void): void }
-      rzp.on('payment.failed', () => {
-        showToast('Payment did not complete — please try again', 'error')
-      })
+      rzp.on('payment.failed', () => { showToast('Payment did not complete — please try again', 'error') })
       rzp.open()
     } catch (err) {
       console.error('Payment error:', err)
@@ -322,127 +237,157 @@ function PayButton({
     ? `₹${Math.round(booking.amount_paise / 100).toLocaleString('en-IN')}`
     : ''
 
+  if (compact) {
+    return (
+      <button onClick={(e) => { e.preventDefault(); handlePay() }} disabled={loading}
+        className="ce-mc-hero-cta" style={{ background: '#A8D5B5', color: '#0E2A1F' }}>
+        {loading ? <Loader2 size={13} className="ce-spin" /> : null}
+        {loading ? 'Opening…' : `Pay ${amountStr}`}
+      </button>
+    )
+  }
+
   return (
-    <button
-      onClick={handlePay}
-      disabled={loading}
-      className="ce-bk-pay-btn"
-    >
+    <button onClick={handlePay} disabled={loading} className="ce-bk-pay-btn">
       {loading ? 'Opening payment…' : `Pay ${amountStr} to confirm →`}
     </button>
   )
 }
 
-// ── Booking card ───────────────────────────────────────────────────────────────
+// ── Skeleton ───────────────────────────────────────────────────────────────────
 
-function BookingCard({
-  booking,
-  profile,
-  optimisticPaid,
-  onPaid,
+function BookingsSkeleton() {
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{ background:'#fff', border:'1px solid #F0EBE1', borderRadius:16, padding:'14px 16px', display:'flex', alignItems:'center', gap:12, minHeight:72 }}>
+          <div className="ce-bk-skel-bar" style={{ width:40, height:40, borderRadius:12, flexShrink:0 }} />
+          <div style={{ flex:1, display:'flex', flexDirection:'column', gap:8 }}>
+            <div className="ce-bk-skel-bar" style={{ height:14, width:'55%', borderRadius:6 }} />
+            <div className="ce-bk-skel-bar" style={{ height:11, width:'38%', borderRadius:6 }} />
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:6, alignItems:'flex-end' }}>
+            <div className="ce-bk-skel-bar" style={{ height:14, width:52, borderRadius:6 }} />
+            <div className="ce-bk-skel-bar" style={{ height:18, width:70, borderRadius:100 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── Compact booking card ────────────────────────────────────────────────────────
+
+function CompactCard({ booking, optimisticPaid }: { booking: BookingRequest; optimisticPaid: boolean }) {
+  const status = optimisticPaid ? 'paid' : booking.status
+  const b = getBadge(status)
+  const emoji = SERVICE_EMOJI[booking.service_id] || '🏥'
+  const amountStr = booking.amount_paise
+    ? `₹${Math.round(booking.amount_paise / 100).toLocaleString('en-IN')}`
+    : null
+  const isCompleted = status === 'completed'
+  const when = fmtCompact(booking.scheduled_at)
+
+  return (
+    <Link
+      to={`/dashboard/bookings/${booking.id}`}
+      className="ce-mc-card"
+      aria-label={`${booking.service_name} — ${b.label}`}
+    >
+      <div className="ce-mc-icon" aria-hidden="true">{emoji}</div>
+      <div className="ce-mc-card-body">
+        <p className="ce-mc-card-name">{booking.service_name}</p>
+        <p className="ce-mc-card-when">{isCompleted ? 'Completed · tap for report' : when}</p>
+      </div>
+      <div className="ce-mc-card-right">
+        {amountStr && <span className="ce-mc-card-price">{amountStr}</span>}
+        <span className={`ce-mc-badge ${b.cls}`}>{b.label}</span>
+      </div>
+      <ChevronRight size={16} className="ce-mc-chevron" aria-hidden="true" />
+    </Link>
+  )
+}
+
+// ── Today hero card ────────────────────────────────────────────────────────────
+
+function TodayHeroCard({
+  booking, profile, optimisticPaid, onPaid,
 }: {
   booking: BookingRequest
   profile: { full_name?: string | null; whatsapp_number?: string | null } | null
   optimisticPaid: boolean
   onPaid: (id: string) => void
 }) {
+  const navigate = useNavigate()
   const status = optimisticPaid ? 'paid' : booking.status
-  const { label, sub, pill, icon } = cfg(status)
-  const isPaid       = status === 'paid'
-  const isComp       = status === 'companion_confirmed'
-  const isNeedsDetails = status === 'needs_details'
-  const isCancelled  = status === 'cancelled'
-  const dateStr = fmtDate(booking.scheduled_at)
-
-  const amountStr = booking.amount_paise
-    ? `₹${Math.round(booking.amount_paise / 100).toLocaleString('en-IN')}`
-    : null
-
-  const topBg = isPaid ? '#F0FDF4' : isComp ? '#EFF6FF' : isCancelled ? '#FAFAFA' : '#FAFAFA'
+  const b = getBadge(status)
+  const emoji = SERVICE_EMOJI[booking.service_id] || '🏥'
+  const needsPay = status === 'companion_confirmed' && !optimisticPaid
+  const timeStr = booking.scheduled_at ? formatIsoTime(booking.scheduled_at) : 'Time TBC'
 
   return (
-    <div className="ce-bk-card">
-      {/* Status strip + amount */}
-      <div className="ce-bk-top" style={{ background: topBg }}>
-        <span className={`ce-bk-pill ${pill}`}>
-          {icon}&nbsp;{label}
-        </span>
-        {amountStr && (
-          <div>
-            <span className="ce-bk-amount-val">{amountStr}</span>
-            <div
-              className="ce-bk-amount-lbl"
-              style={{ color: isPaid ? '#16A34A' : isComp ? '#2563EB' : '#9CA3AF' }}
-            >
-              {isPaid ? '✓ Paid' : isComp ? 'Due now' : 'Pending'}
-            </div>
-          </div>
-        )}
-        {optimisticPaid && !booking.paid_at && !amountStr && (
-          <span style={{ fontSize: 11, color: '#6B7280' }}>Confirming…</span>
-        )}
-      </div>
-
-      {/* Body */}
-      <div className="ce-bk-body">
-        <p className="ce-bk-svc">{booking.service_name}</p>
-        <p className="ce-bk-for">For {booking.recipient_name}</p>
-
-        {dateStr && (
-          <div className="ce-bk-meta">
-            <Calendar size={13} color="#9CA3AF" />
-            <span>{dateStr}</span>
-          </div>
-        )}
-
+    <div className="ce-mc-hero ce-mc-fadein" aria-label={`Today's visit: ${booking.service_name}`}>
+      <div className="ce-mc-hero-body">
+        <p className="ce-mc-hero-label">Today's visit</p>
+        <p className="ce-mc-hero-svc">{emoji} {booking.service_name}</p>
+        <p className="ce-mc-hero-meta">
+          {timeStr}{booking.recipient_name ? ` · For ${booking.recipient_name}` : ''}
+        </p>
         {booking.companion_name && (
-          <div className="ce-bk-meta">
-            <UserCheck size={13} color="#9CA3AF" />
-            <span style={{ fontWeight: 600 }}>{booking.companion_name}</span>
+          <div className="ce-mc-hero-comp">
+            <div className="ce-mc-hero-comp-av" aria-hidden="true">
+              {booking.companion_name.charAt(0).toUpperCase()}
+            </div>
+            <span className="ce-mc-hero-comp-name">{booking.companion_name} · Your companion</span>
           </div>
         )}
-
-        {/* Status message */}
-        {!isPaid && sub && (
-          <p className="ce-bk-sub">{sub}</p>
-        )}
-        {isPaid && (
-          <p className="ce-bk-sub" style={{ color: '#16A34A', fontWeight: 600 }}>
-            Your visit is confirmed. We'll be there.
-          </p>
-        )}
-
-        {/* Payment link notice */}
-        {isComp && !optimisticPaid && (
-          <div className="ce-bk-wa-cta">
-            💳 A secure payment link has been sent to your WhatsApp. Pay there to lock in your visit.
+        {!booking.companion_name && status !== 'cancelled' && (
+          <div className="ce-mc-hero-comp">
+            <div className="ce-mc-hero-comp-av" aria-hidden="true">⏳</div>
+            <span className="ce-mc-hero-comp-name">Companion being assigned…</span>
           </div>
         )}
-
-        {/* Needs details CTA */}
-        {isNeedsDetails && (
-          <Link
-            to="/dashboard/profile"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 10, fontSize: 13, fontWeight: 700, color: 'var(--forest)', textDecoration: 'none' }}
+      </div>
+      <div className="ce-mc-hero-footer">
+        <span className={`ce-mc-badge ${b.cls}`}>{b.label}</span>
+        <div style={{ display:'flex', gap:8 }}>
+          {needsPay && (
+            <PayButton booking={booking} profile={profile} onPaid={onPaid} compact />
+          )}
+          <button
+            className="ce-mc-hero-cta"
+            onClick={() => navigate(`/dashboard/bookings/${booking.id}`)}
+            aria-label={`View details for ${booking.service_name}`}
           >
-            Update your profile <ChevronRight size={13} />
-          </Link>
-        )}
+            View details <ChevronRight size={14} aria-hidden="true" />
+          </button>
+        </div>
       </div>
+    </div>
+  )
+}
 
-      {/* Footer */}
-      <div className="ce-bk-footer">
-        <span className="ce-bk-footer-date">Requested {fmtShort(booking.created_at)}</span>
-        {!['paid', 'cancelled', 'needs_details'].includes(status) && (
-          <span className="ce-bk-live">
-            Live&nbsp;
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ADE80', display: 'inline-block' }} className="ce-pulse-dot" />
-          </span>
-        )}
-        {optimisticPaid && !booking.paid_at && (
-          <span style={{ fontSize: 11, color: '#6B7280' }}>Confirming…</span>
-        )}
+// ── Empty state ────────────────────────────────────────────────────────────────
+
+function EmptyState() {
+  return (
+    <div className="ce-bk-empty ce-mc-fadein">
+      <div className="ce-bk-empty-icon">
+        <Calendar size={26} color="#16A34A" />
       </div>
+      <p style={{ fontWeight:700, fontSize:18, color:'var(--forest)', margin:'0 0 8px', letterSpacing:'-0.01em' }}>
+        No bookings yet
+      </p>
+      <p style={{ fontSize:14, color:'#9CA3AF', margin:'0 0 24px', lineHeight:1.55, maxWidth:260 }}>
+        Book a companion visit for your loved one — we'll send a WhatsApp report after every visit.
+      </p>
+      <Link
+        to="/dashboard/book"
+        style={{ display:'inline-flex', alignItems:'center', gap:6, background:'var(--forest)', color:'#FAF7F2', borderRadius:100, padding:'13px 26px', fontSize:14, fontWeight:700, textDecoration:'none' }}
+        aria-label="Book your first care service"
+      >
+        <Plus size={14} aria-hidden="true" /> Book a visit
+      </Link>
     </div>
   )
 }
@@ -451,15 +396,14 @@ function BookingCard({
 
 export function DashboardBookings() {
   const { user, profile } = useAuth()
-  const [bookings, setBookings]               = useState<BookingRequest[]>([])
-  const [activeVisits, setActiveVisits]       = useState<ActiveVisit[]>([])
-  const [loading, setLoading]                 = useState(true)
-  const [error, setError]                     = useState<string | null>(null)
-  const [optimisticPaid, setOptimisticPaid]   = useState<Set<string>>(new Set())
+  const [bookings, setBookings]             = useState<BookingRequest[]>([])
+  const [activeVisits, setActiveVisits]     = useState<ActiveVisit[]>([])
+  const [loading, setLoading]               = useState(true)
+  const [error, setError]                   = useState<string | null>(null)
+  const [optimisticPaid, setOptimisticPaid] = useState<Set<string>>(new Set())
 
   const load = useCallback(async () => {
     if (!user) return
-
     const phone10 = profile?.whatsapp_number?.replace(/\D/g, '').slice(-10) ?? ''
     const orFilter = phone10
       ? `user_id.eq.${user.id},requester_whatsapp.ilike.%${phone10}`
@@ -499,91 +443,106 @@ export function DashboardBookings() {
     setTimeout(() => load(), 5000)
   }
 
-  const active = bookings.filter(b => b.status !== 'cancelled')
-  const past   = bookings.filter(b => b.status === 'cancelled')
+  // Section splits
+  const today = todayIst()
+  const todayBookings = bookings.filter(b =>
+    istDate(b.scheduled_at) === today && b.status !== 'cancelled',
+  )
+  const upcoming = bookings.filter(b => {
+    if (['cancelled','completed'].includes(b.status)) return false
+    const d = istDate(b.scheduled_at)
+    return !d || d > today
+  })
+  const past = bookings.filter(b => ['cancelled','completed'].includes(b.status))
 
+  // ── Loading ──
   if (loading) return (
-    <div style={{ padding: '0 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, marginTop: 4 }}>
-        <div style={{ height: 28, width: 120, background: '#F0F0F0', borderRadius: 8, animation: 'ce-skel-shimmer 1.4s ease-in-out infinite' }} />
-        <div style={{ height: 38, width: 96, background: '#F0F0F0', borderRadius: 100, animation: 'ce-skel-shimmer 1.4s ease-in-out infinite' }} />
+    <div style={{ padding:'0 16px 80px' }}>
+      <div style={{ paddingTop:8, marginBottom:24 }}>
+        <div className="ce-bk-skel-bar" style={{ height:32, width:100, borderRadius:10 }} />
       </div>
       <BookingsSkeleton />
     </div>
   )
 
   return (
-    <div style={{ padding: '0 16px 80px' }} className="ce-slide-up">
-      {/* Header */}
-      <div style={{ marginBottom: 20, marginTop: 4 }}>
-        <h1 style={{ fontWeight: 700, fontSize: 22, color: 'var(--forest)', margin: 0, letterSpacing: '-0.02em' }}>My bookings</h1>
+    <div style={{ padding:'0 16px', paddingBottom:'calc(80px + env(safe-area-inset-bottom))' }} className="ce-slide-up">
+
+      {/* ── Header ── */}
+      <div style={{ paddingTop:8, marginBottom:24 }}>
+        <h1 style={{ fontSize:28, fontWeight:800, color:'#1D1D1F', letterSpacing:'-0.03em', margin:'0 0 2px' }}>
+          My Care
+        </h1>
+        <p style={{ fontSize:13, color:'#6E6E73', margin:0 }}>Your companion visits</p>
       </div>
 
-      {/* Error */}
+      {/* ── Error ── */}
       {error && (
-        <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 14, padding: '12px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, fontSize: 14, color: '#DC2626' }}>
+        <div style={{ background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:14, padding:'12px 16px', marginBottom:16, display:'flex', justifyContent:'space-between', alignItems:'center', gap:8, fontSize:14, color:'#DC2626' }}>
           {error}
-          <button onClick={load} style={{ fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', flexShrink: 0 }}>Retry</button>
+          <button onClick={load} style={{ fontWeight:700, textDecoration:'underline', background:'none', border:'none', color:'#DC2626', cursor:'pointer', flexShrink:0 }}>
+            Retry
+          </button>
         </div>
       )}
 
-      {/* Active visit tracking */}
+      {/* ── Today's Visit (active visits from old system) ── */}
       {activeVisits.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <p className="ce-bk-sec">Today's visits</p>
+        <section aria-label="Today's visit">
+          <p className="ce-mc-sec" style={{ marginTop:0 }}>Today's visit</p>
           {activeVisits.map(v => <StatusTimeline key={v.id} visit={v} />)}
-        </div>
+        </section>
       )}
 
-      {/* Empty state */}
-      {bookings.length === 0 && activeVisits.length === 0 && (
-        <div className="ce-bk-empty">
-          <div className="ce-bk-empty-icon">
-            <Calendar size={26} color="#16A34A" />
-          </div>
-          <p style={{ fontWeight: 700, fontSize: 17, color: 'var(--forest)', margin: '0 0 6px', letterSpacing: '-0.01em' }}>No bookings yet</p>
-          <p style={{ fontSize: 14, color: '#9CA3AF', margin: '0 0 24px', lineHeight: 1.5 }}>Book a companion visit for your loved one — we'll send a WhatsApp report after every visit.</p>
-          <Link
-            to="/dashboard/book"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--forest)', color: '#FAF7F2', borderRadius: 100, padding: '13px 26px', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}
-          >
-            <Plus size={14} /> Book a visit
-          </Link>
-        </div>
-      )}
-
-      {/* Active bookings */}
-      {active.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: past.length ? 28 : 0 }}>
-          {active.map(b => (
-            <BookingCard
-              key={b.id}
-              booking={b}
-              profile={profile}
-              optimisticPaid={optimisticPaid.has(b.id)}
-              onPaid={handlePaid}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Cancelled bookings */}
-      {past.length > 0 && (
-        <>
-          <p className="ce-bk-sec" style={{ marginTop: active.length ? 0 : undefined }}>Cancelled</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {past.map(b => (
-              <BookingCard
+      {/* ── Today's Visit (booking_requests system) ── */}
+      {todayBookings.length > 0 && (
+        <section aria-label="Today's visit">
+          {!activeVisits.length && <p className="ce-mc-sec" style={{ marginTop:0 }}>Today's visit</p>}
+          <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:8 }}>
+            {todayBookings.map(b => (
+              <TodayHeroCard
                 key={b.id}
                 booking={b}
                 profile={profile}
-                optimisticPaid={false}
-                onPaid={() => {}}
+                optimisticPaid={optimisticPaid.has(b.id)}
+                onPaid={handlePaid}
               />
             ))}
           </div>
-        </>
+        </section>
       )}
+
+      {/* ── Empty state ── */}
+      {bookings.length === 0 && activeVisits.length === 0 && <EmptyState />}
+
+      {/* ── Upcoming visits ── */}
+      {upcoming.length > 0 && (
+        <section aria-label="Upcoming visits">
+          <p className="ce-mc-sec">Upcoming</p>
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {upcoming.map((b, i) => (
+              <div key={b.id} className="ce-mc-fadein" style={{ animationDelay:`${i * 60}ms` }}>
+                <CompactCard booking={b} optimisticPaid={optimisticPaid.has(b.id)} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Past visits ── */}
+      {past.length > 0 && (
+        <section aria-label="Past visits">
+          <p className="ce-mc-sec">Past visits</p>
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {past.map((b, i) => (
+              <div key={b.id} className="ce-mc-fadein" style={{ animationDelay:`${i * 60}ms` }}>
+                <CompactCard booking={b} optimisticPaid={false} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
     </div>
   )
 }

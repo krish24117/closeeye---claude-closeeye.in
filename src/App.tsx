@@ -35,6 +35,7 @@ const DashboardBook = lazy(() => import('@/pages/dashboard/Book').then(m => ({ d
 const BookServicePage = lazy(() => import('@/pages/dashboard/BookService').then(m => ({ default: m.BookServicePage })))
 const DashboardProfile = lazy(() => import('@/pages/dashboard/Profile').then(m => ({ default: m.DashboardProfile })))
 const DashboardBookings = lazy(() => import('@/pages/dashboard/Bookings').then(m => ({ default: m.DashboardBookings })))
+const BookingDetailPage = lazy(() => import('@/pages/dashboard/BookingDetail').then(m => ({ default: m.BookingDetailPage })))
 const DashboardLovedOnes = lazy(() => import('@/pages/dashboard/LovedOnes').then(m => ({ default: m.DashboardLovedOnes })))
 const DashboardReports = lazy(() => import('@/pages/dashboard/Reports').then(m => ({ default: m.DashboardReports })))
 const DashboardReportDetail = lazy(() => import('@/pages/dashboard/Reports').then(m => ({ default: m.DashboardReportDetail })))
@@ -332,6 +333,7 @@ export default function App() {
               <Route path="book/:serviceId" element={<BookServicePage />} />
               <Route path="profile" element={<DashboardProfile />} />
               <Route path="bookings" element={<DashboardBookings />} />
+              <Route path="bookings/:id" element={<BookingDetailPage />} />
               <Route path="loved-ones" element={<DashboardLovedOnes />} />
               <Route path="reports" element={<DashboardReports />} />
               <Route path="reports/:visitId" element={<DashboardReportDetail />} />
