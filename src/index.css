@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Google Places autocomplete dropdown — must render above everything */
+.pac-container {
+  z-index: 10000 !important;
+  border-radius: 12px !important;
+  border: 1px solid #EDE8E0 !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+  font-family: 'Open Sauce One', system-ui, sans-serif !important;
+  margin-top: 4px !important;
+}
+.pac-item { padding: 10px 14px !important; font-size: 14px !important; cursor: pointer !important; }
+.pac-item:hover { background: #FAF7F2 !important; }
+.pac-item-query { font-weight: 600 !important; color: #1D1D1F !important; }
+.pac-matched { color: #0E2A1F !important; font-weight: 700 !important; }
+
 @layer base {
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }

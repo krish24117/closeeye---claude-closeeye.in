@@ -78,36 +78,6 @@ function earliestAvailable(): string | null {
   return null
 }
 
-// ─── Google Places hook ───────────────────────────────────────────────────────
-
-interface PlaceInfo { displayName: string; city: string; state: string; pincode: string }
-
-type PlacesStatus = 'idle' | 'loading' | 'ready' | 'error'
-
-function usePlacesScript(): PlacesStatus {
-  const [status, setStatus] = useState<PlacesStatus>(() =>
-    typeof window !== 'undefined' && !!(window as unknown as Record<string, unknown>)?.google
-      ? 'ready'
-      : (import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? 'loading' : 'idle')
-  )
-  useEffect(() => {
-    const g = (window as unknown as { google?: { maps?: { places?: unknown } } }).google
-    if (g?.maps?.places) { setStatus('ready'); return }
-    const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
-    if (!key) { setStatus('idle'); return }
-    if (document.getElementById('ce-gm-script')) return
-    setStatus('loading')
-    const s = document.createElement('script')
-    s.id = 'ce-gm-script'
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`
-    s.async = true
-    s.onload = () => setStatus('ready')
-    s.onerror = () => setStatus('error')
-    document.head.appendChild(s)
-  }, [])
-  return status
-}
-
 // ─── Stepper ──────────────────────────────────────────────────────────────────
 
 const STEP_LABELS = ['When', 'Parent', 'Where', 'Review']
@@ -157,8 +127,6 @@ export function BookServicePage() {
   const service    = SERVICES.find(s => s.id === serviceId)
   const isEmergency = service?.id === 'emergency_support_visit'
   const isNri       = profile?.user_type === 'nri'
-
-  const placesStatus = usePlacesScript()
 
   // ── Core state ─────────────────────────────────────────────────────────────
   const [step, setStep]   = useState<WizardStep>(isEmergency ? 2 : 1)
@@ -497,10 +465,8 @@ export function BookServicePage() {
           {!isEmergency && step === 3 && (
             <AddressStep
               isNri={isNri}
-              userId={user!.id}
               selectedLO={selectedLO}
               societyAddr={societyAddr}
-              placesStatus={placesStatus}
               notes={notes}
               setNotes={setNotes}
               onAddressReady={addr => { setAddress(addr); setErr('') }}
@@ -672,17 +638,14 @@ function ParentStep({
 // ─── AddressStep ──────────────────────────────────────────────────────────────
 
 function AddressStep({
-  isNri, userId,
+  isNri,
   selectedLO, societyAddr,
-  placesStatus,
   notes, setNotes,
   onAddressReady, setErr,
 }: {
   isNri: boolean
-  userId: string
   selectedLO: LovedOneWithAddr | null
   societyAddr: string
-  placesStatus: PlacesStatus
   notes: string
   setNotes: (v: string) => void
   onAddressReady: (addr: string) => void
@@ -692,46 +655,11 @@ function AddressStep({
 
   const [confirmedAddr, setConfirmedAddr] = useState(savedAddress ?? '')
   const [showNewForm, setShowNewForm]     = useState(!savedAddress)
-
-  // Google Places state
-  const placeInputRef   = useRef<HTMLInputElement>(null)
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
-  const [placeInfo, setPlaceInfo]   = useState<PlaceInfo | null>(null)
   const [house, setHouse]           = useState('')
+  const [manualArea, setManualArea] = useState('')
+  const [manualCity, setManualCity] = useState('')
+  const [manualPin, setManualPin]   = useState('')
   const [savingAddr, setSavingAddr] = useState(false)
-
-  // Manual fallback state
-  const [manualArea, setManualArea]   = useState('')
-  const [manualCity, setManualCity]   = useState('')
-  const [manualState, setManualState] = useState('')
-  const [manualPin, setManualPin]     = useState('')
-
-  // Attach Google Places Autocomplete
-  useEffect(() => {
-    if (placesStatus !== 'ready' || !showNewForm || !placeInputRef.current) return
-    const g = (window as unknown as { google?: { maps?: { places?: { Autocomplete: new (input: HTMLInputElement, opts?: Record<string, unknown>) => google.maps.places.Autocomplete } } } }).google
-    if (!g?.maps?.places) return
-    const ac = new g.maps.places.Autocomplete(placeInputRef.current, {
-      types: ['geocode', 'establishment'],
-      componentRestrictions: { country: 'in' },
-      fields: ['name', 'address_components', 'formatted_address'],
-    })
-    ac.addListener('place_changed', () => {
-      const place = ac.getPlace()
-      if (!place?.address_components) return
-      let city = '', state = '', pincode = '', displayName = ''
-      displayName = place.name || place.formatted_address?.split(',')[0] || ''
-      for (const comp of place.address_components) {
-        if (comp.types.includes('locality'))                            city    = comp.long_name
-        else if (comp.types.includes('administrative_area_level_1'))   state   = comp.long_name
-        else if (comp.types.includes('postal_code'))                   pincode = comp.long_name
-      }
-      setPlaceInfo({ displayName, city, state, pincode })
-      setErr('')
-    })
-    autocompleteRef.current = ac
-    return () => { google.maps.event.clearInstanceListeners(ac) }
-  }, [placesStatus, showNewForm]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function pickSaved() {
     if (!savedAddress) return
@@ -742,19 +670,13 @@ function AddressStep({
   }
 
   function buildNewAddress(): string {
-    if (placesStatus === 'ready' && placeInfo) {
-      return [house.trim(), placeInfo.displayName, placeInfo.city, placeInfo.state, placeInfo.pincode]
-        .filter(Boolean).join(', ')
-    }
-    return [house.trim(), manualArea.trim(), manualCity.trim(), manualState.trim(), manualPin.trim()]
+    return [house.trim(), manualArea.trim(), manualCity.trim(), manualPin.trim()]
       .filter(Boolean).join(', ')
   }
 
   async function confirmNewAddress() {
-    const h = house.trim()
-    if (!h) { setErr('Enter your flat or house number.'); return }
-    if (placesStatus === 'ready' && !placeInfo) { setErr('Select a location from the suggestions.'); return }
-    if ((placesStatus === 'idle' || placesStatus === 'error') && !manualArea.trim()) { setErr('Enter the area or locality.'); return }
+    if (!house.trim()) { setErr('Enter your flat or house number.'); return }
+    if (!manualArea.trim()) { setErr('Enter the area or locality.'); return }
     const addr = buildNewAddress()
     if (isNri && selectedLO?.id) {
       setSavingAddr(true)
@@ -768,8 +690,7 @@ function AddressStep({
     setErr('')
   }
 
-  const canConfirmNew = house.trim().length > 0 &&
-    (placesStatus === 'ready' ? !!placeInfo : manualArea.trim().length > 0)
+  const canConfirmNew = house.trim().length > 0 && manualArea.trim().length > 0
 
   return (
     <div className="flex flex-col gap-4">
@@ -799,7 +720,7 @@ function AddressStep({
       {/* Enter / different address button */}
       {!showNewForm && (
         <button
-          onClick={() => { setShowNewForm(true); setHouse(''); setPlaceInfo(null); setManualArea(''); setManualCity(''); setManualState(''); setManualPin(''); setErr('') }}
+          onClick={() => { setShowNewForm(true); setHouse(''); setManualArea(''); setManualCity(''); setManualPin(''); setErr('') }}
           className="flex items-center gap-3 text-[13.5px] font-semibold text-[#0E2A1F] rounded-[18px] px-4 py-4 min-h-[56px] border-2 border-dashed border-[#A8D5B5] w-full transition-all"
         >
           <div className="w-8 h-8 rounded-full border-2 border-[#0E2A1F] flex items-center justify-center text-[18px] font-bold leading-none shrink-0">+</div>
@@ -831,52 +752,23 @@ function AddressStep({
             />
           </div>
 
-          {/* Google Places search OR manual */}
-          {placesStatus === 'ready' ? (
-            <>
-              <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3">
-                <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">Area / Building *</label>
-                <input
-                  ref={placeInputRef}
-                  placeholder="Search area, building, or landmark…"
-                  autoComplete="off"
-                  className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]"
-                />
-              </div>
-              {placeInfo && (
-                <div className="bg-green-50 border border-green-100 rounded-[14px] px-4 py-3 flex items-start gap-2">
-                  <Check size={13} className="text-green-700 shrink-0 mt-0.5" strokeWidth={3} />
-                  <p className="text-[13px] text-green-800 leading-relaxed">
-                    <strong>{placeInfo.displayName}</strong>
-                    {placeInfo.city && <span className="text-green-700">, {placeInfo.city}</span>}
-                    {placeInfo.state && <span className="text-green-700">, {placeInfo.state}</span>}
-                    {placeInfo.pincode && <span className="text-green-700"> – {placeInfo.pincode}</span>}
-                  </p>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3">
-                <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">Area / Locality *</label>
-                <input value={manualArea} onChange={e => { setManualArea(e.target.value); setErr('') }} placeholder="e.g. Jubilee Hills" className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]" />
-              </div>
-              <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3">
-                <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">City</label>
-                <input value={manualCity} onChange={e => setManualCity(e.target.value)} placeholder="Hyderabad" className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]" />
-              </div>
-              <div className="flex gap-3">
-                <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3 flex-1">
-                  <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">State</label>
-                  <input value={manualState} onChange={e => setManualState(e.target.value)} placeholder="Telangana" className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]" />
-                </div>
-                <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3 w-[120px] shrink-0">
-                  <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">PIN *</label>
-                  <input value={manualPin} onChange={e => setManualPin(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="500034" type="tel" inputMode="numeric" className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]" />
-                </div>
-              </div>
-            </>
-          )}
+          {/* Area / Locality */}
+          <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3">
+            <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">Area / Locality *</label>
+            <input value={manualArea} onChange={e => { setManualArea(e.target.value); setErr('') }} placeholder="e.g. Jubilee Hills" className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]" />
+          </div>
+
+          {/* City + PIN */}
+          <div className="flex gap-3">
+            <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3 flex-1">
+              <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">City</label>
+              <input value={manualCity} onChange={e => setManualCity(e.target.value)} placeholder="Hyderabad" className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]" />
+            </div>
+            <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3 w-[120px] shrink-0">
+              <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">PIN</label>
+              <input value={manualPin} onChange={e => setManualPin(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="500034" type="tel" inputMode="numeric" className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]" />
+            </div>
+          </div>
 
           <button
             onClick={confirmNewAddress}
