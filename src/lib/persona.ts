@@ -81,7 +81,7 @@ export function getPersonaCopy(
       return {
         heroSub:         `On-demand care for ${pn}`,
         emptyStateSub:   `We're close by — book a visit whenever ${pn} needs a check-in.`,
-        askShortcutSub:  `Health question about ${pn}? Ask our medical team`,
+        askShortcutSub:  `A question about ${pn}? Ask CloseEye`,
         askInputHint:    `e.g. Is it okay to give ${pn.split(' ')[0]} paracetamol with BP medicine?`,
         showUsdPrice:    false,
       }

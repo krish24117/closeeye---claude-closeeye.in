@@ -23,7 +23,7 @@ const NAV_LINKS: { label: string; href?: string; to?: string }[] = [
 
 const TRUST_SIGNALS = [
   'GPS-verified visits',
-  'Doctor-reviewed reports',
+  'Detailed WhatsApp reports',
   'WhatsApp delivered',
   'Emergency-ready companions',
 ]
@@ -53,7 +53,7 @@ const WA_MESSAGES = [
 
 const TRUST_PILLARS = [
   { icon: ShieldCheck, title: 'Verified Companions',    body: 'Every companion is background-checked, Aadhaar-verified, trained, and supervised on their first visits before meeting your family alone.' },
-  { icon: Stethoscope, title: 'Doctor Reviewed',        body: 'Our companion notes are reviewed by a qualified physician. Abnormal readings are flagged — not buried in a chat.' },
+  { icon: Stethoscope, title: 'Every Visit Documented',  body: 'Companions record everything — meals, mood, medications, and one personal moment — in a structured report sent to your WhatsApp within the hour.' },
   { icon: PhoneCall,   title: 'Emergency Coordination', body: "If something goes wrong, we don't just inform you. We coordinate with your family's local emergency contact and the nearest hospital." },
   { icon: Lock,        title: 'Privacy First',          body: "Your family's health details never leave our systems. No third-party data sharing, ever." },
 ]
@@ -74,7 +74,7 @@ const COMPARISON_ROWS: [string, string][] = [
 ]
 
 const SERVICE_GROUPS = [
-  { category: 'Health',  icon: Stethoscope,    services: ['Wellness check-in', 'Medication reminder & log', 'Doctor appointment escort', 'Vitals recording'],          available: true  },
+  { category: 'Health',  icon: Stethoscope,    services: ['Wellness check-in', 'Medication reminder & log', 'Doctor appointment escort', 'Wellbeing assessment'],        available: true  },
   { category: 'Care',    icon: HeartHandshake, services: ['Daily companion visit', 'Grocery & errand run', 'Home safety inspection', 'Emergency visit'],                available: true  },
   { category: 'Life',    icon: Building2,      services: ['Government document help', 'Bank & financial escort', 'Telecom & utility support'],                          available: false },
   { category: 'Future',  icon: Globe,          services: ['Society partnership visits', 'Preventive health screening', 'Palliative care coordination'],                  available: false },

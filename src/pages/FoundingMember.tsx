@@ -18,7 +18,7 @@ const HOW_STEPS = [
 const SERVICES = [
   { icon: '🏠', title: 'Home Visits', body: 'Verified companions visit personally — medicines, meals, home safety, and one personal moment captured for you.' },
   { icon: '💬', title: 'WhatsApp Reports', body: 'A detailed update within one hour of every visit. Health snapshot, personal moments, any concerns.' },
-  { icon: '🩺', title: 'Medical Team Guidance', body: 'Ask health questions anytime. Our medical team reviews every response. Available now, before launch.' },
+  { icon: '💬', title: 'Ask CloseEye', body: 'Have a question about your parent\'s care, medications, or daily routines? Ask CloseEye — personalised guidance, available now.' },
   { icon: '🚨', title: 'Emergency Coordination', body: 'We coordinate with local hospitals, doctors, and family — 24/7 — when it matters most.' },
 ]
 
@@ -26,7 +26,7 @@ const BENEFITS = [
   'Founding Member badge (#X — your permanent number)',
   '10% off every Close Eye service — for life',
   'Priority companion matching on launch day',
-  'Medical team Q&A — personalised to your parent, starting today',
+  'Ask CloseEye — personalised care guidance, starting today',
   'Price locked at ₹1,500/month when visits launch (never raised for founding members)',
 ]
 
@@ -211,7 +211,7 @@ export function FoundingMemberPage() {
         <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'center' }}>
           {[
             { icon: Shield, text: 'Background-verified companions' },
-            { icon: Heart, text: 'Medical team reviews every query' },
+            { icon: Heart, text: 'Every Ask CloseEye query gets a personal response' },
             { icon: Clock, text: 'WhatsApp report within 1 hour of every visit' },
           ].map(({ icon: Icon, text }) => (
             <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 500, color: 'var(--forest)' }}>
