@@ -190,7 +190,7 @@ function ErrorCard({ message }: { message: string }) {
   if (!message) return null
   return (
     <div role="alert" style={{ background: C.errorBg, border: `1px solid ${C.errorBorder}`, borderRadius: 14, padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-      <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>⚠</span>
+      <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>⚠️</span>
       <div>
         <p style={{ fontSize: 13, fontWeight: 600, color: '#912018', margin: 0 }}>Something went wrong</p>
         <p style={{ fontSize: 12, color: C.error, margin: '2px 0 0', lineHeight: 1.5 }}>{message}</p>

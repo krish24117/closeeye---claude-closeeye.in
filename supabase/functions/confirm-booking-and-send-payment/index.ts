@@ -85,7 +85,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // ── Resolve amount ───────────────────────────────────────────────────────────
-  const finalAmountPaise: number | null = amount_paise ?? (br.amount_paise as number | null);
+  const finalAmountPaise: number | null = (br.amount_paise as number | null) ?? amount_paise ?? null;
   if (!finalAmountPaise) {
     return json({ error: "amount_paise is required — set it on the booking or pass it in the request" }, 400);
   }

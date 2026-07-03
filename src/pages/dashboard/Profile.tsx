@@ -495,7 +495,7 @@ export function DashboardProfile() {
     finally { setSavingId(null) }
   }
 
-  async function handleSignOut() { await signOut(); window.location.replace('/auth') }
+  async function handleSignOut() { await signOut(); navigate('/auth', { replace: true }) }
 
   function copyReferral() {
     navigator.clipboard.writeText('https://closeeye.in/?ref=' + (user?.id?.slice(0, 8) || 'friend'))
@@ -511,7 +511,7 @@ export function DashboardProfile() {
   async function handleDeleteAccount() {
     if (!window.confirm('Are you sure you want to delete your account? This cannot be undone.')) return
     await signOut()
-    window.location.replace('/')
+    navigate('/', { replace: true })
   }
 
   // ── Skeleton ──────────────────────────────────────────────────────────────
@@ -539,7 +539,7 @@ export function DashboardProfile() {
             {isFounder && (
               <span className="inline-flex items-center gap-1 bg-[#0E2A1F] text-[#A8D5B5] text-[11px] font-bold px-2.5 py-1 rounded-full mt-1">
                 <Star size={9} fill="currentColor" />
-                Founding Member {profile?.founding_number ? `#${String(profile.founding_number).padStart(4, '0')}` : ''}
+                Founding Family {profile?.founding_number ? `#${String(profile.founding_number).padStart(4, '0')}` : ''}
               </span>
             )}
             <p className="text-[12px] text-[#6E6E73] mt-1 truncate">
@@ -573,7 +573,7 @@ export function DashboardProfile() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Star size={13} fill="#A8D5B5" color="#A8D5B5" />
-                    <span className="text-[12px] font-bold text-[#A8D5B5] uppercase tracking-widest">Founding Member</span>
+                    <span className="text-[12px] font-bold text-[#A8D5B5] uppercase tracking-widest">Founding Family</span>
                   </div>
                   <p className="text-white text-[22px] font-bold leading-tight">Active Member</p>
                 </div>
@@ -1026,7 +1026,7 @@ export function DashboardProfile() {
               <Star size={15} fill="#A8D5B5" color="#A8D5B5" />
             </div>
             <div className="flex-1">
-              <p className="text-[13px] font-bold text-[#1D1D1F]">{isFounder ? 'Founding Member' : 'Standard Plan'}</p>
+              <p className="text-[13px] font-bold text-[#1D1D1F]">{isFounder ? 'Founding Family' : 'Standard Plan'}</p>
               <p className="text-[11.5px] text-[#6E6E73]">
                 {profile?.founding_date ? `Since ${fmtDate(profile.founding_date, { month: 'long', year: 'numeric' })}` : 'Active'}
               </p>

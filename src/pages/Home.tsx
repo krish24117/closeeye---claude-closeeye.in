@@ -638,7 +638,7 @@ export function HomePage() {
         flexWrap: 'wrap', gap: '10px 20px',
       }}>
         <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>
-          🌿 Founding Membership open · Launching 15 August
+          🌿 Founding Families welcome · Now live in Hyderabad
         </span>
         <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
           <Link to="/founding-member/checkout" style={{
@@ -646,7 +646,7 @@ export function HomePage() {
             padding: '6px 16px', borderRadius: 100, fontSize: 13, textDecoration: 'none',
             whiteSpace: 'nowrap',
           }}>
-            Become a Founding Member →
+            Become a Founding Family →
           </Link>
           <Link to="/waitlist" style={{
             background: 'transparent', color: 'rgba(255,255,255,0.8)', fontWeight: 500,

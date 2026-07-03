@@ -133,7 +133,7 @@ export function VisitReportPDF({ data }: { data: VisitPdfData }) {
         {/* ── Header ─────────────────────────────────────────────────── */}
         <View style={S.header} fixed>
           <View>
-            <Text style={S.brand}>close eye</Text>
+            <Text style={S.brand}>Close Eye</Text>
             <Text style={S.brandSub}>closeeye.in · Companion Visit Report</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>

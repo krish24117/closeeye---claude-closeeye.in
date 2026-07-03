@@ -23,7 +23,7 @@ const SERVICES = [
 ]
 
 const BENEFITS = [
-  'Founding Member badge (#X — your permanent number)',
+  'Founding Family badge (#X — your permanent number)',
   '10% off every Close Eye service — for life',
   'Priority companion matching on launch day',
   'Ask CloseEye — personalised care guidance, starting today',
@@ -68,7 +68,7 @@ export function FoundingMemberPage() {
           color: 'var(--forest)', fontWeight: 700, fontSize: 15,
           whiteSpace: 'nowrap', flexShrink: 0,
         }}>
-          <Logo className="w-7 h-7" /> close eye
+          <Logo className="w-7 h-7" /> Close Eye
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <Link to="/waitlist" style={{ fontSize: 13, color: 'var(--forest)', textDecoration: 'none', fontWeight: 500, whiteSpace: 'nowrap' }}>
@@ -83,7 +83,7 @@ export function FoundingMemberPage() {
               display: 'flex', alignItems: 'center', gap: 5,
             }}
           >
-            Become a Member →
+            Become a Founding Family →
           </button>
         </div>
       </nav>
@@ -95,7 +95,7 @@ export function FoundingMemberPage() {
           color: 'var(--sage)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em',
           padding: '5px 14px', borderRadius: 100, marginBottom: 24, textTransform: 'uppercase',
         }}>
-          Founding Membership · Before 15 August
+          Founding Family · Before 15 August
         </span>
         <h1 style={{ fontSize: 'clamp(32px, 7vw, 64px)', fontWeight: 800, lineHeight: 1.1, margin: '0 0 24px', maxWidth: 800, marginLeft: 'auto', marginRight: 'auto' }}>
           Close Eye was built<br />for one reason.
@@ -115,7 +115,7 @@ export function FoundingMemberPage() {
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
-            Become a Founding Member — ₹100 <ArrowRight size={18} />
+            Become a Founding Family — ₹100 <ArrowRight size={18} />
           </button>
           <Link to="/waitlist" style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -236,12 +236,12 @@ export function FoundingMemberPage() {
             Be free from the not-knowing.
           </h2>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, margin: '0 0 36px' }}>
-            Close Eye companion visits are live in Hyderabad. Founding Members get priority matching, permanent benefits, and a lower price — locked in forever.
+            Close Eye companion visits are live in Hyderabad. Founding Families get priority matching, permanent benefits, and a lower price — locked in forever.
           </p>
 
           {/* Benefits card */}
           <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '32px 28px', marginBottom: 32, textAlign: 'left' }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--sage)', letterSpacing: '0.06em', margin: '0 0 16px' }}>FOUNDING MEMBER BENEFITS — PERMANENT</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--sage)', letterSpacing: '0.06em', margin: '0 0 16px' }}>FOUNDING FAMILY BENEFITS — PERMANENT</p>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
               {BENEFITS.map(b => (
                 <li key={b} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>
@@ -266,7 +266,7 @@ export function FoundingMemberPage() {
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
-            Become a Founding Member <ArrowRight size={20} />
+            Become a Founding Family <ArrowRight size={20} />
           </button>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 14 }}>
             Secure payment via Razorpay · INR · International cards accepted
@@ -281,7 +281,7 @@ export function FoundingMemberPage() {
           Join the waitlist — it's completely free.
         </p>
         <p style={{ fontSize: 14, color: 'var(--gray-mid)', maxWidth: 440, margin: '0 auto 28px', lineHeight: 1.6 }}>
-          You'll still get access to Ask Close Eye (5 questions/month), early launch notifications, and an upgrade path to Founding Member whenever you're ready.
+          You'll still get access to Ask Close Eye (5 questions/month), early launch notifications, and an upgrade path to Founding Family whenever you're ready.
         </p>
         <Link to="/waitlist" style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,

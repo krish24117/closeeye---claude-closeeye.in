@@ -23,10 +23,6 @@ verify_jwt = false
 [functions.submit-booking-request]
 verify_jwt = false
 
-# Test function — admin-auth enforced in-function; remove after smoke testing
-[functions.send-whatsapp-test]
-verify_jwt = false
-
 # Status lifecycle
 [functions.update-booking-status]
 verify_jwt = true

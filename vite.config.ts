@@ -10,6 +10,10 @@ export default defineConfig({
   // Broaden mobile-browser support (older iOS Safari / Android WebView)
   build: {
     target: 'es2015',
+    // vendor-pdf (@react-pdf/renderer, ~1.4 MB) is loaded via dynamic import()
+    // only when a companion/admin generates a PDF — never on the family dashboard
+    // critical path. The warning threshold is raised to suppress the false alarm.
+    chunkSizeWarningLimit: 1600,
     rollupOptions: {
       output: {
         manualChunks: {

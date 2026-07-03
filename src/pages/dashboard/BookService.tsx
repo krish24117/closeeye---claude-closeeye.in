@@ -203,6 +203,9 @@ export function BookServicePage() {
       if (d.whatsapp) setWhatsapp(d.whatsapp as string)
       if (d.address) setAddress(d.address as string)
       if (d.notes) setNotes(d.notes as string)
+      if (typeof d.step === 'number' && d.step >= 1 && d.step <= 4 && !isEmergency) {
+        setStep(d.step as WizardStep)
+      }
     } catch { /* ignore corrupt draft */ }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -211,7 +214,7 @@ export function BookServicePage() {
     try {
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
         date: date?.toISOString() ?? null,
-        slot, recipientName, relationship, whatsapp, address, notes,
+        slot, recipientName, relationship, whatsapp, address, notes, step,
       }))
     } catch { /* quota exceeded — ignore */ }
   }, [date, slot, recipientName, relationship, whatsapp, address, notes, step]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -305,7 +308,6 @@ export function BookServicePage() {
 
     const rid = (result as { request_id?: string })?.request_id ?? null
     setRequestId(rid)
-    console.info('[BookService] saved, request_id:', rid)
     setStep('done')
     scrollTop()
   }

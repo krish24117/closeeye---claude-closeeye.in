@@ -186,7 +186,7 @@ function NriHome() {
             <p style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.01em' }}>Hello, {firstName}</p>
             {isFounder && (
               <span style={{ display: 'inline-block', marginTop: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: '0.04em', background: 'rgba(168,213,181,.16)', border: '1px solid rgba(168,213,181,.3)', color: 'var(--sage)', padding: '3px 10px', borderRadius: 999 }}>
-                ★ Founding Member{profile?.founding_number ? ` #${String(profile.founding_number).padStart(4, '0')}` : ''}
+                ★ Founding Family{profile?.founding_number ? ` #${String(profile.founding_number).padStart(4, '0')}` : ''}
               </span>
             )}
           </>
@@ -375,7 +375,7 @@ function NriHome() {
           <div style={{ marginTop: 18, background: '#fff', borderRadius: 16, padding: '18px 20px', border: `1px solid ${LINE}` }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: '0.08em', margin: '0 0 14px', textTransform: 'uppercase' }}>HOW IT WORKS</p>
             {[
-              { n: '1', t: 'Join as a Founding Member', d: '₹100 one-time — locks your place and activates health support' },
+              { n: '1', t: 'Join as a Founding Family', d: '₹100 one-time — locks your place and activates health support' },
               { n: '2', t: 'We visit and check on them',  d: 'A verified companion visits your parent in person' },
               { n: '3', t: 'You get a WhatsApp report',   d: 'Health, mood, medicines — sent within the hour' },
             ].map(({ n, t, d }, i) => (
@@ -452,7 +452,7 @@ function SocietyHome() {
         <p style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: 0 }}>{greeting}, {name} 🌿</p>
         <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--sage)', margin: '4px 0 0' }}>Your Close Eye Family Shield</p>
         <span style={{ display: 'inline-block', marginTop: 16, background: 'rgba(168,213,181,0.15)', border: '1px solid rgba(168,213,181,0.3)', borderRadius: 100, padding: '8px 18px', fontSize: 12, fontWeight: 600, color: 'var(--sage)' }}>
-          Founding Member{member?.society_name ? ` · ${member.society_name}` : ''}
+          Founding Family{member?.society_name ? ` · ${member.society_name}` : ''}
         </span>
       </section>
 

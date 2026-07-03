@@ -1165,20 +1165,85 @@
 .ce-spin { animation: ce-spin360 0.7s linear infinite; }
 @keyframes ce-spin360 { to { transform: rotate(360deg); } }
 
-/* RUNG 1 — entry strip */
-.ce-rung1 {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-  background: var(--forest); color: #fff; border-radius: var(--radius-card);
-  padding: 16px 20px; margin-bottom: 20px;
+/* RUNG 1 — Founding Family card */
+.ce-fm-card {
+  display: grid;
+  grid-template-columns: 1.3fr auto;
+  gap: 0;
+  background: var(--forest);
+  border-radius: 24px;
+  padding: 28px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  max-width: 100%;
 }
-.ce-rung1 p { margin: 0; font-size: 15px; }
-.ce-rung1 strong { font-weight: 700; }
+.ce-fm-left { display: flex; flex-direction: column; align-items: flex-start; padding-right: 28px; }
+.ce-fm-badge {
+  display: inline-block; font-size: 10px; font-weight: 800;
+  letter-spacing: 0.13em; text-transform: uppercase;
+  color: var(--forest); background: var(--sage);
+  padding: 4px 12px; border-radius: 100px; margin-bottom: 14px;
+  flex-shrink: 0;
+}
+.ce-fm-title {
+  font-size: clamp(19px, 3vw, 22px); font-weight: 800;
+  color: #FAF7F2; letter-spacing: -0.025em;
+  line-height: 1.25; margin: 0 0 10px;
+  word-break: normal; overflow-wrap: break-word;
+}
+.ce-fm-desc {
+  font-size: 13.5px; color: rgba(250,247,242,.62);
+  line-height: 1.65; margin: 0 0 18px;
+}
+.ce-fm-benefits { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; }
+.ce-fm-benefits li {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 13px; color: rgba(250,247,242,.78); line-height: 1.4;
+}
+.ce-fm-check {
+  width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(168,213,181,.16); border: 1.5px solid rgba(168,213,181,.4);
+  display: flex; align-items: center; justify-content: center; color: var(--sage);
+}
+.ce-fm-right {
+  display: flex; flex-direction: column; align-items: stretch; gap: 14px;
+  min-width: 200px;
+  border-left: 1px solid rgba(168,213,181,.14);
+  padding-left: 28px;
+}
+.ce-fm-price-block { display: flex; flex-direction: column; gap: 3px; text-align: center; }
+.ce-fm-price {
+  font-size: 34px; font-weight: 800; color: #FAF7F2;
+  letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums;
+}
+.ce-fm-price-sub { font-size: 11px; color: rgba(250,247,242,.38); letter-spacing: 0.02em; }
+.ce-fm-cta {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; background: var(--gold); color: var(--black);
+  font-family: inherit; font-size: 14px; font-weight: 700;
+  padding: 14px 18px; border-radius: 14px; border: none; cursor: pointer;
+  transition: filter 140ms ease, transform 140ms ease;
+  white-space: nowrap; min-height: 48px;
+}
+.ce-fm-cta:hover:not(:disabled) { filter: brightness(.93); transform: translateY(-1px); }
+.ce-fm-cta:active:not(:disabled) { transform: translateY(0); }
+.ce-fm-cta:disabled { opacity: .5; cursor: not-allowed; }
+.ce-fm-trust { font-size: 11px; color: rgba(250,247,242,.32); text-align: center; margin: 0; line-height: 1.5; }
 
-/* Acquisition variant */
-.ce-rung1-acquisition { background: var(--forest); }
-.ce-rung1-body { flex: 1; min-width: 0; }
-.ce-rung1-title { font-size: 15px; font-weight: 700; color: #fff; margin: 0 0 4px; }
-.ce-rung1-desc  { font-size: 13px; color: rgba(255,255,255,.72); margin: 0; line-height: 1.5; }
+@media (max-width: 768px) {
+  .ce-fm-card { grid-template-columns: 1fr; padding: 22px; }
+  .ce-fm-left { padding-right: 0; }
+  .ce-fm-right {
+    border-left: none; padding-left: 0;
+    border-top: 1px solid rgba(168,213,181,.14); padding-top: 20px;
+    min-width: 0;
+  }
+  .ce-fm-price-block { flex-direction: row; align-items: baseline; gap: 8px; text-align: left; }
+  .ce-fm-price { font-size: 28px; }
+  .ce-fm-price-sub { align-self: flex-end; padding-bottom: 2px; }
+  .ce-fm-cta { width: 100%; font-size: 15px; padding: 16px 20px; border-radius: 16px; white-space: normal; text-align: center; }
+  .ce-fm-trust { text-align: left; }
+}
 
 /* Founding member status card */
 .ce-member-status {

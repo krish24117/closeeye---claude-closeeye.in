@@ -598,7 +598,7 @@ export function DashboardAsk() {
               fontWeight: 700, fontSize: 14, padding: '10px 24px', borderRadius: 999,
               textDecoration: 'none',
             }}>
-              Become a Founding Member →
+              Become a Founding Family →
             </Link>
           </div>
         ) : (

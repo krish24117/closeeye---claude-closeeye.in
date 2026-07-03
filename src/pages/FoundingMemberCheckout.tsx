@@ -9,7 +9,7 @@ import { Logo } from '@/components/ui/Logo'
 type PayState = 'idle' | 'creating' | 'verifying' | 'success' | 'error'
 
 const PERKS = [
-  'Founding-member status & permanent number',
+  'Founding Family status & permanent number',
   'Personalised Ask Close Eye for your parent',
   'Priority when we set up visits',
   'Your whole family covered',
@@ -60,7 +60,7 @@ function SuccessScreen({ foundingNumber }: { foundingNumber: number }) {
         paddingTop: 'env(safe-area-inset-top, 0px)',
       }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 7, textDecoration: 'none', color: 'var(--forest)', fontWeight: 700, fontSize: 15 }}>
-          <Logo className="w-7 h-7" /> close eye
+          <Logo className="w-7 h-7" /> Close Eye
         </Link>
       </nav>
 
@@ -73,7 +73,7 @@ function SuccessScreen({ foundingNumber }: { foundingNumber: number }) {
         </div>
 
         <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--forest)', margin: '0 0 6px', lineHeight: 1.1 }}>
-          You're a Founding Member
+          You're a Founding Family
         </h1>
         <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: '0 0 14px' }}>
           Welcome to Close Eye. Thank you for trusting us.
@@ -84,7 +84,7 @@ function SuccessScreen({ foundingNumber }: { foundingNumber: number }) {
           fontWeight: 800, fontSize: 14, padding: '8px 20px', borderRadius: 999, letterSpacing: '.02em',
           marginBottom: 22,
         }}>
-          Founding Member #{paddedNum}
+          Founding Family #{paddedNum}
         </div>
 
         <div style={{ background: '#fff', border: '1px solid var(--gray-light)', borderRadius: 16, padding: '16px 18px', textAlign: 'left', marginBottom: 14 }}>
@@ -187,7 +187,7 @@ export function FoundingMemberCheckoutPage() {
         amount: data.amount,
         currency: 'INR',
         name: 'Close Eye',
-        description: 'Founding Membership',
+        description: 'Founding Family',
         image: '/favicon.svg',
         theme: { color: '#0E2A1F' },
         prefill: {
@@ -250,7 +250,7 @@ export function FoundingMemberCheckoutPage() {
         position: 'sticky', top: 0, zIndex: 10,
       }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 7, textDecoration: 'none', color: 'var(--forest)', fontWeight: 700, fontSize: 15 }}>
-          <Logo className="w-6 h-6" /> close eye
+          <Logo className="w-6 h-6" /> Close Eye
         </Link>
         <Link
           to="/founding-member"
@@ -265,7 +265,7 @@ export function FoundingMemberCheckoutPage() {
 
         {/* Breadcrumb context */}
         <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '0 0 20px', fontWeight: 500 }}>
-          {firstName ? `Signed in as ${firstName}` : 'Founding Membership'} · Before 15 August
+          {firstName ? `Signed in as ${firstName}` : 'Founding Family'} · Before 15 August
         </p>
 
         {/* Page headline */}
@@ -273,7 +273,7 @@ export function FoundingMemberCheckoutPage() {
           Set up {parentLabel} care
         </h1>
         <p style={{ fontSize: 15, color: 'var(--gray-mid)', margin: '0 0 28px', lineHeight: 1.5 }}>
-          Begin as a Founding Member — covers your whole family.
+          Begin as a Founding Family — covers your whole family.
         </p>
 
         {/* ── Plan card ─────────────────────────────────────────────────── */}
@@ -292,7 +292,7 @@ export function FoundingMemberCheckoutPage() {
             borderBottom: '1px solid rgba(14,42,31,0.07)',
           }}>
             <div>
-              <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--forest)', margin: 0 }}>Founding Member</p>
+              <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--forest)', margin: 0 }}>Founding Family</p>
               <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '3px 0 0' }}>One-time registration fee</p>
             </div>
             <div style={{ textAlign: 'right' }}>

@@ -74,7 +74,7 @@ export function DashboardLayout() {
             🌿 You're on the waitlist — use Ask CloseEye free (5 questions/month)
           </span>
           <Link to="/founding-member" style={{ background: 'var(--sage)', color: 'var(--forest)', fontWeight: 700, padding: '6px 14px', borderRadius: 100, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-            Become a Founding Member →
+            Become a Founding Family →
           </Link>
         </div>
       )}

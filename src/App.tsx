@@ -8,6 +8,7 @@ import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { IOSInstallBanner } from '@/components/IOSInstallBanner'
+import { OfflineBanner } from '@/components/OfflineBanner'
 
 // Public pages — eagerly bundled (landing page must render without waiting for chunks)
 import { HomePage } from '@/pages/Home'
@@ -137,7 +138,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/faq': 'Answers to common questions about Close Eye visits, companion verification, pricing, cancellations, and coverage areas.',
   '/contact': 'Get in touch with the Close Eye team on WhatsApp or email — we reply within a few hours.',
   '/waitlist': 'Join the Close Eye waitlist to be notified the moment we launch verified companion visits in your city.',
-  '/founding-member': 'Become a Close Eye Founding Member for ₹100. Priority access, permanent benefits, and direct support for your loved ones in India — from 15 August.',
+  '/founding-member': 'Become a Close Eye Founding Member for ₹100. Priority access, permanent benefits, and direct support for your loved ones in India — now live in Hyderabad.',
   '/for-societies': 'Partner with Close Eye to bring verified elder-care companions, wellbeing visits, and a real emergency plan to your residents — at no cost to the society.',
   '/companions': 'Every Close Eye companion is verified at seven levels — application, interviews, police clearance, Aadhaar, training, and supervised visits — before they ever visit your parent alone.',
   '/join-as-companion': 'Apply to become a verified Close Eye companion in Hyderabad. Meaningful work caring for elders, with training and support from our founding team.',
@@ -302,6 +303,7 @@ export default function App() {
     <AuthProvider>
       <ToastProvider>
       <BrowserRouter>
+        <OfflineBanner />
         <SplashScreen />
         <ScrollToTop />
         <SEOManager />

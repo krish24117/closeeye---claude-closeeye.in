@@ -94,10 +94,10 @@ export function WaitlistPage() {
               padding: '16px 24px', borderRadius: 14, textDecoration: 'none', fontSize: 15,
             }}
           >
-            Become a Founding Member — ₹100 <ArrowRight size={16} />
+            Become a Founding Family — ₹100 <ArrowRight size={16} />
           </Link>
           <p style={{ fontSize: 12, color: 'var(--gray-mid)' }}>
-            One-time. Founding Members get priority access and a permanent 10% discount when services launch.
+            One-time. Founding Families get priority access and a permanent 10% discount when services launch.
           </p>
         </div>
 
@@ -134,7 +134,7 @@ export function WaitlistPage() {
           to="/founding-member"
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--sage)', color: 'var(--forest)', fontWeight: 600, padding: '10px 20px', borderRadius: 100, fontSize: 13, textDecoration: 'none' }}
         >
-          Or become a Founding Member (₹100) →
+          Or become a Founding Family (₹100) →
         </Link>
       </div>
 

@@ -46,7 +46,7 @@ export function DashboardBook() {
         <div style={{ margin: '0 16px 14px', background: 'rgba(14,42,31,0.06)', border: '1px solid rgba(14,42,31,0.12)', borderRadius: 14, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--forest)', color: '#fff', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✓</span>
           <div>
-            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--forest)', margin: 0 }}>Founding Member{foundingNumber ? ` #${foundingNumber}` : ''}</p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--forest)', margin: 0 }}>Founding Family{foundingNumber ? ` #${foundingNumber}` : ''}</p>
             <p style={{ fontSize: 12, color: 'var(--gray-mid)', margin: '1px 0 0' }}>Your place is secured — book any service below.</p>
           </div>
         </div>
@@ -91,8 +91,8 @@ export function DashboardBook() {
           <div style={{ margin: '0 16px 16px', borderRadius: 20, overflow: 'hidden', background: 'linear-gradient(135deg, #0E2A1F 0%, #1B4332 100%)' }}>
             <div style={{ padding: '20px 20px 18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Founding Membership</span>
-                <span style={{ background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '3px 10px', fontSize: 10, fontWeight: 700 }}>FOUNDING MEMBER</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Founding Family</span>
+                <span style={{ background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '3px 10px', fontSize: 10, fontWeight: 700 }}>FOUNDING FAMILY</span>
               </div>
               <p style={{ fontSize: 28, fontWeight: 700, color: 'var(--sage)', margin: '0 0 14px' }}>₹100 <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.65)' }}>· one-time</span></p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
@@ -104,7 +104,7 @@ export function DashboardBook() {
                 ))}
               </div>
               <Link to="/founding-member/checkout" style={{ display: 'block', background: 'var(--sage)', color: 'var(--forest)', borderRadius: 100, padding: '13px 20px', fontSize: 15, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
-                Become a Founding Member →
+                Become a Founding Family →
               </Link>
             </div>
           </div>

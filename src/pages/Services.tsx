@@ -55,9 +55,6 @@ export function ServicesPage() {
       if (!loaded) throw new Error('Could not load payment gateway. Please refresh and try again.')
       // NOTE: source of truth is the server-side webhook (HMAC-verified). The
       // client handler only navigates; it never marks the subscription paid.
-      // TODO(intl-recurring): NRI cards need international recurring e-mandates
-      // enabled on the Razorpay account (UPI AutoPay is domestic-only). Confirm
-      // this is enabled before relying on auto-charge for overseas cards.
       const rzp = new window.Razorpay({
         key: data.key_id,
         subscription_id: data.subscription_id,
@@ -197,7 +194,7 @@ export function ServicesPage() {
           <div className="ce-member-status-icon">✓</div>
           <div className="ce-member-status-body">
             <p className="ce-member-status-title">
-              Founding Member{foundingNumber ? ` #${foundingNumber}` : ''}
+              Founding Family{foundingNumber ? ` #${foundingNumber}` : ''}
             </p>
             <p className="ce-member-status-perks">Benefits Active · Priority scheduling · Member pricing</p>
           </div>
@@ -210,18 +207,39 @@ export function ServicesPage() {
         </section>
       ) : (
         /* Non-member — acquisition card */
-        <section className="ce-rung1 ce-rung1-acquisition">
-          <div className="ce-rung1-body">
-            <p className="ce-rung1-title">Become a Founding Member</p>
-            <p className="ce-rung1-desc">
-              Join the first families helping shape Close Eye. Lifetime member pricing — one payment, no renewals.
+        <section className="ce-fm-card">
+          <div className="ce-fm-left">
+            <span className="ce-fm-badge">Early Access</span>
+            <h2 className="ce-fm-title">Become a Founding Family</h2>
+            <p className="ce-fm-desc">
+              Join the first families helping shape Close Eye. Lock in lifetime member pricing with one payment — no renewals.
             </p>
+            <ul className="ce-fm-benefits">
+              {[
+                'Lifetime member pricing',
+                'Priority access to new features',
+                'Help shape Close Eye',
+                'Exclusive Founding Family badge',
+              ].map(b => (
+                <li key={b}>
+                  <span className="ce-fm-check"><Check size={9} strokeWidth={3.5} /></span>
+                  {b}
+                </li>
+              ))}
+            </ul>
           </div>
-          <button className="ce-pp-btn ce-pp-btn-gold" onClick={handleJoin} disabled={busy === 'join'}>
-            {busy === 'join'
-              ? <><Loader2 size={15} className="ce-spin" /> Starting…</>
-              : 'Become a Founding Member'}
-          </button>
+          <div className="ce-fm-right">
+            <div className="ce-fm-price-block">
+              <span className="ce-fm-price">₹100</span>
+              <span className="ce-fm-price-sub">one-time · no renewals</span>
+            </div>
+            <button className="ce-fm-cta" onClick={handleJoin} disabled={busy === 'join'}>
+              {busy === 'join'
+                ? <><Loader2 size={15} className="ce-spin" /> Starting…</>
+                : 'Become a Founding Family'}
+            </button>
+            <p className="ce-fm-trust">Limited to the first founding families.</p>
+          </div>
         </section>
       )}
 
