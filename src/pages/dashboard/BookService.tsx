@@ -331,7 +331,7 @@ export function BookServicePage() {
       <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-[#F0EBE1] shrink-0">
         {step !== 'done' && (
           <button onClick={goBack} aria-label="Go back"
-            className="w-10 h-10 rounded-full bg-[#F5F0E8] flex items-center justify-center shrink-0 min-w-[40px]">
+            className="w-11 h-11 rounded-full bg-[#F5F0E8] flex items-center justify-center shrink-0 min-w-[44px]">
             <ArrowLeft size={18} color="#0E2A1F" />
           </button>
         )}
@@ -397,7 +397,7 @@ export function BookServicePage() {
               {/* Date strip */}
               <div>
                 <SectionLabel>Select a date</SectionLabel>
-                <div className="flex gap-2.5 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+                <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
                   {days.map((d, i) => {
                     const sel = date?.toDateString() === d.toDateString()
                     const dayLabel = i === 0 && todayHasSlots ? 'Today' : i === (todayHasSlots ? 1 : 0) ? 'Tomorrow' : d.toLocaleDateString('en-IN', { weekday: 'short' })
@@ -405,7 +405,7 @@ export function BookServicePage() {
                       <button key={d.toISOString()} onClick={() => { setDate(d); setSlot(''); setErr('') }}
                         aria-label={d.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
                         aria-pressed={sel}
-                        className={`shrink-0 min-w-[64px] rounded-[16px] py-3 px-2 text-center border-2 transition-all duration-200 ${
+                        className={`shrink-0 min-w-[64px] rounded-[16px] py-3 px-2 text-center border-2 transition-all duration-200 snap-start ${
                           sel
                             ? 'bg-[#0E2A1F] border-[#0E2A1F] text-white'
                             : 'bg-[#FAF7F2] border-transparent text-[#3A3A3C]'
@@ -630,7 +630,7 @@ function ParentStep({
               key={r}
               onClick={() => { onRelationshipChange(r); setErr('') }}
               aria-pressed={relationship === r}
-              className={`px-4 py-2 rounded-[12px] text-[13px] font-semibold border-2 min-h-[40px] transition-all duration-200 ${
+              className={`px-4 py-2.5 rounded-[12px] text-[13px] font-semibold border-2 min-h-[44px] transition-all duration-200 ${
                 relationship === r
                   ? 'bg-[#0E2A1F] border-[#0E2A1F] text-white'
                   : 'bg-[#FAF7F2] border-transparent text-[#3A3A3C]'
@@ -766,7 +766,7 @@ function AddressStep({
           {savedAddress && (
             <button
               onClick={() => { setShowNewForm(false); setErr('') }}
-              className="flex items-center gap-1.5 text-[13px] text-[#6E6E73] font-semibold mb-1 min-h-[36px]"
+              className="flex items-center gap-1.5 text-[13px] text-[#6E6E73] font-semibold mb-1 min-h-[44px]"
             >
               <ArrowLeft size={13} /> Back
             </button>
