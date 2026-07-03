@@ -1,22 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
+import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 
 // Verify a founding-membership payment SERVER-SIDE (HMAC of order_id|payment_id).
 // Called directly from the Razorpay handler callback in the client — no polling.
 // Idempotent: if already activated, returns the existing founding_number.
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-  });
-}
 
 async function verifySignature(orderId: string, paymentId: string, signature: string, secret: string): Promise<boolean> {
   const encoder = new TextEncoder();
@@ -29,9 +17,20 @@ async function verifySignature(orderId: string, paymentId: string, signature: st
 }
 
 Deno.serve(async (req: Request) => {
+  const cors = corsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+    return new Response(null, { status: 204, headers: cors });
   }
+
+  const originErr = checkOrigin(req);
+  if (originErr) return originErr;
+
+  const json = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return json({ error: "Missing Authorization header" }, 401);
@@ -104,8 +103,6 @@ Deno.serve(async (req: Request) => {
   }).eq("id", user.id);
 
   // Non-fatal WhatsApp notifications (payment_received then founding_welcome).
-  // Idempotency: the membership.status === "active" early return above prevents
-  // re-sends if this function is called a second time for the same order.
   try {
     const { data: prof } = await sb.from("profiles")
       .select("whatsapp_number, full_name")
@@ -114,7 +111,6 @@ Deno.serve(async (req: Request) => {
     const waNum = (prof?.whatsapp_number as string | null)?.trim();
     if (waNum) {
       const name = (prof?.full_name as string | null) || "there";
-      // amount is the plain numeric string — the template body already contains ₹
       await sendWhatsAppTemplate({ to: waNum, template: "payment_received", variables: [name, "100", "Founding Membership"], sb });
       await sendWhatsAppTemplate({ to: waNum, template: "founding_welcome", variables: [name, String(foundingNumber)], sb });
     } else {

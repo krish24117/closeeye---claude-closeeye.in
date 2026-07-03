@@ -1,24 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 
 type Action = "pause" | "resume" | "cancel";
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-  });
-}
-
 function razorpayAuth(): string {
-  const keyId = Deno.env.get("RAZORPAY_KEY_ID")!;
-  const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET")!;
-  return `Basic ${btoa(`${keyId}:${keySecret}`)}`;
+  return `Basic ${btoa(`${Deno.env.get("RAZORPAY_KEY_ID")!}:${Deno.env.get("RAZORPAY_KEY_SECRET")!}`)}`;
 }
 
 const ACTION_STATUS_MAP: Record<Action, string> = {
@@ -28,9 +14,20 @@ const ACTION_STATUS_MAP: Record<Action, string> = {
 };
 
 Deno.serve(async (req: Request) => {
+  const cors = corsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+    return new Response(null, { status: 204, headers: cors });
   }
+
+  const originErr = checkOrigin(req);
+  if (originErr) return originErr;
+
+  const json = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const authHeader = req.headers.get("Authorization");

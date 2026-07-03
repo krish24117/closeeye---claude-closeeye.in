@@ -1,10 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 
 type PlanId = "companion";
 
@@ -12,23 +7,25 @@ const PLAN_ID_ENV_MAP: Record<PlanId, string> = {
   companion: "RAZORPAY_PLAN_ID_COMPANION",
 };
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-  });
-}
-
 function razorpayAuth(): string {
-  const keyId = Deno.env.get("RAZORPAY_KEY_ID")!;
-  const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET")!;
-  return `Basic ${btoa(`${keyId}:${keySecret}`)}`;
+  return `Basic ${btoa(`${Deno.env.get("RAZORPAY_KEY_ID")!}:${Deno.env.get("RAZORPAY_KEY_SECRET")!}`)}`;
 }
 
 Deno.serve(async (req: Request) => {
+  const cors = corsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+    return new Response(null, { status: 204, headers: cors });
   }
+
+  const originErr = checkOrigin(req);
+  if (originErr) return originErr;
+
+  const json = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const authHeader = req.headers.get("Authorization");
@@ -82,7 +79,6 @@ Deno.serve(async (req: Request) => {
   }
 
   const notifyPhone = profile.phone || profile.whatsapp_number || "";
-  const notifyEmail = userEmail;
 
   // ── Create Razorpay subscription ──────────────────────────────────────────
   const rzRes = await fetch("https://api.razorpay.com/v1/subscriptions", {
@@ -97,7 +93,7 @@ Deno.serve(async (req: Request) => {
       quantity: 1,
       notify_info: {
         notify_phone: notifyPhone,
-        notify_email: notifyEmail,
+        notify_email: userEmail,
       },
       notes: {
         user_id: user.id,
@@ -129,7 +125,7 @@ Deno.serve(async (req: Request) => {
 
   if (upsertErr) {
     console.error("subscriptions upsert error:", upsertErr);
-    // Non-fatal — Razorpay subscription was created, still return it
+    // Non-fatal — Razorpay subscription was created
   }
 
   return json({

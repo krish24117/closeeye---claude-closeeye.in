@@ -2,23 +2,19 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { detectRedFlag } from "./redflags.ts";
 import { answerService } from "./service.ts";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
+import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 
 // Ask Close Eye — health guidance for families caring for elderly parents.
 // Restricted to: elderly health, wellbeing, medication, elder-care topics, Close Eye services.
 // Monthly cap: 5 questions per user (free tier only). Founding/paying members are exempt.
+// Burst cap: 3/min for free users, 10/min for exempt users — prevents Claude API abuse.
 // Emergencies detected by detectRedFlag() bypass the cap entirely and never reach Claude.
 // Every response appends a standard disclaimer.
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
-}
-
 const MONTHLY_LIMIT = 5;
+// Max first-turn questions per 60-second window (burst abuse prevention)
+const BURST_LIMIT_FREE   = 3;
+const BURST_LIMIT_EXEMPT = 10;
 
 const SYSTEM_PROMPT = `You are Ask Close Eye — a warm, knowledgeable wellbeing assistant exclusively for families caring for elderly parents and older adults in India.
 
@@ -75,7 +71,6 @@ const INJECTION_SIGNALS = [
 const DISCLAIMER =
   "\n\n*This is general guidance, not a medical diagnosis. For any serious concerns or emergencies, please contact a qualified doctor or call 108.*";
 
-// Override via CLOSEEYE_AMBULANCE_NUMBER secret if region/project needs a different number
 const AMBULANCE_NUMBER = Deno.env.get("CLOSEEYE_AMBULANCE_NUMBER") ?? "108";
 
 function looksLikeInjection(text: string): boolean {
@@ -83,8 +78,6 @@ function looksLikeInjection(text: string): boolean {
   return INJECTION_SIGNALS.some((sig) => lower.includes(sig));
 }
 
-// ── Service intent detection ──────────────────────────────────────────────────
-// Mirrors ask-health-public — keep the two in sync if patterns change.
 const SERVICE_TRIGGERS: RegExp[] = [
   /how (do|will|does|would) (you|close ?eye) (send|assign|find|choose|select|bring|provide|hire|match)/,
   /how (does|do|will) (the|a|your)? ?(companion|carer|care ?giver|helper|staff|person|someone)/,
@@ -108,19 +101,12 @@ function isServiceQuestion(text: string): boolean {
   return SERVICE_TRIGGERS.some((p) => p.test(q));
 }
 
-// Out-of-scope detection — conservative (prefers false negatives so Claude handles edge cases).
-// Child query: unambiguous infant/child markers, or explicit age ≤ 14 years.
-// Off-topic: clearly non-health subjects (recipes, finance, sports, etc.).
 function looksLikeChildQuery(text: string): boolean {
   const lower = text.toLowerCase();
-  // If the question is clearly about an elderly person, don't flag even if "baby" appears in passing
   const elderlyContext = /\b(elderly|senior|older adult|aged|grandfather|grandmother|dadi|nani|dada|nana|thatha|paati|ajja|ajji|appa|amma|pitaji|mataji)\b/.test(lower);
   if (elderlyContext) return false;
-  // Strong unambiguous child markers
   if (/\b(infant|newborn|baby|toddler|paediatric(?:ian)?|pediatric(?:ian)?|neonatal)\b/.test(lower)) return true;
-  // Explicit age clearly signals a child (≤ 14 years old)
   if (/\b([0-9]|1[0-4])\s*years?\s*old\b/.test(lower)) return true;
-  // Age in months or weeks signals an infant
   if (/\b\d{1,2}\s*(month|week)s?\s*old\b/.test(lower)) return true;
   return false;
 }
@@ -137,10 +123,22 @@ function looksOffTopic(text: string): boolean {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS_HEADERS });
+  const cors = corsHeaders(req);
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+
+  // CSRF guard — rejects requests from untrusted browser origins
+  const originErr = checkOrigin(req);
+  if (originErr) return originErr;
+
+  const json = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+
+  const supabaseUrl      = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey  = Deno.env.get("SUPABASE_ANON_KEY")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   const authHeader = req.headers.get("Authorization");
@@ -161,9 +159,8 @@ Deno.serve(async (req: Request) => {
   const question = (body.question || "").trim();
   if (!question) return json({ error: "Question is required" }, 400);
 
-  // conversation_id present → follow-up turn; skip cap + DB insert for this turn
   const conversationId = body.conversation_id ?? null;
-  const isFollowUp = !!conversationId;
+  const isFollowUp     = !!conversationId;
   const clientMessages = body.messages ?? null;
 
   // ── Red-flag check — runs BEFORE cap and BEFORE any model call.
@@ -180,20 +177,39 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
   const isExempt = !!memberProf?.is_founding_member;
 
-  // ── Monthly cap — free-tier users only, non-emergencies only, first turn only ─
-  if (!isExempt && !redFlag.matched && !isFollowUp) {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const { count: monthCount } = await sb
+  // ── Rate limits — first turns only, non-emergency only ───────────────────
+  if (!redFlag.matched && !isFollowUp) {
+    // Monthly cap — free-tier users only
+    if (!isExempt) {
+      const now          = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const { count: monthCount } = await sb
+        .from("member_queries")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("created_at", startOfMonth);
+
+      if ((monthCount ?? 0) >= MONTHLY_LIMIT) {
+        return json({
+          error:   "monthly_limit_reached",
+          message: "You've used your 5 free questions this month. They refresh on the 1st. For urgent health concerns, please contact a doctor or call 108.",
+        }, 429);
+      }
+    }
+
+    // Burst cap — protects Claude API from rapid automated requests
+    const burstLimit  = isExempt ? BURST_LIMIT_EXEMPT : BURST_LIMIT_FREE;
+    const burstSince  = new Date(Date.now() - 60_000).toISOString();
+    const { count: burstCount } = await sb
       .from("member_queries")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
-      .gte("created_at", startOfMonth);
+      .gte("created_at", burstSince);
 
-    if ((monthCount ?? 0) >= MONTHLY_LIMIT) {
+    if ((burstCount ?? 0) >= burstLimit) {
       return json({
-        error: "monthly_limit_reached",
-        message: "You've used your 5 free questions this month. They refresh on the 1st. For urgent health concerns, please contact a doctor or call 108.",
+        error:   "rate_limited",
+        message: "You're asking too quickly. Please wait a moment before sending another question.",
       }, 429);
     }
   }
@@ -207,9 +223,7 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // ── Out-of-scope boundary — warm redirect, no DB insert, no cap consumed ─
-  // Runs after red-flag so genuine emergencies still reach the escalation path.
-  // Only applied to first-turn questions; follow-up turns pass through to Claude.
+  // ── Out-of-scope boundary ─────────────────────────────────────────────────
   if (!redFlag.matched && !isFollowUp) {
     if (looksLikeChildQuery(question)) {
       const seemsUrgent = /\b(urgent|emergency|help|not breathing|unconscious|seiz|convuls|won.?t wake|not waking)\b/i.test(question);
@@ -232,15 +246,15 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // ── Persist the question — only on the first turn of a conversation ─────
+  // ── Persist the question — first turn only ────────────────────────────────
   let queryId: string;
   if (!isFollowUp) {
     const { data: row, error: insErr } = await sb.from("member_queries").insert({
-      user_id: user.id,
+      user_id:       user.id,
       question,
       subject_label: body.subject_label || null,
-      loved_one_id: body.loved_one_id || null,
-      status: "pending",
+      loved_one_id:  body.loved_one_id  || null,
+      status:        "pending",
     }).select("id").single();
     if (insErr || !row) {
       console.error("member_queries insert error:", insErr);
@@ -251,9 +265,7 @@ Deno.serve(async (req: Request) => {
     queryId = conversationId!;
   }
 
-  // ── Service routing — answers "how Close Eye works / pricing / coverage" questions
-  //    from the KB; never reaches the health Claude path for these.
-  //    Only on first turns — follow-up turns are already inside a health conversation.
+  // ── Service routing ───────────────────────────────────────────────────────
   if (!redFlag.matched && !isFollowUp && isServiceQuestion(question)) {
     const emptyCtx = {
       parentId: user.id, parentName: "", age: undefined,
@@ -263,21 +275,18 @@ Deno.serve(async (req: Request) => {
     };
     try {
       const svc = await answerService(question, emptyCtx);
-      // Persist the service answer back to the query row
       await sb.from("member_queries").update({
-        ai_answer: svc.message,
-        status: "ai_answered",
+        ai_answer:   svc.message,
+        status:      "ai_answered",
         answered_at: new Date().toISOString(),
       }).eq("id", queryId);
       return json({ query_id: queryId, ai_answer: svc.message, track: "service" });
     } catch (svcErr) {
       console.error("[ask-health] service routing error, falling through to health path:", svcErr);
-      // Intentional fall-through: the health Claude call acts as a backstop
     }
   }
 
-  // ── Red-flag escalation — bypass Claude entirely; send fixed emergency response.
-  //    Care-team alert is non-fatal: the family gets the 108 message regardless.
+  // ── Red-flag escalation ───────────────────────────────────────────────────
   if (redFlag.matched) {
     console.log(`[ask-health] escalation: category=${redFlag.category} query_id=${queryId}`);
     try {
@@ -309,8 +318,8 @@ Deno.serve(async (req: Request) => {
 
     return json({
       query_id: queryId,
-      lane: "escalate",
-      message: `**Call ${AMBULANCE_NUMBER} now.** This sounds like a medical emergency — please don't wait.\n\nCall **${AMBULANCE_NUMBER}** (ambulance) or take them to the nearest emergency room immediately. Stay on the line with the dispatcher — they will guide you until help arrives.\n\nOur care team has been alerted and will follow up shortly.`,
+      lane:     "escalate",
+      message:  `**Call ${AMBULANCE_NUMBER} now.** This sounds like a medical emergency — please don't wait.\n\nCall **${AMBULANCE_NUMBER}** (ambulance) or take them to the nearest emergency room immediately. Stay on the line with the dispatcher — they will guide you until help arrives.\n\nOur care team has been alerted and will follow up shortly.`,
       escalation: { ambulanceNumber: AMBULANCE_NUMBER },
     });
   }
@@ -326,8 +335,6 @@ Deno.serve(async (req: Request) => {
     ? `About: ${body.subject_label}\n\nQuestion: ${question}`
     : question;
 
-  // For multi-turn chat: use the full conversation history supplied by the client.
-  // For first turns: fall back to the single-message format.
   const claudeMessages = clientMessages
     ? clientMessages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content }))
     : [{ role: "user" as const, content: userContent }];
@@ -336,15 +343,15 @@ Deno.serve(async (req: Request) => {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
+        "x-api-key":          apiKey,
+        "anthropic-version":  "2023-06-01",
+        "content-type":       "application/json",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model:      "claude-haiku-4-5-20251001",
         max_tokens: 400,
-        system: SYSTEM_PROMPT,
-        messages: claudeMessages,
+        system:     SYSTEM_PROMPT,
+        messages:   claudeMessages,
       }),
     });
 
@@ -354,29 +361,26 @@ Deno.serve(async (req: Request) => {
       return json({ query_id: queryId, ai_answer: null, pending: true });
     }
 
-    const data = await res.json();
+    const data      = await res.json();
     const rawAnswer = (data?.content?.[0]?.text ?? "").trim();
     if (!rawAnswer) return json({ query_id: queryId, ai_answer: null, pending: true });
 
-    // Always append disclaimer — do not let the model decide whether to include it
     const aiAnswer = rawAnswer + DISCLAIMER;
 
-    // Only update DB and notify on the first turn; follow-ups are ephemeral chat turns
     if (!isFollowUp) {
       await sb.from("member_queries").update({
-        ai_answer: aiAnswer,
-        status: "ai_answered",
+        ai_answer:   aiAnswer,
+        status:      "ai_answered",
         answered_at: new Date().toISOString(),
       }).eq("id", queryId);
 
-      // Non-fatal: notify user their question has been answered
       try {
         const { data: prof } = await sb.from("profiles").select("whatsapp_number, full_name").eq("id", user.id).maybeSingle();
         const waNum = prof?.whatsapp_number?.trim();
         if (waNum) {
           await sendWhatsAppTemplate({
-            to: waNum,
-            template: "query_response",
+            to:        waNum,
+            template:  "query_response",
             variables: [prof?.full_name || "there"],
             sb,
           });

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 
 // Manually-triggered WhatsApp broadcast for pre-launch engagement.
 // Protected by the BROADCAST_SECRET header.
@@ -13,18 +14,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Templates: weekly_update | pre_launch_teaser | launch_announcement | city_milestone | ask_nudge
 // Audience:  founding_members | waitlist | all
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-broadcast-secret",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-  });
-}
 
 type Template = "weekly_update" | "pre_launch_teaser" | "launch_announcement" | "city_milestone" | "ask_nudge";
 type Audience = "founding_members" | "waitlist" | "all";
@@ -123,7 +112,22 @@ function buildMessage(
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS_HEADERS });
+  // x-broadcast-secret is a custom auth header — add it to the allowed list
+  const cors = {
+    ...corsHeaders(req),
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-broadcast-secret",
+  };
+
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+
+  const originErr = checkOrigin(req);
+  if (originErr) return originErr;
+
+  const json = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 
   // Auth: require broadcast secret header
   const secret = Deno.env.get("BROADCAST_SECRET");

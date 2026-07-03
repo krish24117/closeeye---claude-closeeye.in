@@ -8,30 +8,29 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendWhatsAppTemplate, normalisePhone } from "../_shared/whatsapp.ts";
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-  });
-}
+import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 
 Deno.serve(async (req: Request) => {
+  const cors = corsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+    return new Response(null, { status: 204, headers: cors });
   }
+
+  const originErr = checkOrigin(req);
+  if (originErr) return originErr;
+
+  const json = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+
   if (req.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
   }
 
   // ── Auth: must be admin (service role or valid JWT with admin role) ──────────
-  // We check the calling JWT has role = admin; the Supabase service role bypasses RLS.
   const supabaseUrl        = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const sb = createClient(supabaseUrl, supabaseServiceKey);
@@ -108,16 +107,12 @@ Deno.serve(async (req: Request) => {
   const rawPhone = (br.requester_whatsapp as string | null) ?? "";
   let customerPhone: string | undefined;
   try {
-    // Razorpay wants plain E.164 without "whatsapp:" prefix
     customerPhone = normalisePhone(rawPhone).replace("whatsapp:", "");
   } catch {
-    // Non-fatal — Razorpay will still create the link, just can't pre-fill contact
     console.warn("[confirm-booking] Could not normalise customer phone:", rawPhone);
   }
 
   // ── Create Razorpay Payment Link ─────────────────────────────────────────────
-  // Razorpay natively delivers the payment link via WhatsApp/SMS when notify is set.
-  // The link expires in 72 hours (can be extended by resending).
   const expiresAt = Math.floor(Date.now() / 1000) + 72 * 60 * 60; // 72h from now
 
   const rzBody: Record<string, unknown> = {
@@ -125,7 +120,7 @@ Deno.serve(async (req: Request) => {
     currency:    "INR",
     accept_partial: false,
     description: `${br.service_name} for ${br.recipient_name}`,
-    reference_id: booking_request_id.replace(/-/g, "").slice(0, 40), // Razorpay: alphanumeric only, max 40 chars
+    reference_id: booking_request_id.replace(/-/g, "").slice(0, 40),
     expire_by:   expiresAt,
     notify: {
       sms:       true,
@@ -208,8 +203,6 @@ Deno.serve(async (req: Request) => {
   }
 
   // ── WhatsApp — visit_confirmed template (companion name + scheduled time) ────
-  // Razorpay already delivers the payment link via WhatsApp/SMS natively.
-  // We send a separate visit_confirmed message so the customer knows their companion.
   if (rawPhone && finalScheduledAt) {
     try {
       const datetimeStr = new Intl.DateTimeFormat("en-IN", {

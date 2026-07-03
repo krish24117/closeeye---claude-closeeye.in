@@ -342,7 +342,7 @@ function HomeAskWidget() {
                 ⚠ This needs urgent attention
               </p>
               <p style={{ fontSize: 13.5, color: '#3d1010', lineHeight: 1.55, margin: 0 }}
-                dangerouslySetInnerHTML={{ __html: answer.message.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') }}
+                dangerouslySetInnerHTML={{ __html: answer.message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>') }}
               />
               <a
                 href={`tel:${answer.ambulanceNumber ?? '108'}`}

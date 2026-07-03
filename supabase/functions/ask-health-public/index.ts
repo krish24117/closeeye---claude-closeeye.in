@@ -13,21 +13,9 @@
 // Cap: frontend-enforced (localStorage). No server-side user tracking because
 //      there is no user — this is the free public hook.
 
+import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
+
 const AMBULANCE_NUMBER = Deno.env.get("CLOSEEYE_AMBULANCE_NUMBER") ?? "108";
-
-// Public endpoint — all browser origins must be allowed so www. and non-www both work.
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, "Content-Type": "application/json" },
-  });
-}
 
 // ── Red-flag patterns ────────────────────────────────────────────────────────
 // IDENTICAL to supabase/functions/ask-health/redflags.ts
@@ -163,7 +151,6 @@ function detectRedFlag(rawMessage: string): { matched: boolean; category?: strin
 }
 
 // ── Service intent detection ─────────────────────────────────────────────────
-// Patterns that signal the user is asking about Close Eye itself — not a health question.
 const SERVICE_TRIGGERS: RegExp[] = [
   /how (do|will|does|would) (you|close ?eye) (send|assign|find|choose|select|bring|provide|hire|match)/,
   /how (does|do|will) (the|a|your)? ?(companion|carer|care ?giver|helper|staff|person|someone)/,
@@ -225,7 +212,6 @@ async function generateServiceAnswer(question: string): Promise<string> {
   return data.content?.[0]?.text?.trim() ?? "";
 }
 
-// ── Claude call (general guidance; NO parent context) ────────────────────────
 async function generateGeneralAnswer(question: string): Promise<string> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set");
@@ -260,8 +246,20 @@ Rules:
 
 // ── Handler ──────────────────────────────────────────────────────────────────
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-  if (req.method !== "POST")    return json({ error: "Method not allowed" }, 405);
+  const cors = corsHeaders(req);
+
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+
+  const originErr = checkOrigin(req);
+  if (originErr) return originErr;
+
+  const json = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   let body: { question?: string };
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
@@ -282,7 +280,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
   }
 
-  // ── Service intent — runs after red-flag so real emergencies still escalate ─
+  // Service intent — runs after red-flag so real emergencies still escalate
   if (isServiceQuestion(question)) {
     let svcMessage: string;
     try {
@@ -300,7 +298,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
     message = await generateGeneralAnswer(question);
     if (!message) throw new Error("empty response");
   } catch {
-    // Soft fallback — still helpful, not a hard wall
     message = "That's a caring question. Our medical team would be happy to give you a personalised answer — register your parent for free to ask directly and get guidance specific to their health history.";
   }
 

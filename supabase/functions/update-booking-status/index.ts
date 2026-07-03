@@ -14,18 +14,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendWhatsAppTemplate } from '../_shared/whatsapp.ts'
-
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  })
-}
+import { corsHeaders, checkOrigin } from '../_shared/cors.ts'
 
 // Valid forward/exception transitions per status
 const TRANSITIONS: Record<string, string[]> = {
@@ -49,7 +38,14 @@ function formatIST(iso: string): string {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
+  const cors = corsHeaders(req)
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors })
+
+  const originErr = checkOrigin(req)
+  if (originErr) return originErr
+
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
   // ── Service-role client (full DB access) ─────────────────────────────────
   const sb = createClient(

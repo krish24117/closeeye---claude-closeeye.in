@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
+import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 
 // One-off booking REQUEST (request -> confirm -> pay). No payment taken here.
 // We persist an unpaid request; ops confirm availability, then send a payment link.
@@ -9,23 +10,50 @@ import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 //   'needs_details'— address or WhatsApp was blank; booking saved but MUST NOT be
 //                    dispatched until ops or the family supplies the missing info
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+// Server-authoritative price map — amount in paise (100 paise = ₹1).
+// Mirrors services-catalog.ts ONE_OFF_SERVICES. Never trust amount_paise from the client.
+// If a service_id is unknown the booking is saved with amount_paise = null so
+// that ops can set the correct amount before creating the payment order.
+const CANONICAL_PRICES: Readonly<Record<string, number | null>> = {
+  // Canonical IDs (services-catalog.ts)
+  home_visit:                    100000, // ₹1,000
+  doctor_visit_support:          150000, // ₹1,500
+  hospital_assistance:           null,   // price comes from the variant
+  grocery_medicine:              50000,  // ₹500
+  emergency_response:            300000, // ₹3,000
+  // Wizard route aliases (Services.tsx SERVICE_WIZARD_ID map)
+  grocery_medicine_assistance:   50000,
+  emergency_support_visit:       300000,
+  // Hospital variant IDs used as direct service_ids in the wizard
+  hospital_assistance_half_day:  200000, // ₹2,000
+  hospital_assistance_full_day:  400000, // ₹4,000
+} as const;
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-  });
+function resolvePrice(serviceId: string, variantId?: string | null): number | null {
+  if (variantId) {
+    const vp = CANONICAL_PRICES[variantId];
+    if (vp !== undefined) return vp;
+  }
+  const sp = CANONICAL_PRICES[serviceId];
+  return sp !== undefined ? sp : null;
 }
 
 Deno.serve(async (req: Request) => {
+  const cors = corsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+    return new Response(null, { status: 204, headers: cors });
   }
+
+  // CSRF guard — rejects requests from untrusted browser origins
+  const originErr = checkOrigin(req);
+  if (originErr) return originErr;
+
+  const json = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -39,7 +67,6 @@ Deno.serve(async (req: Request) => {
   if (authHeader?.startsWith("Bearer ")) {
     try {
       const token = authHeader.slice(7);
-      // Convert base64url → base64 and add padding so atob() never throws
       const raw = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
       const padded = raw + "=".repeat((4 - (raw.length % 4)) % 4);
       const payload = JSON.parse(atob(padded));
@@ -53,7 +80,7 @@ Deno.serve(async (req: Request) => {
     service_id?: string;
     service_name?: string;
     variant_id?: string | null;
-    amount_paise?: number | null;
+    amount_paise?: number | null;   // accepted but IGNORED — server resolves canonical price
     scheduled_at_ist?: string | null;
     recipient_name?: string;
     recipient_address?: string;
@@ -67,37 +94,39 @@ Deno.serve(async (req: Request) => {
   }
 
   const {
-    service_id, service_name, variant_id, amount_paise,
+    service_id, service_name, variant_id,
     scheduled_at_ist, recipient_name, recipient_address, requester_whatsapp, notes,
   } = body;
 
-  // Only the service identity is strictly required.
   if (!service_id || !service_name) {
     return json({ error: "Missing required fields: service_id and service_name" }, 400);
   }
 
+  // Resolve price server-side — client-supplied amount_paise is intentionally discarded
+  const canonicalPrice = resolvePrice(service_id, variant_id);
+
   const addrClean = (recipient_address || "").trim();
-  const waClean = (requester_whatsapp || "").trim();
-  const missingAddress = addrClean === "";
-  const missingWhatsapp = waClean === "";
-  const needsDetails = missingAddress || missingWhatsapp;
+  const waClean   = (requester_whatsapp || "").trim();
+  const missingAddress  = addrClean === "";
+  const missingWhatsapp = waClean   === "";
+  const needsDetails    = missingAddress || missingWhatsapp;
 
   const sb = createClient(supabaseUrl, supabaseServiceKey);
 
   const { data, error } = await sb
     .from("booking_requests")
     .insert({
-      user_id: userId,
+      user_id:            userId,
       service_id,
       service_name,
-      variant_id: variant_id ?? null,
-      amount_paise: amount_paise ?? null,
-      scheduled_at: scheduled_at_ist || null,
-      recipient_name: (recipient_name || "").trim(),
-      recipient_address: addrClean,
+      variant_id:         variant_id ?? null,
+      amount_paise:       canonicalPrice,   // server-authoritative price
+      scheduled_at:       scheduled_at_ist || null,
+      recipient_name:     (recipient_name || "").trim(),
+      recipient_address:  addrClean,
       requester_whatsapp: waClean,
-      notes: notes?.trim() || null,
-      status: needsDetails ? "needs_details" : "pending_confirmation",
+      notes:              notes?.trim() || null,
+      status:             needsDetails ? "needs_details" : "pending_confirmation",
     })
     .select("id")
     .single();
@@ -109,19 +138,20 @@ Deno.serve(async (req: Request) => {
 
   // Notify admin on WhatsApp (Twilio) — non-fatal; booking is already saved above.
   try {
-    const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const token = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const from = Deno.env.get("TWILIO_WHATSAPP_FROM");
-    const adminTo = Deno.env.get("ADMIN_WHATSAPP") || "+919000221261";
+    const sid      = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const token    = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const from     = Deno.env.get("TWILIO_WHATSAPP_FROM");
+    const adminTo  = Deno.env.get("ADMIN_WHATSAPP") || "+919000221261";
     if (sid && token && from) {
       const wa = (n: string) => (n.trim().startsWith("whatsapp:") ? n.trim() : `whatsapp:${n.trim()}`);
       const missingNote = needsDetails
         ? `⚠️ NEEDS DETAILS: ${[missingAddress && "address", missingWhatsapp && "WhatsApp"].filter(Boolean).join(", ")} missing\n`
         : "";
+      const priceLabel = canonicalPrice ? ` (₹${(canonicalPrice / 100).toLocaleString("en-IN")})` : "";
       const msgBody =
         `🔔 New booking request\n` +
         missingNote +
-        `Service: ${service_name}${amount_paise ? ` (₹${(amount_paise / 100).toLocaleString("en-IN")})` : ""}\n` +
+        `Service: ${service_name}${priceLabel}\n` +
         `For: ${recipient_name || "—"}\n` +
         `When: ${scheduled_at_ist || "—"}\n` +
         `Address: ${addrClean || "—"}\n` +
@@ -129,24 +159,29 @@ Deno.serve(async (req: Request) => {
         (notes?.trim() ? `Notes: ${notes.trim()}\n` : "") +
         `closeeye.in/admin`;
       const params = new URLSearchParams({ From: wa(from), To: wa(adminTo), Body: msgBody });
-      const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", Authorization: `Basic ${btoa(`${sid}:${token}`)}` },
-        body: params.toString(),
-      });
+      const res = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Basic ${btoa(`${sid}:${token}`)}`,
+          },
+          body: params.toString(),
+        },
+      );
       if (!res.ok) console.error("Twilio admin notify failed:", res.status, await res.text());
     }
   } catch (waErr) {
     console.error("Admin WhatsApp notify error (non-fatal):", waErr);
   }
 
-
   return json({
     ok: true,
-    request_id: data.id,
+    request_id:   data.id,
     needs_details: needsDetails,
     missing: {
-      address: missingAddress,
+      address:  missingAddress,
       whatsapp: missingWhatsapp,
     },
   });

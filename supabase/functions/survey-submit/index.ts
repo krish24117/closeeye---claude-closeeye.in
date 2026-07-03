@@ -1,22 +1,21 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-  });
-}
+import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 
 Deno.serve(async (req: Request) => {
+  const cors = corsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+    return new Response(null, { status: 204, headers: cors });
   }
+
+  const originErr = checkOrigin(req);
+  if (originErr) return originErr;
+
+  const json = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 
   let body: {
     q1_location?: string;
@@ -47,16 +46,16 @@ Deno.serve(async (req: Request) => {
   const sb = createClient(supabaseUrl, supabaseServiceKey);
 
   const { error: insertErr } = await sb.from("survey_responses").insert({
-    q1_location:        body.q1_location        ?? null,
-    q2_residence:       body.q2_residence       ?? null,
-    q3_worries:         body.q3_worries         ?? [],
-    q4_check_method:    body.q4_check_method    ?? null,
+    q1_location:         body.q1_location         ?? null,
+    q2_residence:        body.q2_residence        ?? null,
+    q3_worries:          body.q3_worries          ?? [],
+    q4_check_method:     body.q4_check_method     ?? null,
     q5_value_perception: body.q5_value_perception ?? null,
-    name:               name.trim(),
-    whatsapp:           whatsapp.trim(),
-    email:              email.trim().toLowerCase(),
-    parent_city:        parent_city.trim(),
-    source:             body.source?.trim()      || null,
+    name:                name.trim(),
+    whatsapp:            whatsapp.trim(),
+    email:               email.trim().toLowerCase(),
+    parent_city:         parent_city.trim(),
+    source:              body.source?.trim()       || null,
   });
 
   if (insertErr) {

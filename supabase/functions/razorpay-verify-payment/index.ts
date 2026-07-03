@@ -1,17 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-  });
-}
+import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 
 async function verifySignature(orderId: string, paymentId: string, signature: string, secret: string): Promise<boolean> {
   const encoder = new TextEncoder();
@@ -30,16 +18,27 @@ async function verifySignature(orderId: string, paymentId: string, signature: st
 }
 
 Deno.serve(async (req: Request) => {
+  const cors = corsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+    return new Response(null, { status: 204, headers: cors });
   }
+
+  const originErr = checkOrigin(req);
+  if (originErr) return originErr;
+
+  const json = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return json({ error: "Missing Authorization header" }, 401);
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const supabaseUrl      = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey  = Deno.env.get("SUPABASE_ANON_KEY")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   const callerSb = createClient(supabaseUrl, supabaseAnonKey, {
@@ -83,10 +82,10 @@ Deno.serve(async (req: Request) => {
   const { data: booking, error: updateErr } = await sb
     .from("bookings")
     .update({
-      payment_status: "paid",
-      status: "confirmed",
+      payment_status:    "paid",
+      status:            "confirmed",
       razorpay_payment_id,
-      paid_at: new Date().toISOString(),
+      paid_at:           new Date().toISOString(),
     })
     .eq("id", booking_id)
     .eq("family_user_id", user.id)
@@ -102,14 +101,13 @@ Deno.serve(async (req: Request) => {
   const amountInr = `₹${(booking.amount_paise / 100).toLocaleString("en-IN")}`;
   await sb.from("notifications").insert({
     user_id: user.id,
-    type: "payment_confirmed",
-    title: "Payment confirmed — booking received",
+    type:    "payment_confirmed",
+    title:   "Payment confirmed — booking received",
     message: `Your ${amountInr} payment was received. A companion will be assigned within 24 hours.`,
-    read: false,
+    read:    false,
   });
 
-  // ── WhatsApp alert to admin/founder ──────────────────────────────────────
-  // Fire-and-forget — never let an alert failure block the booking confirmation.
+  // ── WhatsApp alert to admin ───────────────────────────────────────────────
   try {
     const accountSid  = Deno.env.get("TWILIO_ACCOUNT_SID");
     const authToken   = Deno.env.get("TWILIO_AUTH_TOKEN");
@@ -124,9 +122,9 @@ Deno.serve(async (req: Request) => {
           : Promise.resolve({ data: null }),
       ]);
 
-      const familyName  = profileRes.data?.full_name      ?? "Unknown customer";
-      const familyPhone = profileRes.data?.whatsapp_number ?? "Not provided";
-      const lovedOne    = (lovedOneRes as any).data?.full_name ?? "Unknown";
+      const familyName  = profileRes.data?.full_name       ?? "Unknown customer";
+      const familyPhone = profileRes.data?.whatsapp_number  ?? "Not provided";
+      const lovedOne    = (lovedOneRes as { data: { full_name?: string } | null }).data?.full_name ?? "Unknown";
 
       const SERVICE_LABELS: Record<string, string> = {
         home_visit:                    "Home Visit",
@@ -140,13 +138,13 @@ Deno.serve(async (req: Request) => {
 
       const scheduledDate = booking.scheduled_at
         ? new Date(booking.scheduled_at).toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata",
+            timeZone:  "Asia/Kolkata",
             dateStyle: "medium",
             timeStyle: "short",
           })
         : "Not specified";
 
-      const body = [
+      const msgBody = [
         `🔔 *New Booking — Close Eye*`,
         ``,
         `*Service:* ${serviceName}`,
@@ -160,17 +158,17 @@ Deno.serve(async (req: Request) => {
       ].join("\n");
 
       const to   = adminNumber.startsWith("whatsapp:") ? adminNumber : `whatsapp:${adminNumber}`;
-      const from = fromNumber.startsWith("whatsapp:") ? fromNumber : `whatsapp:${fromNumber}`;
+      const from = fromNumber.startsWith("whatsapp:")  ? fromNumber  : `whatsapp:${fromNumber}`;
 
       await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
         {
           method: "POST",
           headers: {
-            Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+            Authorization:  `Basic ${btoa(`${accountSid}:${authToken}`)}`,
             "Content-Type": "application/x-www-form-urlencoded",
           },
-          body: new URLSearchParams({ From: from, To: to, Body: body }),
+          body: new URLSearchParams({ From: from, To: to, Body: msgBody }),
         },
       );
     }
