@@ -71,6 +71,7 @@ function NriHome() {
     if (!user) return
     let alive = true
     ;(async () => {
+      try {
       // Phase 1 — parallel: loved one + next booking + active request + completed count
       const [loRes, bkRes, arRes, cntRes] = await Promise.all([
         supabase.from('loved_ones')
@@ -125,6 +126,9 @@ function NriHome() {
       }
 
       if (alive) setLoading(false)
+      } catch {
+        if (alive) setLoading(false)
+      }
     })()
     return () => { alive = false }
   }, [user])

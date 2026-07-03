@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft, CheckCircle, Clock, UserCheck, MapPin, FileText,
-  MessageCircle, Star, Loader2, AlertTriangle, ChevronRight,
+  MessageCircle, Loader2, AlertTriangle, ChevronRight,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
@@ -320,7 +320,6 @@ export function BookingDetailPage() {
   const [booking, setBooking]     = useState<BookingRequest | null>(null)
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState<string | null>(null)
-  const [showRating, setShowRating] = useState(false)
   const [optimisticPaid, setOptimisticPaid] = useState(false)
 
   useEffect(() => {
@@ -544,19 +543,6 @@ export function BookingDetailPage() {
                   </div>
                   <ChevronRight size={14} color="#AEAEAE" />
                 </Link>
-                {booking.companion_name && (
-                  <button
-                    onClick={() => setShowRating(true)}
-                    style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, background:'#F5F0E8', borderRadius:14, padding:'13px 16px', border:'none', cursor:'pointer', width:'100%', minHeight:48 }}
-                    aria-label={`Rate companion ${booking.companion_name}`}
-                  >
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <Star size={16} color="#0E2A1F" />
-                      <span style={{ fontSize:14, fontWeight:600, color:'#0E2A1F' }}>Rate your companion</span>
-                    </div>
-                    <ChevronRight size={14} color="#AEAEAE" />
-                  </button>
-                )}
               </div>
             </div>
           </DetailBlock>
@@ -581,11 +567,6 @@ export function BookingDetailPage() {
         )}
 
       </div>
-
-      {/* ── Rating modal ── */}
-      {showRating && booking.companion_name && (
-        <RatingModal companionName={booking.companion_name} onClose={() => setShowRating(false)} />
-      )}
 
     </div>
   )

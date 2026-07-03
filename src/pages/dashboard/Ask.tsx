@@ -169,7 +169,7 @@ function HistoryCard({ q }: { q: Query }) {
       <div style={{ padding: '12px 16px 0' }}>
         {isPending ? (
           <p style={{ fontSize: 13, color: '#9aada3', fontStyle: 'italic', margin: 0 }}>
-            Our medical team is reviewing this…
+            Being reviewed by our care team…
           </p>
         ) : answerText ? (
           <>
@@ -208,7 +208,7 @@ function HistoryCard({ q }: { q: Query }) {
           <>
             <span style={{ fontSize: 13, color: '#2FA84F' }}>✓</span>
             <span style={{ fontSize: 11, fontWeight: 600, color: '#2FA84F' }}>
-              Reviewed by {q.reviewed_by || 'Close Eye medical team'}
+              Reviewed by {q.reviewed_by || 'Close Eye care team'}
             </span>
           </>
         ) : (
@@ -218,7 +218,7 @@ function HistoryCard({ q }: { q: Query }) {
               background: isPending ? '#e8c07a' : '#2FA84F',
             }} />
             <span style={{ fontSize: 11, fontWeight: 500, color: '#7a8c82' }}>
-              {isPending ? 'Pending review' : 'AI guidance · Close Eye medical team'}
+              {isPending ? 'Pending review' : 'Ask CloseEye AI guidance'}
             </span>
           </>
         )}
@@ -353,7 +353,10 @@ export function DashboardAsk() {
     setMessages(prev => prev.filter(m => m.id !== thinkingId))
 
     if (error) {
-      setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: 'assistant', text: null, pending: true }])
+      const errText = !navigator.onLine
+        ? 'No internet connection. Please check your connection and try again.'
+        : "Something went wrong. Please try again in a moment."
+      setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: 'assistant', text: errText }])
       return
     }
 
@@ -520,7 +523,7 @@ export function DashboardAsk() {
                   </div>
                 ) : (
                   <>
-                    <MarkdownAnswer text={msg.text || 'Our medical team will review this shortly. For anything urgent, call 108.'} />
+                    <MarkdownAnswer text={msg.text || 'Something went wrong. Please try again. For anything urgent, call 108.'} />
                     {!isFounder && msg.id === firstRealAssistantId && (
                       <div style={{
                         marginTop: 12, paddingTop: 10,

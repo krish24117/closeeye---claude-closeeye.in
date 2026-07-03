@@ -484,7 +484,7 @@ export function DashboardProfile() {
         if (loErr) throw loErr
         const epData = { loved_one_id: id, age: form.age ? parseInt(form.age) : null, address: form.address.trim(), medical_conditions: form.medical_conditions.trim() || null, current_medications: meds.length ? meds : [], allergies: form.allergies.trim() || null, doctor_name: form.doctor_name.trim() || null, doctor_phone: form.doctor_phone.trim() || null, emergency_contacts: ecs, photo_consent: form.photo_consent }
         const ep = elderProfiles[id]
-        if (ep?.id) await supabase.from('elder_profiles').update(epData).eq('id', ep.id)
+        if (ep?.id) { const { error: epErr } = await supabase.from('elder_profiles').update(epData).eq('id', ep.id); if (epErr) throw epErr }
         else { const { data: newEp, error: epErr } = await supabase.from('elder_profiles').insert(epData).select('id').single(); if (epErr) throw epErr; setElderProfiles(p => ({ ...p, [id]: { id: newEp.id, ...epData } as ElderProfile })) }
         setLovedOnes(p => p.map(l => l.id === id ? { ...l, full_name: form.full_name.trim(), relationship: form.relationship || null, city: form.city.trim() || null, phone_number: form.phone_number.trim() || null } : l))
         setElderProfiles(p => ({ ...p, [id]: { ...(p[id] || {}), ...epData } as ElderProfile }))
