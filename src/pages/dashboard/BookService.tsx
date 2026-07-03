@@ -88,12 +88,12 @@ function usePlacesScript(): PlacesStatus {
   const [status, setStatus] = useState<PlacesStatus>(() =>
     typeof window !== 'undefined' && !!(window as unknown as Record<string, unknown>)?.google
       ? 'ready'
-      : (import.meta.env.VITE_GOOGLE_MAPS_KEY ? 'loading' : 'idle')
+      : (import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? 'loading' : 'idle')
   )
   useEffect(() => {
     const g = (window as unknown as { google?: { maps?: { places?: unknown } } }).google
     if (g?.maps?.places) { setStatus('ready'); return }
-    const key = import.meta.env.VITE_GOOGLE_MAPS_KEY as string | undefined
+    const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
     if (!key) { setStatus('idle'); return }
     if (document.getElementById('ce-gm-script')) return
     setStatus('loading')
