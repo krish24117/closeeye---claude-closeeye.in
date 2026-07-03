@@ -296,7 +296,10 @@ export function BookServicePage() {
     setSubmitting(false)
     if (error || !(result as { ok?: boolean })?.ok) {
       console.error('[BookService] submit failed:', error, result)
-      setErr("Couldn't send your request. Please try again.")
+      const msg = !navigator.onLine
+        ? 'No internet connection. Please check your connection and try again.'
+        : "Couldn't send your request. Please try again."
+      setErr(msg)
       return
     }
 

@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { Logo } from '@/components/ui/Logo'
 import { isOnboardingDismissed } from '@/pages/Onboarding'
 import { InstallPrompt } from '@/components/InstallPrompt'
+import { OfflineBanner } from '@/components/OfflineBanner'
 
 const MAIN_TABS = [
   { to: '/dashboard', icon: Home, label: 'Home', end: true },
@@ -84,6 +85,7 @@ export function DashboardLayout() {
       </main>
 
       <InstallPrompt />
+      <OfflineBanner />
 
       {/* Bottom nav — hidden while keyboard is open to prevent overlap */}
       <nav className="ce-fam-bottom" aria-label="Primary" style={keyboardOpen ? { display: 'none' } : undefined}>
