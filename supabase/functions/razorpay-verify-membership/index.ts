@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 
 // Verify a founding-membership payment SERVER-SIDE (HMAC of order_id|payment_id).
 // Called directly from the Razorpay handler callback in the client — no polling.
@@ -102,74 +103,22 @@ Deno.serve(async (req: Request) => {
     founding_date: foundingDate,
   }).eq("id", user.id);
 
-  // Non-fatal WhatsApp welcome
+  // Non-fatal WhatsApp notifications (payment_received then founding_welcome).
+  // Idempotency: the membership.status === "active" early return above prevents
+  // re-sends if this function is called a second time for the same order.
   try {
     const { data: prof } = await sb.from("profiles")
       .select("whatsapp_number, full_name")
       .eq("id", user.id)
       .maybeSingle();
     const waNum = (prof?.whatsapp_number as string | null)?.trim();
-    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM");
-    if (waNum && accountSid && authToken && fromNum) {
+    if (waNum) {
       const name = (prof?.full_name as string | null) || "there";
-      const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
-      const templateSid = Deno.env.get("TWILIO_TEMPLATE_FOUNDING_WELCOME");
-      const params = templateSid
-        ? new URLSearchParams({
-            From: fromNum, To: to,
-            ContentSid: templateSid,
-            ContentVariables: JSON.stringify({ "1": name, "2": String(foundingNumber) }),
-          })
-        : new URLSearchParams({
-            From: fromNum, To: to,
-            Body: `Welcome to Close Eye, ${name}!\n\nYou are Founding Member #${foundingNumber}. Thank you for trusting us with your loved ones.\n\nCompanion visits launch 15 August 2026. Until then: closeeye.in\n\nKrishna & Aishwarya, Close Eye`,
-          });
-      const waRes = await fetch(
-        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: params,
-        },
-      );
-      if (!waRes.ok) {
-        const errText = await waRes.text();
-        console.error(`[verify-membership] Twilio error ${waRes.status} for ${to}:`, errText);
-      } else {
-        console.log(`[verify-membership] WhatsApp welcome sent to ${to} via ${templateSid ? "template" : "free-form"}`);
-      }
-      // Also send payment_received template
-      const paymentTemplateSid = Deno.env.get("TWILIO_TEMPLATE_PAYMENT_RECEIVED");
-      if (paymentTemplateSid) {
-        const payParams = new URLSearchParams({
-          From: fromNum, To: to,
-          ContentSid: paymentTemplateSid,
-          ContentVariables: JSON.stringify({ "1": name, "2": "₹100", "3": "Founding Membership" }),
-        });
-        const payRes = await fetch(
-          `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: payParams,
-          },
-        );
-        if (!payRes.ok) {
-          console.error(`[verify-membership] payment_received Twilio error:`, await payRes.text());
-        } else {
-          console.log(`[verify-membership] payment_received sent to ${to}`);
-        }
-      }
+      // amount is the plain numeric string — the template body already contains ₹
+      await sendWhatsAppTemplate({ to: waNum, template: "payment_received", variables: [name, "100", "Founding Membership"], sb });
+      await sendWhatsAppTemplate({ to: waNum, template: "founding_welcome", variables: [name, String(foundingNumber)], sb });
     } else {
-      console.warn("[verify-membership] WhatsApp skipped — missing TWILIO_WHATSAPP_FROM or credentials");
+      console.warn("[verify-membership] WhatsApp skipped — no whatsapp_number on profile");
     }
   } catch (waErr) {
     console.error("Membership welcome WhatsApp failed (non-fatal):", waErr);

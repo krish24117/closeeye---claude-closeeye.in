@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { detectRedFlag } from "./redflags.ts";
 import { answerService } from "./service.ts";
+import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 
 // Ask Close Eye — health guidance for families caring for elderly parents.
 // Restricted to: elderly health, wellbeing, medication, elder-care topics, Close Eye services.
@@ -372,23 +373,13 @@ Deno.serve(async (req: Request) => {
       try {
         const { data: prof } = await sb.from("profiles").select("whatsapp_number, full_name").eq("id", user.id).maybeSingle();
         const waNum = prof?.whatsapp_number?.trim();
-        const accountSid  = Deno.env.get("TWILIO_ACCOUNT_SID");
-        const authToken   = Deno.env.get("TWILIO_AUTH_TOKEN");
-        const fromNum     = Deno.env.get("TWILIO_WHATSAPP_FROM");
-        const templateSid = Deno.env.get("TWILIO_TEMPLATE_QUERY_RESPONSE");
-        if (waNum && accountSid && authToken && fromNum && templateSid) {
-          const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
-          const params = new URLSearchParams({
-            From: fromNum, To: to,
-            ContentSid: templateSid,
-            ContentVariables: JSON.stringify({ "1": prof?.full_name || "there" }),
+        if (waNum) {
+          await sendWhatsAppTemplate({
+            to: waNum,
+            template: "query_response",
+            variables: [prof?.full_name || "there"],
+            sb,
           });
-          const waRes = await fetch(
-            `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-            { method: "POST", headers: { Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`, "Content-Type": "application/x-www-form-urlencoded" }, body: params },
-          );
-          if (!waRes.ok) console.error(`[ask-health] query_response Twilio error:`, await waRes.text());
-          else console.log(`[ask-health] query_response sent to ${to}`);
         }
       } catch (waErr) {
         console.error("[ask-health] query_response WhatsApp failed (non-fatal):", waErr);

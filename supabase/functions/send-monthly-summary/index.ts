@@ -3,6 +3,7 @@
 // verify_jwt = false (cron source, no user JWT)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 
 const CORS = { "Access-Control-Allow-Origin": "*" };
 function json(body: unknown, status = 200): Response {
@@ -49,19 +50,6 @@ Deno.serve(async (req: Request) => {
     familyMap[fid].count++;
   }
 
-  const accountSid  = Deno.env.get("TWILIO_ACCOUNT_SID");
-  const authToken   = Deno.env.get("TWILIO_AUTH_TOKEN");
-  const fromNum     = Deno.env.get("TWILIO_WHATSAPP_FROM");
-  const templateSid = Deno.env.get("TWILIO_TEMPLATE_MONTHLY_SUMMARY");
-
-  if (!accountSid || !authToken || !fromNum || !templateSid) {
-    console.error("[send-monthly-summary] Missing Twilio credentials or template SID");
-    return json({ error: "Twilio not configured" }, 500);
-  }
-
-  const twilioUrl  = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-  const twilioAuth = `Basic ${btoa(`${accountSid}:${authToken}`)}`;
-
   let sent = 0;
   for (const [familyUserId, stats] of Object.entries(familyMap)) {
     try {
@@ -69,33 +57,17 @@ Deno.serve(async (req: Request) => {
       const waNum = prof?.whatsapp_number?.trim();
       if (!waNum) continue;
 
-      const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
       const elderDisplay = stats.elderNames.size === 1
         ? [...stats.elderNames][0]
         : "your loved ones";
 
-      const params = new URLSearchParams({
-        From: fromNum, To: to,
-        ContentSid: templateSid,
-        ContentVariables: JSON.stringify({
-          "1": prof?.full_name || "there",
-          "2": elderDisplay,
-          "3": String(stats.count),
-          "4": lastMonthName,
-        }),
+      const result = await sendWhatsAppTemplate({
+        to: waNum,
+        template: "monthly_summary",
+        variables: [prof?.full_name || "there", elderDisplay, String(stats.count), lastMonthName],
+        sb,
       });
-
-      const res = await fetch(twilioUrl, {
-        method: "POST",
-        headers: { Authorization: twilioAuth, "Content-Type": "application/x-www-form-urlencoded" },
-        body: params,
-      });
-      if (res.ok) {
-        sent++;
-        console.log(`[send-monthly-summary] Sent to ${to} (${stats.count} visits in ${lastMonthName})`);
-      } else {
-        console.error(`[send-monthly-summary] Twilio error for ${to}:`, await res.text());
-      }
+      if (result.success) sent++;
     } catch (err) {
       console.error("[send-monthly-summary] Error for family:", familyUserId, err);
     }

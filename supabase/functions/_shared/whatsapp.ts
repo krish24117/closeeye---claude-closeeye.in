@@ -9,14 +9,18 @@
 // ── Template registry ──────────────────────────────────────────────────────
 // vars lists variable names in order; they map to positional ContentVariables {"1":…,"2":…}
 export const TEMPLATES = {
-  founding_welcome: { sid: "HX605ee0cdb1d07028a4962eb59a1b652b", vars: ["name", "member_number"] },
-  waitlist_welcome: { sid: "HX226bf7f738cbfa4d86cd4289f5face3d", vars: ["name"] },
-  payment_received: { sid: "HXfe55800175aef7b25206c3648c4550d5", vars: ["name", "amount", "item"] },
-  visit_confirmed:  { sid: "HXc4706d6ce4aee23982b7e45e3c712697", vars: ["name", "companion", "datetime"] },
-  visit_reminder:   { sid: "HX050a54d79f8e5c2595d10dffdba146cb", vars: ["name", "elder", "datetime"] },
-  visit_completed:  { sid: "HX6ee830afb33f4b3a3c7fcff59ee8203a", vars: ["name", "elder", "companion", "date"] },
-  query_response:   { sid: "HX498ddb1c0fa6f97a2fc51020746b1d88", vars: ["name"] },
-  monthly_summary:  { sid: "HXf4b80d3696bfd3ed256c948c13176517", vars: ["name", "elder", "visits", "month"] },
+  founding_welcome:  { sid: "HX605ee0cdb1d07028a4962eb59a1b652b", vars: ["name", "member_number"] },
+  waitlist_welcome:  { sid: "HX226bf7f738cbfa4d86cd4289f5face3d", vars: ["name"] },
+  payment_received:  { sid: "HXfe55800175aef7b25206c3648c4550d5", vars: ["name", "amount", "item"] },
+  visit_confirmed:   { sid: "HXc4706d6ce4aee23982b7e45e3c712697", vars: ["name", "companion", "datetime"] },
+  visit_reminder:    { sid: "HX050a54d79f8e5c2595d10dffdba146cb", vars: ["name", "elder", "datetime"] },
+  visit_on_the_way:  { sid: "HX07e5cb3853876a92cab27570733b4582", vars: ["family_name", "parent_name", "companion_name", "visit_time"] },
+  visit_delayed:     { sid: "HX3b1260e6d0a7c326a631954460b16a17", vars: ["family_name", "parent_name", "companion_name", "minutes_late", "new_time"] },
+  visit_rescheduled: { sid: "HX8d43bd7ed6b056650a2d8229d0762285", vars: ["family_name", "parent_name", "old_time", "new_time", "reason"] },
+  visit_cancelled:   { sid: "HXe1213db88c99083dc4b59cefa4ade6b2", vars: ["family_name", "parent_name", "original_time", "reason", "reattempt_time"] },
+  visit_completed:   { sid: "HX6ee830afb33f4b3a3c7fcff59ee8203a", vars: ["name", "elder", "companion", "date"] },
+  query_response:    { sid: "HX498ddb1c0fa6f97a2fc51020746b1d88", vars: ["name"] },
+  monthly_summary:   { sid: "HXf4b80d3696bfd3ed256c948c13176517", vars: ["name", "elder", "visits", "month"] },
 } as const;
 
 export type TemplateName = keyof typeof TEMPLATES;

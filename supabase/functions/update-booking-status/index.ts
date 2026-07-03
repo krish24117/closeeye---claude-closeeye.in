@@ -13,7 +13,7 @@
 // Auth: JWT must belong to an admin profile OR the companion assigned to the booking.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { sendWhatsAppTemplate, sendWhatsAppFreeText } from '../_shared/whatsapp.ts'
+import { sendWhatsAppTemplate } from '../_shared/whatsapp.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -96,7 +96,7 @@ Deno.serve(async (req: Request) => {
   // ── Load booking ──────────────────────────────────────────────────────────
   const { data: booking, error: bookingErr } = await sb
     .from('bookings')
-    .select('*, loved_ones(full_name)')
+    .select('*, loved_ones(full_name), companions(full_name)')
     .eq('id', booking_id)
     .single()
 
@@ -119,7 +119,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // ── Build update ──────────────────────────────────────────────────────────
-  const updates: Record<string, unknown> = { status: new_status, attention_needed: false }
+  const updates: Record<string, unknown> = { status: new_status, attention_needed: false, attention_alerted: false }
   if (new_status === 'rescheduled' && reschedule_time) {
     updates.reschedule_time = reschedule_time
     updates.scheduled_at    = reschedule_time   // move the canonical scheduled_at
@@ -144,73 +144,69 @@ Deno.serve(async (req: Request) => {
     .eq('id', booking.family_user_id)
     .single()
 
-  const phone      = familyProfile?.whatsapp_number
-  const familyName = familyProfile?.full_name || 'Family'
-  const elderName  = booking.loved_ones?.full_name || 'your loved one'
-  const refTime    = reschedule_time || booking.scheduled_at
-  const dateStr    = refTime ? formatIST(refTime) : 'your scheduled time'
+  const phone         = familyProfile?.whatsapp_number
+  const familyName    = familyProfile?.full_name   || 'Family'
+  const elderName     = booking.loved_ones?.full_name   || 'your loved one'
+  const companionName = booking.companions?.full_name   || 'your Close Eye companion'
+  const oldDateStr    = booking.scheduled_at ? formatIST(booking.scheduled_at) : 'your scheduled time'
+  const newDateStr    = reschedule_time       ? formatIST(reschedule_time)       : oldDateStr
 
   if (phone) {
     try {
       switch (new_status) {
         case 'confirmed':
+          // visit_confirmed vars: [name, companion, datetime]
           await sendWhatsAppTemplate({
-            to: phone,
-            template: 'visit_confirmed',
-            variables: [familyName, 'your Close Eye companion', dateStr],
-            sb,
+            to: phone, template: 'visit_confirmed', sb,
+            variables: [familyName, companionName, oldDateStr],
           })
           break
 
         case 'companion_assigned':
+          // visit_reminder vars: [name, elder, datetime]
           await sendWhatsAppTemplate({
-            to: phone,
-            template: 'visit_reminder',
-            variables: [familyName, elderName, dateStr],
-            sb,
+            to: phone, template: 'visit_reminder', sb,
+            variables: [familyName, elderName, oldDateStr],
           })
           break
 
         case 'on_the_way':
-          await sendWhatsAppFreeText({
-            to: phone,
-            body: `Hi ${familyName} 👋 Your Close Eye companion is on the way to visit ${elderName}. They should arrive shortly.`,
-            sb, tag: 'visit_on_the_way',
+          // visit_on_the_way vars: [family_name, parent_name, companion_name, visit_time]
+          await sendWhatsAppTemplate({
+            to: phone, template: 'visit_on_the_way', sb,
+            variables: [familyName, elderName, companionName, oldDateStr],
           })
           break
 
-        case 'delayed': {
-          const noteStr = note ? ` (${note})` : ''
-          await sendWhatsAppFreeText({
-            to: phone,
-            body: `Hi ${familyName}, there is a small delay for ${elderName}'s Close Eye visit today${noteStr}. We will keep you updated. For anything urgent, contact us directly.`,
-            sb, tag: 'visit_delayed',
+        case 'delayed':
+          // visit_delayed vars: [family_name, parent_name, companion_name, minutes_late, new_time]
+          // `note` carries the delay amount (e.g. "30 minutes"); new_time is reschedule_time if set
+          await sendWhatsAppTemplate({
+            to: phone, template: 'visit_delayed', sb,
+            variables: [familyName, elderName, companionName, note || 'a short while', newDateStr],
           })
           break
-        }
 
-        case 'rescheduled': {
-          const newDateStr = reschedule_time ? formatIST(reschedule_time) : 'a new time'
-          await sendWhatsAppFreeText({
-            to: phone,
-            body: `Hi ${familyName}, ${elderName}'s Close Eye visit has been rescheduled to ${newDateStr}. We will confirm companion details shortly. We apologise for the change.`,
-            sb, tag: 'visit_rescheduled',
+        case 'rescheduled':
+          // visit_rescheduled vars: [family_name, parent_name, old_time, new_time, reason]
+          // old_time = original scheduled_at read before the DB update
+          await sendWhatsAppTemplate({
+            to: phone, template: 'visit_rescheduled', sb,
+            variables: [familyName, elderName, oldDateStr, newDateStr, note || 'scheduling change'],
           })
           break
-        }
 
-        case 'cancelled': {
-          const reasonStr = note ? ` Reason: ${note}.` : ''
-          await sendWhatsAppFreeText({
-            to: phone,
-            body: `Hi ${familyName}, your Close Eye visit for ${elderName} has been cancelled.${reasonStr} Please contact us to rebook at your convenience.`,
-            sb, tag: 'visit_cancelled',
+        case 'cancelled':
+          // visit_cancelled vars: [family_name, parent_name, original_time, reason, reattempt_time]
+          // reschedule_time (if set) = admin-proposed reattempt slot; else "to be confirmed"
+          await sendWhatsAppTemplate({
+            to: phone, template: 'visit_cancelled', sb,
+            variables: [familyName, elderName, oldDateStr, note || 'unforeseen circumstances', newDateStr !== oldDateStr ? newDateStr : 'to be confirmed'],
           })
           break
-        }
 
         // in_progress — family already knows (companion is there); no message needed.
-        // completed   — handled by send-visit-whatsapp with the full report.
+        // completed   — handled by send-visit-whatsapp with the full visit report.
       }
     } catch (e) {
       console.error('[update-booking-status] WhatsApp send failed (non-fatal):', e)

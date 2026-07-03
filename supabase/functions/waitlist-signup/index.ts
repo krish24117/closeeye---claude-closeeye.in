@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 
 // Public endpoint — saves waitlist entry, creates auth account with is_waitlisted=true,
 // and sends a WhatsApp welcome via Twilio. Called from the /waitlist page (anon).
@@ -89,57 +90,9 @@ Deno.serve(async (req: Request) => {
   }, { onConflict: "email" });
 
   // 4) Send WhatsApp welcome (non-fatal)
-  try {
-    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM");
-
-    if (accountSid && authToken && fromNum && waNum) {
-      const to = waNum.startsWith("whatsapp:") ? waNum : `whatsapp:${waNum}`;
-      const msgBody = [
-        `Welcome to Close Eye, ${name} 🌿`,
-        ``,
-        `You're on our pre-launch list — thank you for reaching out.`,
-        ``,
-        `We launch companion visits on 15 August. Until then, you can ask our medical team health questions for free (5/month).`,
-        ``,
-        `Check your email to activate your Close Eye account, then visit: closeeye.in/dashboard/ask`,
-        ``,
-        `With care,`,
-        `Krishna & Aishwarya`,
-        `Close Eye`,
-      ].join("\n");
-
-      const templateSid = Deno.env.get("TWILIO_TEMPLATE_WAITLIST_WELCOME");
-      const params = templateSid
-        ? new URLSearchParams({
-            From: fromNum, To: to,
-            ContentSid: templateSid,
-            ContentVariables: JSON.stringify({ "1": name }),
-          })
-        : new URLSearchParams({ From: fromNum, To: to, Body: msgBody });
-      const waRes = await fetch(
-        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: params,
-        },
-      );
-      if (!waRes.ok) {
-        const errText = await waRes.text();
-        console.error(`[waitlist-signup] Twilio error ${waRes.status} for ${to}:`, errText);
-      } else {
-        console.log(`[waitlist-signup] WhatsApp welcome sent to ${to} via ${templateSid ? "template" : "free-form"}`);
-      }
-    } else {
-      console.warn("[waitlist-signup] WhatsApp skipped — missing TWILIO_WHATSAPP_FROM or credentials");
-    }
-  } catch (waErr) {
-    console.error("Waitlist WhatsApp welcome failed (non-fatal):", waErr);
+  if (waNum) {
+    await sendWhatsAppTemplate({ to: waNum, template: "waitlist_welcome", variables: [name], sb })
+      .catch((e) => console.error("[waitlist-signup] WhatsApp failed (non-fatal):", e));
   }
 
   return json({ ok: true });

@@ -94,8 +94,8 @@ Deno.serve(async (req: Request) => {
   const finalScheduledAt = scheduled_at ?? (br.scheduled_at as string | null);
 
   // ── Razorpay secrets ─────────────────────────────────────────────────────────
-  const rzKeyId     = Deno.env.get("RAZORPAY_KEY_ID");
-  const rzKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
+  const rzKeyId     = Deno.env.get("RAZORPAY_KEY_ID")?.trim();
+  const rzKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET")?.trim();
   if (!rzKeyId || !rzKeySecret) {
     console.error("[confirm-booking] RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET not set");
     return json({
