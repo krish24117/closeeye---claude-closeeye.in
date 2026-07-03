@@ -110,36 +110,6 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
 
 // ─── Google Places ────────────────────────────────────────────────────────────
 
-declare global {
-  interface Window {
-    google?: {
-      maps?: {
-        places?: {
-          Autocomplete: new (
-            el: HTMLInputElement,
-            opts?: { componentRestrictions?: { country: string }; fields?: string[] }
-          ) => {
-            getPlace(): { address_components?: Array<{ long_name: string; types: string[] }>; geometry?: { location?: { lat(): number; lng(): number } } }
-            addListener(ev: string, fn: () => void): void
-          }
-        }
-        event?: { clearInstanceListeners(inst: object): void }
-      }
-    }
-  }
-}
-
-function loadGoogleMaps(apiKey: string): Promise<void> {
-  return new Promise(resolve => {
-    if (window.google?.maps?.places) { resolve(); return }
-    const s = document.createElement('script')
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
-    s.async = true
-    s.onload = () => resolve()
-    document.head.appendChild(s)
-  })
-}
-
 interface LovedOneWithAddr { id: string; full_name: string; savedAddress: string | null }
 type AddrView = 'recipient' | 'saved' | 'new'
 
@@ -515,8 +485,6 @@ export function BookServicePage() {
 
 // ─── AddressStep ──────────────────────────────────────────────────────────────
 
-const GMAPS_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined
-
 function AddressStep({
   isNri, userId,
   notes, setNotes,
@@ -544,16 +512,13 @@ function AddressStep({
 
   // New address form state
   const [house, setHouse] = useState('')
-  const [landmark, setLandmark] = useState('')
   const [area, setArea] = useState('')
   const [city, setCity] = useState('')
   const [addrState, setAddrState] = useState('')
   const [pincode, setPincode] = useState('')
+  const [landmark, setLandmark] = useState('')
   const [saveForNext, setSaveForNext] = useState(true)
   const [savingAddr, setSavingAddr] = useState(false)
-
-  const searchRef = useRef<HTMLInputElement>(null)
-  const acRef = useRef<any>(null)
 
   // Load loved ones or society address
   useEffect(() => {
@@ -590,35 +555,6 @@ function AddressStep({
     }
   }, [userId, isNri]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Mount Google Autocomplete when in 'new' view
-  useEffect(() => {
-    if (view !== 'new' || !GMAPS_KEY) return
-    let mounted = true
-    loadGoogleMaps(GMAPS_KEY).then(() => {
-      if (!mounted || !searchRef.current || acRef.current) return
-      acRef.current = new window.google!.maps!.places!.Autocomplete(
-        searchRef.current,
-        { componentRestrictions: { country: 'in' }, fields: ['address_components', 'geometry'] }
-      )
-      acRef.current.addListener('place_changed', () => {
-        const place = acRef.current!.getPlace()
-        const get = (t: string) => place.address_components?.find((c: any) => c.types.includes(t))?.long_name || ''
-        setArea(get('sublocality_level_1') || get('sublocality') || get('neighborhood'))
-        setCity(get('locality') || get('administrative_area_level_2'))
-        setAddrState(get('administrative_area_level_1'))
-        setPincode(get('postal_code'))
-        setErr('')
-      })
-    })
-    return () => {
-      mounted = false
-      if (acRef.current) {
-        window.google?.maps?.event?.clearInstanceListeners(acRef.current)
-        acRef.current = null
-      }
-    }
-  }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
-
   function pickSavedAddress(addr: string) {
     setConfirmedAddr(addr)
     onAddressReady(addr)
@@ -627,17 +563,19 @@ function AddressStep({
 
   async function confirmNewAddress() {
     const h = house.trim()
-    if (!h) { setErr('Enter the flat / house number.'); return }
-    if (!city) { setErr('Search and select an address first.'); return }
-    if (!pincode) { setErr('PIN code is missing — choose from search results.'); return }
-    const addr = [h, area, landmark.trim(), city, addrState, pincode].filter(Boolean).join(', ')
-    if (saveForNext) {
+    const a = area.trim()
+    const c = city.trim()
+    const p = pincode.trim()
+    if (!h) { setErr('Enter flat / house number.'); return }
+    if (!a) { setErr('Enter area / locality.'); return }
+    if (!c) { setErr('Enter city.'); return }
+    if (p.length < 6) { setErr('Enter a valid 6-digit PIN code.'); return }
+    const addr = [h, a, landmark.trim(), c, addrState.trim(), p].filter(Boolean).join(', ')
+    if (saveForNext && isNri && selectedLO?.id) {
       setSavingAddr(true)
-      if (isNri && selectedLO?.id) {
-        await supabase.from('elder_profiles')
-          .upsert({ loved_one_id: selectedLO.id, address: addr }, { onConflict: 'loved_one_id' })
-        setSelectedLO(lo => lo ? { ...lo, savedAddress: addr } : lo)
-      }
+      await supabase.from('elder_profiles')
+        .upsert({ loved_one_id: selectedLO.id, address: addr }, { onConflict: 'loved_one_id' })
+      setSelectedLO(lo => lo ? { ...lo, savedAddress: addr } : lo)
       setSavingAddr(false)
     }
     setConfirmedAddr(addr)
@@ -646,43 +584,63 @@ function AddressStep({
     setView('saved')
   }
 
-  const canConfirmNew = house.trim().length > 0 && city.length > 0 && pincode.length > 0
+  function openNewForm() {
+    setHouse(''); setArea(''); setCity(''); setAddrState(''); setPincode(''); setLandmark('')
+    setView('new'); setErr('')
+  }
+
+  const canConfirmNew = house.trim().length > 0 && area.trim().length > 0 && city.trim().length > 0 && pincode.trim().length >= 6
   const currentSavedAddr = isNri ? selectedLO?.savedAddress : societyAddr
 
   // ── VIEW: Who are we visiting? ─────────────────────────────────────────────
   if (view === 'recipient') {
     return (
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         <SectionLabel>Who are we visiting?</SectionLabel>
+
         {loadingLOs ? (
           <div className="flex justify-center py-10">
             <Loader2 size={22} className="ce-spin text-[#AEAEAE]" />
           </div>
-        ) : lovedOnes.length === 0 ? (
-          <div className="bg-amber-50 border border-amber-200 rounded-[18px] px-4 py-5">
-            <p className="text-[14px] font-bold text-amber-800 mb-1">No care recipients added yet</p>
-            <p className="text-[13px] text-amber-700 leading-relaxed mb-3">Add your loved one's details in your profile, then return here to book.</p>
-            <a href="/dashboard/profile" className="text-[13.5px] font-bold text-[#0E2A1F] underline">Add care recipient →</a>
+        ) : lovedOnes.length === 0 ? null : (
+          /* Cards grouped in one container — no gap artifacts */
+          <div className="bg-[#FAF7F2] rounded-[18px] overflow-hidden">
+            {lovedOnes.map((lo, i) => (
+              <div key={lo.id}>
+                {i > 0 && <div className="h-px bg-[#EDE8E0] mx-4" />}
+                <button
+                  onClick={() => { setSelectedLO(lo); onRecipientNameChange(lo.full_name); setView('saved'); setErr('') }}
+                  className="w-full flex items-center gap-3 px-4 py-4 text-left min-h-[72px]"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#0E2A1F] flex items-center justify-center shrink-0 text-[15px] font-bold text-[#A8D5B5]">
+                    {lo.full_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-bold text-[#1D1D1F] truncate">{lo.full_name}</p>
+                    <p className="text-[12px] text-[#6E6E73] mt-0.5 truncate">
+                      {lo.savedAddress || 'No saved address'}
+                    </p>
+                  </div>
+                  <ArrowRight size={16} color="#AEAEAE" className="shrink-0" />
+                </button>
+              </div>
+            ))}
           </div>
-        ) : (
-          lovedOnes.map(lo => (
-            <button
-              key={lo.id}
-              onClick={() => { setSelectedLO(lo); onRecipientNameChange(lo.full_name); setView('saved'); setErr('') }}
-              className="w-full flex items-center gap-3 bg-[#FAF7F2] rounded-[18px] px-4 py-4 text-left min-h-[76px] border-2 border-transparent transition-all duration-150 active:border-[#A8D5B5]"
-            >
-              <div className="w-11 h-11 rounded-full bg-[#0E2A1F] flex items-center justify-center shrink-0 text-[17px] font-bold text-[#A8D5B5]">
-                {lo.full_name.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[15px] font-bold text-[#1D1D1F] truncate">{lo.full_name}</p>
-                <p className="text-[12px] text-[#6E6E73] mt-0.5 truncate">
-                  {lo.savedAddress || 'No saved address'}
-                </p>
-              </div>
-              <ArrowRight size={16} color="#AEAEAE" className="shrink-0" />
-            </button>
-          ))
+        )}
+
+        {/* Add family member */}
+        <a
+          href="/dashboard/profile"
+          className="flex items-center gap-3 text-[13.5px] font-semibold text-[#0E2A1F] rounded-[18px] px-4 py-4 min-h-[56px] border-2 border-dashed border-[#A8D5B5] w-full no-underline transition-all"
+        >
+          <div className="w-8 h-8 rounded-full border-2 border-[#0E2A1F] flex items-center justify-center text-[18px] font-bold leading-none shrink-0">
+            +
+          </div>
+          Add family member
+        </a>
+
+        {lovedOnes.length === 0 && !loadingLOs && (
+          <p className="text-[13px] text-[#AEAEAE] text-center -mt-2">No family members added yet</p>
         )}
       </div>
     )
@@ -694,7 +652,6 @@ function AddressStep({
     return (
       <div className="flex flex-col gap-4">
 
-        {/* Back + recipient name */}
         {isNri && lovedOnes.length > 1 && (
           <button
             onClick={() => { setSelectedLO(null); setConfirmedAddr(''); onAddressReady(''); setView('recipient') }}
@@ -714,7 +671,6 @@ function AddressStep({
 
         <SectionLabel>Choose address</SectionLabel>
 
-        {/* Saved address */}
         {currentSavedAddr ? (
           <button
             onClick={() => pickSavedAddress(currentSavedAddr)}
@@ -736,18 +692,14 @@ function AddressStep({
           </button>
         ) : null}
 
-        {/* Visit different location */}
         <button
-          onClick={() => { setHouse(''); setLandmark(''); setArea(''); setCity(''); setAddrState(''); setPincode(''); setView('new'); setErr('') }}
+          onClick={openNewForm}
           className="flex items-center gap-3 text-[13.5px] font-semibold text-[#0E2A1F] rounded-[18px] px-4 py-4 min-h-[56px] border-2 border-dashed border-[#A8D5B5] w-full transition-all"
         >
-          <div className="w-8 h-8 rounded-full border-2 border-[#0E2A1F] flex items-center justify-center text-[18px] font-bold leading-none shrink-0">
-            +
-          </div>
-          {currentSavedAddr ? 'Visit a different location' : 'Add address'}
+          <div className="w-8 h-8 rounded-full border-2 border-[#0E2A1F] flex items-center justify-center text-[18px] font-bold leading-none shrink-0">+</div>
+          {currentSavedAddr ? 'Visit a different location' : 'Enter address'}
         </button>
 
-        {/* Notes */}
         <FieldBlock label="Special instructions (optional)">
           <textarea
             value={notes}
@@ -758,7 +710,6 @@ function AddressStep({
           />
         </FieldBlock>
 
-        {/* WhatsApp prompt */}
         {showWhatsapp && (
           <div className="bg-amber-50 border-2 border-amber-200 rounded-[16px] px-4 py-4">
             <div className="flex items-center gap-2 mb-3">
@@ -778,82 +729,96 @@ function AddressStep({
     )
   }
 
-  // ── VIEW: Add new address ──────────────────────────────────────────────────
+  // ── VIEW: Enter new address (manual) ───────────────────────────────────────
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <button
         onClick={() => { setView('saved'); setErr('') }}
-        className="flex items-center gap-1.5 text-[13px] text-[#6E6E73] font-semibold -mb-1 min-h-[36px]"
+        className="flex items-center gap-1.5 text-[13px] text-[#6E6E73] font-semibold mb-1 min-h-[36px]"
       >
         <ArrowLeft size={13} /> Back
       </button>
 
-      <SectionLabel>New address</SectionLabel>
+      <SectionLabel>Enter address</SectionLabel>
 
-      {/* Search field */}
-      <div className="bg-[#FAF7F2] rounded-[16px] px-4 py-3.5 flex items-center gap-3 border-2 border-transparent focus-within:border-[#A8D5B5] transition-all">
-        <MapPin size={16} color="#6E6E73" className="shrink-0" />
-        <input
-          ref={searchRef}
-          type="text"
-          placeholder="Search address…"
-          className="flex-1 bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F] placeholder:text-[#AEAEAE]"
-          autoFocus
-          autoComplete="off"
-        />
-      </div>
-      {!GMAPS_KEY && (
-        <p className="text-[11.5px] text-amber-600 -mt-2 px-1">Set VITE_GOOGLE_MAPS_API_KEY to enable address search.</p>
-      )}
-
-      {/* Auto-populated confirmation */}
-      {city && (
-        <div className="bg-green-50 border border-green-200 rounded-[14px] px-4 py-3 flex items-start gap-2">
-          <Check size={13} className="text-green-700 shrink-0 mt-0.5" strokeWidth={3} />
-          <p className="text-[12.5px] text-green-700 leading-relaxed">
-            <strong>{city}</strong>{addrState ? `, ${addrState}` : ''}{pincode ? ` — ${pincode}` : ''}{area ? ` · ${area}` : ''}
-          </p>
-        </div>
-      )}
-
-      {/* House / Flat — required */}
+      {/* House / Flat */}
       <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3">
         <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">House / Flat No. *</label>
         <input
-          value={house}
-          onChange={e => { setHouse(e.target.value); setErr('') }}
+          value={house} onChange={e => { setHouse(e.target.value); setErr('') }}
           placeholder="e.g. Flat 4B, Sunrise Apartments"
+          autoFocus
           className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]"
         />
       </div>
 
-      {/* Landmark — optional */}
+      {/* Area */}
+      <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3">
+        <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">Area / Locality *</label>
+        <input
+          value={area} onChange={e => { setArea(e.target.value); setErr('') }}
+          placeholder="e.g. Jubilee Hills"
+          className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]"
+        />
+      </div>
+
+      {/* City */}
+      <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3">
+        <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">City *</label>
+        <input
+          value={city} onChange={e => { setCity(e.target.value); setErr('') }}
+          placeholder="Hyderabad"
+          className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]"
+        />
+      </div>
+
+      {/* State */}
+      <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3">
+        <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">State</label>
+        <input
+          value={addrState} onChange={e => setAddrState(e.target.value)}
+          placeholder="Telangana"
+          className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]"
+        />
+      </div>
+
+      {/* PIN Code */}
+      <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3">
+        <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">PIN Code *</label>
+        <input
+          value={pincode} onChange={e => { setPincode(e.target.value.replace(/\D/g, '').slice(0, 6)); setErr('') }}
+          placeholder="500034"
+          type="tel"
+          inputMode="numeric"
+          className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]"
+        />
+      </div>
+
+      {/* Landmark */}
       <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3">
         <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">Landmark (optional)</label>
         <input
-          value={landmark}
-          onChange={e => setLandmark(e.target.value)}
+          value={landmark} onChange={e => setLandmark(e.target.value)}
           placeholder="e.g. Near Apollo Hospital"
           className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]"
         />
       </div>
 
       {/* Save toggle */}
-      <button
-        onClick={() => setSaveForNext(v => !v)}
-        className="flex items-center gap-3 text-left py-1"
-      >
-        <div className={`w-5 h-5 rounded-[5px] border-2 flex items-center justify-center shrink-0 transition-all ${saveForNext ? 'bg-[#0E2A1F] border-[#0E2A1F]' : 'border-[#CCC]'}`}>
-          {saveForNext && <Check size={11} color="#fff" strokeWidth={3} />}
-        </div>
-        <span className="text-[13px] text-[#3A3A3C]">Save address for next time</span>
-      </button>
+      {isNri && selectedLO?.id && (
+        <button onClick={() => setSaveForNext(v => !v)} className="flex items-center gap-3 text-left py-1 px-1">
+          <div className={`w-5 h-5 rounded-[5px] border-2 flex items-center justify-center shrink-0 transition-all ${saveForNext ? 'bg-[#0E2A1F] border-[#0E2A1F]' : 'border-[#CCC]'}`}>
+            {saveForNext && <Check size={11} color="#fff" strokeWidth={3} />}
+          </div>
+          <span className="text-[13px] text-[#3A3A3C]">Save address for next time</span>
+        </button>
+      )}
 
-      {/* Confirm button */}
+      {/* Confirm */}
       <button
         onClick={confirmNewAddress}
         disabled={!canConfirmNew || savingAddr}
-        className={`w-full flex items-center justify-center gap-2 bg-[#0E2A1F] text-white text-[15px] font-bold rounded-[16px] py-3.5 min-h-[52px] mt-1 transition-opacity ${canConfirmNew && !savingAddr ? 'opacity-100' : 'opacity-40'}`}
+        className={`w-full flex items-center justify-center gap-2 bg-[#0E2A1F] text-white text-[15px] font-bold rounded-[16px] py-3.5 min-h-[52px] mt-2 transition-opacity ${canConfirmNew && !savingAddr ? 'opacity-100' : 'opacity-40'}`}
       >
         {savingAddr ? <><Loader2 size={15} className="ce-spin" /> Saving…</> : 'Use this address →'}
       </button>
