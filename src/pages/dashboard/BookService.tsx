@@ -171,7 +171,7 @@ export function BookServicePage() {
           setLovedOnes(los)
           if (los.length === 1) {
             setSelectedLO(los[0])
-            setRecipientName(los[0].full_name)
+            setRecipientName(n => n || los[0].full_name)
           }
         })
     } else {
@@ -183,10 +183,38 @@ export function BookServicePage() {
         .then(({ data }) => {
           const addr = [data?.flat_number, data?.society_name, data?.area].filter(Boolean).join(', ')
           setSocietyAddr(addr)
-          if (data?.name) setRecipientName(data.name as string)
+          if (data?.name) setRecipientName(n => n || (data.name as string))
         })
     }
   }, [user, isNri]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Draft persistence (sessionStorage) ──────────────────────────────────────
+  const DRAFT_KEY = `ce_booking_draft_${serviceId}`
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY)
+      if (!raw) return
+      const d = JSON.parse(raw) as Record<string, unknown>
+      if (d.date) setDate(new Date(d.date as string))
+      if (d.slot) setSlot(d.slot as string)
+      if (d.recipientName) setRecipientName(d.recipientName as string)
+      if (d.relationship) setRelationship(d.relationship as string)
+      if (d.whatsapp) setWhatsapp(d.whatsapp as string)
+      if (d.address) setAddress(d.address as string)
+      if (d.notes) setNotes(d.notes as string)
+    } catch { /* ignore corrupt draft */ }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (step === 'done') { sessionStorage.removeItem(DRAFT_KEY); return }
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
+        date: date?.toISOString() ?? null,
+        slot, recipientName, relationship, whatsapp, address, notes,
+      }))
+    } catch { /* quota exceeded — ignore */ }
+  }, [date, slot, recipientName, relationship, whatsapp, address, notes, step]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!service) return (
     <div className="flex flex-col items-center justify-center px-5 py-16 gap-4">
@@ -214,7 +242,6 @@ export function BookServicePage() {
     if (step === 'done') { navigate('/dashboard/bookings', { replace: true }); return }
     if (isEmergency) { navigate('/dashboard/book'); return }
     if (step > 1) {
-      if (step === 4) setAddress('')
       setStep(s => (typeof s === 'number' ? s - 1 : 4) as WizardStep)
       scrollTop()
     } else {
@@ -231,7 +258,6 @@ export function BookServicePage() {
     } else if (step === 2) {
       if (!recipientName.trim()) { setErr('Enter the name of the person we\'re visiting.'); return }
       if (!relationship) { setErr('Select your relationship to them.'); return }
-      setAddress('')
       setStep(3); scrollTop()
     } else if (step === 3) {
       if (!address.trim()) { setErr('Enter a visiting address.'); return }
@@ -471,6 +497,7 @@ export function BookServicePage() {
               setNotes={setNotes}
               onAddressReady={addr => { setAddress(addr); setErr('') }}
               setErr={setErr}
+              currentAddress={address}
             />
           )}
 
@@ -642,6 +669,7 @@ function AddressStep({
   selectedLO, societyAddr,
   notes, setNotes,
   onAddressReady, setErr,
+  currentAddress,
 }: {
   isNri: boolean
   selectedLO: LovedOneWithAddr | null
@@ -650,11 +678,15 @@ function AddressStep({
   setNotes: (v: string) => void
   onAddressReady: (addr: string) => void
   setErr: (v: string) => void
+  currentAddress?: string
 }) {
   const savedAddress = isNri ? (selectedLO?.savedAddress ?? null) : societyAddr || null
 
-  const [confirmedAddr, setConfirmedAddr] = useState(savedAddress ?? '')
-  const [showNewForm, setShowNewForm]     = useState(!savedAddress)
+  // Prefer currentAddress (persisted in parent from back-navigation) so going
+  // back from Review → Where doesn't wipe what the user already confirmed.
+  const initialAddr = currentAddress || savedAddress || ''
+  const [confirmedAddr, setConfirmedAddr] = useState(initialAddr)
+  const [showNewForm, setShowNewForm]     = useState(!initialAddr)
   const [house, setHouse]           = useState('')
   const [manualArea, setManualArea] = useState('')
   const [manualCity, setManualCity] = useState('')
