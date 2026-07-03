@@ -502,6 +502,18 @@ export function DashboardProfile() {
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
 
+  function shareOnWhatsApp() {
+    const ref = user?.id?.slice(0, 8) || 'friend'
+    const text = encodeURIComponent(`I use Close Eye to stay connected to my family in India. Check it out: https://closeeye.in/?ref=${ref}`)
+    window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener,noreferrer')
+  }
+
+  async function handleDeleteAccount() {
+    if (!window.confirm('Are you sure you want to delete your account? This cannot be undone.')) return
+    await signOut()
+    window.location.replace('/')
+  }
+
   // ── Skeleton ──────────────────────────────────────────────────────────────
   if (dataLoading) return (
     <div className="px-4 pt-6 pb-24 space-y-4 animate-pulse">
@@ -539,7 +551,7 @@ export function DashboardProfile() {
         {/* Stats strip */}
         <div className="flex gap-0 mt-5 pt-4 border-t border-[#F0EBE1]">
           {[
-            { val: lovedOnes.length || 0, lbl: 'In care' },
+            { val: lovedOnes.length || 0, lbl: 'Loved ones' },
             { val: completedCount, lbl: 'Visits done' },
             { val: `${careScore}%`, lbl: 'Care score' },
           ].map((s, i, arr) => (
@@ -563,7 +575,7 @@ export function DashboardProfile() {
                     <Star size={13} fill="#A8D5B5" color="#A8D5B5" />
                     <span className="text-[12px] font-bold text-[#A8D5B5] uppercase tracking-widest">Founding Member</span>
                   </div>
-                  <p className="text-white text-[22px] font-bold leading-tight">Premium Active</p>
+                  <p className="text-white text-[22px] font-bold leading-tight">Active Member</p>
                 </div>
                 <span className="bg-[#A8D5B5]/20 text-[#A8D5B5] text-[10.5px] font-bold px-3 py-1.5 rounded-full">LIFETIME</span>
               </div>
@@ -579,7 +591,7 @@ export function DashboardProfile() {
                 ))}
               </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-5">
-                {['Priority booking', '10% discount', 'AI Health Assistant', 'Emergency priority'].map(b => (
+                {['Priority booking', '10% discount', 'Ask CloseEye', 'Emergency priority'].map(b => (
                   <div key={b} className="flex items-center gap-2">
                     <CheckCircle2 size={12} color="#A8D5B5" />
                     <span className="text-white/80 text-[12px]">{b}</span>
@@ -828,9 +840,8 @@ export function DashboardProfile() {
             { icon: <CheckCircle2 size={17} />, lbl: 'Visits done', val: completedCount },
             { icon: <Calendar size={17} />, lbl: 'Confirmed', val: confirmedCount },
             { icon: <FileText size={17} />, lbl: 'Total booked', val: bookings.length },
-            { icon: <MessageCircle size={17} />, lbl: 'AI questions', val: '—' },
+            { icon: <MessageCircle size={17} />, lbl: 'Questions asked', val: '—' },
             { icon: <FileText size={17} />, lbl: 'Reports sent', val: completedCount },
-            { icon: <Shield size={17} />, lbl: 'Emergency', val: 0 },
           ].map(s => (
             <div key={s.lbl} className="bg-white rounded-[18px] p-4 shadow-[0_2px_10px_rgba(0,0,0,.05)] text-center">
               <div className="flex justify-center mb-2 text-[#0E2A1F]">{s.icon}</div>
@@ -1064,7 +1075,7 @@ export function DashboardProfile() {
               className="w-full flex items-center justify-center gap-2 bg-[#A8D5B5] text-[#0E2A1F] rounded-[16px] py-3 text-[13px] font-bold min-h-[44px] mb-2">
               {copied ? <><Check size={14} /> Link copied!</> : <><Copy size={14} /> Copy referral link</>}
             </button>
-            <button className="w-full flex items-center justify-center gap-2 border border-[#A8D5B5]/40 text-[#A8D5B5] rounded-[16px] py-3 text-[13px] font-bold min-h-[44px]">
+            <button onClick={shareOnWhatsApp} className="w-full flex items-center justify-center gap-2 border border-[#A8D5B5]/40 text-[#A8D5B5] rounded-[16px] py-3 text-[13px] font-bold min-h-[44px]">
               <Share2 size={14} /> Share on WhatsApp
             </button>
           </div>
@@ -1097,7 +1108,7 @@ export function DashboardProfile() {
           </button>
         </Card>
 
-        <button className="w-full flex items-center justify-center gap-2 mt-3 py-3 text-[12px] text-[#AEAEAE] min-h-[44px]">
+        <button onClick={handleDeleteAccount} className="w-full flex items-center justify-center gap-2 mt-3 py-3 text-[12px] text-[#AEAEAE] min-h-[44px]">
           <Trash2 size={12} /> Delete my account
         </button>
       </Section>

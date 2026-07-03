@@ -97,7 +97,7 @@ function EscalationCard({ message, ambulanceNumber }: { message: string; ambulan
           width: 36, height: 36, borderRadius: '50%',
           background: '#c0734f', display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 18, flexShrink: 0,
-        }}>⚠</div>
+        }}>⚠️</div>
         <div>
           <p style={{ fontSize: 15, fontWeight: 700, color: '#7a1f1f', margin: 0 }}>Urgent attention needed</p>
           <p style={{ fontSize: 12, color: '#a05540', margin: '2px 0 0' }}>Please act on this immediately</p>
@@ -248,7 +248,7 @@ function TierBadge({ isFounder, parentName }: { isFounder: boolean; parentName?:
       background: 'var(--cream)', border: '1px solid var(--gray-light)',
       borderRadius: 999, padding: '5px 12px', fontSize: 12, fontWeight: 500, color: 'var(--gray-mid)',
     }}>
-      Free tier ·{' '}
+      Standard ·{' '}
       <Link to="/founding-member/checkout" style={{ color: 'var(--forest)', fontWeight: 700, textDecoration: 'none' }}>
         Upgrade →
       </Link>
@@ -450,8 +450,8 @@ export function DashboardAsk() {
             }}>
               <p style={{ fontSize: 14, color: '#2d3a32', lineHeight: 1.6, margin: 0 }}>
                 {isFounder && elder?.full_name
-                  ? `Hi — ask me anything about ${elder.full_name}'s health, medications, or wellbeing. I'll give you a clear, direct answer.`
-                  : `Hi${firstName ? ` ${firstName}` : ''} — ask me about your loved one's health or medications. I give clear, concise guidance.`}
+                  ? `Hi — ask me anything about ${elder.full_name}'s wellbeing, daily routine, or any concerns. I'll give you a clear, direct answer.`
+                  : `Hi${firstName ? ` ${firstName}` : ''} — ask me about your loved one's wellbeing or daily routine. I give clear, concise guidance.`}
               </p>
               {!isFounder && (
                 <div style={{
@@ -640,7 +640,7 @@ export function DashboardAsk() {
               </button>
             </div>
             <p style={{ fontSize: 11, color: '#9aada3', margin: '7px 2px 0', textAlign: 'center' }}>
-              General guidance only · not a diagnosis · call 108 for emergencies
+              General guidance only · always call 108 in an emergency
             </p>
           </>
         )}

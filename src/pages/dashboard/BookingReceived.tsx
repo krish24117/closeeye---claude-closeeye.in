@@ -52,8 +52,9 @@ export function BookingReceived() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 12 }}>
         <div className="ce-spinner" />
+        <p style={{ fontSize: 13, color: 'var(--gray-mid)' }}>Loading your booking…</p>
       </div>
     )
   }
@@ -61,7 +62,9 @@ export function BookingReceived() {
   if (notFound || !booking) {
     return (
       <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-        <p style={{ fontSize: 15, color: 'var(--gray-mid)' }}>Booking not found.</p>
+        <p style={{ fontSize: 15, color: 'var(--gray-mid)', marginBottom: 8 }}>
+          We couldn't find this booking. It may still be processing — check your bookings list.
+        </p>
         <Link to="/dashboard/bookings" style={{ color: 'var(--forest)', fontWeight: 600, fontSize: 14 }}>
           View all bookings →
         </Link>
@@ -87,10 +90,10 @@ export function BookingReceived() {
           <CheckCircle size={36} strokeWidth={2} />
         </div>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--forest)', margin: 0, textAlign: 'center', letterSpacing: '-0.02em' }}>
-          Booking received
+          We've Got Your Booking
         </h1>
         <p style={{ fontSize: 14, color: 'var(--gray-mid)', margin: '8px 0 0', textAlign: 'center', lineHeight: 1.5 }}>
-          We're confirming a companion. You'll get a WhatsApp with a payment link shortly.
+          We're finding the right companion for this visit. You'll get a WhatsApp with a payment link shortly.
         </p>
       </div>
 
@@ -125,7 +128,7 @@ export function BookingReceived() {
           <Row label="For" value={booking.recipient_name} />
           {dateStr && <Row label="Requested time" value={dateStr} icon={<Calendar size={13} />} />}
           {booking.recipient_address && <Row label="Address" value={booking.recipient_address} icon={<MapPin size={13} />} />}
-          {amountStr && <Row label="Estimated amount" value={amountStr} />}
+          {amountStr && <Row label="Service fee" value={amountStr} />}
         </div>
       </div>
 

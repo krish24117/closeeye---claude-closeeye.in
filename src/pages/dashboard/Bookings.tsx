@@ -226,7 +226,7 @@ function TodayHeroCard({
             <>
               <span className="ce-mc-find-pulse" aria-hidden="true" />
               <span className="ce-mc-hero-comp-name" style={{ color: 'rgba(250,247,242,.6)' }}>
-                Finding your companion…
+                Finding your companion — usually within a few hours
               </span>
             </>
           )}
@@ -295,10 +295,10 @@ function EmptyState() {
         <Calendar size={26} color="#16A34A" />
       </div>
       <p style={{ fontWeight: 700, fontSize: 18, color: 'var(--forest)', margin: '0 0 8px', letterSpacing: '-0.01em' }}>
-        No bookings yet
+        Your first visit is just ahead
       </p>
       <p style={{ fontSize: 14, color: '#9CA3AF', margin: '0 0 24px', lineHeight: 1.55, maxWidth: 260 }}>
-        Book a companion visit for your loved one — we'll send a WhatsApp report after every visit.
+        Know your parent is safe and cared for. Book a companion visit today.
       </p>
       <Link
         to="/dashboard/book"

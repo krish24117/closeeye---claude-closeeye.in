@@ -953,7 +953,7 @@ function SuccessScreen({ serviceName, date, slot, isEmergency, onViewBooking, on
         <CheckCircle2 size={40} className="text-green-600" />
       </div>
       <h2 className="text-[24px] font-bold text-[#1D1D1F] mb-2" style={{ letterSpacing: '-0.02em' }}>
-        {isEmergency ? 'Emergency Requested' : 'Booking Requested'}
+        {isEmergency ? 'Emergency Requested' : 'Your visit is on its way'}
       </h2>
       <p className="text-[14px] text-[#6E6E73] leading-relaxed mb-1">
         We've received your request for <strong className="text-[#1D1D1F]">{serviceName}</strong>.
@@ -969,7 +969,7 @@ function SuccessScreen({ serviceName, date, slot, isEmergency, onViewBooking, on
         <p className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-[#6E6E73] mb-4">What happens next</p>
         {(isEmergency
           ? ['Companion dispatching now', 'WhatsApp update within 30 min', 'We stay connected throughout']
-          : ['Companion being assigned', 'WhatsApp confirmation sent', 'Secure payment link via WhatsApp']
+          : ['Finding your companion now', 'WhatsApp confirmation sent', 'Secure payment link via WhatsApp']
         ).map((s, i) => (
           <div key={s} className={`flex items-start gap-3 ${i > 0 ? 'mt-3.5' : ''}`}>
             <div className="w-6 h-6 rounded-full bg-[#0E2A1F] flex items-center justify-center shrink-0 mt-0.5">
@@ -981,9 +981,9 @@ function SuccessScreen({ serviceName, date, slot, isEmergency, onViewBooking, on
       </div>
 
       {!isEmergency && (
-        <div className="w-full flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-[14px] px-4 py-3 mb-6">
-          <Clock size={14} className="text-blue-600 shrink-0" />
-          <p className="text-[12.5px] text-blue-700">Estimated confirmation: <strong>30–60 minutes</strong></p>
+        <div className="w-full flex items-center gap-3 rounded-[14px] px-4 py-3 mb-6" style={{ background: 'rgba(14,42,31,0.05)', border: '1px solid rgba(14,42,31,0.1)' }}>
+          <Clock size={14} style={{ color: 'var(--forest)', flexShrink: 0 }} />
+          <p className="text-[12.5px]" style={{ color: 'var(--forest)' }}>Estimated confirmation: <strong>30–60 minutes</strong></p>
         </div>
       )}
 
@@ -1011,7 +1011,7 @@ function CtaButton({ children, onClick, disabled, loading, loadingLabel, variant
       aria-disabled={disabled}
       className={`w-full ${bg} text-white text-[16px] font-bold rounded-[16px] py-4 min-h-[54px] flex items-center justify-center gap-2 transition-opacity duration-200 ${disabled ? 'opacity-40' : 'opacity-100'}`}
     >
-      {loading ? <><Loader2 size={17} className="ce-spin" />{loadingLabel ?? 'Loading…'}</> : children}
+      {loading ? <><Loader2 size={17} className="ce-spin" />{loadingLabel ?? 'Please wait…'}</> : children}
     </button>
   )
 }

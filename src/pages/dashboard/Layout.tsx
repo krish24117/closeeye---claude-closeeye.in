@@ -71,9 +71,9 @@ export function DashboardLayout() {
       {isWaitlistOnly && (
         <div style={{ background: 'var(--forest)', color: '#fff', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>
-            🌿 You're on the waitlist — ask health questions free (5/month)
+            🌿 You're on the waitlist — use Ask CloseEye free (5 questions/month)
           </span>
-          <Link to="/onboarding" style={{ background: 'var(--sage)', color: 'var(--forest)', fontWeight: 700, padding: '6px 14px', borderRadius: 100, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          <Link to="/founding-member" style={{ background: 'var(--sage)', color: 'var(--forest)', fontWeight: 700, padding: '6px 14px', borderRadius: 100, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' }}>
             Become a Founding Member →
           </Link>
         </div>

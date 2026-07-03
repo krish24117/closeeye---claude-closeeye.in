@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X, Bell, ChevronDown } from 'lucide-react'
+import { Menu, X, LayoutDashboard, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { LogoLockup } from '@/components/ui/Logo'
 import clsx from 'clsx'
@@ -8,10 +8,10 @@ import clsx from 'clsx'
 const NAV_LINKS = [
   { href: '/', label: 'Home' },
   { href: '/services', label: 'Services' },
+  { href: '/#pricing', label: 'Pricing' },
   { href: '/companions', label: 'Companions' },
   { href: '/about', label: 'About' },
   { href: '/faq', label: 'FAQ' },
-  { href: '/contact', label: 'Contact' },
 ]
 
 export function Navbar() {
@@ -78,7 +78,7 @@ export function Navbar() {
                   onClick={() => navigate(dashLink)}
                   className="flex items-center gap-2 text-sm font-medium text-green-800 hover:text-green-600 transition-colors"
                 >
-                  <Bell size={16} />
+                  <LayoutDashboard size={16} />
                   Dashboard
                 </button>
                 <div className="w-px h-4 bg-gray-200" />
@@ -112,6 +112,8 @@ export function Navbar() {
             className="md:hidden p-2 text-green-800 rounded-lg hover:bg-green-50 transition-colors"
             onClick={() => setOpen(!open)}
             aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open}
+            aria-controls="mobile-nav-drawer"
           >
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -127,7 +129,7 @@ export function Navbar() {
       )}
 
       {/* Mobile menu drawer */}
-      <div className={clsx(
+      <div id="mobile-nav-drawer" className={clsx(
         'fixed top-[72px] left-0 right-0 bg-white z-40 md:hidden border-b border-gray-200 shadow-lg transition-all duration-200',
         open ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
       )}>
@@ -154,7 +156,7 @@ export function Navbar() {
                 to={dashLink}
                 className="flex items-center justify-center gap-2 py-3 bg-green-800 text-white rounded-xl text-sm font-semibold"
               >
-                <Bell size={16} /> Dashboard
+                <LayoutDashboard size={16} /> Dashboard
               </Link>
               <button
                 onClick={async () => { await signOut(); window.location.replace('/auth') }}

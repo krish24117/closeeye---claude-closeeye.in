@@ -184,9 +184,9 @@ function Step1Body({ draft, onSave, saving, formErr }: {
 
   return (
     <div>
-      <h2 style={{ fontSize: 23, letterSpacing: '-.01em', lineHeight: 1.12 }}>About you</h2>
+      <h2 style={{ fontSize: 23, letterSpacing: '-.01em', lineHeight: 1.12 }}>Tell us about yourself</h2>
       <p style={{ fontSize: 13, color: T.muted, marginTop: 5, marginBottom: 14 }}>
-        So we know who to keep updated. Saved once — we'll never ask again.
+        So we can send visit updates directly to you.
       </p>
 
       {formErr && <ErrBanner msg={formErr} />}
@@ -264,9 +264,9 @@ function Step2Body({ draft, onSave, saving, formErr }: {
 
   return (
     <div>
-      <h2 style={{ fontSize: 23, letterSpacing: '-.01em', lineHeight: 1.12 }}>Your parent in India</h2>
+      <h2 style={{ fontSize: 23, letterSpacing: '-.01em', lineHeight: 1.12 }}>Tell us about your loved one</h2>
       <p style={{ fontSize: 13, color: T.muted, marginTop: 5, marginBottom: 14 }}>
-        The loved one Close Eye will be looking after.
+        The person we'll be visiting on your behalf.
       </p>
 
       {formErr && <ErrBanner msg={formErr} />}
@@ -301,7 +301,7 @@ function Step2Body({ draft, onSave, saving, formErr }: {
         {errors.relationship && <p role="alert" style={{ fontSize: 11.5, color: T.req, marginBottom: 14 }}>{errors.relationship}</p>}
       </div>
 
-      <Field id="ob-city" label="City in India" required hint="So we can match a vetted companion nearby." error={errors.city}>
+      <Field id="ob-city" label="City in India" required hint="We currently serve Hyderabad — more cities coming soon." error={errors.city}>
         <Inp id="ob-city" value={city} onChange={e => { setCity(e.target.value); setErrors(v => ({ ...v, city: '' })) }} placeholder="e.g. Hyderabad" error={errors.city} />
       </Field>
 
@@ -322,9 +322,9 @@ function Step3Body({ s1, s2 }: { s1: Draft['s1']; s2: Draft['s2'] }) {
   const parentLabel = s2.relationship ? `your ${s2.relationship.toLowerCase()}` : 'your parent'
   return (
     <div>
-      <h2 style={{ fontSize: 23, letterSpacing: '-.01em', lineHeight: 1.12 }}>All set to begin</h2>
+      <h2 style={{ fontSize: 23, letterSpacing: '-.01em', lineHeight: 1.12 }}>One last check</h2>
       <p style={{ fontSize: 13, color: T.muted, marginTop: 5, marginBottom: 14 }}>
-        Quick check — does this look right?
+        Please confirm your details before we get started.
       </p>
 
       <div style={{ background: '#fff', border: `1px solid ${T.line}`, borderRadius: 14, padding: '14px 16px', marginBottom: 14 }}>
@@ -359,9 +359,9 @@ function DoneScreen({ name }: { name: string }) {
           <path d="M5 13l4 4 10-10" stroke="#2c6b43" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
-      <h2 style={{ fontSize: 24, fontWeight: 800, color: T.forest, marginBottom: 8 }}>You're in.</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 800, color: T.forest, marginBottom: 8 }}>You're all set.</h2>
       <p style={{ fontSize: 14, color: T.muted, maxWidth: '30ch', marginInline: 'auto', lineHeight: 1.55 }}>
-        Welcome to Close Eye, {name.split(' ')[0]}. We'll be in touch soon — and your dashboard is ready whenever you are.
+        Welcome to Close Eye, {name.split(' ')[0]}. Our team will reach out within 24–48 hours to schedule your first visit.
       </p>
     </div>
   )
@@ -510,7 +510,7 @@ export function OnboardingPage() {
         {/* Brand */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13, color: T.forest }}>
           <Logo className="w-4 h-4" />
-          close eye
+          Close Eye
         </div>
 
         {/* Step count */}

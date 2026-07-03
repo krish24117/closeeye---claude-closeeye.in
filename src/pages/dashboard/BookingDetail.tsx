@@ -185,7 +185,7 @@ function VerticalTimeline({ booking }: { booking: BookingRequest }) {
         </div>
         <div>
           <p className="ce-mc-vline-label">Booking Cancelled</p>
-          <p className="ce-mc-vline-ts">This booking was cancelled</p>
+          <p className="ce-mc-vline-ts">This visit was cancelled. Need to rebook? <Link to="/dashboard/book" style={{ color: 'var(--forest)', fontWeight: 600, textDecoration: 'none' }}>We're here.</Link></p>
         </div>
       </div>
     )
@@ -402,7 +402,7 @@ export function BookingDetailPage() {
         </button>
         <div style={{ flex:1, minWidth:0 }}>
           <p style={{ fontSize:14, fontWeight:700, color:'#1D1D1F', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-            Booking Details
+            {booking?.service_name || 'Booking Details'}
           </p>
         </div>
         <span className={`ce-mc-badge ${b.cls}`}>{b.label}</span>
@@ -423,7 +423,7 @@ export function BookingDetailPage() {
             </p>
           ) : (
             <p style={{ fontSize:13.5, color:'rgba(250,247,242,.5)', margin:'0 0 12px' }}>
-              Time to be confirmed
+              We'll confirm your visit time shortly
             </p>
           )}
           {booking.recipient_name && (
@@ -499,7 +499,7 @@ export function BookingDetailPage() {
               value={booking.companion_name}
             >
               <p style={{ fontSize:12.5, color:'#6E6E73', margin:'4px 0 0', lineHeight:1.45 }}>
-                Aadhaar-verified · Background-checked · Trained
+                Trained · Background-checked · Aadhaar-verified
               </p>
             </DetailRow>
           </DetailBlock>

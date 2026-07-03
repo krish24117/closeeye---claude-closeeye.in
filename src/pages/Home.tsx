@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Check, Menu, X, ArrowRight, Stethoscope, User, Send, Loader2, MessageCircle, ShieldCheck, PhoneCall, Lock, UserCheck, House, Building2, Globe, HeartHandshake, Mail, Instagram, Linkedin } from 'lucide-react'
+import { Check, Menu, X, ArrowRight, Stethoscope, User, Send, Loader2, MessageCircle, ShieldCheck, PhoneCall, Lock, UserCheck, House, Building2, Globe, HeartHandshake, Mail, Instagram, Linkedin, FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Logo, LogoLockup } from '@/components/ui/Logo'
 import { useAuth } from '@/lib/auth-context'
@@ -24,7 +24,7 @@ const NAV_LINKS: { label: string; href?: string; to?: string }[] = [
 const TRUST_SIGNALS = [
   'GPS-verified visits',
   'Detailed WhatsApp reports',
-  'WhatsApp delivered',
+  'Aadhaar-verified companions',
   'Emergency-ready companions',
 ]
 
@@ -53,7 +53,7 @@ const WA_MESSAGES = [
 
 const TRUST_PILLARS = [
   { icon: ShieldCheck, title: 'Verified Companions',    body: 'Every companion is background-checked, Aadhaar-verified, trained, and supervised on their first visits before meeting your family alone.' },
-  { icon: Stethoscope, title: 'Every Visit Documented',  body: 'Companions record everything — meals, mood, medications, and one personal moment — in a structured report sent to your WhatsApp within the hour.' },
+  { icon: FileText,    title: 'Every Visit Documented',  body: 'Companions record everything — meals, mood, medicines, and one personal moment — in a structured report sent to your WhatsApp within the hour.' },
   { icon: PhoneCall,   title: 'Emergency Coordination', body: "If something goes wrong, we don't just inform you. We coordinate with your family's local emergency contact and the nearest hospital." },
   { icon: Lock,        title: 'Privacy First',          body: "Your family's health details never leave our systems. No third-party data sharing, ever." },
 ]
@@ -74,16 +74,16 @@ const COMPARISON_ROWS: [string, string][] = [
 ]
 
 const SERVICE_GROUPS = [
-  { category: 'Health',  icon: Stethoscope,    services: ['Wellness check-in', 'Medication reminder & log', 'Doctor appointment escort', 'Wellbeing assessment'],        available: true  },
+  { category: 'Health',  icon: Stethoscope,    services: ['Wellness check-in', 'Medication reminder & log', 'Doctor appointment escort', 'Wellbeing check-in'],         available: true  },
   { category: 'Care',    icon: HeartHandshake, services: ['Daily companion visit', 'Grocery & errand run', 'Home safety inspection', 'Emergency visit'],                available: true  },
   { category: 'Life',    icon: Building2,      services: ['Government document help', 'Bank & financial escort', 'Telecom & utility support'],                          available: false },
   { category: 'Future',  icon: Globe,          services: ['Society partnership visits', 'Preventive health screening', 'Palliative care coordination'],                  available: false },
 ]
 
 const ROADMAP_MILESTONES = [
-  { period: 'Today',    title: 'Health Companion',        desc: 'In-person wellness visits, WhatsApp reports, medication reminders, emergency coordination — live in Hyderabad.', active: true  },
-  { period: 'Tomorrow', title: 'Trusted Presence',        desc: 'Life admin support, society partnerships, multi-city expansion across India.',                                      active: false },
-  { period: 'Future',   title: 'Family Operating System', desc: 'Preventive care programs, AI-assisted health trend analysis, specialist access.',                                   active: false },
+  { period: 'Today',    title: 'Trusted Companion',       desc: 'In-person wellness visits, WhatsApp reports, medicine reminders, emergency coordination — live in Hyderabad.',  active: true  },
+  { period: 'Tomorrow', title: 'Trusted Presence',        desc: 'Life admin support, society partnerships, multi-city expansion across India.',                                       active: false },
+  { period: 'Future',   title: 'Family Operating System', desc: 'Preventive care programs, AI-assisted wellbeing insights, specialist access.',                                      active: false },
 ]
 
 const TESTIMONIALS = [
@@ -94,7 +94,7 @@ const TESTIMONIALS = [
 
 const ADVISORS = [
   { initials: 'SA', name: 'Sanjay Arora',   role: 'Brand Strategist',     detail: 'TEDx Speaker · CNN-NEWS18 · 738K followers', enabled: false },
-  { initials: 'DR', name: 'Dr. [Name]',     role: 'Orthopaedic Surgeon',  detail: 'Apollo Hospital, Hyderabad',                  enabled: true  },
+  { initials: 'DR', name: 'Dr. [Name]',     role: 'Orthopaedic Surgeon',  detail: 'Apollo Hospital, Hyderabad',                  enabled: false },
   { initials: 'SS', name: 'Dr. Sidharth',   role: 'Medical Co-Founder',   detail: 'MBBS · Hyderabad Hospital Network',           enabled: true  },
 ]
 
@@ -172,7 +172,7 @@ const SAMPLE_QUESTIONS = [
   'How to make the bathroom safer?',
 ]
 
-const DISCLAIMER = 'General guidance from Ask Close Eye, guided by our medical team. Not a substitute for professional medical advice.'
+const DISCLAIMER = 'General guidance only — not a substitute for professional advice.'
 
 interface PublicAskResponse {
   lane: 'escalate' | 'inform' | 'service'
@@ -236,7 +236,7 @@ function HomeAskWidget() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 800, color: '#0E2A1F' }}>
           <Logo className="w-4 h-4" />
-          Ask about your parent's health — free
+          A question about your parent? Ask Close Eye — free.
         </div>
         <button
           type="button"
@@ -250,7 +250,7 @@ function HomeAskWidget() {
         </button>
       </div>
       <p style={{ fontSize: 12.5, color: '#5c6b62', marginBottom: 13 }}>
-        A health question about your parent? Ask Close Eye, guided by our medical team.
+        Something on your mind? We reply with care, not just answers.
       </p>
 
       {/* Sample chips */}
@@ -289,10 +289,10 @@ function HomeAskWidget() {
               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(question) }
             }}
             onFocus={e => e.currentTarget.classList.remove('ce-ask-pulse')}
-            placeholder="Ask about your parent's health…"
+            placeholder="Ask about your parent's day, routine, or wellbeing…"
             disabled={typing}
             rows={1}
-            aria-label="Ask a health question"
+            aria-label="Ask about your parent"
             className={question || typing ? '' : 'ce-ask-pulse'}
             style={{
               flex: 1, fontFamily: 'inherit', fontSize: 13.5,
@@ -339,7 +339,7 @@ function HomeAskWidget() {
           {isEscalate ? (
             <div style={{ background: '#FEF2F2', border: '1px solid #c0734f', borderRadius: 12, padding: '13px 14px' }}>
               <p style={{ fontSize: 14, fontWeight: 700, color: '#7a1f1f', marginBottom: 6 }}>
-                ⚠ This needs urgent attention
+                ⚠️ This needs urgent attention
               </p>
               <p style={{ fontSize: 13.5, color: '#3d1010', lineHeight: 1.55, margin: 0 }}
                 dangerouslySetInnerHTML={{ __html: answer.message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>') }}
@@ -413,7 +413,7 @@ function HomeAskWidget() {
           <path d="M12 2l8 4v6c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-4z" stroke="#7FBF94" strokeWidth="1.8" strokeLinejoin="round"/>
           <path d="M9 12l2 2 4-4" stroke="#7FBF94" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
-        Guided by our medical team · General guidance, not a diagnosis
+        Guided by our care team · Not a substitute for professional advice
       </div>
 
       <style>{`@keyframes pub-bounce{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}`}</style>
@@ -878,7 +878,7 @@ export function HomePage() {
       <section className="ce-section ce-bg-cream">
         <div className="ce-container">
           <p className="ce-eyebrow animate-on-scroll">Real families</p>
-          <h2 className="ce-h2 animate-on-scroll">What keeps NRI families up at night.</h2>
+          <h2 className="ce-h2 animate-on-scroll">What NRI families tell us.</h2>
           <div className="ce-testimonials-grid">
             {TESTIMONIALS.map((t, i) => (
               <div key={i} className="ce-testimonial-card animate-on-scroll" style={{ transitionDelay: `${i * 100}ms` }}>
@@ -1000,7 +1000,7 @@ export function HomePage() {
       {/* ── BOTTOM CTA — final conversion section ────────────────── */}
       <section className="ce-final-cta-section">
         <div className="ce-container" style={{ textAlign: 'center' }}>
-          <h2 className="ce-h2" style={{ color: '#FAF7F2' }}>Ready to care from anywhere?</h2>
+          <h2 className="ce-h2" style={{ color: '#FAF7F2' }}>Your family deserves a presence they can count on.</h2>
           <p className="ce-final-cta-sub">Start with a question. Or register your family today.</p>
           <div className="ce-final-cta-btns">
             <Link to="/auth?mode=signup" className="ce-btn ce-btn-sage">
@@ -1108,7 +1108,7 @@ export function HomePage() {
               </a>
             </div>
             <p className="ce-footer-copy">
-              © 2025 Close Eye · Stexa Products &amp; Services Pvt. Ltd., Hyderabad
+              © 2026 Close Eye · Stexa Products &amp; Services Pvt. Ltd., Hyderabad
             </p>
           </div>
 

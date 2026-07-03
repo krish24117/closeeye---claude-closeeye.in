@@ -10,15 +10,15 @@ const PROBLEM_QUOTES = [
 ]
 
 const HOW_STEPS = [
-  { n: '01', title: 'Join today for ₹100', body: 'One-time. Locks in your founding seat, your member number, and your permanent benefits — before 15 August.' },
-  { n: '02', title: 'Tell us about your family', body: "Add your loved one's profile — their health history, medications, what makes them comfortable." },
-  { n: '03', title: "We're there on 15 August", body: "Companion visits activate. You'll be first — matched, scheduled, and WhatsApp-ready from day one." },
+  { n: '01', title: 'Join for ₹100', body: 'One-time. Locks in your founding seat, your member number, and your permanent benefits — founding spots are limited.' },
+  { n: '02', title: 'Tell us about your family', body: "Add your loved one's profile — their background, medicines, what makes them comfortable." },
+  { n: '03', title: "We visit, you stay connected", body: "Your companion visits and sends a full WhatsApp report within the hour. You'll know exactly how they are." },
 ]
 
 const SERVICES = [
   { icon: '🏠', title: 'Home Visits', body: 'Verified companions visit personally — medicines, meals, home safety, and one personal moment captured for you.' },
-  { icon: '💬', title: 'WhatsApp Reports', body: 'A detailed update within one hour of every visit. Health snapshot, personal moments, any concerns.' },
-  { icon: '💬', title: 'Ask CloseEye', body: 'Have a question about your parent\'s care, medications, or daily routines? Ask CloseEye — personalised guidance, available now.' },
+  { icon: '📋', title: 'WhatsApp Reports', body: 'A detailed update within one hour of every visit. Health snapshot, personal moments, any concerns.' },
+  { icon: '💬', title: 'Ask CloseEye', body: 'Have a question about your parent\'s care, medicines, or daily routines? Ask CloseEye — personalised guidance, available now.' },
   { icon: '🚨', title: 'Emergency Coordination', body: 'We coordinate with local hospitals, doctors, and family — 24/7 — when it matters most.' },
 ]
 
@@ -127,7 +127,7 @@ export function FoundingMemberPage() {
           </Link>
         </div>
         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 16 }}>
-          ₹100 one-time · Founding benefits locked in forever · Cancel anytime after launch
+          ₹100 one-time · Founding benefits locked in forever · No subscription required
         </p>
       </section>
 
@@ -230,13 +230,13 @@ export function FoundingMemberPage() {
             color: 'var(--sage)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em',
             padding: '5px 14px', borderRadius: 100, marginBottom: 24, textTransform: 'uppercase',
           }}>
-            India Independence Day · 15 August 2025
+            Now Live in Hyderabad
           </span>
           <h2 style={{ fontSize: 'clamp(26px, 6vw, 44px)', fontWeight: 800, margin: '0 0 16px', lineHeight: 1.2 }}>
             Be free from the not-knowing.
           </h2>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, margin: '0 0 36px' }}>
-            On 15 August, Close Eye launches companion visits across Hyderabad. Founding Members are first — matched, scheduled, and welcomed before anyone else.
+            Close Eye companion visits are live in Hyderabad. Founding Members get priority matching, permanent benefits, and a lower price — locked in forever.
           </p>
 
           {/* Benefits card */}
@@ -276,7 +276,7 @@ export function FoundingMemberPage() {
 
       {/* ── SOFT WAITLIST FALLBACK ────────────────────────────────── */}
       <section style={{ background: 'var(--cream)', padding: 'clamp(40px, 6vw, 64px) 24px', textAlign: 'center' }}>
-        <p style={{ fontSize: 16, color: 'var(--gray-mid)', margin: '0 0 8px' }}>Not ready to commit?</p>
+        <p style={{ fontSize: 16, color: 'var(--gray-mid)', margin: '0 0 8px' }}>Not ready yet?</p>
         <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--forest)', margin: '0 0 24px' }}>
           Join the waitlist — it's completely free.
         </p>

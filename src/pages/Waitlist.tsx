@@ -79,13 +79,10 @@ export function WaitlistPage() {
 
         <div style={{ fontSize: 52, marginBottom: 16 }}>🌿</div>
         <h2 style={{ fontSize: 28, fontWeight: 700, color: 'var(--forest)', margin: '0 0 12px' }}>
-          You're on the list.
+          Welcome to Close Eye.
         </h2>
-        <p style={{ fontSize: 16, color: 'var(--gray-mid)', lineHeight: 1.6, margin: '0 0 8px' }}>
-          Welcome to Close Eye. Check your WhatsApp — we've sent you a welcome message.
-        </p>
-        <p style={{ fontSize: 14, color: 'var(--gray-mid)', lineHeight: 1.6, margin: '0 0 28px' }}>
-          Check your email too — click the link to activate your account and start asking health questions (5/month, free).
+        <p style={{ fontSize: 16, color: 'var(--gray-mid)', lineHeight: 1.6, margin: '0 0 28px' }}>
+          We've sent you a welcome message on WhatsApp, and a link to activate your account by email. Once activated, you can use Ask CloseEye — free, up to 5 times a month.
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -131,7 +128,7 @@ export function WaitlistPage() {
           Join our waitlist.
         </h1>
         <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', maxWidth: 440, margin: '0 auto 16px', lineHeight: 1.6 }}>
-          Tell us about your family. We launch 15 August — waitlisters get notified first, and you can ask our medical team health questions in the meantime.
+          Tell us about your family. You'll be first to know when we launch in your city — and you can use Ask CloseEye free in the meantime.
         </p>
         <Link
           to="/founding-member"
@@ -166,7 +163,7 @@ export function WaitlistPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
             <div>
               <label style={labelStyle}>WhatsApp number *</label>
-              <input {...register('whatsapp_number')} placeholder="+1 555 000 0000" style={inputStyle} />
+              <input {...register('whatsapp_number')} type="tel" placeholder="+1 555 000 0000" style={inputStyle} />
               {errors.whatsapp_number && <p style={errStyle}>{errors.whatsapp_number.message}</p>}
             </div>
             <div>
@@ -236,7 +233,7 @@ export function WaitlistPage() {
           </button>
 
           <p style={{ fontSize: 12, textAlign: 'center', color: 'var(--gray-mid)' }}>
-            No spam. We'll reach out on WhatsApp within 24 hours.
+            We read every response personally and reply on WhatsApp within 24 hours.
           </p>
         </form>
       </section>

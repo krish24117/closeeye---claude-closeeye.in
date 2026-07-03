@@ -280,7 +280,7 @@ function NriHome() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--forest)' }}>{nextLabel}{nextTime ? ` · ${nextTime} IST` : ''}</div>
-              <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>A companion will check in and report back.</div>
+              <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Your companion will be there — a full report follows.</div>
             </div>
             <Link to="/dashboard/bookings" style={{ color: MUTED, fontSize: 20, textDecoration: 'none', flexShrink: 0 }}>›</Link>
           </div>
@@ -302,11 +302,12 @@ function NriHome() {
             Ask about your {rel}
           </div>
           <div style={{ fontSize: 12, color: '#3a5a47', marginTop: 4 }}>
-            {pcopy.askShortcutSub || `Personalised to their health & history. Guided by our medical team.`}
+            {pcopy.askShortcutSub || `Personalised to their visits and history. Backed by our care team.`}
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 11 }}>
             <input
               readOnly
+              aria-label="Ask about your parent"
               placeholder={`e.g. Is their BP reading okay?`}
               onFocus={() => navigate('/dashboard/ask')}
               style={{ flex: 1, fontFamily: 'inherit', fontSize: 13, padding: '10px 12px', border: '1px solid #cfe6d7', borderRadius: 11, background: '#fff', color: 'var(--forest)', outline: 'none', cursor: 'text' }}
@@ -340,7 +341,7 @@ function NriHome() {
           </Link>
           {/* Get help now — clay left border, always tel: link */}
           <a href="tel:+919000221261" className="ce-press" style={{ background: '#fff', border: `1px solid ${LINE}`, borderLeft: `3px solid ${CLAY}`, borderRadius: 13, padding: 14, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 7, color: 'var(--forest)' }}>
-            <span style={{ width: 30, height: 30, borderRadius: 9, background: CREAM2, display: 'grid', placeItems: 'center', fontSize: 15 }}>⚠</span>
+            <span style={{ width: 30, height: 30, borderRadius: 9, background: CREAM2, display: 'grid', placeItems: 'center', fontSize: 15 }}>⚠️</span>
             <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2, color: CLAY }}>Get help now</span>
             <span style={{ fontSize: 11, color: MUTED }}>Emergency response</span>
           </a>
@@ -354,15 +355,15 @@ function NriHome() {
               <div style={{ flex: 1, background: '#fff', border: `1px solid ${LINE}`, borderRadius: 13, padding: 13 }}>
                 <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: MUTED, fontWeight: 700 }}>Plan</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--forest)', marginTop: 5 }}>Founding</div>
-                <div style={{ fontSize: 11.5, color: MUTED, marginTop: 2 }}>On-demand · ₹100 joined</div>
+                <div style={{ fontSize: 11.5, color: MUTED, marginTop: 2 }}>On-demand · Joined for ₹100</div>
               </div>
               <div style={{ flex: 1, background: '#fff', border: `1px solid ${LINE}`, borderRadius: 13, padding: 13 }}>
                 <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: MUTED, fontWeight: 700 }}>Visits</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--forest)', marginTop: 5 }}>
-                  {visitCount > 0 ? `${visitCount} done` : 'None yet'}
+                  {visitCount > 0 ? `${visitCount} done` : 'First one soon'}
                 </div>
                 <div style={{ fontSize: 11.5, color: MUTED, marginTop: 2 }}>
-                  {nextShort ? `Next: ${nextShort}` : 'Not scheduled'}
+                  {nextShort ? `Next: ${nextShort}` : 'Book your first'}
                 </div>
               </div>
             </div>
@@ -395,7 +396,7 @@ function NriHome() {
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, color: MUTED, margin: '0 0 1px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{activeReq.service_name}</p>
               <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--forest)', margin: 0 }}>
-                {statusCopy[activeReq.status] || activeReq.status.replace(/_/g, ' ')}
+                {statusCopy[activeReq.status] || 'Being processed'}
               </p>
             </div>
             <ChevronRight size={16} color="var(--forest)" style={{ flexShrink: 0 }} />
@@ -470,7 +471,7 @@ function SocietyHome() {
             <Link key={q.id} to="/dashboard/ask" style={{ display: 'block', background: '#fff', borderRadius: 'var(--radius-card)', padding: 16, boxShadow: 'var(--shadow-card)', marginBottom: 10, textDecoration: 'none' }}>
               <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--black)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.question}</p>
               <p style={{ fontSize: 13, color: 'var(--gray-mid)', margin: '4px 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                {q.answer || q.ai_answer || (q.status === 'pending' ? 'Doctor review in progress…' : '')}
+                {q.answer || q.ai_answer || (q.status === 'pending' ? 'Our care team is reviewing…' : '')}
               </p>
             </Link>
           ))}

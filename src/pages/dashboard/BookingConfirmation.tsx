@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
-import { CheckCircle, Calendar, User, MessageCircle, Loader2, ArrowRight } from 'lucide-react'
+import { CheckCircle, Calendar, Clock, User, MessageCircle, Loader2, ArrowRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { SERVICE_NAMES } from '@/lib/booking-labels'
 import { formatIsoTime } from '@/lib/formatTime'
@@ -47,8 +47,9 @@ export function BookingConfirmationPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
         <Loader2 size={24} className="animate-spin text-green-600" />
+        <p className="text-sm text-gray-400">Confirming your booking…</p>
       </div>
     )
   }
@@ -74,8 +75,8 @@ export function BookingConfirmationPage() {
           <CheckCircle size={28} className="text-white" />
         </div>
         <div>
-          <h1 className="font-serif text-2xl text-white">Booking confirmed!</h1>
-          <p className="text-green-300 text-sm mt-1">Payment received successfully</p>
+          <h1 className="font-serif text-2xl text-white">Your companion is on the way.</h1>
+          <p className="text-green-300 text-sm mt-1">We'll take it from here.</p>
         </div>
       </div>
 
@@ -84,7 +85,6 @@ export function BookingConfirmationPage() {
         <div className="px-5 py-4">
           <p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5">Booking reference</p>
           <p className="font-mono font-bold text-green-900 text-lg">{shortRef}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{booking.id}</p>
         </div>
 
         <div className="px-5 py-4 flex items-center gap-3">
@@ -110,7 +110,7 @@ export function BookingConfirmationPage() {
 
         <div className="px-5 py-4 flex items-center gap-3">
           <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Calendar size={15} className="text-green-700" />
+            <Clock size={15} className="text-green-700" />
           </div>
           <div>
             <p className="text-xs text-gray-400">Preferred date & time</p>
@@ -125,7 +125,7 @@ export function BookingConfirmationPage() {
         <div>
           <p className="text-sm font-semibold text-green-900 mb-1">What happens next?</p>
           <p className="text-sm text-green-800 leading-relaxed">
-            Your companion will be assigned shortly. We'll notify you on WhatsApp with their name, photo, and confirmed visit time within <strong>24 hours</strong>.
+            We'll confirm your companion's name, photo, and visit time within <strong>24 hours</strong> via WhatsApp.
           </p>
         </div>
       </div>
@@ -142,7 +142,7 @@ export function BookingConfirmationPage() {
           to="/dashboard"
           className="flex-1 flex items-center justify-center gap-2 border-2 border-gray-200 text-gray-600 hover:border-green-600 hover:text-green-800 font-semibold py-3 rounded-xl transition-colors text-sm"
         >
-          Go to home
+          Go to Home
         </Link>
       </div>
 

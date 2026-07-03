@@ -494,7 +494,7 @@ export function AuthPage() {
                 Welcome back
               </h1>
               <p style={{ fontSize: 14, color: C.body, margin: 0, lineHeight: 1.55 }}>
-                Stay connected to your family's care from anywhere.
+                Stay connected to your family from anywhere.
               </p>
             </div>
 
@@ -554,7 +554,7 @@ export function AuthPage() {
 
             {/* Switch to signup */}
             <div style={{ textAlign: 'center', borderTop: `1px solid #F0EBE4`, paddingTop: 20 }}>
-              <p style={{ fontSize: 13, color: C.body, margin: '0 0 4px' }}>New here?</p>
+              <p style={{ fontSize: 13, color: C.body, margin: '0 0 4px' }}>First time here?</p>
               <button
                 type="button" onClick={() => switchMode('signup')}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: C.forest, fontWeight: 700, fontFamily: 'inherit', padding: 0 }}
@@ -594,7 +594,7 @@ export function AuthPage() {
                     Create your account
                   </h1>
                   <p style={{ fontSize: 14, color: C.body, margin: 0, lineHeight: 1.55 }}>
-                    Set up your family's care dashboard in minutes.
+                    Set up your family's dashboard in minutes.
                   </p>
                 </div>
 
