@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Loader2, ArrowLeft, MapPin, Clock, Check, AlertTriangle, CheckCircle2, Calendar } from 'lucide-react'
+import { Loader2, ArrowLeft, ArrowRight, MapPin, Clock, Check, AlertTriangle, CheckCircle2, Calendar } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { formatSlot } from '@/lib/formatTime'
@@ -108,14 +108,40 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
   )
 }
 
-// ─── Address fields state ─────────────────────────────────────────────────────
+// ─── Google Places ────────────────────────────────────────────────────────────
 
-interface AddrFields { house: string; area: string; landmark: string; city: string; pincode: string }
-const EMPTY_ADDR: AddrFields = { house: '', area: '', landmark: '', city: 'Hyderabad', pincode: '' }
-
-function addrFromFields(f: AddrFields) {
-  return [f.house, f.area, f.landmark, f.city, f.pincode].filter(Boolean).join(', ')
+declare global {
+  interface Window {
+    google?: {
+      maps?: {
+        places?: {
+          Autocomplete: new (
+            el: HTMLInputElement,
+            opts?: { componentRestrictions?: { country: string }; fields?: string[] }
+          ) => {
+            getPlace(): { address_components?: Array<{ long_name: string; types: string[] }>; geometry?: { location?: { lat(): number; lng(): number } } }
+            addListener(ev: string, fn: () => void): void
+          }
+        }
+        event?: { clearInstanceListeners(inst: object): void }
+      }
+    }
+  }
 }
+
+function loadGoogleMaps(apiKey: string): Promise<void> {
+  return new Promise(resolve => {
+    if (window.google?.maps?.places) { resolve(); return }
+    const s = document.createElement('script')
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
+    s.async = true
+    s.onload = () => resolve()
+    document.head.appendChild(s)
+  })
+}
+
+interface LovedOneWithAddr { id: string; full_name: string; savedAddress: string | null }
+type AddrView = 'recipient' | 'saved' | 'new'
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -132,16 +158,13 @@ export function BookServicePage() {
 
   // ── Recipient ──────────────────────────────────────────────────────────────
   const [recipientName, setRecipientName] = useState('')
-  const [savedAddress, setSavedAddress]   = useState('')
 
   // ── Wizard state ───────────────────────────────────────────────────────────
   const [step, setStep] = useState<WizardStep>(isEmergency ? 2 : 1)
   const [date, setDate] = useState<Date | null>(null)
   const [slot, setSlot] = useState('')
 
-  // Address: either use saved or structured new fields
-  const [usingSaved, setUsingSaved]   = useState(true)
-  const [addrFields, setAddrFields]   = useState<AddrFields>(EMPTY_ADDR)
+  const [address, setAddress] = useState('')
   const [emergencyAddr, setEmergencyAddr] = useState('')
   const [notes, setNotes]   = useState('')
   const [whatsapp, setWhatsapp] = useState('')
@@ -158,26 +181,10 @@ export function BookServicePage() {
   useEffect(() => {
     if (!user) return
     if (isNri) {
-      ;(async () => {
-        const { data: lo } = await supabase.from('loved_ones').select('id, full_name').eq('family_user_id', user.id).order('created_at').limit(1).maybeSingle()
-        let addr = ''
-        if (lo?.id) {
-          const { data: ep } = await supabase.from('elder_profiles').select('address').eq('loved_one_id', lo.id).maybeSingle()
-          addr = ep?.address || ''
-        }
-        setRecipientName(lo?.full_name || profile?.full_name || '')
-        setSavedAddress(addr)
-        setUsingSaved(!!addr)
-      })()
+      setRecipientName(profile?.full_name || '')
     } else {
-      supabase.from('society_members').select('name, flat_number, area, society_name').eq('user_id', user.id).maybeSingle()
-        .then(({ data }) => {
-          const name = data?.name || profile?.full_name || ''
-          const addr = [data?.flat_number, data?.society_name, data?.area].filter(Boolean).join(', ')
-          setRecipientName(name)
-          setSavedAddress(addr)
-          setUsingSaved(!!addr)
-        })
+      supabase.from('society_members').select('name').eq('user_id', user.id).maybeSingle()
+        .then(({ data }) => setRecipientName(data?.name || profile?.full_name || ''))
     }
   }, [user, isNri, profile])
 
@@ -200,17 +207,18 @@ export function BookServicePage() {
   })
 
   // The address to submit
-  const effectiveAddress = isEmergency
-    ? emergencyAddr.trim()
-    : usingSaved ? savedAddress : addrFromFields(addrFields)
+  const effectiveAddress = isEmergency ? emergencyAddr.trim() : address
 
   function scrollTop() { bodyRef.current?.scrollTo({ top: 0, behavior: 'smooth' }) }
 
   function goBack() {
     setErr('')
     if (step === 'done') { navigate('/dashboard/bookings', { replace: true }); return }
-    if (!isEmergency && step > 1) { setStep(s => (typeof s === 'number' ? s - 1 : 3) as WizardStep); scrollTop() }
-    else navigate('/dashboard/book')
+    if (!isEmergency && step > 1) {
+      if (step === 3) setAddress('')
+      setStep(s => (typeof s === 'number' ? s - 1 : 3) as WizardStep)
+      scrollTop()
+    } else navigate('/dashboard/book')
   }
 
   function goNext() {
@@ -218,6 +226,7 @@ export function BookServicePage() {
     if (step === 1) {
       if (!date) { setErr('Select a day first.'); return }
       if (!slot) { setErr('Select a time slot.'); return }
+      setAddress('')
       setStep(2); scrollTop()
     } else if (step === 2) {
       const a = effectiveAddress
@@ -432,16 +441,15 @@ export function BookServicePage() {
           {/* ════════ STEP 2: WHERE ════════ */}
           {!isEmergency && step === 2 && (
             <AddressStep
-              savedAddress={savedAddress}
-              usingSaved={usingSaved}
-              setUsingSaved={setUsingSaved}
-              addrFields={addrFields}
-              setAddrFields={setAddrFields}
+              isNri={isNri}
+              userId={user!.id}
               notes={notes}
               setNotes={setNotes}
               showWhatsapp={showWhatsapp}
               whatsapp={whatsapp}
               setWhatsapp={setWhatsapp}
+              onAddressReady={addr => { setAddress(addr); setErr('') }}
+              onRecipientNameChange={name => setRecipientName(name)}
               setErr={setErr}
             />
           )}
@@ -507,120 +515,348 @@ export function BookServicePage() {
 
 // ─── AddressStep ──────────────────────────────────────────────────────────────
 
+const GMAPS_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined
+
 function AddressStep({
-  savedAddress, usingSaved, setUsingSaved,
-  addrFields, setAddrFields,
+  isNri, userId,
   notes, setNotes,
   showWhatsapp, whatsapp, setWhatsapp,
+  onAddressReady, onRecipientNameChange,
   setErr,
 }: {
-  savedAddress: string
-  usingSaved: boolean
-  setUsingSaved: (v: boolean) => void
-  addrFields: AddrFields
-  setAddrFields: (fn: (f: AddrFields) => AddrFields) => void
+  isNri: boolean
+  userId: string
   notes: string
   setNotes: (v: string) => void
   showWhatsapp: boolean
   whatsapp: string
   setWhatsapp: (v: string) => void
+  onAddressReady: (addr: string) => void
+  onRecipientNameChange: (name: string) => void
   setErr: (v: string) => void
 }) {
-  const firstRef = useRef<HTMLInputElement>(null)
+  const [view, setView] = useState<AddrView>(isNri ? 'recipient' : 'saved')
+  const [lovedOnes, setLovedOnes] = useState<LovedOneWithAddr[]>([])
+  const [selectedLO, setSelectedLO] = useState<LovedOneWithAddr | null>(null)
+  const [societyAddr, setSocietyAddr] = useState('')
+  const [confirmedAddr, setConfirmedAddr] = useState('')
+  const [loadingLOs, setLoadingLOs] = useState(isNri)
 
+  // New address form state
+  const [house, setHouse] = useState('')
+  const [landmark, setLandmark] = useState('')
+  const [area, setArea] = useState('')
+  const [city, setCity] = useState('')
+  const [addrState, setAddrState] = useState('')
+  const [pincode, setPincode] = useState('')
+  const [saveForNext, setSaveForNext] = useState(true)
+  const [savingAddr, setSavingAddr] = useState(false)
+
+  const searchRef = useRef<HTMLInputElement>(null)
+  const acRef = useRef<any>(null)
+
+  // Load loved ones or society address
   useEffect(() => {
-    if (!usingSaved) { setTimeout(() => firstRef.current?.focus(), 50) }
-  }, [usingSaved])
+    if (!userId) return
+    if (isNri) {
+      setLoadingLOs(true)
+      supabase
+        .from('loved_ones')
+        .select('id, full_name, elder_profiles(address)')
+        .eq('family_user_id', userId)
+        .order('created_at')
+        .then(({ data }) => {
+          const los: LovedOneWithAddr[] = (data || []).map((lo: any) => ({
+            id: lo.id,
+            full_name: lo.full_name,
+            savedAddress: (lo.elder_profiles as any[])?.[0]?.address || null,
+          }))
+          setLovedOnes(los)
+          setLoadingLOs(false)
+          if (los.length === 1) {
+            setSelectedLO(los[0])
+            onRecipientNameChange(los[0].full_name)
+            setView('saved')
+          }
+        })
+    } else {
+      supabase.from('society_members').select('name, flat_number, area, society_name')
+        .eq('user_id', userId).maybeSingle()
+        .then(({ data }) => {
+          const addr = [data?.flat_number, data?.society_name, data?.area].filter(Boolean).join(', ')
+          setSocietyAddr(addr)
+          if (data?.name) onRecipientNameChange(data.name)
+        })
+    }
+  }, [userId, isNri]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return (
-    <div className="flex flex-col gap-4">
+  // Mount Google Autocomplete when in 'new' view
+  useEffect(() => {
+    if (view !== 'new' || !GMAPS_KEY) return
+    let mounted = true
+    loadGoogleMaps(GMAPS_KEY).then(() => {
+      if (!mounted || !searchRef.current || acRef.current) return
+      acRef.current = new window.google!.maps!.places!.Autocomplete(
+        searchRef.current,
+        { componentRestrictions: { country: 'in' }, fields: ['address_components', 'geometry'] }
+      )
+      acRef.current.addListener('place_changed', () => {
+        const place = acRef.current!.getPlace()
+        const get = (t: string) => place.address_components?.find((c: any) => c.types.includes(t))?.long_name || ''
+        setArea(get('sublocality_level_1') || get('sublocality') || get('neighborhood'))
+        setCity(get('locality') || get('administrative_area_level_2'))
+        setAddrState(get('administrative_area_level_1'))
+        setPincode(get('postal_code'))
+        setErr('')
+      })
+    })
+    return () => {
+      mounted = false
+      if (acRef.current) {
+        window.google?.maps?.event?.clearInstanceListeners(acRef.current)
+        acRef.current = null
+      }
+    }
+  }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
 
-      {/* Saved address card */}
-      {savedAddress && (
-        <div className={`rounded-[18px] border-2 transition-all duration-200 overflow-hidden ${usingSaved ? 'border-[#0E2A1F]' : 'border-[#EDE8E0]'}`}>
+  function pickSavedAddress(addr: string) {
+    setConfirmedAddr(addr)
+    onAddressReady(addr)
+    setErr('')
+  }
+
+  async function confirmNewAddress() {
+    const h = house.trim()
+    if (!h) { setErr('Enter the flat / house number.'); return }
+    if (!city) { setErr('Search and select an address first.'); return }
+    if (!pincode) { setErr('PIN code is missing — choose from search results.'); return }
+    const addr = [h, area, landmark.trim(), city, addrState, pincode].filter(Boolean).join(', ')
+    if (saveForNext) {
+      setSavingAddr(true)
+      if (isNri && selectedLO?.id) {
+        await supabase.from('elder_profiles')
+          .upsert({ loved_one_id: selectedLO.id, address: addr }, { onConflict: 'loved_one_id' })
+        setSelectedLO(lo => lo ? { ...lo, savedAddress: addr } : lo)
+      }
+      setSavingAddr(false)
+    }
+    setConfirmedAddr(addr)
+    onAddressReady(addr)
+    setErr('')
+    setView('saved')
+  }
+
+  const canConfirmNew = house.trim().length > 0 && city.length > 0 && pincode.length > 0
+  const currentSavedAddr = isNri ? selectedLO?.savedAddress : societyAddr
+
+  // ── VIEW: Who are we visiting? ─────────────────────────────────────────────
+  if (view === 'recipient') {
+    return (
+      <div className="flex flex-col gap-3">
+        <SectionLabel>Who are we visiting?</SectionLabel>
+        {loadingLOs ? (
+          <div className="flex justify-center py-10">
+            <Loader2 size={22} className="ce-spin text-[#AEAEAE]" />
+          </div>
+        ) : lovedOnes.length === 0 ? (
+          <div className="bg-amber-50 border border-amber-200 rounded-[18px] px-4 py-5">
+            <p className="text-[14px] font-bold text-amber-800 mb-1">No care recipients added yet</p>
+            <p className="text-[13px] text-amber-700 leading-relaxed mb-3">Add your loved one's details in your profile, then return here to book.</p>
+            <a href="/dashboard/profile" className="text-[13.5px] font-bold text-[#0E2A1F] underline">Add care recipient →</a>
+          </div>
+        ) : (
+          lovedOnes.map(lo => (
+            <button
+              key={lo.id}
+              onClick={() => { setSelectedLO(lo); onRecipientNameChange(lo.full_name); setView('saved'); setErr('') }}
+              className="w-full flex items-center gap-3 bg-[#FAF7F2] rounded-[18px] px-4 py-4 text-left min-h-[76px] border-2 border-transparent transition-all duration-150 active:border-[#A8D5B5]"
+            >
+              <div className="w-11 h-11 rounded-full bg-[#0E2A1F] flex items-center justify-center shrink-0 text-[17px] font-bold text-[#A8D5B5]">
+                {lo.full_name.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[15px] font-bold text-[#1D1D1F] truncate">{lo.full_name}</p>
+                <p className="text-[12px] text-[#6E6E73] mt-0.5 truncate">
+                  {lo.savedAddress || 'No saved address'}
+                </p>
+              </div>
+              <ArrowRight size={16} color="#AEAEAE" className="shrink-0" />
+            </button>
+          ))
+        )}
+      </div>
+    )
+  }
+
+  // ── VIEW: Choose address ───────────────────────────────────────────────────
+  if (view === 'saved') {
+    const recipName = isNri ? selectedLO?.full_name : undefined
+    return (
+      <div className="flex flex-col gap-4">
+
+        {/* Back + recipient name */}
+        {isNri && lovedOnes.length > 1 && (
           <button
-            onClick={() => { setUsingSaved(true); setErr('') }}
-            className="w-full flex items-start gap-3 p-4 text-left min-h-[60px]"
+            onClick={() => { setSelectedLO(null); setConfirmedAddr(''); onAddressReady(''); setView('recipient') }}
+            className="flex items-center gap-1.5 text-[13px] text-[#6E6E73] font-semibold -mb-1 min-h-[36px]"
           >
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${usingSaved ? 'bg-[#0E2A1F]' : 'bg-[#F5F0E8]'}`}>
-              {usingSaved ? <Check size={14} color="#fff" strokeWidth={3} /> : <MapPin size={14} color="#0E2A1F" />}
+            <ArrowLeft size={13} /> Choose recipient
+          </button>
+        )}
+        {recipName && (
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-[#0E2A1F] flex items-center justify-center text-[12px] font-bold text-[#A8D5B5] shrink-0">
+              {recipName.charAt(0).toUpperCase()}
+            </div>
+            <p className="text-[14.5px] font-bold text-[#1D1D1F]">Visiting {recipName}</p>
+          </div>
+        )}
+
+        <SectionLabel>Choose address</SectionLabel>
+
+        {/* Saved address */}
+        {currentSavedAddr ? (
+          <button
+            onClick={() => pickSavedAddress(currentSavedAddr)}
+            className={`w-full flex items-start gap-3 rounded-[18px] px-4 py-4 text-left min-h-[64px] border-2 transition-all duration-200 ${
+              confirmedAddr === currentSavedAddr ? 'border-[#0E2A1F] bg-[#F0F7F2]' : 'border-[#EDE8E0] bg-[#FAF7F2]'
+            }`}
+          >
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${confirmedAddr === currentSavedAddr ? 'bg-[#0E2A1F]' : 'bg-[#EDE8E0]'}`}>
+              {confirmedAddr === currentSavedAddr
+                ? <Check size={14} color="#fff" strokeWidth={3} />
+                : <MapPin size={14} color="#6E6E73" />}
             </div>
             <div className="flex-1 min-w-0">
-              <p className={`text-[12px] font-bold mb-0.5 ${usingSaved ? 'text-[#0E2A1F]' : 'text-[#6E6E73]'}`}>
+              <p className={`text-[11.5px] font-bold mb-0.5 uppercase tracking-[0.06em] ${confirmedAddr === currentSavedAddr ? 'text-[#0E2A1F]' : 'text-[#6E6E73]'}`}>
                 Saved address
               </p>
-              <p className="text-[13px] text-[#3A3A3C] leading-relaxed">{savedAddress}</p>
+              <p className="text-[13.5px] text-[#1D1D1F] leading-relaxed">{currentSavedAddr}</p>
             </div>
           </button>
-        </div>
-      )}
+        ) : null}
 
-      {/* Enter new address toggle */}
-      {savedAddress && (
+        {/* Visit different location */}
         <button
-          onClick={() => { setUsingSaved(false); setErr('') }}
-          className={`flex items-center gap-2 text-[13px] font-semibold rounded-[14px] px-4 py-3 min-h-[44px] border-2 transition-all w-full ${
-            !usingSaved ? 'border-[#0E2A1F] text-[#0E2A1F] bg-[#F5F0E8]' : 'border-[#EDE8E0] text-[#6E6E73] bg-transparent'
-          }`}
+          onClick={() => { setHouse(''); setLandmark(''); setArea(''); setCity(''); setAddrState(''); setPincode(''); setView('new'); setErr('') }}
+          className="flex items-center gap-3 text-[13.5px] font-semibold text-[#0E2A1F] rounded-[18px] px-4 py-4 min-h-[56px] border-2 border-dashed border-[#A8D5B5] w-full transition-all"
         >
-          <MapPin size={14} />
-          {usingSaved ? 'Enter a different address' : 'Using a new address ↓'}
-        </button>
-      )}
-
-      {/* Structured address fields */}
-      {(!savedAddress || !usingSaved) && (
-        <div className="flex flex-col gap-3">
-          {!savedAddress && <SectionLabel>Visiting address</SectionLabel>}
-          {[
-            { key: 'house' as const,    label: 'House / Flat *',    placeholder: 'e.g. Flat 4B, Sunrise Apartments', ref: firstRef },
-            { key: 'area' as const,     label: 'Area *',            placeholder: 'e.g. Jubilee Hills', ref: null },
-            { key: 'landmark' as const, label: 'Landmark',          placeholder: 'e.g. Near Apollo Hospital', ref: null },
-            { key: 'city' as const,     label: 'City',              placeholder: 'Hyderabad', ref: null },
-            { key: 'pincode' as const,  label: 'Pincode',           placeholder: '500034', ref: null },
-          ].map(f => (
-            <div key={f.key} className="bg-[#FAF7F2] rounded-[14px] px-4 py-3">
-              <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">{f.label}</label>
-              <input
-                ref={f.ref}
-                value={addrFields[f.key]}
-                onChange={e => { setAddrFields(a => ({ ...a, [f.key]: e.target.value })); setErr('') }}
-                placeholder={f.placeholder}
-                className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]"
-                type={f.key === 'pincode' ? 'number' : 'text'}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Special instructions */}
-      <FieldBlock label="Special instructions (optional)">
-        <textarea
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          placeholder="Gate code, lift issue, medicines to remind, anything the companion should know…"
-          rows={3}
-          className="w-full bg-transparent border-none outline-none text-[14.5px] resize-none leading-relaxed"
-        />
-      </FieldBlock>
-
-      {/* WhatsApp prompt */}
-      {showWhatsapp && (
-        <div className="bg-amber-50 border-2 border-amber-200 rounded-[16px] px-4 py-4">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle size={14} className="text-amber-600 shrink-0" />
-            <p className="text-[13px] font-bold text-amber-800">Add WhatsApp to receive the visit report</p>
+          <div className="w-8 h-8 rounded-full border-2 border-[#0E2A1F] flex items-center justify-center text-[18px] font-bold leading-none shrink-0">
+            +
           </div>
-          <input
-            value={whatsapp}
-            onChange={e => setWhatsapp(e.target.value)}
-            placeholder="+91 98765 43210"
-            type="tel"
-            className="w-full bg-white border border-amber-300 rounded-[12px] px-3 py-2.5 text-[14px] outline-none"
+          {currentSavedAddr ? 'Visit a different location' : 'Add address'}
+        </button>
+
+        {/* Notes */}
+        <FieldBlock label="Special instructions (optional)">
+          <textarea
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            placeholder="Gate code, lift, medicines to remind, anything the companion should know…"
+            rows={3}
+            className="w-full bg-transparent border-none outline-none text-[14.5px] resize-none leading-relaxed"
           />
+        </FieldBlock>
+
+        {/* WhatsApp prompt */}
+        {showWhatsapp && (
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-[16px] px-4 py-4">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+              <p className="text-[13px] font-bold text-amber-800">Add WhatsApp to receive the visit report</p>
+            </div>
+            <input
+              value={whatsapp}
+              onChange={e => setWhatsapp(e.target.value)}
+              placeholder="+91 98765 43210"
+              type="tel"
+              className="w-full bg-white border border-amber-300 rounded-[12px] px-3 py-2.5 text-[14px] outline-none"
+            />
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── VIEW: Add new address ──────────────────────────────────────────────────
+  return (
+    <div className="flex flex-col gap-4">
+      <button
+        onClick={() => { setView('saved'); setErr('') }}
+        className="flex items-center gap-1.5 text-[13px] text-[#6E6E73] font-semibold -mb-1 min-h-[36px]"
+      >
+        <ArrowLeft size={13} /> Back
+      </button>
+
+      <SectionLabel>New address</SectionLabel>
+
+      {/* Search field */}
+      <div className="bg-[#FAF7F2] rounded-[16px] px-4 py-3.5 flex items-center gap-3 border-2 border-transparent focus-within:border-[#A8D5B5] transition-all">
+        <MapPin size={16} color="#6E6E73" className="shrink-0" />
+        <input
+          ref={searchRef}
+          type="text"
+          placeholder="Search address…"
+          className="flex-1 bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F] placeholder:text-[#AEAEAE]"
+          autoFocus
+          autoComplete="off"
+        />
+      </div>
+      {!GMAPS_KEY && (
+        <p className="text-[11.5px] text-amber-600 -mt-2 px-1">Set VITE_GOOGLE_MAPS_API_KEY to enable address search.</p>
+      )}
+
+      {/* Auto-populated confirmation */}
+      {city && (
+        <div className="bg-green-50 border border-green-200 rounded-[14px] px-4 py-3 flex items-start gap-2">
+          <Check size={13} className="text-green-700 shrink-0 mt-0.5" strokeWidth={3} />
+          <p className="text-[12.5px] text-green-700 leading-relaxed">
+            <strong>{city}</strong>{addrState ? `, ${addrState}` : ''}{pincode ? ` — ${pincode}` : ''}{area ? ` · ${area}` : ''}
+          </p>
         </div>
       )}
+
+      {/* House / Flat — required */}
+      <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3">
+        <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">House / Flat No. *</label>
+        <input
+          value={house}
+          onChange={e => { setHouse(e.target.value); setErr('') }}
+          placeholder="e.g. Flat 4B, Sunrise Apartments"
+          className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]"
+        />
+      </div>
+
+      {/* Landmark — optional */}
+      <div className="bg-[#FAF7F2] rounded-[14px] px-4 py-3">
+        <label className="block text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#6E6E73] mb-1.5">Landmark (optional)</label>
+        <input
+          value={landmark}
+          onChange={e => setLandmark(e.target.value)}
+          placeholder="e.g. Near Apollo Hospital"
+          className="w-full bg-transparent border-none outline-none text-[14.5px] text-[#1D1D1F]"
+        />
+      </div>
+
+      {/* Save toggle */}
+      <button
+        onClick={() => setSaveForNext(v => !v)}
+        className="flex items-center gap-3 text-left py-1"
+      >
+        <div className={`w-5 h-5 rounded-[5px] border-2 flex items-center justify-center shrink-0 transition-all ${saveForNext ? 'bg-[#0E2A1F] border-[#0E2A1F]' : 'border-[#CCC]'}`}>
+          {saveForNext && <Check size={11} color="#fff" strokeWidth={3} />}
+        </div>
+        <span className="text-[13px] text-[#3A3A3C]">Save address for next time</span>
+      </button>
+
+      {/* Confirm button */}
+      <button
+        onClick={confirmNewAddress}
+        disabled={!canConfirmNew || savingAddr}
+        className={`w-full flex items-center justify-center gap-2 bg-[#0E2A1F] text-white text-[15px] font-bold rounded-[16px] py-3.5 min-h-[52px] mt-1 transition-opacity ${canConfirmNew && !savingAddr ? 'opacity-100' : 'opacity-40'}`}
+      >
+        {savingAddr ? <><Loader2 size={15} className="ce-spin" /> Saving…</> : 'Use this address →'}
+      </button>
     </div>
   )
 }
