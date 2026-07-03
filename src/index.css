@@ -1160,6 +1160,35 @@
 .ce-rung1 p { margin: 0; font-size: 15px; }
 .ce-rung1 strong { font-weight: 700; }
 
+/* Acquisition variant */
+.ce-rung1-acquisition { background: var(--forest); }
+.ce-rung1-body { flex: 1; min-width: 0; }
+.ce-rung1-title { font-size: 15px; font-weight: 700; color: #fff; margin: 0 0 4px; }
+.ce-rung1-desc  { font-size: 13px; color: rgba(255,255,255,.72); margin: 0; line-height: 1.5; }
+
+/* Founding member status card */
+.ce-member-status {
+  display: flex; align-items: center; gap: 14px;
+  background: linear-gradient(135deg, #0E2A1F 0%, #163D2B 100%);
+  border-radius: var(--radius-card); padding: 16px 20px; margin-bottom: 20px;
+}
+.ce-member-status-icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--sage); color: var(--forest);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800; flex-shrink: 0;
+}
+.ce-member-status-body { flex: 1; min-width: 0; }
+.ce-member-status-title { font-size: 15px; font-weight: 700; color: #fff; margin: 0 0 3px; }
+.ce-member-status-perks { font-size: 12px; color: var(--sage); margin: 0; }
+.ce-member-status-manage {
+  flex-shrink: 0; background: rgba(168,213,181,.18); color: var(--sage);
+  border: 1px solid rgba(168,213,181,.35); border-radius: 8px;
+  padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: background 160ms ease;
+}
+.ce-member-status-manage:hover { background: rgba(168,213,181,.30); }
+
 /* RUNG 2 — featured plan */
 .ce-rung2 { margin-bottom: 28px; }
 .ce-plan-card {

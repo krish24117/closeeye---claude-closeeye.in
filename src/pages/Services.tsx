@@ -12,6 +12,12 @@ import {
   paiseToUsdApprox, type ServiceItem,
 } from '@/lib/services-catalog'
 
+// Maps services-catalog IDs → BookService wizard route IDs
+const SERVICE_WIZARD_ID: Record<string, string> = {
+  grocery_medicine:    'grocery_medicine_assistance',
+  emergency_response:  'emergency_support_visit',
+}
+
 const WA_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '919000221261'
 const EMERGENCY_WA = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('EMERGENCY — I need urgent help for my parent in Hyderabad.')}`
 const EMERGENCY_TEL = `tel:+${WA_NUMBER}`
@@ -19,6 +25,10 @@ const EMERGENCY_TEL = `tel:+${WA_NUMBER}`
 export function ServicesPage() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+
+  const profile_ = (profile as unknown) as Record<string, unknown>
+  const isFoundingMember = !!profile_?.is_founding_member
+  const foundingNumber   = profile_?.founding_number as number | undefined
 
   const [busy, setBusy] = useState<'sub' | 'join' | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -135,7 +145,25 @@ export function ServicesPage() {
 
   function handleCta(s: ServiceItem) {
     if (s.type === 'emergency') { window.open(EMERGENCY_WA, '_blank', 'noopener'); return }
-    setDrawerService(s) // one_off → request drawer
+    // Hospital assistance has variants — open picker drawer, then navigate to wizard
+    if (s.variants) { setDrawerService(s); return }
+    // All other one-off services → navigate to step-by-step booking wizard
+    if (!user) {
+      sessionStorage.setItem('pendingCheckout', JSON.stringify({ type: 'booking', serviceType: SERVICE_WIZARD_ID[s.id] ?? s.id }))
+      navigate('/auth?mode=signup')
+      return
+    }
+    navigate(`/dashboard/book/${SERVICE_WIZARD_ID[s.id] ?? s.id}`)
+  }
+
+  function handleVariantNavigate(wizardId: string) {
+    setDrawerService(null)
+    if (!user) {
+      sessionStorage.setItem('pendingCheckout', JSON.stringify({ type: 'booking', serviceType: wizardId }))
+      navigate('/auth?mode=signup')
+      return
+    }
+    navigate(`/dashboard/book/${wizardId}`)
   }
 
   return (
@@ -162,13 +190,40 @@ export function ServicesPage() {
         </div>
       )}
 
-      {/* RUNG 1 — entry strip */}
-      <section className="ce-rung1">
-        <p>New here? <strong>Start with a founding membership</strong> — {paiseToUsdApprox(MEMBERSHIP_PAISE)}, billed in INR.</p>
-        <button className="ce-pp-btn ce-pp-btn-gold" onClick={handleJoin} disabled={busy === 'join'}>
-          {busy === 'join' ? <><Loader2 size={15} className="ce-spin" /> Starting…</> : 'Join for ₹100'}
-        </button>
-      </section>
+      {/* RUNG 1 — membership banner (conditional) */}
+      {isFoundingMember ? (
+        /* Existing member — show status, stop selling */
+        <section className="ce-member-status">
+          <div className="ce-member-status-icon">✓</div>
+          <div className="ce-member-status-body">
+            <p className="ce-member-status-title">
+              Founding Member{foundingNumber ? ` #${foundingNumber}` : ''}
+            </p>
+            <p className="ce-member-status-perks">Benefits Active · Priority scheduling · Member pricing</p>
+          </div>
+          <button
+            className="ce-member-status-manage"
+            onClick={() => navigate('/dashboard/subscription')}
+          >
+            Manage
+          </button>
+        </section>
+      ) : (
+        /* Non-member — acquisition card */
+        <section className="ce-rung1 ce-rung1-acquisition">
+          <div className="ce-rung1-body">
+            <p className="ce-rung1-title">Become a Founding Member</p>
+            <p className="ce-rung1-desc">
+              Join the first families helping shape Close Eye. Lifetime member pricing — one payment, no renewals.
+            </p>
+          </div>
+          <button className="ce-pp-btn ce-pp-btn-gold" onClick={handleJoin} disabled={busy === 'join'}>
+            {busy === 'join'
+              ? <><Loader2 size={15} className="ce-spin" /> Starting…</>
+              : 'Become a Founding Member'}
+          </button>
+        </section>
+      )}
 
       {/* RUNG 2 — featured monthly plan */}
       <section className="ce-rung2">
@@ -238,7 +293,7 @@ export function ServicesPage() {
       <BookingDrawer
         service={drawerService}
         onClose={() => setDrawerService(null)}
-        onSubmitted={(s) => setUpsellFor(s.name)}
+        onNavigate={handleVariantNavigate}
       />
       <ConsultationModal open={consultOpen} onClose={() => setConsultOpen(false)} interestedPlan={MONTHLY_PLAN.name} />
 
