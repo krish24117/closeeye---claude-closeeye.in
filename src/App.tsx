@@ -87,6 +87,7 @@ const DoctorHome = lazy(() => import('@/pages/doctor/Home').then(m => ({ default
 const SurveyPage = lazy(() => import('@/pages/Survey').then(m => ({ default: m.SurveyPage })))
 const OnboardingPage = lazy(() => import('@/pages/Onboarding').then(m => ({ default: m.OnboardingPage })))
 const PublicAskPage = lazy(() => import('@/pages/PublicAsk').then(m => ({ default: m.PublicAskPage })))
+const TeamPlatformPage = lazy(() => import('@/pages/team/TeamPlatform').then(m => ({ default: m.TeamPlatform })))
 
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Close Eye — Trusted Elder Care Companion for NRI Families | Hyderabad',
@@ -328,6 +329,7 @@ export default function App() {
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/onboarding" element={<ProtectedRoute role="family"><OnboardingPage /></ProtectedRoute>} />
             <Route path="/survey" element={<SurveyPage />} />
+            <Route path="/team" element={<TeamPlatformPage />} />
             <Route path="/dashboard" element={<ProtectedRoute role="family"><DashboardLayout /></ProtectedRoute>}>
               <Route index element={<DashboardHome />} />
               <Route path="ask" element={<DashboardAsk />} />
