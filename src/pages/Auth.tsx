@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, forwardRef } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -75,9 +75,10 @@ const inputBase: React.CSSProperties = {
 
 /* ── Sub-components ──────────────────────────────────────────────────────── */
 
-function InputField({
-  label, error, suffix, onFocus: propFocus, onBlur: propBlur, ...rest
-}: React.InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string; suffix?: React.ReactNode }) {
+const InputField = forwardRef<
+  HTMLInputElement,
+  React.InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string; suffix?: React.ReactNode }
+>(function InputField({ label, error, suffix, onFocus: propFocus, onBlur: propBlur, ...rest }, ref) {
   return (
     <div>
       <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.label, marginBottom: 8, letterSpacing: '.01em' }}>
@@ -85,6 +86,7 @@ function InputField({
       </label>
       <div style={{ position: 'relative' }}>
         <input
+          ref={ref}
           {...rest}
           style={{ ...inputBase, paddingRight: suffix ? 56 : 18 }}
           onFocus={e => {
@@ -109,7 +111,7 @@ function InputField({
       {error && <p style={{ fontSize: 12.5, color: C.error, marginTop: 6, fontWeight: 500 }}>{error}</p>}
     </div>
   )
-}
+})
 
 function PasswordField({
   label, showLabel = true, showToggle, show, onToggle, rhfProps, error, autoComplete, placeholder,
@@ -292,16 +294,32 @@ export function AuthPage() {
 
   /* ── Forms ───────────────────────────────────────────────────────────── */
 
-  const loginForm           = useForm<LoginData>({ resolver: zodResolver(loginSchema) })
-  const signupForm          = useForm<SignupData>({ resolver: zodResolver(signupSchema) })
+  const loginForm = useForm<LoginData>({
+    resolver: zodResolver(loginSchema),
+    mode: 'onTouched',
+    defaultValues: { email: '', password: '' },
+  })
+  const signupForm = useForm<SignupData>({
+    resolver: zodResolver(signupSchema),
+    mode: 'onTouched',
+    defaultValues: { full_name: '', email: '', password: '', confirm_password: '' },
+  })
   const signupPassword      = signupForm.watch('password')
   const signupConfirmPw     = signupForm.watch('confirm_password')
-  const passwordsMismatch   = !!signupConfirmPw && signupPassword !== signupConfirmPw
-  const resetForm           = useForm<ResetData>({ resolver: zodResolver(resetSchema) })
-  const updatePasswordForm  = useForm<UpdatePasswordData>({ resolver: zodResolver(updatePasswordSchema) })
+  const passwordsMismatch   = !!signupPassword && !!signupConfirmPw && signupPassword !== signupConfirmPw
+  const resetForm = useForm<ResetData>({
+    resolver: zodResolver(resetSchema),
+    mode: 'onTouched',
+    defaultValues: { email: '' },
+  })
+  const updatePasswordForm = useForm<UpdatePasswordData>({
+    resolver: zodResolver(updatePasswordSchema),
+    mode: 'onTouched',
+    defaultValues: { password: '', confirm_password: '' },
+  })
   const updatePw            = updatePasswordForm.watch('password')
   const updateConfirmPw     = updatePasswordForm.watch('confirm_password')
-  const updateMismatch      = !!updateConfirmPw && updatePw !== updateConfirmPw
+  const updateMismatch      = !!updatePw && !!updateConfirmPw && updatePw !== updateConfirmPw
 
   /* ── Handlers ────────────────────────────────────────────────────────── */
 
