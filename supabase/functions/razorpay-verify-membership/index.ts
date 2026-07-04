@@ -72,12 +72,27 @@ Deno.serve(async (req: Request) => {
   if (mErr || !membership) return json({ error: "Membership not found" }, 404);
   if (membership.user_id !== user.id) return json({ error: "Forbidden" }, 403);
 
-  // Idempotent: already activated (webhook beat us to it) — return existing number
+  // Idempotent: already activated (webhook beat us to it or client called twice).
+  // Still send WhatsApp if it was never delivered (race guard: check whatsapp_messages).
   if (membership.status === "active") {
     const { data: prof } = await sb.from("profiles")
-      .select("founding_number")
+      .select("founding_number, whatsapp_number, full_name")
       .eq("id", user.id)
       .maybeSingle();
+    const waNum = (prof?.whatsapp_number as string | null)?.trim();
+    if (waNum) {
+      const last10 = waNum.replace(/\D/g, "").slice(-10);
+      const { count } = await sb.from("whatsapp_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("template", "founding_welcome")
+        .ilike("to_number", `%${last10}%`);
+      if (!count) {
+        const name = (prof?.full_name as string | null) || "there";
+        const fn   = String(prof?.founding_number ?? 1);
+        await sendWhatsAppTemplate({ to: waNum, template: "payment_received", variables: [name, "100", "Founding Membership"], sb }).catch(() => {});
+        await sendWhatsAppTemplate({ to: waNum, template: "founding_welcome", variables: [name, fn], sb }).catch(() => {});
+      }
+    }
     return json({ ok: true, founding_number: prof?.founding_number ?? 1 });
   }
 

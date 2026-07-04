@@ -35,11 +35,14 @@ const BENEFITS = [
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function FoundingMemberPage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const isFoundingMember = !!((profile as unknown) as Record<string, unknown>)?.is_founding_member
 
   function goToCheckout() {
-    if (user) {
+    if (isFoundingMember) {
+      navigate('/dashboard')
+    } else if (user) {
       navigate('/founding-member/checkout')
     } else {
       sessionStorage.setItem('pendingCheckout', JSON.stringify({ type: 'membership' }))
@@ -83,7 +86,7 @@ export function FoundingMemberPage() {
               display: 'flex', alignItems: 'center', gap: 5,
             }}
           >
-            Become a Founding Family →
+            {isFoundingMember ? 'Go to Dashboard →' : 'Become a Founding Family →'}
           </button>
         </div>
       </nav>
@@ -115,7 +118,7 @@ export function FoundingMemberPage() {
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
-            Become a Founding Family — ₹100 <ArrowRight size={18} />
+            {isFoundingMember ? <>Go to Dashboard <ArrowRight size={18} /></> : <>Become a Founding Family — ₹100 <ArrowRight size={18} /></>}
           </button>
           <Link to="/waitlist" style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -266,7 +269,7 @@ export function FoundingMemberPage() {
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
-            Become a Founding Family <ArrowRight size={20} />
+            {isFoundingMember ? <>Go to Dashboard <ArrowRight size={20} /></> : <>Become a Founding Family <ArrowRight size={20} /></>}
           </button>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 14 }}>
             Secure payment via Razorpay · INR · International cards accepted

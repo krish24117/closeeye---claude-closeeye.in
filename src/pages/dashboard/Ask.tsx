@@ -461,9 +461,11 @@ export function DashboardAsk() {
                   <span style={{ fontSize: 12, color: '#9aada3' }}>
                     {5 - monthlyCount} of 5 questions remaining
                   </span>
-                  <Link to="/founding-member/checkout" style={{ fontSize: 12, fontWeight: 700, color: '#2FA84F', textDecoration: 'none' }}>
-                    Get unlimited →
-                  </Link>
+                  {!isFounder && (
+                    <Link to="/founding-member/checkout" style={{ fontSize: 12, fontWeight: 700, color: '#2FA84F', textDecoration: 'none' }}>
+                      Get unlimited →
+                    </Link>
+                  )}
                 </div>
               )}
             </div>
@@ -544,7 +546,7 @@ export function DashboardAsk() {
         })}
 
         {/* Near-cap warning */}
-        {nearCap && messages.length > 0 && (
+        {nearCap && !isFounder && messages.length > 0 && (
           <div style={{
             background: 'rgba(47,168,79,0.08)', borderRadius: 14,
             padding: '12px 16px', marginBottom: 10,
@@ -590,16 +592,24 @@ export function DashboardAsk() {
             <p style={{ fontSize: 14, fontWeight: 700, color: '#0E2A1F', margin: '0 0 6px' }}>
               5 free questions used this month
             </p>
-            <p style={{ fontSize: 12, color: '#7a8c82', margin: '0 0 8px' }}>
-              Renew on the 1st, or unlock unlimited now.
-            </p>
-            <Link to="/founding-member/checkout" style={{
-              display: 'inline-block', background: '#0E2A1F', color: '#FAF7F2',
-              fontWeight: 700, fontSize: 14, padding: '10px 24px', borderRadius: 999,
-              textDecoration: 'none',
-            }}>
-              Become a Founding Family →
-            </Link>
+            {isFounder ? (
+              <p style={{ fontSize: 12, color: '#7a8c82', margin: 0 }}>
+                Your questions renew on the 1st of next month.
+              </p>
+            ) : (
+              <>
+                <p style={{ fontSize: 12, color: '#7a8c82', margin: '0 0 8px' }}>
+                  Renew on the 1st, or unlock unlimited now.
+                </p>
+                <Link to="/founding-member/checkout" style={{
+                  display: 'inline-block', background: '#0E2A1F', color: '#FAF7F2',
+                  fontWeight: 700, fontSize: 14, padding: '10px 24px', borderRadius: 999,
+                  textDecoration: 'none',
+                }}>
+                  Become a Founding Family →
+                </Link>
+              </>
+            )}
           </div>
         ) : (
           <>

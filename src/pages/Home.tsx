@@ -183,7 +183,7 @@ interface PublicAskResponse {
   requiresHuman?: boolean
 }
 
-function HomeAskWidget() {
+function HomeAskWidget({ isMember = false }: { isMember?: boolean }) {
   const [question, setQuestion]         = useState('')
   const [answer, setAnswer]             = useState<PublicAskResponse | null>(null)
   const [typing, setTyping]             = useState(false)
@@ -378,13 +378,27 @@ function HomeAskWidget() {
               </div>
             ) : (
               <div style={{ marginTop: 11, background: 'linear-gradient(100deg,#0E2A1F,#163b2c)', color: '#FAF7F2', borderRadius: 13, padding: '12px 13px' }}>
-                <p style={{ fontSize: 13, fontWeight: 700 }}>Want answers specific to your parent?</p>
-                <Link
-                  to="/founding-member/checkout"
-                  style={{ display: 'inline-block', marginTop: 9, background: '#7FBF94', color: '#0E2A1F', textDecoration: 'none', fontWeight: 700, fontSize: 12, padding: '7px 13px', borderRadius: 999 }}
-                >
-                  Register your parent →
-                </Link>
+                {isMember ? (
+                  <>
+                    <p style={{ fontSize: 13, fontWeight: 700 }}>You're a Founding Family member.</p>
+                    <Link
+                      to="/dashboard/ask"
+                      style={{ display: 'inline-block', marginTop: 9, background: '#7FBF94', color: '#0E2A1F', textDecoration: 'none', fontWeight: 700, fontSize: 12, padding: '7px 13px', borderRadius: 999 }}
+                    >
+                      Ask in your dashboard →
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ fontSize: 13, fontWeight: 700 }}>Want answers specific to your parent?</p>
+                    <Link
+                      to="/founding-member/checkout"
+                      style={{ display: 'inline-block', marginTop: 9, background: '#7FBF94', color: '#0E2A1F', textDecoration: 'none', fontWeight: 700, fontSize: 12, padding: '7px 13px', borderRadius: 999 }}
+                    >
+                      Register your parent →
+                    </Link>
+                  </>
+                )}
               </div>
             )
           )}
@@ -394,16 +408,30 @@ function HomeAskWidget() {
       {/* Cap reached */}
       {capReached && !answer && (
         <div style={{ marginTop: 8, background: 'linear-gradient(100deg,#0E2A1F,#163b2c)', color: '#FAF7F2', borderRadius: 13, padding: '14px 15px' }}>
-          <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>You've tried 3 free questions.</p>
-          <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,.65)', marginBottom: 11, lineHeight: 1.5 }}>
-            Register your parent for unlimited personalised answers — specific to their health history.
-          </p>
-          <Link
-            to="/founding-member/checkout"
-            style={{ display: 'inline-block', background: '#7FBF94', color: '#0E2A1F', textDecoration: 'none', fontWeight: 700, fontSize: 13, padding: '9px 16px', borderRadius: 999 }}
-          >
-            Claim founding spot · ₹100 →
-          </Link>
+          {isMember ? (
+            <>
+              <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>For deeper questions, use your dashboard.</p>
+              <Link
+                to="/dashboard/ask"
+                style={{ display: 'inline-block', background: '#7FBF94', color: '#0E2A1F', textDecoration: 'none', fontWeight: 700, fontSize: 13, padding: '9px 16px', borderRadius: 999 }}
+              >
+                Go to Ask CloseEye →
+              </Link>
+            </>
+          ) : (
+            <>
+              <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>You've tried 3 free questions.</p>
+              <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,.65)', marginBottom: 11, lineHeight: 1.5 }}>
+                Register your parent for unlimited personalised answers — specific to their health history.
+              </p>
+              <Link
+                to="/founding-member/checkout"
+                style={{ display: 'inline-block', background: '#7FBF94', color: '#0E2A1F', textDecoration: 'none', fontWeight: 700, fontSize: 13, padding: '9px 16px', borderRadius: 999 }}
+              >
+                Claim founding spot · ₹100 →
+              </Link>
+            </>
+          )}
         </div>
       )}
 
@@ -443,6 +471,7 @@ export function HomePage() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, profile } = useAuth()
+  const isFoundingMember = !!((profile as unknown) as Record<string, unknown>)?.is_founding_member
   const [menuOpen, setMenuOpen]         = useState(false)
   const [showStickyCTA, setShowStickyCTA] = useState(false)
   const [showDiscovery, setShowDiscovery] = useState(false)
@@ -641,13 +670,23 @@ export function HomePage() {
           🌿 Founding Families welcome · Now live in Hyderabad
         </span>
         <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
-          <Link to="/founding-member/checkout" style={{
-            background: 'var(--sage)', color: 'var(--forest)', fontWeight: 700,
-            padding: '6px 16px', borderRadius: 100, fontSize: 13, textDecoration: 'none',
-            whiteSpace: 'nowrap',
-          }}>
-            Become a Founding Family →
-          </Link>
+          {isFoundingMember ? (
+            <Link to="/dashboard" style={{
+              background: 'var(--sage)', color: 'var(--forest)', fontWeight: 700,
+              padding: '6px 16px', borderRadius: 100, fontSize: 13, textDecoration: 'none',
+              whiteSpace: 'nowrap',
+            }}>
+              Go to Dashboard →
+            </Link>
+          ) : (
+            <Link to="/founding-member/checkout" style={{
+              background: 'var(--sage)', color: 'var(--forest)', fontWeight: 700,
+              padding: '6px 16px', borderRadius: 100, fontSize: 13, textDecoration: 'none',
+              whiteSpace: 'nowrap',
+            }}>
+              Become a Founding Family →
+            </Link>
+          )}
           <Link to="/waitlist" style={{
             background: 'transparent', color: 'rgba(255,255,255,0.8)', fontWeight: 500,
             padding: '6px 16px', borderRadius: 100, fontSize: 13, textDecoration: 'none',
@@ -703,7 +742,7 @@ export function HomePage() {
             <h2 className="ce-h2">How can Close Eye help your family today?</h2>
             <p className="ce-subtitle" style={{ marginBottom: 0 }}>Ask about medication schedules, what a visit includes, costs, coverage — anything.</p>
           </div>
-          <HomeAskWidget />
+          <HomeAskWidget isMember={isFoundingMember} />
         </div>
       </section>
 
@@ -954,7 +993,11 @@ export function HomePage() {
               <ul className="ce-benefits">
                 {FOUNDING_BENEFITS.map(b => <li key={b}><Check size={18} /> {b}</li>)}
               </ul>
-              <Link to="/founding-member/checkout" className="ce-btn ce-btn-primary ce-btn-full">Register for ₹100 <ArrowRight size={18} /></Link>
+              {isFoundingMember ? (
+                <Link to="/dashboard" className="ce-btn ce-btn-primary ce-btn-full">Go to Dashboard <ArrowRight size={18} /></Link>
+              ) : (
+                <Link to="/founding-member/checkout" className="ce-btn ce-btn-primary ce-btn-full">Register for ₹100 <ArrowRight size={18} /></Link>
+              )}
             </div>
 
             <div className="ce-price-card ce-price-card-featured animate-on-scroll" style={{ transitionDelay: '100ms' }}>
