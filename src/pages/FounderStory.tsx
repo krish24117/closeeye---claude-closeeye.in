@@ -338,6 +338,17 @@ export function FounderStoryPage() {
     return () => clearTimeout(id)
   }, [lineIdx, playing, sceneIdx]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /* ── Auto-advance to next scene when all lines are revealed ─────────── */
+
+  useEffect(() => {
+    if (!playing || !sceneDone) return
+    if (scene.type === 'closing') return
+    if (sceneIdx >= SCENES.length - 1) return
+    const pause = reduceMotion ? 600 : 1800
+    const id = setTimeout(() => goScene(sceneIdx + 1), pause)
+    return () => clearTimeout(id)
+  }, [sceneDone, playing, sceneIdx]) // eslint-disable-line react-hooks/exhaustive-deps
+
   /* ── Show "— Krishna" + "Enter dashboard" when closing completes ──── */
 
   useEffect(() => {
