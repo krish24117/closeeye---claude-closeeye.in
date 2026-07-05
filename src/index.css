@@ -2336,9 +2336,9 @@
 .ce-fs-dock-label strong { color: #B9E3C4; font-weight: 500; }
 
 @media (max-width: 640px) {
-  .ce-fs-rail    { left: 12px; }
+  .ce-fs-rail    { display: none; }
   .ce-fs-navzone { bottom: 90px; }
-  .ce-fs-stage   { padding: 9vh 7vw; }
+  .ce-fs-stage   { padding: 9vh 6vw; }
   .ce-fs-topbar  { padding: 14px 16px; }
   .ce-fs-dock-label { display: none; }
 }
