@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 /* ── Types ───────────────────────────────────────────────────────────── */
@@ -232,14 +232,20 @@ const SCENES: Scene[] = [
 ]
 
 const LANG_LINES: Record<'en' | 'te' | 'hi', null | string[][]> = {
-  en: null, // uses SCENES above as source of truth
-  te: null, // drop in translated arrays when ready
+  en: null,
+  te: null,
   hi: null,
 }
-// suppress unused warning until language tracks are added
 void LANG_LINES
 
 const STORAGE_KEY = 'ce_founder_pos'
+
+function lsGet(key: string): string | null {
+  try { return localStorage.getItem(key) } catch { return null }
+}
+function lsSet(key: string, val: string): void {
+  try { localStorage.setItem(key, val) } catch { /* quota / private browsing — ignore */ }
+}
 
 /* ── Component ───────────────────────────────────────────────────────── */
 
@@ -247,7 +253,7 @@ export function FounderStoryPage() {
   const navigate = useNavigate()
 
   const [sceneIdx, setSceneIdx] = useState(0)
-  const [lineIdx, setLineIdx]   = useState(-1) // -1 = waiting to start; 0+ = line index active
+  const [lineIdx, setLineIdx]   = useState(-1)
   const [playing, setPlaying]   = useState(true)
   const [fading, setFading]     = useState(false)
   const [showEnter, setShowEnter] = useState(false)
@@ -257,11 +263,11 @@ export function FounderStoryPage() {
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   ).current
 
-  // Use a ref to always read latest scene/line inside stable callbacks
   const latest = useRef({ sceneIdx, lineIdx })
   latest.current = { sceneIdx, lineIdx }
 
-  const scene    = SCENES[sceneIdx]
+  // Defensive guard — should never be undefined but protects from stale state
+  const scene    = SCENES[sceneIdx] ?? SCENES[0]
   const maxLines = scene.lines.length
   const sceneDone = lineIdx >= maxLines
 
@@ -281,9 +287,8 @@ export function FounderStoryPage() {
 
   function tapNext() {
     const { sceneIdx: si, lineIdx: li } = latest.current
-    const max = SCENES[si].lines.length
+    const max = SCENES[si]?.lines.length ?? 0
     if (li >= max - 1) {
-      // last line active (or scene done) → advance to next scene
       if (si < SCENES.length - 1) goScene(si + 1)
     } else {
       setLineIdx(l => l + 1)
@@ -299,7 +304,7 @@ export function FounderStoryPage() {
   /* ── Restore position on mount ────────────────────────────────────── */
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
+    const saved = lsGet(STORAGE_KEY)
     if (saved) {
       const si = parseInt(saved, 10)
       if (!isNaN(si) && si > 0 && si < SCENES.length) setSceneIdx(si)
@@ -311,7 +316,7 @@ export function FounderStoryPage() {
   /* ── Save scene position ──────────────────────────────────────────── */
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, String(sceneIdx))
+    lsSet(STORAGE_KEY, String(sceneIdx))
   }, [sceneIdx])
 
   /* ── Start line reveal after scene fades in ──────────────────────── */
@@ -325,7 +330,9 @@ export function FounderStoryPage() {
 
   useEffect(() => {
     if (!playing || lineIdx < 0 || lineIdx >= maxLines) return
-    const wc    = wordCount(scene.lines[lineIdx])
+    const currentLine = scene.lines[lineIdx]
+    if (!currentLine) return
+    const wc    = wordCount(currentLine)
     const dwell = reduceMotion ? 500 : Math.max(1500, 760 + wc * 250)
     const id = setTimeout(() => setLineIdx(l => l + 1), dwell)
     return () => clearTimeout(id)
@@ -373,7 +380,7 @@ export function FounderStoryPage() {
       <div className="ce-fs-topbar">
         <span className="ce-fs-counter">{counterLabel}</span>
         <button className="ce-fs-skip-btn" onClick={() => goScene(SCENES.length - 1)}>
-          Skip intro →
+          Skip intro &rarr;
         </button>
       </div>
 
@@ -382,9 +389,9 @@ export function FounderStoryPage() {
         {SCENES.map((_, i) => (
           <button
             key={i}
-            className={`ce-fs-dot${i === sceneIdx ? ' cur' : i < sceneIdx ? ' done' : ''}`}
+            className={'ce-fs-dot' + (i === sceneIdx ? ' cur' : i < sceneIdx ? ' done' : '')}
             onClick={() => goScene(i)}
-            aria-label={`Go to scene ${i}`}
+            aria-label={'Go to scene ' + i}
             aria-current={i === sceneIdx ? 'step' : undefined}
           />
         ))}
@@ -396,10 +403,10 @@ export function FounderStoryPage() {
 
       {/* Hint */}
       <div
-        className={`ce-fs-hint${showHint && sceneIdx === 0 ? ' visible' : ''}`}
+        className={'ce-fs-hint' + (showHint && sceneIdx === 0 ? ' visible' : '')}
         aria-hidden="true"
       >
-        tap right → to continue
+        tap right &rarr; to continue
       </div>
 
       {/* Main stage */}
@@ -413,7 +420,7 @@ export function FounderStoryPage() {
           ].filter(Boolean).join(' ')}
         >
           {scene.kicker && (
-            <div className={`ce-fs-kicker${lineIdx >= 0 ? ' on' : ''}`}>
+            <div className={'ce-fs-kicker' + (lineIdx >= 0 ? ' on' : '')}>
               {scene.kicker}
             </div>
           )}
@@ -440,18 +447,18 @@ export function FounderStoryPage() {
           </div>
 
           {scene.type === 'closing' && (
-            <p className={`ce-fs-krishna${showEnter ? ' on' : ''}`} aria-hidden={!showEnter ? 'true' : undefined}>
-              — Krishna
+            <p className={'ce-fs-krishna' + (showEnter ? ' on' : '')} aria-hidden={!showEnter ? 'true' : undefined}>
+              &mdash; Krishna
             </p>
           )}
 
           {scene.type === 'closing' && (
             <button
-              className={`ce-fs-enter-btn${showEnter ? ' on' : ''}`}
+              className={'ce-fs-enter-btn' + (showEnter ? ' on' : '')}
               onClick={() => navigate('/dashboard')}
               tabIndex={showEnter ? 0 : -1}
             >
-              Enter the dashboard →
+              Enter the dashboard &rarr;
             </button>
           )}
         </div>
@@ -486,7 +493,7 @@ export function FounderStoryPage() {
         </button>
 
         <span className="ce-fs-dock-label">
-          🎙 <strong>Founder's narration</strong> — coming soon
+          &#127897; <strong>Founder&apos;s narration</strong> &mdash; coming soon
         </span>
 
         <button

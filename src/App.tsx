@@ -299,6 +299,48 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+class FounderStoryBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; message: string }
+> {
+  state = { hasError: false, message: '' }
+  static getDerivedStateFromError(err: Error) {
+    return { hasError: true, message: err?.message ?? String(err) }
+  }
+  componentDidCatch(err: Error) {
+    console.error('[FounderStory crash]', err)
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: '#0E2A1F', flexDirection: 'column', gap: 20, padding: 32, textAlign: 'center',
+        }}>
+          <p style={{ fontFamily: "'Open Sauce One', system-ui, sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.85)', fontSize: 18, margin: 0 }}>
+            The story couldn't load
+          </p>
+          {this.state.message && (
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace', maxWidth: 480, margin: 0, wordBreak: 'break-word' }}>
+              {this.state.message}
+            </p>
+          )}
+          <button
+            onClick={() => { this.setState({ hasError: false, message: '' }); window.location.reload() }}
+            style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.85)', padding: '10px 24px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}
+          >
+            Try again
+          </button>
+          <a href="/dashboard" style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textDecoration: 'underline', textDecorationColor: 'transparent' }}>
+            Go to dashboard
+          </a>
+        </div>
+      )
+    }
+    return <>{this.props.children}</>
+  }
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -331,7 +373,7 @@ export default function App() {
             <Route path="/onboarding" element={<ProtectedRoute role="family"><OnboardingPage /></ProtectedRoute>} />
             <Route path="/survey" element={<SurveyPage />} />
             <Route path="/team" element={<TeamPlatformPage />} />
-            <Route path="/founder-story" element={<FounderStoryPage />} />
+            <Route path="/founder-story" element={<FounderStoryBoundary><FounderStoryPage /></FounderStoryBoundary>} />
             <Route path="/dashboard" element={<ProtectedRoute role="family"><DashboardLayout /></ProtectedRoute>}>
               <Route index element={<DashboardHome />} />
               <Route path="ask" element={<DashboardAsk />} />
