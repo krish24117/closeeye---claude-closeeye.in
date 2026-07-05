@@ -252,7 +252,6 @@ export function FounderStoryPage() {
   const [fading, setFading]     = useState(false)
   const [showEnter, setShowEnter] = useState(false)
   const [showHint, setShowHint]   = useState(false)
-  const [showSig, setShowSig]     = useState(false)
 
   const reduceMotion = useRef(
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -332,25 +331,15 @@ export function FounderStoryPage() {
     return () => clearTimeout(id)
   }, [lineIdx, playing, sceneIdx]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── Show "Enter dashboard" when closing scene completes ─────────── */
+  /* ── Show "— Krishna" + "Enter dashboard" when closing completes ──── */
 
   useEffect(() => {
     if (scene.type === 'closing' && sceneDone) {
-      const id = setTimeout(() => setShowEnter(true), 400)
+      const id = setTimeout(() => setShowEnter(true), 800)
       return () => clearTimeout(id)
     }
     setShowEnter(false)
   }, [sceneDone, sceneIdx]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ── Show signature when scene 15 (Welcome) completes ────────────── */
-
-  useEffect(() => {
-    if (sceneIdx === 15 && sceneDone) {
-      const id = setTimeout(() => setShowSig(true), 600)
-      return () => clearTimeout(id)
-    }
-    setShowSig(false)
-  }, [sceneDone, sceneIdx])
 
   /* ── Keyboard shortcuts ───────────────────────────────────────────── */
 
@@ -450,13 +439,10 @@ export function FounderStoryPage() {
             })}
           </div>
 
-          {sceneIdx === 15 && (
-            <div className={`ce-fs-sig${showSig ? ' on' : ''}`} aria-hidden={!showSig ? 'true' : undefined}>
-              <div className="ce-fs-sig-divider" />
-              <p className="ce-fs-sig-name">Krishna</p>
-              <p className="ce-fs-sig-role">Founder · <span className="ce-fs-sig-brand">close eye</span></p>
-              <p className="ce-fs-sig-quote">"Thank you for believing in this mission."</p>
-            </div>
+          {scene.type === 'closing' && (
+            <p className={`ce-fs-krishna${showEnter ? ' on' : ''}`} aria-hidden={!showEnter ? 'true' : undefined}>
+              — Krishna
+            </p>
           )}
 
           {scene.type === 'closing' && (
