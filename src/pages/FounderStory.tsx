@@ -308,7 +308,7 @@ export function FounderStoryPage() {
     const saved = lsGet(STORAGE_KEY)
     if (saved) {
       const si = parseInt(saved, 10)
-      if (!isNaN(si) && si > 0 && si < SCENES.length) setSceneIdx(si)
+      if (!isNaN(si) && si > 0 && si < SCENES.length - 1) setSceneIdx(si)
     }
     const t = setTimeout(() => setShowHint(true), 2600)
     return () => clearTimeout(t)
@@ -317,7 +317,7 @@ export function FounderStoryPage() {
   /* ── Save scene position ──────────────────────────────────────────── */
 
   useEffect(() => {
-    lsSet(STORAGE_KEY, String(sceneIdx))
+    lsSet(STORAGE_KEY, scene.type === 'closing' ? '0' : String(sceneIdx))
   }, [sceneIdx])
 
   /* ── Start line reveal after scene fades in ──────────────────────── */
@@ -477,6 +477,16 @@ export function FounderStoryPage() {
               tabIndex={showEnter ? 0 : -1}
             >
               Enter the dashboard &rarr;
+            </button>
+          )}
+
+          {scene.type === 'closing' && (
+            <button
+              className={'ce-fs-restart-btn' + (showEnter ? ' on' : '')}
+              onClick={() => { lsSet(STORAGE_KEY, '0'); goScene(0) }}
+              tabIndex={showEnter ? 0 : -1}
+            >
+              &larr; Watch again
             </button>
           )}
         </div>

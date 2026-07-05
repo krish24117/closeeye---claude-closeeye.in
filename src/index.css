@@ -2353,6 +2353,18 @@
 }
 .ce-fs-krishna.on { opacity: 1; transform: none; }
 
+/* "Watch again" ghost button on closing scene */
+.ce-fs-restart-btn {
+  display: block; margin-top: 14px;
+  background: none; border: none; padding: 4px 0;
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  color: rgba(255,255,255,0.35); cursor: pointer; letter-spacing: 0.01em;
+  opacity: 0; transition: opacity 0.7s ease 0.3s, color 0.2s;
+  pointer-events: none;
+}
+.ce-fs-restart-btn.on { opacity: 1; pointer-events: auto; }
+.ce-fs-restart-btn:hover { color: rgba(255,255,255,0.7); }
+
 /* Logo lockup on title card */
 .ce-fs-title-logo {
   display: flex; justify-content: center; margin-bottom: 28px;
