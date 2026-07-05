@@ -252,6 +252,7 @@ export function FounderStoryPage() {
   const [fading, setFading]     = useState(false)
   const [showEnter, setShowEnter] = useState(false)
   const [showHint, setShowHint]   = useState(false)
+  const [showSig, setShowSig]     = useState(false)
 
   const reduceMotion = useRef(
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -340,6 +341,16 @@ export function FounderStoryPage() {
     }
     setShowEnter(false)
   }, [sceneDone, sceneIdx]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Show signature when scene 15 (Welcome) completes ────────────── */
+
+  useEffect(() => {
+    if (sceneIdx === 15 && sceneDone) {
+      const id = setTimeout(() => setShowSig(true), 600)
+      return () => clearTimeout(id)
+    }
+    setShowSig(false)
+  }, [sceneDone, sceneIdx])
 
   /* ── Keyboard shortcuts ───────────────────────────────────────────── */
 
@@ -438,6 +449,15 @@ export function FounderStoryPage() {
               )
             })}
           </div>
+
+          {sceneIdx === 15 && (
+            <div className={`ce-fs-sig${showSig ? ' on' : ''}`} aria-hidden={!showSig ? 'true' : undefined}>
+              <div className="ce-fs-sig-divider" />
+              <p className="ce-fs-sig-name">Krishna</p>
+              <p className="ce-fs-sig-role">Founder · <span className="ce-fs-sig-brand">close eye</span></p>
+              <p className="ce-fs-sig-quote">"Thank you for believing in this mission."</p>
+            </div>
+          )}
 
           {scene.type === 'closing' && (
             <button
