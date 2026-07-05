@@ -226,17 +226,7 @@
     <!-- Branded green loading shell — same markup for every URL. Renders
          instantly from HTML/CSS (no JS, no network) so the user always sees
          Close Eye branding, never a blank white screen. -->
-    <div id="app-loader">
-      <div style="text-align:center;">
-        <!-- Brand lockup: official logo PNG + wordmark -->
-        <div style="display:inline-flex;align-items:center;gap:9px;margin-bottom:20px;">
-          <img src="/ce-logo.png" alt="CloseEye Official Logo" width="24" height="24"
-               style="display:block;flex-shrink:0;object-fit:contain;mix-blend-mode:multiply;" />
-          <span style="font-family:'Open Sauce One',system-ui,-apple-system,sans-serif;font-weight:800;font-size:22px;color:#ffffff;letter-spacing:-.02em;line-height:1;">close eye</span>
-        </div>
-        <div style="width:28px;height:28px;border:2.5px solid rgba(255,255,255,0.22);border-top-color:#86efac;border-radius:50%;animation:ce-spin 0.75s linear infinite;margin:0 auto;"></div>
-      </div>
-    </div>
+    <div id="app-loader"></div>
 
     <div id="root"></div>
 
