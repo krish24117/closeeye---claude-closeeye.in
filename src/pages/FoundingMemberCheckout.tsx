@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Check, ArrowLeft, Loader2, ArrowRight } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
@@ -188,7 +188,7 @@ export function FoundingMemberCheckoutPage() {
         currency: 'INR',
         name: 'Close Eye',
         description: 'Founding Family',
-        image: '/favicon.svg',
+        image: '/ce-logo.png',
         theme: { color: '#0E2A1F' },
         prefill: {
           name: profile?.full_name || '',

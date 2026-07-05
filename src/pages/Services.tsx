@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, Loader2, ArrowRight, Siren, ShieldCheck, Clock, X, HeartHandshake, MessageCircle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
@@ -60,7 +60,7 @@ export function ServicesPage() {
         subscription_id: data.subscription_id,
         name: 'Close Eye',
         description: `${MONTHLY_PLAN.name} — ${MONTHLY_PLAN.priceLabel}/mo`,
-        image: '/favicon.svg',
+        image: '/ce-logo.png',
         theme: { color: '#0E2A1F' },
         prefill: { name: profile?.full_name || '', email: user?.email || '', contact: profile?.whatsapp_number || '' },
         handler: () => { setBusy(null); navigate('/dashboard/subscription') },
@@ -94,7 +94,7 @@ export function ServicesPage() {
         currency: 'INR',
         name: 'Close Eye',
         description: 'Founding membership',
-        image: '/favicon.svg',
+        image: '/ce-logo.png',
         theme: { color: '#0E2A1F' },
         prefill: { name: profile?.full_name || '', email: user?.email || '', contact: profile?.whatsapp_number || '' },
         // Membership is marked paid ONLY after server-side signature verification.

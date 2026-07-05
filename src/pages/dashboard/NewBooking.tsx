@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Heart, Building2, Zap, ShoppingBag, Wrench, AlertTriangle, CheckCircle, Loader2, ShieldCheck, Plus, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -205,7 +205,7 @@ export function DashboardNewBooking() {
         currency: data.currency,
         name: 'Close Eye',
         description: selectedService!.name,
-        image: '/favicon.svg',
+        image: '/ce-logo.png',
         theme: { color: '#14532d' },
         prefill: {
           name: profile?.full_name || '',

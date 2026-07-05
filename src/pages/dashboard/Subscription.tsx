@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+﻿import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CreditCard, CheckCircle, AlertTriangle, Crown, Pause, XCircle, RotateCcw, Loader2, CheckCheck } from 'lucide-react'
 import { format } from 'date-fns'
@@ -83,7 +83,7 @@ export function DashboardSubscription() {
         subscription_id: data.subscription_id,
         name: 'Close Eye',
         description: `${plan.name} Plan — ${plan.priceLabel}`,
-        image: '/favicon.svg',
+        image: '/ce-logo.png',
         theme: { color: '#0E2A1F' },
         prefill: {
           name: profile?.full_name || '',
