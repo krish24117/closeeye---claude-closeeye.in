@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { LogoLockup } from '@/components/ui/Logo'
 
 /* ── Types ───────────────────────────────────────────────────────────── */
 
@@ -430,6 +431,12 @@ export function FounderStoryPage() {
             scene.type === 'closing' ? 'ce-fs-closing'  : '',
           ].filter(Boolean).join(' ')}
         >
+          {scene.type === 'title' && (
+            <div className={'ce-fs-title-logo' + (lineIdx >= 0 ? ' on' : '')}>
+              <LogoLockup fontSize={18} color="light" />
+            </div>
+          )}
+
           {scene.kicker && (
             <div className={'ce-fs-kicker' + (lineIdx >= 0 ? ' on' : '')}>
               {scene.kicker}

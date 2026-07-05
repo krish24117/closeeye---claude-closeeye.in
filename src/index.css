@@ -2353,8 +2353,20 @@
 }
 .ce-fs-krishna.on { opacity: 1; transform: none; }
 
+/* Logo lockup on title card */
+.ce-fs-title-logo {
+  display: flex; justify-content: center; margin-bottom: 28px;
+  opacity: 0; transform: translateY(-6px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.ce-fs-title-logo.on { opacity: 1; transform: translateY(0); }
+/* The mark PNG has a white background; multiply dissolves white into the dark
+   forest canvas while keeping the lime→green cross visible. */
+.ce-fs-title-logo img { mix-blend-mode: multiply; }
+
 @media (prefers-reduced-motion: reduce) {
-  .ce-fs-line, .ce-fs-scene, .ce-fs-kicker, .ce-fs-enter-btn, .ce-fs-sig {
+  .ce-fs-line, .ce-fs-scene, .ce-fs-kicker, .ce-fs-enter-btn, .ce-fs-sig,
+  .ce-fs-title-logo {
     transition: none !important; filter: none !important;
   }
 }
