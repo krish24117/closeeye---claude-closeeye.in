@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import React, { useEffect, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from '@/lib/auth-context'
 import { ToastProvider } from '@/components/ui/Toast'
+import { SplashScreen } from '@/components/SplashScreen'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
@@ -347,6 +348,7 @@ export default function App() {
       <ToastProvider>
       <BrowserRouter>
         <OfflineBanner />
+        <SplashScreen />
         <ScrollToTop />
         <SEOManager />
         <Suspense fallback={<RouteSpinner />}>
