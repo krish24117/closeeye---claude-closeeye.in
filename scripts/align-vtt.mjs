@@ -23,28 +23,39 @@ const WHISPER  = resolve(root, 'public/audio/founder-en-whisper.json')
 const OUT_VTT  = resolve(root, 'public/audio/founder-en.vtt')
 
 const APPROX_MODE = process.argv.includes('--approx') || !existsSync(WHISPER)
-const AUDIO_DURATION = 189.1  // seconds (measured from decode step)
+const AUDIO_DURATION = 189.1  // seconds — update if you replace the mp3
 
-/* ── Script data — mirrors SCENES in FounderStory.tsx ─────────────────────── */
+/* ── Script data — exact mirror of SCENES in FounderStory.tsx ─────────────── */
 
 const SCENES = [
-  { lines: ["Hi.", "I'm Krishna.", "Not the Founder.", "Not the CEO.", "Just Krishna."] },
+  /* 0 — Title */
+  { lines: ["Hi. I'm Krishna.", "Not the Founder.", "Not the CEO.", "Just Krishna."] },
+  /* 1 */
   { lines: ["Thank you for taking a few minutes to listen.", "Before I tell you about Close Eye,", "I want to tell you about one day that changed my life."] },
-  { lines: ["A little while ago, on a June morning,", "my daughter was born.", "It was the happiest day of my life —", "and, unexpectedly, one of the loneliest."] },
-  { lines: ["In that room there were only a few of us.", "My wife. Our newborn daughter.", "My sister-in-law, who never left our side.", "And my parents.", "Everyone else I loved was far away."] },
-  { lines: ["There was no crowd outside the door.", "No phone buzzing every few minutes —", '"Is it a boy or a girl?"  "How\'s the baby?"', "For a few moments, everything went quiet."] },
-  { lines: ["I held my daughter for the first time.", "I wanted to share that joy with the world.", "And I realised I had almost no one to call.", "For the first time, I understood", "what loneliness feels like", "in life's most precious moment."] },
-  { lines: ["Then a thought came —", "the one every parent quietly carries.", '"What if something happens to me?"', "Her mother would always love her.", "Her grandparents would always protect her.", "But I wished there was something more."] },
-  { lines: ["Not someone to replace family.", "Something to strengthen it.", "A trusted circle.", "A trusted presence.", "People who would stand beside her", "if life ever became hard."] },
-  { lines: ["And I realised millions of families", "already live with this feeling.", "Parents growing old.", "Children living oceans away.", "Grandparents missing birthdays.", "Families separated by cities, by countries, by life.", "Every night, someone wonders,", '"Are they okay?"'] },
-  { lines: ["That was the moment Close Eye", "stopped being a startup idea.", "It became my responsibility.", "Close Eye exists so that no family", "faces life's most important moments alone."] },
-  { lines: ["We don't replace relationships. We strengthen them.", "We don't replace sons or daughters —", "we help them stay present, even across distance.", "We don't replace parents —", "we help families care for one another", "with dignity, trust, and compassion."] },
-  { lines: ["Every visit. Every WhatsApp update.", "Every companion. Every conversation.", "Is a family trusting us.", "When you join Close Eye,", "you're not joining a startup.", "You're becoming someone's trusted presence."] },
-  { lines: ["I made another promise that day.", "Close Eye should never exist only for its founders.", "It should grow with the people who build it.", "Think like an owner.", "Build with integrity.", "Protect trust.", "Because trust is never built by software.", "Trust is built by people."] },
-  { lines: ["So every year, on the same June day,", "we won't only mark a company anniversary.", "We'll celebrate Family Day —", "a reminder of why Close Eye exists,", "that every request is a family,", "and that no technology replaces genuine human presence."] },
-  { lines: ["One day, I hope you'll meet my daughter.", "Not because she's our brand —", "but because she reminds us why this matters:", "every child deserves grandparents,", "every grandparent deserves a grandchild's laughter,", "and every family deserves to stay close,", "no matter the distance."] },
-  { lines: ["Thank you for believing in this mission.", "Thank you for becoming part of Close Eye.", "Together, let's build", "the world's most trusted presence network."] },
-  { lines: ["Before you enter the dashboard…", "I'd like you to remember one thing.", "Every notification you receive…", "Every phone call you answer…", "Every WhatsApp message you send…", "Every visit you coordinate…", "Every decision you make…", "Will represent someone's family.", "Someone will sleep peacefully tonight because of your work.", "That is our responsibility.", "That is our privilege.", "And that is why Close Eye exists.", "Close Eye doesn't replace relationships.", "It protects them.", "It strengthens them.", "It helps them grow, even across distance.", "Welcome to Close Eye.", "Thank you for becoming someone's Trusted Presence."] },
+  /* 2 */
+  { lines: ["A little while ago, on the 16th of June,", "my daughter was born.", "It was the happiest day of my life.", "But somehow, it was also one of the loneliest."] },
+  /* 3 */
+  { lines: ["In that room, there were only a few of us.", "My wife. Our new baby.", "My sister-in-law, who stayed with us the whole time.", "And my parents.", "Everyone else I loved was far away."] },
+  /* 4 */
+  { lines: ["There was no crowd outside the door.", "No phone ringing again and again.", "For a few minutes, everything was quiet.", "I held my daughter for the first time.", "I wanted to tell the whole world.", "But I realised — I had almost no one to call."] },
+  /* 5 */
+  { lines: ["Then one thought came to my mind.", "The same thought every parent has:", "“What will happen to her if something happens to me?”", "I didn't want someone to replace her family.", "I wanted something that could make her family stronger.", "Someone she can trust — when we can't be there."] },
+  /* 6 */
+  { lines: ["Then I understood something.", "Millions of families feel this same way.", "Parents getting older.", "Children living far away, in other countries.", "Grandparents missing birthdays.", "Every night, someone is thinking: “Are they okay?”"] },
+  /* 7 */
+  { lines: ["That was the moment Close Eye became real for me.", "It was no longer just an idea.", "It became my responsibility.", "So that no family has to face life's big moments alone."] },
+  /* 8 */
+  { lines: ["We don't replace families. We make them stronger.", "We don't replace sons and daughters.", "We help them stay close, even from far away.", "We help families care for each other —", "with love, respect, and trust."] },
+  /* 9 */
+  { lines: ["Every visit. Every message.", "Every companion. Every call.", "Is a family trusting us.", "When you join Close Eye,", "you are not just joining a company.", "You are becoming someone's trusted presence."] },
+  /* 10 */
+  { lines: ["That day, I made one more promise.", "Close Eye should not grow only for its founders.", "It should grow with the people who build it.", "Work like an owner. Be honest. Protect trust.", "Because trust is not built by software.", "Trust is built by people."] },
+  /* 11 */
+  { lines: ["Every year, on the 16th of June,", "we will celebrate Family Day.", "To remember why Close Eye exists —", "that every request is a real family,", "and that no app can replace a real person being there."] },
+  /* 12 */
+  { lines: ["One day, I hope you will meet my daughter.", "Not because she is our brand.", "But because she reminds us why this work matters.", "Every child deserves grandparents.", "Every grandparent deserves a child's laughter.", "And every family deserves to stay close,", "however far apart they live."] },
+  /* 13 — Closing (— Krishna is a visual-only element, not spoken) */
+  { lines: ["Please remember one thing.", "Every notification. Every call.", "Every visit. Every decision.", "Is about someone's family.", "Because of your work, someone will sleep peacefully tonight.", "This is our responsibility.", "This is our honour.", "Welcome to Close Eye.", "Thank you for believing in this mission.", "Thank you for becoming part of Close Eye.", "Together, let's build the world's most trusted presence network."] },
 ]
 
 function words(text) {

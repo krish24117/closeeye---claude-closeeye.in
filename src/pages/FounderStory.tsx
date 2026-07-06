@@ -48,22 +48,21 @@ function parseVTT(text: string): Cue[] {
   return cues
 }
 
-/* ── Data ────────────────────────────────────────────────────────────── */
+/* ── Scene data — exact transcript of founder-en.mp3 ────────────────── */
 
 const SCENES: Scene[] = [
-  /* 0 — Title card */
+  /* 0 — Title */
   {
     type: 'title',
     kicker: "Founder's Story",
     lines: [
-      "Hi.",
-      "I'm Krishna.",
+      "Hi. I'm Krishna.",
       "Not the Founder.",
       "Not the CEO.",
       "Just Krishna.",
     ],
   },
-  /* 1 — Thank you */
+  /* 1 */
   {
     type: 'scene', kicker: '',
     lines: [
@@ -72,193 +71,147 @@ const SCENES: Scene[] = [
       "I want to tell you about one day that changed my life.",
     ],
   },
-  /* 2 — The day */
+  /* 2 */
   {
     type: 'scene', kicker: '',
     lines: [
-      "A little while ago, on a June morning,",
+      "A little while ago, on the 16th of June,",
       "my daughter was born.",
-      "It was the happiest day of my life —",
-      "and, unexpectedly, one of the loneliest.",
+      "It was the happiest day of my life.",
+      "But somehow, it was also one of the loneliest.",
     ],
   },
-  /* 3 — The quiet room */
+  /* 3 */
   {
     type: 'scene', kicker: '',
     lines: [
-      "In that room there were only a few of us.",
-      "My wife. Our newborn daughter.",
-      "My sister-in-law, who never left our side.",
+      "In that room, there were only a few of us.",
+      "My wife. Our new baby.",
+      "My sister-in-law, who stayed with us the whole time.",
       "And my parents.",
       "Everyone else I loved was far away.",
     ],
   },
-  /* 4 — The silence */
+  /* 4 */
   {
     type: 'scene', kicker: '',
     lines: [
       "There was no crowd outside the door.",
-      "No phone buzzing every few minutes —",
-      { text: "“Is it a boy or a girl?”  “How’s the baby?”", em: true },
-      "For a few moments, everything went quiet.",
-    ],
-  },
-  /* 5 — What loneliness feels like */
-  {
-    type: 'scene', kicker: '',
-    lines: [
+      "No phone ringing again and again.",
+      "For a few minutes, everything was quiet.",
       "I held my daughter for the first time.",
-      "I wanted to share that joy with the world.",
-      "And I realised I had almost no one to call.",
-      "For the first time, I understood",
-      "what loneliness feels like",
-      "in life’s most precious moment.",
+      "I wanted to tell the whole world.",
+      { text: "But I realised — I had almost no one to call.", em: true },
     ],
   },
-  /* 6 — The fear every parent carries */
+  /* 5 */
   {
     type: 'scene', kicker: '',
     lines: [
-      "Then a thought came —",
-      "the one every parent quietly carries.",
-      { text: "“What if something happens to me?”", em: true },
-      "Her mother would always love her.",
-      "Her grandparents would always protect her.",
-      "But I wished there was something more.",
+      "Then one thought came to my mind.",
+      "The same thought every parent has:",
+      { text: "“What will happen to her if something happens to me?”", em: true },
+      "I didn’t want someone to replace her family.",
+      "I wanted something that could make her family stronger.",
+      "Someone she can trust — when we can’t be there.",
     ],
   },
-  /* 7 — Not to replace. To strengthen. */
+  /* 6 */
   {
     type: 'scene', kicker: '',
     lines: [
-      "Not someone to replace family.",
-      "Something to strengthen it.",
-      "A trusted circle.",
-      "A trusted presence.",
-      "People who would stand beside her",
-      "if life ever became hard.",
-    ],
-  },
-  /* 8 — Millions already live with this */
-  {
-    type: 'scene', kicker: '',
-    lines: [
-      "And I realised millions of families",
-      "already live with this feeling.",
-      "Parents growing old.",
-      "Children living oceans away.",
+      "Then I understood something.",
+      "Millions of families feel this same way.",
+      "Parents getting older.",
+      "Children living far away, in other countries.",
       "Grandparents missing birthdays.",
-      "Families separated by cities, by countries, by life.",
-      "Every night, someone wonders,",
-      { text: "“Are they okay?”", em: true },
+      { text: "Every night, someone is thinking: “Are they okay?”", em: true },
     ],
   },
-  /* 9 — From idea to responsibility */
+  /* 7 */
   {
     type: 'scene', kicker: '',
     lines: [
-      "That was the moment Close Eye",
-      "stopped being a startup idea.",
+      "That was the moment Close Eye became real for me.",
+      "It was no longer just an idea.",
       "It became my responsibility.",
-      "Close Eye exists so that no family",
-      "faces life’s most important moments alone.",
+      "So that no family has to face life’s big moments alone.",
     ],
   },
-  /* 10 — What we are, and what we are not */
+  /* 8 */
   {
     type: 'scene', kicker: '',
     lines: [
-      "We don’t replace relationships. We strengthen them.",
-      "We don’t replace sons or daughters —",
-      "we help them stay present, even across distance.",
-      "We don’t replace parents —",
-      "we help families care for one another",
-      "with dignity, trust, and compassion.",
+      "We don’t replace families. We make them stronger.",
+      "We don’t replace sons and daughters.",
+      "We help them stay close, even from far away.",
+      "We help families care for each other —",
+      "with love, respect, and trust.",
     ],
   },
-  /* 11 — What you're really joining */
+  /* 9 */
   {
     type: 'scene', kicker: '',
     lines: [
-      "Every visit. Every WhatsApp update.",
-      "Every companion. Every conversation.",
+      "Every visit. Every message.",
+      "Every companion. Every call.",
       "Is a family trusting us.",
       "When you join Close Eye,",
-      "you’re not joining a startup.",
-      "You’re becoming someone’s trusted presence.",
+      "you are not just joining a company.",
+      "You are becoming someone’s trusted presence.",
     ],
   },
-  /* 12 — Built by people, not software */
+  /* 10 */
   {
     type: 'scene', kicker: '',
     lines: [
-      "I made another promise that day.",
-      "Close Eye should never exist only for its founders.",
+      "That day, I made one more promise.",
+      "Close Eye should not grow only for its founders.",
       "It should grow with the people who build it.",
-      "Think like an owner.",
-      "Build with integrity.",
-      "Protect trust.",
-      "Because trust is never built by software.",
+      "Work like an owner. Be honest. Protect trust.",
+      "Because trust is not built by software.",
       "Trust is built by people.",
     ],
   },
-  /* 13 — Family Day */
+  /* 11 */
   {
     type: 'scene', kicker: '',
     lines: [
-      "So every year, on the same June day,",
-      "we won’t only mark a company anniversary.",
-      "We’ll celebrate Family Day —",
-      "a reminder of why Close Eye exists,",
-      "that every request is a family,",
-      "and that no technology replaces genuine human presence.",
+      "Every year, on the 16th of June,",
+      "we will celebrate Family Day.",
+      "To remember why Close Eye exists —",
+      "that every request is a real family,",
+      "and that no app can replace a real person being there.",
     ],
   },
-  /* 14 — Why this matters */
+  /* 12 */
   {
     type: 'scene', kicker: '',
     lines: [
-      "One day, I hope you’ll meet my daughter.",
-      "Not because she’s our brand —",
-      "but because she reminds us why this matters:",
-      "every child deserves grandparents,",
-      "every grandparent deserves a grandchild’s laughter,",
-      "and every family deserves to stay close,",
-      "no matter the distance.",
+      "One day, I hope you will meet my daughter.",
+      "Not because she is our brand.",
+      "But because she reminds us why this work matters.",
+      "Every child deserves grandparents.",
+      "Every grandparent deserves a child’s laughter.",
+      "And every family deserves to stay close,",
+      "however far apart they live.",
     ],
   },
-  /* 15 — Welcome */
-  {
-    type: 'scene', kicker: '',
-    lines: [
-      "Thank you for believing in this mission.",
-      "Thank you for becoming part of Close Eye.",
-      "Together, let’s build",
-      "the world’s most trusted presence network.",
-    ],
-  },
-  /* 16 — Closing */
+  /* 13 — Closing */
   {
     type: 'closing', kicker: '',
     lines: [
-      "Before you enter the dashboard…",
-      "I’d like you to remember one thing.",
-      "Every notification you receive…",
-      "Every phone call you answer…",
-      "Every WhatsApp message you send…",
-      "Every visit you coordinate…",
-      "Every decision you make…",
-      "Will represent someone’s family.",
-      "Someone will sleep peacefully tonight because of your work.",
-      "That is our responsibility.",
-      "That is our privilege.",
-      "And that is why Close Eye exists.",
-      "Close Eye doesn’t replace relationships.",
-      "It protects them.",
-      "It strengthens them.",
-      "It helps them grow, even across distance.",
+      "Please remember one thing.",
+      "Every notification. Every call.",
+      "Every visit. Every decision.",
+      "Is about someone’s family.",
+      "Because of your work, someone will sleep peacefully tonight.",
+      "This is our responsibility.",
+      "This is our honour.",
       "Welcome to Close Eye.",
-      "Thank you for becoming someone’s Trusted Presence.",
+      "Thank you for believing in this mission.",
+      "Thank you for becoming part of Close Eye.",
+      "Together, let’s build the world’s most trusted presence network.",
     ],
   },
 ]
@@ -280,16 +233,15 @@ export function FounderStoryPage() {
   /* ── Scene / line state ────────────────────────────────────────────── */
   const [sceneIdx,  setSceneIdx]  = useState(0)
   const [lineIdx,   setLineIdx]   = useState(-1)
-  const [playing,   setPlaying]   = useState(true)   // fallback text-advance toggle
+  const [playing,   setPlaying]   = useState(true)
   const [fading,    setFading]    = useState(false)
   const [showEnter, setShowEnter] = useState(false)
   const [showHint,  setShowHint]  = useState(false)
 
   /* ── Audio state ───────────────────────────────────────────────────── */
   // audioFailed: true only on a real load error (404 / decode fail).
-  // Defaults false so the player shows immediately — mobile browsers need
-  // audio.play() called directly inside a user-gesture handler; we must
-  // never gate the play button on canplaythrough.
+  // Defaults false so the full player shows immediately and audio.play()
+  // is always called directly inside the tap handler (mobile policy).
   const [audioFailed,   setAudioFailed]   = useState(false)
   const [audioPlaying,  setAudioPlaying]  = useState(false)
   const [audioTime,     setAudioTime]     = useState(0)
@@ -301,7 +253,6 @@ export function FounderStoryPage() {
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   ).current
 
-  // Always-current snapshot — lets stale-closure event handlers read live state.
   const latest = useRef({ sceneIdx, lineIdx, audioFailed, audioPlaying })
   latest.current = { sceneIdx, lineIdx, audioFailed, audioPlaying }
 
@@ -310,7 +261,6 @@ export function FounderStoryPage() {
   const activeCueRef    = useRef<Cue | null>(null)
   const sceneTransitRef = useRef(false)
 
-  // Stable handler ref — registered once, always reads current values.
   const onTimeUpdate = useRef(() => {})
 
   const scene    = SCENES[sceneIdx] ?? SCENES[0]
@@ -334,8 +284,6 @@ export function FounderStoryPage() {
   }
 
   /* ── Seek helpers — seek only, never force-play ───────────────────── */
-  // Forcing play from seek helpers caused the "jumps" the user reported:
-  // tapping ↺ or ⏭ while paused would unexpectedly start playback.
 
   function seekToSceneStart(si: number) {
     const audio = audioRef.current
@@ -358,7 +306,6 @@ export function FounderStoryPage() {
         cues.find(c => c.scene === si + 1 && c.line === 0)
       if (next) { audio.currentTime = next.start; return }
     }
-    // Fallback: text-only
     const max = SCENES[si]?.lines.length ?? 0
     if (li >= max - 1) { if (si < SCENES.length - 1) goScene(si + 1) }
     else { setLineIdx(l => l + 1); setShowHint(false) }
@@ -366,10 +313,7 @@ export function FounderStoryPage() {
 
   function tapPrev() {
     const { sceneIdx: si, audioFailed: af } = latest.current
-    if (!af) {
-      seekToSceneStart(si > 0 ? si - 1 : si)
-      return
-    }
+    if (!af) { seekToSceneStart(si > 0 ? si - 1 : si); return }
     if (si > 0) goScene(si - 1)
   }
 
@@ -381,8 +325,6 @@ export function FounderStoryPage() {
     if (latest.current.audioPlaying) {
       audio.pause()
     } else {
-      // audio.play() MUST be called synchronously inside a user-gesture handler
-      // to satisfy mobile browser autoplay policy.
       audio.play().catch((err: Error) => {
         console.error('[CloseEye Audio] play() rejected:', err.name, err.message)
       })
@@ -393,7 +335,6 @@ export function FounderStoryPage() {
     const audio = audioRef.current
     if (!audio) return
     audio.currentTime = Math.max(0, audio.currentTime - 10)
-    // onTimeUpdate will drive sceneIdx/lineIdx back automatically
   }
 
   function restart() {
@@ -420,7 +361,7 @@ export function FounderStoryPage() {
 
   function handleScrubChange(e: React.ChangeEvent<HTMLInputElement>) {
     const v = Number(e.target.value)
-    setAudioTime(v)                          // optimistic — thumb moves instantly
+    setAudioTime(v)
     const audio = audioRef.current
     if (audio) audio.currentTime = v
   }
@@ -464,7 +405,7 @@ export function FounderStoryPage() {
     if (prev?.scene === cue.scene && prev?.line === cue.line) return
     activeCueRef.current = cue
 
-    if (reduceMotion) return  // audio audible but visuals stay manual
+    if (reduceMotion) return
 
     const { sceneIdx: si } = latest.current
     if (cue.scene !== si) {
@@ -492,9 +433,7 @@ export function FounderStoryPage() {
     lsSet(STORAGE_KEY, scene.type === 'closing' ? '0' : String(sceneIdx))
   }, [sceneIdx]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── Initial line reveal after scene fade-in ─────────────────────── */
-  // Only runs in text-fallback mode. When audio works, onTimeUpdate drives
-  // lineIdx; this timer would conflict with cue-driven line highlighting.
+  /* ── Text-fallback: initial line reveal after scene fade-in ──────── */
 
   useEffect(() => {
     if (!latest.current.audioFailed) return
@@ -502,7 +441,7 @@ export function FounderStoryPage() {
     return () => clearTimeout(id)
   }, [sceneIdx]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── Auto-advance lines (text-fallback only) ──────────────────────── */
+  /* ── Text-fallback: auto-advance lines ───────────────────────────── */
 
   useEffect(() => {
     if (!latest.current.audioFailed) return
@@ -515,7 +454,7 @@ export function FounderStoryPage() {
     return () => clearTimeout(id)
   }, [lineIdx, playing, sceneIdx]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── Auto-advance scenes (text-fallback only) ────────────────────── */
+  /* ── Text-fallback: auto-advance scenes ──────────────────────────── */
 
   useEffect(() => {
     if (!latest.current.audioFailed) return
@@ -526,7 +465,7 @@ export function FounderStoryPage() {
     return () => clearTimeout(id)
   }, [sceneDone, playing, sceneIdx]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── Show "— Krishna" + dashboard button when closing completes ───── */
+  /* ── Show dashboard button when closing completes ────────────────── */
 
   useEffect(() => {
     if (scene.type === 'closing' && sceneDone) {
@@ -556,8 +495,6 @@ export function FounderStoryPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── Scene counter label ──────────────────────────────────────────── */
-
   const counterLabel =
     sceneIdx === 0 ? '' :
     sceneIdx === SCENES.length - 1 ? 'Closing' :
@@ -570,7 +507,6 @@ export function FounderStoryPage() {
   return (
     <div className="ce-fs-shell">
 
-      {/* Top bar */}
       <div className="ce-fs-topbar">
         <span className="ce-fs-counter">{counterLabel}</span>
         <button className="ce-fs-skip-btn" onClick={() => goScene(SCENES.length - 1)}>
@@ -578,7 +514,6 @@ export function FounderStoryPage() {
         </button>
       </div>
 
-      {/* Left dot rail */}
       <nav className="ce-fs-rail" aria-label="Scene navigation">
         {SCENES.map((_, i) => (
           <button
@@ -594,16 +529,13 @@ export function FounderStoryPage() {
         ))}
       </nav>
 
-      {/* Left / right tap zones */}
       <div className="ce-fs-navzone ce-fs-prevzone" onClick={tapPrev} aria-hidden="true" />
       <div className="ce-fs-navzone ce-fs-nextzone" onClick={tapNext} aria-hidden="true" />
 
-      {/* Hint */}
       <div className={'ce-fs-hint' + (showHint && sceneIdx === 0 ? ' visible' : '')} aria-hidden="true">
         tap right &rarr; to continue
       </div>
 
-      {/* Main stage */}
       <main className="ce-fs-stage">
         <div
           className={[
@@ -678,33 +610,20 @@ export function FounderStoryPage() {
       <div className="ce-fs-dock" role="region" aria-label="Narration player">
 
         {showAudioPlayer ? (
-          /* ── Live audio controls ───────────────────────────────── */
           <>
-            {/* Restart — go to very beginning */}
-            <button
-              className="ce-fs-dock-ic"
-              onClick={restart}
-              aria-label="Restart narration from beginning"
-            >
-              {/* double-chevron-left / restart icon */}
+            <button className="ce-fs-dock-ic" onClick={restart} aria-label="Restart from beginning">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" fill="currentColor" />
               </svg>
             </button>
 
-            {/* Rewind 10 s */}
-            <button
-              className="ce-fs-dock-ic"
-              onClick={rewind10}
-              aria-label="Rewind 10 seconds"
-            >
+            <button className="ce-fs-dock-ic" onClick={rewind10} aria-label="Rewind 10 seconds">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" fill="currentColor" />
                 <text x="12" y="15.5" textAnchor="middle" fontSize="5.5" fontWeight="700" fill="currentColor" fontFamily="sans-serif">10</text>
               </svg>
             </button>
 
-            {/* Play / Pause — audio.play() called DIRECTLY in onClick (mobile policy) */}
             <button
               className="ce-fs-dock-ic main"
               onClick={toggleAudio}
@@ -721,7 +640,6 @@ export function FounderStoryPage() {
               )}
             </button>
 
-            {/* Draggable scrubber — input[type=range] works natively on mobile touch */}
             <input
               type="range"
               className="ce-fs-dock-scrub"
@@ -733,24 +651,17 @@ export function FounderStoryPage() {
               aria-label="Narration progress"
             />
 
-            {/* Time */}
             <span className="ce-fs-dock-time">
               {formatTime(audioTime)}&thinsp;/&thinsp;{formatTime(audioDuration)}
             </span>
 
-            {/* Skip to next scene */}
-            <button
-              className="ce-fs-dock-ic"
-              onClick={skipScene}
-              aria-label="Skip to next scene"
-            >
+            <button className="ce-fs-dock-ic" onClick={skipScene} aria-label="Skip to next scene">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" fill="currentColor" />
               </svg>
             </button>
           </>
         ) : (
-          /* ── Fallback: no audio file ───────────────────────────── */
           <>
             <button
               className="ce-fs-dock-ic main"
@@ -768,11 +679,7 @@ export function FounderStoryPage() {
               )}
             </button>
 
-            <button
-              className="ce-fs-dock-ic"
-              onClick={replayScene}
-              aria-label="Replay this scene"
-            >
+            <button className="ce-fs-dock-ic" onClick={replayScene} aria-label="Replay this scene">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 5V1L7 6l5 5V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z" fill="currentColor" />
               </svg>
@@ -782,11 +689,7 @@ export function FounderStoryPage() {
               &#127897; <strong>Founder&apos;s narration</strong> &mdash; coming soon
             </span>
 
-            <button
-              className="ce-fs-dock-ic"
-              onClick={skipScene}
-              aria-label="Skip to next scene"
-            >
+            <button className="ce-fs-dock-ic" onClick={skipScene} aria-label="Skip to next scene">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" fill="currentColor" />
               </svg>
