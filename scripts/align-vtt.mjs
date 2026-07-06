@@ -109,6 +109,18 @@ function buildApproxCues() {
 function loadWhisperWords() {
   const json = JSON.parse(readFileSync(WHISPER, 'utf8'))
 
+  // openai-whisper CLI format: { segments: [{ words: [{ word, start, end }] }] }
+  if (Array.isArray(json.segments) && json.segments[0]?.words) {
+    const out = []
+    for (const seg of json.segments) {
+      for (const w of seg.words ?? []) {
+        if (!w.word?.trim()) continue
+        out.push({ word: w.word.trim(), start: w.start, end: w.end })
+      }
+    }
+    return out
+  }
+
   // @huggingface/transformers format
   if (Array.isArray(json.chunks)) {
     return json.chunks.map(c => ({
@@ -152,7 +164,7 @@ function norm(w) { return w.toLowerCase().replace(/[^a-z0-9']/g, '') }
 function buildWhisperCues() {
   const whisperWords = loadWhisperWords()
   const cues = []
-  let wi = 0  // current position in whisper word stream
+  let wi = 0  // lower bound for next search; advances by 1 per match so mismatches don't accumulate
 
   for (let si = 0; si < SCENES.length; si++) {
     const sc = SCENES[si]
@@ -160,29 +172,34 @@ function buildWhisperCues() {
       const scriptWords = words(sc.lines[li]).map(norm).filter(Boolean)
       if (!scriptWords.length) continue
 
-      // Slide forward to find the best match window for this line
       let bestStart = wi
       let bestScore = -1
 
-      // Search up to 60 words ahead for the match start
-      for (let probe = wi; probe < Math.min(wi + 60, whisperWords.length - scriptWords.length + 1); probe++) {
+      // Search up to 200 words ahead; larger window handles pauses + proper-noun misrecognitions
+      const searchEnd = Math.min(wi + 200, whisperWords.length)
+      for (let probe = wi; probe < searchEnd; probe++) {
         let score = 0
         for (let k = 0; k < Math.min(scriptWords.length, 3); k++) {
           if (norm(whisperWords[probe + k]?.word ?? '') === scriptWords[k]) score++
         }
         if (score > bestScore) { bestScore = score; bestStart = probe }
-        if (score === 3) break
+        if (score >= 3) break
       }
 
-      const matchStart = bestStart
-      const matchEnd   = Math.min(matchStart + scriptWords.length, whisperWords.length) - 1
+      const matchEnd = Math.min(bestStart + scriptWords.length, whisperWords.length) - 1
 
-      const cueStart = whisperWords[matchStart]?.start ?? (cues.at(-1)?.end ?? 0) + 0.1
+      const cueStart = whisperWords[bestStart]?.start ?? (cues.at(-1)?.end ?? 0) + 0.1
       const cueEnd   = whisperWords[matchEnd]?.end   ?? cueStart + 0.5
 
       cues.push({ scene: si, line: li, start: cueStart, end: cueEnd })
-      wi = matchStart + scriptWords.length  // advance past matched words
+      // Advance by 1 not scriptWords.length — prevents overrun when Whisper word count differs from script
+      wi = bestStart + 1
     }
+  }
+
+  // Post-process: snap each cue end = next cue start − 50ms to eliminate dead zones
+  for (let i = 0; i < cues.length - 1; i++) {
+    cues[i].end = Math.max(cues[i].start + 0.1, cues[i + 1].start - 0.05)
   }
 
   return cues
