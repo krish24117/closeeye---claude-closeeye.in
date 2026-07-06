@@ -2218,6 +2218,18 @@
 
 .ce-fs-closing .ce-fs-line { font-size: clamp(17px, 2.4vw, 26px); }
 
+/* Closing: stack all lines in one grid cell so only the active line takes height.
+   Past lines fade to opacity 0 (not 0.4) so nothing accumulates in the layout. */
+.ce-fs-closing .ce-fs-lines {
+  display: grid;
+}
+.ce-fs-closing .ce-fs-lines > * {
+  grid-area: 1 / 1;
+}
+.ce-fs-closing .ce-fs-line.past {
+  opacity: 0;
+}
+
 .ce-fs-enter-btn {
   margin-top: 40px;
   display: inline-flex; align-items: center; gap: 12px;
