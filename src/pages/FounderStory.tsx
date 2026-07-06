@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LogoLockup } from '@/components/ui/Logo'
 
@@ -13,9 +13,40 @@ interface Scene {
   lines: Line[]
 }
 
+interface Cue { start: number; end: number; scene: number; line: number }
+
 function lineText(l: Line): string { return typeof l === 'string' ? l : l.text }
 function isEm(l: Line): boolean    { return typeof l !== 'string' && l.em }
 function wordCount(l: Line): number { return lineText(l).trim().split(/\s+/).length }
+
+function formatTime(sec: number): string {
+  if (!isFinite(sec) || sec < 0) return '0:00'
+  const m = Math.floor(sec / 60)
+  const s = Math.floor(sec % 60)
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+/* ── Parse WebVTT ────────────────────────────────────────────────────── */
+
+function parseVTT(text: string): Cue[] {
+  const cues: Cue[] = []
+  const blocks = text.split(/\n\n+/)
+  for (const block of blocks) {
+    const lines = block.trim().split('\n')
+    const idLine = lines.find(l => /^scene-\d+-line-\d+$/.test(l.trim()))
+    const tsLine = lines.find(l => /\d+:\d+:\d+\.\d+ --> \d+:\d+:\d+\.\d+/.test(l))
+    if (!idLine || !tsLine) continue
+    const m = idLine.trim().match(/scene-(\d+)-line-(\d+)/)
+    if (!m) continue
+    const [rawStart, rawEnd] = tsLine.split(' --> ')
+    const toSec = (t: string) => {
+      const parts = t.trim().split(':')
+      return Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2])
+    }
+    cues.push({ scene: Number(m[1]), line: Number(m[2]), start: toSec(rawStart), end: toSec(rawEnd) })
+  }
+  return cues
+}
 
 /* ── Data (verbatim from Close_Eye_Founder_Story_Script_v1.md) ──────── */
 
@@ -253,19 +284,36 @@ function lsSet(key: string, val: string): void {
 export function FounderStoryPage() {
   const navigate = useNavigate()
 
-  const [sceneIdx, setSceneIdx] = useState(0)
-  const [lineIdx, setLineIdx]   = useState(-1)
-  const [playing, setPlaying]   = useState(true)
-  const [fading, setFading]     = useState(false)
-  const [showEnter, setShowEnter] = useState(false)
-  const [showHint, setShowHint]   = useState(false)
+  /* ── Existing state ────────────────────────────────────────────────── */
+  const [sceneIdx,   setSceneIdx]   = useState(0)
+  const [lineIdx,    setLineIdx]    = useState(-1)
+  const [playing,    setPlaying]    = useState(true)
+  const [fading,     setFading]     = useState(false)
+  const [showEnter,  setShowEnter]  = useState(false)
+  const [showHint,   setShowHint]   = useState(false)
 
+  /* ── Audio state ───────────────────────────────────────────────────── */
+  const [audioAvail,    setAudioAvail]    = useState(false)
+  const [audioPlaying,  setAudioPlaying]  = useState(false)
+  const [audioTime,     setAudioTime]     = useState(0)
+  const [audioDuration, setAudioDuration] = useState(0)
+
+  /* ── Refs ──────────────────────────────────────────────────────────── */
   const reduceMotion = useRef(
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   ).current
 
-  const latest = useRef({ sceneIdx, lineIdx })
-  latest.current = { sceneIdx, lineIdx }
+  const latest = useRef({ sceneIdx, lineIdx, audioAvail, audioPlaying })
+  latest.current = { sceneIdx, lineIdx, audioAvail, audioPlaying }
+
+  const audioRef          = useRef<HTMLAudioElement | null>(null)
+  const cuesRef           = useRef<Cue[]>([])
+  const activeCueRef      = useRef<Cue | null>(null)
+  const sceneTransitRef   = useRef(false)
+
+  // Stable callback ref: onTimeUpdate reads from latest.current so the event
+  // listener registered once always operates on current values.
+  const onTimeUpdate = useRef(() => {})
 
   // Defensive guard — should never be undefined but protects from stale state
   const scene    = SCENES[sceneIdx] ?? SCENES[0]
@@ -276,6 +324,7 @@ export function FounderStoryPage() {
 
   function goScene(idx: number) {
     if (idx < 0 || idx >= SCENES.length) return
+    sceneTransitRef.current = true
     setFading(true)
     setShowHint(false)
     setTimeout(() => {
@@ -283,11 +332,28 @@ export function FounderStoryPage() {
       setLineIdx(-1)
       setShowEnter(false)
       setFading(false)
+      sceneTransitRef.current = false
     }, 450)
   }
 
   function tapNext() {
-    const { sceneIdx: si, lineIdx: li } = latest.current
+    const { sceneIdx: si, lineIdx: li, audioAvail: aa } = latest.current
+    const audio = audioRef.current
+    const cues  = cuesRef.current
+
+    if (aa && audio && cues.length) {
+      // Seek audio to the start of the next line or next scene
+      const nextCue =
+        cues.find(c => c.scene === si && c.line === li + 1) ??
+        cues.find(c => c.scene === si + 1 && c.line === 0)
+      if (nextCue) {
+        audio.currentTime = nextCue.start
+        if (!latest.current.audioPlaying) audio.play().catch(() => {})
+        return
+      }
+    }
+
+    // Fallback: text-only advance
     const max = SCENES[si]?.lines.length ?? 0
     if (li >= max - 1) {
       if (si < SCENES.length - 1) goScene(si + 1)
@@ -298,8 +364,126 @@ export function FounderStoryPage() {
   }
 
   function tapPrev() {
-    const { sceneIdx: si } = latest.current
+    const { sceneIdx: si, audioAvail: aa } = latest.current
+    const audio = audioRef.current
+    const cues  = cuesRef.current
+
+    if (aa && audio && cues.length) {
+      // Seek to start of previous scene (or current if at line 0)
+      const target = si > 0 ? si - 1 : si
+      const firstCue = cues.find(c => c.scene === target && c.line === 0)
+      if (firstCue) {
+        audio.currentTime = firstCue.start
+        if (!latest.current.audioPlaying) audio.play().catch(() => {})
+        return
+      }
+    }
+
     if (si > 0) goScene(si - 1)
+  }
+
+  /* ── Audio helpers ─────────────────────────────────────────────────── */
+
+  function toggleAudio() {
+    const audio = audioRef.current
+    if (!audio) return
+    if (latest.current.audioPlaying) {
+      audio.pause()
+    } else {
+      audio.play().catch(() => {})
+    }
+  }
+
+  function replayFromSceneStart() {
+    const { sceneIdx: si, audioAvail: aa } = latest.current
+    const audio = audioRef.current
+    const cues  = cuesRef.current
+    if (aa && audio && cues.length) {
+      const firstCue = cues.find(c => c.scene === si && c.line === 0)
+      if (firstCue) {
+        audio.currentTime = firstCue.start
+        audio.play().catch(() => {})
+        return
+      }
+    }
+    goScene(si)
+  }
+
+  function skipToNextScene() {
+    const { sceneIdx: si, audioAvail: aa } = latest.current
+    const audio = audioRef.current
+    const cues  = cuesRef.current
+    if (aa && audio && cues.length) {
+      const nextFirstCue = cues.find(c => c.scene === si + 1 && c.line === 0)
+      if (nextFirstCue) {
+        audio.currentTime = nextFirstCue.start
+        audio.play().catch(() => {})
+        return
+      }
+    }
+    if (si < SCENES.length - 1) goScene(si + 1)
+  }
+
+  function handleScrubClick(e: React.MouseEvent<HTMLDivElement>) {
+    const audio = audioRef.current
+    if (!audio || !audioDuration) return
+    const rect  = e.currentTarget.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    audio.currentTime = ratio * audioDuration
+  }
+
+  /* ── Mount: create Audio element + load VTT ───────────────────────── */
+
+  useEffect(() => {
+    const audio = new Audio('/audio/founder-en.mp3')
+    audioRef.current = audio
+
+    audio.addEventListener('canplaythrough', () => setAudioAvail(true))
+    audio.addEventListener('error',          () => {/* silent — dock shows fallback */})
+    audio.addEventListener('durationchange', () => setAudioDuration(audio.duration))
+    audio.addEventListener('play',           () => setAudioPlaying(true))
+    audio.addEventListener('pause',          () => setAudioPlaying(false))
+    audio.addEventListener('ended',          () => setAudioPlaying(false))
+    audio.addEventListener('timeupdate',     () => onTimeUpdate.current())
+
+    fetch('/audio/founder-en.vtt')
+      .then(r => r.ok ? r.text() : Promise.reject())
+      .then(text => { cuesRef.current = parseVTT(text) })
+      .catch(() => {/* no cues — audio plays without driving scenes */})
+
+    return () => {
+      audio.pause()
+      audio.src = ''
+    }
+  }, [])
+
+  /* ── Time-update handler (always current via ref) ─────────────────── */
+
+  onTimeUpdate.current = () => {
+    const audio = audioRef.current
+    if (!audio) return
+    const t = audio.currentTime
+    setAudioTime(t)
+
+    const cues = cuesRef.current
+    if (!cues.length) return
+
+    // Linear scan: 107 cues is negligible cost at 4 Hz
+    const cue = cues.find(c => t >= c.start && t < c.end)
+    if (!cue) return
+
+    const prev = activeCueRef.current
+    if (prev?.scene === cue.scene && prev?.line === cue.line) return
+    activeCueRef.current = cue
+
+    if (reduceMotion) return // reduced-motion: audio audible but visuals stay manual
+
+    const { sceneIdx: si } = latest.current
+    if (cue.scene !== si) {
+      if (!sceneTransitRef.current) goScene(cue.scene)
+    } else {
+      setLineIdx(cue.line)
+    }
   }
 
   /* ── Restore position on mount ────────────────────────────────────── */
@@ -330,6 +514,7 @@ export function FounderStoryPage() {
   /* ── Auto-advance lines when playing ─────────────────────────────── */
 
   useEffect(() => {
+    if (audioPlaying) return  // audio drives timing — word-count timer idles
     if (!playing || lineIdx < 0 || lineIdx >= maxLines) return
     const currentLine = scene.lines[lineIdx]
     if (!currentLine) return
@@ -337,18 +522,19 @@ export function FounderStoryPage() {
     const dwell = reduceMotion ? 500 : Math.max(1500, 760 + wc * 250)
     const id = setTimeout(() => setLineIdx(l => l + 1), dwell)
     return () => clearTimeout(id)
-  }, [lineIdx, playing, sceneIdx]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lineIdx, playing, sceneIdx, audioPlaying]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Auto-advance to next scene when all lines are revealed ─────────── */
 
   useEffect(() => {
+    if (audioPlaying) return  // audio drives scene transitions
     if (!playing || !sceneDone) return
     if (scene.type === 'closing') return
     if (sceneIdx >= SCENES.length - 1) return
     const pause = reduceMotion ? 600 : 1800
     const id = setTimeout(() => goScene(sceneIdx + 1), pause)
     return () => clearTimeout(id)
-  }, [sceneDone, playing, sceneIdx]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sceneDone, playing, sceneIdx, audioPlaying]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Show "— Krishna" + "Enter dashboard" when closing completes ──── */
 
@@ -364,12 +550,19 @@ export function FounderStoryPage() {
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.code === 'Space')         { e.preventDefault(); setPlaying(p => !p) }
-      else if (e.code === 'ArrowRight') tapNext()
-      else if (e.code === 'ArrowLeft')  tapPrev()
-      else if (e.key.toLowerCase() === 'r') {
-        const { sceneIdx: si } = latest.current
-        goScene(si)
+      if (e.code === 'Space') {
+        e.preventDefault()
+        if (latest.current.audioAvail) {
+          toggleAudio()
+        } else {
+          setPlaying(p => !p)
+        }
+      } else if (e.code === 'ArrowRight') {
+        tapNext()
+      } else if (e.code === 'ArrowLeft') {
+        tapPrev()
+      } else if (e.key.toLowerCase() === 'r') {
+        replayFromSceneStart()
       }
     }
     window.addEventListener('keydown', onKey)
@@ -402,7 +595,15 @@ export function FounderStoryPage() {
           <button
             key={i}
             className={'ce-fs-dot' + (i === sceneIdx ? ' cur' : i < sceneIdx ? ' done' : '')}
-            onClick={() => goScene(i)}
+            onClick={() => {
+              const cues = cuesRef.current
+              const audio = audioRef.current
+              if (latest.current.audioAvail && audio && cues.length) {
+                const firstCue = cues.find(c => c.scene === i && c.line === 0)
+                if (firstCue) { audio.currentTime = firstCue.start; return }
+              }
+              goScene(i)
+            }}
             aria-label={'Go to scene ' + i}
             aria-current={i === sceneIdx ? 'step' : undefined}
           />
@@ -494,12 +695,18 @@ export function FounderStoryPage() {
 
       {/* Audio dock */}
       <div className="ce-fs-dock" role="region" aria-label="Narration player">
+
+        {/* Main play/pause button */}
         <button
           className="ce-fs-dock-ic main"
-          onClick={() => setPlaying(p => !p)}
-          aria-label={playing ? 'Pause auto-advance' : 'Resume auto-advance'}
+          onClick={audioAvail ? toggleAudio : () => setPlaying(p => !p)}
+          aria-label={
+            audioAvail
+              ? (audioPlaying ? 'Pause narration' : 'Play narration')
+              : (playing       ? 'Pause auto-advance' : 'Resume auto-advance')
+          }
         >
-          {playing ? (
+          {(audioAvail ? audioPlaying : playing) ? (
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="currentColor" />
             </svg>
@@ -510,32 +717,78 @@ export function FounderStoryPage() {
           )}
         </button>
 
-        <button
-          className="ce-fs-dock-ic"
-          onClick={() => { const { sceneIdx: si } = latest.current; goScene(si) }}
-          aria-label="Replay this scene"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 5V1L7 6l5 5V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z" fill="currentColor" />
-          </svg>
-        </button>
+        {audioAvail ? (
+          /* ── Live audio controls ─────────────────────────────────── */
+          <>
+            <div
+              className="ce-fs-dock-scrub"
+              onClick={handleScrubClick}
+              role="progressbar"
+              aria-label="Narration progress"
+              aria-valuenow={Math.round(audioTime)}
+              aria-valuemax={Math.round(audioDuration)}
+            >
+              <div
+                className="ce-fs-dock-scrub-fill"
+                style={{ width: audioDuration > 0 ? `${(audioTime / audioDuration) * 100}%` : '0%' }}
+              />
+            </div>
 
-        <span className="ce-fs-dock-label">
-          &#127897; <strong>Founder&apos;s narration</strong> &mdash; coming soon
-        </span>
+            <span className="ce-fs-dock-time">
+              {formatTime(audioTime)}&thinsp;/&thinsp;{formatTime(audioDuration)}
+            </span>
 
-        <button
-          className="ce-fs-dock-ic"
-          onClick={() => {
-            const { sceneIdx: si } = latest.current
-            if (si < SCENES.length - 1) goScene(si + 1)
-          }}
-          aria-label="Skip to next scene"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" fill="currentColor" />
-          </svg>
-        </button>
+            <button
+              className="ce-fs-dock-ic"
+              onClick={replayFromSceneStart}
+              aria-label="Replay from scene start"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5V1L7 6l5 5V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z" fill="currentColor" />
+              </svg>
+            </button>
+
+            <button
+              className="ce-fs-dock-ic"
+              onClick={skipToNextScene}
+              aria-label="Skip to next scene"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" fill="currentColor" />
+              </svg>
+            </button>
+          </>
+        ) : (
+          /* ── Fallback: text-only controls (audio unavailable) ─────── */
+          <>
+            <button
+              className="ce-fs-dock-ic"
+              onClick={() => { const { sceneIdx: si } = latest.current; goScene(si) }}
+              aria-label="Replay this scene"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5V1L7 6l5 5V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z" fill="currentColor" />
+              </svg>
+            </button>
+
+            <span className="ce-fs-dock-label">
+              &#127897; <strong>Founder&apos;s narration</strong> &mdash; coming soon
+            </span>
+
+            <button
+              className="ce-fs-dock-ic"
+              onClick={() => {
+                const { sceneIdx: si } = latest.current
+                if (si < SCENES.length - 1) goScene(si + 1)
+              }}
+              aria-label="Skip to next scene"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" fill="currentColor" />
+              </svg>
+            </button>
+          </>
+        )}
       </div>
 
     </div>
