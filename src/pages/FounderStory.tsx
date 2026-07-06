@@ -376,7 +376,14 @@ export function FounderStoryPage() {
     audio.addEventListener('durationchange', () => setAudioDuration(audio.duration))
     audio.addEventListener('play',           () => setAudioPlaying(true))
     audio.addEventListener('pause',          () => setAudioPlaying(false))
-    audio.addEventListener('ended',          () => setAudioPlaying(false))
+    audio.addEventListener('ended',          () => {
+      setAudioPlaying(false)
+      // Advance lineIdx past maxLines so sceneDone fires → showEnter triggers
+      const si = latest.current.sceneIdx
+      if (si === SCENES.length - 1) {
+        setLineIdx(SCENES[SCENES.length - 1].lines.length)
+      }
+    })
     audio.addEventListener('timeupdate',     () => onTimeUpdate.current())
 
     fetch('/audio/founder-en.vtt')
@@ -509,7 +516,10 @@ export function FounderStoryPage() {
 
       <div className="ce-fs-topbar">
         <span className="ce-fs-counter">{counterLabel}</span>
-        <button className="ce-fs-skip-btn" onClick={() => goScene(SCENES.length - 1)}>
+        <button className="ce-fs-skip-btn" onClick={() => {
+          if (!latest.current.audioFailed) seekToSceneStart(SCENES.length - 1)
+          else goScene(SCENES.length - 1)
+        }}>
           Skip intro &rarr;
         </button>
       </div>
@@ -597,7 +607,12 @@ export function FounderStoryPage() {
           {scene.type === 'closing' && (
             <button
               className={'ce-fs-restart-btn' + (showEnter ? ' on' : '')}
-              onClick={() => { lsSet(STORAGE_KEY, '0'); goScene(0) }}
+              onClick={() => {
+                lsSet(STORAGE_KEY, '0')
+                const audio = audioRef.current
+                if (audio) { audio.currentTime = 0; activeCueRef.current = null; setAudioTime(0) }
+                goScene(0)
+              }}
               tabIndex={showEnter ? 0 : -1}
             >
               &larr; Watch again
