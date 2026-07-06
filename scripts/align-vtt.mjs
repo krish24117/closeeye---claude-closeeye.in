@@ -24,6 +24,7 @@ const OUT_VTT  = resolve(root, 'public/audio/founder-en.vtt')
 
 const APPROX_MODE = process.argv.includes('--approx') || !existsSync(WHISPER)
 const AUDIO_DURATION = 189.1  // seconds — update if you replace the mp3
+const CUE_OFFSET = -0.6       // shift all cues earlier to compensate for timeupdate latency + Whisper drift
 
 /* ── Script data — exact mirror of SCENES in FounderStory.tsx ─────────────── */
 
@@ -210,8 +211,10 @@ function buildWhisperCues() {
 function buildVTT(cues) {
   const lines = ['WEBVTT - Close Eye Founder Story\n']
   for (const c of cues) {
+    const s = Math.max(0, c.start + CUE_OFFSET)
+    const e = Math.max(s + 0.05, c.end + CUE_OFFSET)
     lines.push(`scene-${c.scene}-line-${c.line}`)
-    lines.push(`${fmtVTT(c.start)} --> ${fmtVTT(c.end)}`)
+    lines.push(`${fmtVTT(s)} --> ${fmtVTT(e)}`)
     lines.push(SCENES[c.scene].lines[c.line])
     lines.push('')
   }
