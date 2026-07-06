@@ -57,7 +57,7 @@ export function SplashScreen() {
       }}
     >
       <img
-        src="/splash/SPLASHSCREEN..png"
+        src="/splash/splash-screen.png"
         alt=""
         style={{
           width: '100%',
