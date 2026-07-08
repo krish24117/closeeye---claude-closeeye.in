@@ -27,7 +27,7 @@ export function MembershipCard() {
         <div className="flex items-start gap-3">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><ShieldPlus className="h-5 w-5" strokeWidth={1.5} /></span>
           <div>
-            <p className="text-body font-semibold text-ink">Protect your loved one with ongoing care.</p>
+            <p className="text-body font-semibold text-ink">Protect the people you love with ongoing care.</p>
             <p className="mt-0.5 text-body-sm text-muted">Choose a membership to unlock dedicated coordination and monthly wellbeing support.</p>
           </div>
         </div>

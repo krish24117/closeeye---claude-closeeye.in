@@ -65,13 +65,38 @@ export async function deleteLovedOne(id: string): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
+/** Update a family member's full profile (RLS: update own). Returns the new row. */
+export async function updateFamilyMember(id: string, input: NewLovedOne): Promise<LovedOne> {
+  const row = {
+    full_name: input.full_name.trim(),
+    relationship: clean(input.relationship),
+    age: input.age ?? null,
+    city: clean(input.city),
+    address: orEmpty(input.address),
+    phone_number: clean(input.phone_number),
+    medical_notes: orEmpty(input.medical_notes),
+    doctor_name: orEmpty(input.doctor_name),
+    nearest_hospital: orEmpty(input.nearest_hospital),
+    emergency_contact_name: orEmpty(input.emergency_contact_name),
+    emergency_contact_phone: orEmpty(input.emergency_contact_phone),
+  }
+  const { data, error } = await supabase.from('loved_ones').update(row).eq('id', id).select(LOVED_ONE_COLS).single()
+  if (error) throw new Error(error.message)
+  return data as LovedOne
+}
+
 const BOOKING_REQUEST_COLS = 'id, service_name, status, scheduled_at, recipient_name, payment_status, created_at'
 
-/** The family's own visit requests (RLS: user_id = auth.uid()). Empty for new users. */
-export async function fetchMyBookingRequests(): Promise<BookingRequest[]> {
+/**
+ * The signed-in family user's own visit requests. We filter explicitly by
+ * user_id — the booking_requests RLS also grants ADMINS a global read, so
+ * relying on RLS alone would show an admin every family's requests here.
+ */
+export async function fetchMyBookingRequests(userId: string): Promise<BookingRequest[]> {
   const { data, error } = await supabase
     .from('booking_requests')
     .select(BOOKING_REQUEST_COLS)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
   if (error) throw new Error(error.message)
   return (data as BookingRequest[] | null) ?? []

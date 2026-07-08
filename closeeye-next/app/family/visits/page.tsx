@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/family/page-header'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/family/avatar'
 import { initialsOf } from '@/components/family/loved-one-card'
+import { useAuth } from '@/components/auth/auth-provider'
 import { fetchMyBookingRequests } from '@/lib/db/family'
 import type { BookingRequest } from '@/lib/db/types'
 import { cn } from '@/lib/utils'
@@ -43,11 +44,16 @@ function fmtDate(iso: string | null): string {
 }
 
 export default function VisitsPage() {
+  const { user } = useAuth()
   const [requests, setRequests] = React.useState<BookingRequest[] | null>(null)
 
   React.useEffect(() => {
-    fetchMyBookingRequests().then(setRequests).catch(() => setRequests([]))
-  }, [])
+    if (!user?.id) {
+      setRequests([])
+      return
+    }
+    fetchMyBookingRequests(user.id).then(setRequests).catch(() => setRequests([]))
+  }, [user?.id])
 
   return (
     <div className="flex flex-col gap-6">

@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { useAuth } from '@/components/auth/auth-provider'
-import { addLovedOne as addLovedOneDb, deleteLovedOne as deleteLovedOneDb, fetchMyLovedOnes, fetchMyProfile } from '@/lib/db/family'
+import { addLovedOne as addLovedOneDb, deleteLovedOne as deleteLovedOneDb, fetchMyLovedOnes, fetchMyProfile, updateFamilyMember as updateFamilyMemberDb } from '@/lib/db/family'
 import { fetchMySubscription, selectPlan as selectPlanDb } from '@/lib/db/onboarding'
 import type { LovedOne, NewLovedOne, Profile, Subscription } from '@/lib/db/types'
 import type { PlanId } from '@/lib/plans'
@@ -28,6 +28,7 @@ interface FamilyData {
   error: string | null
   refresh: () => Promise<void>
   addLovedOne: (input: NewLovedOne) => Promise<LovedOne>
+  editFamilyMember: (id: string, input: NewLovedOne) => Promise<LovedOne>
   removeLovedOne: (id: string) => Promise<void>
   chooseMembership: (planId: PlanId) => Promise<void>
 }
@@ -103,6 +104,12 @@ export function FamilyDataProvider({ children }: { children: React.ReactNode }) 
     [userId],
   )
 
+  const editFamilyMember = useCallback(async (id: string, input: NewLovedOne) => {
+    const updated = await updateFamilyMemberDb(id, input)
+    setLovedOnes((prev) => prev.map((l) => (l.id === id ? updated : l)))
+    return updated
+  }, [])
+
   const removeLovedOne = useCallback(async (id: string) => {
     await deleteLovedOneDb(id)
     setLovedOnes((prev) => prev.filter((l) => l.id !== id))
@@ -120,8 +127,8 @@ export function FamilyDataProvider({ children }: { children: React.ReactNode }) 
 
   const identity = useMemo(() => deriveIdentity(user, profile), [user, profile])
   const value = useMemo<FamilyData>(
-    () => ({ profile, lovedOnes, subscription, identity, loading, error, refresh: load, addLovedOne, removeLovedOne, chooseMembership }),
-    [profile, lovedOnes, subscription, identity, loading, error, load, addLovedOne, removeLovedOne, chooseMembership],
+    () => ({ profile, lovedOnes, subscription, identity, loading, error, refresh: load, addLovedOne, editFamilyMember, removeLovedOne, chooseMembership }),
+    [profile, lovedOnes, subscription, identity, loading, error, load, addLovedOne, editFamilyMember, removeLovedOne, chooseMembership],
   )
 
   return <FamilyDataContext.Provider value={value}>{children}</FamilyDataContext.Provider>
@@ -140,8 +147,8 @@ export function useProfile(): Identity {
 
 /** The signed-in user's loved ones, with loading/empty/error + add/remove. */
 export function useLovedOnes() {
-  const { lovedOnes, loading, error, refresh, addLovedOne, removeLovedOne } = useFamilyData()
-  return { lovedOnes, loading, error, refresh, addLovedOne, removeLovedOne }
+  const { lovedOnes, loading, error, refresh, addLovedOne, editFamilyMember, removeLovedOne } = useFamilyData()
+  return { lovedOnes, loading, error, refresh, addLovedOne, editFamilyMember, removeLovedOne }
 }
 
 /** The signed-in user's membership subscription + plan selection. */

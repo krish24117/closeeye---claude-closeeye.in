@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 
 const STEPS = [
   'Choose a membership',
-  'Add your loved one',
+  'Add your family member',
   'Your Presence Manager is assigned',
   'Start requesting support anytime',
 ]
