@@ -68,9 +68,9 @@ export function planById(id?: string | null): Plan | null {
 
 /** Other à-la-carte services (not memberships). "Starting at" wording, locked. */
 export const SERVICES = [
-  { name: 'Home Wellbeing Visit', price: 'Starting at ₹1,000', note: 'Book an additional wellbeing visit whenever needed.' },
-  { name: 'Hospital Companion', price: 'Starting at ₹2,000', note: 'Accompaniment, admission support and family coordination.' },
-  { name: 'Custom Request', price: 'Starting at ₹500', note: 'Groceries, medicines, festivals, documents and other family requests.' },
+  { name: 'Home Wellbeing Visit', price: 'Starting at ₹1,000', note: 'Book an additional wellbeing visit whenever needed.', serviceId: 'home-wellbeing-visit', cta: 'Book Visit' },
+  { name: 'Hospital Companion', price: 'Starting at ₹2,000', note: 'Accompaniment, admission support and family coordination.', serviceId: 'hospital-companion', cta: 'Book Visit' },
+  { name: 'Custom Request', price: 'Starting at ₹500', note: 'Groceries, medicines, document pickup, temple visits and other family requests.', serviceId: 'custom-request', cta: 'Request Service' },
 ] as const
 
 /** "Who are you protecting?" → the loved one's relationship stored on the row. */

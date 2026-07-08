@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Check, Loader2 } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
 import { Button } from '@/components/ui/button'
@@ -30,6 +31,7 @@ export default function MembershipPage() {
   const [choosing, setChoosing] = useState<PlanId | null>(null)
   const currentId = subscription?.plan_id
   const active = subscription?.status === 'active'
+  const isCare = planById(currentId)?.key === 'care'
 
   async function choose(planId: PlanId) {
     if (choosing) return
@@ -134,15 +136,42 @@ export default function MembershipPage() {
         <h2 className="text-h4">Other services</h2>
         <p className="mt-1 text-body-sm text-muted">One-off support, whenever your family needs it.</p>
         <div className="mt-4 overflow-hidden rounded-lg border border-line bg-card shadow-sm">
-          {SERVICES.map((s, i) => (
-            <div key={s.name} className={cn('flex items-center justify-between gap-4 px-5 py-4', i > 0 && 'border-t border-line')}>
-              <div className="min-w-0">
-                <p className="text-body-sm font-semibold text-ink">{s.name}</p>
-                <p className="text-caption text-muted">{s.note}</p>
+          {SERVICES.map((s, i) => {
+            const careVisit = isCare && s.serviceId === 'home-wellbeing-visit'
+            return (
+              <div key={s.name} className={cn('px-5 py-4', i > 0 && 'border-t border-line')}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-body-sm font-semibold text-ink">{s.name}</p>
+                    <p className="text-caption text-muted">{s.note}</p>
+                  </div>
+                  {careVisit ? (
+                    <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-success/12 px-2.5 py-1 text-caption font-semibold text-success">
+                      <span className="h-1.5 w-1.5 rounded-full bg-success" /> Included in your membership
+                    </span>
+                  ) : (
+                    <span className="shrink-0 whitespace-nowrap text-body-sm font-semibold text-ink">{s.price}</span>
+                  )}
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {careVisit ? (
+                    <>
+                      <Button asChild size="sm">
+                        <Link href={`/book?service=${s.serviceId}`}>Schedule Monthly Visit</Link>
+                      </Button>
+                      <Link href={`/book?service=${s.serviceId}`} className="text-caption font-semibold text-green hover:underline">
+                        Book Extra Visit · ₹1,000
+                      </Link>
+                    </>
+                  ) : (
+                    <Button asChild variant="secondary" size="sm">
+                      <Link href={`/book?service=${s.serviceId}`}>{s.cta}</Link>
+                    </Button>
+                  )}
+                </div>
               </div>
-              <span className="shrink-0 whitespace-nowrap text-body-sm font-semibold text-ink">{s.price}</span>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 
