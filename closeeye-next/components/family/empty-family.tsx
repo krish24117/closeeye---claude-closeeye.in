@@ -19,7 +19,7 @@ export function EmptyFamily() {
       </p>
       <Button asChild size="lg" className="mt-6">
         <Link href="/family/add">
-          <UserPlus className="h-5 w-5" strokeWidth={2} /> Add your first loved one
+          <UserPlus className="h-5 w-5" strokeWidth={2} /> Add your first family member
         </Link>
       </Button>
     </section>

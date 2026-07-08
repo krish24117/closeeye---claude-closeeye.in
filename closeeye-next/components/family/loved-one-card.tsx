@@ -1,9 +1,12 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Heart, MapPin, Phone, ShieldAlert, Pencil } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
+import { getLocalPhoto } from '@/lib/local-photos'
 import type { LovedOne } from '@/lib/db/types'
+import { cn } from '@/lib/utils'
 
 /** Initials from a full name (first two words). */
 export function initialsOf(name: string): string {
@@ -11,46 +14,49 @@ export function initialsOf(name: string): string {
   return (p.slice(0, 2).map((s) => s[0]).join('') || '·').toUpperCase()
 }
 
-/** A loved one, rendered from real Supabase data, with prompts to complete gaps. */
-export function LovedOneCard({ lo }: { lo: LovedOne }) {
-  const first = lo.full_name.split(/\s+/)[0]
-  const meta = [lo.relationship, lo.age ? `${lo.age}` : null, lo.city].filter(Boolean).join(' · ')
-  const rows = [
-    lo.city && { icon: MapPin, text: lo.city },
-    lo.phone_number && { icon: Phone, text: lo.phone_number },
-    lo.medical_notes && { icon: Heart, text: lo.medical_notes },
-    lo.emergency_contact_name && { icon: ShieldAlert, text: `${lo.emergency_contact_name}${lo.emergency_contact_phone ? ` · ${lo.emergency_contact_phone}` : ''}` },
-  ].filter(Boolean) as { icon: typeof Heart; text: string }[]
+type Tone = 'ok' | 'warn' | 'muted'
 
-  const incomplete = !lo.phone_number || !lo.medical_notes || !lo.emergency_contact_name
+function StatusRow({ label, value, tone }: { label: string; value: string; tone: Tone }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-3.5">
+      <span className="text-body-sm text-muted">{label}</span>
+      <span
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold',
+          tone === 'ok' ? 'bg-success/12 text-success' : tone === 'warn' ? 'bg-warning/12 text-warning' : 'bg-ink/[0.05] text-muted',
+        )}
+      >
+        <span className={cn('h-1.5 w-1.5 rounded-full', tone === 'ok' ? 'bg-success' : tone === 'warn' ? 'bg-warning' : 'bg-muted')} />
+        {value}
+      </span>
+    </div>
+  )
+}
+
+/** A family member, from real Supabase data, with at-a-glance status. */
+export function LovedOneCard({ lo }: { lo: LovedOne }) {
+  const [photo, setPhoto] = useState<string | null>(null)
+  useEffect(() => { setPhoto(getLocalPhoto(lo.id)) }, [lo.id])
+
+  const healthComplete = Boolean(lo.medical_notes?.trim() && lo.phone_number?.trim() && lo.emergency_contact_name?.trim())
+  const meta = [lo.relationship, lo.city].filter(Boolean).join(' · ')
 
   return (
-    <article className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
-      <header className="flex items-center gap-4 border-b border-line px-6 py-5">
-        <Avatar initials={initialsOf(lo.full_name)} size="lg" tone="solid" />
+    <article className="overflow-hidden rounded-[20px] border border-line bg-card shadow-sm">
+      <header className="flex items-center gap-4 px-6 py-6">
+        <Avatar initials={initialsOf(lo.full_name)} src={photo} alt={lo.full_name} size="lg" tone="solid" />
         <div className="min-w-0 flex-1">
-          <h2 className="text-h4 text-ink">{lo.full_name}</h2>
-          {meta && <p className="text-caption text-muted">{meta}</p>}
+          <h2 className="truncate text-h4 text-ink">{lo.full_name}</h2>
+          {meta && <p className="truncate text-body-sm text-muted">{meta}</p>}
         </div>
-        <Link href="/family/add" aria-label={`Edit ${lo.full_name}`} className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
-          <Pencil className="h-4 w-4" strokeWidth={1.5} />
+        <Link href="/family/add" aria-label={`Edit ${lo.full_name}`} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-ink">
+          <Pencil className="h-4 w-4" strokeWidth={1.75} />
         </Link>
       </header>
-
-      <div className="flex flex-col gap-2.5 px-6 py-5">
-        {rows.map((r, i) => {
-          const Icon = r.icon
-          return (
-            <p key={i} className="flex items-start gap-2.5 text-body-sm text-ink">
-              <Icon className="mt-0.5 h-4 w-4 shrink-0 text-green" strokeWidth={1.75} /> {r.text}
-            </p>
-          )
-        })}
-        {incomplete && (
-          <p className="text-body-sm text-muted">
-            Add {first}’s health details, phone and emergency contacts to complete their profile.
-          </p>
-        )}
+      <div className="divide-y divide-line border-t border-line px-6">
+        <StatusRow label="Membership" value="Not activated" tone="warn" />
+        <StatusRow label="Health profile" value={healthComplete ? 'Complete' : 'Incomplete'} tone={healthComplete ? 'ok' : 'warn'} />
+        <StatusRow label="Next visit" value="Not scheduled" tone="muted" />
       </div>
     </article>
   )
