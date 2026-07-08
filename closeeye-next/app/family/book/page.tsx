@@ -43,7 +43,8 @@ export default function FamilyBookPage() {
   const member = lovedOnes.find((l) => l.id === memberId)
   const service = BOOKING_SERVICES.find((s) => s.id === serviceId)
   const slots = TIME_SLOTS.filter((t) => !t.emergencyOnly || service?.allowsEmergency)
-  const slotLabel = TIME_SLOTS.find((t) => t.id === timeSlot)?.label
+  const chosenSlot = TIME_SLOTS.find((t) => t.id === timeSlot)
+  const slotLabel = chosenSlot ? `${chosenSlot.label} (${chosenSlot.note})` : undefined
   const valid = Boolean(member && service && date && timeSlot)
 
   async function confirm() {
@@ -159,7 +160,9 @@ export default function FamilyBookPage() {
         <Field label="Preferred time">
           <div className="flex flex-wrap gap-2.5">
             {slots.map((t) => (
-              <Chip key={t.id} selected={timeSlot === t.id} onClick={() => setTimeSlot(t.id)}>{t.label}</Chip>
+              <Chip key={t.id} selected={timeSlot === t.id} onClick={() => setTimeSlot(t.id)}>
+                {t.label} <span className="font-normal text-muted">· {t.note}</span>
+              </Chip>
             ))}
           </div>
         </Field>
