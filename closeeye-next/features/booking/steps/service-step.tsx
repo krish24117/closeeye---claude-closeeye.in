@@ -43,7 +43,7 @@ export function ServiceStep() {
             meta={
               <span className="flex flex-col gap-0.5">
                 <span>{s.duration}</span>
-                <span className="font-semibold text-ink">from {s.priceFrom}</span>
+                <span className="font-semibold text-ink">Starting at {s.priceFrom}</span>
               </span>
             }
           />

@@ -19,7 +19,7 @@ const SEED: Notif[] = [
   { id: 'n1', cat: 'Guardians', title: 'Arjun checked in', text: 'Arjun has arrived at the Rao family for the 9:30 visit.', time: '2m', unread: true, href: '/family/visits' },
   { id: 'n2', cat: 'Bookings', title: 'Visit completed', text: 'Ramesh Rao’s wellbeing report is ready to read.', time: '18m', unread: true, href: '/family/visits/v-103' },
   { id: 'n3', cat: 'Medical', title: 'BP reading added', text: 'Blood pressure 128/82 — within the expected range.', time: '20m', unread: true, href: '/family/visits/v-103' },
-  { id: 'n4', cat: 'Payments', title: 'Payment received', text: '₹8,000 for your Family Care membership.', time: '1h', unread: false, href: '/admin/finance' },
+  { id: 'n4', cat: 'Payments', title: 'Payment received', text: '₹1,500 for your CloseEye Care membership.', time: '1h', unread: false, href: '/admin/finance' },
   { id: 'n5', cat: 'Care Team', title: 'Ticket resolved', text: 'Your medicine coordination request is complete.', time: '2h', unread: false, href: '/console' },
   { id: 'n6', cat: 'Renewals', title: 'Membership renews soon', text: 'Lakshmi Rao’s plan renews in 6 days.', time: '5h', unread: false, href: '/admin/memberships' },
   { id: 'n7', cat: 'Companions', title: 'Companion assigned', text: 'Vikram will accompany Fatima to her cardiology visit.', time: 'Yesterday', unread: false, href: '/console/families/f-sheikh' },

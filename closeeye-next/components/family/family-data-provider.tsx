@@ -4,7 +4,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { User } from '@supabase/supabase-js'
 import { useAuth } from '@/components/auth/auth-provider'
 import { addLovedOne as addLovedOneDb, deleteLovedOne as deleteLovedOneDb, fetchMyLovedOnes, fetchMyProfile } from '@/lib/db/family'
-import type { LovedOne, NewLovedOne, Profile } from '@/lib/db/types'
+import { fetchMySubscription, selectPlan as selectPlanDb } from '@/lib/db/onboarding'
+import type { LovedOne, NewLovedOne, Profile, Subscription } from '@/lib/db/types'
+import type { PlanId } from '@/lib/plans'
 
 /** The signed-in person's display identity, resolved from profile + auth. */
 export interface Identity {
@@ -20,12 +22,14 @@ export interface Identity {
 interface FamilyData {
   profile: Profile | null
   lovedOnes: LovedOne[]
+  subscription: Subscription | null
   identity: Identity
   loading: boolean
   error: string | null
   refresh: () => Promise<void>
   addLovedOne: (input: NewLovedOne) => Promise<LovedOne>
   removeLovedOne: (id: string) => Promise<void>
+  chooseMembership: (planId: PlanId) => Promise<void>
 }
 
 const FamilyDataContext = createContext<FamilyData | undefined>(undefined)
@@ -59,6 +63,7 @@ export function FamilyDataProvider({ children }: { children: React.ReactNode }) 
   const userId = user?.id
   const [profile, setProfile] = useState<Profile | null>(null)
   const [lovedOnes, setLovedOnes] = useState<LovedOne[]>([])
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -66,15 +71,17 @@ export function FamilyDataProvider({ children }: { children: React.ReactNode }) 
     if (!userId) {
       setProfile(null)
       setLovedOnes([])
+      setSubscription(null)
       setError(null)
       return
     }
     setLoading(true)
     setError(null)
     try {
-      const [p, l] = await Promise.all([fetchMyProfile(userId), fetchMyLovedOnes(userId)])
+      const [p, l, sub] = await Promise.all([fetchMyProfile(userId), fetchMyLovedOnes(userId), fetchMySubscription(userId)])
       setProfile(p)
       setLovedOnes(l)
+      setSubscription(sub)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load your family data.')
     } finally {
@@ -101,10 +108,20 @@ export function FamilyDataProvider({ children }: { children: React.ReactNode }) 
     setLovedOnes((prev) => prev.filter((l) => l.id !== id))
   }, [])
 
+  const chooseMembership = useCallback(
+    async (planId: PlanId) => {
+      if (!userId) throw new Error('You’re not signed in.')
+      const { error: e } = await selectPlanDb(userId, planId)
+      if (e) throw new Error(e)
+      setSubscription((prev) => ({ plan_id: planId, status: prev?.status ?? 'created', current_end: prev?.current_end ?? null }))
+    },
+    [userId],
+  )
+
   const identity = useMemo(() => deriveIdentity(user, profile), [user, profile])
   const value = useMemo<FamilyData>(
-    () => ({ profile, lovedOnes, identity, loading, error, refresh: load, addLovedOne, removeLovedOne }),
-    [profile, lovedOnes, identity, loading, error, load, addLovedOne, removeLovedOne],
+    () => ({ profile, lovedOnes, subscription, identity, loading, error, refresh: load, addLovedOne, removeLovedOne, chooseMembership }),
+    [profile, lovedOnes, subscription, identity, loading, error, load, addLovedOne, removeLovedOne, chooseMembership],
   )
 
   return <FamilyDataContext.Provider value={value}>{children}</FamilyDataContext.Provider>
@@ -125,4 +142,10 @@ export function useProfile(): Identity {
 export function useLovedOnes() {
   const { lovedOnes, loading, error, refresh, addLovedOne, removeLovedOne } = useFamilyData()
   return { lovedOnes, loading, error, refresh, addLovedOne, removeLovedOne }
+}
+
+/** The signed-in user's membership subscription + plan selection. */
+export function useMembership() {
+  const { subscription, chooseMembership, loading } = useFamilyData()
+  return { subscription, chooseMembership, loading }
 }

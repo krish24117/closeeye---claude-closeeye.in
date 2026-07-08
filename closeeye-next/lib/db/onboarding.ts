@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { PlanId } from '@/lib/plans'
+import type { Subscription } from '@/lib/db/types'
 
 /**
  * Save the user's basic profile from onboarding and mark onboarding complete.
@@ -28,4 +29,15 @@ export async function selectPlan(userId: string, planId: PlanId): Promise<{ erro
     .from('subscriptions')
     .upsert({ user_id: userId, plan_id: planId, status: 'created' }, { onConflict: 'user_id' })
   return { error: error?.message ?? null }
+}
+
+/** The user's current membership subscription, or null if none selected yet. */
+export async function fetchMySubscription(userId: string): Promise<Subscription | null> {
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .select('plan_id, status, current_end')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  return (data as Subscription | null) ?? null
 }

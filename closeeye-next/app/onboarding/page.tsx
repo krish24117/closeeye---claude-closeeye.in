@@ -181,7 +181,7 @@ export default function OnboardingPage() {
                         <span className={cn('grid h-5 w-5 place-items-center rounded-full border', plan === pl.id ? 'border-green bg-green text-white' : 'border-line')}>{plan === pl.id && <Check className="h-3.5 w-3.5" strokeWidth={3} />}</span>
                       </span>
                     </div>
-                    <p className="mt-1 text-caption text-muted">{pl.tagline}</p>
+                    <p className="mt-1 text-caption text-muted">{pl.description}</p>
                   </button>
                 ))}
               </div>

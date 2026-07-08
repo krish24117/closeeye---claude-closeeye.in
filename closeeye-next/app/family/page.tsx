@@ -7,6 +7,7 @@ import { Greeting } from '@/components/family/greeting'
 import { SectionTitle } from '@/components/family/section-title'
 import { EmptyFamily } from '@/components/family/empty-family'
 import { LovedOneCard } from '@/components/family/loved-one-card'
+import { MembershipCard } from '@/components/family/membership-card'
 import { useLovedOnes } from '@/components/family/family-data-provider'
 import type { LovedOne } from '@/lib/db/types'
 
@@ -63,6 +64,7 @@ export default function FamilyHome() {
       ) : (
         <RealOverview lovedOnes={lovedOnes} />
       )}
+      {!loading && <MembershipCard />}
     </div>
   )
 }

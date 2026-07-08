@@ -1,48 +1,79 @@
 /**
- * Membership plans offered at onboarding. `id` matches the DB constraint on
- * `subscriptions.plan_id` ('companion' | 'trust' | 'family_os'). Prices are
- * indicative for selection only — no charge is taken here; the actual amount is
- * confirmed later at Razorpay checkout from the Membership page.
+ * CloseEye V2 membership model — LOCKED (Product Director decision).
+ * Clean rounded pricing only. Do not add plans, alter prices, or introduce
+ * alternatives without a new explicit product decision.
+ *
+ * `id` matches the DB constraint on `subscriptions.plan_id`
+ * ('companion' | 'trust' | 'family_os'); the user-facing names are Connect /
+ * Care. Connect → companion, Care → trust (app-layer mapping, no schema change).
  */
 export type PlanId = 'companion' | 'trust' | 'family_os'
+export type PlanKey = 'connect' | 'care'
 
 export interface Plan {
   id: PlanId
+  key: PlanKey
   name: string
-  tagline: string
+  short: string
   price: string
   period: string
-  features: string[]
+  description: string
+  benefits: string[]
+  cta: string
   popular?: boolean
 }
 
 export const PLANS: Plan[] = [
   {
     id: 'companion',
-    name: 'Companion',
-    tagline: 'Friendly check-ins and calls to stay close',
-    price: '₹2,000',
-    period: '/mo',
-    features: ['Regular check-in calls', 'Wellbeing updates', 'WhatsApp support'],
+    key: 'connect',
+    name: 'CloseEye Connect',
+    short: 'Connect',
+    price: '₹500',
+    period: '/month',
+    description: "Stay connected even when you're away.",
+    benefits: [
+      'Dedicated Presence Manager',
+      'Phone & WhatsApp coordination',
+      'Family updates',
+      'Emergency coordination',
+      'Dashboard access',
+    ],
+    cta: 'Choose Connect',
   },
   {
     id: 'trust',
-    name: 'Trust',
-    tagline: 'Wellbeing visits with a dedicated Presence Manager',
-    price: '₹8,000',
-    period: '/mo',
+    key: 'care',
+    name: 'CloseEye Care',
+    short: 'Care',
+    price: '₹1,500',
+    period: '/month',
     popular: true,
-    features: ['Up to 8 home visits a month', 'A dedicated Presence Manager', 'Same-day reports & photos', 'Priority emergency response'],
-  },
-  {
-    id: 'family_os',
-    name: 'Family OS',
-    tagline: 'Complete care — visits, health and priority support',
-    price: '₹15,000',
-    period: '/mo',
-    features: ['Everything in Trust', 'Health & medication coordination', 'Doctor & hospital assistance', 'Unlimited priority support'],
+    description: 'Someone you trust visits your loved one every month.',
+    benefits: [
+      'Everything in Connect',
+      'Monthly wellbeing visit',
+      'Verified Guardian',
+      'Photos & visit report',
+      'Medicine verification',
+      'Home observation',
+      'Priority scheduling',
+    ],
+    cta: 'Choose Care',
   },
 ]
+
+/** Resolve a stored plan_id to its plan definition. */
+export function planById(id?: string | null): Plan | null {
+  return PLANS.find((p) => p.id === id) ?? null
+}
+
+/** Other à-la-carte services (not memberships). "Starting at" wording, locked. */
+export const SERVICES = [
+  { name: 'Home Wellbeing Visit', price: 'Starting at ₹1,000', note: 'Extra visits, or one-off, on any plan' },
+  { name: 'Hospital Companion', price: 'Starting at ₹2,000', note: 'Accompaniment, admission & discharge help' },
+  { name: 'Custom Request', price: 'Starting at ₹500', note: 'Groceries, pickups, festival & temple visits, and more' },
+] as const
 
 /** "Who are you protecting?" → the loved one's relationship stored on the row. */
 export const PROTECT_OPTIONS = [

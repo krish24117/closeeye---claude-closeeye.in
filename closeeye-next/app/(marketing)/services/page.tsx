@@ -93,7 +93,7 @@ export default function ServicesPage() {
                     <Link href="/book">Book a visit</Link>
                   </Button>
                   <span className="text-body-sm text-muted">
-                    from <span className="font-semibold text-ink">{s.priceFrom}</span>
+                    Starting at <span className="font-semibold text-ink">{s.priceFrom}</span>
                   </span>
                 </div>
               </Split>

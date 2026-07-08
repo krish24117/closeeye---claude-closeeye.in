@@ -31,6 +31,13 @@ export interface LovedOne {
 }
 
 /** Input for creating a loved one (the Add Loved One flow). */
+/** The user's membership subscription (subscriptions table). */
+export interface Subscription {
+  plan_id: string
+  status: string
+  current_end: string | null
+}
+
 export interface NewLovedOne {
   full_name: string
   relationship: string
