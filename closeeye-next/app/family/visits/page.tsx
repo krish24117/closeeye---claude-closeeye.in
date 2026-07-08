@@ -89,7 +89,7 @@ export default function VisitsPage() {
                 <Avatar initials={initialsOf(name)} size="md" tone="solid" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-body-sm font-semibold text-ink">{r.service_name?.trim() || 'Wellbeing visit'}</p>
-                  <p className="truncate text-caption text-muted">{name} · {fmtDate(r.scheduled_at)}</p>
+                  <p className="truncate text-caption text-muted">For {name} · {fmtDate(r.scheduled_at)}</p>
                 </div>
                 <span className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold', toneCls[m.tone])}>
                   <span className={cn('h-1.5 w-1.5 rounded-full', dotCls[m.tone])} /> {m.label}

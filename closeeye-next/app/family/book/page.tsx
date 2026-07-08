@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { ArrowLeft, CalendarCheck, CheckCircle2, Loader2, UserPlus } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CalendarCheck, Check, CheckCircle2, Loader2, UserPlus } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/family/avatar'
@@ -17,12 +17,14 @@ import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
 
 const todayISO = () => new Date().toISOString().slice(0, 10)
+const memberMeta = (m: { relationship: string | null; city: string | null }) => [m.relationship, m.city].filter(Boolean).join(' · ')
 
 export default function FamilyBookPage() {
   const params = useSearchParams()
-  const { lovedOnes, profile } = useFamilyData()
+  const { lovedOnes, profile, loading } = useFamilyData()
 
   const [memberId, setMemberId] = React.useState('')
+  const [pickChoice, setPickChoice] = React.useState('')
   const [serviceId, setServiceId] = React.useState('')
   const [date, setDate] = React.useState('')
   const [timeSlot, setTimeSlot] = React.useState('')
@@ -31,10 +33,15 @@ export default function FamilyBookPage() {
   const [error, setError] = React.useState('')
   const [ref, setRef] = React.useState<string | null>(null)
 
-  // Pre-select the only family member; prefill service from ?service.
+  // Resolve the member automatically when it's unambiguous: ?member=… or a
+  // single family member. Multiple members fall through to the picker.
   React.useEffect(() => {
-    if (lovedOnes.length === 1) setMemberId(lovedOnes[0]!.id)
-  }, [lovedOnes])
+    if (memberId || lovedOnes.length === 0) return
+    const pm = params.get('member')
+    if (pm && lovedOnes.some((l) => l.id === pm)) setMemberId(pm)
+    else if (lovedOnes.length === 1) setMemberId(lovedOnes[0]!.id)
+  }, [lovedOnes, params, memberId])
+
   React.useEffect(() => {
     const s = params.get('service')
     if (s && BOOKING_SERVICES.some((b) => b.id === s)) setServiceId(s)
@@ -90,6 +97,11 @@ export default function FamilyBookPage() {
     )
   }
 
+  // ── Loading loved ones ──────────────────────────────────────────────────
+  if (loading && lovedOnes.length === 0) {
+    return <div className="grid place-items-center rounded-lg border border-line bg-card py-20 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
+  }
+
   // ── No family member yet ────────────────────────────────────────────────
   if (lovedOnes.length === 0) {
     return (
@@ -105,42 +117,44 @@ export default function FamilyBookPage() {
     )
   }
 
-  // ── Booking form ────────────────────────────────────────────────────────
+  // ── Member picker (multiple members, none chosen yet) ───────────────────
+  if (!member) {
+    return (
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
+        <Link href="/family/visits" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to visits</Link>
+        <PageHeader title="Book a visit" subtitle="Who is this visit for?" />
+        <div className="flex flex-col gap-3">
+          {lovedOnes.map((l) => {
+            const on = l.id === pickChoice
+            return (
+              <button key={l.id} type="button" onClick={() => setPickChoice(l.id)} className={cn('flex items-center gap-3 rounded-lg border-2 bg-card px-4 py-3 text-left transition-colors', on ? 'border-green bg-accent-soft/30' : 'border-line hover:border-ink/20')}>
+                <Avatar initials={initialsOf(l.full_name)} size="md" tone={on ? 'solid' : 'soft'} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-body-sm font-semibold text-ink">{l.full_name}</p>
+                  {memberMeta(l) && <p className="truncate text-caption text-muted">{memberMeta(l)}</p>}
+                </div>
+                <span className={cn('grid h-5 w-5 shrink-0 place-items-center rounded-full border', on ? 'border-green bg-green text-white' : 'border-line')}>{on && <Check className="h-3 w-3" strokeWidth={3} />}</span>
+              </button>
+            )
+          })}
+        </div>
+        <Button size="lg" className="w-full sm:w-auto sm:self-start" disabled={!pickChoice} onClick={() => setMemberId(pickChoice)}>
+          Continue <ArrowRight className="h-5 w-5" strokeWidth={2} />
+        </Button>
+      </div>
+    )
+  }
+
+  // ── Booking form (member resolved) ──────────────────────────────────────
   return (
-    <div className="flex flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-8">
       <div>
         <Link href="/family/visits" className="mb-3 inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to visits</Link>
-        <PageHeader title="Book a visit" subtitle="Just the essentials — we already have your family’s details." />
-      </div>
-
-      {/* Who is this visit for? */}
-      <section className="flex flex-col gap-4">
-        <h2 className="text-h4 text-ink">Who is this visit for?</h2>
-        {lovedOnes.length === 1 ? (
-          <div className="flex items-center gap-3 rounded-lg border border-green/40 bg-accent-soft/40 px-4 py-3">
-            <Avatar initials={initialsOf(member?.full_name ?? '')} size="md" tone="solid" />
-            <div className="min-w-0">
-              <p className="truncate text-body-sm font-semibold text-ink">{member?.full_name}</p>
-              <p className="truncate text-caption text-muted">{[member?.relationship, member?.city].filter(Boolean).join(' · ')}</p>
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {lovedOnes.map((l) => {
-              const on = l.id === memberId
-              return (
-                <button key={l.id} type="button" onClick={() => setMemberId(l.id)} className={cn('flex items-center gap-3 rounded-lg border-2 bg-card px-4 py-3 text-left transition-colors', on ? 'border-green bg-accent-soft/30' : 'border-line hover:border-ink/20')}>
-                  <Avatar initials={initialsOf(l.full_name)} size="md" tone={on ? 'solid' : 'soft'} />
-                  <div className="min-w-0">
-                    <p className="truncate text-body-sm font-semibold text-ink">{l.full_name}</p>
-                    <p className="truncate text-caption text-muted">{[l.relationship, l.city].filter(Boolean).join(' · ')}</p>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
+        <PageHeader title="Book a visit" subtitle={`For ${member.full_name}`} />
+        {lovedOnes.length > 1 && (
+          <button type="button" onClick={() => { setMemberId(''); setPickChoice(member.id) }} className="mt-2 text-caption font-semibold text-green hover:underline">Change person</button>
         )}
-      </section>
+      </div>
 
       {/* Service */}
       <section className="flex flex-col gap-4">
@@ -172,6 +186,16 @@ export default function FamilyBookPage() {
       <Field label="Notes for the Guardian" htmlFor="notes" optional hint="Anything specific for this visit — a task, a preference, a reminder.">
         <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. Please check the medicine box and go for a short walk." />
       </Field>
+
+      {/* Review */}
+      {valid && (
+        <div className="rounded-lg border border-line bg-accent-soft/40 px-5 py-4">
+          <p className="text-caption font-semibold uppercase tracking-widest text-muted">Review</p>
+          <p className="mt-1.5 text-body-sm text-ink">
+            <span className="font-semibold">{service!.name}</span> for <span className="font-semibold">{member.full_name}</span> — {new Date(date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}, {chosenSlot?.label} ({chosenSlot?.note}).
+          </p>
+        </div>
+      )}
 
       {error && <p className="text-caption text-error">{error}</p>}
 
