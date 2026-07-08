@@ -8,7 +8,8 @@ import { cn } from '@/lib/utils'
 
 /**
  * Relationship picker — a searchable bottom-sheet (mobile) / dialog (desktop)
- * with an icon per option. Replaces the native <select>; animates via Overlay.
+ * that mirrors our input fields. Replaces the native <select>; animates via
+ * Overlay.
  */
 export function RelationshipSelector({
   value,
@@ -21,8 +22,7 @@ export function RelationshipSelector({
 }) {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
-  const selected = RELATIONSHIP_OPTIONS.find((o) => o.key === value)
-  const filtered = RELATIONSHIP_OPTIONS.filter((o) => o.key.toLowerCase().includes(q.trim().toLowerCase()))
+  const filtered = RELATIONSHIP_OPTIONS.filter((o) => o.toLowerCase().includes(q.trim().toLowerCase()))
 
   return (
     <>
@@ -31,40 +31,43 @@ export function RelationshipSelector({
         onClick={() => { setOpen(true); setQ('') }}
         className="flex min-h-[52px] w-full items-center justify-between gap-2 rounded-2xl border border-line bg-ivory px-4 py-3.5 text-left transition-colors hover:border-ink/20 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20"
       >
-        {selected ? (
-          <span className="flex items-center gap-2.5 text-body text-ink"><span className="text-lg" aria-hidden>{selected.emoji}</span> {selected.key}</span>
-        ) : (
-          <span className="text-body text-muted/70">{placeholder}</span>
-        )}
+        <span className={cn('text-body', value ? 'text-ink' : 'text-muted/70')}>{value || placeholder}</span>
         <ChevronDown className="h-5 w-5 shrink-0 text-muted" strokeWidth={1.75} />
       </button>
 
       <Overlay open={open} onClose={() => setOpen(false)}>
         <div className="p-4">
           <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line sm:hidden" />
-          <h3 className="px-1 text-h4 text-ink">Relationship</h3>
-          <div className="mt-3 flex items-center gap-2 rounded-2xl border border-line bg-ivory px-3.5 py-2.5">
+          <div className="flex items-center gap-2 rounded-2xl border border-line bg-ivory px-4 py-3">
             <Search className="h-4 w-4 shrink-0 text-muted" strokeWidth={1.75} />
-            <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search…" className="w-full bg-transparent text-body-sm text-ink placeholder:text-muted/70 focus:outline-none" />
+            <input
+              autoFocus
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search relationship"
+              className="w-full bg-transparent text-body-sm text-ink placeholder:text-muted/70 focus:outline-none"
+            />
           </div>
-          <ul className="mt-3 flex max-h-[46vh] flex-col gap-1 overflow-y-auto pb-2">
+          <ul className="mt-2 flex max-h-[40vh] flex-col overflow-y-auto">
             {filtered.map((o) => {
-              const active = o.key === value
+              const active = o === value
               return (
-                <li key={o.key}>
+                <li key={o}>
                   <button
                     type="button"
-                    onClick={() => { onChange(o.key); setOpen(false) }}
-                    className={cn('flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-left transition-colors', active ? 'bg-accent-soft' : 'hover:bg-accent-soft/40')}
+                    onClick={() => { onChange(o); setOpen(false) }}
+                    className={cn(
+                      'flex w-full items-center justify-between rounded-xl px-4 py-2.5 text-left text-body text-ink transition-colors',
+                      active ? 'bg-accent-soft font-medium' : 'hover:bg-accent-soft/40',
+                    )}
                   >
-                    <span className="text-xl" aria-hidden>{o.emoji}</span>
-                    <span className="flex-1 text-body font-medium text-ink">{o.key}</span>
-                    {active && <Check className="h-5 w-5 text-green" strokeWidth={2.25} />}
+                    {o}
+                    {active && <Check className="h-4 w-4 shrink-0 text-green" strokeWidth={2.5} />}
                   </button>
                 </li>
               )
             })}
-            {filtered.length === 0 && <li className="px-3.5 py-6 text-center text-body-sm text-muted">No matches.</li>}
+            {filtered.length === 0 && <li className="px-4 py-6 text-center text-body-sm text-muted">No matches.</li>}
           </ul>
         </div>
       </Overlay>

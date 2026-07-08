@@ -52,19 +52,10 @@ export const PROTECT_OPTIONS = [
   { key: 'Self', label: 'Myself', emoji: '🙋' },
 ] as const
 
-/** Relationship options for the Add Family Member selector (each with a simple icon). */
+/** Relationship options for the Add Family Member selector. */
 export const RELATIONSHIP_OPTIONS = [
-  { key: 'Father', emoji: '👨' },
-  { key: 'Mother', emoji: '👩' },
-  { key: 'Spouse', emoji: '💍' },
-  { key: 'Son', emoji: '🧑' },
-  { key: 'Daughter', emoji: '👧' },
-  { key: 'Grandfather', emoji: '👴' },
-  { key: 'Grandmother', emoji: '👵' },
-  { key: 'Brother', emoji: '👦' },
-  { key: 'Sister', emoji: '👩‍🦰' },
-  { key: 'Self', emoji: '🙋' },
-  { key: 'Other', emoji: '👤' },
+  'Father', 'Mother', 'Spouse', 'Son', 'Daughter',
+  'Grandfather', 'Grandmother', 'Brother', 'Sister', 'Self', 'Other',
 ] as const
 
 /** City suggestions for the Add Family Member autocomplete (free text allowed). */

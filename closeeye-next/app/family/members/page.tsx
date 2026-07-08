@@ -16,8 +16,8 @@ export default function MembersPage() {
       <div className="flex items-end justify-between gap-4">
         <PageHeader title="Your family" subtitle="The people you’re caring for." />
         {lovedOnes.length > 0 && (
-          <Button asChild size="sm">
-            <Link href="/family/add"><UserPlus className="h-4 w-4" strokeWidth={2} /> Add</Link>
+          <Button asChild size="md">
+            <Link href="/family/add"><UserPlus className="h-5 w-5" strokeWidth={2} /> Add member</Link>
           </Button>
         )}
       </div>

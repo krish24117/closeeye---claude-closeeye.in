@@ -31,6 +31,7 @@ export default function AddFamilyMemberPage() {
   const valid = fullName.trim().length >= 2 && relationship.length > 0 && city.trim().length >= 2
 
   async function submit() {
+    if (busy) return // guard against rapid double-clicks → only one record
     setError('')
     if (!valid) return setError('Please add a name, relationship and city.')
     setBusy(true)
