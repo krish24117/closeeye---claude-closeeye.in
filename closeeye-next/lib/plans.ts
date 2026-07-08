@@ -49,14 +49,12 @@ export const PLANS: Plan[] = [
     price: '₹1,500',
     period: '/month',
     popular: true,
-    description: 'Someone you trust visits your loved one every month.',
+    description: 'A verified CloseEye Guardian visits your loved one every month and keeps your family connected.',
     benefits: [
-      'Everything in Connect',
-      'Monthly wellbeing visit',
-      'Verified Guardian',
-      'Photos & visit report',
+      'Everything in CloseEye Connect',
+      'One monthly wellbeing visit',
+      'Visit report with photos',
       'Medicine verification',
-      'Home observation',
       'Priority scheduling',
     ],
     cta: 'Choose Care',
@@ -70,9 +68,9 @@ export function planById(id?: string | null): Plan | null {
 
 /** Other à-la-carte services (not memberships). "Starting at" wording, locked. */
 export const SERVICES = [
-  { name: 'Home Wellbeing Visit', price: 'Starting at ₹1,000', note: 'Extra visits, or one-off, on any plan' },
-  { name: 'Hospital Companion', price: 'Starting at ₹2,000', note: 'Accompaniment, admission & discharge help' },
-  { name: 'Custom Request', price: 'Starting at ₹500', note: 'Groceries, pickups, festival & temple visits, and more' },
+  { name: 'Home Wellbeing Visit', price: 'Starting at ₹1,000', note: 'Book an additional wellbeing visit whenever needed.' },
+  { name: 'Hospital Companion', price: 'Starting at ₹2,000', note: 'Accompaniment, admission support and family coordination.' },
+  { name: 'Custom Request', price: 'Starting at ₹500', note: 'Groceries, medicines, festivals, documents and other family requests.' },
 ] as const
 
 /** "Who are you protecting?" → the loved one's relationship stored on the row. */
