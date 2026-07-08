@@ -31,6 +31,33 @@ export async function selectPlan(userId: string, planId: PlanId): Promise<{ erro
   return { error: error?.message ?? null }
 }
 
+/**
+ * Save the Profile module's editable fields. Name + mobile go to the `profiles`
+ * row; language + emergency contact live on the user's own metadata (no schema
+ * change). Metadata is the authoritative source for name/language.
+ */
+export async function saveMyProfile(
+  userId: string,
+  input: { fullName: string; phone?: string; language?: string; emergencyName?: string; emergencyPhone?: string },
+): Promise<{ error: string | null }> {
+  const full_name = input.fullName.trim()
+  const phone = input.phone?.trim() || null
+  try {
+    await supabase.from('profiles').update({ full_name, phone }).eq('id', userId)
+  } catch {
+    /* best-effort; the metadata below is authoritative for name */
+  }
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      full_name,
+      language: (input.language ?? '').trim(),
+      emergency_contact_name: (input.emergencyName ?? '').trim(),
+      emergency_contact_phone: (input.emergencyPhone ?? '').trim(),
+    },
+  })
+  return { error: error?.message ?? null }
+}
+
 /** The user's current membership subscription, or null if none selected yet. */
 export async function fetchMySubscription(userId: string): Promise<Subscription | null> {
   const { data, error } = await supabase
