@@ -8,6 +8,8 @@ export interface Profile {
   id: string
   full_name: string | null
   role: string | null
+  /** Staff sub-role: super_admin | presence_manager | companion | doctor (null = not staff). */
+  admin_role: string | null
   phone: string | null
   whatsapp_number: string | null
   address: string | null

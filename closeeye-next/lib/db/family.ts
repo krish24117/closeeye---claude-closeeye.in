@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { BookingRequest, LovedOne, NewLovedOne, Profile } from '@/lib/db/types'
 
-const PROFILE_COLS = 'id, full_name, role, phone, whatsapp_number, address'
+const PROFILE_COLS = 'id, full_name, role, admin_role, phone, whatsapp_number, address'
 const LOVED_ONE_COLS =
   'id, family_user_id, full_name, relationship, age, city, address, phone_number, medical_notes, doctor_name, nearest_hospital, emergency_contact_name, emergency_contact_phone, created_at'
 

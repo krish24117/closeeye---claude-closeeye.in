@@ -9,6 +9,7 @@ import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchAdminThreads, type AdminThread } from '@/lib/db/messages'
 import type { Message } from '@/lib/db/types'
+import { canUseConsole } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 
 type Filter = 'all' | 'awaiting'
@@ -31,17 +32,17 @@ function rowTime(iso: string): string {
 
 export default function ConsoleMessagesPage() {
   const { profile, loading } = useFamilyData()
-  const isAdmin = profile?.role === 'admin'
+  const isStaff = canUseConsole(profile)
   const [threads, setThreads] = React.useState<AdminThread[] | null>(null)
   const [filter, setFilter] = React.useState<Filter>('all')
   const [q, setQ] = React.useState('')
 
   React.useEffect(() => {
-    if (!isAdmin) return
+    if (!isStaff) return
     fetchAdminThreads()
       .then(setThreads)
       .catch(() => setThreads([]))
-  }, [isAdmin])
+  }, [isStaff])
 
   if (loading) {
     return (
@@ -51,7 +52,7 @@ export default function ConsoleMessagesPage() {
     )
   }
 
-  if (!isAdmin) {
+  if (!isStaff) {
     return (
       <div className="flex flex-col gap-6">
         <div>

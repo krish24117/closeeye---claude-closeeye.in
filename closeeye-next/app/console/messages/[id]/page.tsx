@@ -9,19 +9,20 @@ import { EmptyState } from '@/components/ui/states'
 import { Button } from '@/components/ui/button'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchAdminThreadMeta, type AdminThreadRef } from '@/lib/db/messages'
+import { canUseConsole } from '@/lib/roles'
 
 export default function ConsoleThreadPage() {
   const params = useParams<{ id: string }>()
   const { profile, loading } = useFamilyData()
-  const isAdmin = profile?.role === 'admin'
+  const isStaff = canUseConsole(profile)
   const [meta, setMeta] = React.useState<AdminThreadRef | null | undefined>(undefined) // undefined = still loading
 
   React.useEffect(() => {
-    if (!isAdmin || !params.id) return
+    if (!isStaff || !params.id) return
     fetchAdminThreadMeta(params.id)
       .then(setMeta)
       .catch(() => setMeta(null))
-  }, [isAdmin, params.id])
+  }, [isStaff, params.id])
 
   if (loading) {
     return (
@@ -31,7 +32,7 @@ export default function ConsoleThreadPage() {
     )
   }
 
-  if (!isAdmin) {
+  if (!isStaff) {
     return (
       <div className="flex flex-col gap-6">
         <div>
