@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Close Eye</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: #F6F3EC;
+      color: #0E2A1F;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: env(safe-area-inset-top) 2rem env(safe-area-inset-bottom);
+      -webkit-font-smoothing: antialiased;
+    }
+    .mark { width: 76px; height: 76px; animation: pulse 2.4s ease-in-out infinite; }
+    .word { margin-top: 1.25rem; font-size: 1.9rem; font-weight: 800; letter-spacing: -.03em; text-transform: lowercase; }
+    .tag { margin-top: .6rem; color: #5B6B62; font-size: 1rem; }
+    .hint { margin-top: 2rem; color: #9aa79f; font-size: .82rem; }
+    @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .78; transform: scale(.965); } }
+    @media (prefers-reduced-motion: reduce) { .mark { animation: none; } }
+  </style>
+</head>
+<body>
+  <div>
+    <svg class="mark" viewBox="6.2 27.95 229.6 229.6" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Close Eye">
+      <defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a8ff3e"/><stop offset="100%" stop-color="#1a6b3a"/></linearGradient></defs>
+      <path fill="url(#g)" fill-rule="evenodd" d="M 119.5 46 C 124.5 45.67 131.5 46.67 136 48.5 C 140.5 50.33 143.75 52.92 146.5 57 C 149.25 61.08 151.33 66.83 152.5 73 C 153.67 79.17 151.92 88.58 153.5 94 C 155.08 99.42 158.58 102.75 162 105.5 C 165.42 108.25 167.67 108.83 174 110.5 C 180.33 112.17 193.5 113.67 200 115.5 C 206.5 117.33 209.75 119.42 213 121.5 C 216.25 123.58 217.75 125.25 219.5 128 C 221.25 130.75 223 133.83 223.5 138 C 224 142.17 224.42 148.25 222.5 153 C 220.58 157.75 215.42 163.42 212 166.5 C 208.58 169.58 209 169.67 202 171.5 C 195 173.33 177.42 174.92 170 177.5 C 162.58 180.08 160.42 183.42 157.5 187 C 154.58 190.58 153.83 193 152.5 199 C 151.17 205 151.75 216.92 149.5 223 C 147.25 229.08 142.25 232.75 139 235.5 C 135.75 238.25 134.17 238.83 130 239.5 C 125.83 240.17 118.92 240.92 114 239.5 C 109.08 238.08 103.92 235.08 100.5 231 C 97.08 226.92 95 221.17 93.5 215 C 92 208.83 92.92 199.25 91.5 194 C 90.08 188.75 88.42 186.42 85 183.5 C 81.58 180.58 77.33 178.33 71 176.5 C 64.67 174.67 53.5 174.17 47 172.5 C 40.5 170.83 35.92 168.75 32 166.5 C 28.08 164.25 25.75 162.08 23.5 159 C 21.25 155.92 19.17 152 18.5 148 C 17.83 144 18.5 138.67 19.5 135 C 20.5 131.33 22.42 128.58 24.5 126 C 26.58 123.42 28.08 121.58 32 119.5 C 35.92 117.42 41 115.17 48 113.5 C 55 111.83 67.58 111.58 74 109.5 C 80.42 107.42 83.75 103.75 86.5 101 C 89.25 98.25 89.5 98.33 90.5 93 C 91.5 87.67 91.5 74.5 92.5 69 C 93.5 63.5 94.25 63.08 96.5 60 C 98.75 56.92 102.17 52.83 106 50.5 C 109.83 48.17 114.5 46.33 119.5 46 Z"/>
+      <path fill="#4ade80" d="M 47.5 183 C 53 183 61.33 184.33 66 187.5 C 70.67 190.67 73.92 197.42 75.5 202 C 77.08 206.58 76 211.67 75.5 215 C 75 218.33 74.58 219.25 72.5 222 C 70.42 224.75 66.08 229.42 63 231.5 C 59.92 233.58 58.5 234.5 54 234.5 C 49.5 234.5 40.58 233.58 36 231.5 C 31.42 229.42 28.58 225.08 26.5 222 C 24.42 218.92 24 216.33 23.5 213 C 23 209.67 22.83 205.33 23.5 202 C 24.17 198.67 25.92 195.42 27.5 193 C 29.08 190.58 29.67 189.17 33 187.5 C 36.33 185.83 42 183 47.5 183 Z M 47.5 197 C 50.08 196.58 53.67 196.83 56 198.5 C 58.33 200.17 60.92 204.25 61.5 207 C 62.08 209.75 61.08 212.92 59.5 215 C 57.92 217.08 54.58 218.92 52 219.5 C 49.42 220.08 46.25 219.92 44 218.5 C 41.75 217.08 39.08 213.92 38.5 211 C 37.92 208.08 39 203.33 40.5 201 C 42 198.67 44.92 197.42 47.5 197 Z"/>
+    </svg>
+    <div class="word">close eye</div>
+    <div class="tag">Care beyond presence</div>
+    <div class="hint">Connecting you to your family…</div>
+  </div>
+</body>
+</html>

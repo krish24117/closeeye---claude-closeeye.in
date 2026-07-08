@@ -1,0 +1,4 @@
+# This Vercel project deploys ONLY the Vite app (src/) for closeeye.in.
+# The V2 app (closeeye-next) has its own Vercel project and must NOT be uploaded
+# or processed by this build — excluding it keeps deploys small and correct.
+closeeye-next

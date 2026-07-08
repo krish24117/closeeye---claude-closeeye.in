@@ -1,0 +1,102 @@
+# Close Eye — Android CI/CD
+#
+# Preview:    debug APK on every PR / push to main  (no secrets needed)
+# Production: signed .aab on a version tag (v1.2.3)  (needs the ANDROID_* secrets)
+#
+# NOTE: the app lives in the `closeeye-next/` subfolder of this repo, so run steps use
+# `working-directory: closeeye-next` and artifact paths are prefixed accordingly.
+
+name: Android
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: closeeye-next
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync Capacitor (Android)
+        run: npx cap sync android
+
+      # ── Preview build: unsigned debug APK (PRs, branch pushes) ──
+      - name: Build debug APK
+        if: github.ref_type != 'tag'
+        working-directory: closeeye-next/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload debug APK
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: closeeye-debug-apk
+          path: closeeye-next/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      # ── Production build: signed App Bundle (version tags only) ──
+      # Signs via AGP's injected-signing properties — no build.gradle edits needed.
+      - name: Build & sign release AAB
+        if: github.ref_type == 'tag'
+        working-directory: closeeye-next/android
+        env:
+          STORE_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PW: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          chmod +x ./gradlew
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/closeeye.jks"
+          ./gradlew bundleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/closeeye.jks" \
+            -Pandroid.injected.signing.store.password="$STORE_PW" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PW"
+
+      - name: Upload release AAB
+        if: github.ref_type == 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: closeeye-release-aab
+          path: closeeye-next/android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      # ── Optional: publish to Play Internal testing (uncomment + add the service account) ──
+      # - name: Upload to Google Play (internal)
+      #   if: github.ref_type == 'tag'
+      #   uses: r0adkll/upload-google-play@v1
+      #   with:
+      #     serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+      #     packageName: in.closeeye.app
+      #     releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+      #     track: internal
+      #     status: completed

@@ -1,0 +1,8 @@
+export { Hero } from './hero'
+export { Services } from './services'
+export { HowItWorks } from './how-it-works'
+export { Trust } from './trust'
+export { Testimonials } from './testimonials'
+export { Faq } from './faq'
+export { FinalCta } from './final-cta'
+export { FounderTeaser } from './founder-teaser'
