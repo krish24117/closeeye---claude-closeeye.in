@@ -89,9 +89,8 @@ export default function FamilyBookPage() {
         <p className="max-w-sm text-body text-muted">
           Your Presence Manager will confirm {member?.full_name?.split(' ')[0]}’s {service?.name.toLowerCase()} shortly. Your reference is <span className="font-semibold text-ink">{ref}</span>.
         </p>
-        <div className="mt-2 flex flex-wrap justify-center gap-3">
+        <div className="mt-2">
           <Button asChild><Link href="/family/visits">View visits</Link></Button>
-          <Button asChild variant="secondary"><Link href="/family">Back to overview</Link></Button>
         </div>
       </div>
     )
