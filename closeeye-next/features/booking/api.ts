@@ -1,25 +1,56 @@
+import { supabase } from '@/lib/supabase'
 import type { BookingData } from './schema'
-import { serviceById } from './schema'
+import { serviceById, TIME_SLOTS } from './schema'
 import { SITE, whatsappLink } from '@/lib/site'
 
 export interface BookingResult {
   ref: string
 }
 
+/** Wizard service ids → the edge function's canonical price ids (server prices it). */
+const CANONICAL_SERVICE_ID: Record<string, string> = {
+  'home-wellbeing-visit': 'home_visit',
+  'hospital-companion': 'hospital_assistance_half_day',
+  'custom-request': 'grocery_medicine',
+}
+
 /**
- * Submit a booking. Posts to the API placeholder at /api/bookings.
- * Throws on failure so the wizard can show the (warm) error state.
+ * Submit a booking request. Persists via the `submit-booking-request` edge
+ * function (server-authoritative pricing + admin notify + booking_requests
+ * insert). Works for guests and signed-in users. Throws on failure so the
+ * wizard shows its warm error state.
  */
 export async function submitBooking(data: Partial<BookingData>): Promise<BookingResult> {
-  const res = await fetch('/api/bookings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+  const svc = serviceById(data.serviceId)
+  const slot = TIME_SLOTS.find((t) => t.id === data.timeSlot)?.label
+  const dateIso = data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : null
+  const notes =
+    [
+      data.date && `Requested date: ${data.date}`,
+      slot && `Preferred time: ${slot}`,
+      data.purpose && `Purpose: ${data.purpose}`,
+      data.details,
+      data.notes,
+    ]
+      .filter(Boolean)
+      .join(' · ') || null
+
+  const { data: res, error } = await supabase.functions.invoke('submit-booking-request', {
+    body: {
+      service_id: (data.serviceId && CANONICAL_SERVICE_ID[data.serviceId]) || data.serviceId,
+      service_name: svc?.name ?? 'Visit',
+      scheduled_at_ist: dateIso,
+      recipient_name: data.name,
+      recipient_address: data.address,
+      requester_whatsapp: data.whatsapp || data.phone,
+      notes,
+    },
   })
-  if (!res.ok) throw new Error('booking_failed')
-  const json = (await res.json()) as { ok: boolean; ref?: string }
-  if (!json.ok || !json.ref) throw new Error('booking_failed')
-  return { ref: json.ref }
+
+  const json = res as { ok?: boolean; request_id?: string } | null
+  if (error || !json?.ok || !json.request_id) throw new Error('booking_failed')
+  // Friendly, ops-findable reference (prefix of the request uuid).
+  return { ref: `CE-${json.request_id.replace(/-/g, '').slice(0, 8).toUpperCase()}` }
 }
 
 /**
