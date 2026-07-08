@@ -92,7 +92,7 @@ export default function MembershipPage() {
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-success/12 px-2.5 py-1 text-caption font-semibold text-success"><Check className="h-3 w-3" strokeWidth={3} /> Active</span>
                     ) : (
                       <>
-                        <span className="inline-flex items-center rounded-full bg-ink/[0.06] px-2.5 py-1 text-caption font-semibold text-muted">Selected</span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-success/12 px-2.5 py-1 text-caption font-semibold text-success"><Check className="h-3 w-3" strokeWidth={3} /> Selected</span>
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/12 px-2.5 py-1 text-caption font-semibold text-warning"><span className="h-1.5 w-1.5 rounded-full bg-warning" /> Payment pending</span>
                       </>
                     )}
