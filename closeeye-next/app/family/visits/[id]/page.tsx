@@ -1,66 +1,118 @@
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import { ArrowLeft, MessageCircle, CalendarClock } from 'lucide-react'
-import { VisitStatusBadge, MoodBadge } from '@/components/family/badges'
-import { Avatar } from '@/components/family/avatar'
-import { VisitExperience } from '@/components/family/visit-experience'
-import { Button } from '@/components/ui/button'
-import { VISITS, PRESENCE_MANAGER } from '@/lib/family-data'
-import { whatsappLink } from '@/lib/site'
+'use client'
 
-export function generateStaticParams() {
-  return VISITS.map((v) => ({ id: v.id }))
+import * as React from 'react'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
+import { ArrowLeft, CalendarClock, FileText, Loader2, MessageCircle } from 'lucide-react'
+import { Avatar } from '@/components/family/avatar'
+import { initialsOf } from '@/components/family/loved-one-card'
+import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/states'
+import { useAuth } from '@/components/auth/auth-provider'
+import { fetchMyBookingRequests } from '@/lib/db/family'
+import { whatsappLink } from '@/lib/site'
+import type { BookingRequest } from '@/lib/db/types'
+import { cn } from '@/lib/utils'
+
+type Tone = 'green' | 'amber' | 'grey'
+const toneCls: Record<Tone, string> = {
+  green: 'bg-success/12 text-success',
+  amber: 'bg-warning/12 text-warning',
+  grey: 'bg-ink/[0.06] text-muted',
+}
+function statusMeta(status: string): { label: string; tone: Tone } {
+  switch (status) {
+    case 'paid': return { label: 'Scheduled', tone: 'green' }
+    case 'scheduled':
+    case 'companion_confirmed':
+    case 'confirmed': return { label: 'Confirmed', tone: 'green' }
+    case 'cancelled': return { label: 'Cancelled', tone: 'grey' }
+    case 'needs_details': return { label: 'Needs details', tone: 'amber' }
+    default: return { label: 'Requested', tone: 'amber' }
+  }
+}
+function fmtDate(iso: string | null): string {
+  if (!iso) return 'Date to be confirmed'
+  try {
+    return new Date(iso).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
+  } catch {
+    return 'Date to be confirmed'
+  }
 }
 
-export default async function VisitDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const visit = VISITS.find((v) => v.id === id)
-  if (!visit) notFound()
+export default function VisitDetailPage() {
+  const params = useParams<{ id: string }>()
+  const { user } = useAuth()
+  const [visit, setVisit] = React.useState<BookingRequest | null | undefined>(undefined)
 
-  const initials = visit.memberName.split(' ').map((w) => w[0]).join('')
+  React.useEffect(() => {
+    if (!user?.id) { setVisit(null); return }
+    fetchMyBookingRequests(user.id)
+      .then((rows) => setVisit(rows.find((r) => r.id === params.id) ?? null))
+      .catch(() => setVisit(null))
+  }, [user?.id, params.id])
+
+  const back = (
+    <Button asChild variant="text" className="self-start">
+      <Link href="/family/visits"><ArrowLeft className="h-4 w-4" strokeWidth={1.5} /> All visits</Link>
+    </Button>
+  )
+
+  if (visit === undefined) {
+    return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
+  }
+
+  if (!visit) {
+    return (
+      <div className="flex flex-col gap-6">
+        {back}
+        <EmptyState
+          icon={CalendarClock}
+          title="Visit not found"
+          hint="This visit may have been cancelled or belongs to another account."
+          action={<Button asChild><Link href="/family/visits">Back to visits</Link></Button>}
+        />
+      </div>
+    )
+  }
+
+  const name = visit.recipient_name?.trim() || 'Your family'
+  const m = statusMeta(visit.status)
 
   return (
     <div className="flex flex-col gap-6">
-      <Button asChild variant="text" className="self-start">
-        <Link href="/family/visits">
-          <ArrowLeft className="h-4 w-4" strokeWidth={1.5} /> All visits
-        </Link>
-      </Button>
+      {back}
 
-      {/* Header */}
       <header className="flex flex-wrap items-center gap-4 rounded-lg border border-line bg-card p-6 shadow-sm">
-        <Avatar initials={initials} size="lg" />
+        <Avatar initials={initialsOf(name)} size="lg" tone="solid" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-h3">{visit.memberName}</h1>
-            <VisitStatusBadge status={visit.status} />
-            {visit.mood && <MoodBadge mood={visit.mood} />}
+            <h1 className="text-h3">{visit.service_name?.trim() || 'Wellbeing visit'}</h1>
+            <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold', toneCls[m.tone])}>{m.label}</span>
           </div>
-          <p className="mt-1 text-body-sm text-muted">
-            {visit.serviceName} · {visit.dateLabel} · {visit.timeLabel} · with {visit.guardianName}
-          </p>
+          <p className="mt-1 text-body-sm text-muted">For {name} · {fmtDate(visit.scheduled_at)}</p>
         </div>
       </header>
 
-      {visit.status === 'upcoming' ? (
-        <section className="rounded-lg border border-line bg-card p-6 shadow-sm">
-          <h2 className="flex items-center gap-2 text-h4">
-            <CalendarClock className="h-5 w-5 text-green" strokeWidth={1.5} /> This visit is scheduled
-          </h2>
-          <p className="mt-4 text-body text-muted">
-            {visit.summary} We&apos;ll share the story, photos, a warm summary and the full wellbeing
-            report right here as soon as the visit is complete.
-          </p>
-          <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
-            <Button asChild size="sm"><Link href="/family/messages"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Message Presence Manager</Link></Button>
-            <Button asChild variant="secondary" size="sm">
-              <a href={whatsappLink(`Hi ${PRESENCE_MANAGER.name.split(' ')[0]} — I'd like to reschedule ${visit.memberName}'s visit on ${visit.dateLabel}.`)}>Reschedule</a>
-            </Button>
-          </div>
-        </section>
-      ) : (
-        <VisitExperience visit={visit} />
-      )}
+      <section className="rounded-lg border border-line bg-card p-6 shadow-sm">
+        <h2 className="flex items-center gap-2 text-h4">
+          <CalendarClock className="h-5 w-5 text-green" strokeWidth={1.5} /> {visit.status === 'cancelled' ? 'This visit was cancelled' : 'This visit is being arranged'}
+        </h2>
+        <p className="mt-4 text-body text-muted">
+          Your Presence Manager coordinates the details and keeps you updated. You&apos;ll see the full report and photos here once the visit is complete.
+        </p>
+        <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
+          <Button asChild size="sm"><Link href="/family/messages"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Message Presence Manager</Link></Button>
+          <Button asChild variant="secondary" size="sm">
+            <a href={whatsappLink(`Hi Close Eye — I'd like to reschedule ${name}'s visit.`)} target="_blank" rel="noreferrer">Reschedule</a>
+          </Button>
+        </div>
+      </section>
+
+      <section className="flex items-center gap-3 rounded-lg border border-dashed border-line bg-card/50 p-5">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><FileText className="h-5 w-5" strokeWidth={1.5} /></span>
+        <p className="text-body-sm text-muted">The visit report and photos will appear here after this visit is completed.</p>
+      </section>
     </div>
   )
 }

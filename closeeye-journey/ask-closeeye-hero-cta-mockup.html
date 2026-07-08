@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Close Eye — hero with CTA mockup</title>
+<link href="https://fonts.cdnfonts.com/css/open-sauce-sans" rel="stylesheet">
+<style>
+  :root{
+    --forest:#0E2A1F;--forest-2:#163b2c;--cream:#FAF7F2;--cream-2:#f1ece2;
+    --sage:#A8D5B5;--sage-2:#7FBF94;--gold:#D4A24E;--muted:#5c6b62;--line:#e3ddd1;
+    --font:'Open Sauce Sans','Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:#d9d4ca;color:var(--forest);-webkit-font-smoothing:antialiased;line-height:1.5}
+
+  .frame{max-width:430px;margin:24px auto;background:var(--cream);border-radius:30px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.28);border:1px solid #cfc9bd}
+  .notch{height:30px;background:var(--forest);display:flex;align-items:center;justify-content:center}
+  .notch span{width:90px;height:7px;background:#0a1f17;border-radius:99px}
+
+  /* HERO */
+  .hero{background:radial-gradient(120% 90% at 80% 0%, #1c4a35 0%, var(--forest) 55%);color:var(--cream);padding:22px 22px 64px;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;right:-40px;top:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,#2a6347,transparent 70%);opacity:.5}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin-bottom:24px;position:relative;z-index:1}
+  .spark{width:20px;height:20px}
+  .hero h1{font-size:29px;line-height:1.1;letter-spacing:-.025em;max-width:14ch;position:relative;z-index:1}
+  .hero h1 em{font-style:normal;color:var(--sage-2)}
+  .hero .lead{margin-top:11px;font-size:14px;color:#cdd9cf;max-width:32ch;position:relative;z-index:1}
+  .hero .tag{margin-top:14px;font-size:12px;color:var(--sage);font-style:italic;border-left:2px solid var(--sage-2);padding-left:10px;position:relative;z-index:1}
+
+  /* PRIMARY CTA */
+  .cta-row{margin-top:22px;display:flex;flex-direction:column;gap:11px;position:relative;z-index:1}
+  .btn-primary{display:flex;align-items:center;justify-content:center;gap:9px;background:var(--sage-2);color:var(--forest);text-decoration:none;font-weight:800;font-size:15.5px;padding:15px 18px;border-radius:14px;box-shadow:0 8px 20px rgba(127,191,148,.25)}
+  .btn-primary .price{font-size:12px;font-weight:700;background:var(--forest);color:var(--sage-2);padding:3px 9px;border-radius:999px}
+  .secondary-link{text-align:center;color:#bcd0c2;font-size:13px;font-weight:600;text-decoration:none}
+  .secondary-link u{text-decoration:none;border-bottom:1px solid #5c7a68;padding-bottom:1px}
+
+  /* ASK CLOSE EYE — integrated secondary CTA, card overlaps hero bottom */
+  .ask-shell{margin:-44px 14px 0;position:relative;z-index:2}
+  .ask-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px 15px 17px;box-shadow:0 14px 34px rgba(14,42,31,.14)}
+  .ask-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .ask-head .t{font-size:15px;font-weight:800;display:flex;align-items:center;gap:7px}
+  .ask-head .t svg{width:17px;height:17px}
+  .free{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#2c6b43;background:#eaf5ee;border:1px solid #cfe6d7;padding:4px 9px;border-radius:999px}
+  .ask-card .sub{font-size:12.5px;color:var(--muted);margin-top:5px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .chip{font-size:12px;font-weight:600;color:var(--forest-2);background:var(--cream);border:1px solid var(--sage);border-radius:999px;padding:7px 11px;cursor:pointer;transition:all .15s ease;line-height:1.2}
+  .chip:hover{background:var(--sage)}
+
+  .inputrow{display:flex;gap:8px;margin-top:12px}
+  .inputrow input{flex:1;font-family:var(--font);font-size:13.5px;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:var(--cream);color:var(--forest);outline:none}
+  .inputrow input:focus{border-color:var(--sage-2);background:#fff}
+  .inputrow button{flex:0 0 auto;background:var(--forest);color:var(--cream);border:0;border-radius:12px;padding:0 15px;font-weight:700;font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:5px}
+  .inputrow button:active{transform:scale(.98)}
+
+  .answer{margin-top:12px;display:none}
+  .answer.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .qline{font-size:12.5px;color:var(--forest);background:#eef6f0;border:1px solid #d6e8db;border-radius:11px;padding:8px 11px;margin-bottom:8px;font-weight:600}
+  .abubble{background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:12px 13px;font-size:13px;line-height:1.5;color:#243831}
+  .disc{display:block;margin-top:8px;font-size:10.5px;color:#7e8b83;font-style:italic;border-top:1px solid #e7e2d7;padding-top:6px}
+  .typing{display:flex;gap:4px;padding:5px 2px}
+  .typing i{width:6px;height:6px;border-radius:50%;background:var(--sage-2);animation:bounce 1s infinite}
+  .typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
+
+  .nudge{margin-top:11px;background:linear-gradient(100deg,#0E2A1F,#163b2c);color:var(--cream);border-radius:13px;padding:12px 13px;display:none}
+  .nudge.show{display:block;animation:fade .4s ease}
+  .nudge .nt{font-size:13px;font-weight:700}
+  .nudge a{display:inline-block;margin-top:9px;background:var(--sage-2);color:var(--forest);text-decoration:none;font-weight:700;font-size:12px;padding:7px 13px;border-radius:999px}
+
+  .trust{display:flex;align-items:center;gap:6px;margin-top:13px;font-size:11px;color:var(--muted)}
+
+  /* what's below, to show the hero in context */
+  .below{padding:26px 22px 30px;text-align:center}
+  .below .k{font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:var(--sage-2);font-weight:700}
+  .below h3{font-size:18px;margin-top:7px;letter-spacing:-.01em}
+  .steps{display:flex;gap:10px;margin-top:16px}
+  .step{flex:1;background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 8px}
+  .step .n{width:26px;height:26px;border-radius:8px;background:var(--forest);color:var(--sage);display:grid;place-items:center;font-weight:700;font-size:13px;margin:0 auto 8px}
+  .step p{font-size:11px;color:var(--muted);line-height:1.3}
+
+  .caption{max-width:430px;margin:0 auto 30px;padding:0 18px;color:#4a443b;font-size:12.5px;text-align:center}
+  .caption b{color:#2a2520}
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <div class="notch"><span></span></div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="brand">
+      <svg class="spark" viewBox="0 0 24 24" fill="none"><path d="M12 1l2.4 7.2L22 11l-7.6 2.4L12 21l-2.4-7.6L2 11l7.6-2.8L12 1z" fill="url(#g)"/><circle cx="4.5" cy="19" r="1.6" fill="#7FBF94"/><defs><linearGradient id="g" x1="2" y1="1" x2="22" y2="21"><stop stop-color="#A8D5B5"/><stop offset="1" stop-color="#7FBF94"/></linearGradient></defs></svg>
+      close eye
+    </div>
+
+    <h1>Care for your parents in India, <em>even from afar.</em></h1>
+    <p class="lead">A trusted companion who visits, checks in, and keeps you updated — so you have peace of mind, wherever you are.</p>
+    <div class="tag">When you can't be there, Close Eye can.</div>
+
+    <div class="cta-row">
+      <a class="btn-primary" href="#">Claim your founding spot <span class="price">Start ₹100</span></a>
+      <a class="secondary-link" href="#"><u>See how it works</u></a>
+    </div>
+  </section>
+
+  <!-- ASK CLOSE EYE — secondary CTA, overlapping the hero -->
+  <div class="ask-shell">
+    <div class="ask-card">
+      <div class="ask-head">
+        <div class="t">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 1l2.4 7.2L22 11l-7.6 2.4L12 21l-2.4-7.6L2 11l7.6-2.8L12 1z" fill="url(#g2)"/><defs><linearGradient id="g2" x1="2" y1="1" x2="22" y2="21"><stop stop-color="#A8D5B5"/><stop offset="1" stop-color="#7FBF94"/></linearGradient></defs></svg>
+          Or, ask us anything — free
+        </div>
+        <span class="free">Try now</span>
+      </div>
+      <p class="sub">A health question about your parent? Ask Close Eye, guided by our medical team.</p>
+
+      <div class="chips" id="chips"></div>
+
+      <div class="inputrow">
+        <input id="q" type="text" placeholder="Ask about your parent's health…" />
+        <button id="askBtn">Ask
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="#FAF7F2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <div class="answer" id="answer">
+        <div class="qline" id="qline"></div>
+        <div class="abubble" id="abubble"></div>
+      </div>
+
+      <div class="nudge" id="nudge">
+        <div class="nt">Want answers specific to your parent?</div>
+        <a href="#">Register your parent →</a>
+      </div>
+
+      <div class="trust">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-4z" stroke="#7FBF94" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="#7FBF94" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Guided by our medical team · General guidance, not a diagnosis
+      </div>
+    </div>
+  </div>
+
+  <!-- context below -->
+  <section class="below">
+    <div class="k">How it works</div>
+    <h3>Three simple steps</h3>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><p>Tell us about your parent</p></div>
+      <div class="step"><div class="n">2</div><p>We match a vetted companion</p></div>
+      <div class="step"><div class="n">3</div><p>You get updates every visit</p></div>
+    </div>
+  </section>
+</div>
+
+<p class="caption"><b>Mockup — hero with primary CTA.</b> Presence + "Claim your founding spot · Start ₹100" lead; Ask Close Eye is the secondary "try it free" hook. The answer is simulated; live, it calls your existing function with the cap and red-flag safety intact.</p>
+
+<script>
+  const samples = [
+    { q: "Is it normal for him to sleep more in the day?", a: "A bit more daytime rest can be normal as we age, and on its own it's often nothing alarming. Worth watching whether he sleeps well at night, eats normally, and is alert when awake. If it came on suddenly, comes with confusion, or he's hard to wake, that's worth a doctor's look." },
+    { q: "Foods that help with constipation?", a: "Gentle, regular help: more fibre (fruit, vegetables, soaked figs or prunes), plenty of water through the day, and a short daily walk. Go slowly so it stays comfortable. If it's been many days, painful, or there's blood, raise it with a doctor." },
+    { q: "How to make the bathroom safer?", a: "Most falls are preventable with small changes: grab bars by the toilet and shower, a non-slip mat, a sturdy shower stool, good lighting with a night light, and keeping the floor dry and clear. A raised toilet seat helps the knees too." },
+  ];
+  const generic = "That's a caring question. In the live app, Ask Close Eye answers warmly using what we know about your parent, and offers a doctor consult if it's something that needs one. This mockup just shows the feel.";
+  const DISC = "General guidance from Ask Close Eye, guided by our medical team. This isn't a substitute for professional medical advice.";
+
+  const chips = document.getElementById('chips');
+  const input = document.getElementById('q');
+  samples.forEach(s => { const c = document.createElement('button'); c.className='chip'; c.textContent=s.q; c.onclick=()=>{input.value=s.q;input.focus();}; chips.appendChild(c); });
+
+  const ans=document.getElementById('answer'), qline=document.getElementById('qline'), abubble=document.getElementById('abubble'), nudge=document.getElementById('nudge');
+  function ask(){
+    const q=input.value.trim(); if(!q){input.focus();return;}
+    const m=samples.find(s=>s.q.toLowerCase()===q.toLowerCase());
+    const t=m?m.a:generic;
+    qline.textContent=q; ans.classList.add('show'); nudge.classList.remove('show');
+    abubble.innerHTML='<div class="typing"><i></i><i></i><i></i></div>';
+    setTimeout(()=>{ abubble.innerHTML=t+'<span class="disc">'+DISC+'</span>'; setTimeout(()=>nudge.classList.add('show'),250); },900);
+  }
+  document.getElementById('askBtn').onclick=ask;
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')ask();});
+</script>
+</body>
+</html>

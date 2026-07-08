@@ -65,6 +65,21 @@ export default function VisitsPage() {
 
   React.useEffect(() => { reload() }, [reload])
 
+  // Payment is confirmed by the async webhook, so a single reload races it.
+  // Poll a few times until the booking flips to paid (M5).
+  const pollUntilPaid = React.useCallback(async (id: string) => {
+    for (let i = 0; i < 6; i++) {
+      if (!user?.id) break
+      const rows = await fetchMyBookingRequests(user.id).catch(() => null)
+      if (rows) {
+        setRequests(rows)
+        const row = rows.find((x) => x.id === id)
+        if (row && (row.payment_status === 'paid' || row.status === 'paid')) return
+      }
+      await new Promise((res) => setTimeout(res, 2000))
+    }
+  }, [user?.id])
+
   async function pay(r: BookingRequest) {
     if (paying) return
     setPaying(r.id)
@@ -78,8 +93,8 @@ export default function VisitsPage() {
         },
       })
       if (outcome.status === 'success') {
-        toast('Payment received — your visit is confirmed.')
-        reload()
+        toast('Payment received — confirming your visit…')
+        await pollUntilPaid(r.id)
       } else if (outcome.status === 'dismissed') {
         toast('Payment cancelled — you can pay anytime.')
       } else {

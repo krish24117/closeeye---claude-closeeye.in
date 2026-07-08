@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Close Eye — user flow</title>
+<link href="https://fonts.cdnfonts.com/css/open-sauce-sans" rel="stylesheet">
+<style>
+  :root{
+    --forest:#0E2A1F;--forest-2:#163b2c;--cream:#FAF7F2;--cream-2:#f1ece2;
+    --sage:#A8D5B5;--sage-2:#7FBF94;--gold:#D4A24E;--muted:#5c6b62;--line:#dfd9cd;
+    --font:'Open Sauce Sans','Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:var(--cream);color:var(--forest);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:780px;margin:0 auto;padding:34px 22px 60px}
+
+  .eyebrow{text-transform:uppercase;letter-spacing:.22em;font-size:11px;color:var(--sage-2);font-weight:700;margin-bottom:8px}
+  h1{font-size:27px;letter-spacing:-.02em;line-height:1.12}
+  h1 em{font-style:normal;color:var(--sage-2)}
+  .thesis{margin-top:12px;font-size:14.5px;color:var(--muted);background:#fff;border:1px solid var(--line);border-left:3px solid var(--sage-2);border-radius:0 10px 10px 0;padding:13px 16px}
+  .thesis b{color:var(--forest)}
+
+  .stage{margin-top:14px}
+  .stage-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700;margin:22px 0 9px}
+  .arrow{text-align:center;color:var(--sage-2);font-size:20px;margin:4px 0;line-height:1}
+
+  .box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 17px}
+  .box h3{font-size:16px;display:flex;align-items:center;gap:8px}
+  .box p{font-size:13px;color:var(--muted);margin-top:5px}
+
+  /* personas converging */
+  .personas{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  @media(max-width:620px){.personas{grid-template-columns:1fr}}
+  .p{background:#fff;border:1px solid var(--line);border-top:3px solid var(--forest);border-radius:13px;padding:13px 14px}
+  .p .who{font-size:14px;font-weight:700}
+  .p .d{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4}
+  .p .tag{display:inline-block;margin-top:8px;font-size:10.5px;font-weight:700;color:#2c6b43;background:#eaf5ee;border:1px solid #cfe6d7;padding:2px 8px;border-radius:999px}
+
+  /* two doors */
+  .doors{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:560px){.doors{grid-template-columns:1fr}}
+  .door{border-radius:13px;padding:15px 16px}
+  .door.ask{background:linear-gradient(120deg,#eef6f0,#e4f0e8);border:1px solid #cfe6d7}
+  .door.care{background:var(--forest);color:var(--cream)}
+  .door h3{font-size:15px;font-weight:800}
+  .door p{font-size:12.5px;margin-top:5px}
+  .door.ask p{color:#3a5a47}
+  .door.care p{color:#c8d5cb}
+  .door .pill{display:inline-block;margin-top:9px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px}
+  .door.ask .pill{background:var(--sage-2);color:var(--forest)}
+  .door.care .pill{background:var(--sage-2);color:var(--forest)}
+
+  /* onboarding branch */
+  .branch{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 17px}
+  .branch h3{font-size:16px}
+  .qq{font-size:13px;color:var(--muted);margin:6px 0 11px}
+  .opts{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  @media(max-width:620px){.opts{grid-template-columns:1fr}}
+  .opt{border:1px solid var(--line);border-radius:11px;padding:11px 12px;background:var(--cream)}
+  .opt .t{font-size:13px;font-weight:700}
+  .opt .s{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+  .steps3{display:flex;gap:8px;margin-top:13px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+  .steps3 span{background:var(--cream-2);border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-weight:600}
+
+  /* dashboard */
+  .dash{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 17px}
+  .dash h3{font-size:16px}
+  .dfeat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
+  @media(max-width:560px){.dfeat{grid-template-columns:1fr}}
+  .dfeat div{font-size:12.5px;color:#243831;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+  .dfeat div b{color:var(--forest)}
+
+  /* ask spine */
+  .spine{margin-top:24px;background:linear-gradient(120deg,#0E2A1F,#163b2c);color:var(--cream);border-radius:16px;padding:18px 20px}
+  .spine h3{font-size:16px;display:flex;align-items:center;gap:9px}
+  .spine svg{width:20px;height:20px}
+  .spine p{font-size:13px;color:#c8d5cb;margin-top:7px;max-width:62ch}
+  .spine .flow{display:flex;gap:7px;margin-top:13px;flex-wrap:wrap}
+  .spine .flow span{font-size:11.5px;font-weight:600;background:rgba(255,255,255,.08);border:1px solid rgba(168,213,181,.25);border-radius:999px;padding:6px 12px;color:#dceee2}
+
+  .note{font-size:12px;color:var(--muted);text-align:center;margin-top:26px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Close Eye · user flow</div>
+  <h1>One flow, <em>not three.</em></h1>
+  <div class="thesis">Your three users are the same product with one difference — <b>where the caregiver is.</b> So the persona is just <b>one question in onboarding</b>, and <b>Ask Close Eye is the spine everyone shares.</b> One sign-up, one dashboard, lightly adapted per person.</div>
+
+  <!-- PERSONAS -->
+  <div class="stage-label">Three users</div>
+  <div class="personas">
+    <div class="p"><div class="who">NRI primary</div><div class="d">Lives abroad, parent in India. The buyer & emotional driver.</div><div class="tag">uses Ask</div></div>
+    <div class="p"><div class="who">India, different city</div><div class="d">In India but far from their parent (e.g. Bengaluru → Hyderabad).</div><div class="tag">uses Ask</div></div>
+    <div class="p"><div class="who">Ask user</div><div class="d">Anyone with a health question about an elderly parent.</div><div class="tag">uses Ask</div></div>
+  </div>
+
+  <div class="arrow">↓ &nbsp; everyone starts the same way &nbsp; ↓</div>
+
+  <!-- ENTRY: two doors -->
+  <div class="stage-label">1 · Entry (no login needed)</div>
+  <div class="doors">
+    <div class="door ask">
+      <h3>Try Ask Close Eye</h3>
+      <p>Ask a health question about your parent — free, instant, no sign-up. Your hook for every visitor.</p>
+      <span class="pill">Free taste</span>
+    </div>
+    <div class="door care">
+      <h3>Claim founding spot</h3>
+      <p>Ready for real care — companion visits + updates. Routes into sign-up.</p>
+      <span class="pill">Start ₹100</span>
+    </div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <!-- SIGN UP -->
+  <div class="stage-label">2 · Sign up (only when they want more)</div>
+  <div class="box">
+    <h3>Continue with Google</h3>
+    <p>Either door leads here once they want personalized answers or to set up care. Same sign-up for everyone.</p>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <!-- ONBOARDING BRANCH -->
+  <div class="stage-label">3 · Onboarding — the one branch that sets the persona</div>
+  <div class="branch">
+    <h3>Step 1 · "Where do you live?"</h3>
+    <p class="qq">This single answer is the whole persona difference. No separate flows.</p>
+    <div class="opts">
+      <div class="opt"><div class="t">Abroad</div><div class="s">NRI framing · timezone-aware updates · USD shown</div></div>
+      <div class="opt"><div class="t">Another city in India</div><div class="s">"Your eyes in [parent's city]" · INR</div></div>
+      <div class="opt"><div class="t">Same city</div><div class="s">Lighter, more on-demand framing</div></div>
+    </div>
+    <div class="steps3"><span>Step 1 · About you</span><span>Step 2 · Your parent in India</span><span>Step 3 · Confirm</span></div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <!-- DASHBOARD -->
+  <div class="stage-label">4 · Dashboard (shared, persona-flavored)</div>
+  <div class="dash">
+    <h3>One home for everyone</h3>
+    <div class="dfeat">
+      <div><b>Ask Close Eye</b> — always there, now personalized to their parent</div>
+      <div><b>Visit updates</b> — WhatsApp reports with photos</div>
+      <div><b>Care coordinator</b> — doctor visits, daily needs</div>
+      <div><b>Founding membership</b> — manage plan & on-demand services</div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:11px">Only the copy & pricing shift by persona (abroad vs another-city). The features are identical.</p>
+  </div>
+
+  <!-- ASK SPINE -->
+  <div class="spine">
+    <h3>
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 1l2.4 7.2L22 11l-7.6 2.4L12 21l-2.4-7.6L2 11l7.6-2.8L12 1z" fill="url(#g)"/><defs><linearGradient id="g" x1="2" y1="1" x2="22" y2="21"><stop stop-color="#A8D5B5"/><stop offset="1" stop-color="#7FBF94"/></linearGradient></defs></svg>
+      Ask Close Eye is the spine
+    </h3>
+    <p>It runs through every stage — the free hook before login, the daily reassurance after, and the safety net that escalates real emergencies. Every user touches it, which is why it's the one thing worth getting right first.</p>
+    <div class="flow">
+      <span>Visitor: free taste (no login)</span>
+      <span>→ Member: personalized to their parent</span>
+      <span>→ Worry: offers a doctor</span>
+      <span>→ Emergency: escalates to your team</span>
+    </div>
+  </div>
+
+  <p class="note">Keep this file in your project folder as the reference for how all three users move through Close Eye.</p>
+</div>
+</body>
+</html>

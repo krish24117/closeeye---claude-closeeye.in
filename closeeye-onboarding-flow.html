@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Close Eye — onboarding flow (redesigned)</title>
+<link href="https://fonts.cdnfonts.com/css/open-sauce-sans" rel="stylesheet">
+<style>
+  :root{
+    --forest:#0E2A1F;--forest-2:#163b2c;--cream:#FAF7F2;--cream-2:#f1ece2;
+    --sage:#A8D5B5;--sage-2:#7FBF94;--muted:#5c6b62;--line:#e3ddd1;--req:#c0734f;
+    --font:'Open Sauce Sans','Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:#d9d4ca;color:var(--forest);-webkit-font-smoothing:antialiased;line-height:1.5}
+  .frame{max-width:400px;margin:22px auto;background:var(--cream);border-radius:30px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.28);border:1px solid #cfc9bd;min-height:760px;display:flex;flex-direction:column}
+  .notch{height:28px;background:transparent;display:flex;align-items:center;justify-content:center;padding-top:6px}
+  .notch span{width:80px;height:6px;background:#c7c1b5;border-radius:99px}
+
+  /* top bar with EXIT */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 4px}
+  .exit{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;font-size:17px;color:var(--forest)}
+  .brand{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px}
+  .brand svg{width:16px;height:16px}
+  .stepcount{font-size:12px;color:var(--muted);font-weight:600;min-width:34px;text-align:right}
+
+  /* stepper */
+  .stepper{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 0 4px}
+  .dot{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:var(--cream-2);color:var(--muted);border:1px solid var(--line)}
+  .dot.active{background:var(--forest);color:var(--sage);border-color:var(--forest)}
+  .dot.done{background:var(--sage-2);color:var(--forest);border-color:var(--sage-2)}
+  .bar{width:26px;height:2px;background:var(--line);border-radius:2px}
+
+  .body{flex:1;padding:14px 20px 8px;overflow-y:auto}
+  h2{font-size:23px;letter-spacing:-.01em;line-height:1.12}
+  .sub{font-size:13px;color:var(--muted);margin-top:5px;margin-bottom:14px}
+  .sect{font-size:10.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700;margin:16px 0 9px}
+
+  label{display:block;font-size:13.5px;font-weight:600;margin-bottom:6px}
+  label .r{color:var(--req)}
+  .opt{color:var(--muted);font-weight:500;font-size:12px}
+  .field{width:100%;font-family:var(--font);font-size:14px;padding:12px 13px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--forest);outline:none;margin-bottom:4px}
+  .field:focus{border-color:var(--sage-2)}
+  .field.ro{background:var(--cream-2);color:var(--muted)}
+  .hint{font-size:11.5px;color:var(--muted);margin-bottom:14px}
+  .prefill{font-size:11px;color:#2c6b43;background:#eaf5ee;border:1px solid #cfe6d7;display:inline-block;padding:2px 8px;border-radius:999px;margin-bottom:14px;margin-top:-2px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .rchip{font-size:13px;font-weight:600;color:var(--forest-2);background:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 14px;cursor:pointer}
+  .rchip.sel{background:var(--sage);border-color:var(--sage-2)}
+
+  /* confirm */
+  .summary{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+  .summary .row{display:flex;justify-content:space-between;font-size:13.5px;padding:7px 0;border-bottom:1px solid var(--cream-2)}
+  .summary .row:last-child{border-bottom:0}
+  .summary .row b{color:var(--forest)}
+  .summary .row span{color:var(--muted)}
+  .next{background:linear-gradient(100deg,#0E2A1F,#163b2c);color:var(--cream);border-radius:14px;padding:15px 16px;font-size:13px;line-height:1.5}
+  .next b{color:var(--sage-2)}
+
+  .done-card{text-align:center;padding:30px 10px}
+  .done-card .tick{width:64px;height:64px;border-radius:50%;background:#eaf5ee;display:grid;place-items:center;margin:0 auto 16px}
+  .done-card h2{font-size:24px}
+  .done-card p{font-size:14px;color:var(--muted);margin-top:8px;max-width:30ch;margin-inline:auto}
+
+  /* footer nav */
+  .footer{padding:12px 20px 18px;border-top:1px solid var(--line);background:var(--cream)}
+  .navrow{display:flex;gap:10px}
+  .btn{flex:1;font-family:var(--font);font-size:15px;font-weight:700;padding:14px;border-radius:13px;cursor:pointer;border:0}
+  .btn-back{flex:0 0 auto;width:54px;background:#fff;border:1px solid var(--line);color:var(--forest);font-size:18px}
+  .btn-go{background:var(--forest);color:var(--cream)}
+  .later{display:block;text-align:center;margin-top:11px;font-size:13px;color:var(--muted);font-weight:600;text-decoration:none;background:none;border:0;width:100%;cursor:pointer}
+  .later u{text-decoration:none;border-bottom:1px solid #c7c1b5;padding-bottom:1px}
+
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;background:var(--forest);color:var(--cream);padding:11px 18px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:10}
+  .toast.show{opacity:1}
+  .caption{max-width:400px;margin:0 auto 30px;padding:0 18px;color:#4a443b;font-size:12.5px;text-align:center}
+  .caption b{color:#2a2520}
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <div class="notch"><span></span></div>
+
+  <div class="topbar">
+    <button class="exit" id="exitBtn" title="Exit to dashboard">✕</button>
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 1l2.4 7.2L22 11l-7.6 2.4L12 21l-2.4-7.6L2 11l7.6-2.8L12 1z" fill="url(#g)"/><defs><linearGradient id="g" x1="2" y1="1" x2="22" y2="21"><stop stop-color="#A8D5B5"/><stop offset="1" stop-color="#7FBF94"/></linearGradient></defs></svg>
+      close eye
+    </div>
+    <div class="stepcount" id="stepcount">1 / 3</div>
+  </div>
+
+  <div class="stepper" id="stepper"></div>
+
+  <div class="body" id="body"></div>
+
+  <div class="footer" id="footer"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<p class="caption"><b>Redesigned onboarding — 3 short steps.</b> You → your parent → confirm. Every screen has an exit (✕), a Back button, and "I'll do this later". Fewer required fields = more people finish.</p>
+
+<script>
+  let step = 1;
+  let relationship = "";
+
+  const stepperEl = document.getElementById('stepper');
+  const bodyEl = document.getElementById('body');
+  const footerEl = document.getElementById('footer');
+  const stepcountEl = document.getElementById('stepcount');
+  const toastEl = document.getElementById('toast');
+
+  function toast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'),1600); }
+
+  function renderStepper(){
+    if (step > 3){ stepperEl.style.display='none'; return; }
+    stepperEl.style.display='flex';
+    const dots=[1,2,3].map(n=>{
+      const cls = n<step?'dot done':(n===step?'dot active':'dot');
+      const inner = n<step?'✓':n;
+      return `<div class="${cls}">${inner}</div>`;
+    });
+    stepperEl.innerHTML = dots[0]+'<div class="bar"></div>'+dots[1]+'<div class="bar"></div>'+dots[2];
+    stepcountEl.textContent = step+' / 3';
+  }
+
+  const steps = {
+    1: `
+      <h2>About you</h2>
+      <p class="sub">So we know who to keep updated. Saved once — we'll never ask again.</p>
+      <label>Your name <span class="r">*</span></label>
+      <input class="field" value="siddartha reddy">
+      <label>Email</label>
+      <input class="field ro" value="siddu789reddy@gmail.com" readonly>
+      <div class="prefill">✓ From your Google account</div>
+      <label>WhatsApp number <span class="r">*</span></label>
+      <input class="field" placeholder="+65 9123 4567">
+      <div class="hint">This is where you'll get visit updates and alerts.</div>
+      <label>Where you live <span class="opt">(optional)</span></label>
+      <input class="field" placeholder="City, country — e.g. Singapore">
+      <div class="hint">Helps us time calls to your timezone.</div>
+    `,
+    2: `
+      <h2>Your parent in India</h2>
+      <p class="sub">The loved one Close Eye will be looking after.</p>
+      <label>Their name <span class="r">*</span></label>
+      <input class="field" placeholder="e.g. Kamala Kumar">
+      <label>Your relationship <span class="r">*</span></label>
+      <div class="chips" id="relchips"></div>
+      <label>City in India <span class="r">*</span></label>
+      <input class="field" placeholder="e.g. Hyderabad">
+      <div class="hint">So we can match a vetted companion nearby.</div>
+      <label>Their phone <span class="opt">(optional)</span></label>
+      <input class="field" placeholder="+91 ...">
+      <label>Their age <span class="opt">(optional)</span></label>
+      <input class="field" placeholder="e.g. 72">
+    `,
+    3: `
+      <h2>All set to begin</h2>
+      <p class="sub">Quick check — does this look right?</p>
+      <div class="summary">
+        <div class="row"><span>You</span><b>siddartha reddy</b></div>
+        <div class="row"><span>Updates to</span><b>WhatsApp</b></div>
+        <div class="row"><span>Caring for</span><b id="sumParent">your parent</b></div>
+        <div class="row"><span>In</span><b>India</b></div>
+      </div>
+      <div class="next"><b>What happens next:</b> our care team reaches out within 24–48 hours to set up your parent's care and answer any questions. You can add their health details any time from your dashboard.</div>
+    `,
+    4: `
+      <div class="done-card">
+        <div class="tick">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4 10-10" stroke="#2c6b43" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2>You're in.</h2>
+        <p>Welcome to Close Eye. We'll be in touch soon — and your dashboard is ready whenever you are.</p>
+      </div>
+    `
+  };
+
+  const footers = {
+    1: `<div class="navrow"><button class="btn btn-go" onclick="go(2)">Continue</button></div>
+        <button class="later" onclick="later()"><u>I'll do this later</u></button>`,
+    2: `<div class="navrow"><button class="btn btn-back" onclick="go(1)">←</button><button class="btn btn-go" onclick="go(3)">Continue</button></div>
+        <button class="later" onclick="later()"><u>I'll do this later</u></button>`,
+    3: `<div class="navrow"><button class="btn btn-back" onclick="go(2)">←</button><button class="btn btn-go" onclick="go(4)">Finish</button></div>
+        <button class="later" onclick="later()"><u>I'll do this later</u></button>`,
+    4: `<div class="navrow"><button class="btn btn-go" onclick="toast('→ goes to dashboard')">Go to my dashboard</button></div>`
+  };
+
+  function render(){
+    renderStepper();
+    bodyEl.innerHTML = steps[step];
+    footerEl.innerHTML = footers[step];
+    document.getElementById('exitBtn').style.visibility = step>3 ? 'hidden':'visible';
+    if (step===2){
+      const rc=document.getElementById('relchips');
+      ['Mother','Father','Grandparent','Other'].forEach(r=>{
+        const b=document.createElement('button'); b.className='rchip'+(relationship===r?' sel':''); b.textContent=r;
+        b.onclick=()=>{relationship=r; render();}; rc.appendChild(b);
+      });
+    }
+    if (step===3){ const sp=document.getElementById('sumParent'); if(sp) sp.textContent = relationship ? ('your '+relationship.toLowerCase()) : 'your parent'; }
+    bodyEl.scrollTop=0;
+  }
+
+  window.go = (n)=>{ step=n; render(); };
+  window.later = ()=>{ toast('→ goes to dashboard (resume anytime)'); };
+  document.getElementById('exitBtn').onclick = ()=> toast('✕ → back to dashboard');
+
+  render();
+</script>
+</body>
+</html>

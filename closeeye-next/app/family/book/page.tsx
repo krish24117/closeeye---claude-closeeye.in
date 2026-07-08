@@ -64,6 +64,7 @@ export default function FamilyBookPage() {
     try {
       const res = await requestVisit({
         serviceId: service.id,
+        lovedOneId: member.id,
         recipientName: member.full_name,
         recipientAddress: member.address?.trim() || member.city?.trim() || '',
         requesterWhatsapp: profile?.whatsapp_number || profile?.phone || '',

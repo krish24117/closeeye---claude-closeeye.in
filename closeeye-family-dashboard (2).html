@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Close Eye — family dashboard</title>
+<link href="https://fonts.cdnfonts.com/css/open-sauce-sans" rel="stylesheet">
+<style>
+  :root{
+    --forest:#0E2A1F;--forest-2:#163b2c;--cream:#FAF7F2;--cream-2:#f1ece2;
+    --sage:#A8D5B5;--sage-2:#7FBF94;--gold:#D4A24E;--clay:#C0734F;--muted:#5c6b62;--line:#e3ddd1;
+    --font:'Open Sauce Sans','Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:#d9d4ca;color:var(--forest);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .stage-wrap{max-width:900px;margin:0 auto;padding:22px 16px 40px}
+  .lead{max-width:400px;margin:0 auto 12px;text-align:center;font-size:12.5px;color:#4a443b}
+  .lead b{color:#2a2520}
+  .frame{max-width:400px;margin:0 auto;background:var(--cream);border-radius:30px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.28);border:1px solid #cfc9bd;height:800px;display:flex;flex-direction:column}
+  .notch{height:26px;display:flex;align-items:center;justify-content:center;padding-top:7px}
+  .notch span{width:78px;height:6px;background:#c7c1b5;border-radius:99px}
+  .body{flex:1;overflow-y:auto}
+  .view{display:none}.view.on{display:block}
+
+  .top{background:var(--forest);color:var(--cream);padding:14px 18px 20px}
+  .top .row{display:flex;justify-content:space-between;align-items:center}
+  .brand{display:flex;align-items:center;gap:7px;font-weight:700;font-size:13px}
+  .brand svg{width:16px;height:16px}
+  .av{width:32px;height:32px;border-radius:50%;background:var(--sage-2);color:var(--forest);display:grid;place-items:center;font-weight:800;font-size:14px}
+  .hi{font-size:20px;font-weight:800;margin-top:14px;letter-spacing:-.01em}
+  .fm{display:inline-block;margin-top:6px;font-size:10.5px;font-weight:700;letter-spacing:.04em;background:rgba(168,213,181,.16);border:1px solid rgba(168,213,181,.3);color:var(--sage);padding:3px 10px;border-radius:999px}
+
+  .pad{padding:0 16px}
+  .sec-l{font-size:10.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700;margin:18px 4px 9px}
+
+  .status{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:-12px;box-shadow:0 10px 26px rgba(14,42,31,.08);position:relative;z-index:2}
+  .status .hd{display:flex;justify-content:space-between;align-items:flex-start}
+  .status .q{font-size:16px;font-weight:800}
+  .status .ok{font-size:11px;font-weight:800;color:#2c6b43;background:#eaf5ee;border:1px solid #cfe6d7;padding:4px 10px;border-radius:999px;white-space:nowrap}
+  .status .when{font-size:12px;color:var(--muted);margin-top:3px}
+  .rep{display:flex;gap:12px;margin-top:13px}
+  .rep .photo{flex:0 0 auto;width:74px;height:74px;border-radius:12px;background:linear-gradient(135deg,#cfe6d7,#a8d5b5);display:grid;place-items:center;color:#2c6b43;font-size:11px;font-weight:700}
+  .rep p{font-size:12.5px;color:#243831;line-height:1.45}
+  .status .view-b{display:block;text-align:center;margin-top:13px;background:var(--cream);border:1px solid var(--line);border-radius:11px;padding:11px;font-size:13px;font-weight:700;color:var(--forest);cursor:pointer;text-decoration:none}
+
+  .visit{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 15px;display:flex;align-items:center;gap:13px}
+  .visit .cal{flex:0 0 auto;width:46px;height:46px;border-radius:11px;background:var(--forest);color:var(--cream);display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .visit .cal .d{font-size:16px;font-weight:800;line-height:1}.visit .cal .m{font-size:9px;text-transform:uppercase;letter-spacing:.05em}
+  .visit .info{flex:1}.visit .info .t{font-size:13.5px;font-weight:700}.visit .info .s{font-size:12px;color:var(--muted);margin-top:2px}
+  .visit .chev{color:var(--muted);font-size:18px}
+
+  .ask{background:linear-gradient(120deg,#eef6f0,#e4f0e8);border:1px solid #cfe6d7;border-radius:14px;padding:14px 15px}
+  .ask .t{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px}.ask .t svg{width:16px;height:16px}
+  .ask .s{font-size:12px;color:#3a5a47;margin-top:4px}
+  .ask .inp{display:flex;gap:8px;margin-top:11px}
+  .ask input{flex:1;font-family:var(--font);font-size:13px;padding:10px 12px;border:1px solid #cfe6d7;border-radius:11px;background:#fff;color:var(--forest);outline:none}
+  .ask button{background:var(--forest);color:var(--cream);border:0;border-radius:11px;padding:0 15px;font-weight:700;font-size:13px;cursor:pointer}
+
+  .qa{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .qa a{background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px;text-decoration:none;color:var(--forest);display:flex;flex-direction:column;gap:7px;cursor:pointer}
+  .qa a .ic{width:30px;height:30px;border-radius:9px;background:var(--cream-2);display:grid;place-items:center;font-size:15px}
+  .qa a .lab{font-size:13px;font-weight:700;line-height:1.2}.qa a .sub{font-size:11px;color:var(--muted)}
+  .qa a.book{background:var(--forest);color:var(--cream)}.qa a.book .ic{background:rgba(168,213,181,.18)}.qa a.book .sub{color:#c8d5cb}
+  .qa a.emerg{border-left:3px solid var(--clay)}.qa a.emerg .lab{color:var(--clay)}
+
+  .mini{display:flex;gap:10px}
+  .mini .m{flex:1;background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px}
+  .mini .m .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+  .mini .m .v{font-size:14px;font-weight:700;margin-top:5px}.mini .m .x{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+  /* PROFILE view */
+  .ptop{background:var(--forest);color:var(--cream);padding:16px 18px 18px;display:flex;align-items:center;gap:13px}
+  .ptop .pav{width:46px;height:46px;border-radius:50%;background:var(--sage-2);color:var(--forest);display:grid;place-items:center;font-weight:800;font-size:18px}
+  .ptop .pn{font-size:17px;font-weight:800}.ptop .pe{font-size:12px;color:#c8d5cb}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:6px 15px;margin-top:0}
+  .frow{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--cream-2)}
+  .frow:last-child{border-bottom:0}
+  .frow .k{font-size:12px;color:var(--muted)}.frow .v{font-size:13.5px;font-weight:600;text-align:right}
+  .frow .edit{font-size:12px;color:var(--sage-2);font-weight:700}
+  .fam{background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 15px;display:flex;align-items:center;gap:12px;margin-bottom:9px}
+  .fam .fa{width:40px;height:40px;border-radius:11px;background:var(--cream-2);display:grid;place-items:center;font-size:16px}
+  .fam .fi{flex:1}.fam .fi .fn{font-size:14px;font-weight:700}.fam .fi .fs{font-size:12px;color:var(--muted);margin-top:1px}
+  .fam .chev{color:var(--muted);font-size:18px}
+  .addbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--cream);border:1px dashed var(--sage-2);color:var(--forest);border-radius:13px;padding:13px;font-size:13.5px;font-weight:700;cursor:pointer}
+  .menu a{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:8px;text-decoration:none;color:var(--forest);font-size:13.5px;font-weight:600}
+  .menu a .mi{font-size:16px}.menu a .chev{margin-left:auto;color:var(--muted)}
+  .menu a.out{color:var(--clay);justify-content:center;font-weight:700;border-color:#ecd3c2}
+
+  .bnav{display:flex;justify-content:space-around;border-top:1px solid var(--line);background:var(--cream);padding:9px 0 12px}
+  .bnav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--muted);text-decoration:none;cursor:pointer}
+  .bnav a.on{color:var(--forest)}
+  .bnav a .d{font-size:17px}
+  .spacer{height:18px}
+
+  .eng{max-width:400px;margin:20px auto 0;background:#fff;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;padding:13px 15px}
+  .eng h4{font-size:11.5px;font-weight:800;color:#9a6a16;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+  .eng li{font-size:12px;line-height:1.45;color:#4a443b;list-style:none;padding-left:15px;position:relative;margin-bottom:5px}
+  .eng li::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;border-radius:50%;background:var(--gold)}
+  .eng li b{color:var(--forest)}
+</style>
+</head>
+<body>
+<div class="stage-wrap">
+  <p class="lead"><b>Family dashboard.</b> Tap <b>Home</b> and <b>Profile</b> in the bottom bar to switch.</p>
+
+  <div class="frame">
+    <div class="notch"><span></span></div>
+    <div class="body">
+
+      <!-- HOME VIEW -->
+      <div class="view on" id="home">
+        <div class="top">
+          <div class="row">
+            <div class="brand"><svg viewBox="0 0 24 24" fill="none"><path d="M12 1l2.4 7.2L22 11l-7.6 2.4L12 21l-2.4-7.6L2 11l7.6-2.8L12 1z" fill="url(#g)"/><defs><linearGradient id="g" x1="2" y1="1" x2="22" y2="21"><stop stop-color="#A8D5B5"/><stop offset="1" stop-color="#7FBF94"/></linearGradient></defs></svg> close eye</div>
+            <div class="av">S</div>
+          </div>
+          <div class="hi">Hello, Siddartha</div>
+          <span class="fm">★ Founding Member #0042</span>
+        </div>
+        <div class="pad">
+          <div class="status">
+            <div class="hd"><div><div class="q">How is your father?</div><div class="when">Last visit · Today, 10:14 AM</div></div><span class="ok">Doing well</span></div>
+            <div class="rep"><div class="photo">📷</div><p>"In good spirits — ate breakfast well, slept fine, no complaints. We chatted about cricket. BP normal."</p></div>
+            <a class="view-b" href="#" onclick="return false">View full report →</a>
+          </div>
+          <div class="sec-l">Next visit</div>
+          <div class="visit"><div class="cal"><div class="d">5</div><div class="m">Jul</div></div><div class="info"><div class="t">Wellbeing visit · 9–11 AM IST</div><div class="s">A companion will check in and report back.</div></div><div class="chev">›</div></div>
+          <div class="sec-l">Ask Close Eye</div>
+          <div class="ask">
+            <div class="t"><svg viewBox="0 0 24 24" fill="none"><path d="M12 1l2.4 7.2L22 11l-7.6 2.4L12 21l-2.4-7.6L2 11l7.6-2.8L12 1z" fill="url(#g2)"/><defs><linearGradient id="g2" x1="2" y1="1" x2="22" y2="21"><stop stop-color="#A8D5B5"/><stop offset="1" stop-color="#7FBF94"/></linearGradient></defs></svg> Ask about your father</div>
+            <div class="s">Personalised to his health &amp; history. Guided by our medical team.</div>
+            <div class="inp"><input placeholder="e.g. Is his BP reading okay?"><button onclick="return false">Ask</button></div>
+          </div>
+          <div class="sec-l">Quick actions</div>
+          <div class="qa">
+            <a class="book" onclick="return false"><span class="ic">＋</span><span class="lab">Book a service</span><span class="sub">Visit, doctor, errands</span></a>
+            <a onclick="return false"><span class="ic">📞</span><span class="lab">Request a call</span><span class="sub">Weekly wellbeing call</span></a>
+            <a onclick="show('profile')"><span class="ic">👤</span><span class="lab">Father's profile</span><span class="sub">Health &amp; details</span></a>
+            <a class="emerg" href="tel:+919000221261"><span class="ic">⚠</span><span class="lab">Get help now</span><span class="sub">Emergency response</span></a>
+          </div>
+          <div class="sec-l">Your membership</div>
+          <div class="mini"><div class="m"><div class="l">Plan</div><div class="v">Founding</div><div class="x">On-demand · ₹100 joined</div></div><div class="m"><div class="l">Visits</div><div class="v">3 done</div><div class="x">Next: 5 Jul</div></div></div>
+          <div class="spacer"></div>
+        </div>
+      </div>
+
+      <!-- PROFILE VIEW -->
+      <div class="view" id="profile">
+        <div class="ptop">
+          <div class="pav">S</div>
+          <div><div class="pn">Siddartha Reddy</div><div class="pe">siddu789reddy@gmail.com</div></div>
+        </div>
+        <div class="pad">
+          <div class="sec-l">Your details</div>
+          <div class="card">
+            <div class="frow"><span class="k">Name</span><span class="v">Siddartha Reddy</span></div>
+            <div class="frow"><span class="k">WhatsApp</span><span class="v">+65 9123 4567</span></div>
+            <div class="frow"><span class="k">Email</span><span class="v">siddu789reddy@gmail.com</span></div>
+            <div class="frow"><span class="k">Where you live</span><span class="v edit">+ Add address</span></div>
+          </div>
+
+          <div class="sec-l">Family in India</div>
+          <div class="fam"><div class="fa">👴</div><div class="fi"><div class="fn">Naveen Reddy · Father</div><div class="fs">Hyderabad · tap to add health details</div></div><div class="chev">›</div></div>
+          <button class="addbtn" onclick="return false">＋ Add a family member</button>
+
+          <div class="sec-l">Membership &amp; billing</div>
+          <div class="menu">
+            <a onclick="return false"><span class="mi">★</span> Manage membership / plan <span class="chev">›</span></a>
+            <a onclick="return false"><span class="mi">🧾</span> Bookings &amp; receipts <span class="chev">›</span></a>
+          </div>
+
+          <div class="sec-l">Settings &amp; support</div>
+          <div class="menu">
+            <a onclick="return false"><span class="mi">🔔</span> Notifications <span class="chev">›</span></a>
+            <a onclick="return false"><span class="mi">💬</span> Contact the care team <span class="chev">›</span></a>
+            <a onclick="return false"><span class="mi">❔</span> Help &amp; FAQ <span class="chev">›</span></a>
+            <a class="out" onclick="return false">Sign out</a>
+          </div>
+          <div class="spacer"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="bnav">
+      <a id="n-home" class="on" onclick="show('home')"><span class="d">⌂</span>Home</a>
+      <a onclick="return false"><span class="d">✦</span>Ask</a>
+      <a onclick="return false"><span class="d">＋</span>Book</a>
+      <a id="n-profile" onclick="show('profile')"><span class="d">👤</span>Profile</a>
+    </div>
+  </div>
+
+  <div class="eng">
+    <h4>⟡ Build notes</h4>
+    <ul style="margin:0;padding:0">
+      <li><b>Profile</b> is the account hub: your details + address, family members (add multiple loved ones, each with relationship / city / phone / age / health notes), membership &amp; receipts, settings, sign out.</li>
+      <li>Health details (conditions, meds) live on each <b>family member</b> — added here after onboarding, not during it. This is also what powers personalised Ask.</li>
+      <li>Empty states: a new member sees "+ Add address" and prompts to complete a parent's health profile, never blank fields. Guard against null everywhere.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  function show(id){
+    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id===id));
+    document.getElementById('n-home').classList.toggle('on', id==='home');
+    document.getElementById('n-profile').classList.toggle('on', id==='profile');
+    document.querySelector('.body').scrollTop=0;
+  }
+</script>
+</body>
+</html>

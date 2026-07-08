@@ -1,0 +1,336 @@
+/* ============================================================
+   Close Eye — Admin Design System
+   Drop into the repo (e.g. src/styles/admin.css) and import once
+   at the admin shell. Apply the component classes to existing
+   markup — do NOT restyle screens individually.
+
+   Scope: wrap the admin app in <div class="ce-admin"> … </div>
+   so these styles don't collide with Tailwind utilities or the
+   public site. All rules below are scoped under .ce-admin.
+   ============================================================ */
+
+/* ---- Self-hosted font (already in /public/fonts) ----------- */
+/* Adjust the path/filenames to match your repo. Self-host —
+   do NOT load from a CDN (avoids opaque cross-origin failures). */
+@font-face{
+  font-family:"Open Sauce Sans";
+  src:url("/fonts/OpenSauceSans-Regular.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:"Open Sauce Sans";
+  src:url("/fonts/OpenSauceSans-Bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:"Open Sauce Sans";
+  src:url("/fonts/OpenSauceSans-ExtraBold.woff2") format("woff2");
+  font-weight:800; font-style:normal; font-display:swap;
+}
+
+/* ============================================================
+   1. DESIGN TOKENS
+   ============================================================ */
+.ce-admin{
+  /* brand */
+  --forest:#0E2A1F;
+  --forest-2:#163b2c;
+  --cream:#FAF7F2;
+  --cream-2:#f1ece2;
+  --sage:#A8D5B5;
+  --sage-2:#7FBF94;
+  --green:#2FA84F;
+  --lime:#7ED321;
+  /* semantic (status only, never decoration) */
+  --clay:#C0734F;     /* danger / emergency / overdue */
+  --gold:#D4A24E;     /* AI-draft / warning accents   */
+  --blue:#2a5599;     /* in-progress / informational  */
+  /* neutrals */
+  --muted:#5c6b62;
+  --line:#e3ddd1;
+  --ink:#0E2A1F;
+  /* type */
+  --font:"Open Sauce Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  /* rhythm */
+  --pad:24px;
+  --radius:13px;
+  --radius-lg:18px;
+
+  font-family:var(--font);
+  color:var(--ink);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.ce-admin *{box-sizing:border-box}
+
+/* ============================================================
+   2. LAYOUT SHELL
+   ============================================================ */
+.ce-admin .app{
+  background:var(--cream);
+  display:flex;
+  min-height:100vh;
+}
+.ce-admin .main{flex:1;display:flex;flex-direction:column;min-width:0}
+.ce-admin .top{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:17px 26px;background:#fff;border-bottom:1px solid var(--line);
+}
+.ce-admin .top h1{font-size:20px;letter-spacing:-.01em;font-weight:800}
+.ce-admin .top .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.ce-admin .content{padding:22px var(--pad);overflow-y:auto;flex:1}
+
+/* ============================================================
+   3. SIDEBAR + NAV
+   ============================================================ */
+.ce-admin .side{
+  width:222px;flex:0 0 auto;background:var(--forest);color:var(--cream);
+  display:flex;flex-direction:column;padding:18px 12px;overflow-y:auto;
+}
+.ce-admin .brand{display:flex;align-items:center;gap:9px;padding:4px 8px 18px}
+.ce-admin .brand .logo-img{width:28px;height:28px;flex:0 0 auto;object-fit:contain}
+.ce-admin .brand .nm{font-weight:700;font-size:16px}
+.ce-admin .brand .tag{
+  font-size:10px;color:#9fb4a7;font-weight:600;
+  background:rgba(168,213,181,.12);padding:2px 7px;border-radius:6px;
+}
+.ce-admin .grp{
+  font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;
+  color:#6f897c;font-weight:700;padding:13px 10px 6px;
+}
+.ce-admin .nav a{
+  display:flex;align-items:center;gap:11px;margin-bottom:1px;
+  padding:9px 11px;border-radius:9px;cursor:pointer;
+  color:#c8d5cb;text-decoration:none;font-size:13.5px;font-weight:600;
+}
+.ce-admin .nav a .ic{width:17px;flex:0 0 auto;text-align:center;font-size:14px}
+.ce-admin .nav a:hover:not(.on){background:rgba(255,255,255,.05)}
+.ce-admin .nav a.on{background:rgba(168,213,181,.16);color:#fff}
+.ce-admin .nav a .badge{
+  margin-left:auto;background:var(--clay);color:#fff;
+  font-size:10px;font-weight:800;padding:1px 7px;border-radius:999px;
+}
+.ce-admin .side .who{
+  margin-top:auto;display:flex;align-items:center;gap:9px;
+  padding:12px 8px 4px;border-top:1px solid rgba(255,255,255,.08);
+}
+.ce-admin .side .who .av{
+  width:30px;height:30px;border-radius:50%;flex:0 0 auto;
+  background:var(--sage-2);color:var(--forest);
+  display:grid;place-items:center;font-weight:800;font-size:13px;
+}
+.ce-admin .side .who .n{font-size:13px;font-weight:700}
+.ce-admin .side .who .r{font-size:11px;color:#9fb4a7}
+
+/* ============================================================
+   4. BUTTONS
+   ============================================================ */
+.ce-admin .btn{
+  font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;
+  padding:7px 12px;border-radius:9px;border:0;
+  background:var(--forest);color:var(--cream);
+}
+.ce-admin .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--forest)}
+.ce-admin .btn.lg{font-size:14px;padding:13px 18px;border-radius:11px}
+.ce-admin .top .act{
+  font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;
+  padding:10px 16px;border-radius:10px;border:0;white-space:nowrap;
+  background:var(--forest);color:var(--cream);
+}
+.ce-admin .btn:focus-visible,
+.ce-admin .nav a:focus-visible{outline:2px solid var(--sage-2);outline-offset:2px}
+
+/* ============================================================
+   5. STAT CARDS
+   ============================================================ */
+.ce-admin .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.ce-admin .stat{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:15px}
+.ce-admin .stat .l{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
+.ce-admin .stat .v{font-size:25px;font-weight:800;margin-top:6px}
+.ce-admin .stat .d{font-size:11.5px;color:var(--green);font-weight:600;margin-top:3px}
+.ce-admin .stat.alert{border-color:#ecd3c2;background:#fbf3ec}
+.ce-admin .stat.alert .v,
+.ce-admin .stat.alert .d{color:var(--clay)}
+
+/* ============================================================
+   6. CARDS, SECTION HEADERS, GRID
+   ============================================================ */
+.ce-admin .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.ce-admin .sec-h{
+  font-size:13px;font-weight:800;margin:24px 0 11px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ce-admin .sec-h .link{font-size:12px;color:var(--green);font-weight:700;cursor:pointer}
+.ce-admin .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ============================================================
+   7. TABLES + PILLS
+   ============================================================ */
+.ce-admin table{width:100%;border-collapse:collapse;font-size:13px}
+.ce-admin th{
+  text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);font-weight:700;padding:11px 15px;
+  background:var(--cream);border-bottom:1px solid var(--line);
+}
+.ce-admin td{padding:12px 15px;border-bottom:1px solid var(--cream-2)}
+.ce-admin tr:last-child td{border-bottom:0}
+.ce-admin tbody tr:hover td{background:#fcfbf8}
+.ce-admin .nm2{font-weight:700}
+.ce-admin .meta{font-size:11.5px;color:var(--muted)}
+
+.ce-admin .pill{display:inline-block;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px}
+.ce-admin .pill.green{background:#eaf5ee;color:#2c6b43;border:1px solid #cfe6d7}
+.ce-admin .pill.amber{background:#fbf3e8;color:#9a6a16;border:1px solid #ecd9b8}
+.ce-admin .pill.grey {background:var(--cream-2);color:var(--muted);border:1px solid var(--line)}
+.ce-admin .pill.clay {background:#fbece4;color:#a14f2e;border:1px solid #ecd3c2}
+.ce-admin .pill.blue {background:#eaf0fb;color:#2a5599;border:1px solid #cfdcef}
+
+/* ============================================================
+   8. FILTER CHIPS
+   ============================================================ */
+.ce-admin .filters{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
+.ce-admin .filters button{
+  font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;
+  padding:6px 12px;border-radius:999px;border:1px solid var(--line);
+  background:#fff;color:var(--muted);
+}
+.ce-admin .filters button.on{background:var(--forest);color:var(--cream);border-color:var(--forest)}
+.ce-admin .filters button .n{opacity:.7;margin-left:3px}
+
+/* ============================================================
+   9. EMERGENCY / ALERT BANNER  (clay — reserved for real alerts)
+   ============================================================ */
+.ce-admin .emerg{
+  display:flex;align-items:center;gap:13px;margin-bottom:18px;
+  padding:14px 16px;border-radius:var(--radius);color:#fff;
+  background:linear-gradient(100deg,#7a2e16,#a14f2e);
+}
+.ce-admin .emerg .ic{font-size:20px}
+.ce-admin .emerg .t{font-size:14px;font-weight:800}
+.ce-admin .emerg .s{font-size:12px;color:#f3d9cd}
+.ce-admin .emerg .btn{margin-left:auto;background:#fff;color:#a14f2e}
+
+/* ============================================================
+   10. COMPANION VETTING PIPELINE (7 stages)
+   ============================================================ */
+.ce-admin .pipe{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:18px}
+.ce-admin .pstage{background:#fff;border:1px solid var(--line);border-radius:11px;padding:11px 9px;text-align:center}
+.ce-admin .pstage .pn{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700;line-height:1.25;min-height:26px}
+.ce-admin .pstage .pc{font-size:22px;font-weight:800;margin-top:6px}
+.ce-admin .pstage.cert{border-color:var(--sage-2);background:#f3faf5}
+.ce-admin .dotstage{display:flex;gap:4px}
+.ce-admin .dotstage i{width:13px;height:6px;border-radius:3px;background:var(--cream-2)}
+.ce-admin .dotstage i.done{background:var(--sage-2)}
+.ce-admin .dotstage i.cur{background:var(--forest)}
+
+/* ============================================================
+   11. BAR CHART (dependency-free)
+   ============================================================ */
+.ce-admin .chart{display:flex;align-items:flex-end;gap:12px;height:170px;padding:14px 6px 0}
+.ce-admin .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:7px;height:100%}
+.ce-admin .bar .col{width:60%;min-height:4px;border-radius:7px 7px 0 0;background:linear-gradient(var(--sage-2),var(--green))}
+.ce-admin .bar .bl{font-size:11px;color:var(--muted);font-weight:600}
+.ce-admin .bar .bv{font-size:11px;font-weight:700}
+
+/* ============================================================
+   12. HEALTH-QUERIES WORKBENCH (master-detail)
+   ============================================================ */
+.ce-admin .promise{font-size:11.5px;color:var(--green);font-weight:600;margin-bottom:12px}
+.ce-admin .hqwrap{display:flex;height:560px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.ce-admin .hqq{width:320px;flex:0 0 auto;border-right:1px solid var(--line);overflow-y:auto;background:var(--cream)}
+.ce-admin .qi{padding:13px 15px;border-bottom:1px solid var(--cream-2);cursor:pointer}
+.ce-admin .qi:hover{background:#fcfbf8}
+.ce-admin .qi.sel{background:#fff;box-shadow:inset 3px 0 0 var(--forest)}
+.ce-admin .qi .qh{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.ce-admin .qi .wait{margin-left:auto;font-size:11px;color:var(--muted);font-weight:600}
+.ce-admin .qi .qq{font-size:13px;font-weight:700;line-height:1.3}
+.ce-admin .qi .qm{font-size:11px;color:var(--muted);margin-top:4px}
+.ce-admin .hqd{flex:1;overflow-y:auto;padding:20px;min-width:0}
+.ce-admin .hqd .dq{font-size:16px;font-weight:800;line-height:1.3}
+.ce-admin .hqd .dmeta{font-size:12px;color:var(--muted);margin-top:6px}
+
+/* urgency tag — shared by queue + workbench */
+.ce-admin .urg{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px}
+.ce-admin .urg.red{background:#fbece4;color:#a14f2e;border:1px solid #ecd3c2}
+.ce-admin .urg.amber{background:#fbf3e8;color:#9a6a16;border:1px solid #ecd9b8}
+.ce-admin .urg.grey{background:var(--cream-2);color:var(--muted);border:1px solid var(--line)}
+
+/* SLA chip */
+.ce-admin .sla{font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:5px}
+.ce-admin .sla.ok{color:var(--muted)}
+.ce-admin .sla.due{color:#9a6a16}
+.ce-admin .sla.over{color:#a14f2e}
+.ce-admin .sla .dot{width:7px;height:7px;border-radius:50%}
+.ce-admin .sla.ok .dot{background:var(--sage-2)}
+.ce-admin .sla.due .dot{background:var(--gold)}
+.ce-admin .sla.over .dot{background:var(--clay)}
+
+/* flag, blocks, care-context, AI draft */
+.ce-admin .flag{display:inline-flex;gap:6px;font-size:11.5px;font-weight:700;margin-top:11px;padding:5px 11px;border-radius:8px;background:#fbece4;color:#a14f2e;border:1px solid #ecd3c2}
+.ce-admin .blk{margin-top:16px}
+.ce-admin .bl{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:700;margin-bottom:7px}
+.ce-admin .ctx{background:var(--cream);border:1px solid var(--line);border-radius:11px;padding:13px}
+.ce-admin .ctx .cr{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;border-bottom:1px solid var(--cream-2)}
+.ce-admin .ctx .cr:last-child{border-bottom:0}
+.ce-admin .ctx .cr .k{color:var(--muted)}
+.ce-admin .ctx .cr .v{font-weight:600}
+.ce-admin .ctx .cr .v.warn{color:var(--clay)}
+.ce-admin .draft{position:relative;background:var(--cream-2);border:1px dashed #c9c2b3;border-radius:11px;padding:13px;font-size:12.5px;line-height:1.5;color:#3a4640}
+.ce-admin .draft .tag{position:absolute;top:-9px;left:12px;background:var(--gold);color:#fff;font-size:9px;font-weight:800;text-transform:uppercase;padding:2px 8px;border-radius:999px}
+.ce-admin .hqactions{display:flex;gap:9px;margin-top:14px}
+
+/* ============================================================
+   13. PLAN / PRICING CARDS
+   ============================================================ */
+.ce-admin .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.ce-admin .plan{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}
+.ce-admin .plan.feat{border-color:var(--sage-2);box-shadow:0 6px 20px rgba(127,191,148,.18)}
+.ce-admin .plan .pt{font-size:14px;font-weight:800}
+.ce-admin .plan .pp{font-size:24px;font-weight:800;margin:8px 0}
+.ce-admin .plan .pp small{font-size:13px;color:var(--muted);font-weight:600}
+.ce-admin .plan ul{list-style:none;margin-top:10px;padding:0;font-size:12.5px;color:#3a4640}
+.ce-admin .plan ul li{position:relative;padding:4px 0 4px 18px}
+.ce-admin .plan ul li:before{content:"\2713";position:absolute;left:0;color:var(--green);font-weight:800}
+
+/* ============================================================
+   14. SETTINGS ROWS + TOGGLES
+   ============================================================ */
+.ce-admin .setrow{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid var(--cream-2)}
+.ce-admin .setrow:last-child{border-bottom:0}
+.ce-admin .setrow .sk{font-size:13px;font-weight:700}
+.ce-admin .setrow .sv{font-size:12.5px;color:var(--muted)}
+.ce-admin .toggle{position:relative;width:40px;height:23px;border-radius:999px;background:var(--green);flex:0 0 auto;cursor:pointer}
+.ce-admin .toggle.off{background:#cdc6b8}
+.ce-admin .toggle:after{content:"";position:absolute;top:2px;right:2px;width:19px;height:19px;border-radius:50%;background:#fff}
+.ce-admin .toggle.off:after{right:auto;left:2px}
+
+/* ============================================================
+   15. EXPORT CARDS
+   ============================================================ */
+.ce-admin .exp{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.ce-admin .expc{display:flex;align-items:center;gap:13px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.ce-admin .expc .ei{width:40px;height:40px;border-radius:11px;background:var(--cream-2);display:grid;place-items:center;font-size:18px}
+.ce-admin .expc .et{font-size:13.5px;font-weight:700}
+.ce-admin .expc .es{font-size:11.5px;color:var(--muted)}
+.ce-admin .expc .btn{margin-left:auto}
+
+/* ============================================================
+   16. RESPONSIVE  (sidebar -> top bar; grids collapse)
+   ============================================================ */
+@media(max-width:920px){
+  .ce-admin .app{flex-direction:column}
+  .ce-admin .side{flex-direction:row;width:100%;height:auto;overflow-x:auto;padding:8px;align-items:center}
+  .ce-admin .brand{padding:4px 8px;flex:0 0 auto}
+  .ce-admin .brand .tag{display:none}
+  .ce-admin .grp{display:none}
+  .ce-admin .side .who{display:none}
+  .ce-admin .nav{display:flex;gap:2px}
+  .ce-admin .nav a{padding:8px 10px;font-size:12.5px;white-space:nowrap;margin:0}
+  .ce-admin .stats{grid-template-columns:repeat(2,1fr)}
+  .ce-admin .grid2{grid-template-columns:1fr}
+  .ce-admin .plans{grid-template-columns:1fr}
+  .ce-admin .pipe{grid-template-columns:repeat(4,1fr)}
+  .ce-admin .exp{grid-template-columns:1fr}
+  .ce-admin .hqwrap{flex-direction:column;height:auto}
+  .ce-admin .hqq{width:100%;max-height:260px;border-right:0;border-bottom:1px solid var(--line)}
+}

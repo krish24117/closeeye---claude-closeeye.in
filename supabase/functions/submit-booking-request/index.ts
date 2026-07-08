@@ -80,6 +80,7 @@ Deno.serve(async (req: Request) => {
     service_id?: string;
     service_name?: string;
     variant_id?: string | null;
+    loved_one_id?: string | null;   // H2 — link the visit to a stored family member
     amount_paise?: number | null;   // accepted but IGNORED — server resolves canonical price
     scheduled_at_ist?: string | null;
     recipient_name?: string;
@@ -94,12 +95,21 @@ Deno.serve(async (req: Request) => {
   }
 
   const {
-    service_id, service_name, variant_id,
+    service_id, service_name, variant_id, loved_one_id,
     scheduled_at_ist, recipient_name, recipient_address, requester_whatsapp, notes,
   } = body;
 
   if (!service_id || !service_name) {
     return json({ error: "Missing required fields: service_id and service_name" }, 400);
+  }
+
+  // M3 — reject past dates server-side (the client `min` attribute is spoofable).
+  if (scheduled_at_ist) {
+    const dateOnly = String(scheduled_at_ist).slice(0, 10);
+    const todayIst = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly) && dateOnly < todayIst) {
+      return json({ error: "Scheduled date cannot be in the past" }, 400);
+    }
   }
 
   // Resolve price server-side — client-supplied amount_paise is intentionally discarded
@@ -113,10 +123,49 @@ Deno.serve(async (req: Request) => {
 
   const sb = createClient(supabaseUrl, supabaseServiceKey);
 
+  // H2 — only attach a loved_one_id the requester actually owns (guards against
+  // a forged member id; unverified JWT means we can't fully trust `userId`).
+  let lovedOneId: string | null = null;
+  if (loved_one_id && userId) {
+    const { data: lo } = await sb
+      .from("loved_ones")
+      .select("id")
+      .eq("id", loved_one_id)
+      .eq("family_user_id", userId)
+      .maybeSingle();
+    lovedOneId = lo?.id ?? null;
+  }
+
+  // M1 — idempotency: collapse an accidental double-submit / retry-after-timeout
+  // into the existing request (same requester + service + date within 90s).
+  {
+    const sinceIso = new Date(Date.now() - 90_000).toISOString();
+    let dq = sb
+      .from("booking_requests")
+      .select("id")
+      .eq("service_id", service_id)
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    dq = userId ? dq.eq("user_id", userId) : dq.eq("requester_whatsapp", waClean);
+    if (scheduled_at_ist) dq = dq.eq("scheduled_at", scheduled_at_ist);
+    const { data: dup } = await dq.maybeSingle();
+    if (dup?.id) {
+      return json({
+        ok: true,
+        request_id: dup.id,
+        deduped: true,
+        needs_details: needsDetails,
+        missing: { address: missingAddress, whatsapp: missingWhatsapp },
+      });
+    }
+  }
+
   const { data, error } = await sb
     .from("booking_requests")
     .insert({
       user_id:            userId,
+      loved_one_id:       lovedOneId,
       service_id,
       service_name,
       variant_id:         variant_id ?? null,

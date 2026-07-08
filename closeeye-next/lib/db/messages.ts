@@ -155,40 +155,50 @@ export interface AdminThread extends AdminThreadRef {
   count: number
 }
 
-/** Every active conversation (one per loved_one that has messages), newest first. */
+interface AdminThreadRow {
+  loved_one_id: string
+  loved_one_name: string | null
+  family_user_id: string
+  family_name: string | null
+  last_message_id: string
+  last_sender: Message['sender']
+  last_body: string | null
+  last_attachment_type: Message['attachment_type']
+  last_created_at: string
+  awaiting_reply: boolean
+  message_count: number
+}
+
+/**
+ * Every active conversation (one per loved_one that has messages), newest first.
+ * Aggregation happens server-side via the `admin_thread_summaries` RPC (SECURITY
+ * INVOKER → RLS still scopes Super Admin=all / PM=assigned), so the whole
+ * platform's messages are NOT pulled into the browser. Bounded to p_limit rows.
+ */
 export async function fetchAdminThreads(): Promise<AdminThread[]> {
-  const { data, error } = await supabase.from('messages').select(MESSAGE_COLS).order('created_at', { ascending: false })
+  const { data, error } = await supabase.rpc('admin_thread_summaries', { p_limit: 200 })
   if (error) throw new Error(error.message)
-  const rows = (data as Message[] | null) ?? []
-  if (rows.length === 0) return []
-
-  const byLovedOne = new Map<string, { last: Message; count: number; familyUserId: string }>()
-  for (const m of rows) {
-    const g = byLovedOne.get(m.loved_one_id)
-    if (!g) byLovedOne.set(m.loved_one_id, { last: m, count: 1, familyUserId: m.family_user_id })
-    else g.count++
-  }
-
-  const lovedOneIds = [...byLovedOne.keys()]
-  const familyIds = [...new Set([...byLovedOne.values()].map((g) => g.familyUserId))]
-  const [loRes, profRes] = await Promise.all([
-    supabase.from('loved_ones').select('id, full_name').in('id', lovedOneIds),
-    supabase.from('profiles').select('id, full_name').in('id', familyIds),
-  ])
-  const loName = new Map(((loRes.data ?? []) as { id: string; full_name: string }[]).map((l) => [l.id, l.full_name]))
-  const famName = new Map(((profRes.data ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name ?? '']))
-
-  return [...byLovedOne.entries()]
-    .map(([lovedOneId, g]) => ({
-      lovedOneId,
-      lovedOneName: loName.get(lovedOneId) ?? 'Family member',
-      familyUserId: g.familyUserId,
-      familyName: famName.get(g.familyUserId) || 'Family',
-      lastMessage: g.last,
-      awaitingReply: g.last.sender === 'family',
-      count: g.count,
-    }))
-    .sort((a, b) => b.lastMessage.created_at.localeCompare(a.lastMessage.created_at))
+  const rows = (data as AdminThreadRow[] | null) ?? []
+  return rows.map((r) => ({
+    lovedOneId: r.loved_one_id,
+    lovedOneName: r.loved_one_name ?? 'Family member',
+    familyUserId: r.family_user_id,
+    familyName: r.family_name || 'Family',
+    lastMessage: {
+      id: r.last_message_id,
+      loved_one_id: r.loved_one_id,
+      family_user_id: r.family_user_id,
+      sender: r.last_sender,
+      body: r.last_body,
+      attachment_url: null,
+      attachment_type: r.last_attachment_type,
+      related_booking_id: null,
+      read_at: null,
+      created_at: r.last_created_at,
+    },
+    awaitingReply: r.awaiting_reply,
+    count: Number(r.message_count),
+  }))
 }
 
 /** One thread's full history, admin-scoped (filter by loved_one_id only). */

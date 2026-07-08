@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Close Eye — book a service</title>
+<link href="https://fonts.cdnfonts.com/css/open-sauce-sans" rel="stylesheet">
+<style>
+  :root{
+    --forest:#0E2A1F;--forest-2:#163b2c;--cream:#FAF7F2;--cream-2:#f1ece2;
+    --sage:#A8D5B5;--sage-2:#7FBF94;--gold:#D4A24E;--clay:#C0734F;--rz:#3395ff;--muted:#5c6b62;--line:#e3ddd1;
+    --font:'Open Sauce Sans','Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:#d9d4ca;color:var(--forest);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .stage-wrap{max-width:900px;margin:0 auto;padding:22px 16px 40px}
+  .lead{max-width:430px;margin:0 auto 6px;text-align:center;font-size:12.5px;color:#4a443b}
+  .lead b{color:#2a2520}
+  .nav{max-width:430px;margin:12px auto 0;display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+  .nav button{font-family:var(--font);font-size:12px;font-weight:700;padding:8px 12px;border-radius:10px;border:1px solid #bdb6a8;background:#fff;color:var(--forest);cursor:pointer}
+  .nav button.active{background:var(--forest);color:var(--cream);border-color:var(--forest)}
+  .frame{max-width:400px;margin:14px auto 0;background:var(--cream);border-radius:30px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.28);border:1px solid #cfc9bd;min-height:740px;display:flex;flex-direction:column}
+  .notch{height:26px;display:flex;align-items:center;justify-content:center;padding-top:7px}
+  .notch span{width:78px;height:6px;background:#c7c1b5;border-radius:99px}
+  .body{flex:1;padding:10px 18px 16px;overflow-y:auto}
+  .crumb{font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700;margin:4px 0 4px}
+  h2{font-size:21px;letter-spacing:-.01em;line-height:1.14}
+  .tagline{font-size:13px;color:var(--muted);margin-top:5px}
+  .billnote{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .sub{font-size:13px;color:var(--muted);margin-top:5px;margin-bottom:6px}
+
+  /* plan card */
+  .planwrap{margin-top:14px}
+  .badge-row{display:flex;justify-content:center;margin-bottom:-9px;position:relative;z-index:2}
+  .badge{background:var(--sage-2);color:var(--forest);font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:4px 12px;border-radius:999px}
+  .plan{background:#fff;border:2px solid var(--sage-2);border-radius:16px;padding:16px 16px 15px;box-shadow:0 10px 26px rgba(127,191,148,.18)}
+  .plan .pn{font-size:16px;font-weight:800}
+  .plan .pp{font-size:20px;font-weight:800;margin-top:2px}
+  .plan .pp small{font-size:12px;color:var(--muted);font-weight:600}
+  .plan .usd{font-size:11.5px;color:var(--muted)}
+  .plan ul{list-style:none;margin-top:11px;display:flex;flex-direction:column;gap:7px}
+  .plan li{font-size:13px;padding-left:19px;position:relative;color:#243831;line-height:1.35}
+  .plan li::before{content:"✓";position:absolute;left:0;color:var(--sage-2);font-weight:800}
+  .talk{display:block;text-align:center;margin-top:10px;font-size:12.5px;color:var(--muted);font-weight:600;text-decoration:none}
+  .talk u{text-decoration:none;border-bottom:1px solid #c7c1b5}
+
+  .oneoff{font-size:13px;font-weight:800;margin:20px 0 4px}
+  .svc{background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 14px;margin-top:9px;cursor:pointer;transition:border-color .15s}
+  .svc:hover{border-color:var(--sage-2)}
+  .svc.emerg{border-left:3px solid var(--clay)}
+  .svc .r{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .svc .n{font-size:14.5px;font-weight:700}
+  .svc .n .em{color:var(--clay)}
+  .svc .price{text-align:right;white-space:nowrap}
+  .svc .p{font-size:14px;font-weight:800;color:var(--forest-2)}
+  .svc .u{font-size:11px;color:var(--muted)}
+  .svc .d{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4}
+
+  label{display:block;font-size:13px;font-weight:700;margin:14px 0 8px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{font-size:13px;font-weight:600;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 13px;cursor:pointer}
+  .chip.sel{background:var(--sage);border-color:var(--sage-2)}
+  .field{width:100%;font-family:var(--font);font-size:14px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--forest);outline:none}
+  textarea.field{min-height:60px;resize:none}
+  .ist{font-size:11px;color:var(--muted);margin-top:6px}
+
+  .summary{background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px 15px;margin-top:8px}
+  .summary .row{display:flex;justify-content:space-between;font-size:13.5px;padding:8px 0;border-bottom:1px solid var(--cream-2)}
+  .summary .row:last-child{border-bottom:0;font-weight:800;font-size:15px}
+  .summary .row span{color:var(--muted)}
+  .summary .row b{color:var(--forest)}
+
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;font-family:var(--font);font-size:15px;font-weight:800;padding:15px;border-radius:13px;border:0;cursor:pointer;margin-top:14px;background:var(--forest);color:var(--cream)}
+  .btn.rz{background:var(--rz)}
+  .btn.emerg{background:var(--clay)}
+  .secure{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:var(--muted);margin-top:9px}
+  .callbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;font-size:14px;font-weight:700;padding:13px;border-radius:13px;border:1px solid var(--clay);background:#fff;color:var(--clay);margin-top:10px;text-decoration:none}
+
+  .proc{text-align:center;padding:60px 10px}
+  .spin{width:46px;height:46px;border:4px solid var(--cream-2);border-top-color:var(--sage-2);border-radius:50%;margin:0 auto 16px;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .proc p{font-size:14px;color:var(--muted)}
+
+  .tick{width:62px;height:62px;border-radius:50%;background:#eaf5ee;display:grid;place-items:center;margin:10px auto 12px}
+  .tick.emerg{background:#f7e9e1}
+  .succ{text-align:center}
+  .ref{display:inline-block;margin-top:8px;background:var(--forest);color:var(--sage);font-weight:800;font-size:12.5px;padding:6px 13px;border-radius:999px}
+  .next{margin-top:15px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 15px}
+  .next .nh{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;margin-bottom:8px}
+  .next .ni{font-size:13px;display:flex;gap:9px;padding:5px 0;color:#243831}
+  .next .ni b{color:var(--forest)}
+
+  .report{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin-top:8px}
+  .report .rh{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800}
+  .report .wi{width:24px;height:24px;border-radius:50%;background:#25d366;display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px}
+  .report .photo{height:118px;border-radius:11px;background:linear-gradient(135deg,#cfe6d7,#a8d5b5);margin:11px 0;display:grid;place-items:center;color:#2c6b43;font-size:12px;font-weight:600}
+  .report p{font-size:13px;line-height:1.5;color:#243831}
+  .rate{margin-top:14px;text-align:center}
+  .rate .q{font-size:13px;font-weight:700}
+  .stars{font-size:26px;color:var(--gold);letter-spacing:4px;margin-top:8px;cursor:pointer}
+  .done-pill{display:inline-block;margin-top:14px;background:#eaf5ee;color:#2c6b43;border:1px solid #cfe6d7;font-weight:800;font-size:12.5px;padding:7px 15px;border-radius:999px}
+
+  .eng{max-width:430px;margin:20px auto 0;background:#fff;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;padding:14px 16px}
+  .eng h4{font-size:12px;font-weight:800;color:#9a6a16;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+  .eng ul{list-style:none;display:flex;flex-direction:column;gap:6px}
+  .eng li{font-size:12.5px;line-height:1.45;padding-left:16px;position:relative;color:#4a443b}
+  .eng li::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;border-radius:50%;background:var(--gold)}
+  .eng li b{color:var(--forest)}
+</style>
+</head>
+<body>
+<div class="stage-wrap">
+  <p class="lead"><b>Founding member books a service.</b> Membership gets them in; visits are booked on-demand or via the monthly plan. Tap through.</p>
+  <div class="nav" id="nav"></div>
+  <div class="frame">
+    <div class="notch"><span></span></div>
+    <div class="body" id="body"></div>
+  </div>
+  <div class="eng">
+    <h4>⟡ Build notes (matches your stack)</h4>
+    <ul>
+      <li>Date/time in <b>IST</b>; create the Razorpay order <b>server-side</b>, verify the webhook with HMAC, write the booking to Supabase <b>only after</b> payment confirms.</li>
+      <li>Reuse <b>submit-booking-request</b>; status lifecycle <b>requested → paid → assigned → completed</b>. The monthly plan is a Razorpay <b>subscription</b>, not a one-off charge.</li>
+      <li><b>Hospital assistance</b> is a range (₹2,000–4,000): take a deposit / confirm final amount after, don't hard-charge a fixed price.</li>
+      <li><b>Emergency</b> skips scheduling — dispatch now + show the call button immediately, and alert the care team. Never make an emergency wait behind a form.</li>
+    </ul>
+  </div>
+</div>
+<script>
+  const steps=['Service','When','Pay','Confirmed','Follow-up'];
+  let step=0, svc=null, day=null, slot=null;
+  const plan={n:'Monthly Companion Plan',p:'₹1,500',per:'/month',usd:'≈ $18/mo · billed in INR',
+    bullets:['A monthly home visit + weekly wellbeing calls','A WhatsApp report after every visit','Medicine reminders','Priority rates on every on-demand service']};
+  const services=[
+    {id:'home',n:'Home visit',d:'~60-min in-person wellbeing visit + WhatsApp report within the hour',p:'₹1,000',usd:'≈ $12'},
+    {id:'doctor',n:'Doctor visit support',d:'Companion accompanies them to the doctor, takes notes, reports back',p:'₹1,500',usd:'≈ $18'},
+    {id:'hospital',n:'Hospital assistance',d:'In-hospital presence and coordination; family updated throughout',p:'₹2,000–4,000',usd:''},
+    {id:'grocery',n:'Grocery & medicine',d:'Collection and delivery with receipt provided',p:'₹500',usd:'≈ $6'},
+    {id:'emergency',n:'Emergency response',d:'2-hour rapid visit for a fall, sudden illness, or distress',p:'₹3,000',usd:'≈ $36',emergency:true},
+  ];
+  const navEl=document.getElementById('nav'), bodyEl=document.getElementById('body');
+  function renderNav(){ navEl.innerHTML=steps.map((s,i)=>`<button class="${i===step?'active':''}" onclick="go(${i})">${i+1}. ${s}</button>`).join(''); }
+
+  const svcCard=(s)=>`<div class="svc ${s.emergency?'emerg':''}" onclick="pick('${s.id}')"><div class="r"><div class="n">${s.emergency?'<span class="em">⚠ </span>':''}${s.n}</div><div class="price"><div class="p">${s.p}</div>${s.usd?`<div class="u">${s.usd}</div>`:''}</div></div><div class="d">${s.d}</div></div>`;
+
+  const screens={
+    service:()=>`
+      <div class="crumb">Dashboard · Founding Member #0042</div>
+      <h2>Care for your parents, whatever the distance</h2>
+      <div class="billnote">Prices are the same for everyone. All amounts billed in INR.</div>
+      <div class="planwrap">
+        <div class="badge-row"><span class="badge">Where most families start</span></div>
+        <div class="plan">
+          <div class="pn">${plan.n}</div>
+          <div class="pp">${plan.p}<small>${plan.per}</small></div>
+          <div class="usd">${plan.usd}</div>
+          <ul>${plan.bullets.map(b=>`<li>${b}</li>`).join('')}</ul>
+          <button class="btn" onclick="pick('plan')">Start plan</button>
+          <a class="talk" href="#"><u>Prefer to talk first? Book a free call</u></a>
+        </div>
+      </div>
+      <div class="oneoff">Or just need something once?</div>
+      ${services.map(svcCard).join('')}
+    `,
+    when:()=>`
+      <div class="crumb">${svc.n} · ${svc.p}</div>
+      <h2>When should we visit?</h2>
+      <p class="sub">${svc.d}</p>
+      <label>Pick a day</label><div class="chips" id="days"></div>
+      <label>Pick a time</label><div class="chips" id="slots"></div>
+      <div class="ist">All times shown in IST (India).</div>
+      <label>Anything we should know? (optional)</label>
+      <textarea class="field" placeholder="e.g. He's a little hard of hearing — speak slowly."></textarea>
+      <button class="btn" onclick="go(2)">Continue</button>
+    `,
+    pay:()=>{
+      if(svc.id==='plan') return `
+        <div class="crumb">Start your plan</div>
+        <h2>Confirm your plan</h2>
+        <div class="summary">
+          <div class="row"><span>Plan</span><b>${plan.n}</b></div>
+          <div class="row"><span>Billing</span><b>Monthly · auto-renews</b></div>
+          <div class="row"><span>Amount</span><b>${plan.p}${plan.per}</b></div>
+        </div>
+        <button class="btn rz" onclick="go(3,true)">Start plan · ${plan.p}${plan.per}</button>
+        <div class="secure">🔒 Secure subscription by Razorpay</div>`;
+      return `
+        <div class="crumb">Review &amp; pay</div>
+        <h2>Confirm your booking</h2>
+        <div class="summary">
+          <div class="row"><span>Service</span><b>${svc.n}</b></div>
+          <div class="row"><span>For</span><b>Your father</b></div>
+          <div class="row"><span>When</span><b>${day||'Tomorrow'}, ${slot||'9–11 AM'} IST</b></div>
+          <div class="row"><span>Total</span><b>${svc.p}${svc.id==='hospital'?' (final billed after)':''}</b></div>
+        </div>
+        <button class="btn rz" onclick="go(3,true)">Pay ${svc.p} · Razorpay</button>
+        <div class="secure">🔒 Secure payment by Razorpay</div>`;
+    },
+    confirmed:()=>{
+      if(svc.id==='plan') return `
+        <div class="succ">
+          <div class="tick"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4 10-10" stroke="#2c6b43" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h2>Your plan is active</h2>
+          <div class="ref">Monthly Companion Plan</div>
+          <div class="next"><div class="nh">What happens next</div>
+            <div class="ni"><b>1.</b> We schedule your father's first home visit and confirm on WhatsApp.</div>
+            <div class="ni"><b>2.</b> Weekly wellbeing calls begin this week.</div>
+            <div class="ni"><b>3.</b> You get a WhatsApp report after every visit.</div>
+          </div>
+          <button class="btn" onclick="go(4)">See a sample report →</button>
+        </div>`;
+      return `
+        <div class="succ">
+          <div class="tick"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4 10-10" stroke="#2c6b43" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h2>Visit booked</h2>
+          <div class="ref">Booking #CE-7731</div>
+          <div class="next"><div class="nh">What happens next</div>
+            <div class="ni"><b>1.</b> We assign a vetted companion and confirm with you on WhatsApp.</div>
+            <div class="ni"><b>2.</b> The visit happens at your chosen time.</div>
+            <div class="ni"><b>3.</b> You get a report with a photo, right after.</div>
+          </div>
+          <button class="btn" onclick="go(4)">See the follow-up →</button>
+        </div>`;
+    },
+    followup:()=>`
+      <div class="crumb">After the visit</div>
+      <h2>Your report is in</h2>
+      <div class="report">
+        <div class="rh"><span class="wi">✓</span> WhatsApp report · ${svc.id==='plan'?'Monthly Plan':'Booking #CE-7731'}</div>
+        <div class="photo">📷 Photo from the visit</div>
+        <p>"Visited your father this morning — he's in good spirits. Ate breakfast well, slept fine, no complaints. We chatted about cricket for a while. BP looked normal. Nothing to worry about. — Team Close Eye"</p>
+      </div>
+      <div class="rate"><div class="q">How was this visit?</div><div class="stars" onclick="complete()">★ ★ ★ ★ ★</div><div id="donewrap"></div></div>
+    `,
+    emergency:()=>`
+      <div class="succ" style="text-align:left">
+        <div class="crumb" style="color:var(--clay)">⚠ Emergency response · ₹3,000</div>
+        <h2>Get help now</h2>
+        <p class="sub">A companion is dispatched for a rapid visit within 2 hours. For anything life-threatening, call an ambulance (108) first.</p>
+        <a class="callbtn" href="tel:+919000221261">📞 Call us now · +91 90002 21261</a>
+        <button class="btn emerg" onclick="go(3,true)">Request rapid visit · ₹3,000</button>
+        <div class="secure">Our care team is alerted the moment you request.</div>
+      </div>
+    `
+  };
+
+  const order=['service','when','pay','confirmed','followup'];
+
+  window.pick=(id)=>{
+    if(id==='plan'){ svc={id:'plan',n:plan.n,p:plan.p}; go(2); return; }
+    svc=services.find(s=>s.id===id);
+    if(svc.emergency){ step=0; renderNav(); bodyEl.innerHTML=screens.emergency(); bodyEl.scrollTop=0; return; }
+    go(1);
+  };
+  window.complete=()=>{ const w=document.getElementById('donewrap'); if(w) w.innerHTML='<div class="done-pill">✓ Visit completed — loop closed</div>'; };
+  window.go=(n,proc)=>{
+    // guard: steps after "Service" need a chosen service — if none, bounce to step 0
+    if(n>0 && !svc){ step=0; renderNav(); bodyEl.innerHTML=screens.service(); bodyEl.scrollTop=0; return; }
+    if(proc){ step=3; renderNav(); bodyEl.innerHTML='<div class="proc"><div class="spin"></div><p>'+(svc.id==='plan'?'Starting your plan…':svc.emergency?'Dispatching help…':'Confirming your payment…')+'</p></div>'; setTimeout(()=>{ if(step===3) bodyEl.innerHTML=screens.confirmed(); },1500); return; }
+    step=n; renderNav(); bodyEl.innerHTML=screens[order[n]](); bodyEl.scrollTop=0;
+    if(n===1){
+      const d=document.getElementById('days'); ['Today','Tomorrow','Sat','Sun'].forEach(x=>{const b=document.createElement('button');b.className='chip'+(day===x?' sel':'');b.textContent=x;b.onclick=()=>{day=x;go(1);};d.appendChild(b);});
+      const sl=document.getElementById('slots'); ['9–11 AM','12–2 PM','4–6 PM','6–8 PM'].forEach(x=>{const b=document.createElement('button');b.className='chip'+(slot===x?' sel':'');b.textContent=x;b.onclick=()=>{slot=x;go(1);};sl.appendChild(b);});
+    }
+  };
+  window.go(0);
+</script>
+</body>
+</html>

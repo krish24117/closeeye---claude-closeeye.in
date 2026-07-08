@@ -17,6 +17,7 @@ const CANONICAL_SERVICE_ID: Record<string, string> = {
 interface RequestBody {
   service_id?: string
   service_name: string
+  loved_one_id?: string | null
   scheduled_at_ist: string | null
   recipient_name?: string
   recipient_address?: string
@@ -63,6 +64,7 @@ export async function submitBooking(data: Partial<BookingData>): Promise<Booking
  */
 export async function requestVisit(input: {
   serviceId: string
+  lovedOneId?: string
   recipientName: string
   recipientAddress: string
   requesterWhatsapp: string
@@ -80,6 +82,7 @@ export async function requestVisit(input: {
   return invokeBookingRequest({
     service_id: CANONICAL_SERVICE_ID[input.serviceId] ?? input.serviceId,
     service_name: svc?.name ?? 'Visit',
+    loved_one_id: input.lovedOneId ?? null,
     scheduled_at_ist: dateIso,
     recipient_name: input.recipientName,
     recipient_address: input.recipientAddress,
