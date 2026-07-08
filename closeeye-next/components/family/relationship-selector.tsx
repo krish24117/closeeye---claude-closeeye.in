@@ -29,7 +29,7 @@ export function RelationshipSelector({
       <button
         type="button"
         onClick={() => { setOpen(true); setQ('') }}
-        className="flex w-full items-center justify-between gap-2 rounded-2xl border border-line bg-ivory px-4 py-3.5 text-left transition-colors hover:border-ink/20 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20"
+        className="flex min-h-[52px] w-full items-center justify-between gap-2 rounded-2xl border border-line bg-ivory px-4 py-3.5 text-left transition-colors hover:border-ink/20 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20"
       >
         {selected ? (
           <span className="flex items-center gap-2.5 text-body text-ink"><span className="text-lg" aria-hidden>{selected.emoji}</span> {selected.key}</span>

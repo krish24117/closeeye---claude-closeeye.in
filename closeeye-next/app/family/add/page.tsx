@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/toast'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { RelationshipSelector } from '@/components/family/relationship-selector'
 import { CityField } from '@/components/family/city-field'
@@ -14,10 +15,11 @@ import { haptic } from '@/lib/haptics'
 
 const labelCls = 'mb-2 block text-body-sm font-semibold text-ink'
 const inputCls =
-  'w-full rounded-2xl border border-line bg-ivory px-4 py-3.5 text-body text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20'
+  'w-full min-h-[52px] rounded-2xl border border-line bg-ivory px-4 py-3.5 text-body text-ink placeholder:text-muted/70 transition-colors focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20'
 
 export default function AddFamilyMemberPage() {
   const router = useRouter()
+  const toast = useToast()
   const { addLovedOne } = useFamilyData()
   const [fullName, setFullName] = React.useState('')
   const [relationship, setRelationship] = React.useState('')
@@ -36,10 +38,13 @@ export default function AddFamilyMemberPage() {
       const created = await addLovedOne({ full_name: fullName, relationship, city })
       if (photo) setLocalPhoto(created.id, photo)
       haptic('success')
+      toast(`${fullName.trim().split(/\s+/)[0]} was added to your family.`)
       router.replace('/family/members')
     } catch (e) {
+      // Never surface a raw Postgres/Supabase error to the user; log it for us.
+      console.error('[add-family-member] save failed:', e)
       setBusy(false)
-      setError(e instanceof Error ? e.message : 'Could not save. Please try again.')
+      setError('We couldn’t save your family member. Please try again.')
     }
   }
 

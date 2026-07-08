@@ -25,7 +25,7 @@ export function CityField({
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-2 rounded-2xl border border-line bg-ivory px-4 py-3.5 focus-within:border-green focus-within:ring-2 focus-within:ring-green/20">
+      <div className="flex min-h-[52px] items-center gap-2 rounded-2xl border border-line bg-ivory px-4 py-3.5 transition-colors focus-within:border-green focus-within:ring-2 focus-within:ring-green/20">
         <MapPin className="h-5 w-5 shrink-0 text-muted" strokeWidth={1.75} />
         <input
           value={value}

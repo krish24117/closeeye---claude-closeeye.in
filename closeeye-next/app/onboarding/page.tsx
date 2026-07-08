@@ -87,8 +87,10 @@ export default function OnboardingPage() {
       haptic('success')
       router.replace('/family')
     } catch (e) {
+      // Keep raw Postgres/Supabase errors out of the UI; log for debugging.
+      console.error('[onboarding] setup failed:', e)
       setBusy(false)
-      setError(e instanceof Error ? e.message : 'Something went wrong setting up your family space. Please try again.')
+      setError('We couldn’t finish setting up your family space. Please try again.')
     }
   }
 
