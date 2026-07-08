@@ -133,3 +133,115 @@ export function subscribeToThread(lovedOneId: string, onInsert: (m: Message) => 
     void supabase.removeChannel(channel)
   }
 }
+
+// ── Admin / Presence Manager side ────────────────────────────────────────────
+// Admins (profiles.role='admin') read & reply to EVERY thread via the
+// "Messages: admin manage" RLS. These fns intentionally do NOT filter by
+// family_user_id — the opposite of the family-side fns. There is currently no
+// admin→family assignment model, so every admin sees every conversation; add a
+// family_assignments table + RLS if per-Presence-Manager scoping is ever needed.
+
+/** The minimum a conversation needs to render on the admin side. */
+export interface AdminThreadRef {
+  lovedOneId: string
+  lovedOneName: string
+  familyUserId: string // the owning family account (denormalised onto each message)
+  familyName: string
+}
+
+export interface AdminThread extends AdminThreadRef {
+  lastMessage: Message
+  awaitingReply: boolean // the family sent the most recent message
+  count: number
+}
+
+/** Every active conversation (one per loved_one that has messages), newest first. */
+export async function fetchAdminThreads(): Promise<AdminThread[]> {
+  const { data, error } = await supabase.from('messages').select(MESSAGE_COLS).order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  const rows = (data as Message[] | null) ?? []
+  if (rows.length === 0) return []
+
+  const byLovedOne = new Map<string, { last: Message; count: number; familyUserId: string }>()
+  for (const m of rows) {
+    const g = byLovedOne.get(m.loved_one_id)
+    if (!g) byLovedOne.set(m.loved_one_id, { last: m, count: 1, familyUserId: m.family_user_id })
+    else g.count++
+  }
+
+  const lovedOneIds = [...byLovedOne.keys()]
+  const familyIds = [...new Set([...byLovedOne.values()].map((g) => g.familyUserId))]
+  const [loRes, profRes] = await Promise.all([
+    supabase.from('loved_ones').select('id, full_name').in('id', lovedOneIds),
+    supabase.from('profiles').select('id, full_name').in('id', familyIds),
+  ])
+  const loName = new Map(((loRes.data ?? []) as { id: string; full_name: string }[]).map((l) => [l.id, l.full_name]))
+  const famName = new Map(((profRes.data ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name ?? '']))
+
+  return [...byLovedOne.entries()]
+    .map(([lovedOneId, g]) => ({
+      lovedOneId,
+      lovedOneName: loName.get(lovedOneId) ?? 'Family member',
+      familyUserId: g.familyUserId,
+      familyName: famName.get(g.familyUserId) || 'Family',
+      lastMessage: g.last,
+      awaitingReply: g.last.sender === 'family',
+      count: g.count,
+    }))
+    .sort((a, b) => b.lastMessage.created_at.localeCompare(a.lastMessage.created_at))
+}
+
+/** One thread's full history, admin-scoped (filter by loved_one_id only). */
+export async function fetchThreadAsAdmin(lovedOneId: string): Promise<Message[]> {
+  const { data, error } = await supabase
+    .from('messages')
+    .select(MESSAGE_COLS)
+    .eq('loved_one_id', lovedOneId)
+    .order('created_at', { ascending: true })
+  if (error) throw new Error(error.message)
+  return (data as Message[] | null) ?? []
+}
+
+/** Resolve a single thread's header info (loved one + owning family) for the admin view. */
+export async function fetchAdminThreadMeta(lovedOneId: string): Promise<AdminThreadRef | null> {
+  const { data, error } = await supabase
+    .from('loved_ones')
+    .select('id, full_name, family_user_id')
+    .eq('id', lovedOneId)
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  if (!data) return null
+  const lo = data as { id: string; full_name: string; family_user_id: string }
+  const { data: prof } = await supabase.from('profiles').select('full_name').eq('id', lo.family_user_id).maybeSingle()
+  return {
+    lovedOneId: lo.id,
+    lovedOneName: lo.full_name,
+    familyUserId: lo.family_user_id,
+    familyName: (prof as { full_name: string | null } | null)?.full_name || 'Family',
+  }
+}
+
+/**
+ * Reply into a thread as Close Eye (sender='closeeye'). Requires the thread's
+ * owning family id (family_user_id is a NOT NULL denormalised column). The
+ * family receives it instantly via their existing realtime subscription.
+ */
+export async function sendAdminMessage(input: {
+  lovedOneId: string
+  familyUserId: string
+  body?: string
+  attachmentPath?: string
+  attachmentType?: 'image' | 'pdf'
+}): Promise<Message> {
+  const row = {
+    family_user_id: input.familyUserId,
+    loved_one_id: input.lovedOneId,
+    sender: 'closeeye' as const,
+    body: input.body?.trim() || null,
+    attachment_url: input.attachmentPath ?? null,
+    attachment_type: input.attachmentType ?? null,
+  }
+  const { data, error } = await supabase.from('messages').insert(row).select(MESSAGE_COLS).single()
+  if (error) throw new Error(error.message)
+  return data as Message
+}
