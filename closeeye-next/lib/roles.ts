@@ -19,9 +19,14 @@ export function isPresenceManager(p: Profile | null | undefined): boolean {
   return p?.admin_role === 'presence_manager'
 }
 
-/** Guardian — the field caregiver, scoped to assigned visits (the companion model). */
+/**
+ * Guardian — the field caregiver, scoped to assigned visits (the companion model).
+ * The real, working companion accounts use the top-level role `role='companion'`
+ * (a companions row whose id == auth.uid). `admin_role='companion'` is kept as a
+ * lenient fallback for any staff-tagged accounts.
+ */
 export function isGuardian(p: Profile | null | undefined): boolean {
-  return p?.admin_role === 'companion'
+  return p?.role === 'companion' || p?.admin_role === 'companion'
 }
 
 /** Doctor — the Medical Concierge, scoped to assigned member queries. */

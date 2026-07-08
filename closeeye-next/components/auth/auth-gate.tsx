@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
+import { useFamilyData } from '@/components/family/family-data-provider'
 import { isNative } from '@/lib/native'
 import { LogoMark } from '@/components/ui/logo'
 
@@ -23,6 +24,7 @@ const inList = (p: string, l: string[]) => l.some((f) => p === f || p.startsWith
  */
 export function AuthGate() {
   const { session, loading, configured, onboardingComplete } = useAuth()
+  const { profile, loading: dataLoading } = useFamilyData()
   const pathname = usePathname()
   const router = useRouter()
   const native = isNative()
@@ -34,8 +36,8 @@ export function AuthGate() {
       setReady(true)
       return
     }
-    // Wait for the session and (when signed in) the onboarding check to resolve.
-    if (loading || (!!session && onboardingComplete === null)) return
+    // Wait for the session and (when signed in) the onboarding + profile to resolve.
+    if (loading || (!!session && (onboardingComplete === null || dataLoading))) return
 
     const onApp = inList(pathname, APP)
     const onFlow = inList(pathname, FLOW)
@@ -48,8 +50,10 @@ export function AuthGate() {
     } else if (onboardingComplete === false) {
       if (pathname !== '/onboarding') target = '/onboarding' // must finish onboarding
     } else {
-      if (onFlow) target = '/family' // skip the auth flow once fully set up
-      else if (firstNative && !onApp) target = '/family' // native launch on marketing
+      // Guardians (companions) land in the Guardian app; everyone else in Family.
+      const home = profile?.role === 'companion' ? '/guardian' : '/family'
+      if (onFlow) target = home // skip the auth flow once fully set up
+      else if (firstNative && !onApp) target = home // native launch on marketing
     }
 
     launched.current = true
@@ -58,7 +62,7 @@ export function AuthGate() {
       if (native) return // keep the splash cover until the destination renders
     }
     setReady(true)
-  }, [configured, loading, session, onboardingComplete, pathname, native, router])
+  }, [configured, loading, session, onboardingComplete, dataLoading, profile?.role, pathname, native, router])
 
   if (native && !ready) {
     return (
