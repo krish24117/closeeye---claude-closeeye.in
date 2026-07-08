@@ -32,7 +32,9 @@ export default function WelcomePage() {
   const go = (dir: number) => setI((n) => Math.min(Math.max(n + dir, 0), SLIDES.length - 1))
   function finish() {
     haptic('success')
-    router.push('/family')
+    // Onboarding intro done → hand off to authentication (never straight to the
+    // dashboard). The auth gate takes over from here.
+    router.push('/auth')
   }
 
   if (splash) {

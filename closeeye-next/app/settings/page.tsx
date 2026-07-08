@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/family/avatar'
 import { SettingsToggle } from '@/components/family/settings-toggle'
 import { Overlay } from '@/components/family/overlay'
+import { SignOutButton } from '@/components/auth/sign-out-button'
 import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
@@ -129,6 +130,8 @@ export default function SettingsPage() {
           <Row label="Terms of Service" href="/terms" />
           <div className="flex items-center justify-between px-5 py-3.5"><span className="text-body-sm text-muted">Version</span><span className="text-body-sm text-muted">1.0.0 (build 100)</span></div>
         </Card>
+
+        <SignOutButton />
 
         <p className="pb-4 text-center text-caption text-muted">Made with care in India · Close Eye</p>
       </main>
