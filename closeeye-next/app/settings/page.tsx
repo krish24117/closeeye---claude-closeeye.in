@@ -12,6 +12,7 @@ import { Avatar } from '@/components/family/avatar'
 import { SettingsToggle } from '@/components/family/settings-toggle'
 import { Overlay } from '@/components/family/overlay'
 import { SignOutButton } from '@/components/auth/sign-out-button'
+import { useFamilyData } from '@/components/family/family-data-provider'
 import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
@@ -43,6 +44,7 @@ function Row({ label, hint, value, onClick, href, danger }: { label: string; hin
 
 export default function SettingsPage() {
   const toast = useToast()
+  const { identity, profile } = useFamilyData()
   const [lang, setLang] = React.useState('English')
   const [confirmDelete, setConfirmDelete] = React.useState(false)
 
@@ -59,10 +61,10 @@ export default function SettingsPage() {
       <main className="ce-fade-in mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6">
         {/* Profile */}
         <section className="flex items-center gap-4 rounded-lg border border-line bg-card p-5 shadow-sm">
-          <Avatar initials="AR" size="lg" />
+          <Avatar initials={identity.initials} src={identity.avatarUrl} alt={identity.fullName} size="lg" />
           <div className="min-w-0 flex-1">
-            <p className="text-h4 text-ink">Ananya Rao</p>
-            <p className="truncate text-caption text-muted">ananya@email.com · +1 416 555 0142</p>
+            <p className="text-h4 text-ink">{identity.fullName}</p>
+            <p className="truncate text-caption text-muted">{[identity.email, profile?.phone].filter(Boolean).join(' · ') || 'Add your details'}</p>
           </div>
           <Button variant="secondary" size="sm" onClick={() => toast('Edit your profile.')}>Edit</Button>
         </section>

@@ -5,6 +5,7 @@ import { RegisterSW } from '@/components/pwa/register-sw'
 import { NativeInit } from '@/components/pwa/native-init'
 import { AuthProvider } from '@/components/auth/auth-provider'
 import { AuthGate } from '@/components/auth/auth-gate'
+import { FamilyDataProvider } from '@/components/family/family-data-provider'
 import { ToastProvider } from '@/components/ui/toast'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 import { CommandK } from '@/components/ui/command-k'
@@ -111,8 +112,10 @@ export default function RootLayout({
           Skip to content
         </a>
         <AuthProvider>
-          <AuthGate />
-          <ToastProvider>{children}</ToastProvider>
+          <FamilyDataProvider>
+            <AuthGate />
+            <ToastProvider>{children}</ToastProvider>
+          </FamilyDataProvider>
         </AuthProvider>
         <OfflineBanner />
         <CommandK />

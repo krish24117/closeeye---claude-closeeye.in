@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { GUARDIAN } from '@/lib/guardian-data'
+import { useProfile } from '@/components/family/family-data-provider'
 
 /** Warm, time-aware greeting. Computed client-side to avoid hydration mismatch. */
 export function GuardianGreeting({ subtitle }: { subtitle: string }) {
+  const { firstName } = useProfile()
   const [part, setPart] = useState('Hello')
   useEffect(() => {
     const h = new Date().getHours()
@@ -13,7 +14,7 @@ export function GuardianGreeting({ subtitle }: { subtitle: string }) {
   return (
     <div>
       <h1 className="text-h2">
-        {part}, {GUARDIAN.firstName}.
+        {part}, {firstName}.
       </h1>
       <p className="mt-1.5 text-body leading-relaxed text-muted">{subtitle}</p>
     </div>

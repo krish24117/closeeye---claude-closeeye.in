@@ -1,13 +1,11 @@
 import Link from 'next/link'
-import { Pencil, LogOut, ShieldCheck, Bell, Lock, UserRound } from 'lucide-react'
+import { LogOut, ShieldCheck, Bell, Lock, UserRound } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
-import { Avatar } from '@/components/family/avatar'
 import { Button } from '@/components/ui/button'
 import { FeatureIcon } from '@/components/ui/feature-icon'
 import { SettingsToggle } from '@/components/family/settings-toggle'
 import { RequestDataButton, ManageSessionsButton } from '@/components/family/profile-actions'
-import { CURRENT_USER, PRESENCE_MANAGER } from '@/lib/family-data'
-import { whatsappLink } from '@/lib/site'
+import { ProfileIdentity } from '@/components/family/profile-identity'
 
 function Card({ icon, title, children }: { icon: typeof Bell; title: string; children: React.ReactNode }) {
   return (
@@ -27,19 +25,7 @@ export default function ProfilePage() {
       <PageHeader title="Profile & settings" subtitle="Your details and how we stay in touch." />
 
       {/* Identity */}
-      <section className="flex items-center gap-4 rounded-lg border border-line bg-card p-6 shadow-sm">
-        <Avatar initials="AR" size="xl" />
-        <div className="min-w-0 flex-1">
-          <p className="text-h4 text-ink">{CURRENT_USER.fullName}</p>
-          <p className="text-body-sm text-muted">{CURRENT_USER.email}</p>
-          <p className="text-caption text-muted">{CURRENT_USER.location}</p>
-        </div>
-        <Button asChild variant="ghost" size="sm">
-          <a href={whatsappLink(`Hi ${PRESENCE_MANAGER.name.split(' ')[0]} — I'd like to update my profile details.`)}>
-            <Pencil className="h-4 w-4" strokeWidth={1.5} /> Edit
-          </a>
-        </Button>
-      </section>
+      <ProfileIdentity />
 
       <Card icon={Bell} title="Communication preferences">
         <SettingsToggle label="WhatsApp updates" hint="Photos and notes after every visit" defaultOn />

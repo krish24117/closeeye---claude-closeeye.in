@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CURRENT_USER } from '@/lib/family-data'
+import { useProfile } from '@/components/family/family-data-provider'
 
 /** Warm, time-aware greeting. Computed client-side to avoid hydration mismatch. */
 export function Greeting() {
+  const { firstName } = useProfile()
   const [part, setPart] = useState('Hello')
   useEffect(() => {
     const h = new Date().getHours()
@@ -14,7 +15,7 @@ export function Greeting() {
   return (
     <div>
       <h1 className="text-h2">
-        {part}, {CURRENT_USER.firstName}
+        {part}, {firstName}
       </h1>
       <p className="mt-1.5 text-body text-muted">Here&apos;s how your family is doing today.</p>
     </div>
