@@ -22,8 +22,10 @@ import {
 import { Logo } from '@/components/ui/logo'
 import { Avatar } from '@/components/family/avatar'
 import { Overlay } from '@/components/family/overlay'
+import { useLovedOnes } from '@/components/family/family-data-provider'
+import { SITE } from '@/lib/site'
+import type { LovedOne } from '@/lib/db/types'
 import { cn } from '@/lib/utils'
-import { PRESENCE_MANAGER, MEMBERS, NOTIFICATIONS } from '@/lib/family-data'
 
 const DESKTOP_NAV = [
   { href: '/family', label: 'Overview', icon: Home },
@@ -49,9 +51,11 @@ function isActive(pathname: string, href: string) {
 
 export function FamilyShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const { lovedOnes } = useLovedOnes()
   const [emergency, setEmergency] = useState(false)
   const [notif, setNotif] = useState(false)
-  const unread = NOTIFICATIONS.filter((n) => n.unread).length
+  // Real notifications feed isn't wired yet — show 0 rather than a fabricated count.
+  const unread = 0
 
   return (
     <div className="min-h-dvh bg-ivory">
@@ -148,7 +152,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
       </nav>
 
       <NotifPanel open={notif} onClose={() => setNotif(false)} />
-      <EmergencySheet open={emergency} onClose={() => setEmergency(false)} />
+      <EmergencySheet open={emergency} onClose={() => setEmergency(false)} lovedOnes={lovedOnes} />
     </div>
   )
 }
@@ -177,10 +181,10 @@ function PresenceManagerMini() {
       href="/family/messages"
       className="mt-auto flex items-center gap-3 rounded-md border border-line bg-ivory p-3 transition-colors hover:border-accent"
     >
-      <Avatar initials={PRESENCE_MANAGER.initials} size="sm" />
+      <Avatar initials="CE" size="sm" tone="solid" />
       <span className="min-w-0">
-        <span className="block truncate text-body-sm font-semibold text-ink">{PRESENCE_MANAGER.name}</span>
-        <span className="block text-caption text-muted">Your Presence Manager</span>
+        <span className="block truncate text-body-sm font-semibold text-ink">{SITE.name}</span>
+        <span className="block text-caption text-muted">Message your care team</span>
       </span>
     </Link>
   )
@@ -197,24 +201,27 @@ function NotifPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
           <X className="h-5 w-5" strokeWidth={1.5} />
         </button>
       </div>
-      <ul className="max-h-[70vh] overflow-y-auto">
-        {NOTIFICATIONS.map((n) => (
-          <li key={n.id} className="flex gap-3 border-b border-line px-6 py-4 last:border-b-0">
-            <span className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', n.unread ? 'bg-success' : 'bg-line')} />
-            <div>
-              <p className="text-body-sm text-ink">{n.text}</p>
-              <p className="mt-0.5 text-caption text-muted">{n.timeLabel}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <div className="px-6 py-12 text-center">
+        <p className="text-body-sm font-semibold text-ink">You&apos;re all caught up</p>
+        <p className="mx-auto mt-1 max-w-xs text-caption text-muted">
+          Updates about your family&apos;s visits and reports will appear here.
+        </p>
+      </div>
     </Overlay>
   )
 }
 
-function EmergencySheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const contacts = MEMBERS.flatMap((m) => m.emergencyContacts)
-  const father = MEMBERS[0]
+function EmergencySheet({ open, onClose, lovedOnes }: { open: boolean; onClose: () => void; lovedOnes: LovedOne[] }) {
+  const contacts = lovedOnes
+    .filter((lo) => lo.emergency_contact_name?.trim() && lo.emergency_contact_phone?.trim())
+    .map((lo) => ({
+      name: lo.emergency_contact_name!.trim(),
+      phone: lo.emergency_contact_phone!.trim(),
+      forName: lo.full_name.split(/\s+/)[0],
+      key: lo.id,
+    }))
+  const careCards = lovedOnes.filter((lo) => lo.nearest_hospital?.trim() || lo.medical_notes?.trim())
+
   return (
     <Overlay open={open} onClose={onClose}>
       <div className="flex items-center justify-between border-b border-line px-6 py-4">
@@ -230,40 +237,52 @@ function EmergencySheet({ open, onClose }: { open: boolean; onClose: () => void 
       </div>
       <div className="flex flex-col gap-5 overflow-y-auto px-6 py-5">
         <a
-          href={`tel:${PRESENCE_MANAGER.phone.replace(/\s/g, '')}`}
+          href={SITE.phoneHref}
           className="flex items-center justify-center gap-2 rounded-sm bg-error py-4 text-body font-semibold text-ivory transition-opacity hover:opacity-90"
         >
-          <Phone className="h-5 w-5" strokeWidth={1.75} /> Call {PRESENCE_MANAGER.name}
+          <Phone className="h-5 w-5" strokeWidth={1.75} /> Call {SITE.name}
         </a>
 
         <div>
           <p className="text-caption font-semibold uppercase tracking-widest text-muted">Emergency contacts</p>
-          <ul className="mt-2 flex flex-col gap-2">
-            {contacts.map((c) => (
-              <li key={c.name + c.phone}>
-                <a href={`tel:${c.phone.replace(/\s/g, '')}`} className="flex items-center justify-between rounded-sm border border-line px-4 py-3 transition-colors hover:border-accent">
-                  <span>
-                    <span className="block text-body-sm font-semibold text-ink">{c.name}</span>
-                    <span className="block text-caption text-muted">{c.relation}</span>
-                  </span>
-                  <Phone className="h-4 w-4 text-green" strokeWidth={1.5} />
-                </a>
-              </li>
-            ))}
-          </ul>
+          {contacts.length > 0 ? (
+            <ul className="mt-2 flex flex-col gap-2">
+              {contacts.map((c) => (
+                <li key={c.key}>
+                  <a href={`tel:${c.phone.replace(/\s/g, '')}`} className="flex items-center justify-between rounded-sm border border-line px-4 py-3 transition-colors hover:border-accent">
+                    <span>
+                      <span className="block text-body-sm font-semibold text-ink">{c.name}</span>
+                      <span className="block text-caption text-muted">For {c.forName}</span>
+                    </span>
+                    <Phone className="h-4 w-4 text-green" strokeWidth={1.5} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-body-sm text-muted">
+              Add an emergency contact in each family member&apos;s health profile so it&apos;s ready here.
+            </p>
+          )}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-sm border border-line p-4">
-            <p className="flex items-center gap-1.5 text-caption font-semibold uppercase tracking-widest text-muted"><MapPin className="h-3.5 w-3.5" /> Nearest hospital</p>
-            <p className="mt-1.5 text-body-sm text-ink">Apollo Hospitals, Jubilee Hills</p>
-            <p className="text-caption text-muted">≈ 3.2 km from {father?.city}</p>
+        {careCards.map((lo) => (
+          <div key={lo.id} className="grid gap-3 sm:grid-cols-2">
+            {lo.nearest_hospital?.trim() && (
+              <div className="rounded-sm border border-line p-4">
+                <p className="flex items-center gap-1.5 text-caption font-semibold uppercase tracking-widest text-muted"><MapPin className="h-3.5 w-3.5" /> Nearest hospital · {lo.full_name.split(/\s+/)[0]}</p>
+                <p className="mt-1.5 text-body-sm text-ink">{lo.nearest_hospital}</p>
+              </div>
+            )}
+            {lo.medical_notes?.trim() && (
+              <div className="rounded-sm border border-line p-4">
+                <p className="flex items-center gap-1.5 text-caption font-semibold uppercase tracking-widest text-muted"><Stethoscope className="h-3.5 w-3.5" /> Medical notes · {lo.full_name.split(/\s+/)[0]}</p>
+                <p className="mt-1.5 text-body-sm text-ink">{lo.medical_notes}</p>
+              </div>
+            )}
           </div>
-          <div className="rounded-sm border border-line p-4">
-            <p className="flex items-center gap-1.5 text-caption font-semibold uppercase tracking-widest text-muted"><Stethoscope className="h-3.5 w-3.5" /> Medical notes</p>
-            <p className="mt-1.5 text-body-sm text-ink">{father?.medicalNotes[0]}</p>
-          </div>
-        </div>
+        ))}
+
         <p className="text-caption text-muted">In a life-threatening emergency, always call 108 (ambulance) first.</p>
       </div>
     </Overlay>
