@@ -38,6 +38,17 @@ export interface Subscription {
   current_end: string | null
 }
 
+/** A visit the family requested via /book (booking_requests table). */
+export interface BookingRequest {
+  id: string
+  service_name: string | null
+  status: string
+  scheduled_at: string | null
+  recipient_name: string | null
+  payment_status: string | null
+  created_at: string | null
+}
+
 export interface NewLovedOne {
   full_name: string
   relationship: string

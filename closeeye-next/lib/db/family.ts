@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import type { LovedOne, NewLovedOne, Profile } from '@/lib/db/types'
+import type { BookingRequest, LovedOne, NewLovedOne, Profile } from '@/lib/db/types'
 
 const PROFILE_COLS = 'id, full_name, role, phone, whatsapp_number, address'
 const LOVED_ONE_COLS =
@@ -63,4 +63,16 @@ export async function addLovedOne(userId: string, input: NewLovedOne): Promise<L
 export async function deleteLovedOne(id: string): Promise<void> {
   const { error } = await supabase.from('loved_ones').delete().eq('id', id)
   if (error) throw new Error(error.message)
+}
+
+const BOOKING_REQUEST_COLS = 'id, service_name, status, scheduled_at, recipient_name, payment_status, created_at'
+
+/** The family's own visit requests (RLS: user_id = auth.uid()). Empty for new users. */
+export async function fetchMyBookingRequests(): Promise<BookingRequest[]> {
+  const { data, error } = await supabase
+    .from('booking_requests')
+    .select(BOOKING_REQUEST_COLS)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return (data as BookingRequest[] | null) ?? []
 }
