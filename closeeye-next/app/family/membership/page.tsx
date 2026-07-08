@@ -5,9 +5,10 @@ import Link from 'next/link'
 import { Check, Loader2 } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
 import { Button } from '@/components/ui/button'
-import { useMembership } from '@/components/family/family-data-provider'
+import { useFamilyData } from '@/components/family/family-data-provider'
 import { useToast } from '@/components/ui/toast'
 import { PLANS, SERVICES, planById, type PlanId } from '@/lib/plans'
+import { payForMembership, type PayOutcome } from '@/lib/razorpay'
 import { cn } from '@/lib/utils'
 
 const STEPS = [
@@ -26,24 +27,49 @@ function formatDate(iso: string): string {
 }
 
 export default function MembershipPage() {
-  const { subscription, chooseMembership } = useMembership()
+  const { subscription, chooseMembership, profile, identity, refresh } = useFamilyData()
   const toast = useToast()
-  const [choosing, setChoosing] = useState<PlanId | null>(null)
+  const [busy, setBusy] = useState<PlanId | null>(null)
   const currentId = subscription?.plan_id
   const active = subscription?.status === 'active'
+  const activating = subscription?.status === 'authenticated'
   const isCare = planById(currentId)?.key === 'care'
 
+  function handleOutcome(o: PayOutcome, short: string) {
+    if (o.status === 'success') {
+      toast(`Payment received — activating your CloseEye ${short} membership.`)
+      void refresh()
+    } else if (o.status === 'dismissed') {
+      toast(`CloseEye ${short} selected — you can complete payment anytime.`)
+    } else {
+      toast(o.message) // failed / unavailable / error
+    }
+  }
+
+  // Select the plan, then open Razorpay to activate it. Works for a fresh choice
+  // and for completing payment on an already-selected (pending) plan.
   async function choose(planId: PlanId) {
-    if (choosing) return
-    setChoosing(planId)
+    if (busy) return
+    const plan = planById(planId)
+    if (!plan) return
+    setBusy(planId)
     try {
       await chooseMembership(planId)
-      toast(`You’re on CloseEye ${planById(planId)?.short ?? ''}.`)
+      const outcome = await payForMembership({
+        planId,
+        planName: `CloseEye ${plan.short}`,
+        prefill: {
+          name: identity.fullName,
+          email: identity.email ?? undefined,
+          contact: profile?.whatsapp_number || profile?.phone || undefined,
+        },
+      })
+      handleOutcome(outcome, plan.short)
     } catch (e) {
-      console.error('[membership] choose failed:', e)
-      toast('We couldn’t update your plan. Please try again.')
+      console.error('[membership] payment failed:', e)
+      toast('We couldn’t start the payment. Please try again.')
     } finally {
-      setChoosing(null)
+      setBusy(null)
     }
   }
 
@@ -90,6 +116,11 @@ export default function MembershipPage() {
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     {active ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-success/12 px-2.5 py-1 text-caption font-semibold text-success"><Check className="h-3 w-3" strokeWidth={3} /> Active</span>
+                    ) : activating ? (
+                      <>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-success/12 px-2.5 py-1 text-caption font-semibold text-success"><Check className="h-3 w-3" strokeWidth={3} /> Selected</span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2.5 py-1 text-caption font-semibold text-green"><Loader2 className="h-3 w-3 animate-spin" strokeWidth={2.5} /> Activating…</span>
+                      </>
                     ) : (
                       <>
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-success/12 px-2.5 py-1 text-caption font-semibold text-success"><Check className="h-3 w-3" strokeWidth={3} /> Selected</span>
@@ -100,16 +131,21 @@ export default function MembershipPage() {
                   {active && subscription?.current_end && (
                     <p className="mt-2 text-caption text-muted">Renews on {formatDate(subscription.current_end)}</p>
                   )}
+                  {!active && !activating && (
+                    <Button size="sm" className="mt-3 w-full" disabled={busy !== null} onClick={() => choose(plan.id)}>
+                      {busy === plan.id ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Opening…</> : 'Complete payment'}
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <Button
                   size="lg"
                   variant={plan.popular ? 'primary' : 'secondary'}
                   className="mt-7 w-full"
-                  disabled={choosing !== null}
+                  disabled={busy !== null}
                   onClick={() => choose(plan.id)}
                 >
-                  {choosing === plan.id ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Saving…</> : plan.cta}
+                  {busy === plan.id ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Opening…</> : plan.cta}
                 </Button>
               )}
             </div>
