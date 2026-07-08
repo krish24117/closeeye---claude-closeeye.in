@@ -41,3 +41,25 @@ export async function signInWithGoogle(): Promise<{ error: string | null }> {
   await Browser.open({ url: data.url, presentationStyle: 'popover' })
   return { error: null }
 }
+
+/**
+ * Email sign-in link (a.k.a. "magic link").
+ *
+ * The default Supabase email service can only send a link, not a 6-digit code —
+ * a code needs `{{ .Token }}` in the template, and template editing is gated
+ * behind custom SMTP. So email sign-in is link-based until SMTP is configured;
+ * once it is, the same call can deliver a code (add code entry back on /auth).
+ *
+ * The link returns to the app the same way Google does: on web it lands on
+ * `/auth` (Supabase auto-exchanges the code); on native it deep-links to the
+ * registered scheme and completes in native-init.tsx. Opening the email on the
+ * SAME device that requested it is required (that device holds the PKCE verifier).
+ */
+export async function sendMagicLink(email: string): Promise<{ error: string | null }> {
+  const emailRedirectTo = isNative() ? NATIVE_OAUTH_REDIRECT : `${window.location.origin}/auth`
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.trim().toLowerCase(),
+    options: { shouldCreateUser: true, emailRedirectTo },
+  })
+  return { error: error?.message ?? null }
+}
