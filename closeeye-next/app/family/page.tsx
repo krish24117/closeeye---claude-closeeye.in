@@ -40,7 +40,7 @@ function RealOverview({ lovedOnes }: { lovedOnes: LovedOne[] }) {
       <section className="flex flex-col gap-4">
         <SectionTitle>Getting started</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-3">
-          <ActionCard href="/book" icon={CalendarPlus} title="Book the first visit" desc={`Schedule a wellbeing visit for ${first}.`} />
+          <ActionCard href="/family/book" icon={CalendarPlus} title="Book the first visit" desc={`Schedule a wellbeing visit for ${first}.`} />
           <ActionCard href="/family/members" icon={ClipboardList} title="Complete their profile" desc="Add health details and emergency contacts." />
           <ActionCard href="/family/add" icon={UserPlus} title="Add another family member" desc="Care for more of your family." />
         </div>

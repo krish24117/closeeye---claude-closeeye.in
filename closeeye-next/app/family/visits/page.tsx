@@ -55,7 +55,7 @@ export default function VisitsPage() {
         <PageHeader title="Visits" subtitle="Every visit for the people you love." />
         {requests && requests.length > 0 && (
           <Button asChild size="md">
-            <Link href="/book"><CalendarPlus className="h-5 w-5" strokeWidth={2} /> Book a visit</Link>
+            <Link href="/family/book"><CalendarPlus className="h-5 w-5" strokeWidth={2} /> Book a visit</Link>
           </Button>
         )}
       </div>
@@ -70,7 +70,7 @@ export default function VisitsPage() {
           <h2 className="mt-5 text-h3 text-ink">No visits yet</h2>
           <p className="mt-2 max-w-sm text-body text-muted">When you book a wellbeing visit, it appears here — with photos and a full report after each one.</p>
           <Button asChild size="lg" className="mt-6">
-            <Link href="/book"><CalendarPlus className="h-5 w-5" strokeWidth={2} /> Book a visit</Link>
+            <Link href="/family/book"><CalendarPlus className="h-5 w-5" strokeWidth={2} /> Book a visit</Link>
           </Button>
         </section>
       ) : (
