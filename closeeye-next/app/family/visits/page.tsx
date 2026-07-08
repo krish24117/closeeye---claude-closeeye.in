@@ -8,7 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/family/avatar'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useAuth } from '@/components/auth/auth-provider'
+import { useFamilyData } from '@/components/family/family-data-provider'
+import { useToast } from '@/components/ui/toast'
 import { fetchMyBookingRequests } from '@/lib/db/family'
+import { payForBooking } from '@/lib/razorpay'
 import type { BookingRequest } from '@/lib/db/types'
 import { cn } from '@/lib/utils'
 
@@ -43,17 +46,52 @@ function fmtDate(iso: string | null): string {
   }
 }
 
+const rupees = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN')}`
+
 export default function VisitsPage() {
   const { user } = useAuth()
+  const { profile, identity } = useFamilyData()
+  const toast = useToast()
   const [requests, setRequests] = React.useState<BookingRequest[] | null>(null)
+  const [paying, setPaying] = React.useState<string | null>(null)
 
-  React.useEffect(() => {
+  const reload = React.useCallback(() => {
     if (!user?.id) {
       setRequests([])
       return
     }
     fetchMyBookingRequests(user.id).then(setRequests).catch(() => setRequests([]))
   }, [user?.id])
+
+  React.useEffect(() => { reload() }, [reload])
+
+  async function pay(r: BookingRequest) {
+    if (paying) return
+    setPaying(r.id)
+    try {
+      const outcome = await payForBooking({
+        bookingRequestId: r.id,
+        prefill: {
+          name: identity.fullName,
+          email: identity.email ?? undefined,
+          contact: profile?.whatsapp_number || profile?.phone || undefined,
+        },
+      })
+      if (outcome.status === 'success') {
+        toast('Payment received — your visit is confirmed.')
+        reload()
+      } else if (outcome.status === 'dismissed') {
+        toast('Payment cancelled — you can pay anytime.')
+      } else {
+        toast(outcome.message)
+      }
+    } catch (e) {
+      console.error('[visits] payment failed:', e)
+      toast('We couldn’t start the payment. Please try again.')
+    } finally {
+      setPaying(null)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -84,16 +122,26 @@ export default function VisitsPage() {
           {requests.map((r, i) => {
             const name = r.recipient_name?.trim() || 'Your family'
             const m = statusMeta(r.status)
+            const awaitingPayment = r.status === 'companion_confirmed' && r.payment_status !== 'paid' && (r.amount_paise ?? 0) > 0
             return (
-              <div key={r.id} className={cn('flex items-center gap-4 px-5 py-4', i > 0 && 'border-t border-line')}>
-                <Avatar initials={initialsOf(name)} size="md" tone="solid" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-body-sm font-semibold text-ink">{r.service_name?.trim() || 'Wellbeing visit'}</p>
-                  <p className="truncate text-caption text-muted">For {name} · {fmtDate(r.scheduled_at)}</p>
+              <div key={r.id} className={cn('px-5 py-4', i > 0 && 'border-t border-line')}>
+                <div className="flex items-center gap-4">
+                  <Avatar initials={initialsOf(name)} size="md" tone="solid" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-body-sm font-semibold text-ink">{r.service_name?.trim() || 'Wellbeing visit'}</p>
+                    <p className="truncate text-caption text-muted">For {name} · {fmtDate(r.scheduled_at)}</p>
+                  </div>
+                  <span className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold', toneCls[m.tone])}>
+                    <span className={cn('h-1.5 w-1.5 rounded-full', dotCls[m.tone])} /> {m.label}
+                  </span>
                 </div>
-                <span className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold', toneCls[m.tone])}>
-                  <span className={cn('h-1.5 w-1.5 rounded-full', dotCls[m.tone])} /> {m.label}
-                </span>
+                {awaitingPayment && (
+                  <div className="mt-3">
+                    <Button size="sm" disabled={paying !== null} onClick={() => pay(r)}>
+                      {paying === r.id ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Opening…</> : `Pay ${rupees(r.amount_paise ?? 0)} now`}
+                    </Button>
+                  </div>
+                )}
               </div>
             )
           })}

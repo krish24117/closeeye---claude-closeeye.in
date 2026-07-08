@@ -99,6 +99,7 @@ export default function ProfilePage() {
 
       <Card icon={BadgeCheck} title="Plan & family">
         <LinkRow href="/family/membership" label="Membership" hint={plan ? plan.name : 'Choose a plan'} value={membershipValue} />
+        <LinkRow href="/family/billing" label="Billing & payments" hint="Receipts and renewals" />
         <LinkRow href="/family/members" label="Family" hint={`${lovedOnes.length} ${lovedOnes.length === 1 ? 'member' : 'members'}`} />
       </Card>
 

@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { PlanId } from '@/lib/plans'
-import type { Subscription } from '@/lib/db/types'
+import type { MembershipReceipt, Subscription } from '@/lib/db/types'
 
 /**
  * Save the user's basic profile from onboarding and mark onboarding complete.
@@ -62,9 +62,23 @@ export async function saveMyProfile(
 export async function fetchMySubscription(userId: string): Promise<Subscription | null> {
   const { data, error } = await supabase
     .from('subscriptions')
-    .select('plan_id, status, current_end')
+    .select('plan_id, status, current_end, next_billing_at, total_paid_paise, invoice_count')
     .eq('user_id', userId)
     .maybeSingle()
   if (error) throw new Error(error.message)
   return (data as Subscription | null) ?? null
+}
+
+/**
+ * The user's one-time membership receipts (memberships table). Filter explicitly
+ * by user_id — memberships RLS also grants admins a global read.
+ */
+export async function fetchMyMemberships(userId: string): Promise<MembershipReceipt[]> {
+  const { data, error } = await supabase
+    .from('memberships')
+    .select('id, amount_paise, status, razorpay_payment_id, activated_at, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return (data as MembershipReceipt[] | null) ?? []
 }

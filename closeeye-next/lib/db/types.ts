@@ -36,6 +36,19 @@ export interface Subscription {
   plan_id: string
   status: string
   current_end: string | null
+  next_billing_at: string | null
+  total_paid_paise: number | null
+  invoice_count: number | null
+}
+
+/** A one-time membership receipt (memberships table — founding ₹100). */
+export interface MembershipReceipt {
+  id: string
+  amount_paise: number | null
+  status: string
+  razorpay_payment_id: string | null
+  activated_at: string | null
+  created_at: string | null
 }
 
 /** A visit the family requested via /book (booking_requests table). */
@@ -46,6 +59,7 @@ export interface BookingRequest {
   scheduled_at: string | null
   recipient_name: string | null
   payment_status: string | null
+  amount_paise: number | null
   created_at: string | null
 }
 

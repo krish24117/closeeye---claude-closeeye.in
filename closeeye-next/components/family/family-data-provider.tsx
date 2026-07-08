@@ -120,7 +120,14 @@ export function FamilyDataProvider({ children }: { children: React.ReactNode }) 
       if (!userId) throw new Error('You’re not signed in.')
       const { error: e } = await selectPlanDb(userId, planId)
       if (e) throw new Error(e)
-      setSubscription((prev) => ({ plan_id: planId, status: prev?.status ?? 'created', current_end: prev?.current_end ?? null }))
+      setSubscription((prev) => ({
+        plan_id: planId,
+        status: prev?.status ?? 'created',
+        current_end: prev?.current_end ?? null,
+        next_billing_at: prev?.next_billing_at ?? null,
+        total_paid_paise: prev?.total_paid_paise ?? null,
+        invoice_count: prev?.invoice_count ?? null,
+      }))
     },
     [userId],
   )

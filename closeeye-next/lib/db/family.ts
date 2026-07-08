@@ -85,7 +85,7 @@ export async function updateFamilyMember(id: string, input: NewLovedOne): Promis
   return data as LovedOne
 }
 
-const BOOKING_REQUEST_COLS = 'id, service_name, status, scheduled_at, recipient_name, payment_status, created_at'
+const BOOKING_REQUEST_COLS = 'id, service_name, status, scheduled_at, recipient_name, payment_status, amount_paise, created_at'
 
 /**
  * The signed-in family user's own visit requests. We filter explicitly by
