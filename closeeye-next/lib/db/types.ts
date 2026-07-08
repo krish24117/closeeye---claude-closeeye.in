@@ -63,6 +63,20 @@ export interface BookingRequest {
   created_at: string | null
 }
 
+/** A single message in a family member's care thread (messages table). */
+export interface Message {
+  id: string
+  loved_one_id: string
+  family_user_id: string
+  sender: 'family' | 'closeeye' | 'system'
+  body: string | null
+  attachment_url: string | null // storage PATH within the private message-attachments bucket
+  attachment_type: 'image' | 'pdf' | null
+  related_booking_id: string | null
+  read_at: string | null
+  created_at: string
+}
+
 export interface NewLovedOne {
   full_name: string
   relationship: string
