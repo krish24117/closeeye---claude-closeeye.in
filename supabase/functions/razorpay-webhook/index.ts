@@ -459,6 +459,56 @@ Deno.serve(async (req: Request) => {
     return json({ ok: true, handled: "payment_link_paid" });
   }
 
+  // ── Handle payment.failed ────────────────────────────────────────────────────
+  // A one-time order payment failed — record it so the DB (our source of truth)
+  // reflects the failure. Never downgrades an already-paid booking.
+  if (event === "payment.failed") {
+    const orderId = rzPayment?.order_id as string | undefined;
+    const paymentId = rzPayment?.id as string | undefined;
+    console.log(`[razorpay-webhook] payment.failed — orderId=${orderId} paymentId=${paymentId}`);
+    if (orderId) {
+      const { data: br } = await sb
+        .from("booking_requests")
+        .select("id, payment_status")
+        .eq("razorpay_order_id", orderId)
+        .maybeSingle();
+      if (br && br.payment_status !== "paid") {
+        await sb.from("booking_requests").update({
+          payment_status: "failed",
+          razorpay_payment_id: paymentId ?? null,
+        }).eq("id", br.id as string);
+      }
+    }
+    return json({ ok: true, handled: "payment_failed" });
+  }
+
+  // ── Handle order.paid ────────────────────────────────────────────────────────
+  // Order-level confirmation for a one-time booking order. Idempotent alongside
+  // payment.captured — marks the booking paid if not already.
+  if (event === "order.paid") {
+    // deno-lint-ignore no-explicit-any
+    const rzOrder = (payload.payload as any)?.order?.entity as Record<string, unknown> | undefined;
+    const orderId = (rzOrder?.id as string | undefined) ?? (rzPayment?.order_id as string | undefined);
+    const paymentId = rzPayment?.id as string | undefined;
+    console.log(`[razorpay-webhook] order.paid — orderId=${orderId} paymentId=${paymentId}`);
+    if (orderId) {
+      const { data: br } = await sb
+        .from("booking_requests")
+        .select("id, status")
+        .eq("razorpay_order_id", orderId)
+        .maybeSingle();
+      if (br && br.status !== "paid") {
+        await sb.from("booking_requests").update({
+          status: "paid",
+          payment_status: "paid",
+          razorpay_payment_id: paymentId ?? null,
+          paid_at: new Date().toISOString(),
+        }).eq("id", br.id as string);
+      }
+    }
+    return json({ ok: true, handled: "order_paid" });
+  }
+
   if (!rzSub?.id) {
     console.warn("No subscription entity in payload", event);
     return json({ ok: true });
