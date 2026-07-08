@@ -58,3 +58,9 @@ export async function addLovedOne(userId: string, input: NewLovedOne): Promise<L
   if (error) throw new Error(error.message)
   return data as LovedOne
 }
+
+/** Remove a family member (RLS: a family user may delete their own rows). */
+export async function deleteLovedOne(id: string): Promise<void> {
+  const { error } = await supabase.from('loved_ones').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+}

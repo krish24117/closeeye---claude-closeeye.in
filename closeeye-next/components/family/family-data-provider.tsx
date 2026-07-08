@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { useAuth } from '@/components/auth/auth-provider'
-import { addLovedOne as addLovedOneDb, fetchMyLovedOnes, fetchMyProfile } from '@/lib/db/family'
+import { addLovedOne as addLovedOneDb, deleteLovedOne as deleteLovedOneDb, fetchMyLovedOnes, fetchMyProfile } from '@/lib/db/family'
 import type { LovedOne, NewLovedOne, Profile } from '@/lib/db/types'
 
 /** The signed-in person's display identity, resolved from profile + auth. */
@@ -25,6 +25,7 @@ interface FamilyData {
   error: string | null
   refresh: () => Promise<void>
   addLovedOne: (input: NewLovedOne) => Promise<LovedOne>
+  removeLovedOne: (id: string) => Promise<void>
 }
 
 const FamilyDataContext = createContext<FamilyData | undefined>(undefined)
@@ -95,10 +96,15 @@ export function FamilyDataProvider({ children }: { children: React.ReactNode }) 
     [userId],
   )
 
+  const removeLovedOne = useCallback(async (id: string) => {
+    await deleteLovedOneDb(id)
+    setLovedOnes((prev) => prev.filter((l) => l.id !== id))
+  }, [])
+
   const identity = useMemo(() => deriveIdentity(user, profile), [user, profile])
   const value = useMemo<FamilyData>(
-    () => ({ profile, lovedOnes, identity, loading, error, refresh: load, addLovedOne }),
-    [profile, lovedOnes, identity, loading, error, load, addLovedOne],
+    () => ({ profile, lovedOnes, identity, loading, error, refresh: load, addLovedOne, removeLovedOne }),
+    [profile, lovedOnes, identity, loading, error, load, addLovedOne, removeLovedOne],
   )
 
   return <FamilyDataContext.Provider value={value}>{children}</FamilyDataContext.Provider>
@@ -115,8 +121,8 @@ export function useProfile(): Identity {
   return useFamilyData().identity
 }
 
-/** The signed-in user's loved ones, with loading/empty/error + add. */
+/** The signed-in user's loved ones, with loading/empty/error + add/remove. */
 export function useLovedOnes() {
-  const { lovedOnes, loading, error, refresh, addLovedOne } = useFamilyData()
-  return { lovedOnes, loading, error, refresh, addLovedOne }
+  const { lovedOnes, loading, error, refresh, addLovedOne, removeLovedOne } = useFamilyData()
+  return { lovedOnes, loading, error, refresh, addLovedOne, removeLovedOne }
 }
