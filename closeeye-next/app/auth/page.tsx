@@ -9,10 +9,12 @@ import { LogoMark } from '@/components/ui/logo'
 import { Button } from '@/components/ui/button'
 import { ErrorState } from '@/components/ui/states'
 import { isSupabaseConfigured } from '@/lib/supabase'
-import { signInWithGoogle, sendMagicLink } from '@/lib/auth-actions'
+import { signInWithGoogle, sendEmailOtp, verifyEmailOtp } from '@/lib/auth-actions'
+import { isNative } from '@/lib/native'
 import { haptic } from '@/lib/haptics'
 
 const isEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
+type Pending = null | 'google' | 'email' | 'verify'
 
 /** The Google mark for the "Continue with Google" button. */
 function GoogleG() {
@@ -26,7 +28,7 @@ function GoogleG() {
   )
 }
 
-/** Resend countdown; resets each time a link is (re)sent. */
+/** Resend countdown; resets each time a code is (re)sent. */
 function Resend({ seedKey, onResend }: { seedKey: number; onResend: () => void }) {
   const [left, setLeft] = React.useState(30)
   React.useEffect(() => setLeft(30), [seedKey])
@@ -36,30 +38,29 @@ function Resend({ seedKey, onResend }: { seedKey: number; onResend: () => void }
     return () => clearTimeout(t)
   }, [left])
   return left > 0 ? (
-    <span className="inline-flex items-center gap-1.5 text-caption text-muted"><Clock className="h-3.5 w-3.5" strokeWidth={1.75} /> Resend link in {left}s</span>
+    <span className="inline-flex items-center gap-1.5 text-caption text-muted"><Clock className="h-3.5 w-3.5" strokeWidth={1.75} /> Resend code in {left}s</span>
   ) : (
-    <button type="button" onClick={onResend} className="inline-flex items-center gap-1.5 text-caption font-semibold text-green hover:underline"><RefreshCw className="h-3.5 w-3.5" strokeWidth={1.75} /> Resend link</button>
+    <button type="button" onClick={onResend} className="inline-flex items-center gap-1.5 text-caption font-semibold text-green hover:underline"><RefreshCw className="h-3.5 w-3.5" strokeWidth={1.75} /> Resend code</button>
   )
 }
 
 function AuthFlow() {
   const router = useRouter()
   const params = useSearchParams()
-  const [stage, setStage] = React.useState<'signin' | 'sent'>('signin')
+  const native = isNative()
+  const [stage, setStage] = React.useState<'signin' | 'code'>('signin')
   const [email, setEmail] = React.useState('')
-  const [busy, setBusy] = React.useState(false)
+  const [code, setCode] = React.useState('')
+  const [pending, setPending] = React.useState<Pending>(null)
   const [error, setError] = React.useState('')
   const [sentAt, setSentAt] = React.useState(0)
+  const busy = pending !== null
 
-  // A magic link returning on the web lands here with `?code=…`; the Supabase
+  // A sign-in link returning on the web lands here with `?code=…`; the Supabase
   // client exchanges it automatically, so show a "signing you in" state (not the
   // form) while the auth gate routes on to the dashboard.
   const returning = params.get('code') !== null || params.get('token_hash') !== null
   const [stuck, setStuck] = React.useState(false)
-
-  // If the exchange succeeds the gate navigates away in well under a second. If
-  // it hasn't after ~9s the link was opened in a different browser (no PKCE
-  // verifier) or has expired — surface a retry instead of spinning forever.
   React.useEffect(() => {
     if (!returning) return
     const t = setTimeout(() => setStuck(true), 9000)
@@ -69,29 +70,44 @@ function AuthFlow() {
   const inputCls =
     'w-full rounded-sm border border-line bg-ivory px-3.5 py-2.5 text-body-sm text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20'
 
-  async function sendLink(resend = false) {
+  async function google() {
+    setError('')
+    setPending('google')
+    const { error: err } = await signInWithGoogle()
+    if (err) {
+      setPending(null)
+      setError(err)
+      return
+    }
+    // Web redirects away (spinner rides through the redirect). Native has just
+    // opened the system browser, so stop the spinner and wait for the deep link.
+    if (native) setPending(null)
+  }
+
+  async function sendCode(resend = false) {
     setError('')
     if (!isEmail(email)) return setError('Please enter a valid email address.')
     if (!isSupabaseConfigured) return setError('Sign-in is temporarily unavailable. Please try again shortly.')
-    setBusy(true)
-    const { error: err } = await sendMagicLink(email)
-    setBusy(false)
+    setPending('email')
+    const { error: err } = await sendEmailOtp(email)
+    setPending(null)
     if (err) return setError(err)
     haptic('light')
     setSentAt(Date.now())
-    if (!resend) setStage('sent')
+    if (!resend) setStage('code')
   }
 
-  async function google() {
+  async function verify() {
     setError('')
-    setBusy(true)
-    const { error: err } = await signInWithGoogle()
-    // Web redirects away; native opens the system browser and returns via deep
-    // link. Only surface an error (otherwise the flow continues elsewhere).
-    if (err) {
-      setBusy(false)
-      setError(err)
-    }
+    if (code.trim().length < 6) return setError('Enter the 6-digit code from your email.')
+    setPending('verify')
+    const { error: err } = await verifyEmailOtp(email, code)
+    setPending(null)
+    if (err) return setError(err)
+    haptic('success')
+    // Signed in — the auth gate sends new accounts to onboarding, everyone else
+    // straight to their family space.
+    router.replace('/family')
   }
 
   const Shell = ({ children }: { children: React.ReactNode }) => (
@@ -123,7 +139,7 @@ function AuthFlow() {
     return (
       <Shell>
         {stuck ? (
-          <ErrorState icon={Clock} title="Couldn’t finish signing in" message="Your sign-in link may have expired, or it was opened in a different browser than the one that requested it. Please request a fresh link and open it on the same device." onRetry={() => router.replace('/auth')} retryLabel="Try again" />
+          <ErrorState icon={Clock} title="Couldn’t finish signing in" message="Your sign-in link may have expired, or it was opened in a different browser than the one that requested it. Please request a fresh code and open it on the same device." onRetry={() => router.replace('/auth')} retryLabel="Try again" />
         ) : (
           <div className="flex flex-col items-center rounded-lg border border-line bg-card p-8 text-center shadow-sm">
             <Loader2 className="h-7 w-7 animate-spin text-green" strokeWidth={2} />
@@ -145,35 +161,44 @@ function AuthFlow() {
 
             {/* Primary: Google — no email needed, works on the app and the web. */}
             <button type="button" disabled={busy} onClick={google} className="mt-5 flex min-h-[3rem] w-full items-center justify-center gap-2.5 rounded-sm border border-ink/15 text-body-sm font-semibold text-ink transition-colors hover:border-ink/30 hover:bg-ink/[0.03] disabled:opacity-60">
-              <GoogleG /> Continue with Google
+              {pending === 'google' ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Connecting to Google…</> : <><GoogleG /> Continue with Google</>}
             </button>
 
             <div className="my-4 flex items-center gap-3 text-caption text-muted"><span className="h-px flex-1 bg-line" /> or use email <span className="h-px flex-1 bg-line" /></div>
 
-            {/* Fallback: email sign-in link (default Supabase email, no code). */}
+            {/* Email one-time passcode (arrives as a code with SMTP, else a link). */}
             <label className="block">
               <span className="mb-1.5 block text-body-sm font-medium text-ink">Email address</span>
               <input
                 type="email" inputMode="email" autoComplete="email" placeholder="you@email.com"
                 value={email} onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && sendLink()}
+                onKeyDown={(e) => e.key === 'Enter' && sendCode()}
                 className={inputCls}
               />
             </label>
             {error && <p className="mt-3 text-caption text-error">{error}</p>}
-            <Button size="lg" className="mt-4 w-full" disabled={busy} onClick={() => sendLink()}>
-              {busy ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Sending link…</> : <>Email me a sign-in link <ArrowRight className="h-5 w-5" strokeWidth={2} /></>}
+            <Button size="lg" className="mt-4 w-full" disabled={busy} onClick={() => sendCode()}>
+              {pending === 'email' ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Sending code…</> : <>Continue with Email <ArrowRight className="h-5 w-5" strokeWidth={2} /></>}
             </Button>
           </>
         ) : (
-          <div className="text-center">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-green/10 text-green"><MailCheck className="h-6 w-6" strokeWidth={1.75} /></div>
-            <h1 className="mt-4 text-h3 text-ink">Check your email</h1>
-            <p className="mt-1.5 text-body-sm text-muted">We sent a sign-in link to <span className="font-medium text-ink">{email}</span>. Open it <span className="font-medium text-ink">on this device</span> to finish signing in.</p>
-            <div className="mt-4 flex justify-center"><Resend seedKey={sentAt} onResend={() => sendLink(true)} /></div>
+          <>
+            <button type="button" onClick={() => { setStage('signin'); setError(''); setCode('') }} className="mb-3 inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Change email</button>
+            <h1 className="text-h3 text-ink">Enter your code</h1>
+            <p className="mt-1.5 text-body-sm text-muted">We sent a 6-digit code to <span className="font-medium text-ink">{email}</span>.</p>
+            <input
+              inputMode="numeric" maxLength={6} autoComplete="one-time-code" placeholder="••••••"
+              value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              onKeyDown={(e) => e.key === 'Enter' && verify()}
+              className="mt-5 w-full rounded-sm border border-line bg-ivory px-4 py-3 text-center text-h3 tracking-[0.5em] text-ink placeholder:tracking-[0.5em] placeholder:text-muted/40 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20"
+            />
+            <div className="mt-3"><Resend seedKey={sentAt} onResend={() => sendCode(true)} /></div>
             {error && <p className="mt-3 text-caption text-error">{error}</p>}
-            <button type="button" onClick={() => { setStage('signin'); setError('') }} className="mt-5 inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Use a different email</button>
-          </div>
+            <Button size="lg" className="mt-5 w-full" disabled={busy} onClick={verify}>
+              {pending === 'verify' ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Verifying…</> : <><MailCheck className="h-5 w-5" strokeWidth={1.75} /> Verify &amp; continue</>}
+            </Button>
+            <p className="mt-4 text-center text-caption text-muted">No code in your inbox? Open the same email and tap the sign-in link instead.</p>
+          </>
         )}
       </div>
     </Shell>
