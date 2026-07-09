@@ -9,7 +9,7 @@ import { isNative } from '@/lib/native'
 import { LogoMark } from '@/components/ui/logo'
 
 // The unauthenticated / setup flow (allowed before the dashboard).
-const FLOW = ['/welcome', '/auth', '/permissions', '/onboarding']
+const FLOW = ['/welcome', '/auth', '/permissions', '/onboarding', '/guardian/login']
 // The signed-in app surfaces (require auth + completed onboarding).
 const APP = ['/family', '/guardian', '/console', '/admin', '/settings', '/notifications', '/search']
 const inList = (p: string, l: string[]) => l.some((f) => p === f || p.startsWith(`${f}/`))
@@ -46,7 +46,9 @@ export function AuthGate() {
     let target: string | null = null
 
     if (!session) {
-      if (onApp) target = '/welcome' // protect app routes (web + native)
+      // Protect app routes. /guardian/login is public (in FLOW) so it renders;
+      // a signed-out guardian route sends to the Guardian login, not family welcome.
+      if (onApp && !onFlow) target = pathname.startsWith('/guardian') ? '/guardian/login' : '/welcome'
       else if (firstNative && !onFlow) target = '/welcome' // native launch on marketing
     } else if (onboardingComplete === false) {
       if (pathname !== '/onboarding') target = '/onboarding' // must finish onboarding
