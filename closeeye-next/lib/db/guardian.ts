@@ -131,6 +131,38 @@ export async function fetchGuardianVisit(companionId: string, bookingId: string)
   }
 }
 
+/** The signed-in Guardian's real profile + lifetime stats (Profile tab + shell). */
+export interface GuardianProfile {
+  fullName: string
+  phone: string
+  city: string
+  status: string
+  visitsCompleted: number
+}
+
+export async function fetchGuardianProfile(companionId: string): Promise<GuardianProfile> {
+  const { data } = await supabase
+    .from('companions')
+    .select('full_name, phone, city, status')
+    .eq('id', companionId)
+    .maybeSingle()
+  const c = data as { full_name: string | null; phone: string | null; city: string | null; status: string | null } | null
+
+  const { count } = await supabase
+    .from('bookings')
+    .select('id', { count: 'exact', head: true })
+    .eq('companion_id', companionId)
+    .eq('status', 'completed')
+
+  return {
+    fullName: c?.full_name?.trim() || 'Guardian',
+    phone: c?.phone?.trim() || '',
+    city: c?.city?.trim() || '',
+    status: c?.status?.trim() || 'approved',
+    visitsCompleted: count ?? 0,
+  }
+}
+
 export interface GeoCoords { lat: number; lng: number }
 
 /** Best-effort device location — resolves null if unavailable or denied. */
