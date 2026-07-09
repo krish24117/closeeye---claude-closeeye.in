@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import {
-  ArrowLeft, Phone, MessageCircle, CalendarPlus, UserCog, ShieldAlert, Clock, Sparkles, Camera, Mic,
+  ArrowLeft, Phone, MessageCircle, CalendarPlus, CalendarClock, UserCog, ShieldAlert, Clock, Sparkles, Camera, Mic,
   HeartPulse, Activity, MessageSquareHeart, FileText, ShieldCheck, History,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -18,6 +18,7 @@ import { VoicePlayer } from '@/components/family/voice-player'
 import { HealthSnapshot } from '@/components/family/health-snapshot'
 import { WellnessTrendCard } from '@/components/family/wellness-trend'
 import { HealthBadge } from '@/components/console/health-badge'
+import { ConsoleConnect } from '@/components/console/console-connect'
 import { VisitStatusBadge, VISIT_TYPE } from '@/components/console/visit-status-badge'
 import { guardianById, escalationsForFamily, TODAY_VISITS, type ConsoleFamily } from '@/lib/console-data'
 import { effectiveVisits } from '@/lib/visit-ops'
@@ -95,6 +96,7 @@ export function ConsoleFamilyProfile({ family }: { family: ConsoleFamily }) {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main */}
         <div className="flex flex-col gap-6 lg:col-span-2">
+          <ConsoleConnect family={family} />
           {report ? (
             <>
               <AIStoryCard report={report} />
@@ -152,6 +154,12 @@ export function ConsoleFamilyProfile({ family }: { family: ConsoleFamily }) {
 
         {/* Sidebar */}
         <div className="flex flex-col gap-6">
+          <Section icon={CalendarClock} title="Next Presence">
+            <p className="text-body-sm font-semibold text-ink">{family.nextVisitLabel}</p>
+            <p className="mt-0.5 text-caption text-muted">{guardian ? `${guardian.name} · in person` : 'Guardian to be assigned'}</p>
+            <Button variant="secondary" size="sm" className="mt-3 w-full" onClick={() => toast(`Reschedule opened for ${family.memberName.split(' ')[0]}.`)}>Reschedule</Button>
+          </Section>
+
           {guardian && (
             <Section icon={ShieldCheck} title="Guardian">
               <div className="flex items-center gap-3">
