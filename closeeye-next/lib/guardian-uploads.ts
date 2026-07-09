@@ -188,7 +188,9 @@ function realUpload(blob: Blob, filename: string, onProgress: (pct: number) => v
     }, 180)
     supabase.storage
       .from(target.bucket)
-      .upload(path, blob, { contentType: blob.type || undefined, upsert: true })
+      // Strip any codecs parameter (e.g. "audio/webm;codecs=opus") — storage
+      // bucket mime whitelists match the base type, and the param can be rejected.
+      .upload(path, blob, { contentType: blob.type ? blob.type.split(';')[0]!.trim() : undefined, upsert: true })
       .then(({ error }) => {
         clearInterval(tick)
         if (cancelled) return reject(new Error('cancelled'))
