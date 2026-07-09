@@ -85,7 +85,7 @@ export async function updateFamilyMember(id: string, input: NewLovedOne): Promis
   return data as LovedOne
 }
 
-const BOOKING_REQUEST_COLS = 'id, service_name, status, scheduled_at, recipient_name, payment_status, amount_paise, created_at'
+const BOOKING_REQUEST_COLS = 'id, service_name, status, scheduled_at, recipient_name, payment_status, amount_paise, booking_id, created_at'
 
 /**
  * The signed-in family user's own visit requests. We filter explicitly by
@@ -100,4 +100,42 @@ export async function fetchMyBookingRequests(userId: string): Promise<BookingReq
     .order('created_at', { ascending: false })
   if (error) throw new Error(error.message)
   return (data as BookingRequest[] | null) ?? []
+}
+
+/** The Guardian's completed-visit report for a materialised booking, if any. */
+export interface VisitReport {
+  id: string
+  summary: string | null
+  mood: number | null
+  photoPaths: string[]
+  createdAt: string | null
+}
+
+export async function fetchVisitReport(bookingId: string): Promise<VisitReport | null> {
+  const { data, error } = await supabase
+    .from('visits')
+    .select('id, one_moment, report_text, mood_score, photo_urls, created_at')
+    .eq('booking_id', bookingId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  if (!data) return null
+  const v = data as {
+    id: string; one_moment: string | null; report_text: string | null
+    mood_score: number | null; photo_urls: string[] | null; created_at: string | null
+  }
+  return {
+    id: v.id,
+    summary: v.one_moment || v.report_text || null,
+    mood: v.mood_score,
+    photoPaths: v.photo_urls ?? [],
+    createdAt: v.created_at,
+  }
+}
+
+/** A short-lived signed URL for a private visit photo (null on failure). */
+export async function signedVisitPhotoUrl(path: string): Promise<string | null> {
+  const { data } = await supabase.storage.from('visit-photos').createSignedUrl(path, 3600)
+  return data?.signedUrl ?? null
 }

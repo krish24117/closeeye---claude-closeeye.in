@@ -62,6 +62,8 @@ export interface BookingRequest {
   recipient_name: string | null
   payment_status: string | null
   amount_paise: number | null
+  /** The materialised `bookings` row (set once paid) — the Guardian's visit. */
+  booking_id: string | null
   created_at: string | null
 }
 
