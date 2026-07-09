@@ -27,11 +27,20 @@ export interface VoiceRecorderProps {
   voice: VoiceAttachment | null
   onSet: (voice: VoiceAttachment | null) => void
   onPatch: (patch: Partial<VoiceAttachment>) => void
+  /** Booking id → the voice note uploads to visit-audio/<bookingId>/… for real. */
+  bookingId: string
 }
 
 type Mode = 'idle' | 'recording' | 'paused'
 
-export function VoiceRecorder({ voice, onSet, onPatch }: VoiceRecorderProps) {
+function audioExt(mime: string): string {
+  if (mime.includes('mp4')) return 'm4a'
+  if (mime.includes('ogg')) return 'ogg'
+  if (mime.includes('mpeg')) return 'mp3'
+  return 'webm'
+}
+
+export function VoiceRecorder({ voice, onSet, onPatch, bookingId }: VoiceRecorderProps) {
   const [mode, setMode] = React.useState<Mode>('idle')
   const [seconds, setSeconds] = React.useState(0)
   const [error, setError] = React.useState<string | null>(null)
@@ -79,10 +88,10 @@ export function VoiceRecorder({ voice, onSet, onPatch }: VoiceRecorderProps) {
 
   const beginUpload = React.useCallback(
     (blob: Blob, id: string) => {
-      const { promise } = uploadBlob(blob, `${id}.webm`, (pct) => onPatch({ progress: pct }))
+      const { promise } = uploadBlob(blob, `${id}.${audioExt(blob.type)}`, (pct) => onPatch({ progress: pct }), { bucket: 'visit-audio', bookingId })
       promise.then((url) => onPatch({ status: 'done', url, progress: 100 })).catch(() => onPatch({ status: 'error' }))
     },
-    [onPatch],
+    [onPatch, bookingId],
   )
 
   const start = React.useCallback(async () => {

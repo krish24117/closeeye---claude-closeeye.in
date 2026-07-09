@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Target, ListChecks, Siren, MessageCircle, Phone, ArrowRight } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
 import { Button } from '@/components/ui/button'
-import { PRESENCE_MANAGER, type GuardianVisit } from '@/lib/guardian-data'
+import type { GuardianVisit } from '@/lib/guardian-data'
 import { useVisit } from '../visit-state'
 import { VisitTimer } from '../visit-timer'
 import { objectiveOf } from '../derive'
@@ -72,7 +72,7 @@ export function StartStep({ visit }: { visit: GuardianVisit }) {
           <Siren className="h-5 w-5" strokeWidth={1.75} /> Emergency
         </a>
         <Link href="/guardian/messages" className="flex flex-col items-center gap-1.5 rounded-md border border-line bg-card py-3 text-caption font-semibold text-ink transition-colors hover:border-ink/25">
-          <MessageCircle className="h-5 w-5 text-green" strokeWidth={1.75} /> Message {PRESENCE_MANAGER.name.split(' ')[0]}
+          <MessageCircle className="h-5 w-5 text-green" strokeWidth={1.75} /> Message team
         </Link>
         <a
           href={familyPhone ? `tel:${familyPhone.replace(/\s/g, '')}` : undefined}

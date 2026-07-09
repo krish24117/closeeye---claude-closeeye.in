@@ -3,9 +3,11 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Star, ShieldAlert, HeartPulse, Siren, Wrench, MessageCircle, Check } from 'lucide-react'
+import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
-import { PRESENCE_MANAGER, type GuardianVisit } from '@/lib/guardian-data'
+import type { GuardianVisit } from '@/lib/guardian-data'
+import { updateVisitFeedback } from '@/lib/db/guardian'
 import { cn } from '@/lib/utils'
 import { useVisit } from '../visit-state'
 
@@ -18,16 +20,24 @@ const ISSUES = [
 
 /** Screen 10 — a gentle post-visit check-in with the Guardian. All optional. */
 export function PostStep({ visit }: { visit: GuardianVisit }) {
-  const { rating, issues, dispatch } = useVisit()
+  const { rating, issues, reportId, dispatch } = useVisit()
   const toast = useToast()
   const router = useRouter()
+  const [busy, setBusy] = React.useState(false)
 
-  function finish() {
+  async function finish() {
+    setBusy(true)
+    // Attach the (optional) rating + raised issues to the saved report.
+    if (reportId && (rating > 0 || issues.length > 0)) {
+      try {
+        await updateVisitFeedback(reportId, { rating, issues })
+      } catch {
+        /* feedback is optional — never block the guardian from finishing */
+      }
+    }
+    // Clear the offline draft; completion is tracked by the booking status now.
     try {
       localStorage.removeItem(`ce_guardian_visit_${visit.id}`)
-      const raw = localStorage.getItem('ce_guardian_completed')
-      const list: string[] = raw ? JSON.parse(raw) : []
-      if (!list.includes(visit.id)) localStorage.setItem('ce_guardian_completed', JSON.stringify([...list, visit.id]))
     } catch {
       /* ignore */
     }
@@ -88,13 +98,13 @@ export function PostStep({ visit }: { visit: GuardianVisit }) {
       {issues.length > 0 && (
         <Button asChild variant="secondary" size="lg" className="w-full">
           <Link href="/guardian/messages">
-            <MessageCircle className="h-5 w-5" strokeWidth={1.75} /> Message {PRESENCE_MANAGER.name.split(' ')[0]} about this
+            <MessageCircle className="h-5 w-5" strokeWidth={1.75} /> Message your Presence Manager about this
           </Link>
         </Button>
       )}
 
-      <Button size="lg" className="w-full" onClick={finish}>
-        <Check className="h-5 w-5" strokeWidth={2} /> Done for now
+      <Button size="lg" className="w-full" onClick={finish} disabled={busy}>
+        <Check className="h-5 w-5" strokeWidth={2} /> {busy ? 'Saving…' : 'Done for now'}
       </Button>
     </div>
   )

@@ -17,9 +17,19 @@ import { CompleteStep } from './steps/complete'
 import { PostStep } from './steps/post'
 
 /** Entry point — wraps the journey in its own offline-persisted state. */
-export function VisitJourney({ visit }: { visit: GuardianVisit }) {
+export function VisitJourney({
+  visit,
+  companionId,
+  guardianName,
+  elderProfileId,
+}: {
+  visit: GuardianVisit
+  companionId: string
+  guardianName: string
+  elderProfileId: string | null
+}) {
   return (
-    <VisitProvider visitId={visit.id}>
+    <VisitProvider visitId={visit.id} companionId={companionId} guardianName={guardianName} elderProfileId={elderProfileId}>
       <Journey visit={visit} />
     </VisitProvider>
   )

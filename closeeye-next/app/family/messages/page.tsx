@@ -1,14 +1,6 @@
-import { PageHeader } from '@/components/family/page-header'
-import { MessagesThread } from '@/components/family/messages-thread'
+import { redirect } from 'next/navigation'
 
-export default function MessagesPage() {
-  return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Messages"
-        subtitle="A direct, private line to your Presence Manager. Voice, photos, or a few words — whatever's easiest."
-      />
-      <MessagesThread />
-    </div>
-  )
+/** Messages became CloseEye Connect — keep old links/bookmarks working. */
+export default function MessagesMovedToConnect() {
+  redirect('/family/connect')
 }

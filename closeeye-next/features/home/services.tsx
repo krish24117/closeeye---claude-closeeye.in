@@ -26,7 +26,7 @@ export function Services() {
               <div className="flex items-center justify-between">
                 <FeatureIcon icon={service.icon} />
                 <span className="text-caption text-muted">
-                  from <span className="font-semibold text-ink">{service.priceFrom}</span>
+                  Starting at <span className="font-semibold text-ink">{service.priceFrom}</span>
                 </span>
               </div>
               <h3 className="text-h4">{service.name}</h3>

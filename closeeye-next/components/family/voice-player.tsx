@@ -23,8 +23,10 @@ export function VoicePlayer({ src, durationSec, label }: { src: string; duration
   const [elapsed, setElapsed] = React.useState(0)
   const [rate, setRate] = React.useState(0)
   const [showTranscript, setShowTranscript] = React.useState(false)
+  const [failed, setFailed] = React.useState(false)
 
   React.useEffect(() => {
+    setFailed(false)
     const audio = new Audio(src)
     audioRef.current = audio
     const onTime = () => setElapsed(audio.currentTime)
@@ -32,12 +34,15 @@ export function VoicePlayer({ src, durationSec, label }: { src: string; duration
       setPlaying(false)
       setElapsed(0)
     }
+    const onErr = () => setFailed(true)
     audio.addEventListener('timeupdate', onTime)
     audio.addEventListener('ended', onEnd)
+    audio.addEventListener('error', onErr)
     return () => {
       audio.pause()
       audio.removeEventListener('timeupdate', onTime)
       audio.removeEventListener('ended', onEnd)
+      audio.removeEventListener('error', onErr)
       audioRef.current = null
     }
   }, [src])
@@ -49,7 +54,7 @@ export function VoicePlayer({ src, durationSec, label }: { src: string; duration
     const a = audioRef.current
     if (!a) return
     if (playing) a.pause()
-    else void a.play().catch(() => setPlaying(false))
+    else void a.play().catch(() => { setPlaying(false); setFailed(true) })
     setPlaying((p) => !p)
   }
 
@@ -119,6 +124,14 @@ export function VoicePlayer({ src, durationSec, label }: { src: string; duration
           <Download className="h-3.5 w-3.5" strokeWidth={1.75} /> Download
         </a>
       </div>
+
+      {failed && (
+        <div className="mt-3 rounded-md bg-warning/[0.08] p-3.5">
+          <p className="text-caption text-ink">If the player above didn&apos;t start, use this one — or tap <strong>Download</strong>:</p>
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <audio controls preload="metadata" src={src} className="mt-2 w-full" />
+        </div>
+      )}
 
       {showTranscript && (
         <p className="mt-3 rounded-md bg-ivory p-3.5 text-body-sm italic text-muted">

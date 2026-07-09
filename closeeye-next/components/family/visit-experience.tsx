@@ -5,6 +5,7 @@ import Link from 'next/link'
 import {
   LogIn, LogOut, ClipboardCheck, Clock, Sparkles, Camera, Mic, HeartPulse, Activity,
   MessageSquareText, Pill, Lightbulb, Quote, MessageCircle, FileText, ImageDown, HeartPulse as HeartIcon,
+  FileDown, Loader2,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
@@ -35,13 +36,15 @@ function FamilySection({ icon: Icon, title, children }: { icon: LucideIcon; titl
   )
 }
 
-function StatCards({ visit }: { visit: Visit }) {
+export interface VisitStats { arrival: string; departure: string; durationLabel: string }
+
+function StatCards({ stats }: { stats: VisitStats }) {
   return (
     <div className="grid grid-cols-3 gap-3">
       {[
-        { icon: LogIn, label: 'Arrived', value: visit.arrival },
-        { icon: LogOut, label: 'Left', value: visit.departure },
-        { icon: ClipboardCheck, label: 'Duration', value: visit.durationLabel },
+        { icon: LogIn, label: 'Arrived', value: stats.arrival },
+        { icon: LogOut, label: 'Left', value: stats.departure },
+        { icon: ClipboardCheck, label: 'Duration', value: stats.durationLabel },
       ].map((t) => {
         const Icon = t.icon
         return (
@@ -97,16 +100,93 @@ export function VisitExperience({ visit }: { visit: Visit }) {
   // Until we've read localStorage, render the static body (matches SSR — no flash).
   if (!ready || !report) return <StaticBody visit={visit} />
 
+  return (
+    <VisitReportExperience
+      report={report}
+      stats={{ arrival: visit.arrival ?? '—', departure: visit.departure ?? '—', durationLabel: visit.durationLabel ?? '—' }}
+      recommendations={visit.recommendations}
+      followUps={visit.followUp ? [visit.followUp] : undefined}
+      pmReview={visit.pmReview ?? null}
+    />
+  )
+}
+
+/**
+ * The complete Human Presence Experience, rendered from a SharedVisitReport —
+ * the approved family report. Fed by real Supabase data (see fetchFullVisitReport)
+ * or the localStorage report; the components and layout are identical.
+ */
+export function VisitReportExperience({
+  report,
+  stats,
+  recommendations,
+  followUps,
+  pmReview = null,
+  pdfUrl,
+  delivery,
+  admin = false,
+}: {
+  report: SharedVisitReport
+  stats: VisitStats
+  recommendations?: string[]
+  followUps?: string[]
+  pmReview?: string | null
+  pdfUrl?: string
+  delivery?: { emailOk: boolean; emailReason?: string; whatsappOk: boolean }
+  /** Staff/admin viewer — shows the detailed email diagnostics. */
+  admin?: boolean
+}) {
+  const [pdfBusy, setPdfBusy] = React.useState(false)
   const timeline = timelineEvents(report)
   const health = healthSnapshot(report)
   const trend = wellnessTrend(report)
   const moments = momentItems(report)
+  const slug = report.key.replace(/\s+/g, '-') || 'visit'
+
+  async function downloadPdf() {
+    // Prefer the branded PDF already uploaded at completion (a real hosted file —
+    // reliable across browsers). Fall back to generating it client-side.
+    if (pdfUrl) {
+      window.open(pdfUrl, '_blank', 'noopener')
+      return
+    }
+    setPdfBusy(true)
+    try {
+      const { buildVisitPdf, reportToPdfInput } = await import('@/lib/visit-pdf')
+      const pdf = await buildVisitPdf(reportToPdfInput(report, stats, recommendations ?? [], followUps ?? []))
+      // Robust across platforms: iOS Safari ignores jsPDF's save()/download attribute,
+      // so open the blob in a new tab (its PDF viewer lets the user save/share);
+      // desktop honours the download attribute and saves directly.
+      const blob = pdf.output('blob')
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `close-eye-care-report-${slug}.pdf`
+      a.target = '_blank'
+      a.rel = 'noopener'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 20000)
+    } catch (e) {
+      console.error('[visit-pdf] failed:', e)
+    } finally {
+      setPdfBusy(false)
+    }
+  }
+  const completedLabel = (() => {
+    try {
+      return new Date(report.completedAt).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
+    } catch {
+      return ''
+    }
+  })()
 
   return (
     <div className="flex flex-col gap-6">
       <AIStoryCard report={report} />
 
-      <StatCards visit={visit} />
+      <StatCards stats={stats} />
 
       <FamilySection icon={Clock} title="The visit, moment by moment">
         <VisitStoryTimeline events={timeline} />
@@ -143,6 +223,30 @@ export function VisitExperience({ visit }: { visit: Visit }) {
         </FamilySection>
       )}
 
+      {recommendations && recommendations.length > 0 && (
+        <FamilySection icon={Lightbulb} title="Gentle recommendations">
+          <ul className="flex flex-col gap-2.5">
+            {recommendations.map((r) => (
+              <li key={r} className="flex gap-2.5 text-body-sm text-ink">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-green" /> {r}
+              </li>
+            ))}
+          </ul>
+        </FamilySection>
+      )}
+
+      {followUps && followUps.length > 0 && (
+        <FamilySection icon={ClipboardCheck} title="Suggested follow-ups">
+          <ul className="flex flex-col gap-2.5">
+            {followUps.map((f) => (
+              <li key={f} className="flex gap-2.5 text-body-sm text-ink">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-warning" /> {f}
+              </li>
+            ))}
+          </ul>
+        </FamilySection>
+      )}
+
       {report.win && (
         <div className="flex items-start gap-3 rounded-lg border border-green/20 bg-accent-soft/40 p-5">
           <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-green" strokeWidth={1.5} />
@@ -159,12 +263,12 @@ export function VisitExperience({ visit }: { visit: Visit }) {
         </FamilySection>
       )}
 
-      {visit.pmReview && (
+      {pmReview && (
         <div className="flex gap-4 rounded-lg border border-line bg-ink p-6 text-white shadow-sm">
           <Avatar initials={PRESENCE_MANAGER.initials} size="md" tone="solid" className="ring-2 ring-white/20" />
           <div>
             <p className="text-caption font-semibold uppercase tracking-widest text-accent">Presence Manager review</p>
-            <p className="mt-1.5 text-body text-white/90">{visit.pmReview}</p>
+            <p className="mt-1.5 text-body text-white/90">{pmReview}</p>
           </div>
         </div>
       )}
@@ -172,19 +276,38 @@ export function VisitExperience({ visit }: { visit: Visit }) {
       {/* Downloads */}
       <FamilySection icon={FileText} title="Download & keep">
         <div className="flex flex-wrap gap-2.5">
-          <DownloadButton label="Visit report" filename={`close-eye-report-${visit.id}.html`} content={reportDoc(report)} />
+          <Button size="sm" onClick={downloadPdf} disabled={pdfBusy}>
+            {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> : <FileDown className="h-4 w-4" strokeWidth={1.75} />} Download PDF
+          </Button>
+          <DownloadButton variant="secondary" label="Report (web)" filename={`close-eye-report-${slug}.html`} content={reportDoc(report)} />
           {report.photos.length > 0 && (
-            <DownloadButton variant="secondary" icon={ImageDown} label="Photo package" filename={`close-eye-photos-${visit.id}.html`} content={photoPackageDoc(report)} />
+            <DownloadButton variant="secondary" icon={ImageDown} label="Photo package" filename={`close-eye-photos-${slug}.html`} content={photoPackageDoc(report)} />
           )}
           {health.length > 0 && (
-            <DownloadButton variant="secondary" icon={HeartIcon} label="Health summary" filename={`close-eye-health-${visit.id}.html`} content={healthDoc(report)} />
+            <DownloadButton variant="secondary" icon={HeartIcon} label="Health summary" filename={`close-eye-health-${slug}.html`} content={healthDoc(report)} />
           )}
         </div>
       </FamilySection>
 
+      {completedLabel && <p className="text-center text-caption text-muted">Report shared after the visit on {completedLabel}.</p>}
+
+      {delivery && (
+        <div className="text-center text-caption text-muted">
+          <p>
+            Your report is saved here{delivery.whatsappOk ? ' and sent to your WhatsApp' : ''}
+            {delivery.emailOk ? ' and email' : ''}.
+          </p>
+          {admin && !delivery.emailOk && delivery.emailReason && (
+            <p className="mx-auto mt-1.5 max-w-md break-words rounded-md bg-warning/[0.08] px-3 py-2 text-left font-mono text-[0.7rem] leading-snug text-warning/90">
+              Email diagnostics (staff): {delivery.emailReason}
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 pt-2 sm:flex-row">
         <Button asChild variant="secondary" size="sm">
-          <Link href="/family/messages"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Ask about this visit</Link>
+          <Link href="/family/connect"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Ask about this visit</Link>
         </Button>
       </div>
     </div>
@@ -213,7 +336,7 @@ function staticReportDoc(v: Visit): string {
 function StaticBody({ visit }: { visit: Visit }) {
   return (
     <div className="flex flex-col gap-6">
-      <StatCards visit={visit} />
+      <StatCards stats={{ arrival: visit.arrival ?? '—', departure: visit.departure ?? '—', durationLabel: visit.durationLabel ?? '—' }} />
 
       {visit.photoCount ? (
         <FamilySection icon={ClipboardCheck} title="Photos from the visit">
@@ -298,7 +421,7 @@ function StaticBody({ visit }: { visit: Visit }) {
 
       <div className="flex flex-col gap-3 pt-2 sm:flex-row">
         <DownloadButton label="Download report" filename={`close-eye-report-${visit.id}.html`} content={staticReportDoc(visit)} />
-        <Button asChild variant="secondary" size="sm"><Link href="/family/messages"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Ask about this visit</Link></Button>
+        <Button asChild variant="secondary" size="sm"><Link href="/family/connect"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Ask about this visit</Link></Button>
       </div>
     </div>
   )

@@ -1,143 +1,181 @@
+'use client'
+
+import * as React from 'react'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import {
-  ArrowLeft,
-  Navigation,
-  Star,
-  HeartPulse,
-  Sparkles,
-  ClipboardList,
-  MessageSquareText,
-  Eye,
-  History,
-  Phone,
-  Target,
-  Clock,
-  Car,
-  ArrowRight,
+  ArrowLeft, ArrowRight, CalendarClock, CheckCircle2, HeartPulse, Loader2, MapPin, MessageSquareHeart,
+  Navigation, Phone, PlayCircle, ShieldAlert, Sparkles, Target,
 } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
-import { StatusBadge, type StatusTone } from '@/components/family/badges'
+import { initialsOf } from '@/components/family/loved-one-card'
 import { Button } from '@/components/ui/button'
-import { FamilyRequestsInbox } from '@/components/guardian/family-requests-inbox'
-import { TODAY_VISITS, visitById, type GuardianVisit } from '@/lib/guardian-data'
-import { objectiveOf } from '@/features/guardian/derive'
+import { EmptyState } from '@/components/ui/states'
+import { useAuth } from '@/components/auth/auth-provider'
+import { fetchGuardianVisitFull, type GuardianVisitFull } from '@/lib/db/guardian'
+import type { LucideIcon } from 'lucide-react'
 
-export function generateStaticParams() {
-  return TODAY_VISITS.map((v) => ({ id: v.id }))
+const mapsLink = (address: string) => `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`
+
+function fmtWhen(iso: string | null): string {
+  if (!iso) return 'Time to be confirmed'
+  try {
+    return new Date(iso).toLocaleString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', hour12: true })
+  } catch {
+    return '—'
+  }
 }
 
-const STATUS: Record<GuardianVisit['status'], { tone: StatusTone; label: string }> = {
-  upcoming: { tone: 'info', label: 'Upcoming' },
-  'en-route': { tone: 'info', label: 'En route' },
-  'in-progress': { tone: 'attention', label: 'In progress' },
-  completed: { tone: 'positive', label: 'Completed' },
-}
-
-function Brief({ icon: Icon, title, children }: { icon: typeof Star; title: string; children: React.ReactNode }) {
+/** A brief section that only renders when it has content. */
+function ListCard({ icon: Icon, title, items, tone = 'green' }: { icon: LucideIcon; title: string; items: string[]; tone?: 'green' | 'amber' }) {
+  if (!items.length) return null
   return (
     <section className="rounded-lg border border-line bg-card p-5 shadow-sm">
-      <h2 className="flex items-center gap-2 text-body-sm font-semibold uppercase tracking-widest text-muted">
-        <Icon className="h-4 w-4 text-green" strokeWidth={1.75} /> {title}
-      </h2>
-      <div className="mt-2.5 text-body-sm text-ink">{children}</div>
+      <p className={`flex items-center gap-2 text-caption font-semibold uppercase tracking-widest ${tone === 'amber' ? 'text-warning' : 'text-green'}`}>
+        <Icon className="h-4 w-4" strokeWidth={1.75} /> {title}
+      </p>
+      <ul className="mt-2.5 flex flex-col gap-1.5">
+        {items.map((t, i) => (
+          <li key={i} className="flex gap-2 text-body-sm leading-relaxed text-ink">
+            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green/50" /> {t}
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }
 
-const bullets = (items: string[]) => (
-  <ul className="flex flex-col gap-1.5">
-    {items.map((i) => (
-      <li key={i} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-green" /> {i}</li>
-    ))}
-  </ul>
-)
+export default function VisitBriefPage() {
+  const params = useParams<{ id: string }>()
+  const { user } = useAuth()
+  const [data, setData] = React.useState<GuardianVisitFull | null | undefined>(undefined)
 
-export default async function GuardianVisitBrief({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const v = visitById(id)
-  if (!v) notFound()
-  const s = STATUS[v.status]
-  const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.address)}`
-  const objective = objectiveOf(v)
-  const familyPhone = v.emergencyContacts[0]?.phone
+  React.useEffect(() => {
+    if (!user?.id || !params.id) {
+      setData(null)
+      return
+    }
+    fetchGuardianVisitFull(user.id, params.id).then(setData).catch(() => setData(null))
+  }, [user?.id, params.id])
+
+  const back = (
+    <Link href="/guardian" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
+      <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Today
+    </Link>
+  )
+
+  if (data === undefined) {
+    return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
+  }
+
+  if (!data) {
+    return (
+      <div className="flex flex-col gap-6">
+        {back}
+        <EmptyState icon={CalendarClock} title="Visit not found" hint="This visit may have been reassigned or isn't assigned to you." action={<Button asChild><Link href="/guardian">Back to today</Link></Button>} />
+      </div>
+    )
+  }
+
+  const v = data.visit
+  const completed = v.status === 'completed'
+  const inProgress = v.status === 'in-progress'
 
   return (
-    <div className="flex flex-col gap-4">
-      <Button asChild variant="text" className="self-start">
-        <Link href="/guardian"><ArrowLeft className="h-4 w-4" strokeWidth={1.5} /> Today</Link>
-      </Button>
+    <div className="flex flex-col gap-6 pb-4">
+      {back}
 
-      {/* Header */}
-      <header className="rounded-lg border border-line bg-card p-5 shadow-sm">
-        <div className="flex items-center gap-3.5">
-          <Avatar initials={v.memberInitials} size="lg" />
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-h3">{v.memberName}</h1>
-              <StatusBadge label={s.label} tone={s.tone} dot={false} />
-            </div>
-            <p className="text-caption text-muted">{v.familyName} · {v.relationship} · {v.age}</p>
-          </div>
-        </div>
-        <p className="mt-4 text-body-sm text-muted">{v.address}</p>
-        <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-caption text-muted">
-          <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-green" strokeWidth={1.75} /> {v.timeLabel} · {v.durationLabel}</span>
-          <span>·</span>
-          <span className="inline-flex items-center gap-1"><Car className="h-3.5 w-3.5 text-green" strokeWidth={1.75} /> {v.distanceLabel}{v.driveLabel ? ` · ${v.driveLabel}` : ''}</span>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-2.5">
-          <Button asChild variant="secondary" size="sm">
-            <a href={mapsLink} target="_blank" rel="noopener noreferrer"><Navigation className="h-4 w-4" strokeWidth={1.75} /> Directions</a>
-          </Button>
-          <Button asChild variant="secondary" size="sm">
-            <a href={familyPhone ? `tel:${familyPhone.replace(/\s/g, '')}` : undefined}><Phone className="h-4 w-4" strokeWidth={1.75} /> Call family</a>
-          </Button>
+      <header className="flex items-center gap-4 rounded-lg border border-line bg-card p-5 shadow-sm">
+        <Avatar initials={initialsOf(v.memberName)} size="xl" tone="solid" />
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-h3 leading-tight text-ink">{v.memberName}</h1>
+          <p className="mt-0.5 truncate text-body-sm text-muted">
+            {[v.relationship, v.age ? `${v.age}` : '', v.service].filter(Boolean).join(' · ')}
+          </p>
         </div>
       </header>
 
-      {/* Today's objective — what the family hopes for */}
-      <section className="rounded-lg border border-line bg-accent-soft/50 p-5">
-        <h2 className="flex items-center gap-2 text-caption font-semibold uppercase tracking-widest text-green">
-          <Target className="h-4 w-4" strokeWidth={1.75} /> Today’s objective
-        </h2>
-        <ul className="mt-2.5 flex flex-col gap-2">
-          {objective.map((o) => (
-            <li key={o} className="flex gap-2 text-body-sm leading-relaxed text-ink">
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-green" /> {o}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Requests the family prepared for this visit */}
-      <FamilyRequestsInbox memberName={v.memberName} />
-
-      {/* Begin the visit journey — navigate, arrive, check in */}
-      {v.status !== 'completed' && (
-        <Button asChild size="lg" className="w-full">
-          <Link href={`/guardian/visits/${v.id}/visit`}>I’m here · Begin check-in <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link>
-        </Button>
+      {completed && (
+        <div className="flex items-center gap-3 rounded-lg border border-line bg-success/[0.06] p-4">
+          <CheckCircle2 className="h-6 w-6 shrink-0 text-success" strokeWidth={1.75} />
+          <p className="text-body-sm font-semibold text-ink">This visit is complete. Thank you for showing up.</p>
+        </div>
       )}
 
-      <Brief icon={Star} title="Special notes"><p>{v.specialNotes}</p></Brief>
-      <Brief icon={HeartPulse} title="Medical notes">{bullets(v.medicalNotes)}</Brief>
-      <Brief icon={ClipboardList} title="Family instructions">{bullets(v.familyInstructions)}</Brief>
-      <Brief icon={Sparkles} title="Personal preferences">{bullets(v.preferences)}</Brief>
-      <Brief icon={MessageSquareText} title="Conversation ideas">{bullets(v.conversationSuggestions)}</Brief>
-      <Brief icon={Eye} title="Things to observe">{bullets(v.thingsToObserve)}</Brief>
-      {v.previousSummary && <Brief icon={History} title="Last visit"><p className="italic">{v.previousSummary}</p></Brief>}
+      {/* When / where */}
+      <section className="flex flex-col gap-3 rounded-lg border border-line bg-card p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <CalendarClock className="mt-0.5 h-5 w-5 shrink-0 text-green" strokeWidth={1.75} />
+          <div><p className="text-caption text-muted">When</p><p className="text-body-sm font-medium text-ink">{fmtWhen(data.scheduledAt)}</p></div>
+        </div>
+        {v.address && (
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-green" strokeWidth={1.75} />
+              <div><p className="text-caption text-muted">Where</p><p className="text-body-sm font-medium text-ink">{v.address}</p></div>
+            </div>
+            <Button asChild variant="secondary" size="sm">
+              <a href={mapsLink(v.address)} target="_blank" rel="noopener noreferrer"><Navigation className="h-4 w-4" strokeWidth={1.75} /> Directions</a>
+            </Button>
+          </div>
+        )}
+      </section>
 
-      <Brief icon={Phone} title="Emergency contacts">
-        <ul className="flex flex-col gap-2">
-          {v.emergencyContacts.map((c) => (
-            <li key={c.name} className="flex items-center justify-between gap-2">
-              <span>{c.name} · <span className="text-muted">{c.relation}</span></span>
-              <a href={`tel:${c.phone.replace(/\s/g, '')}`} className="font-semibold text-green hover:underline">{c.phone}</a>
-            </li>
-          ))}
-        </ul>
-      </Brief>
+      {v.previousSummary && (
+        <section className="rounded-lg border border-green/20 bg-accent-soft/40 p-5">
+          <p className="flex items-center gap-2 text-caption font-semibold uppercase tracking-widest text-green">
+            <MessageSquareHeart className="h-4 w-4" strokeWidth={1.75} /> Last time
+          </p>
+          <p className="mt-2 text-body-sm italic leading-relaxed text-ink">“{v.previousSummary}”</p>
+        </section>
+      )}
+
+      {v.specialNotes && (
+        <section className="rounded-lg border border-line bg-card p-5 shadow-sm">
+          <p className="flex items-center gap-2 text-caption font-semibold uppercase tracking-widest text-green">
+            <Target className="h-4 w-4" strokeWidth={1.75} /> For this visit
+          </p>
+          <p className="mt-2 text-body-sm leading-relaxed text-ink">{v.specialNotes}</p>
+        </section>
+      )}
+
+      <ListCard icon={HeartPulse} title="Health notes" items={v.medicalNotes} tone="amber" />
+      <ListCard icon={CheckCircle2} title="What the family asked" items={v.familyInstructions} />
+      <ListCard icon={Sparkles} title="Preferences" items={v.preferences} />
+      <ListCard icon={MessageSquareHeart} title="Conversation starters" items={v.conversationSuggestions} />
+      <ListCard icon={ShieldAlert} title="Please keep an eye on" items={v.thingsToObserve} tone="amber" />
+
+      {v.emergencyContacts.length > 0 && (
+        <section className="rounded-lg border border-line bg-card p-5 shadow-sm">
+          <p className="flex items-center gap-2 text-caption font-semibold uppercase tracking-widest text-green">
+            <ShieldAlert className="h-4 w-4" strokeWidth={1.75} /> Emergency contacts
+          </p>
+          <ul className="mt-3 flex flex-col gap-2.5">
+            {v.emergencyContacts.map((c, i) => (
+              <li key={i} className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-body-sm font-medium text-ink">{c.name}</p>
+                  {c.relation && <p className="truncate text-caption text-muted">{c.relation}</p>}
+                </div>
+                {c.phone && (
+                  <Button asChild variant="secondary" size="sm">
+                    <a href={`tel:${c.phone.replace(/\s/g, '')}`}><Phone className="h-4 w-4" strokeWidth={1.75} /> Call</a>
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Primary action — into the real in-visit journey */}
+      {!completed && (
+        <Button asChild size="lg" className="w-full">
+          <Link href={`/guardian/visits/${v.id}/visit`}>
+            {inProgress ? <><PlayCircle className="h-5 w-5" strokeWidth={1.75} /> Continue visit</> : <>Begin visit <ArrowRight className="h-5 w-5" strokeWidth={2} /></>}
+          </Link>
+        </Button>
+      )}
     </div>
   )
 }

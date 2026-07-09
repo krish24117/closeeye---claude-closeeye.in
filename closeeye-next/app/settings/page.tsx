@@ -11,7 +11,10 @@ import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/family/avatar'
 import { SettingsToggle } from '@/components/family/settings-toggle'
 import { Overlay } from '@/components/family/overlay'
+import { SignOutButton } from '@/components/auth/sign-out-button'
+import { useFamilyData } from '@/components/family/family-data-provider'
 import { useToast } from '@/components/ui/toast'
+import { planById } from '@/lib/plans'
 import { cn } from '@/lib/utils'
 
 function Card({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: React.ReactNode }) {
@@ -42,6 +45,8 @@ function Row({ label, hint, value, onClick, href, danger }: { label: string; hin
 
 export default function SettingsPage() {
   const toast = useToast()
+  const { identity, profile, subscription } = useFamilyData()
+  const plan = planById(subscription?.plan_id)
   const [lang, setLang] = React.useState('English')
   const [confirmDelete, setConfirmDelete] = React.useState(false)
 
@@ -58,10 +63,10 @@ export default function SettingsPage() {
       <main className="ce-fade-in mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6">
         {/* Profile */}
         <section className="flex items-center gap-4 rounded-lg border border-line bg-card p-5 shadow-sm">
-          <Avatar initials="AR" size="lg" />
+          <Avatar initials={identity.initials} src={identity.avatarUrl} alt={identity.fullName} size="lg" />
           <div className="min-w-0 flex-1">
-            <p className="text-h4 text-ink">Ananya Rao</p>
-            <p className="truncate text-caption text-muted">ananya@email.com · +1 416 555 0142</p>
+            <p className="text-h4 text-ink">{identity.fullName}</p>
+            <p className="truncate text-caption text-muted">{[identity.email, profile?.phone].filter(Boolean).join(' · ') || 'Add your details'}</p>
           </div>
           <Button variant="secondary" size="sm" onClick={() => toast('Edit your profile.')}>Edit</Button>
         </section>
@@ -110,7 +115,7 @@ export default function SettingsPage() {
 
         {/* Membership & billing */}
         <Card icon={CreditCard} title="Membership & billing">
-          <Row label="Membership" hint="Family Care · ₹8,000/mo" value="Renews 1 Mar 2027" href="/family/membership" />
+          <Row label="Membership" hint={plan ? `CloseEye ${plan.short} · ${plan.price}${plan.period}` : 'Choose a plan'} value={subscription ? (subscription.status === 'active' ? 'Active' : 'Not active') : undefined} href="/family/membership" />
           <Row label="Payment methods" hint="Visa ending 4242" onClick={() => toast('Manage payment methods.')} />
           <Row label="Invoices" hint="Download receipts" onClick={() => toast('Opening your invoices.')} />
         </Card>
@@ -129,6 +134,8 @@ export default function SettingsPage() {
           <Row label="Terms of Service" href="/terms" />
           <div className="flex items-center justify-between px-5 py-3.5"><span className="text-body-sm text-muted">Version</span><span className="text-body-sm text-muted">1.0.0 (build 100)</span></div>
         </Card>
+
+        <SignOutButton />
 
         <p className="pb-4 text-center text-caption text-muted">Made with care in India · Close Eye</p>
       </main>

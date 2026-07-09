@@ -1,10 +1,15 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 
-type PlanId = "companion";
+type PlanId = "companion" | "trust" | "family_os";
 
+// Each plan maps to a Razorpay plan id held in a Supabase secret. Connect =
+// companion, Care = trust (see lib/plans.ts). Adding a plan here is all the code
+// needs; only the matching secret must be set in the Razorpay/Supabase dashboard.
 const PLAN_ID_ENV_MAP: Record<PlanId, string> = {
   companion: "RAZORPAY_PLAN_ID_COMPANION",
+  trust: "RAZORPAY_PLAN_ID_TRUST",
+  family_os: "RAZORPAY_PLAN_ID_FAMILY_OS",
 };
 
 function razorpayAuth(): string {
@@ -51,7 +56,7 @@ Deno.serve(async (req: Request) => {
 
   const planId = body.plan_id as PlanId | undefined;
   if (!planId || !PLAN_ID_ENV_MAP[planId]) {
-    return json({ error: "plan_id must be: companion" }, 400);
+    return json({ error: "plan_id must be one of: companion, trust, family_os" }, 400);
   }
 
   const razorpayPlanId = Deno.env.get(PLAN_ID_ENV_MAP[planId]);

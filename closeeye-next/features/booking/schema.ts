@@ -29,7 +29,7 @@ export const BOOKING_SERVICES: BookingService[] = [
     id: 'hospital-companion',
     icon: HeartPulse,
     name: 'Hospital Companion',
-    blurb: 'Someone beside your loved one through admission, appointments and recovery.',
+    blurb: 'Someone beside your family member through admission, appointments and recovery.',
     duration: 'Half or full day',
     priceFrom: '₹2,000',
     priceValue: 2000,

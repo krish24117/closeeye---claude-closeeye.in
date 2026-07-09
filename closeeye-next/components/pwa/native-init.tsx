@@ -47,10 +47,27 @@ export function NativeInit() {
         })
         cleanups.push(() => void back.remove())
 
-        // Deep links: in.closeeye.app://<path> or an https App Link → route.
-        const opened = await App.addListener('appUrlOpen', ({ url }) => {
+        // Deep links: in.closeeye.app://<path>, an https App Link, or the Google
+        // OAuth callback (in.closeeye.app://auth/callback?code=…).
+        const opened = await App.addListener('appUrlOpen', async ({ url }) => {
           try {
             const u = new URL(url)
+
+            // Google OAuth return → complete the session, then enter the app.
+            if (u.pathname.includes('auth/callback') || u.searchParams.has('code')) {
+              const code = u.searchParams.get('code')
+              const { supabase } = await import('@/lib/supabase')
+              if (code) await supabase.auth.exchangeCodeForSession(code)
+              try {
+                const { Browser } = await import('@capacitor/browser')
+                await Browser.close()
+              } catch {
+                /* browser already closed */
+              }
+              router.replace('/family')
+              return
+            }
+
             const path = `${u.pathname}${u.search}${u.hash}`
             if (path && path !== '/') router.push(path)
           } catch {

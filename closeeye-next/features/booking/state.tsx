@@ -68,8 +68,14 @@ interface Ctx extends State {
 
 const BookingContext = React.createContext<Ctx | null>(null)
 
-export function BookingProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = React.useReducer(reducer, { step: 0, data: {}, status: 'idle' })
+export function BookingProvider({ children, initialServiceId }: { children: React.ReactNode; initialServiceId?: BookingData['serviceId'] }) {
+  // Seed the service synchronously (e.g. from ?service=… on /book) so the
+  // service step opens pre-selected — the concierge "one click" entry.
+  const [state, dispatch] = React.useReducer(reducer, {
+    step: 0,
+    data: initialServiceId ? { serviceId: initialServiceId } : {},
+    status: 'idle',
+  })
 
   // Hydrate saved progress (data only — always resume at the start of the form).
   React.useEffect(() => {

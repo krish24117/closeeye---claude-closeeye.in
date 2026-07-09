@@ -15,7 +15,9 @@ function json(body: unknown, status = 200): Response {
 }
 
 const PLAN_DISPLAY: Record<string, string> = {
-  companion: "CloseEye Companion",
+  companion: "CloseEye Connect",
+  trust: "CloseEye Care",
+  family_os: "CloseEye Family OS",
 };
 
 // ── Razorpay signature verification ──────────────────────────────────────────
@@ -459,6 +461,80 @@ Deno.serve(async (req: Request) => {
     return json({ ok: true, handled: "payment_link_paid" });
   }
 
+  // ── Handle payment.failed ────────────────────────────────────────────────────
+  // A one-time order payment failed — record it so the DB (our source of truth)
+  // reflects the failure. Never downgrades an already-paid booking.
+  if (event === "payment.failed") {
+    const orderId = rzPayment?.order_id as string | undefined;
+    const paymentId = rzPayment?.id as string | undefined;
+    console.log(`[razorpay-webhook] payment.failed — orderId=${orderId} paymentId=${paymentId}`);
+    if (orderId) {
+      const { data: br } = await sb
+        .from("booking_requests")
+        .select("id, payment_status")
+        .eq("razorpay_order_id", orderId)
+        .maybeSingle();
+      if (br && br.payment_status !== "paid") {
+        await sb.from("booking_requests").update({
+          payment_status: "failed",
+          razorpay_payment_id: paymentId ?? null,
+        }).eq("id", br.id as string);
+      }
+    }
+    return json({ ok: true, handled: "payment_failed" });
+  }
+
+  // ── Handle order.paid ────────────────────────────────────────────────────────
+  // Order-level confirmation for a one-time booking order. Idempotent alongside
+  // payment.captured — marks the booking paid if not already.
+  if (event === "order.paid") {
+    // deno-lint-ignore no-explicit-any
+    const rzOrder = (payload.payload as any)?.order?.entity as Record<string, unknown> | undefined;
+    const orderId = (rzOrder?.id as string | undefined) ?? (rzPayment?.order_id as string | undefined);
+    const paymentId = rzPayment?.id as string | undefined;
+    console.log(`[razorpay-webhook] order.paid — orderId=${orderId} paymentId=${paymentId}`);
+    if (orderId) {
+      const { data: br } = await sb
+        .from("booking_requests")
+        .select("id, status")
+        .eq("razorpay_order_id", orderId)
+        .maybeSingle();
+      if (br && br.status !== "paid") {
+        await sb.from("booking_requests").update({
+          status: "paid",
+          payment_status: "paid",
+          razorpay_payment_id: paymentId ?? null,
+          paid_at: new Date().toISOString(),
+        }).eq("id", br.id as string);
+      }
+    }
+    return json({ ok: true, handled: "order_paid" });
+  }
+
+  // ── Handle refunds ───────────────────────────────────────────────────────────
+  // Reflect reversals in the DB (our source of truth). A booking refund flips
+  // payment_status → 'refunded' (free-text column). Membership/subscription
+  // refunds are logged for manual handling (their status enums have no 'refunded').
+  if (event === "refund.created" || event === "refund.processed") {
+    // deno-lint-ignore no-explicit-any
+    const rzRefund = (payload.payload as any)?.refund?.entity as Record<string, unknown> | undefined;
+    const paymentId = (rzRefund?.payment_id as string | undefined) ?? (rzPayment?.id as string | undefined);
+    console.log(`[razorpay-webhook] ${event} — paymentId=${paymentId}`);
+    if (paymentId) {
+      const { data: br } = await sb
+        .from("booking_requests")
+        .select("id")
+        .eq("razorpay_payment_id", paymentId)
+        .maybeSingle();
+      if (br) {
+        await sb.from("booking_requests").update({ payment_status: "refunded" }).eq("id", br.id as string);
+        return json({ ok: true, handled: "booking_refunded" });
+      }
+      console.warn(`[razorpay-webhook] refund for payment ${paymentId} not matched to a booking — manual review`);
+    }
+    return json({ ok: true });
+  }
+
   if (!rzSub?.id) {
     console.warn("No subscription entity in payload", event);
     return json({ ok: true });
@@ -469,7 +545,7 @@ Deno.serve(async (req: Request) => {
   // ── Fetch local subscription ──────────────────────────────────────────────
   const { data: localSub, error: localSubErr } = await sb
     .from("subscriptions")
-    .select("id, user_id, plan_id, invoice_count, total_paid_paise")
+    .select("id, user_id, plan_id, invoice_count, total_paid_paise, last_charge_payment_id")
     .eq("razorpay_subscription_id", rzSubId)
     .single();
 
@@ -491,6 +567,13 @@ Deno.serve(async (req: Request) => {
     }
 
     case "subscription.charged": {
+      const chargePaymentId = rzPayment?.id as string | undefined;
+      // M7 — idempotency: Razorpay redelivers on any non-2xx; skip if we already
+      // counted this exact charge (else invoice_count / total_paid inflate).
+      if (chargePaymentId && chargePaymentId === localSub.last_charge_payment_id) {
+        console.log(`[razorpay-webhook] subscription.charged ${chargePaymentId} already applied — skipping`);
+        return json({ ok: true, handled: "charge_duplicate_skipped" });
+      }
       const paymentAmount = typeof rzPayment?.amount === "number" ? rzPayment.amount as number : 0;
       const newInvoiceCount = (localSub.invoice_count ?? 0) + 1;
       const newTotalPaid = (localSub.total_paid_paise ?? 0) + paymentAmount;
@@ -499,6 +582,7 @@ Deno.serve(async (req: Request) => {
         status: "active",
         invoice_count: newInvoiceCount,
         total_paid_paise: newTotalPaid,
+        last_charge_payment_id: chargePaymentId ?? null,
         next_billing_at: rzSub.charge_at ? new Date((rzSub.charge_at as number) * 1000).toISOString() : null,
         current_start: rzSub.current_start ? new Date((rzSub.current_start as number) * 1000).toISOString() : null,
         current_end: rzSub.current_end ? new Date((rzSub.current_end as number) * 1000).toISOString() : null,

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Close Eye — payment & confirmation journey</title>
+<link href="https://fonts.cdnfonts.com/css/open-sauce-sans" rel="stylesheet">
+<style>
+  :root{
+    --forest:#0E2A1F;--forest-2:#163b2c;--cream:#FAF7F2;--cream-2:#f1ece2;
+    --sage:#A8D5B5;--sage-2:#7FBF94;--gold:#D4A24E;--muted:#5c6b62;--line:#e3ddd1;
+    --rz:#3395ff;--font:'Open Sauce Sans','Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:#d9d4ca;color:var(--forest);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .stage-wrap{max-width:900px;margin:0 auto;padding:22px 16px 40px}
+  .lead{max-width:430px;margin:0 auto 6px;text-align:center;font-size:12.5px;color:#4a443b}
+  .lead b{color:#2a2520}
+
+  .frame{max-width:400px;margin:14px auto 0;background:var(--cream);border-radius:30px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.28);border:1px solid #cfc9bd;min-height:720px;display:flex;flex-direction:column}
+  .notch{height:26px;display:flex;align-items:center;justify-content:center;padding-top:7px}
+  .notch span{width:78px;height:6px;background:#c7c1b5;border-radius:99px}
+  .body{flex:1;padding:8px 20px 14px;overflow-y:auto}
+
+  .crumb{font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700;text-align:center;margin:4px 0 12px}
+
+  h2{font-size:22px;letter-spacing:-.01em;line-height:1.14}
+  .sub{font-size:13px;color:var(--muted);margin-top:6px}
+
+  /* plan card */
+  .plan{background:#fff;border:2px solid var(--sage-2);border-radius:16px;padding:16px;margin-top:14px;box-shadow:0 10px 26px rgba(127,191,148,.16)}
+  .plan .row1{display:flex;justify-content:space-between;align-items:baseline}
+  .plan .pn{font-size:16px;font-weight:800}
+  .plan .pp{font-size:18px;font-weight:800}
+  .plan .pp small{font-size:11px;color:var(--muted);font-weight:600}
+  .plan ul{list-style:none;margin-top:11px;display:flex;flex-direction:column;gap:7px}
+  .plan li{font-size:13px;padding-left:19px;position:relative;color:#243831}
+  .plan li::before{content:"✓";position:absolute;left:0;color:var(--sage-2);font-weight:800}
+
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;font-family:var(--font);font-size:15px;font-weight:800;padding:15px;border-radius:13px;border:0;cursor:pointer;margin-top:16px;background:var(--forest);color:var(--cream)}
+  .btn:active{transform:scale(.99)}
+  .btn.rz{background:var(--rz);color:#fff}
+  .secure{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:var(--muted);margin-top:10px}
+
+  /* razorpay mock */
+  .rz-head{background:var(--rz);color:#fff;margin:-8px -20px 0;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
+  .rz-head .m{font-size:14px;font-weight:700}
+  .rz-head .a{font-size:16px;font-weight:800}
+  .rz-sec{margin-top:16px}
+  .rz-sec .l{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;margin-bottom:8px}
+  .pay-opt{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:11px;padding:13px;margin-bottom:9px;font-size:13.5px;font-weight:600;cursor:pointer;background:#fff}
+  .pay-opt:hover{border-color:var(--rz)}
+  .pay-opt .ico{width:30px;height:30px;border-radius:8px;background:var(--cream-2);display:grid;place-items:center;font-size:15px}
+
+  /* processing */
+  .proc{text-align:center;padding:60px 10px}
+  .spin{width:48px;height:48px;border:4px solid var(--cream-2);border-top-color:var(--sage-2);border-radius:50%;margin:0 auto 18px;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .proc p{font-size:14px;color:var(--muted)}
+  .proc .small{font-size:12px;margin-top:6px}
+
+  /* success */
+  .succ{text-align:center;padding:14px 4px}
+  .tick{width:66px;height:66px;border-radius:50%;background:#eaf5ee;display:grid;place-items:center;margin:8px auto 14px}
+  .succ h2{font-size:24px}
+  .badge{display:inline-block;margin-top:10px;background:var(--forest);color:var(--sage);font-weight:800;font-size:13px;padding:7px 15px;border-radius:999px;letter-spacing:.02em}
+  .next{margin-top:16px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px 15px}
+  .next .nh{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;margin-bottom:9px}
+  .next .ni{font-size:13px;display:flex;gap:9px;padding:6px 0;color:#243831}
+  .next .ni b{color:var(--forest)}
+  .wa{margin-top:13px;background:#e7f6ec;border:1px solid #c4e7d1;border-radius:13px;padding:12px 13px;font-size:12.5px;color:#1d3a2a;display:flex;gap:9px}
+  .wa .wi{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:#25d366;display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px}
+  .sig{text-align:center;font-size:12px;color:var(--sage-2);font-style:italic;font-weight:600;margin-top:16px}
+
+  /* footer nav of mockup */
+  .nav{max-width:400px;margin:12px auto 0;display:flex;gap:8px;justify-content:center}
+  .nav button{font-family:var(--font);font-size:12.5px;font-weight:700;padding:9px 14px;border-radius:10px;border:1px solid #bdb6a8;background:#fff;color:var(--forest);cursor:pointer}
+  .nav button.active{background:var(--forest);color:var(--cream);border-color:var(--forest)}
+
+  /* engineering note */
+  .eng{max-width:430px;margin:20px auto 0;background:#fff;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;padding:14px 16px}
+  .eng h4{font-size:12px;font-weight:800;color:#9a6a16;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+  .eng ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+  .eng li{font-size:12.5px;line-height:1.45;padding-left:16px;position:relative;color:#4a443b}
+  .eng li::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;border-radius:50%;background:var(--gold)}
+  .eng li b{color:var(--forest)}
+</style>
+</head>
+<body>
+<div class="stage-wrap">
+  <p class="lead"><b>Onboarding → payment → confirmation.</b> Tap the steps to walk the journey. The answer/payment are simulated.</p>
+
+  <div class="nav" id="nav"></div>
+
+  <div class="frame">
+    <div class="notch"><span></span></div>
+    <div class="body" id="body"></div>
+  </div>
+
+  <div class="eng">
+    <h4>⟡ The part that must be bulletproof (Moment of Truth #1)</h4>
+    <ul>
+      <li><b>Verify on the server, not the client.</b> Activate only after the Razorpay <b>payment.captured</b> webhook (with HMAC signature check) — never on the browser saying "success".</li>
+      <li><b>Idempotent activation.</b> Assign the founding number, set is_founding_member + founding_date once; a repeated webhook must not double-activate.</li>
+      <li><b>WhatsApp welcome fires automatically</b> the moment activation succeeds — warm, human, with the founding number.</li>
+      <li><b>Fallback alert.</b> If activation or the welcome fails, ping your team instantly so <b>no paying member is ever silently stranded</b> — the exact failure that hit members #1/#3/#5.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  const steps = ['Set up care','Razorpay','Verifying','You\'re in'];
+  let step = 0;
+
+  const navEl = document.getElementById('nav');
+  const bodyEl = document.getElementById('body');
+
+  function renderNav(){
+    navEl.innerHTML = steps.map((s,i)=>`<button class="${i===step?'active':''}" onclick="go(${i})">${i+1}. ${s}</button>`).join('');
+  }
+
+  const screens = [
+    // 0 — choose founding membership (after onboarding)
+    () => `
+      <div class="crumb">After onboarding · for Siddartha</div>
+      <h2>Set up your parent's care</h2>
+      <p class="sub">Begin as a Founding Member — covers your whole family.</p>
+      <div class="plan">
+        <div class="row1"><div class="pn">Founding Member</div><div class="pp">₹100 <small>to start</small></div></div>
+        <ul>
+          <li>Founding-member status &amp; number</li>
+          <li>Personalised Ask Close Eye for your parent</li>
+          <li>Priority when we set up visits</li>
+          <li>Your family covered</li>
+        </ul>
+        <button class="btn" onclick="go(1)">Become a Founding Member · ₹100</button>
+        <div class="secure">🔒 Secure payment by Razorpay</div>
+      </div>
+    `,
+    // 1 — razorpay checkout (mock)
+    () => `
+      <div class="rz-head"><div class="m">Close Eye</div><div class="a">₹100</div></div>
+      <div class="rz-sec">
+        <div class="l">Pay with</div>
+        <div class="pay-opt" onclick="go(2)"><span class="ico">▣</span> UPI — GPay / PhonePe / Paytm</div>
+        <div class="pay-opt" onclick="go(2)"><span class="ico">💳</span> Card</div>
+        <div class="pay-opt" onclick="go(2)"><span class="ico">🏦</span> Netbanking</div>
+        <button class="btn rz" onclick="go(2)">Pay ₹100</button>
+        <div class="secure">🔒 Razorpay · 256-bit secure</div>
+      </div>
+    `,
+    // 2 — verifying
+    () => `
+      <div class="proc">
+        <div class="spin"></div>
+        <p>Confirming your payment…</p>
+        <p class="small">Activating your founding membership securely.</p>
+      </div>
+    `,
+    // 3 — success / confirmation
+    () => `
+      <div class="succ">
+        <div class="tick"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4 10-10" stroke="#2c6b43" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h2>You're a Founding Member</h2>
+        <div class="badge">Founding Member #0042</div>
+        <div class="next">
+          <div class="nh">What happens next</div>
+          <div class="ni"><b>1.</b> Our care team reaches out within 24–48 hours to set up your parent's visits.</div>
+          <div class="ni"><b>2.</b> Ask Close Eye is now personalised to your parent.</div>
+          <div class="ni"><b>3.</b> You'll get a WhatsApp report after every visit.</div>
+        </div>
+        <div class="wa"><span class="wi">✓</span><div><b>WhatsApp welcome sent</b> to your number — say hi so we can reach you any time.</div></div>
+        <button class="btn" onclick="alert('→ goes to dashboard')">Go to my dashboard</button>
+        <div class="sig">Your Trusted Presence in India.</div>
+      </div>
+    `
+  ];
+
+  window.go = (n) => {
+    step = n; renderNav(); bodyEl.innerHTML = screens[n]();
+    bodyEl.scrollTop = 0;
+    if (n === 2) setTimeout(()=>{ if(step===2) go(3); }, 1600); // auto-advance after "verifying"
+  };
+
+  go(0);
+</script>
+</body>
+</html>

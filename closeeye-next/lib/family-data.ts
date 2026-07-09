@@ -303,7 +303,7 @@ export const DOCUMENTS: DocumentGroup[] = [
 ]
 
 export const MEMBERSHIP = {
-  plan: 'Family Care',
+  plan: 'CloseEye Care',
   status: 'Active',
   memberSince: 'March 2026',
   renewalLabel: 'Renews 1 March 2027',

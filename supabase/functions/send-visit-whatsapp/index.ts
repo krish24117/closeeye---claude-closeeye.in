@@ -20,6 +20,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendWhatsAppTemplate } from '../_shared/whatsapp.ts'
+import { readCanonicalReport, renderWhatsAppMessage } from '../_shared/visit-report.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -299,10 +300,14 @@ Deno.serve(async (req) => {
 
     const hasPhoto = !!photoSignedUrl
 
-    // ── Build message body ────────────────────────────────────────────────
-    const messageBody = hasConcern
-      ? buildNeedsAttentionMessage({ familyName, elderName, checks, oneMoment, nextVisit: nextVisitStr, hasPhoto })
-      : buildGoodStatusMessage({ familyName, elderName, oneMoment, checks, nextVisit: nextVisitStr, hasPhoto })
+    // ── Build message body from the ONE canonical report (real visit content).
+    // Legacy visits (pre-canonical) fall back to the older check-based message.
+    const canonical = readCanonicalReport(visit)
+    const messageBody = canonical
+      ? renderWhatsAppMessage(canonical, { familyName, nextVisit: nextVisitStr, hasPhoto })
+      : hasConcern
+        ? buildNeedsAttentionMessage({ familyName, elderName, checks, oneMoment, nextVisit: nextVisitStr, hasPhoto })
+        : buildGoodStatusMessage({ familyName, elderName, oneMoment, checks, nextVisit: nextVisitStr, hasPhoto })
 
     type Bubble = { body: string; mediaUrl?: string }
     const bubbles: Bubble[] = [

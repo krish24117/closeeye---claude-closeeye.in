@@ -44,6 +44,7 @@ export function ReviewStep() {
   const slotLabel = TIME_SLOTS.find((s) => s.id === data.timeSlot)?.label
 
   async function confirm() {
+    if (status === 'submitting') return // guard against double-tap / retry re-entry (server also dedups)
     if (!payment) {
       setPayError('Choose how you’d like to pay')
       return
