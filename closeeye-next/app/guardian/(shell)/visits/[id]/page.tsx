@@ -3,13 +3,13 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, CalendarClock, HeartPulse, Loader2, MapPin, MessageCircle, Phone, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, CalendarClock, CheckCircle2, HeartPulse, Loader2, MapPin, MessageCircle, Phone, PlayCircle, ShieldAlert } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/states'
 import { useAuth } from '@/components/auth/auth-provider'
-import { fetchGuardianVisit, type GuardianVisitBrief } from '@/lib/db/guardian'
+import { checkInVisit, completeVisit, fetchGuardianVisit, getVisitLocation, type GuardianVisitBrief } from '@/lib/db/guardian'
 
 function fmtWhen(iso: string | null): string {
   if (!iso) return 'Time to be confirmed'
@@ -26,8 +26,9 @@ export default function GuardianVisitBriefPage() {
   const params = useParams<{ id: string }>()
   const { user } = useAuth()
   const [visit, setVisit] = React.useState<GuardianVisitBrief | null | undefined>(undefined)
+  const [busy, setBusy] = React.useState(false)
 
-  React.useEffect(() => {
+  const load = React.useCallback(() => {
     if (!user?.id || !params.id) {
       setVisit(null)
       return
@@ -36,6 +37,32 @@ export default function GuardianVisitBriefPage() {
       .then(setVisit)
       .catch(() => setVisit(null))
   }, [user?.id, params.id])
+
+  React.useEffect(() => {
+    load()
+  }, [load])
+
+  async function startVisit() {
+    if (!visit) return
+    setBusy(true)
+    try {
+      await checkInVisit(visit.id, await getVisitLocation())
+      load()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function finishVisit() {
+    if (!visit) return
+    setBusy(true)
+    try {
+      await completeVisit(visit.id, await getVisitLocation())
+      load()
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const back = (
     <Link href="/guardian" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
@@ -102,11 +129,33 @@ export default function GuardianVisitBriefPage() {
         </section>
       )}
 
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-3">
+        {visit.status === 'completed' ? (
+          <div className="flex items-center gap-3 rounded-lg border border-line bg-success/[0.06] p-4">
+            <CheckCircle2 className="h-6 w-6 shrink-0 text-success" strokeWidth={1.75} />
+            <p className="text-body-sm font-semibold text-ink">Visit completed. Thank you for showing up.</p>
+          </div>
+        ) : visit.status === 'in_progress' ? (
+          <>
+            <div className="flex items-center gap-2 rounded-lg border border-green/30 bg-accent-soft/50 p-3 text-body-sm font-semibold text-green">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-green" /> Visit in progress
+            </div>
+            <Button size="lg" className="w-full" onClick={finishVisit} disabled={busy}>
+              {busy ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Saving…</> : <><CheckCircle2 className="h-5 w-5" strokeWidth={1.75} /> Complete visit</>}
+            </Button>
+          </>
+        ) : (
+          <Button size="lg" className="w-full" onClick={startVisit} disabled={busy}>
+            {busy ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Starting…</> : <><PlayCircle className="h-5 w-5" strokeWidth={1.75} /> Start visit</>}
+          </Button>
+        )}
+
         <Button asChild variant="secondary" size="lg" className="w-full">
           <Link href="/guardian/messages"><MessageCircle className="h-5 w-5" strokeWidth={1.75} /> Message Presence Manager</Link>
         </Button>
-        <p className="text-center text-caption text-muted">Check-in and the guided visit flow arrive in the next update.</p>
+        {visit.status !== 'completed' && (
+          <p className="text-center text-caption text-muted">Photos, checklist and the visit report arrive in the next update.</p>
+        )}
       </div>
     </div>
   )

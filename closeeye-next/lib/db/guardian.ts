@@ -130,3 +130,43 @@ export async function fetchGuardianVisit(companionId: string, bookingId: string)
     emergencyContactPhone,
   }
 }
+
+export interface GeoCoords { lat: number; lng: number }
+
+/** Best-effort device location — resolves null if unavailable or denied. */
+export function getVisitLocation(): Promise<GeoCoords | null> {
+  return new Promise((resolve) => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return resolve(null)
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => resolve(null),
+      { timeout: 8000, maximumAge: 60_000 },
+    )
+  })
+}
+
+/** Check in — start the visit (bookings RLS: a companion may update their own booking). */
+export async function checkInVisit(bookingId: string, coords?: GeoCoords | null): Promise<void> {
+  const { error } = await supabase
+    .from('bookings')
+    .update({
+      status: 'in_progress',
+      checked_in_at: new Date().toISOString(),
+      ...(coords ? { check_in_lat: coords.lat, check_in_lng: coords.lng } : {}),
+    })
+    .eq('id', bookingId)
+  if (error) throw new Error(error.message)
+}
+
+/** Check out — complete the visit. completed_at is stamped by the bookings trigger. */
+export async function completeVisit(bookingId: string, coords?: GeoCoords | null): Promise<void> {
+  const { error } = await supabase
+    .from('bookings')
+    .update({
+      status: 'completed',
+      checked_out_at: new Date().toISOString(),
+      ...(coords ? { check_out_lat: coords.lat, check_out_lng: coords.lng } : {}),
+    })
+    .eq('id', bookingId)
+  if (error) throw new Error(error.message)
+}
