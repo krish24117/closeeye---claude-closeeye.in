@@ -276,3 +276,83 @@ export async function fetchFullVisitReport(
     followUps: intel.followUps,
   }
 }
+
+/* ── Health Profile (elder_profiles) — the family-owned care brief ─────────── */
+
+export interface ElderProfileForm {
+  food_preferences: string
+  conversation_interests: string
+  daily_routine: string
+  things_to_avoid: string
+  medical_conditions: string
+  allergies: string
+  /** One medication per line in the UI; stored as a jsonb string[]. */
+  current_medications: string[]
+  doctor_name: string
+  doctor_phone: string
+  pinned_note: string
+  /** Allow the Guardian to share visit photos with the family on WhatsApp. */
+  photo_consent: boolean
+}
+
+const EMPTY_ELDER: ElderProfileForm = {
+  food_preferences: '', conversation_interests: '', daily_routine: '', things_to_avoid: '',
+  medical_conditions: '', allergies: '', current_medications: [], doctor_name: '', doctor_phone: '',
+  pinned_note: '', photo_consent: false,
+}
+
+/** The Health Profile for a loved one (RLS: family read own). Empty form if none. */
+export async function fetchElderProfile(lovedOneId: string): Promise<ElderProfileForm> {
+  const { data, error } = await supabase
+    .from('elder_profiles')
+    .select('food_preferences, conversation_interests, daily_routine, things_to_avoid, medical_conditions, allergies, current_medications, doctor_name, doctor_phone, pinned_note, photo_consent')
+    .eq('loved_one_id', lovedOneId)
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  if (!data) return { ...EMPTY_ELDER }
+  const d = data as Record<string, unknown>
+  return {
+    food_preferences: (d.food_preferences as string) ?? '',
+    conversation_interests: (d.conversation_interests as string) ?? '',
+    daily_routine: (d.daily_routine as string) ?? '',
+    things_to_avoid: (d.things_to_avoid as string) ?? '',
+    medical_conditions: (d.medical_conditions as string) ?? '',
+    allergies: (d.allergies as string) ?? '',
+    current_medications: Array.isArray(d.current_medications) ? (d.current_medications as unknown[]).map(String) : [],
+    doctor_name: (d.doctor_name as string) ?? '',
+    doctor_phone: (d.doctor_phone as string) ?? '',
+    pinned_note: (d.pinned_note as string) ?? '',
+    photo_consent: Boolean(d.photo_consent),
+  }
+}
+
+/**
+ * Create or update the Health Profile (RLS: family insert/update own). name + age
+ * mirror the loved one so downstream (the Guardian brief, WhatsApp) has them.
+ * emergency_contacts is intentionally omitted so an existing value is preserved.
+ */
+export async function upsertElderProfile(
+  lovedOneId: string,
+  input: ElderProfileForm,
+  meta: { name: string; age: number | null },
+): Promise<void> {
+  const t = (s: string) => (s.trim() ? s.trim() : null)
+  const row = {
+    loved_one_id: lovedOneId,
+    name: meta.name,
+    age: meta.age,
+    food_preferences: t(input.food_preferences),
+    conversation_interests: t(input.conversation_interests),
+    daily_routine: t(input.daily_routine),
+    things_to_avoid: t(input.things_to_avoid),
+    medical_conditions: t(input.medical_conditions),
+    allergies: t(input.allergies),
+    current_medications: input.current_medications.map((m) => m.trim()).filter(Boolean),
+    doctor_name: t(input.doctor_name),
+    doctor_phone: t(input.doctor_phone),
+    pinned_note: t(input.pinned_note),
+    photo_consent: input.photo_consent,
+  }
+  const { error } = await supabase.from('elder_profiles').upsert(row, { onConflict: 'loved_one_id' })
+  if (error) throw new Error(error.message)
+}
