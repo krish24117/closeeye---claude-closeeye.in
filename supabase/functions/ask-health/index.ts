@@ -122,6 +122,103 @@ function looksOffTopic(text: string): boolean {
   ].some((p) => p.test(lower));
 }
 
+// Backstop signal: strong emergency language in Claude's OWN answer. Checked on
+// the RAW answer (before the generic disclaimer is appended) so it never fires on
+// the disclaimer's own "call 108". Catches emergencies the regex red-flags miss.
+const ANSWER_EMERGENCY_RE =
+  /(medical emergency|call an ambulance|call 108 (immediately|now|right away|straight)|rush (him|her|them|to)|(go|get) (to|him|her|them).{0,20}(hospital|emergency|\ber\b).{0,14}(now|immediately|right away)|emergency room (right )?now|life[- ]threatening|every (second|minute|moment) (counts|matters))/i;
+
+// Build a fully-actionable alert (WHO / WHAT / WHERE + the number to CALL NOW) and
+// push it to the care team on every configured channel. Best-effort — never throws,
+// so it can never block the caller's response.
+async function sendCareTeamAlert(
+  sb: ReturnType<typeof createClient>,
+  opts: { userId: string; question: string; queryId: string; lovedOneId?: string | null; subjectLabel?: string; category: string },
+): Promise<void> {
+  let famName = "", famPhone = "";
+  let patient = "", location = "", hospital = "", emgContact = "", medNotes = "";
+  try {
+    const { data: prof } = await sb.from("profiles").select("full_name, whatsapp_number").eq("id", opts.userId).maybeSingle();
+    famName  = (prof?.full_name || "").trim();
+    famPhone = (prof?.whatsapp_number || "").trim();
+  } catch (_e) { /* ignore */ }
+  if (opts.lovedOneId) {
+    try {
+      const { data: lo } = await sb.from("loved_ones")
+        .select("full_name, age, address, city, emergency_contact_name, emergency_contact_phone, nearest_hospital, medical_notes")
+        .eq("id", opts.lovedOneId).maybeSingle();
+      if (lo) {
+        patient  = `${(lo.full_name || "").trim()}${lo.age ? `, ${lo.age}y` : ""}`.trim();
+        location = [lo.address, lo.city].map((s: string | null) => (s ?? "").trim()).filter(Boolean).join(", ");
+        hospital = (lo.nearest_hospital || "").trim();
+        medNotes = (lo.medical_notes || "").trim();
+        const ecn = (lo.emergency_contact_name || "").trim();
+        const ecp = (lo.emergency_contact_phone || "").trim();
+        if (ecn || ecp) emgContact = `${ecn}${ecn && ecp ? " · " : ""}${ecp}`.trim();
+      }
+    } catch (_e) { /* ignore */ }
+  }
+  let nowIST: string;
+  try { nowIST = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" }); }
+  catch { nowIST = new Date().toISOString(); }
+
+  const alertBody = [
+    "🚨 EMERGENCY — Ask Close Eye",
+    `⏰ ${nowIST}`,
+    `⚠️ ${opts.category.toUpperCase().replace(/_/g, " ")}`,
+    patient ? `🧓 Patient: ${patient}` : (opts.subjectLabel ? `👤 About: ${opts.subjectLabel}` : ""),
+    `💬 "${opts.question.slice(0, 400)}"`,
+    "",
+    `📞 CALL NOW — ${famName || "Family"}${famPhone ? `: ${famPhone}` : " (no phone on file)"}`,
+    location ? `📍 ${location}` : "",
+    hospital ? `🏥 Nearest hospital: ${hospital}` : "",
+    emgContact ? `🆘 Emergency contact: ${emgContact}` : "",
+    medNotes ? `📝 Medical: ${medNotes.slice(0, 160)}` : "",
+    "",
+    `Ref: query ${opts.queryId}`,
+  ].filter(Boolean).join("\n");
+
+  // WhatsApp — real-time (needs an open 24h session for the recipient).
+  try {
+    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM");
+    const careTeam   = Deno.env.get("CARE_TEAM_WHATSAPP");
+    if (accountSid && authToken && fromNum && careTeam) {
+      const numbers = careTeam.split(",").map((n: string) => n.trim()).filter(Boolean);
+      await Promise.all(numbers.map(async (to) => {
+        const waTo = to.startsWith("whatsapp:") ? to : `whatsapp:${to.startsWith("+") ? to : "+" + to}`;
+        const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+          method: "POST",
+          headers: { Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`, "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ From: fromNum, To: waTo, Body: alertBody }),
+        });
+        if (!res.ok) console.error("[ask-health] care-team WhatsApp failed:", res.status, await res.text());
+      }));
+    }
+  } catch (e) { console.error("[ask-health] care-team WhatsApp error (non-fatal):", e); }
+
+  // Email — reliable (no 24h window, no DLT). Fires when CARE_TEAM_EMAIL is set.
+  try {
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    const emailFrom = Deno.env.get("RESEND_FROM_EMAIL");
+    const emailTo   = Deno.env.get("CARE_TEAM_EMAIL");
+    if (resendKey && emailFrom && emailTo) {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: emailFrom,
+          to: emailTo.split(",").map((e: string) => e.trim()).filter(Boolean),
+          subject: `🚨 EMERGENCY — ${famName || "Family"}${patient ? ` · ${patient}` : ""}`,
+          text: alertBody,
+        }),
+      });
+      if (!res.ok) console.error("[ask-health] care-team email failed:", res.status, await res.text());
+    }
+  } catch (e) { console.error("[ask-health] care-team email error (non-fatal):", e); }
+}
+
 Deno.serve(async (req: Request) => {
   const cors = corsHeaders(req);
 
@@ -289,76 +386,10 @@ Deno.serve(async (req: Request) => {
   // ── Red-flag escalation ───────────────────────────────────────────────────
   if (redFlag.matched) {
     console.log(`[ask-health] escalation: category=${redFlag.category} query_id=${queryId}`);
-    // Pull everything the care team needs to act in seconds — WHO, WHAT, WHERE,
-    // and the number to CALL NOW. Best-effort: a lookup failure never blocks the alert.
-    let famName = "", famPhone = "";
-    let patient = "", location = "", hospital = "", emgContact = "", medNotes = "";
-    try {
-      const { data: prof } = await sb.from("profiles")
-        .select("full_name, whatsapp_number")
-        .eq("id", user.id).maybeSingle();
-      famName  = (prof?.full_name || "").trim();
-      famPhone = (prof?.whatsapp_number || "").trim();
-    } catch (_lookupErr) { /* ignore */ }
-    if (body.loved_one_id) {
-      try {
-        const { data: lo } = await sb.from("loved_ones")
-          .select("full_name, age, address, city, emergency_contact_name, emergency_contact_phone, nearest_hospital, medical_notes")
-          .eq("id", body.loved_one_id).maybeSingle();
-        if (lo) {
-          patient  = `${(lo.full_name || "").trim()}${lo.age ? `, ${lo.age}y` : ""}`.trim();
-          location = [lo.address, lo.city].map((s: string | null) => (s ?? "").trim()).filter(Boolean).join(", ");
-          hospital = (lo.nearest_hospital || "").trim();
-          medNotes = (lo.medical_notes || "").trim();
-          const ecn = (lo.emergency_contact_name || "").trim();
-          const ecp = (lo.emergency_contact_phone || "").trim();
-          if (ecn || ecp) emgContact = `${ecn}${ecn && ecp ? " · " : ""}${ecp}`.trim();
-        }
-      } catch (_loErr) { /* ignore */ }
-    }
-    let nowIST: string;
-    try { nowIST = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" }); }
-    catch { nowIST = new Date().toISOString(); }
-
-    const alertBody = [
-      "🚨 EMERGENCY — Ask Close Eye",
-      `⏰ ${nowIST}`,
-      `⚠️ ${redFlag.category.toUpperCase().replace(/_/g, " ")}`,
-      patient ? `🧓 Patient: ${patient}` : (body.subject_label ? `👤 About: ${body.subject_label}` : ""),
-      `💬 "${question.slice(0, 400)}"`,
-      "",
-      `📞 CALL NOW — ${famName || "Family"}${famPhone ? `: ${famPhone}` : " (no phone on file)"}`,
-      location ? `📍 ${location}` : "",
-      hospital ? `🏥 Nearest hospital: ${hospital}` : "",
-      emgContact ? `🆘 Emergency contact: ${emgContact}` : "",
-      medNotes ? `📝 Medical: ${medNotes.slice(0, 160)}` : "",
-      "",
-      `Ref: query ${queryId}`,
-    ].filter(Boolean).join("\n");
-
-    try {
-      const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-      const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
-      const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM");
-      const careTeam   = Deno.env.get("CARE_TEAM_WHATSAPP");
-      if (accountSid && authToken && fromNum && careTeam) {
-        const numbers = careTeam.split(",").map((n: string) => n.trim()).filter(Boolean);
-        await Promise.all(numbers.map(async (to) => {
-          const waTo = to.startsWith("whatsapp:") ? to : `whatsapp:${to.startsWith("+") ? to : "+" + to}`;
-          const res = await fetch(
-            `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-            {
-              method: "POST",
-              headers: { Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`, "Content-Type": "application/x-www-form-urlencoded" },
-              body: new URLSearchParams({ From: fromNum, To: waTo, Body: alertBody }),
-            },
-          );
-          if (!res.ok) console.error("[ask-health] care-team alert failed:", res.status, await res.text());
-        }));
-      }
-    } catch (alertErr) {
-      console.error("[ask-health] care-team alert error (non-fatal):", alertErr);
-    }
+    await sendCareTeamAlert(sb, {
+      userId: user.id, question, queryId,
+      lovedOneId: body.loved_one_id, subjectLabel: body.subject_label, category: redFlag.category,
+    });
 
     return json({
       query_id: queryId,
@@ -411,13 +442,35 @@ Deno.serve(async (req: Request) => {
 
     const aiAnswer = rawAnswer + DISCLAIMER;
 
+    // Persist the answer first, so it's saved regardless of what we return.
     if (!isFollowUp) {
       await sb.from("member_queries").update({
         ai_answer:   aiAnswer,
         status:      "ai_answered",
         answered_at: new Date().toISOString(),
       }).eq("id", queryId);
+    }
 
+    // ── Safety backstop ──────────────────────────────────────────────────────
+    // The deterministic red-flags didn't fire, but Claude's OWN answer says this
+    // is an emergency. Alert the care team AND return the prominent escalation
+    // card — so a real emergency is never silently shown as a normal answer.
+    if (ANSWER_EMERGENCY_RE.test(rawAnswer)) {
+      console.log(`[ask-health] ai-detected emergency query_id=${queryId}`);
+      await sendCareTeamAlert(sb, {
+        userId: user.id, question, queryId,
+        lovedOneId: body.loved_one_id, subjectLabel: body.subject_label, category: "ai_detected",
+      });
+      return json({
+        query_id: queryId,
+        lane:     "escalate",
+        message:  aiAnswer,
+        escalation: { ambulanceNumber: AMBULANCE_NUMBER },
+      });
+    }
+
+    // Normal answer → let the family know their question was answered.
+    if (!isFollowUp) {
       try {
         const { data: prof } = await sb.from("profiles").select("whatsapp_number, full_name").eq("id", user.id).maybeSingle();
         const waNum = prof?.whatsapp_number?.trim();

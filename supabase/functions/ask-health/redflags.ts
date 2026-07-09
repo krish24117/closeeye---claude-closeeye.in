@@ -62,9 +62,23 @@ const RED_FLAGS: { category: string; patterns: RegExp[] }[] = [
   {
     category: "bleeding",
     patterns: [
-      /(heavy|severe|won('| ?)t stop|a lot of|lots of|uncontrolled) bleed/,
+      /(heavy|severe|won('| ?)t stop|(a )?lot of|lots of|uncontrolled|excessive|profuse|badly|heavily) bleed/,
+      /bleed(ing)? (heavily|badly|a lot|lot|profusely|uncontrollably|everywhere|non ?stop)/,
+      /(losing|lost) (a lot of |lots of )?blood/,
+      /blood (everywhere|all over|gushing|pouring)/,
       /vomit(ing|ed)? blood|throwing up blood|coughing (up )?blood/,
       /blood in (his|her|the|its|it)\b/,
+    ],
+  },
+  {
+    category: "accident_trauma",
+    patterns: [
+      /(met with|had|in|been in|there('| ?)s been) (an |a )?accident/,
+      /(road|car|bike|scooter|bus|train|traffic) accident/,
+      /(badly|seriously|severely|critically) (hurt|injured|wounded)/,
+      /(serious|severe|major|bad|deep) (injury|wound|cut|gash|head injury)/,
+      /(hit|knocked|run) (by|over|down) (a |by a )?(car|bike|vehicle|bus|truck)/,
+      /\baccident\b.{0,30}\b(bleed|blood|unconscious|hurt|injured|not moving|head|broke|broken)/,
     ],
   },
   {
