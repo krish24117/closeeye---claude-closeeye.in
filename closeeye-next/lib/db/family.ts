@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { BookingRequest, LovedOne, NewLovedOne, Profile } from '@/lib/db/types'
+import { reportKey, type Pronoun, type ReportPhoto, type SharedVisitReport } from '@/lib/visit-reports'
+import { processVisit, type VisitObservations } from '@/lib/cloza'
 
 const PROFILE_COLS = 'id, full_name, role, admin_role, phone, whatsapp_number, address'
 const LOVED_ONE_COLS =
@@ -138,4 +140,139 @@ export async function fetchVisitReport(bookingId: string): Promise<VisitReport |
 export async function signedVisitPhotoUrl(path: string): Promise<string | null> {
   const { data } = await supabase.storage.from('visit-photos').createSignedUrl(path, 3600)
   return data?.signedUrl ?? null
+}
+
+/* ── The complete Family Visit Report (Human Presence Experience) ─────────── */
+
+/** Everything the approved report UI needs, mapped from the real `visits` row. */
+export interface FullVisitReport {
+  report: SharedVisitReport
+  stats: { arrival: string; departure: string; durationLabel: string }
+  recommendations: string[]
+  followUps: string[]
+}
+
+const NUM_TO_MOOD: Record<number, string> = { 5: 'Cheerful', 4: 'Good', 3: 'Calm', 2: 'Low', 1: 'Low' }
+const asNum = (x: unknown): number | undefined => (typeof x === 'number' && Number.isFinite(x) ? x : undefined)
+const toMs = (iso: string | null): number | undefined => {
+  if (!iso) return undefined
+  const t = new Date(iso).getTime()
+  return Number.isFinite(t) ? t : undefined
+}
+function clockLabel(ms: number): string {
+  try {
+    return new Date(ms).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+  } catch {
+    return '—'
+  }
+}
+function durationLabel(sec: number): string {
+  if (!sec || sec < 1) return '—'
+  const min = Math.max(1, Math.round(sec / 60))
+  if (min < 60) return `${min} min`
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return m ? `${h} hr ${m} min` : `${h} hr`
+}
+
+/**
+ * Build the full report from the completed `visits` row: the structured CLOza
+ * record in checklist_data + one_moment/photo_urls/mood, resolving photos and the
+ * voice note to signed URLs. Deterministic recommendations/follow-ups are derived
+ * from the stored observations. Returns null if no visit report exists yet.
+ */
+export async function fetchFullVisitReport(
+  bookingId: string,
+  fallback: { memberName: string; service: string },
+): Promise<FullVisitReport | null> {
+  const { data, error } = await supabase
+    .from('visits')
+    .select('id, one_moment, report_text, mood_score, photo_urls, created_at, start_time, end_time, checklist_data')
+    .eq('booking_id', bookingId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  if (!data) return null
+
+  const v = data as {
+    id: string; one_moment: string | null; report_text: string | null; mood_score: number | null
+    photo_urls: string[] | null; created_at: string | null; start_time: string | null; end_time: string | null
+    checklist_data: Record<string, unknown> | null
+  }
+  const cd = (v.checklist_data ?? {}) as Record<string, unknown>
+
+  // Photos → signed URLs (the approved gallery renders <img src=…> directly).
+  const paths: string[] = Array.isArray(v.photo_urls) ? v.photo_urls : []
+  const photos: ReportPhoto[] = []
+  if (paths.length) {
+    const { data: signed } = await supabase.storage.from('visit-photos').createSignedUrls(paths, 3600)
+    ;(signed ?? []).forEach((s, i) => {
+      if (s.signedUrl) photos.push({ id: `ph-${i}`, thumb: s.signedUrl })
+    })
+  }
+
+  // Voice note → signed URL from the visit-audio bucket.
+  let voice: SharedVisitReport['voice'] = null
+  const vp = cd.voice as { path?: string; durationSec?: number } | null | undefined
+  if (vp?.path) {
+    const { data: sv } = await supabase.storage.from('visit-audio').createSignedUrl(vp.path, 3600)
+    if (sv?.signedUrl) voice = { dataUrl: sv.signedUrl, durationSec: vp.durationSec ?? 0 }
+  }
+
+  const completedAt = asNum(cd.completedAt) ?? toMs(v.end_time) ?? toMs(v.created_at) ?? Date.now()
+  const checkinAt = asNum(cd.checkinAt) ?? toMs(v.start_time) ?? completedAt
+  const startedAt = asNum(cd.startedAt) ?? checkinAt
+  const durationSec = asNum(cd.durationSec) ?? Math.max(1, Math.round((completedAt - startedAt) / 1000))
+
+  const scales = (cd.scales ?? {}) as Record<string, string>
+  const moments = (cd.moments ?? []) as string[]
+  const social = (cd.social ?? []) as string[]
+  const vitals = (cd.vitals ?? {}) as SharedVisitReport['vitals']
+  const note = (typeof cd.note === 'string' && cd.note) || undefined
+  const win = (typeof cd.win === 'string' && cd.win) || undefined
+
+  const report: SharedVisitReport = {
+    key: reportKey(fallback.memberName),
+    memberName: fallback.memberName,
+    guardianName: (cd.guardianName as string) || 'Your Guardian',
+    service: (cd.service as string) || fallback.service,
+    pronoun: (cd.pronoun as Pronoun) || 'they',
+    summary: v.one_moment || v.report_text || '',
+    story: (cd.story as string) || v.one_moment || v.report_text || '',
+    mood: (cd.moodLabel as string) || (v.mood_score ? NUM_TO_MOOD[v.mood_score] : undefined),
+    wellnessScore: asNum(cd.wellnessScore) ?? 82,
+    scales,
+    moments,
+    social,
+    vitals,
+    note,
+    win,
+    photos,
+    voice,
+    startedAt,
+    checkinAt,
+    completedAt,
+    durationSec,
+  }
+
+  // Recommendations + follow-ups — deterministic, from the stored observations.
+  const obs: VisitObservations = {
+    scales,
+    moments,
+    social,
+    concern: (typeof cd.concern === 'string' && cd.concern) || undefined,
+    note,
+    win,
+    photos: photos.map((p) => ({ id: p.id, name: '', thumb: p.thumb, size: 0, status: 'done' as const, progress: 100 })),
+    voiceNote: voice ? { id: 'v', dataUrl: voice.dataUrl, durationSec: voice.durationSec, size: 0, status: 'done' as const, progress: 100 } : null,
+  }
+  const intel = processVisit(obs, fallback.memberName)
+
+  return {
+    report,
+    stats: { arrival: clockLabel(checkinAt), departure: clockLabel(completedAt), durationLabel: durationLabel(durationSec) },
+    recommendations: intel.recommendations,
+    followUps: intel.followUps,
+  }
 }

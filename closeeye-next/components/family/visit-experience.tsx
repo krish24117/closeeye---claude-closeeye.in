@@ -35,13 +35,15 @@ function FamilySection({ icon: Icon, title, children }: { icon: LucideIcon; titl
   )
 }
 
-function StatCards({ visit }: { visit: Visit }) {
+export interface VisitStats { arrival: string; departure: string; durationLabel: string }
+
+function StatCards({ stats }: { stats: VisitStats }) {
   return (
     <div className="grid grid-cols-3 gap-3">
       {[
-        { icon: LogIn, label: 'Arrived', value: visit.arrival },
-        { icon: LogOut, label: 'Left', value: visit.departure },
-        { icon: ClipboardCheck, label: 'Duration', value: visit.durationLabel },
+        { icon: LogIn, label: 'Arrived', value: stats.arrival },
+        { icon: LogOut, label: 'Left', value: stats.departure },
+        { icon: ClipboardCheck, label: 'Duration', value: stats.durationLabel },
       ].map((t) => {
         const Icon = t.icon
         return (
@@ -97,16 +99,53 @@ export function VisitExperience({ visit }: { visit: Visit }) {
   // Until we've read localStorage, render the static body (matches SSR — no flash).
   if (!ready || !report) return <StaticBody visit={visit} />
 
+  return (
+    <VisitReportExperience
+      report={report}
+      stats={{ arrival: visit.arrival ?? '—', departure: visit.departure ?? '—', durationLabel: visit.durationLabel ?? '—' }}
+      recommendations={visit.recommendations}
+      followUps={visit.followUp ? [visit.followUp] : undefined}
+      pmReview={visit.pmReview ?? null}
+    />
+  )
+}
+
+/**
+ * The complete Human Presence Experience, rendered from a SharedVisitReport —
+ * the approved family report. Fed by real Supabase data (see fetchFullVisitReport)
+ * or the localStorage report; the components and layout are identical.
+ */
+export function VisitReportExperience({
+  report,
+  stats,
+  recommendations,
+  followUps,
+  pmReview = null,
+}: {
+  report: SharedVisitReport
+  stats: VisitStats
+  recommendations?: string[]
+  followUps?: string[]
+  pmReview?: string | null
+}) {
   const timeline = timelineEvents(report)
   const health = healthSnapshot(report)
   const trend = wellnessTrend(report)
   const moments = momentItems(report)
+  const slug = report.key.replace(/\s+/g, '-') || 'visit'
+  const completedLabel = (() => {
+    try {
+      return new Date(report.completedAt).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
+    } catch {
+      return ''
+    }
+  })()
 
   return (
     <div className="flex flex-col gap-6">
       <AIStoryCard report={report} />
 
-      <StatCards visit={visit} />
+      <StatCards stats={stats} />
 
       <FamilySection icon={Clock} title="The visit, moment by moment">
         <VisitStoryTimeline events={timeline} />
@@ -143,6 +182,30 @@ export function VisitExperience({ visit }: { visit: Visit }) {
         </FamilySection>
       )}
 
+      {recommendations && recommendations.length > 0 && (
+        <FamilySection icon={Lightbulb} title="Gentle recommendations">
+          <ul className="flex flex-col gap-2.5">
+            {recommendations.map((r) => (
+              <li key={r} className="flex gap-2.5 text-body-sm text-ink">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-green" /> {r}
+              </li>
+            ))}
+          </ul>
+        </FamilySection>
+      )}
+
+      {followUps && followUps.length > 0 && (
+        <FamilySection icon={ClipboardCheck} title="Suggested follow-ups">
+          <ul className="flex flex-col gap-2.5">
+            {followUps.map((f) => (
+              <li key={f} className="flex gap-2.5 text-body-sm text-ink">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-warning" /> {f}
+              </li>
+            ))}
+          </ul>
+        </FamilySection>
+      )}
+
       {report.win && (
         <div className="flex items-start gap-3 rounded-lg border border-green/20 bg-accent-soft/40 p-5">
           <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-green" strokeWidth={1.5} />
@@ -159,12 +222,12 @@ export function VisitExperience({ visit }: { visit: Visit }) {
         </FamilySection>
       )}
 
-      {visit.pmReview && (
+      {pmReview && (
         <div className="flex gap-4 rounded-lg border border-line bg-ink p-6 text-white shadow-sm">
           <Avatar initials={PRESENCE_MANAGER.initials} size="md" tone="solid" className="ring-2 ring-white/20" />
           <div>
             <p className="text-caption font-semibold uppercase tracking-widest text-accent">Presence Manager review</p>
-            <p className="mt-1.5 text-body text-white/90">{visit.pmReview}</p>
+            <p className="mt-1.5 text-body text-white/90">{pmReview}</p>
           </div>
         </div>
       )}
@@ -172,15 +235,17 @@ export function VisitExperience({ visit }: { visit: Visit }) {
       {/* Downloads */}
       <FamilySection icon={FileText} title="Download & keep">
         <div className="flex flex-wrap gap-2.5">
-          <DownloadButton label="Visit report" filename={`close-eye-report-${visit.id}.html`} content={reportDoc(report)} />
+          <DownloadButton label="Visit report" filename={`close-eye-report-${slug}.html`} content={reportDoc(report)} />
           {report.photos.length > 0 && (
-            <DownloadButton variant="secondary" icon={ImageDown} label="Photo package" filename={`close-eye-photos-${visit.id}.html`} content={photoPackageDoc(report)} />
+            <DownloadButton variant="secondary" icon={ImageDown} label="Photo package" filename={`close-eye-photos-${slug}.html`} content={photoPackageDoc(report)} />
           )}
           {health.length > 0 && (
-            <DownloadButton variant="secondary" icon={HeartIcon} label="Health summary" filename={`close-eye-health-${visit.id}.html`} content={healthDoc(report)} />
+            <DownloadButton variant="secondary" icon={HeartIcon} label="Health summary" filename={`close-eye-health-${slug}.html`} content={healthDoc(report)} />
           )}
         </div>
       </FamilySection>
+
+      {completedLabel && <p className="text-center text-caption text-muted">Report shared after the visit on {completedLabel}.</p>}
 
       <div className="flex flex-col gap-3 pt-2 sm:flex-row">
         <Button asChild variant="secondary" size="sm">
@@ -213,7 +278,7 @@ function staticReportDoc(v: Visit): string {
 function StaticBody({ visit }: { visit: Visit }) {
   return (
     <div className="flex flex-col gap-6">
-      <StatCards visit={visit} />
+      <StatCards stats={{ arrival: visit.arrival ?? '—', departure: visit.departure ?? '—', durationLabel: visit.durationLabel ?? '—' }} />
 
       {visit.photoCount ? (
         <FamilySection icon={ClipboardCheck} title="Photos from the visit">
