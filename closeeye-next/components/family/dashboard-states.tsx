@@ -284,9 +284,18 @@ export function VisitBookedDashboard({ data, lovedOnes }: { data: DashboardData;
 
 export function ActiveDashboard({ data, lovedOnes, subscription }: { data: DashboardData; lovedOnes: LovedOne[]; subscription: Subscription | null }) {
   const plan = planById(subscription?.plan_id)
+  const lastCompleted = [...data.completedVisits].sort((a, b) => (b.scheduled_at ?? '').localeCompare(a.scheduled_at ?? ''))[0]
+  // Lead with the real story: upcoming when there's one ahead, else the last
+  // completed visit — never a bare "0 upcoming".
+  const visitTile =
+    data.upcomingVisits.length > 0
+      ? { label: 'Upcoming visits', value: String(data.upcomingVisits.length) }
+      : lastCompleted
+        ? { label: 'Last visit', value: visitDate(lastCompleted.scheduled_at) }
+        : { label: 'Upcoming visits', value: '0' }
   const tiles = [
     { label: 'Family members', value: String(data.familyCount) },
-    { label: 'Upcoming visits', value: String(data.upcomingVisits.length) },
+    visitTile,
     { label: 'Unread messages', value: String(data.unreadMessages) },
     { label: 'Membership', value: plan ? plan.name : 'Active' },
   ]
