@@ -107,7 +107,7 @@ export default function ConnectHome() {
         <SectionTitle>Coming soon to Connect</SectionTitle>
         <div className="grid gap-3 sm:grid-cols-2">
           <ComingSoonCard icon={Stethoscope} title="Doctor consultations" desc="Speak with a doctor about your family's health." />
-          <ComingSoonCard icon={FolderLock} title="Documents" desc="Reports and prescriptions, together in one place." />
+          <ComingSoonCard icon={FolderLock} title="Documents" desc="Health records and prescriptions, together in one place." />
         </div>
       </section>
     </div>

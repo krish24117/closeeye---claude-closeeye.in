@@ -136,7 +136,7 @@ export default function VisitsPage() {
         <section className="flex flex-col items-center rounded-lg border border-line bg-card px-6 py-14 text-center shadow-sm">
           <span className="grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-green"><CalendarClock className="h-8 w-8" strokeWidth={1.5} /></span>
           <h2 className="mt-5 text-h3 text-ink">No visits yet</h2>
-          <p className="mt-2 max-w-sm text-body text-muted">When you book a wellbeing visit, it appears here — with photos and a full report after each one.</p>
+          <p className="mt-2 max-w-sm text-body text-muted">When you book a wellbeing visit, it appears here — with photos and a full Presence Story after each one.</p>
           <Button asChild size="lg" className="mt-6">
             <Link href="/family/book"><CalendarPlus className="h-5 w-5" strokeWidth={2} /> Book a visit</Link>
           </Button>
@@ -146,7 +146,7 @@ export default function VisitsPage() {
           {requests.map((r, i) => {
             const name = r.recipient_name?.trim() || 'Your family'
             const hasReport = Boolean(r.booking_id && reported.has(r.booking_id))
-            const m = hasReport ? { label: 'Report ready', tone: 'green' as Tone } : statusMeta(r.status)
+            const m = hasReport ? { label: 'Presence Story ready', tone: 'green' as Tone } : statusMeta(r.status)
             const awaitingPayment = r.status === 'companion_confirmed' && r.payment_status !== 'paid' && (r.amount_paise ?? 0) > 0
             return (
               <div key={r.id} className={cn('px-5 py-4', i > 0 && 'border-t border-line')}>
@@ -155,7 +155,7 @@ export default function VisitsPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-body-sm font-semibold text-ink group-hover:text-green">{r.service_name?.trim() || 'Wellbeing visit'}</p>
                     <p className="truncate text-caption text-muted">For {name} · {fmtDate(r.scheduled_at)}</p>
-                    {hasReport && <p className="mt-0.5 text-caption font-semibold text-green">View the full Care Report →</p>}
+                    {hasReport && <p className="mt-0.5 text-caption font-semibold text-green">View the full Presence Story →</p>}
                   </div>
                   <span className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold', toneCls[m.tone])}>
                     <span className={cn('h-1.5 w-1.5 rounded-full', dotCls[m.tone])} /> {m.label}

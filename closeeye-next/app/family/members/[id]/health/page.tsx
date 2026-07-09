@@ -165,7 +165,7 @@ export default function HealthProfilePage() {
             </span>
             <span>
               <span className="block text-body-sm font-semibold text-ink">Share visit photos with me on WhatsApp</span>
-              <span className="block text-caption text-muted">Your Guardian can include a photo from each visit in your Care Report.</span>
+              <span className="block text-caption text-muted">Your Guardian can include a photo from each visit in your Presence Story.</span>
             </span>
           </button>
         </Section>

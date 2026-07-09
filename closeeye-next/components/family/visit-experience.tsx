@@ -63,8 +63,8 @@ function StatCards({ stats }: { stats: VisitStats }) {
 
 function reportDoc(r: SharedVisitReport): string {
   const vit = Object.entries(r.vitals).filter(([, v]) => v)
-  return brandedDocument(`Visit report — ${r.memberName}`, `
-    <h1>Wellbeing visit report</h1>
+  return brandedDocument(`Presence Story — ${r.memberName}`, `
+    <h1>Presence Story</h1>
     <p class="meta">${r.memberName} · ${r.service} · with ${r.guardianName}</p>
     <div class="card"><p>${r.story}</p></div>
     ${vit.length ? `<div class="card"><h2>Readings</h2>${vit.map(([k, v]) => `<div class="row"><span class="label">${k}</span><span>${v}</span></div>`).join('')}</div>` : ''}
@@ -279,7 +279,7 @@ export function VisitReportExperience({
           <Button size="sm" onClick={downloadPdf} disabled={pdfBusy}>
             {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> : <FileDown className="h-4 w-4" strokeWidth={1.75} />} Download PDF
           </Button>
-          <DownloadButton variant="secondary" label="Report (web)" filename={`close-eye-report-${slug}.html`} content={reportDoc(report)} />
+          <DownloadButton variant="secondary" label="Presence Story (web)" filename={`close-eye-report-${slug}.html`} content={reportDoc(report)} />
           {report.photos.length > 0 && (
             <DownloadButton variant="secondary" icon={ImageDown} label="Photo package" filename={`close-eye-photos-${slug}.html`} content={photoPackageDoc(report)} />
           )}
@@ -289,12 +289,12 @@ export function VisitReportExperience({
         </div>
       </FamilySection>
 
-      {completedLabel && <p className="text-center text-caption text-muted">Report shared after the visit on {completedLabel}.</p>}
+      {completedLabel && <p className="text-center text-caption text-muted">Your Presence Story was shared after the visit on {completedLabel}.</p>}
 
       {delivery && (
         <div className="text-center text-caption text-muted">
           <p>
-            Your report is saved here{delivery.whatsappOk ? ' and sent to your WhatsApp' : ''}
+            Your Presence Story is saved here{delivery.whatsappOk ? ' and sent to your WhatsApp' : ''}
             {delivery.emailOk ? ' and email' : ''}.
           </p>
           {admin && !delivery.emailOk && delivery.emailReason && (
@@ -320,8 +320,8 @@ function staticReportDoc(v: Visit): string {
   const row = (l: string, val?: string) => `<div class="row"><span class="label">${l}</span><span>${val ?? '—'}</span></div>`
   const list = (items?: string[]) => (items?.length ? `<ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul>` : '—')
   const wellbeing = v.wellbeing?.map((w) => row(w.label, w.value)).join('') ?? ''
-  return brandedDocument(`Visit report — ${v.memberName}`, `
-    <h1>Wellbeing visit report</h1>
+  return brandedDocument(`Presence Story — ${v.memberName}`, `
+    <h1>Presence Story</h1>
     <p class="meta">${v.memberName} · ${v.serviceName} · ${v.dateLabel} · ${v.timeLabel} · with ${v.guardianName}</p>
     <div class="card">${row('Arrived', v.arrival)}${row('Left', v.departure)}${row('Duration', v.durationLabel)}${row('Mood', v.mood)}${row('Medication', v.medication)}</div>
     ${v.conversation ? `<div class="card"><h2>What we talked about</h2><p>${v.conversation}</p></div>` : ''}
@@ -420,7 +420,7 @@ function StaticBody({ visit }: { visit: Visit }) {
       )}
 
       <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-        <DownloadButton label="Download report" filename={`close-eye-report-${visit.id}.html`} content={staticReportDoc(visit)} />
+        <DownloadButton label="Download Presence Story" filename={`close-eye-report-${visit.id}.html`} content={staticReportDoc(visit)} />
         <Button asChild variant="secondary" size="sm"><Link href="/family/connect"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Ask about this visit</Link></Button>
       </div>
     </div>

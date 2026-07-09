@@ -204,7 +204,7 @@ function NotifPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
       <div className="px-6 py-12 text-center">
         <p className="text-body-sm font-semibold text-ink">You&apos;re all caught up</p>
         <p className="mx-auto mt-1 max-w-xs text-caption text-muted">
-          Updates about your family&apos;s visits and reports will appear here.
+          Updates about your family&apos;s visits and Presence Stories will appear here.
         </p>
       </div>
     </Overlay>

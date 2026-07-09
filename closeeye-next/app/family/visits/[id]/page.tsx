@@ -126,12 +126,12 @@ export default function VisitDetailPage() {
           <CalendarClock className="h-5 w-5 text-green" strokeWidth={1.5} /> {visit.status === 'cancelled' ? 'This visit was cancelled' : 'This visit is being arranged'}
         </h2>
         <p className="mt-4 text-body text-muted">
-          Your Presence Manager coordinates the details and keeps you updated. You&apos;ll see the full report and photos here once the visit is complete.
+          Your Presence Manager coordinates the details and keeps you updated. You&apos;ll see the full Presence Story and photos here once the visit is complete.
         </p>
       </section>
       <section className="flex items-center gap-3 rounded-lg border border-dashed border-line bg-card/50 p-5">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><FileText className="h-5 w-5" strokeWidth={1.5} /></span>
-        <p className="text-body-sm text-muted">The visit report and photos will appear here after this visit is completed.</p>
+        <p className="text-body-sm text-muted">The Presence Story and photos will appear here after this visit is completed.</p>
       </section>
 
       <div className="flex flex-col gap-2.5 sm:flex-row">
