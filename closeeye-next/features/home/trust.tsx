@@ -10,9 +10,10 @@ export function Trust() {
       <Split
         media={
           <ImageFrame
+            src="/trust.png"
+            alt="A Close Eye Guardian and an elderly woman looking through an old photo album together over tea at home"
             ratio="portrait"
             gradient
-            direction="A Close Eye Guardian sharing tea with an elderly parent at home — unhurried, genuine, warm afternoon light."
             className="mx-auto max-w-md lg:mx-0"
           />
         }

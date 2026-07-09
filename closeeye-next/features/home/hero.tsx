@@ -68,9 +68,11 @@ export function Hero() {
           className="relative mx-auto mt-16 max-w-5xl"
         >
           <ImageFrame
+            src="/hero.jpg"
+            alt="An elderly mother on a video call with her daughter while a Close Eye Guardian sits beside her, holding her hand, in a sunlit living room"
             ratio="wide"
+            priority
             gradient
-            direction="A daughter on a video call, smiling — her mother's hand held by a Close Eye Guardian in a sunlit living room. Natural light, warm tones, real home."
             className="shadow-lg"
             sizes="(max-width: 1200px) 100vw, 1000px"
           />
