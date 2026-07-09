@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { isGuardian } from '@/lib/roles'
 import { isNative } from '@/lib/native'
 import { LogoMark } from '@/components/ui/logo'
 
@@ -51,7 +52,7 @@ export function AuthGate() {
       if (pathname !== '/onboarding') target = '/onboarding' // must finish onboarding
     } else {
       // Guardians (companions) land in the Guardian app; everyone else in Family.
-      const home = profile?.role === 'companion' ? '/guardian' : '/family'
+      const home = isGuardian(profile) ? '/guardian' : '/family'
       if (onFlow) target = home // skip the auth flow once fully set up
       else if (firstNative && !onApp) target = home // native launch on marketing
     }
