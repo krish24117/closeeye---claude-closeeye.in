@@ -59,7 +59,8 @@ export function reportToPdfInput(
   const vitals = Object.entries(report.vitals)
     .filter(([, v]) => v && String(v).trim())
     .map(([k, v]) => ({ label: VITAL_META[k]?.label ?? k, value: `${v}${VITAL_META[k]?.unit ? ` ${VITAL_META[k].unit}` : ''}` }))
-  const moments = MOMENTS.filter((m) => report.moments.includes(m.key)).map((m) => `${m.emoji} ${m.label}`)
+  // Labels only — jsPDF's core fonts can't render emoji (they'd become mojibake).
+  const moments = MOMENTS.filter((m) => report.moments.includes(m.key)).map((m) => m.label)
 
   return {
     memberName: report.memberName,
