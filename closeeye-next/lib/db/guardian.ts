@@ -158,14 +158,59 @@ export async function checkInVisit(bookingId: string, coords?: GeoCoords | null)
   if (error) throw new Error(error.message)
 }
 
-/** Check out — complete the visit. completed_at is stamped by the bookings trigger. */
-export async function completeVisit(bookingId: string, coords?: GeoCoords | null): Promise<void> {
+/**
+ * Upload a visit photo to the private visit-photos bucket at `<bookingId>/<name>`
+ * (the path convention the storage RLS keys on). Returns the storage path.
+ */
+export async function uploadVisitPhoto(bookingId: string, file: File): Promise<string> {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+  const path = `${bookingId}/visit-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`
+  const { error } = await supabase.storage
+    .from('visit-photos')
+    .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false })
+  if (error) throw new Error(error.message)
+  return path
+}
+
+export interface VisitReport {
+  companionId: string
+  summary?: string
+  mood?: number | null // 1–5
+  photoPaths?: string[]
+  coords?: GeoCoords | null
+}
+
+/**
+ * Complete the visit: write a structured `visits` report row (mirrors the Vite
+ * companion insert) + mark the booking completed. completed_at is stamped by
+ * the bookings trigger. visits RLS: a companion inserts where companion_id = auth.uid.
+ */
+export async function completeVisit(bookingId: string, report: VisitReport): Promise<void> {
+  const now = new Date().toISOString()
+  const summary = report.summary?.trim() || null
+
+  const { error: visErr } = await supabase.from('visits').insert({
+    booking_id: bookingId,
+    elder_id: null,
+    companion_id: report.companionId,
+    start_time: now,
+    end_time: now,
+    tier_completed: 1,
+    checklist_data: {},
+    flags: 'none',
+    one_moment: summary,
+    photo_urls: report.photoPaths ?? [],
+    mood_score: report.mood ?? null,
+    report_text: summary,
+  })
+  if (visErr) throw new Error(visErr.message)
+
   const { error } = await supabase
     .from('bookings')
     .update({
       status: 'completed',
-      checked_out_at: new Date().toISOString(),
-      ...(coords ? { check_out_lat: coords.lat, check_out_lng: coords.lng } : {}),
+      checked_out_at: now,
+      ...(report.coords ? { check_out_lat: report.coords.lat, check_out_lng: report.coords.lng } : {}),
     })
     .eq('id', bookingId)
   if (error) throw new Error(error.message)
