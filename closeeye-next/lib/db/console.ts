@@ -2,13 +2,12 @@ import { supabase } from '@/lib/supabase'
 import { fetchAdminThreads } from '@/lib/db/messages'
 
 /**
- * Presence Console — the REAL caseload for the signed-in staff member.
- *
- * RLS does the scoping: a Super Admin sees every family; a Presence Manager sees
- * only the families in `family_assignments`. We read the tables a PM can already
- * reach today (loved_ones, bookings, messages) — no new policies needed — and
- * derive a warm "relationship & service health" status. Emergencies (red) come
- * later, once member_queries/visits gain a manager-read policy.
+ * Presence Console — the REAL caseload + Today overview for the signed-in staff
+ * member. RLS does the scoping: a Super Admin sees every family; a Presence
+ * Manager sees only the families in `family_assignments`. We read the tables a PM
+ * can already reach today (loved_ones, bookings, messages, best-effort
+ * companions) — no new policies needed. Emergencies (red) join later once
+ * member_queries/visits gain a manager-read policy.
  */
 
 export type CaseStatus = 'green' | 'yellow'
@@ -25,6 +24,34 @@ export interface ConsoleFamilyLive {
   reason: string
   nextVisitLabel: string | null
   awaitingReply: boolean
+  needsVisitAttention: boolean
+}
+
+export interface ConsoleTriageItem {
+  id: string
+  lovedOneId: string
+  memberName: string
+  kind: 'message' | 'visit'
+  tag: string
+  text: string
+  href: string
+}
+
+export type ConsoleVisitStatus = 'upcoming' | 'en-route' | 'on-site' | 'completed' | 'cancelled'
+
+export interface ConsoleScheduleItem {
+  id: string
+  lovedOneId: string
+  memberName: string
+  guardianName: string | null
+  timeLabel: string
+  status: ConsoleVisitStatus
+}
+
+export interface ConsoleOverview {
+  families: ConsoleFamilyLive[]
+  triage: ConsoleTriageItem[]
+  schedule: ConsoleScheduleItem[]
 }
 
 interface LovedOneRow {
@@ -36,58 +63,85 @@ interface LovedOneRow {
   city: string | null
   phone_number: string | null
 }
-
 interface BookingRow {
+  id: string
   loved_one_id: string | null
   status: string
   scheduled_at: string | null
   attention_needed: boolean | null
+  companion_id: string | null
 }
+interface CompanionRow { id: string; full_name: string | null }
 
-// Bookings that represent a live, upcoming Presence (not done, not cancelled).
 const ACTIVE_BOOKING = new Set(['confirmed', 'companion_assigned', 'on_the_way', 'in_progress', 'scheduled', 'paid'])
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })
 }
+function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
+function isToday(iso: string): boolean {
+  return new Date(iso).toDateString() === new Date().toDateString()
+}
+function mapBookingStatus(s: string): ConsoleVisitStatus {
+  if (s === 'completed') return 'completed'
+  if (s === 'in_progress') return 'on-site'
+  if (s === 'on_the_way') return 'en-route'
+  if (s === 'cancelled') return 'cancelled'
+  return 'upcoming'
+}
 
-/**
- * Every family in the signed-in staff member's care, most-in-need first is left
- * to the caller. Three RLS-scoped reads: loved_ones + their bookings + the
- * message threads (for "awaiting reply").
- */
-export async function fetchConsoleFamilies(): Promise<ConsoleFamilyLive[]> {
+interface Caseload {
+  lovedOnes: LovedOneRow[]
+  bookings: BookingRow[]
+  awaiting: Map<string, boolean>
+  guardians: Map<string, string>
+}
+
+async function loadCaseload(): Promise<Caseload> {
   const { data: loData } = await supabase
     .from('loved_ones')
     .select('id, family_user_id, full_name, relationship, age, city, phone_number')
     .order('full_name')
   const lovedOnes = (loData as LovedOneRow[] | null) ?? []
-  if (lovedOnes.length === 0) return []
+  if (lovedOnes.length === 0) return { lovedOnes: [], bookings: [], awaiting: new Map(), guardians: new Map() }
   const ids = lovedOnes.map((l) => l.id)
 
   const [{ data: bkData }, threads] = await Promise.all([
-    supabase.from('bookings').select('loved_one_id, status, scheduled_at, attention_needed').in('loved_one_id', ids),
+    supabase.from('bookings').select('id, loved_one_id, status, scheduled_at, attention_needed, companion_id').in('loved_one_id', ids),
     fetchAdminThreads().catch(() => []),
   ])
   const bookings = (bkData as BookingRow[] | null) ?? []
-  const awaitingByLoved = new Map<string, boolean>()
-  threads.forEach((t) => awaitingByLoved.set(t.lovedOneId, t.awaitingReply))
+  const awaiting = new Map<string, boolean>()
+  threads.forEach((t) => awaiting.set(t.lovedOneId, t.awaitingReply))
 
+  // Best-effort Guardian names for today's visits (RLS may return none for a PM).
+  const compIds = Array.from(
+    new Set(bookings.filter((b) => b.companion_id && b.scheduled_at && isToday(b.scheduled_at)).map((b) => b.companion_id as string)),
+  )
+  const guardians = new Map<string, string>()
+  if (compIds.length) {
+    const { data: cData } = await supabase.from('companions').select('id, full_name').in('id', compIds)
+    ;((cData as CompanionRow[] | null) ?? []).forEach((c) => { if (c.full_name) guardians.set(c.id, c.full_name) })
+  }
+  return { lovedOnes, bookings, awaiting, guardians }
+}
+
+function mapFamilies({ lovedOnes, bookings, awaiting }: Caseload): ConsoleFamilyLive[] {
   const now = Date.now()
   return lovedOnes.map((lo) => {
     const bks = bookings.filter((b) => b.loved_one_id === lo.id)
-    const attention = bks.some((b) => b.attention_needed && b.status !== 'cancelled' && b.status !== 'completed')
+    const needsVisitAttention = bks.some((b) => b.attention_needed && b.status !== 'cancelled' && b.status !== 'completed')
     const next = bks
       .filter((b) => b.scheduled_at && ACTIVE_BOOKING.has(b.status) && new Date(b.scheduled_at).getTime() >= now)
       .sort((a, b) => (a.scheduled_at ?? '').localeCompare(b.scheduled_at ?? ''))[0]
-    const awaiting = awaitingByLoved.get(lo.id) ?? false
-
-    const reason = attention
+    const awaitingReply = awaiting.get(lo.id) ?? false
+    const reason = needsVisitAttention
       ? 'A visit needs your attention'
-      : awaiting
+      : awaitingReply
         ? 'A family message is waiting for a reply'
         : 'Doing well'
-
     return {
       lovedOneId: lo.id,
       familyUserId: lo.family_user_id,
@@ -96,10 +150,47 @@ export async function fetchConsoleFamilies(): Promise<ConsoleFamilyLive[]> {
       age: lo.age,
       city: lo.city,
       phone: lo.phone_number,
-      status: attention || awaiting ? 'yellow' : 'green',
+      status: needsVisitAttention || awaitingReply ? 'yellow' : 'green',
       reason,
       nextVisitLabel: next?.scheduled_at ? fmtDate(next.scheduled_at) : null,
-      awaitingReply: awaiting,
+      awaitingReply,
+      needsVisitAttention,
     }
   })
+}
+
+/** Just the caseload — used by the Families directory. */
+export async function fetchConsoleFamilies(): Promise<ConsoleFamilyLive[]> {
+  return mapFamilies(await loadCaseload())
+}
+
+/** Caseload + "Needs you now" triage + Today's Presence — used by the dashboard. */
+export async function fetchConsoleOverview(): Promise<ConsoleOverview> {
+  const data = await loadCaseload()
+  const families = mapFamilies(data)
+  const byId = new Map(families.map((f) => [f.lovedOneId, f]))
+
+  // Needs you now — visit attention first, then families awaiting a reply.
+  const triage: ConsoleTriageItem[] = []
+  families.forEach((f) => {
+    if (f.needsVisitAttention) triage.push({ id: `v-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'visit', tag: 'Needs action', text: 'A recent visit needs your attention.', href: `/console/messages/${f.lovedOneId}` })
+  })
+  families.forEach((f) => {
+    if (f.awaitingReply) triage.push({ id: `m-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'message', tag: 'Awaiting reply', text: 'A family message is waiting for your reply.', href: `/console/messages/${f.lovedOneId}` })
+  })
+
+  // Today's Presence.
+  const schedule: ConsoleScheduleItem[] = data.bookings
+    .filter((b) => b.scheduled_at && isToday(b.scheduled_at) && b.status !== 'cancelled')
+    .sort((a, b) => (a.scheduled_at ?? '').localeCompare(b.scheduled_at ?? ''))
+    .map((b) => ({
+      id: b.id,
+      lovedOneId: b.loved_one_id ?? '',
+      memberName: (b.loved_one_id ? byId.get(b.loved_one_id)?.name : null) ?? 'A family member',
+      guardianName: (b.companion_id ? data.guardians.get(b.companion_id) : null) ?? null,
+      timeLabel: b.scheduled_at ? fmtTime(b.scheduled_at) : '—',
+      status: mapBookingStatus(b.status),
+    }))
+
+  return { families, triage, schedule }
 }
