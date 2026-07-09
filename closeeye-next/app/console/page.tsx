@@ -9,13 +9,14 @@ import { Avatar } from '@/components/family/avatar'
 import { EmptyState } from '@/components/ui/states'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
-import { fetchConsoleOverview, type ConsoleOverview, type CaseStatus } from '@/lib/db/console'
+import { fetchConsoleOverview, CASE_RANK, type ConsoleOverview, type CaseStatus } from '@/lib/db/console'
 import { canUseConsole } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 
 const FAM_STATUS: Record<CaseStatus, { label: string; chip: string; dot: string }> = {
   green: { label: 'Doing well', chip: 'bg-success/12 text-success', dot: 'bg-success' },
   yellow: { label: 'Needs attention', chip: 'bg-warning/15 text-warning', dot: 'bg-warning' },
+  red: { label: 'Urgent', chip: 'bg-error/10 text-error', dot: 'bg-error' },
 }
 
 export default function ConsoleDashboard() {
@@ -52,10 +53,10 @@ export default function ConsoleDashboard() {
 
   const { families, triage, schedule } = data
   const doingWell = families.filter((f) => f.status === 'green').length
-  const needYou = families.filter((f) => f.status === 'yellow').length
+  const needYou = families.filter((f) => f.status !== 'green').length
   const completeToday = schedule.filter((s) => s.status === 'completed').length
   const awaiting = families.filter((f) => f.awaitingReply).length
-  const roster = [...families].sort((a, b) => (a.status === b.status ? a.name.localeCompare(b.name) : a.status === 'yellow' ? -1 : 1))
+  const roster = [...families].sort((a, b) => CASE_RANK[a.status] - CASE_RANK[b.status] || a.name.localeCompare(b.name))
 
   const strip: { label: string; dot: string }[] = [
     { label: `${doingWell} doing well`, dot: 'bg-success' },
@@ -94,14 +95,15 @@ export default function ConsoleDashboard() {
           ) : (
             <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
               {triage.map((t, i) => {
+                const red = t.tone === 'red'
                 const Icon = t.kind === 'message' ? MessageCircle : TriangleAlert
                 return (
-                  <Link key={t.id} href={t.href} className={cn('flex gap-3.5 border-l-4 border-l-warning p-4 transition-colors hover:bg-accent-soft/20', i > 0 && 'border-t border-t-line')}>
-                    <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-md bg-warning/12 text-warning"><Icon className="h-5 w-5" strokeWidth={1.75} /></span>
+                  <Link key={t.id} href={t.href} className={cn('flex gap-3.5 border-l-4 p-4 transition-colors hover:bg-accent-soft/20', red ? 'border-l-error bg-error/[0.03]' : 'border-l-warning', i > 0 && 'border-t border-t-line')}>
+                    <span className={cn('mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-md', red ? 'bg-error/10 text-error' : 'bg-warning/12 text-warning')}><Icon className="h-5 w-5" strokeWidth={1.75} /></span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-body-sm font-bold text-ink">{t.memberName}</p>
-                        <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-warning">{t.tag}</span>
+                        <span className={cn('rounded px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide', red ? 'bg-error/12 text-error' : 'bg-warning/15 text-warning')}>{t.tag}</span>
                       </div>
                       <p className="mt-1 text-body-sm text-ink">{t.text}</p>
                       <span className="mt-2 inline-flex items-center gap-1.5 text-caption font-bold text-green">Open in Connect <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></span>

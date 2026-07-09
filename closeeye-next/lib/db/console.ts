@@ -4,13 +4,14 @@ import { fetchAdminThreads } from '@/lib/db/messages'
 /**
  * Presence Console — the REAL caseload + Today overview for the signed-in staff
  * member. RLS does the scoping: a Super Admin sees every family; a Presence
- * Manager sees only the families in `family_assignments`. We read the tables a PM
- * can already reach today (loved_ones, bookings, messages, best-effort
- * companions) — no new policies needed. Emergencies (red) join later once
- * member_queries/visits gain a manager-read policy.
+ * Manager sees only the families in `family_assignments`. Reads loved_ones,
+ * bookings, messages, urgent member_queries + best-effort companions.
+ * (member_queries/visits gain a PM read policy in 20260709160000_pm_console_reads;
+ * Super Admins can already read them via is_admin().)
  */
 
-export type CaseStatus = 'green' | 'yellow'
+export type CaseStatus = 'green' | 'yellow' | 'red'
+export const CASE_RANK: Record<CaseStatus, number> = { red: 0, yellow: 1, green: 2 }
 
 export interface ConsoleFamilyLive {
   lovedOneId: string
@@ -25,13 +26,15 @@ export interface ConsoleFamilyLive {
   nextVisitLabel: string | null
   awaitingReply: boolean
   needsVisitAttention: boolean
+  urgentQuestion: string | null
 }
 
 export interface ConsoleTriageItem {
   id: string
   lovedOneId: string
   memberName: string
-  kind: 'message' | 'visit'
+  kind: 'urgent' | 'message' | 'visit'
+  tone: 'red' | 'amber'
   tag: string
   text: string
   href: string
@@ -72,6 +75,7 @@ interface BookingRow {
   companion_id: string | null
 }
 interface CompanionRow { id: string; full_name: string | null }
+interface QueryRow { loved_one_id: string | null; question: string }
 
 const ACTIVE_BOOKING = new Set(['confirmed', 'companion_assigned', 'on_the_way', 'in_progress', 'scheduled', 'paid'])
 
@@ -83,6 +87,9 @@ function fmtTime(iso: string): string {
 }
 function isToday(iso: string): boolean {
   return new Date(iso).toDateString() === new Date().toDateString()
+}
+function clip(s: string, n = 64): string {
+  return s.length > n ? `${s.slice(0, n).trimEnd()}…` : s
 }
 function mapBookingStatus(s: string): ConsoleVisitStatus {
   if (s === 'completed') return 'completed'
@@ -97,6 +104,7 @@ interface Caseload {
   bookings: BookingRow[]
   awaiting: Map<string, boolean>
   guardians: Map<string, string>
+  urgent: Map<string, string>
 }
 
 async function loadCaseload(): Promise<Caseload> {
@@ -105,16 +113,22 @@ async function loadCaseload(): Promise<Caseload> {
     .select('id, family_user_id, full_name, relationship, age, city, phone_number')
     .order('full_name')
   const lovedOnes = (loData as LovedOneRow[] | null) ?? []
-  if (lovedOnes.length === 0) return { lovedOnes: [], bookings: [], awaiting: new Map(), guardians: new Map() }
+  if (lovedOnes.length === 0) return { lovedOnes: [], bookings: [], awaiting: new Map(), guardians: new Map(), urgent: new Map() }
   const ids = lovedOnes.map((l) => l.id)
 
-  const [{ data: bkData }, threads] = await Promise.all([
+  const [{ data: bkData }, threads, { data: mqData }] = await Promise.all([
     supabase.from('bookings').select('id, loved_one_id, status, scheduled_at, attention_needed, companion_id').in('loved_one_id', ids),
     fetchAdminThreads().catch(() => []),
+    supabase.from('member_queries').select('loved_one_id, question').in('loved_one_id', ids).eq('urgency', 'urgent').eq('status', 'pending').order('created_at', { ascending: false }),
   ])
   const bookings = (bkData as BookingRow[] | null) ?? []
   const awaiting = new Map<string, boolean>()
   threads.forEach((t) => awaiting.set(t.lovedOneId, t.awaitingReply))
+
+  const urgent = new Map<string, string>()
+  ;((mqData as QueryRow[] | null) ?? []).forEach((q) => {
+    if (q.loved_one_id && !urgent.has(q.loved_one_id)) urgent.set(q.loved_one_id, q.question)
+  })
 
   // Best-effort Guardian names for today's visits (RLS may return none for a PM).
   const compIds = Array.from(
@@ -125,10 +139,10 @@ async function loadCaseload(): Promise<Caseload> {
     const { data: cData } = await supabase.from('companions').select('id, full_name').in('id', compIds)
     ;((cData as CompanionRow[] | null) ?? []).forEach((c) => { if (c.full_name) guardians.set(c.id, c.full_name) })
   }
-  return { lovedOnes, bookings, awaiting, guardians }
+  return { lovedOnes, bookings, awaiting, guardians, urgent }
 }
 
-function mapFamilies({ lovedOnes, bookings, awaiting }: Caseload): ConsoleFamilyLive[] {
+function mapFamilies({ lovedOnes, bookings, awaiting, urgent }: Caseload): ConsoleFamilyLive[] {
   const now = Date.now()
   return lovedOnes.map((lo) => {
     const bks = bookings.filter((b) => b.loved_one_id === lo.id)
@@ -137,11 +151,17 @@ function mapFamilies({ lovedOnes, bookings, awaiting }: Caseload): ConsoleFamily
       .filter((b) => b.scheduled_at && ACTIVE_BOOKING.has(b.status) && new Date(b.scheduled_at).getTime() >= now)
       .sort((a, b) => (a.scheduled_at ?? '').localeCompare(b.scheduled_at ?? ''))[0]
     const awaitingReply = awaiting.get(lo.id) ?? false
-    const reason = needsVisitAttention
-      ? 'A visit needs your attention'
-      : awaitingReply
-        ? 'A family message is waiting for a reply'
-        : 'Doing well'
+    const urgentQuestion = urgent.get(lo.id) ?? null
+
+    const status: CaseStatus = urgentQuestion ? 'red' : needsVisitAttention || awaitingReply ? 'yellow' : 'green'
+    const reason = urgentQuestion
+      ? 'An urgent health question needs a human answer'
+      : needsVisitAttention
+        ? 'A visit needs your attention'
+        : awaitingReply
+          ? 'A family message is waiting for a reply'
+          : 'Doing well'
+
     return {
       lovedOneId: lo.id,
       familyUserId: lo.family_user_id,
@@ -150,11 +170,12 @@ function mapFamilies({ lovedOnes, bookings, awaiting }: Caseload): ConsoleFamily
       age: lo.age,
       city: lo.city,
       phone: lo.phone_number,
-      status: needsVisitAttention || awaitingReply ? 'yellow' : 'green',
+      status,
       reason,
       nextVisitLabel: next?.scheduled_at ? fmtDate(next.scheduled_at) : null,
       awaitingReply,
       needsVisitAttention,
+      urgentQuestion,
     }
   })
 }
@@ -170,13 +191,16 @@ export async function fetchConsoleOverview(): Promise<ConsoleOverview> {
   const families = mapFamilies(data)
   const byId = new Map(families.map((f) => [f.lovedOneId, f]))
 
-  // Needs you now — visit attention first, then families awaiting a reply.
+  // Needs you now — urgent (red) first, then visit attention, then awaiting replies.
   const triage: ConsoleTriageItem[] = []
   families.forEach((f) => {
-    if (f.needsVisitAttention) triage.push({ id: `v-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'visit', tag: 'Needs action', text: 'A recent visit needs your attention.', href: `/console/messages/${f.lovedOneId}` })
+    if (f.urgentQuestion) triage.push({ id: `u-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'urgent', tone: 'red', tag: 'Urgent', text: `Urgent health question: “${clip(f.urgentQuestion)}”`, href: `/console/messages/${f.lovedOneId}` })
   })
   families.forEach((f) => {
-    if (f.awaitingReply) triage.push({ id: `m-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'message', tag: 'Awaiting reply', text: 'A family message is waiting for your reply.', href: `/console/messages/${f.lovedOneId}` })
+    if (f.needsVisitAttention) triage.push({ id: `v-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'visit', tone: 'amber', tag: 'Needs action', text: 'A recent visit needs your attention.', href: `/console/messages/${f.lovedOneId}` })
+  })
+  families.forEach((f) => {
+    if (f.awaitingReply) triage.push({ id: `m-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'message', tone: 'amber', tag: 'Awaiting reply', text: 'A family message is waiting for your reply.', href: `/console/messages/${f.lovedOneId}` })
   })
 
   // Today's Presence.

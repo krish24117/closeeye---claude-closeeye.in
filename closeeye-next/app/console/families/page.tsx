@@ -7,7 +7,7 @@ import { Avatar } from '@/components/family/avatar'
 import { EmptyState } from '@/components/ui/states'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
-import { fetchConsoleFamilies, type ConsoleFamilyLive, type CaseStatus } from '@/lib/db/console'
+import { fetchConsoleFamilies, CASE_RANK, type ConsoleFamilyLive, type CaseStatus } from '@/lib/db/console'
 import { canUseConsole } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 
@@ -16,6 +16,7 @@ type Filter = 'all' | 'attention'
 const STATUS: Record<CaseStatus, { label: string; chip: string; dot: string }> = {
   green: { label: 'Doing well', chip: 'bg-success/12 text-success', dot: 'bg-success' },
   yellow: { label: 'Needs attention', chip: 'bg-warning/15 text-warning', dot: 'bg-warning' },
+  red: { label: 'Urgent', chip: 'bg-error/10 text-error', dot: 'bg-error' },
 }
 
 export default function FamiliesPage() {
@@ -47,11 +48,11 @@ export default function FamiliesPage() {
 
   const query = q.trim().toLowerCase()
   const list = (families ?? [])
-    .filter((f) => (filter === 'attention' ? f.status === 'yellow' : true))
+    .filter((f) => (filter === 'attention' ? f.status !== 'green' : true))
     .filter((f) => (query ? `${f.name} ${f.city ?? ''} ${f.relationship ?? ''}`.toLowerCase().includes(query) : true))
-    .sort((a, b) => (a.status === b.status ? a.name.localeCompare(b.name) : a.status === 'yellow' ? -1 : 1))
+    .sort((a, b) => CASE_RANK[a.status] - CASE_RANK[b.status] || a.name.localeCompare(b.name))
 
-  const needCount = (families ?? []).filter((f) => f.status === 'yellow').length
+  const needCount = (families ?? []).filter((f) => f.status !== 'green').length
 
   return (
     <div className="flex flex-col gap-6">
