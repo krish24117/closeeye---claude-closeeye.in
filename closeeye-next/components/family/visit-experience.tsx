@@ -124,6 +124,7 @@ export function VisitReportExperience({
   pmReview = null,
   pdfUrl,
   delivery,
+  admin = false,
 }: {
   report: SharedVisitReport
   stats: VisitStats
@@ -132,6 +133,8 @@ export function VisitReportExperience({
   pmReview?: string | null
   pdfUrl?: string
   delivery?: { emailOk: boolean; emailReason?: string; whatsappOk: boolean }
+  /** Staff/admin viewer — shows the detailed email diagnostics. */
+  admin?: boolean
 }) {
   const [pdfBusy, setPdfBusy] = React.useState(false)
   const timeline = timelineEvents(report)
@@ -289,10 +292,17 @@ export function VisitReportExperience({
       {completedLabel && <p className="text-center text-caption text-muted">Report shared after the visit on {completedLabel}.</p>}
 
       {delivery && (
-        <p className="text-center text-caption text-muted">
-          Delivered to you: WhatsApp {delivery.whatsappOk ? '✓' : '—'} · Email{' '}
-          {delivery.emailOk ? '✓' : <span className="text-warning">not sent{delivery.emailReason ? ` (${delivery.emailReason})` : ''}</span>}
-        </p>
+        <div className="text-center text-caption text-muted">
+          <p>
+            Your report is saved here{delivery.whatsappOk ? ' and sent to your WhatsApp' : ''}
+            {delivery.emailOk ? ' and email' : ''}.
+          </p>
+          {admin && !delivery.emailOk && delivery.emailReason && (
+            <p className="mx-auto mt-1.5 max-w-md break-words rounded-md bg-warning/[0.08] px-3 py-2 text-left font-mono text-[0.7rem] leading-snug text-warning/90">
+              Email diagnostics (staff): {delivery.emailReason}
+            </p>
+          )}
+        </div>
       )}
 
       <div className="flex flex-col gap-3 pt-2 sm:flex-row">

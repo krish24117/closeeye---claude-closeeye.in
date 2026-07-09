@@ -9,6 +9,8 @@ import { initialsOf } from '@/components/family/loved-one-card'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/states'
 import { useAuth } from '@/components/auth/auth-provider'
+import { useFamilyData } from '@/components/family/family-data-provider'
+import { isSuperAdmin } from '@/lib/roles'
 import { fetchMyBookingRequests, fetchFullVisitReport, type FullVisitReport } from '@/lib/db/family'
 import { VisitReportExperience } from '@/components/family/visit-experience'
 import { whatsappLink } from '@/lib/site'
@@ -45,6 +47,8 @@ function fmtDate(iso: string | null): string {
 export default function VisitDetailPage() {
   const params = useParams<{ id: string }>()
   const { user } = useAuth()
+  const { profile } = useFamilyData()
+  const admin = isSuperAdmin(profile)
   const [visit, setVisit] = React.useState<BookingRequest | null | undefined>(undefined)
   const [full, setFull] = React.useState<FullVisitReport | null>(null)
 
@@ -96,7 +100,7 @@ export default function VisitDetailPage() {
     return (
       <div className="flex flex-col gap-6">
         {back}
-        <VisitReportExperience report={full.report} stats={full.stats} recommendations={full.recommendations} followUps={full.followUps} pdfUrl={full.pdfUrl} delivery={full.delivery} />
+        <VisitReportExperience report={full.report} stats={full.stats} recommendations={full.recommendations} followUps={full.followUps} pdfUrl={full.pdfUrl} delivery={full.delivery} admin={admin} />
       </div>
     )
   }

@@ -47,7 +47,10 @@ Deno.serve(async (req) => {
     if (!booking_id || !pdf_url) return json({ error: 'booking_id and pdf_url are required' }, 400)
 
     const apiKey = Deno.env.get('RESEND_API_KEY')
-    if (!apiKey) return json({ skipped: true, reason: 'no_provider' })
+    if (!apiKey) {
+      console.error('[send-visit-email] SKIPPED — missing env RESEND_API_KEY')
+      return json({ skipped: true, reason: 'no_provider', diagnostics: { hasResendKey: false, missingEnv: ['RESEND_API_KEY'] } })
+    }
 
     const url = Deno.env.get('SUPABASE_URL')!
     const sb = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -78,7 +81,10 @@ Deno.serve(async (req) => {
       sb.auth.admin.getUserById(familyUserId),
     ])
     const toEmail = authUser?.user?.email
-    if (!toEmail) return json({ skipped: true, reason: 'no_email' })
+    if (!toEmail) {
+      console.error('[send-visit-email] SKIPPED — no_email for family', familyUserId)
+      return json({ skipped: true, reason: 'no_email', diagnostics: { familyUserId, hasEmail: false } })
+    }
 
     const { data: visit } = await sb.from('visits').select('one_moment').eq('booking_id', booking_id).order('created_at', { ascending: false }).limit(1).maybeSingle()
 
@@ -91,17 +97,48 @@ Deno.serve(async (req) => {
     })
 
     const from = Deno.env.get('RESEND_FROM_EMAIL') || Deno.env.get('RESEND_FROM') || 'Close Eye <care@closeeye.in>'
+    // Structured diagnostics — logged server-side + returned for capture.
+    const diagnostics: Record<string, unknown> = {
+      fn: 'send-visit-email',
+      hasResendKey: true,
+      fromSource: Deno.env.get('RESEND_FROM_EMAIL') ? 'RESEND_FROM_EMAIL' : Deno.env.get('RESEND_FROM') ? 'RESEND_FROM' : 'default_fallback',
+      from,
+      to: toEmail,
+    }
+
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ from, to: [toEmail], subject: `${lo?.full_name || 'Your loved one'}'s Care Report — Close Eye`, html }),
     })
+    diagnostics.resendStatus = res.status
+    const bodyText = await res.text()
+    try { diagnostics.resendBody = JSON.parse(bodyText) } catch { diagnostics.resendBody = bodyText }
+
     if (!res.ok) {
-      const detail = await res.text()
-      console.error('[send-visit-email] Resend error', res.status, 'from:', from, 'to:', toEmail, detail)
-      return json({ error: 'email_send_failed', status: res.status, from, to: toEmail, detail }, 502)
+      // Report the account's domain verification status directly.
+      try {
+        const dres = await fetch('https://api.resend.com/domains', { headers: { Authorization: `Bearer ${apiKey}` } })
+        if (dres.ok) {
+          const dj = (await dres.json()) as { data?: Array<{ name: string; status: string }> }
+          diagnostics.domains = (dj.data ?? []).map((d) => ({ name: d.name, status: d.status }))
+        } else {
+          diagnostics.domainsLookup = `HTTP ${dres.status}`
+        }
+      } catch (e) {
+        diagnostics.domainsLookupError = String(e)
+      }
+      diagnostics.category =
+        res.status === 401 ? 'authentication (RESEND_API_KEY)'
+          : res.status === 403 || res.status === 422 ? 'configuration / domain verification'
+            : res.status >= 500 ? 'resend outage'
+              : 'application'
+      console.error('[send-visit-email] FAILED', JSON.stringify(diagnostics))
+      return json({ error: 'email_send_failed', diagnostics }, 502)
     }
-    return json({ success: true, to: toEmail, from })
+
+    console.log('[send-visit-email] SENT', JSON.stringify(diagnostics))
+    return json({ success: true, diagnostics })
   } catch (err) {
     return json({ error: String(err) }, 500)
   }

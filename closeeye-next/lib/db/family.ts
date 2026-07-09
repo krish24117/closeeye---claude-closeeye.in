@@ -284,12 +284,22 @@ export async function fetchFullVisitReport(
 
   // The branded PDF uploaded at completion (served instead of client-side regen)
   // + the recorded delivery outcome (for the report status + tracing).
+  type Diag = {
+    resendStatus?: number
+    resendBody?: { message?: string; name?: string } | string
+    from?: string
+    to?: string
+    domains?: Array<{ name: string; status: string }>
+    missingEnv?: string[]
+  }
+  type DeliveryEmail = {
+    success?: boolean; skipped?: boolean; reason?: string; error?: string
+    diagnostics?: Diag
+    response?: { diagnostics?: Diag; error?: string } | string
+  }
   const rawDelivery = (cd.delivery ?? null) as {
-    email?: {
-      success?: boolean; error?: string; reason?: string; skipped?: boolean; status?: number
-      response?: { error?: string; detail?: string; status?: number; from?: string } | string
-    } | null
-    whatsapp?: { success?: boolean; error?: string; reason?: string } | null
+    email?: DeliveryEmail | null
+    whatsapp?: { success?: boolean } | null
     pdfPath?: string
   } | null
 
@@ -303,12 +313,21 @@ export async function fetchFullVisitReport(
   if (rawDelivery) {
     const e = rawDelivery.email
     const emailOk = e?.success === true
+    const diag: Diag | undefined = e?.diagnostics ?? (e && typeof e.response === 'object' ? e.response?.diagnostics : undefined)
     let emailReason: string | undefined
     if (!emailOk) {
-      const resp = e?.response
-      const raw = typeof resp === 'string' ? resp : resp?.detail || resp?.error || e?.error || e?.reason || (e == null ? 'not attempted' : 'unknown')
-      const status = (typeof resp === 'object' && resp ? resp.status : undefined) ?? e?.status
-      emailReason = `${status ? `HTTP ${status}: ` : ''}${String(raw).slice(0, 240)}`
+      const parts: string[] = []
+      if (diag?.resendStatus) parts.push(`Resend HTTP ${diag.resendStatus}`)
+      const body = diag?.resendBody
+      if (body && typeof body === 'object' && body.message) parts.push(body.message)
+      else if (typeof body === 'string' && body) parts.push(body.slice(0, 160))
+      if (diag?.from) parts.push(`from ${diag.from}`)
+      if (diag?.to) parts.push(`to ${diag.to}`)
+      if (diag?.domains?.length) parts.push(`domains ${diag.domains.map((d) => `${d.name}:${d.status}`).join(', ')}`)
+      if (diag?.missingEnv?.length) parts.push(`missing env ${diag.missingEnv.join(',')}`)
+      if (e?.reason) parts.push(e.reason)
+      if (!parts.length) parts.push(e?.error || 'unknown')
+      emailReason = parts.join(' · ')
     }
     delivery = { emailOk, emailReason, whatsappOk: rawDelivery.whatsapp?.success === true }
   }
