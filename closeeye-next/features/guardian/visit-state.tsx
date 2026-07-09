@@ -25,10 +25,13 @@ interface JourneyState {
   confirmed: boolean
   rating: number
   issues: string[]
+  /** The saved `visits` row id (set once the report is written) — lets the
+   *  post-visit step attach rating/issues to the same real record. */
+  reportId: string | null
 }
 
 function initial(): JourneyState {
-  return { step: 0, gpsChecked: false, checkinAt: null, prep: [], startedAt: null, observations: emptyObservations(), vitals: {}, confirmed: false, rating: 0, issues: [] }
+  return { step: 0, gpsChecked: false, checkinAt: null, prep: [], startedAt: null, observations: emptyObservations(), vitals: {}, confirmed: false, rating: 0, issues: [], reportId: null }
 }
 
 type Action =
@@ -49,6 +52,7 @@ type Action =
   | { type: 'voiceSet'; voice: VoiceAttachment | null }
   | { type: 'voicePatch'; patch: Partial<VoiceAttachment> }
   | { type: 'confirm' }
+  | { type: 'reportSaved'; id: string }
   | { type: 'rating'; value: number }
   | { type: 'toggleIssue'; id: string }
   | { type: 'hydrate'; state: JourneyState }
@@ -94,6 +98,8 @@ function reducer(s: JourneyState, a: Action): JourneyState {
       return { ...s, observations: { ...s.observations, voiceNote: s.observations.voiceNote ? { ...s.observations.voiceNote, ...a.patch } : s.observations.voiceNote } }
     case 'confirm':
       return { ...s, confirmed: true }
+    case 'reportSaved':
+      return { ...s, reportId: a.id }
     case 'rating':
       return { ...s, rating: a.value }
     case 'toggleIssue':
@@ -110,10 +116,23 @@ function reducer(s: JourneyState, a: Action): JourneyState {
 interface Ctx extends JourneyState {
   dispatch: React.Dispatch<Action>
   stepKey: StepKey
+  /** Real identifiers, from the signed-in guardian + the assigned booking. */
+  bookingId: string
+  companionId: string
+  guardianName: string
+  elderProfileId: string | null
 }
 const VisitContext = React.createContext<Ctx | null>(null)
 
-export function VisitProvider({ visitId, children }: { visitId: string; children: React.ReactNode }) {
+export interface VisitProviderProps {
+  visitId: string
+  companionId: string
+  guardianName: string
+  elderProfileId: string | null
+  children: React.ReactNode
+}
+
+export function VisitProvider({ visitId, companionId, guardianName, elderProfileId, children }: VisitProviderProps) {
   const key = `ce_guardian_visit_${visitId}`
   const [state, dispatch] = React.useReducer(reducer, undefined, initial)
   const hydrated = React.useRef(false)
@@ -151,7 +170,13 @@ export function VisitProvider({ visitId, children }: { visitId: string; children
   // Flush the last change when the journey unmounts (e.g. navigating away mid-visit).
   React.useEffect(() => () => persist(), [persist])
 
-  return <VisitContext.Provider value={{ ...state, dispatch, stepKey: STEPS[state.step]! }}>{children}</VisitContext.Provider>
+  return (
+    <VisitContext.Provider
+      value={{ ...state, dispatch, stepKey: STEPS[state.step]!, bookingId: visitId, companionId, guardianName, elderProfileId }}
+    >
+      {children}
+    </VisitContext.Provider>
+  )
 }
 
 export function useVisit(): Ctx {

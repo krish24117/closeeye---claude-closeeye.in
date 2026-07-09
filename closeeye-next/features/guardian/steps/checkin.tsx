@@ -4,16 +4,19 @@ import * as React from 'react'
 import { MapPin, ShieldCheck, Clock, Crosshair, RefreshCw, CircleCheckBig, CloudOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { GuardianVisit } from '@/lib/guardian-data'
+import { checkInVisit, getVisitLocation, type GeoCoords } from '@/lib/db/guardian'
 import { useVisit } from '../visit-state'
 
 type Phase = 'locating' | 'verified' | 'error'
 
-/** Screen 3 — GPS check-in. Calm confirmation the Guardian reached the family. */
+/** Screen 3 — GPS check-in. Confirms arrival and writes the real check-in. */
 export function CheckinStep({ visit }: { visit: GuardianVisit }) {
-  const { dispatch } = useVisit()
+  const { dispatch, bookingId } = useVisit()
   const [phase, setPhase] = React.useState<Phase>('locating')
   const [time, setTime] = React.useState('')
   const [accuracy, setAccuracy] = React.useState(12)
+  const [coords, setCoords] = React.useState<GeoCoords | null>(null)
+  const [busy, setBusy] = React.useState(false)
 
   const verify = React.useCallback(() => {
     setPhase('locating')
@@ -30,10 +33,11 @@ export function CheckinStep({ visit }: { visit: GuardianVisit }) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           clearTimeout(t)
+          setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
           finish(Math.max(4, Math.round(pos.coords.accuracy)))
         },
         () => {
-          /* keep the simulated success — real permission not needed for the flow */
+          /* keep the confirmation flow going even if the fix is slow indoors */
         },
         { timeout: 4000, maximumAge: 60000 },
       )
@@ -45,6 +49,20 @@ export function CheckinStep({ visit }: { visit: GuardianVisit }) {
     const cleanup = verify()
     return cleanup
   }, [verify])
+
+  // Write the real check-in (status=in_progress + coords), then advance.
+  const doCheckIn = React.useCallback(async () => {
+    setBusy(true)
+    try {
+      await checkInVisit(bookingId, coords ?? (await getVisitLocation()))
+    } catch {
+      /* non-fatal — the guardian can still care; the brief allows a retry */
+    } finally {
+      setBusy(false)
+    }
+    dispatch({ type: 'gps', at: Date.now() })
+    dispatch({ type: 'next' })
+  }, [bookingId, coords, dispatch])
 
   if (phase === 'error') {
     return (
@@ -60,7 +78,7 @@ export function CheckinStep({ visit }: { visit: GuardianVisit }) {
           <Button size="lg" className="w-full" onClick={verify}>
             <RefreshCw className="h-5 w-5" strokeWidth={1.75} /> Try again
           </Button>
-          <Button variant="secondary" size="lg" className="w-full" onClick={() => { dispatch({ type: 'gps', at: Date.now() }); dispatch({ type: 'next' }) }}>
+          <Button variant="secondary" size="lg" className="w-full" onClick={doCheckIn} disabled={busy}>
             <ShieldCheck className="h-5 w-5" strokeWidth={1.75} /> Ask Presence Manager to confirm
           </Button>
         </div>
@@ -96,8 +114,8 @@ export function CheckinStep({ visit }: { visit: GuardianVisit }) {
       )}
 
       <div className="w-full">
-        <Button size="lg" className="w-full" disabled={phase !== 'verified'} onClick={() => { dispatch({ type: 'gps', at: Date.now() }); dispatch({ type: 'next' }) }}>
-          {phase === 'verified' ? 'Check in' : 'Confirming…'}
+        <Button size="lg" className="w-full" disabled={phase !== 'verified' || busy} onClick={doCheckIn}>
+          {busy ? 'Checking in…' : phase === 'verified' ? 'Check in' : 'Confirming…'}
         </Button>
         {phase === 'verified' && (
           <button type="button" onClick={() => setPhase('error')} className="mt-3 text-caption text-muted underline-offset-4 hover:underline">

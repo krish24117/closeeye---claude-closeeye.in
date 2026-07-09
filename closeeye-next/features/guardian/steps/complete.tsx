@@ -8,9 +8,10 @@ import { VoiceNote } from '@/components/family/voice-note'
 import { Overlay } from '@/components/family/overlay'
 import { processVisit } from '@/lib/cloza'
 import type { PhotoAttachment } from '@/lib/guardian-uploads'
-import { GUARDIAN, type GuardianVisit } from '@/lib/guardian-data'
-import { saveReport } from '@/lib/visit-reports'
-import { composeReport } from '@/lib/family-report'
+import type { GuardianVisit } from '@/lib/guardian-data'
+import type { ReportVitals } from '@/lib/visit-reports'
+import { buildStory, moodLabel, pronounFor, wellnessScore } from '@/lib/family-report'
+import { submitVisitReport } from '@/lib/db/guardian'
 import { useVisit } from '../visit-state'
 import { VisitTimer } from '../visit-timer'
 
@@ -28,9 +29,11 @@ function fmtDuration(ms: number) {
 
 /** Screen 9 — review and complete. Confirmation reassures, then hands to Post Visit. */
 export function CompleteStep({ visit }: { visit: GuardianVisit }) {
-  const { observations, vitals, startedAt, checkinAt, confirmed, dispatch } = useVisit()
+  const { observations, vitals, prep, startedAt, checkinAt, confirmed, dispatch, bookingId, companionId, guardianName, elderProfileId } = useVisit()
   const [frozen] = React.useState(() => Date.now())
   const [preview, setPreview] = React.useState<PhotoAttachment | null>(null)
+  const [saving, setSaving] = React.useState(false)
+  const [err, setErr] = React.useState(false)
 
   const scalesNoted = Object.values(observations.scales).filter(Boolean).length
   const momentsCount = observations.moments.length
@@ -139,35 +142,54 @@ export function CompleteStep({ visit }: { visit: GuardianVisit }) {
       <Button
         size="lg"
         className="w-full"
-        onClick={() => {
-          // Hand the family the full, warm report — story, mood, moments, vitals, media.
+        disabled={saving}
+        onClick={async () => {
+          // Hand the family the full, warm report — written to the real visits row.
           const now = Date.now()
-          saveReport(
-            composeReport({
-              memberName: visit.memberName,
-              guardianName: GUARDIAN.name,
-              service: visit.service,
-              relationship: visit.relationship,
-              summary: intel.summary,
+          const pronoun = pronounFor(visit.relationship || '')
+          const story = buildStory(visit.memberName, pronoun, observations.scales, observations.moments, observations.social, vitals as ReportVitals)
+          const photoPaths = photos.map((p) => p.url).filter((u): u is string => Boolean(u))
+          const voiceOut = voice?.url ? { path: voice.url, durationSec: voice.durationSec } : null
+          setErr(false)
+          setSaving(true)
+          try {
+            const id = await submitVisitReport(bookingId, {
+              companionId,
+              elderProfileId,
               scales: observations.scales,
               moments: observations.moments,
               social: observations.social,
               vitals,
-              note: observations.note,
+              prep,
               win: observations.win,
-              photos: photos.filter((p) => p.thumb).map((p) => ({ id: p.id, thumb: p.thumb })),
-              voice: voice ? { dataUrl: voice.dataUrl, durationSec: voice.durationSec } : null,
+              concern: observations.concern,
+              note: observations.note,
+              summary: intel.summary,
+              story,
+              moodLabel: moodLabel(observations.scales.mood),
+              wellnessScore: wellnessScore(observations.scales),
+              guardianName,
+              service: visit.service,
+              pronoun,
+              photoPaths,
+              voice: voiceOut,
               startedAt: startedAt ?? now,
               checkinAt: checkinAt ?? startedAt ?? now,
               completedAt: now,
-            }),
-          )
-          dispatch({ type: 'confirm' })
+            })
+            dispatch({ type: 'reportSaved', id })
+            dispatch({ type: 'confirm' })
+          } catch {
+            setErr(true)
+          } finally {
+            setSaving(false)
+          }
         }}
       >
-        Complete visit
+        {saving ? 'Saving report…' : 'Complete visit'}
       </Button>
-      <Button variant="text" className="mx-auto" onClick={() => dispatch({ type: 'back' })}>
+      {err && <p className="text-center text-caption text-error">We couldn&apos;t save the report. Check your connection and try again.</p>}
+      <Button variant="text" className="mx-auto" onClick={() => dispatch({ type: 'back' })} disabled={saving}>
         Go back and add more
       </Button>
 

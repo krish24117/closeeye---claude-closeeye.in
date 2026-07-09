@@ -22,21 +22,23 @@ export interface PhotoCaptureProps {
   onAdd: (photo: PhotoAttachment) => void
   onPatch: (id: string, patch: Partial<PhotoAttachment>) => void
   onRemove: (id: string) => void
+  /** Booking id → photos upload to visit-photos/<bookingId>/… for real. */
+  bookingId: string
 }
 
-export function PhotoCapture({ photos, onAdd, onPatch, onRemove }: PhotoCaptureProps) {
+export function PhotoCapture({ photos, onAdd, onPatch, onRemove, bookingId }: PhotoCaptureProps) {
   const inputRef = React.useRef<HTMLInputElement | null>(null)
   const [preview, setPreview] = React.useState<PhotoAttachment | null>(null)
 
   const startUpload = React.useCallback(
     (id: string, blob: Blob) => {
       onPatch(id, { status: 'uploading', progress: 0 })
-      const { promise } = uploadBlob(blob, `${id}.jpg`, (pct) => onPatch(id, { progress: pct }))
+      const { promise } = uploadBlob(blob, `${id}.jpg`, (pct) => onPatch(id, { progress: pct }), { bucket: 'visit-photos', bookingId })
       promise
         .then((url) => onPatch(id, { status: 'done', url, progress: 100 }))
         .catch(() => onPatch(id, { status: 'error' }))
     },
-    [onPatch],
+    [onPatch, bookingId],
   )
 
   const handleFiles = React.useCallback(

@@ -38,12 +38,14 @@ export function ObservationsStep({ visit }: { visit: GuardianVisit }) {
         onAdd={(photo) => dispatch({ type: 'photoAdd', photo })}
         onPatch={(id, patch) => dispatch({ type: 'photoPatch', id, patch })}
         onRemove={(id) => dispatch({ type: 'photoRemove', id })}
+        bookingId={visit.id}
       />
 
       <VoiceRecorder
         voice={observations.voiceNote}
         onSet={(voice) => dispatch({ type: 'voiceSet', voice })}
         onPatch={(patch) => dispatch({ type: 'voicePatch', patch })}
+        bookingId={visit.id}
       />
 
       {/* A small win */}

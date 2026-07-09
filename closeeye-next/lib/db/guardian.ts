@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import type { EmergencyContact, GuardianVisit as RichVisit, GuardianVisitStatus } from '@/lib/guardian-data'
 
 /** A companion's assigned visit, from the real `bookings` table. */
 export interface GuardianVisit {
@@ -161,6 +162,321 @@ export async function fetchGuardianProfile(companionId: string): Promise<Guardia
     status: c?.status?.trim() || 'approved',
     visitsCompleted: count ?? 0,
   }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * The rich in-visit journey. It consumes the full `GuardianVisit` shape from
+ * @/lib/guardian-data; we populate that shape from REAL data — the booking, the
+ * loved_one, the (optional) elder_profile care brief, and the last visit — so
+ * the mock dataset is never touched. Fields with no real source stay empty.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+const RICH_STATUS: Record<string, GuardianVisitStatus> = {
+  completed: 'completed',
+  in_progress: 'in-progress',
+  on_the_way: 'en-route',
+}
+
+/** Split a free-text brief field into clean lines (empty → []). */
+function toLines(...texts: (string | null | undefined)[]): string[] {
+  return texts
+    .flatMap((t) => (t ? t.split(/\r?\n|·|;|•|•/) : []))
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
+function medsToLines(meds: unknown): string[] {
+  if (!Array.isArray(meds)) return []
+  return meds
+    .map((m) => {
+      if (typeof m === 'string') return m.trim()
+      if (m && typeof m === 'object') {
+        const o = m as Record<string, unknown>
+        const name = String(o.name ?? o.medication ?? '').trim()
+        const dose = String(o.dose ?? o.dosage ?? o.schedule ?? '').trim()
+        return [name, dose].filter(Boolean).join(' · ')
+      }
+      return ''
+    })
+    .filter(Boolean)
+}
+
+function contactsFromJson(raw: unknown): EmergencyContact[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map((c) => {
+      const o = (c ?? {}) as Record<string, unknown>
+      const name = String(o.name ?? '').trim()
+      const phone = String(o.phone ?? o.number ?? '').trim()
+      const relation = String(o.relation ?? o.relationship ?? '').trim()
+      return { name: name || 'Contact', relation, phone }
+    })
+    .filter((c) => c.phone || c.name !== 'Contact')
+}
+
+function timeLabelOf(iso: string | null): string {
+  if (!iso) return ''
+  try {
+    return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+  } catch {
+    return ''
+  }
+}
+
+function windowLabelOf(iso: string | null): string {
+  if (!iso) return ''
+  const h = new Date(iso).getHours()
+  return h < 12 ? 'Morning' : h < 16 ? 'Afternoon' : h < 20 ? 'Evening' : 'Night'
+}
+
+function initialsFor(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (!parts.length) return '··'
+  return ((parts[0]![0] ?? '') + (parts.length > 1 ? parts[parts.length - 1]![0] ?? '' : '')).toUpperCase()
+}
+
+interface LovedOneBrief {
+  full_name: string
+  relationship: string | null
+  age: number | null
+  address: string | null
+  city: string | null
+  medical_notes: string | null
+  emergency_contact_name: string | null
+  emergency_contact_phone: string | null
+  doctor_name: string | null
+  nearest_hospital: string | null
+}
+
+interface ElderRow {
+  id: string
+  medical_conditions: string | null
+  current_medications: unknown
+  allergies: string | null
+  doctor_name: string | null
+  doctor_phone: string | null
+  emergency_contacts: unknown
+  food_preferences: string | null
+  conversation_interests: string | null
+  things_to_avoid: string | null
+  daily_routine: string | null
+  continuity_notes: string | null
+  pinned_note: string | null
+}
+
+export interface GuardianVisitFull {
+  visit: RichVisit
+  elderProfileId: string | null
+  /** Raw scheduled time (ISO) — the rich shape only carries a short time label. */
+  scheduledAt: string | null
+}
+
+/**
+ * Load one assigned visit as the rich journey shape, from real data. Reads the
+ * booking (RLS: companion_id), the loved_one, the optional elder_profiles brief,
+ * and the guardian's own most-recent visit for this elder (for "last time").
+ */
+export async function fetchGuardianVisitFull(companionId: string, bookingId: string): Promise<GuardianVisitFull | null> {
+  const { data: bk } = await supabase
+    .from('bookings')
+    .select('id, service_type, scheduled_at, status, loved_one_id, special_instructions')
+    .eq('id', bookingId)
+    .eq('companion_id', companionId)
+    .maybeSingle()
+  const b = bk as (BookingRow & { special_instructions: string | null }) | null
+  if (!b) return null
+
+  let lo: LovedOneBrief | null = null
+  if (b.loved_one_id) {
+    const { data } = await supabase
+      .from('loved_ones')
+      .select('full_name, relationship, age, address, city, medical_notes, emergency_contact_name, emergency_contact_phone, doctor_name, nearest_hospital')
+      .eq('id', b.loved_one_id)
+      .maybeSingle()
+    lo = data as LovedOneBrief | null
+  }
+
+  let elder: ElderRow | null = null
+  if (b.loved_one_id) {
+    const { data } = await supabase
+      .from('elder_profiles')
+      .select('id, medical_conditions, current_medications, allergies, doctor_name, doctor_phone, emergency_contacts, food_preferences, conversation_interests, things_to_avoid, daily_routine, continuity_notes, pinned_note')
+      .eq('loved_one_id', b.loved_one_id)
+      .maybeSingle()
+    elder = data as ElderRow | null
+  }
+
+  // Previous visit summary — the guardian's own most recent completed report for this elder.
+  let previousSummary: string | undefined
+  if (elder) {
+    const { data } = await supabase
+      .from('visits')
+      .select('one_moment, report_text, created_at')
+      .eq('companion_id', companionId)
+      .eq('elder_id', elder.id)
+      .neq('booking_id', bookingId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const v = data as { one_moment: string | null; report_text: string | null } | null
+    previousSummary = (v?.one_moment || v?.report_text || '').trim() || undefined
+  }
+
+  const name = lo?.full_name?.trim() || 'Family member'
+  const parts = name.split(/\s+/)
+  const first = parts[0] ?? name
+  const last = parts.length > 1 ? parts[parts.length - 1]! : ''
+
+  const medicalNotes = elder
+    ? [...toLines(elder.medical_conditions), ...medsToLines(elder.current_medications), ...(elder.allergies ? [`Allergies: ${elder.allergies}`] : [])]
+    : toLines(lo?.medical_notes)
+
+  const emergencyContacts = contactsFromJson(elder?.emergency_contacts)
+  if (!emergencyContacts.length && lo?.emergency_contact_name) {
+    emergencyContacts.push({ name: lo.emergency_contact_name, relation: 'Emergency contact', phone: lo.emergency_contact_phone ?? '' })
+  }
+  const docName = elder?.doctor_name || lo?.doctor_name
+  if (docName) emergencyContacts.push({ name: docName, relation: 'Physician', phone: elder?.doctor_phone ?? '' })
+
+  const specialNotes = (b.special_instructions?.trim() || elder?.pinned_note?.trim() || '')
+
+  const visit: RichVisit = {
+    id: b.id,
+    familyName: last ? `${last} family` : `${first}'s family`,
+    memberName: name,
+    memberInitials: initialsFor(name),
+    relationship: lo?.relationship?.trim() || '',
+    age: lo?.age ?? 0,
+    service: serviceLabel(b.service_type),
+    address: lo?.address?.trim() || lo?.city?.trim() || '',
+    area: lo?.city?.trim() || '',
+    timeLabel: timeLabelOf(b.scheduled_at),
+    windowLabel: windowLabelOf(b.scheduled_at),
+    durationLabel: '',
+    distanceLabel: '',
+    driveLabel: '',
+    status: RICH_STATUS[b.status] ?? 'upcoming',
+    specialNotes,
+    medicalNotes,
+    preferences: toLines(elder?.food_preferences, elder?.daily_routine),
+    familyInstructions: toLines(b.special_instructions, elder?.pinned_note),
+    conversationSuggestions: toLines(elder?.conversation_interests),
+    thingsToObserve: toLines(elder?.things_to_avoid, elder?.continuity_notes),
+    emergencyContacts,
+    previousSummary,
+  }
+
+  return { visit, elderProfileId: elder?.id ?? null, scheduledAt: b.scheduled_at }
+}
+
+/* ── The real report write (replaces the localStorage saveReport bridge) ──── */
+
+const MOOD_TO_SCORE: Record<string, number> = { Excellent: 5, Good: 4, Neutral: 3, Low: 2, Concern: 1 }
+
+export interface VisitReportInput {
+  companionId: string
+  elderProfileId: string | null
+  scales: Record<string, string>
+  moments: string[]
+  social: string[]
+  vitals: Record<string, string>
+  prep: string[]
+  win?: string
+  concern?: string
+  note?: string
+  summary: string // short, family-safe one-liner
+  story: string // the rich, human story
+  moodLabel?: string
+  wellnessScore: number
+  guardianName: string
+  service: string
+  pronoun: string
+  photoPaths: string[]
+  voice: { path: string; durationSec: number } | null
+  startedAt: number
+  checkinAt: number
+  completedAt: number
+}
+
+/**
+ * Write the completed visit as a real `visits` row: the full structured CLOza
+ * record lands in checklist_data (queryable), the warm story in one_moment, and
+ * the booking is marked completed. Returns the new visits row id so the
+ * post-visit step can attach the guardian's rating/issues to the same record.
+ */
+export async function submitVisitReport(bookingId: string, input: VisitReportInput): Promise<string> {
+  const durationSec = Math.max(1, Math.round((input.completedAt - input.startedAt) / 1000))
+  const checklist_data = {
+    scales: input.scales,
+    moments: input.moments,
+    social: input.social,
+    vitals: input.vitals,
+    prep: input.prep,
+    win: input.win ?? null,
+    concern: input.concern ?? null,
+    note: input.note ?? null,
+    story: input.story,
+    moodLabel: input.moodLabel ?? null,
+    wellnessScore: input.wellnessScore,
+    guardianName: input.guardianName,
+    service: input.service,
+    pronoun: input.pronoun,
+    voice: input.voice,
+    durationSec,
+    checkinAt: input.checkinAt,
+    startedAt: input.startedAt,
+    completedAt: input.completedAt,
+  }
+  const mood_score = input.scales.mood ? MOOD_TO_SCORE[input.scales.mood] ?? null : null
+
+  const { data, error } = await supabase
+    .from('visits')
+    .insert({
+      booking_id: bookingId,
+      elder_id: input.elderProfileId,
+      companion_id: input.companionId,
+      start_time: new Date(input.startedAt).toISOString(),
+      end_time: new Date(input.completedAt).toISOString(),
+      tier_completed: 1,
+      checklist_data,
+      flags: input.concern ? 'monitor' : 'none',
+      flag_notes: input.concern ?? null,
+      one_moment: input.story,
+      photo_urls: input.photoPaths,
+      mood_score,
+      report_text: input.summary,
+    })
+    .select('id')
+    .single()
+  if (error) throw new Error(error.message)
+
+  const { error: bErr } = await supabase
+    .from('bookings')
+    .update({ status: 'completed', checked_out_at: new Date(input.completedAt).toISOString() })
+    .eq('id', bookingId)
+  if (bErr) throw new Error(bErr.message)
+
+  return (data as { id: string }).id
+}
+
+/** Attach the guardian's post-visit rating + raised issues to the saved report. */
+export async function updateVisitFeedback(visitRowId: string, feedback: { rating?: number; issues?: string[] }): Promise<void> {
+  const issues = feedback.issues ?? []
+  const urgent = issues.some((i) => i === 'urgent' || i === 'medical' || i === 'safety')
+
+  const { data } = await supabase.from('visits').select('checklist_data, flag_notes').eq('id', visitRowId).maybeSingle()
+  const row = data as { checklist_data: Record<string, unknown> | null; flag_notes: string | null } | null
+  const cd = row?.checklist_data ?? {}
+
+  const patch: Record<string, unknown> = {
+    checklist_data: { ...cd, guardianRating: feedback.rating ?? null, guardianIssues: issues },
+  }
+  if (urgent) {
+    patch.flags = 'urgent'
+    patch.flag_notes = [row?.flag_notes, `Guardian flagged: ${issues.join(', ')}`].filter(Boolean).join(' · ')
+  }
+  const { error } = await supabase.from('visits').update(patch).eq('id', visitRowId)
+  if (error) throw new Error(error.message)
 }
 
 export interface GeoCoords { lat: number; lng: number }
