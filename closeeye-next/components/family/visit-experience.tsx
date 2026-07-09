@@ -141,7 +141,20 @@ export function VisitReportExperience({
     try {
       const { buildVisitPdf, reportToPdfInput } = await import('@/lib/visit-pdf')
       const pdf = await buildVisitPdf(reportToPdfInput(report, stats, recommendations ?? [], followUps ?? []))
-      pdf.save(`close-eye-care-report-${slug}.pdf`)
+      // Robust across platforms: iOS Safari ignores jsPDF's save()/download attribute,
+      // so open the blob in a new tab (its PDF viewer lets the user save/share);
+      // desktop honours the download attribute and saves directly.
+      const blob = pdf.output('blob')
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `close-eye-care-report-${slug}.pdf`
+      a.target = '_blank'
+      a.rel = 'noopener'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 20000)
     } catch (e) {
       console.error('[visit-pdf] failed:', e)
     } finally {

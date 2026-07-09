@@ -23,8 +23,10 @@ export function VoicePlayer({ src, durationSec, label }: { src: string; duration
   const [elapsed, setElapsed] = React.useState(0)
   const [rate, setRate] = React.useState(0)
   const [showTranscript, setShowTranscript] = React.useState(false)
+  const [failed, setFailed] = React.useState(false)
 
   React.useEffect(() => {
+    setFailed(false)
     const audio = new Audio(src)
     audioRef.current = audio
     const onTime = () => setElapsed(audio.currentTime)
@@ -32,12 +34,15 @@ export function VoicePlayer({ src, durationSec, label }: { src: string; duration
       setPlaying(false)
       setElapsed(0)
     }
+    const onErr = () => setFailed(true)
     audio.addEventListener('timeupdate', onTime)
     audio.addEventListener('ended', onEnd)
+    audio.addEventListener('error', onErr)
     return () => {
       audio.pause()
       audio.removeEventListener('timeupdate', onTime)
       audio.removeEventListener('ended', onEnd)
+      audio.removeEventListener('error', onErr)
       audioRef.current = null
     }
   }, [src])
@@ -49,7 +54,7 @@ export function VoicePlayer({ src, durationSec, label }: { src: string; duration
     const a = audioRef.current
     if (!a) return
     if (playing) a.pause()
-    else void a.play().catch(() => setPlaying(false))
+    else void a.play().catch(() => { setPlaying(false); setFailed(true) })
     setPlaying((p) => !p)
   }
 
@@ -119,6 +124,12 @@ export function VoicePlayer({ src, durationSec, label }: { src: string; duration
           <Download className="h-3.5 w-3.5" strokeWidth={1.75} /> Download
         </a>
       </div>
+
+      {failed && (
+        <p className="mt-3 rounded-md bg-warning/[0.08] p-3.5 text-caption text-ink">
+          This voice note can&apos;t play in this browser. Tap <strong>Download</strong> to save and open it in your files.
+        </p>
+      )}
 
       {showTranscript && (
         <p className="mt-3 rounded-md bg-ivory p-3.5 text-body-sm italic text-muted">
