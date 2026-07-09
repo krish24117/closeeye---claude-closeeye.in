@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { deriveDashboard, fetchDashboardSignals } from '@/lib/db/dashboard'
+import { useVisitSync } from '@/lib/use-visit-sync'
 import {
   ActiveDashboard,
   FamilyAddedDashboard,
@@ -24,7 +25,7 @@ export default function FamilyHome() {
   const { lovedOnes, subscription, loading } = useFamilyData()
   const [signals, setSignals] = React.useState<{ visits: BookingRequest[]; unreadMessages: number; reportedBookingIds: Set<string> } | null>(null)
 
-  React.useEffect(() => {
+  const reload = React.useCallback(() => {
     if (!user?.id) {
       setSignals({ visits: [], unreadMessages: 0, reportedBookingIds: new Set() })
       return
@@ -33,6 +34,9 @@ export default function FamilyHome() {
       .then(setSignals)
       .catch(() => setSignals({ visits: [], unreadMessages: 0, reportedBookingIds: new Set() }))
   }, [user?.id])
+
+  React.useEffect(() => { reload() }, [reload])
+  useVisitSync(user?.id, reload)
 
   if (loading || signals === null) {
     return (
