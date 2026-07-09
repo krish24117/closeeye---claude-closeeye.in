@@ -6,6 +6,7 @@ import { ArrowRight, ShieldAlert, Sparkles } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useLovedOnes } from '@/components/family/family-data-provider'
 import { fetchAskHistory, type AskHistoryItem } from '@/lib/db/ask'
+import { SITE } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
 const EMOJI_RE = /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FEFF}]/gu
@@ -91,8 +92,8 @@ export function AskCloseEyeCard({
           <Sparkles className="h-5 w-5" strokeWidth={1.75} />
         </span>
         <div className="min-w-0">
-          <h2 className="text-h4 text-ink">CloseEye Connect</h2>
-          <p className="text-caption text-muted">Your ongoing conversation with CloseEye.</p>
+          <h2 className="text-h4 text-ink">{SITE.name} Connect</h2>
+          <p className="text-caption text-muted">Your ongoing conversation with {SITE.name}.</p>
         </div>
       </div>
 
@@ -122,7 +123,7 @@ export function AskCloseEyeCard({
             <div className="max-w-[90%] rounded-[4px_16px_16px_16px] border border-line bg-card px-3.5 py-2 text-body-sm leading-relaxed text-ink">
               {first
                 ? `I'm keeping an eye on ${first}. Ask me anything about their day — or just say hello.`
-                : `I'm here for your family. Ask me anything about their care, or how CloseEye works.`}
+                : `I'm here for your family. Ask me anything about their care, or how ${SITE.name} works.`}
             </div>
           </div>
         )}

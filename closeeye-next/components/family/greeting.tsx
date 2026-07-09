@@ -18,7 +18,7 @@ export function Greeting({ subtitle, showName = true }: { subtitle?: React.React
 
   return (
     <div>
-      <h1 className="text-h2">{showName ? `${part}, ${firstName}` : part}</h1>
+      <h1 className="text-h2">{showName && firstName ? `${part}, ${firstName}` : part}</h1>
       <p className="mt-1.5 text-body text-muted">{subtitle ?? "Here's how your family is doing today."}</p>
     </div>
   )
