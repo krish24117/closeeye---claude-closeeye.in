@@ -2,7 +2,8 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Bell, Loader2, MessageCircle, UserPlus } from 'lucide-react'
+import { Bell, FolderLock, Loader2, MessageCircle, Stethoscope, UserPlus } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { Greeting } from '@/components/family/greeting'
 import { SectionTitle } from '@/components/family/section-title'
 import { Avatar } from '@/components/family/avatar'
@@ -99,6 +100,33 @@ export default function ConnectHome() {
           </ul>
         )}
       </section>
+
+      {/* Roadmap — honest, non-functional previews of what's coming to Connect
+          (Phase 9). Guardian updates already ship above as "Care updates". */}
+      <section className="flex flex-col gap-4">
+        <SectionTitle>Coming soon to Connect</SectionTitle>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ComingSoonCard icon={Stethoscope} title="Doctor consultations" desc="Speak with a doctor about your family's health." />
+          <ComingSoonCard icon={FolderLock} title="Documents" desc="Reports and prescriptions, together in one place." />
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function ComingSoonCard({ icon: Icon, title, desc }: { icon: LucideIcon; title: string; desc: string }) {
+  return (
+    <div className="flex items-start gap-3 rounded-lg border border-dashed border-line bg-card/60 px-5 py-4">
+      <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink/[0.04] text-muted">
+        <Icon className="h-5 w-5" strokeWidth={1.75} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="text-body-sm font-semibold text-ink">{title}</p>
+          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-green">Soon</span>
+        </div>
+        <p className="mt-0.5 text-caption text-muted">{desc}</p>
+      </div>
     </div>
   )
 }
@@ -110,6 +138,7 @@ function preview(s: ThreadSummary | undefined): string {
   if (m.body) return who + m.body
   if (m.attachment_type === 'image') return who + 'Photo'
   if (m.attachment_type === 'pdf') return who + 'Document'
+  if (m.attachment_type === 'audio') return who + 'Voice note'
   return who + 'Message'
 }
 
