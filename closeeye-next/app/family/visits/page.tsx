@@ -10,7 +10,7 @@ import { initialsOf } from '@/components/family/loved-one-card'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { useToast } from '@/components/ui/toast'
-import { fetchMyBookingRequests } from '@/lib/db/family'
+import { fetchMyBookingRequests, fetchReportedBookingIds } from '@/lib/db/family'
 import { payForBooking } from '@/lib/razorpay'
 import type { BookingRequest } from '@/lib/db/types'
 import { cn } from '@/lib/utils'
@@ -53,6 +53,7 @@ export default function VisitsPage() {
   const { profile, identity } = useFamilyData()
   const toast = useToast()
   const [requests, setRequests] = React.useState<BookingRequest[] | null>(null)
+  const [reported, setReported] = React.useState<Set<string>>(new Set())
   const [paying, setPaying] = React.useState<string | null>(null)
 
   const reload = React.useCallback(() => {
@@ -60,7 +61,13 @@ export default function VisitsPage() {
       setRequests([])
       return
     }
-    fetchMyBookingRequests(user.id).then(setRequests).catch(() => setRequests([]))
+    fetchMyBookingRequests(user.id)
+      .then((rows) => {
+        setRequests(rows)
+        const ids = rows.map((r) => r.booking_id).filter(Boolean) as string[]
+        if (ids.length) fetchReportedBookingIds(ids).then(setReported).catch(() => {})
+      })
+      .catch(() => setRequests([]))
   }, [user?.id])
 
   React.useEffect(() => { reload() }, [reload])
@@ -136,20 +143,22 @@ export default function VisitsPage() {
         <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
           {requests.map((r, i) => {
             const name = r.recipient_name?.trim() || 'Your family'
-            const m = statusMeta(r.status)
+            const hasReport = Boolean(r.booking_id && reported.has(r.booking_id))
+            const m = hasReport ? { label: 'Report ready', tone: 'green' as Tone } : statusMeta(r.status)
             const awaitingPayment = r.status === 'companion_confirmed' && r.payment_status !== 'paid' && (r.amount_paise ?? 0) > 0
             return (
               <div key={r.id} className={cn('px-5 py-4', i > 0 && 'border-t border-line')}>
-                <div className="flex items-center gap-4">
+                <Link href={`/family/visits/${r.id}`} className="group flex items-center gap-4">
                   <Avatar initials={initialsOf(name)} size="md" tone="solid" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-body-sm font-semibold text-ink">{r.service_name?.trim() || 'Wellbeing visit'}</p>
+                    <p className="truncate text-body-sm font-semibold text-ink group-hover:text-green">{r.service_name?.trim() || 'Wellbeing visit'}</p>
                     <p className="truncate text-caption text-muted">For {name} · {fmtDate(r.scheduled_at)}</p>
+                    {hasReport && <p className="mt-0.5 text-caption font-semibold text-green">View the full Care Report →</p>}
                   </div>
                   <span className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold', toneCls[m.tone])}>
                     <span className={cn('h-1.5 w-1.5 rounded-full', dotCls[m.tone])} /> {m.label}
                   </span>
-                </div>
+                </Link>
                 {awaitingPayment && (
                   <div className="mt-3">
                     <Button size="sm" disabled={paying !== null} onClick={() => pay(r)}>

@@ -539,6 +539,9 @@ export async function deliverVisitReport(args: {
     const pdfUrl = signed?.signedUrl
     if (!pdfUrl) return { delivered: false, reason: 'sign_failed' }
 
+    // Email — best-effort; no-ops until send-visit-email is deployed with a provider key.
+    void supabase.functions.invoke('send-visit-email', { body: { booking_id: args.bookingId, pdf_url: pdfUrl } }).catch(() => undefined)
+
     const { data, error } = await supabase.functions.invoke('send-visit-whatsapp', { body: { booking_id: args.bookingId, pdf_url: pdfUrl } })
     if (error) return { delivered: false, reason: error.message }
     const res = data as { success?: boolean; skipped?: boolean; reason?: string } | null

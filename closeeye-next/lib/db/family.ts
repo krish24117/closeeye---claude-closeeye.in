@@ -104,6 +104,15 @@ export async function fetchMyBookingRequests(userId: string): Promise<BookingReq
   return (data as BookingRequest[] | null) ?? []
 }
 
+/** Which of these bookings have a completed visit report (for Visit History). */
+export async function fetchReportedBookingIds(bookingIds: string[]): Promise<Set<string>> {
+  const ids = bookingIds.filter(Boolean)
+  if (!ids.length) return new Set()
+  const { data, error } = await supabase.from('visits').select('booking_id').in('booking_id', ids)
+  if (error) return new Set()
+  return new Set(((data ?? []) as { booking_id: string | null }[]).map((r) => r.booking_id).filter(Boolean) as string[])
+}
+
 /** The Guardian's completed-visit report for a materialised booking, if any. */
 export interface VisitReport {
   id: string
