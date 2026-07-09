@@ -1,7 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import { Loader2, Send, Sparkles, Phone, ShieldAlert, ShieldCheck } from 'lucide-react'
+import Link from 'next/link'
+import { CalendarPlus, Loader2, MessageCircle, Send, Sparkles, Phone, ShieldAlert, ShieldCheck } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { Button } from '@/components/ui/button'
@@ -147,6 +149,15 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
   }, [user?.id])
 
   const empty = msgs.length === 0
+  // The most recent real answer — where we offer the "next steps" (integration
+  // hooks into the existing Book-a-visit + care-team conversation).
+  const lastAnswerId = (() => {
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      const m = msgs[i]
+      if (m && m.role === 'assistant' && !m.pending && !m.notice && !m.escalate && m.text) return m.id
+    }
+    return null
+  })()
 
   return (
     <div className="flex flex-col gap-4">
@@ -190,15 +201,25 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
             return <EscalationCard key={m.id} message={m.text ?? ''} ambulanceNumber={m.ambulanceNumber} />
           }
           return (
-            <AssistantBubble key={m.id}>
-              {m.pending ? (
-                <TypingDots />
-              ) : m.notice ? (
-                <p className="text-body-sm leading-relaxed text-muted">{m.text}</p>
-              ) : (
-                <MarkdownAnswer text={m.text ?? ''} className="flex flex-col gap-1.5" />
+            <React.Fragment key={m.id}>
+              <AssistantBubble>
+                {m.pending ? (
+                  <TypingDots />
+                ) : m.notice ? (
+                  <p className="text-body-sm leading-relaxed text-muted">{m.text}</p>
+                ) : (
+                  <MarkdownAnswer text={m.text ?? ''} className="flex flex-col gap-1.5" />
+                )}
+              </AssistantBubble>
+              {!m.pending && !m.notice && m.id === lastAnswerId && (
+                <div className="ml-[2.625rem] flex flex-wrap gap-2">
+                  <NextStepChip href="/family/book" icon={CalendarPlus}>Book a visit</NextStepChip>
+                  <NextStepChip href={subjectId ? `/family/connect/${subjectId}` : '/family/connect'} icon={MessageCircle}>
+                    Message care team
+                  </NextStepChip>
+                </div>
               )}
-            </AssistantBubble>
+            </React.Fragment>
           )
         })}
 
@@ -283,6 +304,17 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
         </div>
       </Overlay>
     </div>
+  )
+}
+
+function NextStepChip({ href, icon: Icon, children }: { href: string; icon: LucideIcon; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-medium text-ink transition-colors hover:border-green hover:text-green"
+    >
+      <Icon className="h-3.5 w-3.5 text-green" strokeWidth={1.75} /> {children}
+    </Link>
   )
 }
 
