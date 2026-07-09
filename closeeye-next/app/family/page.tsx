@@ -22,16 +22,16 @@ import type { BookingRequest } from '@/lib/db/types'
 export default function FamilyHome() {
   const { user } = useAuth()
   const { lovedOnes, subscription, loading } = useFamilyData()
-  const [signals, setSignals] = React.useState<{ visits: BookingRequest[]; unreadMessages: number } | null>(null)
+  const [signals, setSignals] = React.useState<{ visits: BookingRequest[]; unreadMessages: number; reportedBookingIds: Set<string> } | null>(null)
 
   React.useEffect(() => {
     if (!user?.id) {
-      setSignals({ visits: [], unreadMessages: 0 })
+      setSignals({ visits: [], unreadMessages: 0, reportedBookingIds: new Set() })
       return
     }
     fetchDashboardSignals(user.id)
       .then(setSignals)
-      .catch(() => setSignals({ visits: [], unreadMessages: 0 }))
+      .catch(() => setSignals({ visits: [], unreadMessages: 0, reportedBookingIds: new Set() }))
   }, [user?.id])
 
   if (loading || signals === null) {
@@ -44,7 +44,7 @@ export default function FamilyHome() {
     )
   }
 
-  const data = deriveDashboard({ lovedOnes, subscription, visits: signals.visits, unreadMessages: signals.unreadMessages })
+  const data = deriveDashboard({ lovedOnes, subscription, visits: signals.visits, unreadMessages: signals.unreadMessages, reportedBookingIds: signals.reportedBookingIds })
 
   return (
     <div className="flex flex-col gap-8">

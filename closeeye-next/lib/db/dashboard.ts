@@ -1,4 +1,4 @@
-import { fetchMyBookingRequests } from '@/lib/db/family'
+import { fetchMyBookingRequests, fetchReportedBookingIds } from '@/lib/db/family'
 import { fetchThreadSummaries } from '@/lib/db/messages'
 import type { BookingRequest, LovedOne, Subscription } from '@/lib/db/types'
 
@@ -29,18 +29,21 @@ export interface DashboardData {
  */
 export async function fetchDashboardSignals(
   userId: string,
-): Promise<{ visits: BookingRequest[]; unreadMessages: number }> {
+): Promise<{ visits: BookingRequest[]; unreadMessages: number; reportedBookingIds: Set<string> }> {
   const [visits, summaries] = await Promise.all([fetchMyBookingRequests(userId), fetchThreadSummaries(userId)])
   let unreadMessages = 0
   summaries.forEach((s) => {
     unreadMessages += s.unread
   })
-  return { visits, unreadMessages }
+  const bookingIds = visits.map((v) => v.booking_id).filter(Boolean) as string[]
+  const reportedBookingIds = bookingIds.length ? await fetchReportedBookingIds(bookingIds) : new Set<string>()
+  return { visits, unreadMessages, reportedBookingIds }
 }
 
-// A visit counts as "completed" once its scheduled time has passed and it had
-// progressed to a confirmed/paid state (booking_requests has no 'completed'
-// status — this derives it from existing data, no new schema).
+// A visit counts as "completed" when its Guardian report exists (the true signal
+// — booking_requests has no 'completed' status). As a fallback for legacy data
+// with no report row, we also treat a passed scheduled time + paid/confirmed
+// status as completed.
 const COMPLETED_STATUSES = ['confirmed', 'scheduled', 'companion_confirmed', 'paid']
 
 // Same definition of a complete health profile the family card uses.
@@ -58,15 +61,18 @@ export function deriveDashboard(input: {
   subscription: Subscription | null
   visits: BookingRequest[]
   unreadMessages: number
+  reportedBookingIds?: Set<string>
   now?: number
 }): DashboardData {
   const now = input.now ?? Date.now()
   const familyCount = input.lovedOnes.length
   const membershipActive = input.subscription?.status === 'active'
+  const reported = input.reportedBookingIds ?? new Set<string>()
 
   const live = input.visits.filter((v) => v.status !== 'cancelled')
   const isCompleted = (v: BookingRequest) =>
-    !!v.scheduled_at && new Date(v.scheduled_at).getTime() < now && COMPLETED_STATUSES.includes(v.status)
+    (!!v.booking_id && reported.has(v.booking_id)) ||
+    (!!v.scheduled_at && new Date(v.scheduled_at).getTime() < now && COMPLETED_STATUSES.includes(v.status))
   const completedVisits = live.filter(isCompleted)
   const upcomingVisits = live
     .filter((v) => !isCompleted(v))
