@@ -9,7 +9,7 @@
 // gracefully.
 //
 // Required secret (to actually send): RESEND_API_KEY
-// Optional: RESEND_FROM (default "Close Eye <care@closeeye.in>")
+// From address: RESEND_FROM_EMAIL (or RESEND_FROM); default "Close Eye <care@closeeye.in>"
 // Auto-provided: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -90,18 +90,18 @@ Deno.serve(async (req) => {
       pdfUrl: pdf_url,
     })
 
+    const from = Deno.env.get('RESEND_FROM_EMAIL') || Deno.env.get('RESEND_FROM') || 'Close Eye <care@closeeye.in>'
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: Deno.env.get('RESEND_FROM') || 'Close Eye <care@closeeye.in>',
-        to: [toEmail],
-        subject: `${lo?.full_name || 'Your loved one'}'s Care Report — Close Eye`,
-        html,
-      }),
+      body: JSON.stringify({ from, to: [toEmail], subject: `${lo?.full_name || 'Your loved one'}'s Care Report — Close Eye`, html }),
     })
-    if (!res.ok) return json({ error: 'email_send_failed', detail: await res.text() }, 502)
-    return json({ success: true, to: toEmail })
+    if (!res.ok) {
+      const detail = await res.text()
+      console.error('[send-visit-email] Resend error', res.status, 'from:', from, 'to:', toEmail, detail)
+      return json({ error: 'email_send_failed', status: res.status, from, to: toEmail, detail }, 502)
+    }
+    return json({ success: true, to: toEmail, from })
   } catch (err) {
     return json({ error: String(err) }, 500)
   }

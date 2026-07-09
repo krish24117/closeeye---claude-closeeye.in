@@ -285,7 +285,10 @@ export async function fetchFullVisitReport(
   // The branded PDF uploaded at completion (served instead of client-side regen)
   // + the recorded delivery outcome (for the report status + tracing).
   const rawDelivery = (cd.delivery ?? null) as {
-    email?: { success?: boolean; error?: string; reason?: string; skipped?: boolean } | null
+    email?: {
+      success?: boolean; error?: string; reason?: string; skipped?: boolean; status?: number
+      response?: { error?: string; detail?: string; status?: number; from?: string } | string
+    } | null
     whatsapp?: { success?: boolean; error?: string; reason?: string } | null
     pdfPath?: string
   } | null
@@ -296,16 +299,19 @@ export async function fetchFullVisitReport(
     pdfUrl = s?.signedUrl ?? undefined
   }
 
-  const delivery = rawDelivery
-    ? {
-        emailOk: rawDelivery.email?.success === true,
-        emailReason:
-          rawDelivery.email?.success === true
-            ? undefined
-            : rawDelivery.email?.error || rawDelivery.email?.reason || (rawDelivery.email == null ? 'not attempted' : 'unknown'),
-        whatsappOk: rawDelivery.whatsapp?.success === true,
-      }
-    : undefined
+  let delivery: FullVisitReport['delivery']
+  if (rawDelivery) {
+    const e = rawDelivery.email
+    const emailOk = e?.success === true
+    let emailReason: string | undefined
+    if (!emailOk) {
+      const resp = e?.response
+      const raw = typeof resp === 'string' ? resp : resp?.detail || resp?.error || e?.error || e?.reason || (e == null ? 'not attempted' : 'unknown')
+      const status = (typeof resp === 'object' && resp ? resp.status : undefined) ?? e?.status
+      emailReason = `${status ? `HTTP ${status}: ` : ''}${String(raw).slice(0, 240)}`
+    }
+    delivery = { emailOk, emailReason, whatsappOk: rawDelivery.whatsapp?.success === true }
+  }
 
   return {
     report,

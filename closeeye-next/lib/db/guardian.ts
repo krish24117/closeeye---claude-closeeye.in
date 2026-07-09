@@ -539,11 +539,26 @@ export async function deliverVisitReport(args: {
     const pdfUrl = signed?.signedUrl
     if (!pdfUrl) return { delivered: false, reason: 'sign_failed' }
 
-    // Email — awaited so we capture its result (evidence) and it finishes before nav.
-    const emailRes = await supabase.functions
-      .invoke('send-visit-email', { body: { booking_id: args.bookingId, pdf_url: pdfUrl } })
-      .catch((e) => ({ data: null as unknown, error: e as { message?: string } }))
-    const emailOut = emailRes as { data?: unknown; error?: { message?: string } }
+    // Email — capture the function's ACTUAL response (Resend HTTP status + body),
+    // not just the generic "non-2xx" wrapper, so the exact cause is traceable.
+    let emailResult: Record<string, unknown>
+    try {
+      const { data: eData, error: eErr } = await supabase.functions.invoke('send-visit-email', { body: { booking_id: args.bookingId, pdf_url: pdfUrl } })
+      if (eErr) {
+        const ctx = (eErr as { context?: Response }).context
+        let response: unknown = eErr.message
+        let status: number | undefined
+        if (ctx && typeof ctx.clone === 'function') {
+          status = ctx.status
+          try { response = await ctx.clone().json() } catch { try { response = await ctx.text() } catch { /* keep message */ } }
+        }
+        emailResult = { error: eErr.message, status, response }
+      } else {
+        emailResult = (eData as Record<string, unknown>) ?? { success: true }
+      }
+    } catch (e) {
+      emailResult = { error: e instanceof Error ? e.message : 'invoke_failed' }
+    }
 
     const { data, error } = await supabase.functions.invoke('send-visit-whatsapp', { body: { booking_id: args.bookingId, pdf_url: pdfUrl } })
     const wa = data as { success?: boolean; skipped?: boolean; reason?: string } | null
@@ -551,7 +566,7 @@ export async function deliverVisitReport(args: {
     // Persist the delivery outcome on the visits row — evidence + a status the family reads.
     try {
       const delivery = {
-        email: emailOut.error ? { error: emailOut.error.message } : (emailOut.data ?? null),
+        email: emailResult,
         whatsapp: error ? { error: error.message } : (wa ?? null),
         pdfPath: path,
         at: new Date(args.completedAt).toISOString(),
