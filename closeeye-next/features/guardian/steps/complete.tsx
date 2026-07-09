@@ -11,6 +11,7 @@ import type { PhotoAttachment } from '@/lib/guardian-uploads'
 import type { GuardianVisit } from '@/lib/guardian-data'
 import type { ReportVitals } from '@/lib/visit-reports'
 import { buildStory, moodLabel, pronounFor, wellnessScore } from '@/lib/family-report'
+import { buildCanonicalReport } from '@/lib/visit-report-canonical'
 import { deliverVisitReport, submitVisitReport } from '@/lib/db/guardian'
 import { useVisit } from '../visit-state'
 import { VisitTimer } from '../visit-timer'
@@ -150,6 +151,24 @@ export function CompleteStep({ visit }: { visit: GuardianVisit }) {
           const story = buildStory(visit.memberName, pronoun, observations.scales, observations.moments, observations.social, vitals as ReportVitals)
           const photoPaths = photos.map((p) => p.url).filter((u): u is string => Boolean(u))
           const voiceOut = voice?.url ? { path: voice.url, durationSec: voice.durationSec } : null
+          const canonical = buildCanonicalReport({
+            memberName: visit.memberName,
+            guardianName,
+            service: visit.service,
+            relationship: visit.relationship || '',
+            scales: observations.scales,
+            moments: observations.moments,
+            social: observations.social,
+            vitals,
+            note: observations.note,
+            win: observations.win,
+            concern: observations.concern,
+            photoPaths,
+            voice: voiceOut,
+            startedAt: startedAt ?? now,
+            checkinAt: checkinAt ?? startedAt ?? now,
+            completedAt: now,
+          })
           setErr(false)
           setSaving(true)
           try {
@@ -176,6 +195,7 @@ export function CompleteStep({ visit }: { visit: GuardianVisit }) {
               startedAt: startedAt ?? now,
               checkinAt: checkinAt ?? startedAt ?? now,
               completedAt: now,
+              canonical,
             })
             dispatch({ type: 'reportSaved', id })
             // Deliver the report to the family (PDF + WhatsApp + completion

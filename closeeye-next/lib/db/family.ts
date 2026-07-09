@@ -332,11 +332,15 @@ export async function fetchFullVisitReport(
     delivery = { emailOk, emailReason, whatsappOk: rawDelivery.whatsapp?.success === true }
   }
 
+  // Prefer the ONE canonical report's derived content; re-derive only for legacy
+  // visits written before the canonical existed.
+  const canon = (cd.report ?? null) as { recommendations?: string[]; followUps?: string[] } | null
+
   return {
     report,
     stats: { arrival: clockLabel(checkinAt), departure: clockLabel(completedAt), durationLabel: durationLabel(durationSec) },
-    recommendations: intel.recommendations,
-    followUps: intel.followUps,
+    recommendations: canon?.recommendations ?? intel.recommendations,
+    followUps: canon?.followUps ?? intel.followUps,
     pdfUrl,
     delivery,
   }

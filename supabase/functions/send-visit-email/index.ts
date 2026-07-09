@@ -13,6 +13,7 @@
 // Auto-provided: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { readCanonicalReport, renderEmailHtml } from '../_shared/visit-report.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -86,15 +87,20 @@ Deno.serve(async (req) => {
       return json({ skipped: true, reason: 'no_email', diagnostics: { familyUserId, hasEmail: false } })
     }
 
-    const { data: visit } = await sb.from('visits').select('one_moment').eq('booking_id', booking_id).order('created_at', { ascending: false }).limit(1).maybeSingle()
+    const { data: visit } = await sb.from('visits').select('one_moment, checklist_data').eq('booking_id', booking_id).order('created_at', { ascending: false }).limit(1).maybeSingle()
 
-    const html = emailHtml({
-      familyName: owner?.full_name || 'there',
-      elderName: lo?.full_name || 'your loved one',
-      guardianName: comp?.full_name || 'your Guardian',
-      oneMoment: visit?.one_moment || '',
-      pdfUrl: pdf_url,
-    })
+    // Render the ONE canonical report (real visit content). Fall back to the story
+    // for any legacy visit written before the canonical report existed.
+    const canonical = readCanonicalReport(visit)
+    const html = canonical
+      ? renderEmailHtml(canonical, { familyName: owner?.full_name || 'there', pdfUrl: pdf_url })
+      : emailHtml({
+          familyName: owner?.full_name || 'there',
+          elderName: lo?.full_name || 'your loved one',
+          guardianName: comp?.full_name || 'your Guardian',
+          oneMoment: visit?.one_moment || '',
+          pdfUrl: pdf_url,
+        })
 
     const from = Deno.env.get('RESEND_FROM_EMAIL') || Deno.env.get('RESEND_FROM') || 'Close Eye <care@closeeye.in>'
     // Structured diagnostics — logged server-side + returned for capture.

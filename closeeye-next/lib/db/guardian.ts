@@ -4,6 +4,7 @@ import { buildVisitPdf, reportToPdfInput } from '@/lib/visit-pdf'
 import { buildStory, moodLabel, pronounFor, wellnessScore } from '@/lib/family-report'
 import { processVisit, type VisitObservations } from '@/lib/cloza'
 import { reportKey, type ReportVitals, type SharedVisitReport } from '@/lib/visit-reports'
+import type { CanonicalReport } from '@/lib/visit-report-canonical'
 
 /** A companion's assigned visit, from the real `bookings` table. */
 export interface GuardianVisit {
@@ -400,6 +401,8 @@ export interface VisitReportInput {
   startedAt: number
   checkinAt: number
   completedAt: number
+  /** The ONE canonical report every surface renders (family/PDF/email/WhatsApp). */
+  canonical: CanonicalReport
 }
 
 /**
@@ -430,6 +433,8 @@ export async function submitVisitReport(bookingId: string, input: VisitReportInp
     checkinAt: input.checkinAt,
     startedAt: input.startedAt,
     completedAt: input.completedAt,
+    // The canonical rendered report — the single source every surface reads.
+    report: input.canonical,
   }
   const mood_score = input.scales.mood ? MOOD_TO_SCORE[input.scales.mood] ?? null : null
 
