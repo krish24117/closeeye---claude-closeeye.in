@@ -291,33 +291,35 @@ export async function fetchGuardianVisitFull(companionId: string, bookingId: str
   const b = bk as (BookingRow & { special_instructions: string | null }) | null
   if (!b) return null
 
+  // loved_one and elder_profile are independent reads for the same loved_one —
+  // run them together rather than one after the other.
   let lo: LovedOneBrief | null = null
-  if (b.loved_one_id) {
-    const { data } = await supabase
-      .from('loved_ones')
-      .select('full_name, relationship, age, address, city, medical_notes, emergency_contact_name, emergency_contact_phone, doctor_name, nearest_hospital')
-      .eq('id', b.loved_one_id)
-      .maybeSingle()
-    lo = data as LovedOneBrief | null
-  }
-
   let elder: ElderRow | null = null
   if (b.loved_one_id) {
-    const { data } = await supabase
-      .from('elder_profiles')
-      .select('id, medical_conditions, current_medications, allergies, doctor_name, doctor_phone, emergency_contacts, food_preferences, conversation_interests, things_to_avoid, daily_routine, continuity_notes, pinned_note')
-      .eq('loved_one_id', b.loved_one_id)
-      .maybeSingle()
-    elder = data as ElderRow | null
+    const [loRes, elderRes] = await Promise.all([
+      supabase
+        .from('loved_ones')
+        .select('full_name, relationship, age, address, city, medical_notes, emergency_contact_name, emergency_contact_phone, doctor_name, nearest_hospital')
+        .eq('id', b.loved_one_id)
+        .maybeSingle(),
+      supabase
+        .from('elder_profiles')
+        .select('id, medical_conditions, current_medications, allergies, doctor_name, doctor_phone, emergency_contacts, food_preferences, conversation_interests, things_to_avoid, daily_routine, continuity_notes, pinned_note')
+        .eq('loved_one_id', b.loved_one_id)
+        .maybeSingle(),
+    ])
+    lo = loRes.data as LovedOneBrief | null
+    elder = elderRes.data as ElderRow | null
   }
 
-  // Previous visit summary — the guardian's own most recent completed report for this elder.
+  // The elder's most recent prior visit — across ALL guardians, for continuity on
+  // hand-off. RLS `companion_read_covered_elder_visits` scopes this to elders the
+  // signed-in guardian is currently assigned to.
   let previousSummary: string | undefined
   if (elder) {
     const { data } = await supabase
       .from('visits')
       .select('one_moment, report_text, created_at')
-      .eq('companion_id', companionId)
       .eq('elder_id', elder.id)
       .neq('booking_id', bookingId)
       .order('created_at', { ascending: false })
@@ -448,7 +450,8 @@ export async function submitVisitReport(bookingId: string, input: VisitReportInp
       {
         booking_id: bookingId,
         elder_id: input.elderProfileId,
-        companion_id: input.companionId,
+        // companion_id is server-derived (column default auth.uid()) — never sent
+        // by the client; RLS also enforces companion_id = auth.uid() on insert.
         start_time: new Date(input.startedAt).toISOString(),
         end_time: new Date(input.completedAt).toISOString(),
         tier_completed: 1,

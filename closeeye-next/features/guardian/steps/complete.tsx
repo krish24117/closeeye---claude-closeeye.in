@@ -47,6 +47,17 @@ export function CompleteStep({ visit }: { visit: GuardianVisit }) {
     : 'None'
   const intel = processVisit(observations, visit.memberName)
 
+  // M-3: a visit can't be completed empty — require at least one meaningful
+  // capture (an observation, a written note, or a photo/voice note).
+  const hasContent =
+    scalesNoted > 0 ||
+    momentsCount > 0 ||
+    vitalsCount > 0 ||
+    hasMedia ||
+    Boolean(observations.note?.trim()) ||
+    Boolean(observations.win?.trim()) ||
+    Boolean(observations.concern?.trim())
+
   if (confirmed) {
     return (
       <div className="flex min-h-[64vh] flex-col items-center justify-center gap-6 py-6 text-center">
@@ -143,7 +154,7 @@ export function CompleteStep({ visit }: { visit: GuardianVisit }) {
       <Button
         size="lg"
         className="w-full"
-        disabled={saving}
+        disabled={saving || !hasContent}
         onClick={async () => {
           // Hand the family the full, warm report — written to the real visits row.
           const now = Date.now()
@@ -231,6 +242,9 @@ export function CompleteStep({ visit }: { visit: GuardianVisit }) {
       >
         {saving ? 'Saving report…' : 'Complete visit'}
       </Button>
+      {!hasContent && !saving && (
+        <p className="text-center text-caption text-muted">Add a note, an observation, or a photo to complete.</p>
+      )}
       {err && <p className="text-center text-caption text-error">We couldn&apos;t save the report. Check your connection and try again.</p>}
       <Button variant="text" className="mx-auto" onClick={() => dispatch({ type: 'back' })} disabled={saving}>
         Go back and add more
