@@ -172,8 +172,8 @@ export async function fetchGuardianProfile(companionId: string): Promise<Guardia
 /* ──────────────────────────────────────────────────────────────────────────
  * The rich in-visit journey. It consumes the full `GuardianVisit` shape from
  * @/lib/guardian-data; we populate that shape from REAL data — the booking, the
- * loved_one, the (optional) elder_profile care brief, and the last visit — so
- * the mock dataset is never touched. Fields with no real source stay empty.
+ * loved_one, the (optional) elder_profile care brief, and the last visit.
+ * Fields with no real source stay empty (never fabricated).
  * ────────────────────────────────────────────────────────────────────────── */
 
 const RICH_STATUS: Record<string, GuardianVisitStatus> = {
@@ -408,8 +408,12 @@ export interface VisitReportInput {
 /**
  * Write the completed visit as a real `visits` row: the full structured CLOza
  * record lands in checklist_data (queryable), the warm story in one_moment, and
- * the booking is marked completed. Returns the new visits row id so the
- * post-visit step can attach the guardian's rating/issues to the same record.
+ * the booking is marked completed. Returns the visits row id so the post-visit
+ * step can attach the guardian's rating/issues to the same record.
+ *
+ * Upserts on booking_id (unique index `visits_booking_id_key`) so re-completing
+ * a visit updates the same report instead of inserting a duplicate — making the
+ * two-step write (report + booking status) idempotent under retries.
  */
 export async function submitVisitReport(bookingId: string, input: VisitReportInput): Promise<string> {
   const durationSec = Math.max(1, Math.round((input.completedAt - input.startedAt) / 1000))
@@ -440,21 +444,24 @@ export async function submitVisitReport(bookingId: string, input: VisitReportInp
 
   const { data, error } = await supabase
     .from('visits')
-    .insert({
-      booking_id: bookingId,
-      elder_id: input.elderProfileId,
-      companion_id: input.companionId,
-      start_time: new Date(input.startedAt).toISOString(),
-      end_time: new Date(input.completedAt).toISOString(),
-      tier_completed: 1,
-      checklist_data,
-      flags: input.concern ? 'monitor' : 'none',
-      flag_notes: input.concern ?? null,
-      one_moment: input.story,
-      photo_urls: input.photoPaths,
-      mood_score,
-      report_text: input.summary,
-    })
+    .upsert(
+      {
+        booking_id: bookingId,
+        elder_id: input.elderProfileId,
+        companion_id: input.companionId,
+        start_time: new Date(input.startedAt).toISOString(),
+        end_time: new Date(input.completedAt).toISOString(),
+        tier_completed: 1,
+        checklist_data,
+        flags: input.concern ? 'monitor' : 'none',
+        flag_notes: input.concern ?? null,
+        one_moment: input.story,
+        photo_urls: input.photoPaths,
+        mood_score,
+        report_text: input.summary,
+      },
+      { onConflict: 'booking_id' },
+    )
     .select('id')
     .single()
   if (error) throw new Error(error.message)

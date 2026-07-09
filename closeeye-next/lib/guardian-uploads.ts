@@ -1,10 +1,9 @@
 /**
  * Guardian media — attachment types, image compression, and the upload seam.
  *
- * `uploadBlob` uploads to real Supabase Storage when given a target (bucket +
- * bookingId); it resolves to the stored object PATH (`<bookingId>/<file>`), which
- * the RLS policies key on and Family Space reads via a signed URL. Without a
- * target it falls back to the simulated upload (kept for previews/tests).
+ * `uploadBlob` uploads to real Supabase Storage (bucket + bookingId) and resolves
+ * to the stored object PATH (`<bookingId>/<file>`), which the RLS policies key on
+ * and Family Space reads via a signed URL.
  */
 import { supabase } from '@/lib/supabase'
 
@@ -18,7 +17,7 @@ export interface PhotoAttachment {
   size: number
   status: UploadStatus
   progress: number
-  /** Remote URL once uploaded (mock URL until storage is configured). */
+  /** Stored object path once uploaded. */
   url?: string
 }
 
@@ -41,16 +40,6 @@ export function uid(prefix = ''): string {
       ? crypto.randomUUID()
       : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
   return prefix ? `${prefix}_${rand}` : rand
-}
-
-/* ── storage config seam ─────────────────────────────────────────────────── */
-
-export function isStorageConfigured(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-      process.env.NEXT_PUBLIC_GUARDIAN_MEDIA_BUCKET,
-  )
 }
 
 /* ── image compression (client-side, before upload) ──────────────────────── */
@@ -131,36 +120,11 @@ export function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: mime })
 }
 
-/* ── upload (mock now, real backend later — same signature) ──────────────── */
+/* ── upload ───────────────────────────────────────────────────────────────── */
 
 export interface UploadHandle {
   promise: Promise<string>
   cancel: () => void
-}
-
-/** Simulated upload with lifelike progress. Fails fast when offline so the UI can
- *  offer retry — mirroring how the real client behaves on a dropped connection. */
-function mockUpload(path: string, onProgress: (pct: number) => void): UploadHandle {
-  let cancelled = false
-  const promise = new Promise<string>((resolve, reject) => {
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      reject(new Error('offline'))
-      return
-    }
-    let pct = 0
-    const tick = () => {
-      if (cancelled) {
-        reject(new Error('cancelled'))
-        return
-      }
-      pct = Math.min(100, pct + 10 + Math.random() * 20)
-      onProgress(Math.round(pct))
-      if (pct >= 100) resolve(`mock://guardian-media/${path}`)
-      else setTimeout(tick, 110 + Math.random() * 140)
-    }
-    setTimeout(tick, 140)
-  })
-  return { promise, cancel: () => (cancelled = true) }
 }
 
 /** Where a real upload lands: a private bucket, namespaced by the booking. */
@@ -206,11 +170,7 @@ function realUpload(blob: Blob, filename: string, onProgress: (pct: number) => v
   return { promise, cancel: () => (cancelled = true) }
 }
 
-/**
- * Upload a blob and resolve to its stored PATH (real) or a mock URL (no target).
- * Callers are agnostic — the UI shows the same progress either way.
- */
-export function uploadBlob(blob: Blob, filename: string, onProgress: (pct: number) => void, target?: UploadTarget): UploadHandle {
-  if (target) return realUpload(blob, filename, onProgress, target)
-  return mockUpload(filename, onProgress)
+/** Upload a blob to its booking-scoped bucket and resolve to the stored object PATH. */
+export function uploadBlob(blob: Blob, filename: string, onProgress: (pct: number) => void, target: UploadTarget): UploadHandle {
+  return realUpload(blob, filename, onProgress, target)
 }

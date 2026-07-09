@@ -6,7 +6,7 @@ import { Star, ShieldAlert, HeartPulse, Siren, Wrench, MessageCircle, Check } fr
 import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
-import { PRESENCE_MANAGER, type GuardianVisit } from '@/lib/guardian-data'
+import type { GuardianVisit } from '@/lib/guardian-data'
 import { updateVisitFeedback } from '@/lib/db/guardian'
 import { cn } from '@/lib/utils'
 import { useVisit } from '../visit-state'
@@ -98,7 +98,7 @@ export function PostStep({ visit }: { visit: GuardianVisit }) {
       {issues.length > 0 && (
         <Button asChild variant="secondary" size="lg" className="w-full">
           <Link href="/guardian/messages">
-            <MessageCircle className="h-5 w-5" strokeWidth={1.75} /> Message {PRESENCE_MANAGER.name.split(' ')[0]} about this
+            <MessageCircle className="h-5 w-5" strokeWidth={1.75} /> Message your Presence Manager about this
           </Link>
         </Button>
       )}

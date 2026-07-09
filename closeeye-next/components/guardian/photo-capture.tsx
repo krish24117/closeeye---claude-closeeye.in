@@ -13,9 +13,9 @@ import {
 
 /**
  * PhotoCapture — real, mobile-first photo attachment.
- * Opens the camera or library, compresses each image client-side, shows live
- * upload progress, and lets the Guardian remove, retry, or preview. Fully
- * functional today with mock uploads; swaps to real storage with no UI change.
+ * Opens the camera or library, compresses each image client-side, uploads to
+ * Supabase Storage with live progress, and lets the Guardian remove, retry, or
+ * preview.
  */
 export interface PhotoCaptureProps {
   photos: PhotoAttachment[]
