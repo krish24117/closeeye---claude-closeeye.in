@@ -293,11 +293,11 @@ export function ActiveDashboard({ data, lovedOnes, subscription }: { data: Dashb
       : lastCompleted
         ? { label: 'Last visit', value: visitDate(lastCompleted.scheduled_at) }
         : { label: 'Upcoming visits', value: '0' }
-  const tiles = [
+  const tiles: { label: string; value: string; small?: boolean }[] = [
     { label: 'Family members', value: String(data.familyCount) },
     visitTile,
     { label: 'Unread messages', value: String(data.unreadMessages) },
-    { label: 'Membership', value: plan ? plan.name : 'Active' },
+    { label: 'Membership', value: plan ? plan.name : 'Active', small: true },
   ]
   const updates = data.completedVisits.slice(0, 3)
 
@@ -312,7 +312,7 @@ export function ActiveDashboard({ data, lovedOnes, subscription }: { data: Dashb
           {tiles.map((t) => (
             <div key={t.label} className="rounded-lg border border-line bg-card px-5 py-4 shadow-sm">
               <dt className="text-caption text-muted">{t.label}</dt>
-              <dd className="mt-1 truncate text-h4 text-ink">{t.value}</dd>
+              <dd className={cn('mt-1 truncate text-ink', t.small ? 'text-body font-bold leading-tight' : 'text-h4')}>{t.value}</dd>
             </div>
           ))}
         </dl>
