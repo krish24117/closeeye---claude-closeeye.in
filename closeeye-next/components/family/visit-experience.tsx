@@ -5,6 +5,7 @@ import Link from 'next/link'
 import {
   LogIn, LogOut, ClipboardCheck, Clock, Sparkles, Camera, Mic, HeartPulse, Activity,
   MessageSquareText, Pill, Lightbulb, Quote, MessageCircle, FileText, ImageDown, HeartPulse as HeartIcon,
+  FileDown, Loader2,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
@@ -128,11 +129,25 @@ export function VisitReportExperience({
   followUps?: string[]
   pmReview?: string | null
 }) {
+  const [pdfBusy, setPdfBusy] = React.useState(false)
   const timeline = timelineEvents(report)
   const health = healthSnapshot(report)
   const trend = wellnessTrend(report)
   const moments = momentItems(report)
   const slug = report.key.replace(/\s+/g, '-') || 'visit'
+
+  async function downloadPdf() {
+    setPdfBusy(true)
+    try {
+      const { buildVisitPdf, reportToPdfInput } = await import('@/lib/visit-pdf')
+      const pdf = await buildVisitPdf(reportToPdfInput(report, stats, recommendations ?? [], followUps ?? []))
+      pdf.save(`close-eye-care-report-${slug}.pdf`)
+    } catch (e) {
+      console.error('[visit-pdf] failed:', e)
+    } finally {
+      setPdfBusy(false)
+    }
+  }
   const completedLabel = (() => {
     try {
       return new Date(report.completedAt).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -235,7 +250,10 @@ export function VisitReportExperience({
       {/* Downloads */}
       <FamilySection icon={FileText} title="Download & keep">
         <div className="flex flex-wrap gap-2.5">
-          <DownloadButton label="Visit report" filename={`close-eye-report-${slug}.html`} content={reportDoc(report)} />
+          <Button size="sm" onClick={downloadPdf} disabled={pdfBusy}>
+            {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> : <FileDown className="h-4 w-4" strokeWidth={1.75} />} Download PDF
+          </Button>
+          <DownloadButton variant="secondary" label="Report (web)" filename={`close-eye-report-${slug}.html`} content={reportDoc(report)} />
           {report.photos.length > 0 && (
             <DownloadButton variant="secondary" icon={ImageDown} label="Photo package" filename={`close-eye-photos-${slug}.html`} content={photoPackageDoc(report)} />
           )}
