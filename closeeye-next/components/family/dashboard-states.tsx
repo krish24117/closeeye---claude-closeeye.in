@@ -1,16 +1,16 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
-  AlertTriangle,
   ArrowRight,
-  BadgeCheck,
-  CalendarClock,
   CalendarCheck,
+  CalendarClock,
   CalendarPlus,
-  CheckCircle2,
+  Camera,
   ClipboardList,
   FileText,
+  Heart,
   Mail,
   MessageCircle,
   Phone,
@@ -22,13 +22,15 @@ import type { LucideIcon } from 'lucide-react'
 import { Greeting } from '@/components/family/greeting'
 import { AskCloseEyeCard } from '@/components/family/ask-closeeye-card'
 import { SectionTitle } from '@/components/family/section-title'
-import { LovedOneCard } from '@/components/family/loved-one-card'
-import { MembershipCard } from '@/components/family/membership-card'
+import { LovedOneCard, initialsOf } from '@/components/family/loved-one-card'
+import { Avatar } from '@/components/family/avatar'
+import { StatusBadge, type StatusTone } from '@/components/family/badges'
+import { PresenceCheckIn } from '@/components/family/presence-check-in'
 import { Button } from '@/components/ui/button'
 import { SITE, whatsappLink } from '@/lib/site'
+import { getLocalPhoto } from '@/lib/local-photos'
 import type { DashboardData } from '@/lib/db/dashboard'
-import type { LovedOne, Subscription } from '@/lib/db/types'
-import { planById } from '@/lib/plans'
+import type { LovedOne } from '@/lib/db/types'
 import { cn } from '@/lib/utils'
 
 // ── Shared primitives (existing design language only) ────────────────────────
@@ -60,30 +62,6 @@ export function ActionCard({ href, icon: Icon, title, desc }: { href: string; ic
   )
 }
 
-function StatusRow({ ok, label }: { ok: boolean; label: string }) {
-  return (
-    <div className="flex items-center gap-3 py-3">
-      {ok ? (
-        <CheckCircle2 className="h-5 w-5 shrink-0 text-success" strokeWidth={1.75} />
-      ) : (
-        <AlertTriangle className="h-5 w-5 shrink-0 text-warning" strokeWidth={1.75} />
-      )}
-      <span className={cn('text-body-sm', ok ? 'text-ink' : 'font-medium text-ink')}>{label}</span>
-    </div>
-  )
-}
-
-function FamilySection({ lovedOnes }: { lovedOnes: LovedOne[] }) {
-  return (
-    <section className="flex flex-col gap-4">
-      <SectionTitle href="/family/members" cta="Manage →">Your family</SectionTitle>
-      <div className="grid gap-5 md:grid-cols-2">
-        {lovedOnes.map((lo) => <LovedOneCard key={lo.id} lo={lo} />)}
-      </div>
-    </section>
-  )
-}
-
 const STATUS_LABEL: Record<string, string> = {
   pending_confirmation: 'Pending confirmation',
   requested: 'Requested',
@@ -94,7 +72,10 @@ const STATUS_LABEL: Record<string, string> = {
   paid: 'Confirmed & paid',
   cancelled: 'Cancelled',
 }
-const GUARDIAN_ASSIGNED = ['companion_confirmed', 'paid']
+
+function firstNameOf(name: string): string {
+  return name.trim().split(/\s+/)[0] || name
+}
 
 function visitDate(iso: string | null): string {
   if (!iso) return 'To be confirmed'
@@ -105,57 +86,75 @@ function visitTime(iso: string | null): string {
   return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
 }
 
+/** A warm 4:3 image of the loved one when we have a photo; a soft placeholder otherwise. */
+function PhotoFrame({ lovedOneId, name }: { lovedOneId: string; name: string }) {
+  const [photo, setPhoto] = useState<string | null>(null)
+  useEffect(() => { setPhoto(getLocalPhoto(lovedOneId)) }, [lovedOneId])
+
+  if (photo) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={photo} alt={name} referrerPolicy="no-referrer" className="aspect-[4/3] w-full object-cover" />
+  }
+  return (
+    <div className="grid aspect-[4/3] w-full place-items-center bg-gradient-to-br from-accent-soft to-ivory text-green">
+      <Camera className="h-9 w-9" strokeWidth={1.25} />
+    </div>
+  )
+}
+
 // ── STATE 1 — New user ───────────────────────────────────────────────────────
 
 export function NewUserDashboard() {
+  const steps = [
+    { n: 1, t: 'You add someone', d: "Tell us who you're caring for." },
+    { n: 2, t: `${SITE.name} shows up`, d: 'A verified Guardian visits, in person.' },
+    { n: 3, t: 'You feel close again', d: 'Photos, a warm story, and Connect.' },
+  ]
+  const trust = [
+    { icon: ShieldCheck, t: 'Verified Guardians', d: 'Trained, background-checked people who show up in person.' },
+    { icon: Users, t: 'A dedicated Presence Manager', d: 'One human who knows your family.' },
+    { icon: FileText, t: 'Presence Stories', d: 'A warm story and photos after every visit.' },
+    { icon: MessageCircle, t: 'Always in the loop', d: 'Updates straight to you, wherever you are.' },
+  ]
+
   return (
     <>
-      <Greeting
-        showName={false}
-        subtitle={`Welcome to ${SITE.name}. ${SITE.tagline} We're here to help you care for the people who matter most.`}
-      />
+      <Greeting subtitle="Your trusted presence in India." />
 
-      {/* Primary card — the ONLY primary action */}
-      <section className="flex flex-col items-start gap-5 rounded-lg border border-line bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      {/* The promise + the one primary action */}
+      <section className="flex flex-col gap-5 rounded-lg border border-line bg-card p-6 shadow-sm">
+        <p className="text-h3 leading-tight text-ink">When you can&rsquo;t be there, {SITE.name} can.</p>
         <div className="flex items-start gap-3">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><UserPlus className="h-5 w-5" strokeWidth={1.5} /></span>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><Heart className="h-5 w-5" strokeWidth={1.5} /></span>
           <div>
-            <p className="text-body font-semibold text-ink">Add your first family member</p>
-            <p className="mt-0.5 text-body-sm text-muted">Create a profile for someone you&apos;d like us to care for.</p>
+            <p className="text-body font-semibold text-ink">Who&rsquo;s on your mind today?</p>
+            <p className="mt-0.5 text-body-sm text-muted">A parent, a grandparent — someone you love.</p>
           </div>
         </div>
-        <Button asChild size="md" className="shrink-0">
-          <Link href="/family/add"><UserPlus className="h-5 w-5" strokeWidth={2} /> Add family member</Link>
+        <Button asChild size="lg" className="w-full sm:w-auto sm:self-start">
+          <Link href="/family/add"><UserPlus className="h-5 w-5" strokeWidth={2} /> Add someone you love</Link>
         </Button>
       </section>
 
-      {/* How CloseEye works */}
+      {/* How Close Eye works */}
       <section className="flex flex-col gap-4">
         <SectionTitle>How {SITE.name} works</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-3">
-          {[
-            { n: 1, t: 'Add your loved one' },
-            { n: 2, t: 'Choose a membership' },
-            { n: 3, t: 'Book your first visit and receive updates' },
-          ].map((s) => (
+          {steps.map((s) => (
             <div key={s.n} className="rounded-lg border border-line bg-card p-5 shadow-sm">
               <span className="grid h-9 w-9 place-items-center rounded-full bg-ink text-body-sm font-semibold text-ivory">{s.n}</span>
-              <p className="mt-3 text-body-sm font-medium text-ink">{s.t}</p>
+              <p className="mt-3 text-body-sm font-semibold text-ink">{s.t}</p>
+              <p className="mt-1 text-caption text-muted">{s.d}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Why families trust CloseEye */}
+      {/* Why families trust Close Eye */}
       <section className="flex flex-col gap-4">
         <SectionTitle>Why families trust {SITE.name}</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-2">
-          {[
-            { icon: ShieldCheck, t: 'Verified Guardians', d: 'Trained, background-checked people who show up in person.' },
-            { icon: Users, t: 'Dedicated Presence Managers', d: 'One point of contact who knows your family.' },
-            { icon: FileText, t: 'Visit reports', d: 'A clear summary after every visit.' },
-            { icon: MessageCircle, t: 'Family updates', d: 'Photos and notes, straight to you.' },
-          ].map((f) => (
+          {trust.map((f) => (
             <div key={f.t} className="flex items-start gap-3 rounded-lg border border-line bg-card p-5 shadow-sm">
               <IconChip icon={f.icon} />
               <div>
@@ -172,92 +171,106 @@ export function NewUserDashboard() {
   )
 }
 
-// ── STATE 2 — Family added ───────────────────────────────────────────────────
+// ── STATE 2 — Family added (convert to first Presence) ───────────────────────
 
 export function FamilyAddedDashboard({ data, lovedOnes }: { data: DashboardData; lovedOnes: LovedOne[] }) {
+  const primary = lovedOnes[0]
+  const first = primary ? firstNameOf(primary.full_name) : 'your loved one'
+  const incomplete = data.healthIncompleteMember
+
   return (
     <>
-      <Greeting subtitle={`Your loved one has been added successfully. You're just one step away from receiving trusted care. ${SITE.tagline}`} />
+      <Greeting subtitle={`${first} now has a trusted presence. Let's plan their first Presence Visit together.`} />
 
+      {/* What a Presence feels like — the strongest emotional asset, before any price */}
+      <section className="flex flex-col gap-4">
+        <SectionTitle>What your first Presence feels like</SectionTitle>
+        <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+          <div className="grid aspect-[16/10] w-full place-items-center bg-gradient-to-br from-accent-soft to-ivory text-green">
+            <Camera className="h-9 w-9" strokeWidth={1.25} />
+          </div>
+          <div className="flex flex-col gap-3 p-6">
+            <p className="text-body italic text-ink">&ldquo;We had tea on the balcony and talked about the garden for a while. {first} was in wonderful spirits.&rdquo;</p>
+            <p className="text-caption text-muted">An example of the Presence Story you&rsquo;ll receive after every visit.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Guardian introduction — a person, chosen like family */}
+      <section className="flex items-start gap-4 rounded-lg border border-line bg-card p-6 shadow-sm">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><ShieldCheck className="h-5 w-5" strokeWidth={1.5} /></span>
+        <div className="min-w-0">
+          <p className="text-body font-semibold text-ink">A verified Guardian, chosen like family</p>
+          <p className="mt-1 text-body-sm text-muted">A trained, background-checked person who visits {first} in person — and you&rsquo;ll meet them before the first visit.</p>
+        </div>
+      </section>
+
+      {/* Book the first Presence — lead with the feeling, not the price */}
+      <section className="flex flex-col gap-4 rounded-lg border border-line bg-card p-6 shadow-sm">
+        <div>
+          <p className="text-h4 text-ink">Book {first}&rsquo;s first Presence</p>
+          <p className="mt-1 text-body-sm text-muted">You&rsquo;ll see them, hear about their day, and know they&rsquo;re okay.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+          <Button asChild size="lg" className="w-full sm:w-auto">
+            <Link href={primary ? `/family/book?member=${primary.id}` : '/family/book'}><CalendarPlus className="h-5 w-5" strokeWidth={2} /> Book first Presence</Link>
+          </Button>
+          {!data.membershipActive && (
+            <Link href="/family/membership" className="text-body-sm font-semibold text-green transition-colors hover:text-green-hover">
+              View membership options →
+            </Link>
+          )}
+        </div>
+      </section>
+
+      {/* Ask Close Eye — free value */}
       <AskCloseEyeCard variant="compact" />
 
-      {/* Today's family status */}
-      <section className="flex flex-col gap-2">
-        <SectionTitle>Today&apos;s family status</SectionTitle>
-        <div className="divide-y divide-line rounded-lg border border-line bg-card px-6 py-1 shadow-sm">
-          <StatusRow ok label="Family profile created" />
-          <StatusRow ok={data.membershipActive} label={data.membershipActive ? 'Membership active' : 'Membership not active'} />
-          <StatusRow ok={false} label="First visit not scheduled" />
-          <StatusRow ok label="No emergencies" />
-        </div>
-      </section>
-
-      {/* Next steps — context-aware */}
-      <section className="flex flex-col gap-4">
-        <SectionTitle>Next steps</SectionTitle>
-        <div className="flex flex-col gap-4">
-          {!data.membershipActive && (
-            <StepCard n={1} icon={BadgeCheck} title="Choose membership" cta="View Membership" href="/family/membership" />
-          )}
-          <StepCard n={data.membershipActive ? 1 : 2} icon={CalendarPlus} title="Book your first visit" cta="Book Visit" href="/family/book" />
-          {data.healthIncompleteMember && (
-            <StepCard
-              n={data.membershipActive ? 2 : 3}
-              icon={ClipboardList}
-              title="Complete health profile"
-              cta="Complete Profile"
-              href={`/family/members/${data.healthIncompleteMember.id}`}
-            />
-          )}
-        </div>
-      </section>
-
-      <FamilySection lovedOnes={lovedOnes} />
+      {/* Help us know them better */}
+      {incomplete && (
+        <section className="flex flex-col items-start gap-4 rounded-lg border border-line bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <IconChip icon={ClipboardList} />
+            <div>
+              <p className="text-body font-semibold text-ink">Help us know {firstNameOf(incomplete.full_name)} better</p>
+              <p className="mt-0.5 text-body-sm text-muted">The little things make their Presence personal.</p>
+            </div>
+          </div>
+          <Button asChild variant="secondary" size="md" className="shrink-0">
+            <Link href={`/family/members/${incomplete.id}`}>Complete profile</Link>
+          </Button>
+        </section>
+      )}
     </>
   )
 }
 
-function StepCard({ n, icon: Icon, title, cta, href }: { n: number; icon: LucideIcon; title: string; cta: string; href: string }) {
-  return (
-    <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-body-sm font-semibold text-ivory">{n}</span>
-        <div className="flex items-center gap-2.5">
-          <Icon className="h-5 w-5 text-green" strokeWidth={1.75} />
-          <p className="text-body font-semibold text-ink">{title}</p>
-        </div>
-      </div>
-      <Button asChild size="md" className="shrink-0"><Link href={href}>{cta}</Link></Button>
-    </div>
-  )
-}
+// ── STATE (transitional) — Visit booked, not yet completed ───────────────────
 
-// ── STATE 3 — Visit booked ───────────────────────────────────────────────────
+const GUARDIAN_ASSIGNED = ['companion_confirmed', 'paid']
 
 export function VisitBookedDashboard({ data, lovedOnes }: { data: DashboardData; lovedOnes: LovedOne[] }) {
   const v = data.upcomingVisit
   return (
     <>
-      <Greeting subtitle={`Everything is progressing as planned. ${SITE.tagline}`} />
-
-      <AskCloseEyeCard variant="compact" />
+      <Greeting subtitle={`Everything is arranged. ${SITE.tagline}`} />
 
       {v && (
         <section className="flex flex-col gap-4">
-          <SectionTitle>Today&apos;s summary</SectionTitle>
+          <SectionTitle>Your first Presence</SectionTitle>
           <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
             <div className="flex items-center gap-3 bg-ink px-6 py-5 text-white">
               <span className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-accent"><CalendarClock className="h-5 w-5" strokeWidth={1.5} /></span>
               <div className="min-w-0">
-                <p className="text-caption text-white/60">Upcoming visit</p>
-                <p className="truncate text-body font-semibold text-white">{v.service_name || 'Wellbeing visit'}{v.recipient_name ? ` · for ${v.recipient_name}` : ''}</p>
+                <p className="text-caption text-white/60">Upcoming Presence</p>
+                <p className="truncate text-body font-semibold text-white">{v.service_name || 'Presence visit'}{v.recipient_name ? ` · for ${v.recipient_name}` : ''}</p>
               </div>
             </div>
             <dl className="grid grid-cols-2 gap-px bg-line sm:grid-cols-4">
               {[
                 { label: 'Guardian', value: GUARDIAN_ASSIGNED.includes(v.status) ? 'Confirmed' : 'Being matched' },
-                { label: 'Visit date', value: visitDate(v.scheduled_at) },
-                { label: 'Visit time', value: visitTime(v.scheduled_at) },
+                { label: 'Date', value: visitDate(v.scheduled_at) },
+                { label: 'Time', value: visitTime(v.scheduled_at) },
                 { label: 'Status', value: STATUS_LABEL[v.status] ?? v.status },
               ].map((s) => (
                 <div key={s.label} className="bg-card px-5 py-4">
@@ -270,13 +283,14 @@ export function VisitBookedDashboard({ data, lovedOnes }: { data: DashboardData;
         </section>
       )}
 
-      {/* Quick actions */}
+      <AskCloseEyeCard variant="compact" />
+
       <section className="flex flex-col gap-4">
         <SectionTitle>Quick actions</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-3">
-          <ActionCard href="/family/visits" icon={CalendarCheck} title="View visit" desc="See the full details of this visit." />
-          <ActionCard href="/family/visits" icon={CalendarClock} title="Reschedule" desc="Change the date or time of this visit." />
-          <ActionCard href="/family/connect" icon={MessageCircle} title="Message Presence Manager" desc="Ask a question about this visit." />
+          <ActionCard href="/family/visits" icon={CalendarCheck} title="View Presence" desc="See the full details of this visit." />
+          <ActionCard href="/family/visits" icon={CalendarClock} title="Reschedule" desc="Change the date or time." />
+          <ActionCard href="/family/connect" icon={MessageCircle} title="Message your Presence Manager" desc="Ask a question about this visit." />
         </div>
       </section>
 
@@ -285,106 +299,160 @@ export function VisitBookedDashboard({ data, lovedOnes }: { data: DashboardData;
   )
 }
 
-// ── STATE 4 — Active customer ────────────────────────────────────────────────
+function FamilySection({ lovedOnes }: { lovedOnes: LovedOne[] }) {
+  return (
+    <section className="flex flex-col gap-4">
+      <SectionTitle href="/family/members" cta="Manage →">Your family</SectionTitle>
+      <div className="grid gap-5 md:grid-cols-2">
+        {lovedOnes.map((lo) => <LovedOneCard key={lo.id} lo={lo} />)}
+      </div>
+    </section>
+  )
+}
 
-export function ActiveDashboard({ data, lovedOnes, subscription }: { data: DashboardData; lovedOnes: LovedOne[]; subscription: Subscription | null }) {
-  const plan = planById(subscription?.plan_id)
+// ── STATE 3 — Active customer (daily reassurance) ────────────────────────────
+
+export function ActiveDashboard({ data, lovedOnes }: { data: DashboardData; lovedOnes: LovedOne[] }) {
+  const primary = lovedOnes[0]
+  const first = primary ? firstNameOf(primary.full_name) : 'your family'
   const lastCompleted = [...data.completedVisits].sort((a, b) => (b.scheduled_at ?? '').localeCompare(a.scheduled_at ?? ''))[0]
-  // Lead with the real story: upcoming when there's one ahead, else the last
-  // completed visit — never a bare "0 upcoming".
-  const visitTile =
-    data.upcomingVisits.length > 0
-      ? { label: 'Upcoming visits', value: String(data.upcomingVisits.length) }
-      : lastCompleted
-        ? { label: 'Last visit', value: visitDate(lastCompleted.scheduled_at) }
-        : { label: 'Upcoming visits', value: '0' }
-  const tiles: { label: string; value: string; small?: boolean }[] = [
-    { label: 'Family members', value: String(data.familyCount) },
-    visitTile,
-    { label: 'Unread messages', value: String(data.unreadMessages) },
-    { label: 'Membership', value: plan ? plan.name : 'Active', small: true },
-  ]
-  const updates = data.completedVisits.slice(0, 3)
+  const next = data.upcomingVisit
+  const reassure = lastCompleted
+    ? `Last Presence ${visitDate(lastCompleted.scheduled_at)} · all has been calm since.`
+    : `Your ${SITE.name} team is watching over ${first}.`
 
   return (
     <>
-      <Greeting subtitle="Here's today's update from home." />
+      <Greeting subtitle={SITE.tagline} />
 
-      <AskCloseEyeCard variant="compact" />
+      {/* 1 · The check-in signature → reassurance */}
+      <PresenceCheckIn name={first} detail={reassure} storyHref="/family/visits" />
 
-      {/* Today's summary */}
+      {/* 2 · Presence Story — photo first */}
       <section className="flex flex-col gap-4">
-        <SectionTitle>Today&apos;s summary</SectionTitle>
-        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {tiles.map((t) => (
-            <div key={t.label} className="rounded-lg border border-line bg-card px-5 py-4 shadow-sm">
-              <dt className="text-caption text-muted">{t.label}</dt>
-              <dd className={cn('mt-1 truncate text-ink', t.small ? 'text-body font-bold leading-tight' : 'text-h4')}>{t.value}</dd>
+        <SectionTitle href="/family/visits" cta="All stories →">{first}&rsquo;s Presence Story</SectionTitle>
+        <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+          {primary && <PhotoFrame lovedOneId={primary.id} name={primary.full_name} />}
+          <div className="flex flex-col gap-4 p-6">
+            <p className="text-body text-ink">Photos and a warm story from {first}&rsquo;s latest Presence.</p>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+              <Button asChild size="md"><Link href="/family/visits"><FileText className="h-4 w-4" strokeWidth={1.75} /> View Presence Story</Link></Button>
+              <Link
+                href={`/family/connect/ask?q=${encodeURIComponent(`How was ${first} during the last Presence?`)}`}
+                className="inline-flex items-center gap-1.5 text-body-sm font-semibold text-green transition-colors hover:text-green-hover"
+              >
+                <MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Ask about this moment
+              </Link>
             </div>
-          ))}
-        </dl>
-      </section>
-
-      {/* Quick actions */}
-      <section className="flex flex-col gap-4">
-        <SectionTitle>Quick actions</SectionTitle>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <ActionCard href="/family/book" icon={CalendarPlus} title="Book a visit" desc="Schedule another wellbeing visit." />
-          <ActionCard href="/family/connect" icon={MessageCircle} title="Message Presence Manager" desc="Reach your dedicated coordinator." />
-          <ActionCard href="/family/visits" icon={FileText} title="View reports" desc="Read summaries from past visits." />
-          <ActionCard href="/family/add" icon={UserPlus} title="Add family member" desc="Care for more of your family." />
+          </div>
         </div>
       </section>
 
-      <FamilySection lovedOnes={lovedOnes} />
+      {/* 3 · CloseEye Connect */}
+      <AskCloseEyeCard variant="compact" />
 
-      {/* Upcoming visits — max three */}
-      {data.upcomingVisits.length > 0 && (
+      {/* 4 · Next Presence */}
+      {next && (
         <section className="flex flex-col gap-4">
-          <SectionTitle href="/family/visits" cta="All visits →">Upcoming visits</SectionTitle>
+          <SectionTitle href="/family/visits" cta="All visits →">Next Presence</SectionTitle>
           <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
-            {data.upcomingVisits.slice(0, 3).map((v, i) => (
-              <div key={v.id} className={cn('flex items-center gap-4 px-5 py-4', i > 0 && 'border-t border-line')}>
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><CalendarClock className="h-5 w-5" strokeWidth={1.75} /></span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-body-sm font-semibold text-ink">{v.service_name || 'Wellbeing visit'}{v.recipient_name ? ` · ${v.recipient_name}` : ''}</p>
-                  <p className="text-caption text-muted">{visitDate(v.scheduled_at)} · {visitTime(v.scheduled_at)}</p>
-                </div>
-                <span className="shrink-0 text-caption font-semibold text-muted">{STATUS_LABEL[v.status] ?? v.status}</span>
+            <div className="flex items-center gap-4 px-5 py-4">
+              <IconChip icon={CalendarClock} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-body-sm font-semibold text-ink">{next.service_name || 'Presence visit'}{next.recipient_name ? ` · ${next.recipient_name}` : ''}</p>
+                <p className="text-caption text-muted">{visitDate(next.scheduled_at)} · {visitTime(next.scheduled_at)}</p>
               </div>
-            ))}
+              <span className="shrink-0 text-caption font-semibold text-muted">{STATUS_LABEL[next.status] ?? next.status}</span>
+            </div>
+            <div className="border-t border-line px-5 py-3">
+              <Link
+                href={`/family/connect/ask?q=${encodeURIComponent(`What should I know about ${first}'s next Presence?`)}`}
+                className="inline-flex items-center gap-1.5 text-body-sm font-semibold text-green transition-colors hover:text-green-hover"
+              >
+                <MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Ask about this visit
+              </Link>
+            </div>
           </div>
         </section>
       )}
 
-      {/* Recent updates — real completed visits only (no fabricated items) */}
-      {updates.length > 0 && (
-        <section className="flex flex-col gap-4">
-          <SectionTitle>Recent updates</SectionTitle>
-          <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
-            {updates.map((v, i) => (
-              <div key={v.id} className={cn('flex items-center gap-4 px-5 py-4', i > 0 && 'border-t border-line')}>
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-success/12 text-success"><CalendarCheck className="h-5 w-5" strokeWidth={1.75} /></span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-body-sm font-semibold text-ink">Visit completed{v.recipient_name ? ` for ${v.recipient_name}` : ''}</p>
-                  <p className="text-caption text-muted">{visitDate(v.scheduled_at)}</p>
-                </div>
-                <Link href="/family/visits" className="shrink-0 text-caption font-semibold text-green hover:text-green-hover">View →</Link>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* 5 · Loved ones — human states, not clinical status */}
+      <LovedOnesRoster lovedOnes={lovedOnes} hasRecentPresence={!!lastCompleted} />
 
-      {/* Membership */}
-      <MembershipCard />
+      {/* 6 · Presence Manager */}
+      <PresenceManagerContact />
 
+      {/* 7 · Support */}
       <SupportCard />
     </>
   )
 }
 
-// ── Support card (State 1 + State 4) ─────────────────────────────────────────
+// A warm, human status. Absent a live alert (handled by the emergency system),
+// CloseEye's default is reassurance — never clinical language.
+function moodFor(index: number, hasRecentPresence: boolean): { label: string; tone: StatusTone } {
+  if (index === 0) return { label: hasRecentPresence ? 'Doing well' : 'Calm', tone: 'positive' }
+  return { label: 'Comfortable', tone: 'positive' }
+}
+
+function LovedOnesRoster({ lovedOnes, hasRecentPresence }: { lovedOnes: LovedOne[]; hasRecentPresence: boolean }) {
+  return (
+    <section className="flex flex-col gap-4">
+      <SectionTitle href="/family/members" cta="Manage →">Your loved ones</SectionTitle>
+      <ul className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+        {lovedOnes.map((lo, i) => (
+          <li key={lo.id} className={cn(i > 0 && 'border-t border-line')}>
+            <RosterRow lo={lo} mood={moodFor(i, hasRecentPresence)} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function RosterRow({ lo, mood }: { lo: LovedOne; mood: { label: string; tone: StatusTone } }) {
+  const [photo, setPhoto] = useState<string | null>(null)
+  useEffect(() => { setPhoto(getLocalPhoto(lo.id)) }, [lo.id])
+  const meta = [lo.relationship, lo.city].filter(Boolean).join(' · ')
+
+  return (
+    <Link href={`/family/connect/${lo.id}`} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-accent-soft/30">
+      <Avatar initials={initialsOf(lo.full_name)} src={photo} alt={lo.full_name} size="md" tone="solid" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-body-sm font-semibold text-ink">{lo.full_name}</p>
+        <p className="truncate text-caption text-muted">{meta || 'In your care'}</p>
+      </div>
+      <StatusBadge label={mood.label} tone={mood.tone} />
+    </Link>
+  )
+}
+
+/**
+ * Your Presence Manager — the human guarantee behind the promise. Real contact
+ * channels only; a named Presence Manager surfaces here once the real-data
+ * migration reaches Presence-Manager identity (no mock person on the hero screen).
+ */
+function PresenceManagerContact() {
+  return (
+    <section className="flex flex-col gap-4">
+      <SectionTitle>Your Presence Manager</SectionTitle>
+      <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <Avatar initials="CE" size="lg" tone="soft" />
+          <div className="min-w-0">
+            <p className="text-body font-semibold text-ink">Your {SITE.name} care team</p>
+            <p className="mt-0.5 text-body-sm text-muted">Here for you, whenever you need us.</p>
+          </div>
+        </div>
+        <Button asChild size="md" variant="secondary" className="shrink-0">
+          <Link href="/family/connect"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Message</Link>
+        </Button>
+      </div>
+    </section>
+  )
+}
+
+// ── Support card ─────────────────────────────────────────────────────────────
 
 function SupportCard() {
   const items = [

@@ -55,7 +55,7 @@ export default function FamilyHome() {
       {data.state === 'new' && <NewUserDashboard />}
       {data.state === 'family_added' && <FamilyAddedDashboard data={data} lovedOnes={lovedOnes} />}
       {data.state === 'visit_booked' && <VisitBookedDashboard data={data} lovedOnes={lovedOnes} />}
-      {data.state === 'active' && <ActiveDashboard data={data} lovedOnes={lovedOnes} subscription={subscription} />}
+      {data.state === 'active' && <ActiveDashboard data={data} lovedOnes={lovedOnes} />}
     </div>
   )
 }
