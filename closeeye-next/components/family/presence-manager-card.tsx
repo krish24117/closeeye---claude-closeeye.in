@@ -72,7 +72,7 @@ export function PresenceManagerCard() {
         </div>
         <div className="mt-3 flex items-center justify-between gap-3">
           <Link
-            href="/family/messages"
+            href="/family/connect"
             className="inline-flex items-center gap-1.5 text-body-sm font-semibold text-green transition-colors hover:text-green-hover"
           >
             Open messages <ArrowRight className="h-4 w-4" strokeWidth={1.5} />

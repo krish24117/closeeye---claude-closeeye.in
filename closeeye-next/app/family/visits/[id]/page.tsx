@@ -135,7 +135,7 @@ export default function VisitDetailPage() {
       </section>
 
       <div className="flex flex-col gap-2.5 sm:flex-row">
-        <Button asChild size="sm"><Link href="/family/messages"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Message Presence Manager</Link></Button>
+        <Button asChild size="sm"><Link href="/family/connect"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Message Presence Manager</Link></Button>
         {visit.status !== 'cancelled' && (
           <Button asChild variant="secondary" size="sm">
             <a href={whatsappLink(`Hi Close Eye — I'd like to reschedule ${name}'s visit.`)} target="_blank" rel="noreferrer">Reschedule</a>

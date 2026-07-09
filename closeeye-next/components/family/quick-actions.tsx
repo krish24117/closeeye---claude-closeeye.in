@@ -11,7 +11,7 @@ const ACTIONS: ActionCardData[] = [
   {
     label: 'Message Presence Manager',
     description: 'Talk directly to the person coordinating your family’s care.',
-    href: '/family/messages',
+    href: '/family/connect',
     icon: MessageCircle,
   },
   {

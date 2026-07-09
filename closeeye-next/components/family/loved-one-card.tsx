@@ -115,7 +115,7 @@ export function LovedOneCard({ lo }: { lo: LovedOne }) {
           <CardAction href={`/family/book?member=${lo.id}`} icon={CalendarPlus} label="Book a visit" primary />
           <CardAction href={`/family/members/${lo.id}`} icon={UserRound} label="Profile" />
           <CardAction href="/family/visits" icon={CalendarClock} label="Visits" />
-          <CardAction href={`/family/messages/${lo.id}`} icon={MessageCircle} label="Message" />
+          <CardAction href={`/family/connect/${lo.id}`} icon={MessageCircle} label="Message" />
         </div>
       </article>
 

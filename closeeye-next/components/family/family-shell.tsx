@@ -33,7 +33,7 @@ const DESKTOP_NAV = [
   { href: '/family/visits', label: 'Visits', icon: CalendarDays },
   { href: '/family/documents', label: 'Documents', icon: FolderLock },
   { href: '/family/membership', label: 'Membership', icon: BadgeCheck },
-  { href: '/family/messages', label: 'Messages', icon: MessageCircle },
+  { href: '/family/connect', label: 'Connect', icon: MessageCircle },
   { href: '/family/profile', label: 'Settings', icon: Settings },
 ]
 
@@ -41,7 +41,7 @@ const MOBILE_NAV = [
   { href: '/family', label: 'Home', icon: Home },
   { href: '/family/members', label: 'Family', icon: Users },
   { href: '/family/visits', label: 'Visits', icon: CalendarDays },
-  { href: '/family/messages', label: 'Messages', icon: MessageCircle },
+  { href: '/family/connect', label: 'Connect', icon: MessageCircle },
   { href: '/family/profile', label: 'Profile', icon: User },
 ]
 
@@ -178,7 +178,7 @@ function BellButton({ count, onClick }: { count: number; onClick: () => void }) 
 function PresenceManagerMini() {
   return (
     <Link
-      href="/family/messages"
+      href="/family/connect"
       className="mt-auto flex items-center gap-3 rounded-md border border-line bg-ivory p-3 transition-colors hover:border-accent"
     >
       <Avatar initials="CE" size="sm" tone="solid" />

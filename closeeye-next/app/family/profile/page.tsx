@@ -193,7 +193,7 @@ export default function ProfilePage() {
 
       {/* 7 · SUPPORT */}
       <Card icon={LifeBuoy} title="Support">
-        <NavRow href="/family/messages" label="Contact Presence Manager" />
+        <NavRow href="/family/connect" label="Contact Presence Manager" />
         <NavRow href="/help" label="Help Centre" />
         <NavRow href={SITE.phoneHref} label="Emergency support" value={SITE.phoneDisplay} />
         <NavRow href="/privacy" label="Privacy Policy" />

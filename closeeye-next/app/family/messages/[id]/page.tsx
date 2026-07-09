@@ -1,52 +1,7 @@
-'use client'
+import { redirect } from 'next/navigation'
 
-import Link from 'next/link'
-import { useParams } from 'next/navigation'
-import { ArrowLeft, Loader2, UserRound } from 'lucide-react'
-import { MessagesThread } from '@/components/family/messages-thread'
-import { EmptyState } from '@/components/ui/states'
-import { Button } from '@/components/ui/button'
-import { useFamilyData } from '@/components/family/family-data-provider'
-
-export default function MemberThreadPage() {
-  const params = useParams<{ id: string }>()
-  const { lovedOnes, loading } = useFamilyData()
-  const member = lovedOnes.find((l) => l.id === params.id)
-
-  if (loading && !member) {
-    return (
-      <div className="grid place-items-center py-24">
-        <Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} />
-      </div>
-    )
-  }
-
-  if (!member) {
-    return (
-      <div className="flex flex-col gap-6">
-        <Link href="/family/messages" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
-          <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Messages
-        </Link>
-        <EmptyState
-          icon={UserRound}
-          title="Conversation not found"
-          hint="This family member may have been removed."
-          action={
-            <Button asChild>
-              <Link href="/family/messages">Back to messages</Link>
-            </Button>
-          }
-        />
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      <Link href="/family/messages" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
-        <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> All messages
-      </Link>
-      <MessagesThread lovedOne={member} />
-    </div>
-  )
+/** Per-member thread moved under CloseEye Connect — preserve the deep link. */
+export default async function MessageThreadMovedToConnect({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  redirect(`/family/connect/${id}`)
 }

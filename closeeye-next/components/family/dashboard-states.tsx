@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Greeting } from '@/components/family/greeting'
+import { AskCloseEyeCard } from '@/components/family/ask-closeeye-card'
 import { SectionTitle } from '@/components/family/section-title'
 import { LovedOneCard } from '@/components/family/loved-one-card'
 import { MembershipCard } from '@/components/family/membership-card'
@@ -178,6 +179,8 @@ export function FamilyAddedDashboard({ data, lovedOnes }: { data: DashboardData;
     <>
       <Greeting subtitle={`Your loved one has been added successfully. You're just one step away from receiving trusted care. ${SITE.tagline}`} />
 
+      <AskCloseEyeCard variant="compact" />
+
       {/* Today's family status */}
       <section className="flex flex-col gap-2">
         <SectionTitle>Today&apos;s family status</SectionTitle>
@@ -237,6 +240,8 @@ export function VisitBookedDashboard({ data, lovedOnes }: { data: DashboardData;
     <>
       <Greeting subtitle={`Everything is progressing as planned. ${SITE.tagline}`} />
 
+      <AskCloseEyeCard variant="compact" />
+
       {v && (
         <section className="flex flex-col gap-4">
           <SectionTitle>Today&apos;s summary</SectionTitle>
@@ -271,7 +276,7 @@ export function VisitBookedDashboard({ data, lovedOnes }: { data: DashboardData;
         <div className="grid gap-4 sm:grid-cols-3">
           <ActionCard href="/family/visits" icon={CalendarCheck} title="View visit" desc="See the full details of this visit." />
           <ActionCard href="/family/visits" icon={CalendarClock} title="Reschedule" desc="Change the date or time of this visit." />
-          <ActionCard href="/family/messages" icon={MessageCircle} title="Message Presence Manager" desc="Ask a question about this visit." />
+          <ActionCard href="/family/connect" icon={MessageCircle} title="Message Presence Manager" desc="Ask a question about this visit." />
         </div>
       </section>
 
@@ -305,6 +310,8 @@ export function ActiveDashboard({ data, lovedOnes, subscription }: { data: Dashb
     <>
       <Greeting subtitle="Here's today's update from home." />
 
+      <AskCloseEyeCard variant="compact" />
+
       {/* Today's summary */}
       <section className="flex flex-col gap-4">
         <SectionTitle>Today&apos;s summary</SectionTitle>
@@ -323,7 +330,7 @@ export function ActiveDashboard({ data, lovedOnes, subscription }: { data: Dashb
         <SectionTitle>Quick actions</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-2">
           <ActionCard href="/family/book" icon={CalendarPlus} title="Book a visit" desc="Schedule another wellbeing visit." />
-          <ActionCard href="/family/messages" icon={MessageCircle} title="Message Presence Manager" desc="Reach your dedicated coordinator." />
+          <ActionCard href="/family/connect" icon={MessageCircle} title="Message Presence Manager" desc="Reach your dedicated coordinator." />
           <ActionCard href="/family/visits" icon={FileText} title="View reports" desc="Read summaries from past visits." />
           <ActionCard href="/family/add" icon={UserPlus} title="Add family member" desc="Care for more of your family." />
         </div>
