@@ -17,7 +17,7 @@ export function FounderTeaser() {
           <ImageFrame
             src={FOUNDER.portrait}
             alt={`${FOUNDER.name}, Founder of Close Eye`}
-            ratio="square"
+            ratio="portrait"
             className="mx-auto max-w-sm shadow-lg lg:ml-auto"
           />
         }

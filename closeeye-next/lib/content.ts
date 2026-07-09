@@ -145,7 +145,7 @@ export const TRUST_PILLARS: TrustPillar[] = [
 export const FOUNDER = {
   name: 'Krishna',
   role: 'Founder',
-  portrait: '/founder.jpg',
+  portrait: '/founder.png',
   excerpt:
     "On the day my daughter was born — the happiest day of my life — I realised I had almost no one to call. In that quiet, I understood a fear every family carries: what happens to the people we love when we can't be there? Close Eye is my answer.",
 } as const
