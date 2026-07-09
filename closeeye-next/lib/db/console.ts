@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
-import { fetchAdminThreads } from '@/lib/db/messages'
+import { fetchAdminThreads, fetchAdminThreadMeta, type AdminThreadRef } from '@/lib/db/messages'
+import { fetchElderProfile } from '@/lib/db/family'
 
 /**
  * Presence Console — the REAL caseload + Today overview for the signed-in staff
@@ -194,13 +195,13 @@ export async function fetchConsoleOverview(): Promise<ConsoleOverview> {
   // Needs you now — urgent (red) first, then visit attention, then awaiting replies.
   const triage: ConsoleTriageItem[] = []
   families.forEach((f) => {
-    if (f.urgentQuestion) triage.push({ id: `u-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'urgent', tone: 'red', tag: 'Urgent', text: `Urgent health question: “${clip(f.urgentQuestion)}”`, href: `/console/messages/${f.lovedOneId}` })
+    if (f.urgentQuestion) triage.push({ id: `u-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'urgent', tone: 'red', tag: 'Urgent', text: `Urgent health question: “${clip(f.urgentQuestion)}”`, href: `/console/families/${f.lovedOneId}` })
   })
   families.forEach((f) => {
-    if (f.needsVisitAttention) triage.push({ id: `v-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'visit', tone: 'amber', tag: 'Needs action', text: 'A recent visit needs your attention.', href: `/console/messages/${f.lovedOneId}` })
+    if (f.needsVisitAttention) triage.push({ id: `v-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'visit', tone: 'amber', tag: 'Needs action', text: 'A recent visit needs your attention.', href: `/console/families/${f.lovedOneId}` })
   })
   families.forEach((f) => {
-    if (f.awaitingReply) triage.push({ id: `m-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'message', tone: 'amber', tag: 'Awaiting reply', text: 'A family message is waiting for your reply.', href: `/console/messages/${f.lovedOneId}` })
+    if (f.awaitingReply) triage.push({ id: `m-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'message', tone: 'amber', tag: 'Awaiting reply', text: 'A family message is waiting for your reply.', href: `/console/families/${f.lovedOneId}` })
   })
 
   // Today's Presence.
@@ -217,4 +218,62 @@ export async function fetchConsoleOverview(): Promise<ConsoleOverview> {
     }))
 
   return { families, triage, schedule }
+}
+
+export interface ConsoleFamilyDetail {
+  meta: AdminThreadRef
+  relationship: string | null
+  age: number | null
+  city: string | null
+  phone: string | null
+  nextVisitLabel: string | null
+  nextGuardian: string | null
+  glance: { label: string; value: string }[]
+}
+
+interface DetailBookingRow { scheduled_at: string | null; status: string; companion_id: string | null }
+
+/** One family's live workspace context — header, next Presence + Guardian, at-a-glance care brief. */
+export async function fetchConsoleFamilyDetail(lovedOneId: string): Promise<ConsoleFamilyDetail | null> {
+  const meta = await fetchAdminThreadMeta(lovedOneId)
+  if (!meta) return null
+
+  const [{ data: loRow }, { data: bkRows }, ep] = await Promise.all([
+    supabase.from('loved_ones').select('relationship, age, city, phone_number').eq('id', lovedOneId).maybeSingle(),
+    supabase.from('bookings').select('scheduled_at, status, companion_id').eq('loved_one_id', lovedOneId),
+    fetchElderProfile(lovedOneId).catch(() => null),
+  ])
+  const lo = loRow as { relationship: string | null; age: number | null; city: string | null; phone_number: string | null } | null
+  const bookings = (bkRows as DetailBookingRow[] | null) ?? []
+
+  const now = Date.now()
+  const next = bookings
+    .filter((b) => b.scheduled_at && ACTIVE_BOOKING.has(b.status) && new Date(b.scheduled_at).getTime() >= now)
+    .sort((a, b) => (a.scheduled_at ?? '').localeCompare(b.scheduled_at ?? ''))[0]
+  let nextGuardian: string | null = null
+  if (next?.companion_id) {
+    const { data: c } = await supabase.from('companions').select('full_name').eq('id', next.companion_id).maybeSingle()
+    nextGuardian = (c as { full_name: string | null } | null)?.full_name ?? null
+  }
+
+  const glance: { label: string; value: string }[] = []
+  if (lo?.age) glance.push({ label: 'Age', value: String(lo.age) })
+  if (ep) {
+    const add = (label: string, v: string | null | undefined) => { if (v && v.trim()) glance.push({ label, value: v.trim() }) }
+    add('Conditions', ep.medical_conditions)
+    if (ep.current_medications?.length) glance.push({ label: 'Medications', value: ep.current_medications.join(', ') })
+    add('Allergies', ep.allergies)
+    add('Avoid', ep.things_to_avoid)
+  }
+
+  return {
+    meta,
+    relationship: lo?.relationship ?? null,
+    age: lo?.age ?? null,
+    city: lo?.city ?? null,
+    phone: lo?.phone_number ?? null,
+    nextVisitLabel: next?.scheduled_at ? fmtDate(next.scheduled_at) : null,
+    nextGuardian,
+    glance,
+  }
 }

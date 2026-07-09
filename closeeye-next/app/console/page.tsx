@@ -129,7 +129,7 @@ export default function ConsoleDashboard() {
                 <ul className="divide-y divide-line">
                   {schedule.map((s) => (
                     <li key={s.id}>
-                      <Link href={s.lovedOneId ? `/console/messages/${s.lovedOneId}` : '/console/visits'} className="flex flex-col gap-1.5 px-4 py-3 transition-colors hover:bg-accent-soft/30">
+                      <Link href={s.lovedOneId ? `/console/families/${s.lovedOneId}` : '/console/visits'} className="flex flex-col gap-1.5 px-4 py-3 transition-colors hover:bg-accent-soft/30">
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate text-body-sm font-semibold text-ink">{s.memberName}</span>
                           <VisitStatusBadge status={s.status} />
@@ -178,7 +178,7 @@ export default function ConsoleDashboard() {
             {roster.slice(0, 8).map((f) => {
               const st = FAM_STATUS[f.status]
               return (
-                <Link key={f.lovedOneId} href={`/console/messages/${f.lovedOneId}`} className="group flex flex-col gap-3 rounded-lg border border-line bg-card p-4 shadow-sm transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:shadow-md">
+                <Link key={f.lovedOneId} href={`/console/families/${f.lovedOneId}`} className="group flex flex-col gap-3 rounded-lg border border-line bg-card p-4 shadow-sm transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:shadow-md">
                   <div className="flex items-center gap-3">
                     <Avatar initials={initialsOf(f.name)} size="md" tone="solid" />
                     <div className="min-w-0 flex-1">
