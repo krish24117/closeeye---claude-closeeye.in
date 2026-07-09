@@ -11,7 +11,7 @@ import type { PhotoAttachment } from '@/lib/guardian-uploads'
 import type { GuardianVisit } from '@/lib/guardian-data'
 import type { ReportVitals } from '@/lib/visit-reports'
 import { buildStory, moodLabel, pronounFor, wellnessScore } from '@/lib/family-report'
-import { submitVisitReport } from '@/lib/db/guardian'
+import { deliverVisitReport, submitVisitReport } from '@/lib/db/guardian'
 import { useVisit } from '../visit-state'
 import { VisitTimer } from '../visit-timer'
 
@@ -178,6 +178,29 @@ export function CompleteStep({ visit }: { visit: GuardianVisit }) {
               completedAt: now,
             })
             dispatch({ type: 'reportSaved', id })
+            // Deliver the report to the family (PDF + WhatsApp + completion
+            // notification). Best-effort — never blocks completion.
+            try {
+              await deliverVisitReport({
+                bookingId,
+                memberName: visit.memberName,
+                guardianName,
+                service: visit.service,
+                relationship: visit.relationship || '',
+                scales: observations.scales,
+                moments: observations.moments,
+                social: observations.social,
+                vitals,
+                note: observations.note,
+                win: observations.win,
+                concern: observations.concern,
+                startedAt: startedAt ?? now,
+                checkinAt: checkinAt ?? startedAt ?? now,
+                completedAt: now,
+              })
+            } catch {
+              /* delivery is best-effort */
+            }
             dispatch({ type: 'confirm' })
           } catch {
             setErr(true)

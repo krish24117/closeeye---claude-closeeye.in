@@ -1,5 +1,9 @@
 import { supabase } from '@/lib/supabase'
 import type { EmergencyContact, GuardianVisit as RichVisit, GuardianVisitStatus } from '@/lib/guardian-data'
+import { buildVisitPdf, reportToPdfInput } from '@/lib/visit-pdf'
+import { buildStory, moodLabel, pronounFor, wellnessScore } from '@/lib/family-report'
+import { processVisit, type VisitObservations } from '@/lib/cloza'
+import { reportKey, type ReportVitals, type SharedVisitReport } from '@/lib/visit-reports'
 
 /** A companion's assigned visit, from the real `bookings` table. */
 export interface GuardianVisit {
@@ -457,6 +461,91 @@ export async function submitVisitReport(bookingId: string, input: VisitReportInp
   if (bErr) throw new Error(bErr.message)
 
   return (data as { id: string }).id
+}
+
+/**
+ * Deliver the completed report to the family: generate the branded PDF, upload it
+ * to visit-pdfs (RLS: companion upload own), then trigger the existing
+ * send-visit-whatsapp edge function — which sends the visit_completed notification
+ * ("your Care Report is now available") + the warm message + PDF. Best-effort and
+ * never throws: returns whether it delivered + a reason if not.
+ */
+export async function deliverVisitReport(args: {
+  bookingId: string
+  memberName: string
+  guardianName: string
+  service: string
+  relationship: string
+  scales: Record<string, string>
+  moments: string[]
+  social: string[]
+  vitals: Record<string, string>
+  note?: string
+  win?: string
+  concern?: string
+  startedAt: number
+  checkinAt: number
+  completedAt: number
+}): Promise<{ delivered: boolean; reason?: string }> {
+  try {
+    const pronoun = pronounFor(args.relationship || '')
+    const story = buildStory(args.memberName, pronoun, args.scales, args.moments, args.social, args.vitals as ReportVitals)
+    const obs: VisitObservations = {
+      scales: args.scales, moments: args.moments, social: args.social,
+      concern: args.concern, note: args.note, win: args.win, photos: [], voiceNote: null,
+    }
+    const intel = processVisit(obs, args.memberName)
+    const report: SharedVisitReport = {
+      key: reportKey(args.memberName),
+      memberName: args.memberName,
+      guardianName: args.guardianName,
+      service: args.service,
+      pronoun,
+      summary: intel.summary,
+      story,
+      mood: moodLabel(args.scales.mood),
+      wellnessScore: wellnessScore(args.scales),
+      scales: args.scales,
+      moments: args.moments,
+      social: args.social,
+      vitals: args.vitals as ReportVitals,
+      note: args.note,
+      win: args.win,
+      photos: [],
+      voice: null,
+      startedAt: args.startedAt,
+      checkinAt: args.checkinAt,
+      completedAt: args.completedAt,
+      durationSec: Math.max(1, Math.round((args.completedAt - args.startedAt) / 1000)),
+    }
+    const clock = (ms: number) => {
+      try { return new Date(ms).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }) } catch { return '—' }
+    }
+    const mins = Math.max(1, Math.round((args.completedAt - args.startedAt) / 60000))
+    const stats = {
+      arrival: clock(args.checkinAt),
+      departure: clock(args.completedAt),
+      durationLabel: mins < 60 ? `${mins} min` : `${Math.floor(mins / 60)} hr ${mins % 60} min`,
+    }
+
+    const pdf = await buildVisitPdf(reportToPdfInput(report, stats, intel.recommendations, intel.followUps))
+    const blob = pdf.output('blob') as Blob
+
+    const path = `${args.bookingId}/care-report-${Date.now()}.pdf`
+    const { error: upErr } = await supabase.storage.from('visit-pdfs').upload(path, blob, { contentType: 'application/pdf', upsert: true })
+    if (upErr) return { delivered: false, reason: upErr.message }
+
+    const { data: signed } = await supabase.storage.from('visit-pdfs').createSignedUrl(path, 60 * 60 * 24 * 7)
+    const pdfUrl = signed?.signedUrl
+    if (!pdfUrl) return { delivered: false, reason: 'sign_failed' }
+
+    const { data, error } = await supabase.functions.invoke('send-visit-whatsapp', { body: { booking_id: args.bookingId, pdf_url: pdfUrl } })
+    if (error) return { delivered: false, reason: error.message }
+    const res = data as { success?: boolean; skipped?: boolean; reason?: string } | null
+    return { delivered: Boolean(res?.success), reason: res?.reason }
+  } catch (e) {
+    return { delivered: false, reason: e instanceof Error ? e.message : 'error' }
+  }
 }
 
 /** Attach the guardian's post-visit rating + raised issues to the saved report. */
