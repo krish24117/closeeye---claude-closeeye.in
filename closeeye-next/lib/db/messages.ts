@@ -54,6 +54,23 @@ export async function fetchThreadSummaries(userId: string): Promise<Map<string, 
   return map
 }
 
+/**
+ * Recent system care-updates for the family — the "Care updates" feed on Connect
+ * Home. These are `sender='system'` rows written by DB triggers on real care
+ * events (visit started / completed). Newest first.
+ */
+export async function fetchSystemUpdates(userId: string, limit = 8): Promise<Message[]> {
+  const { data, error } = await supabase
+    .from('messages')
+    .select(MESSAGE_COLS)
+    .eq('family_user_id', userId)
+    .eq('sender', 'system')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw new Error(error.message)
+  return (data as Message[] | null) ?? []
+}
+
 /** Send a family message into a member's thread. Returns the created row. */
 export async function sendMessage(
   userId: string,

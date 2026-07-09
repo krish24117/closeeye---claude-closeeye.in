@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Loader2, MessageCircle, UserPlus } from 'lucide-react'
+import { Bell, Loader2, MessageCircle, UserPlus } from 'lucide-react'
 import { Greeting } from '@/components/family/greeting'
 import { SectionTitle } from '@/components/family/section-title'
 import { Avatar } from '@/components/family/avatar'
@@ -12,9 +12,9 @@ import { initialsOf } from '@/components/family/loved-one-card'
 import { AskCloseEyeCard } from '@/components/family/ask-closeeye-card'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useLovedOnes } from '@/components/family/family-data-provider'
-import { fetchThreadSummaries, type ThreadSummary } from '@/lib/db/messages'
+import { fetchSystemUpdates, fetchThreadSummaries, type ThreadSummary } from '@/lib/db/messages'
 import { getLocalPhoto } from '@/lib/local-photos'
-import type { LovedOne } from '@/lib/db/types'
+import type { LovedOne, Message } from '@/lib/db/types'
 import { cn } from '@/lib/utils'
 
 /**
@@ -26,15 +26,20 @@ export default function ConnectHome() {
   const { user } = useAuth()
   const { lovedOnes, loading } = useLovedOnes()
   const [summaries, setSummaries] = React.useState<Map<string, ThreadSummary> | null>(null)
+  const [updates, setUpdates] = React.useState<Message[]>([])
 
   React.useEffect(() => {
     if (!user?.id) {
       setSummaries(new Map())
+      setUpdates([])
       return
     }
     fetchThreadSummaries(user.id)
       .then(setSummaries)
       .catch(() => setSummaries(new Map()))
+    fetchSystemUpdates(user.id)
+      .then(setUpdates)
+      .catch(() => {})
   }, [user?.id])
 
   return (
@@ -42,6 +47,30 @@ export default function ConnectHome() {
       <Greeting subtitle="Stay connected with your family and your CloseEye Care Team." />
 
       <AskCloseEyeCard />
+
+      {updates.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <SectionTitle>Care updates</SectionTitle>
+          <ul className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+            {updates.map((u, i) => (
+              <li key={u.id} className={cn(i > 0 && 'border-t border-line')}>
+                <Link
+                  href={`/family/connect/${u.loved_one_id}`}
+                  className="flex items-start gap-3.5 px-5 py-3.5 transition-colors hover:bg-accent-soft/30"
+                >
+                  <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-green">
+                    <Bell className="h-4 w-4" strokeWidth={1.75} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-body-sm leading-relaxed text-ink">{u.body}</p>
+                    <p className="mt-0.5 text-caption text-muted">{rowTime(u.created_at)}</p>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="flex flex-col gap-4">
         <SectionTitle>Conversations</SectionTitle>
