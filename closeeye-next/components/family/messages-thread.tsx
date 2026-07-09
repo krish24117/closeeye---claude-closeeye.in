@@ -2,7 +2,7 @@
 'use client'
 
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
-import { FileText, Image as ImageIcon, Loader2, MessageCircle, Paperclip, Send, X } from 'lucide-react'
+import { FileText, Image as ImageIcon, Loader2, MessageCircle, Mic, Paperclip, Send, Square, X } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { EmptyState, ErrorState } from '@/components/ui/states'
@@ -17,12 +17,28 @@ import {
   signedAttachmentUrl,
   subscribeToThread,
   uploadAttachment,
+  uploadVoiceNote,
 } from '@/lib/db/messages'
 import type { LovedOne, Message } from '@/lib/db/types'
 import { cn } from '@/lib/utils'
 
 type Status = 'loading' | 'ready' | 'error'
-type Pending = { path: string; type: 'image' | 'pdf'; previewUrl: string | null; name: string }
+type Pending = { path: string; type: 'image' | 'pdf' | 'audio'; previewUrl: string | null; name: string }
+
+const AUDIO_MIME = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus']
+function pickAudioMime(): string {
+  if (typeof MediaRecorder === 'undefined') return ''
+  return AUDIO_MIME.find((m) => MediaRecorder.isTypeSupported?.(m)) ?? ''
+}
+function audioExt(mime: string): string {
+  if (mime.includes('mp4')) return 'm4a'
+  if (mime.includes('ogg')) return 'ogg'
+  return 'webm'
+}
+function fmtDur(sec: number): string {
+  const s = Math.max(0, Math.round(sec))
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}
 
 function dayLabel(iso: string): string {
   const d = new Date(iso)
@@ -43,7 +59,7 @@ function timeLabel(iso: string): string {
 }
 
 /** Lazily resolves a private attachment's signed URL and renders it. */
-function AttachmentBubble({ path, type, mine }: { path: string; type: 'image' | 'pdf'; mine: boolean }) {
+function AttachmentBubble({ path, type, mine }: { path: string; type: 'image' | 'pdf' | 'audio'; mine: boolean }) {
   const [url, setUrl] = useState<string | null>(null)
   useEffect(() => {
     let live = true
@@ -63,6 +79,16 @@ function AttachmentBubble({ path, type, mine }: { path: string; type: 'image' | 
     ) : (
       <span className="grid h-40 w-56 place-items-center rounded-md bg-ink/[0.06]">
         <Loader2 className="h-5 w-5 animate-spin text-muted" strokeWidth={2} />
+      </span>
+    )
+  }
+
+  if (type === 'audio') {
+    return url ? (
+      <audio controls src={url} className="w-56 max-w-full" />
+    ) : (
+      <span className="grid h-10 w-56 place-items-center rounded-md bg-ink/[0.06]">
+        <Loader2 className="h-4 w-4 animate-spin text-muted" strokeWidth={2} />
       </span>
     )
   }
@@ -121,10 +147,16 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
   const [uploading, setUploading] = useState(false)
   const [sending, setSending] = useState(false)
   const [photo, setPhoto] = useState<string | null>(null)
+  const [recording, setRecording] = useState(false)
+  const [recSeconds, setRecSeconds] = useState(0)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const recRef = useRef<MediaRecorder | null>(null)
+  const recStreamRef = useRef<MediaStream | null>(null)
+  const recChunksRef = useRef<Blob[]>([])
+  const recSecRef = useRef(0)
 
   useEffect(() => setPhoto(getLocalPhoto(lovedOne.id)), [lovedOne.id])
 
@@ -200,6 +232,88 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
     } finally {
       setSending(false)
     }
+  }
+
+  // ── Voice notes ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!recording) return
+    const id = setInterval(() => {
+      recSecRef.current += 1
+      setRecSeconds(recSecRef.current)
+    }, 1000)
+    return () => clearInterval(id)
+  }, [recording])
+
+  // Release the mic on unmount / if still recording.
+  useEffect(
+    () => () => {
+      try {
+        if (recRef.current && recRef.current.state !== 'inactive') recRef.current.stop()
+      } catch {
+        /* ignore */
+      }
+      recStreamRef.current?.getTracks().forEach((t) => t.stop())
+    },
+    [],
+  )
+
+  async function startRecording() {
+    if (!userId || recording || uploading || pending) return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      recStreamRef.current = stream
+      const mime = pickAudioMime()
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined)
+      recChunksRef.current = []
+      rec.ondataavailable = (e) => {
+        if (e.data && e.data.size) recChunksRef.current.push(e.data)
+      }
+      rec.onstop = () => {
+        const dur = recSecRef.current
+        const blob = new Blob(recChunksRef.current, { type: rec.mimeType || 'audio/webm' })
+        recStreamRef.current?.getTracks().forEach((t) => t.stop())
+        recStreamRef.current = null
+        if (!blob.size || !userId) return
+        void (async () => {
+          setUploading(true)
+          try {
+            const { path, type } = await uploadVoiceNote(userId, lovedOne.id, blob, audioExt(blob.type))
+            setPending({ path, type, previewUrl: URL.createObjectURL(blob), name: `Voice note · ${fmtDur(dur)}` })
+          } catch {
+            toast('Your voice note couldn’t be saved. Please try again.')
+          } finally {
+            setUploading(false)
+          }
+        })()
+      }
+      recRef.current = rec
+      recSecRef.current = 0
+      setRecSeconds(0)
+      rec.start()
+      setRecording(true)
+    } catch {
+      toast('We couldn’t reach your microphone. Allow mic access and try again.')
+      recStreamRef.current?.getTracks().forEach((t) => t.stop())
+    }
+  }
+
+  function stopRecording() {
+    try {
+      recRef.current?.stop()
+    } catch {
+      /* ignore */
+    }
+    setRecording(false)
+  }
+
+  function cancelRecording() {
+    recChunksRef.current = [] // drop the audio so onstop produces nothing usable
+    try {
+      recRef.current?.stop()
+    } catch {
+      /* ignore */
+    }
+    setRecording(false)
   }
 
   const firstName = lovedOne.full_name.trim().split(/\s+/)[0]
@@ -278,7 +392,7 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
               <img src={pending.previewUrl} alt="" className="h-10 w-10 rounded object-cover" />
             ) : (
               <span className="grid h-10 w-10 place-items-center rounded bg-accent-soft text-green">
-                <FileText className="h-5 w-5" strokeWidth={1.5} />
+                {pending.type === 'audio' ? <Mic className="h-5 w-5" strokeWidth={1.5} /> : <FileText className="h-5 w-5" strokeWidth={1.5} />}
               </span>
             )}
             <span className="min-w-0 flex-1 truncate text-body-sm text-ink">{pending.name}</span>
@@ -292,65 +406,97 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
             </button>
           </div>
         )}
-        <div className="flex items-center gap-2">
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) => {
-              void handleFile(e.target.files?.[0])
-              e.target.value = ''
-            }}
-          />
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            hidden
-            onChange={(e) => {
-              void handleFile(e.target.files?.[0])
-              e.target.value = ''
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => imageInputRef.current?.click()}
-            disabled={uploading || !!pending}
-            aria-label="Attach photo"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-ink disabled:opacity-40"
-          >
-            <ImageIcon className="h-5 w-5" strokeWidth={1.5} />
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading || !!pending}
-            aria-label="Attach document"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-ink disabled:opacity-40"
-          >
-            <Paperclip className="h-5 w-5" strokeWidth={1.5} />
-          </button>
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder={`Message about ${firstName}…`}
-            aria-label="Message"
-            className="h-11 flex-1 rounded-full border border-line bg-ivory px-4 text-body-sm text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/25"
-          />
-          <button
-            type="submit"
-            aria-label="Send"
-            disabled={(!draft.trim() && !pending) || sending || uploading}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ink text-ivory transition-opacity disabled:opacity-40"
-          >
-            {sending || uploading ? (
-              <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} />
-            ) : (
-              <Send className="h-5 w-5" strokeWidth={1.75} />
-            )}
-          </button>
-        </div>
+        {recording ? (
+          <div className="flex h-11 items-center gap-3 rounded-full border border-error/30 bg-error/5 px-4">
+            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-error" />
+            <span className="text-body-sm font-semibold tabular-nums text-error">{fmtDur(recSeconds)}</span>
+            <span className="flex-1 text-caption text-muted">Recording voice note…</span>
+            <button
+              type="button"
+              onClick={cancelRecording}
+              className="text-caption font-semibold text-muted transition-colors hover:text-ink"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={stopRecording}
+              aria-label="Stop and attach voice note"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-ivory"
+            >
+              <Square className="h-4 w-4" fill="currentColor" strokeWidth={2} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                void handleFile(e.target.files?.[0])
+                e.target.value = ''
+              }}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              hidden
+              onChange={(e) => {
+                void handleFile(e.target.files?.[0])
+                e.target.value = ''
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={uploading || !!pending}
+              aria-label="Attach photo"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-ink disabled:opacity-40"
+            >
+              <ImageIcon className="h-5 w-5" strokeWidth={1.5} />
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading || !!pending}
+              aria-label="Attach document"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-ink disabled:opacity-40"
+            >
+              <Paperclip className="h-5 w-5" strokeWidth={1.5} />
+            </button>
+            <button
+              type="button"
+              onClick={() => void startRecording()}
+              disabled={uploading || !!pending}
+              aria-label="Record voice note"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-ink disabled:opacity-40"
+            >
+              <Mic className="h-5 w-5" strokeWidth={1.5} />
+            </button>
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder={`Message about ${firstName}…`}
+              aria-label="Message"
+              className="h-11 flex-1 rounded-full border border-line bg-ivory px-4 text-body-sm text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/25"
+            />
+            <button
+              type="submit"
+              aria-label="Send"
+              disabled={(!draft.trim() && !pending) || sending || uploading}
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ink text-ivory transition-opacity disabled:opacity-40"
+            >
+              {sending || uploading ? (
+                <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} />
+              ) : (
+                <Send className="h-5 w-5" strokeWidth={1.75} />
+              )}
+            </button>
+          </div>
+        )}
       </form>
     </div>
   )

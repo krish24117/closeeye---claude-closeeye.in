@@ -74,7 +74,7 @@ export async function fetchSystemUpdates(userId: string, limit = 8): Promise<Mes
 /** Send a family message into a member's thread. Returns the created row. */
 export async function sendMessage(
   userId: string,
-  input: { lovedOneId: string; body?: string; attachmentPath?: string; attachmentType?: 'image' | 'pdf' },
+  input: { lovedOneId: string; body?: string; attachmentPath?: string; attachmentType?: 'image' | 'pdf' | 'audio' },
 ): Promise<Message> {
   const row = {
     family_user_id: userId,
@@ -123,6 +123,25 @@ export async function uploadAttachment(
   })
   if (error) throw new Error(error.message)
   return { path, type: isPdf ? 'pdf' : 'image' }
+}
+
+/**
+ * Upload a recorded voice note (audio blob) to the same private bucket at
+ * "<userId>/<lovedOneId>/<name>.<ext>". Strips any codecs parameter from the
+ * content-type. Returns the stored path + 'audio' type.
+ */
+export async function uploadVoiceNote(
+  userId: string,
+  lovedOneId: string,
+  blob: Blob,
+  ext: string,
+): Promise<{ path: string; type: 'audio' }> {
+  const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext || 'webm'}`
+  const path = `${userId}/${lovedOneId}/${name}`
+  const contentType = blob.type ? blob.type.split(';')[0]!.trim() : 'audio/webm'
+  const { error } = await supabase.storage.from(ATTACH_BUCKET).upload(path, blob, { contentType, upsert: false })
+  if (error) throw new Error(error.message)
+  return { path, type: 'audio' }
 }
 
 /** A short-lived signed URL to display a private attachment (null on failure). */

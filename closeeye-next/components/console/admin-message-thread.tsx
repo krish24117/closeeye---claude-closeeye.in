@@ -39,7 +39,7 @@ function timeLabel(iso: string): string {
   return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
 }
 
-function AttachmentBubble({ path, type, mine }: { path: string; type: 'image' | 'pdf'; mine: boolean }) {
+function AttachmentBubble({ path, type, mine }: { path: string; type: 'image' | 'pdf' | 'audio'; mine: boolean }) {
   const [url, setUrl] = useState<string | null>(null)
   useEffect(() => {
     let live = true
@@ -59,6 +59,16 @@ function AttachmentBubble({ path, type, mine }: { path: string; type: 'image' | 
     ) : (
       <span className="grid h-40 w-56 place-items-center rounded-md bg-ink/[0.06]">
         <Loader2 className="h-5 w-5 animate-spin text-muted" strokeWidth={2} />
+      </span>
+    )
+  }
+
+  if (type === 'audio') {
+    return url ? (
+      <audio controls src={url} className="w-56 max-w-full" />
+    ) : (
+      <span className="grid h-10 w-56 place-items-center rounded-md bg-ink/[0.06]">
+        <Loader2 className="h-4 w-4 animate-spin text-muted" strokeWidth={2} />
       </span>
     )
   }

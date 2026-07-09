@@ -75,7 +75,7 @@ export interface Message {
   sender: 'family' | 'closeeye' | 'system'
   body: string | null
   attachment_url: string | null // storage PATH within the private message-attachments bucket
-  attachment_type: 'image' | 'pdf' | null
+  attachment_type: 'image' | 'pdf' | 'audio' | null
   related_booking_id: string | null
   read_at: string | null
   created_at: string
