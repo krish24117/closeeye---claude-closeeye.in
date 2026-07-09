@@ -289,6 +289,53 @@ Deno.serve(async (req: Request) => {
   // ── Red-flag escalation ───────────────────────────────────────────────────
   if (redFlag.matched) {
     console.log(`[ask-health] escalation: category=${redFlag.category} query_id=${queryId}`);
+    // Pull everything the care team needs to act in seconds — WHO, WHAT, WHERE,
+    // and the number to CALL NOW. Best-effort: a lookup failure never blocks the alert.
+    let famName = "", famPhone = "";
+    let patient = "", location = "", hospital = "", emgContact = "", medNotes = "";
+    try {
+      const { data: prof } = await sb.from("profiles")
+        .select("full_name, whatsapp_number")
+        .eq("id", user.id).maybeSingle();
+      famName  = (prof?.full_name || "").trim();
+      famPhone = (prof?.whatsapp_number || "").trim();
+    } catch (_lookupErr) { /* ignore */ }
+    if (body.loved_one_id) {
+      try {
+        const { data: lo } = await sb.from("loved_ones")
+          .select("full_name, age, address, city, emergency_contact_name, emergency_contact_phone, nearest_hospital, medical_notes")
+          .eq("id", body.loved_one_id).maybeSingle();
+        if (lo) {
+          patient  = `${(lo.full_name || "").trim()}${lo.age ? `, ${lo.age}y` : ""}`.trim();
+          location = [lo.address, lo.city].map((s: string | null) => (s ?? "").trim()).filter(Boolean).join(", ");
+          hospital = (lo.nearest_hospital || "").trim();
+          medNotes = (lo.medical_notes || "").trim();
+          const ecn = (lo.emergency_contact_name || "").trim();
+          const ecp = (lo.emergency_contact_phone || "").trim();
+          if (ecn || ecp) emgContact = `${ecn}${ecn && ecp ? " · " : ""}${ecp}`.trim();
+        }
+      } catch (_loErr) { /* ignore */ }
+    }
+    let nowIST: string;
+    try { nowIST = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" }); }
+    catch { nowIST = new Date().toISOString(); }
+
+    const alertBody = [
+      "🚨 EMERGENCY — Ask Close Eye",
+      `⏰ ${nowIST}`,
+      `⚠️ ${redFlag.category.toUpperCase().replace(/_/g, " ")}`,
+      patient ? `🧓 Patient: ${patient}` : (body.subject_label ? `👤 About: ${body.subject_label}` : ""),
+      `💬 "${question.slice(0, 400)}"`,
+      "",
+      `📞 CALL NOW — ${famName || "Family"}${famPhone ? `: ${famPhone}` : " (no phone on file)"}`,
+      location ? `📍 ${location}` : "",
+      hospital ? `🏥 Nearest hospital: ${hospital}` : "",
+      emgContact ? `🆘 Emergency contact: ${emgContact}` : "",
+      medNotes ? `📝 Medical: ${medNotes.slice(0, 160)}` : "",
+      "",
+      `Ref: query ${queryId}`,
+    ].filter(Boolean).join("\n");
+
     try {
       const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
       const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
@@ -303,10 +350,7 @@ Deno.serve(async (req: Request) => {
             {
               method: "POST",
               headers: { Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`, "Content-Type": "application/x-www-form-urlencoded" },
-              body: new URLSearchParams({
-                From: fromNum, To: waTo,
-                Body: `🚨 EMERGENCY — Ask Close Eye\nCategory: ${redFlag.category}\nQuery: "${question.slice(0, 140)}"\nUser: ${user.id} | Query: ${queryId}\nAction: contact this family now.`,
-              }),
+              body: new URLSearchParams({ From: fromNum, To: waTo, Body: alertBody }),
             },
           );
           if (!res.ok) console.error("[ask-health] care-team alert failed:", res.status, await res.text());
