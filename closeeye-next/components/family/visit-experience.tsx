@@ -122,12 +122,16 @@ export function VisitReportExperience({
   recommendations,
   followUps,
   pmReview = null,
+  pdfUrl,
+  delivery,
 }: {
   report: SharedVisitReport
   stats: VisitStats
   recommendations?: string[]
   followUps?: string[]
   pmReview?: string | null
+  pdfUrl?: string
+  delivery?: { emailOk: boolean; emailReason?: string; whatsappOk: boolean }
 }) {
   const [pdfBusy, setPdfBusy] = React.useState(false)
   const timeline = timelineEvents(report)
@@ -137,6 +141,12 @@ export function VisitReportExperience({
   const slug = report.key.replace(/\s+/g, '-') || 'visit'
 
   async function downloadPdf() {
+    // Prefer the branded PDF already uploaded at completion (a real hosted file —
+    // reliable across browsers). Fall back to generating it client-side.
+    if (pdfUrl) {
+      window.open(pdfUrl, '_blank', 'noopener')
+      return
+    }
     setPdfBusy(true)
     try {
       const { buildVisitPdf, reportToPdfInput } = await import('@/lib/visit-pdf')
@@ -277,6 +287,13 @@ export function VisitReportExperience({
       </FamilySection>
 
       {completedLabel && <p className="text-center text-caption text-muted">Report shared after the visit on {completedLabel}.</p>}
+
+      {delivery && (
+        <p className="text-center text-caption text-muted">
+          Delivered to you: WhatsApp {delivery.whatsappOk ? '✓' : '—'} · Email{' '}
+          {delivery.emailOk ? '✓' : <span className="text-warning">not sent{delivery.emailReason ? ` (${delivery.emailReason})` : ''}</span>}
+        </p>
+      )}
 
       <div className="flex flex-col gap-3 pt-2 sm:flex-row">
         <Button asChild variant="secondary" size="sm">

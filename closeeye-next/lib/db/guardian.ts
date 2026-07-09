@@ -539,13 +539,38 @@ export async function deliverVisitReport(args: {
     const pdfUrl = signed?.signedUrl
     if (!pdfUrl) return { delivered: false, reason: 'sign_failed' }
 
-    // Email — best-effort; no-ops until send-visit-email is deployed with a provider key.
-    void supabase.functions.invoke('send-visit-email', { body: { booking_id: args.bookingId, pdf_url: pdfUrl } }).catch(() => undefined)
+    // Email — awaited so we capture its result (evidence) and it finishes before nav.
+    const emailRes = await supabase.functions
+      .invoke('send-visit-email', { body: { booking_id: args.bookingId, pdf_url: pdfUrl } })
+      .catch((e) => ({ data: null as unknown, error: e as { message?: string } }))
+    const emailOut = emailRes as { data?: unknown; error?: { message?: string } }
 
     const { data, error } = await supabase.functions.invoke('send-visit-whatsapp', { body: { booking_id: args.bookingId, pdf_url: pdfUrl } })
+    const wa = data as { success?: boolean; skipped?: boolean; reason?: string } | null
+
+    // Persist the delivery outcome on the visits row — evidence + a status the family reads.
+    try {
+      const delivery = {
+        email: emailOut.error ? { error: emailOut.error.message } : (emailOut.data ?? null),
+        whatsapp: error ? { error: error.message } : (wa ?? null),
+        pdfPath: path,
+        at: new Date(args.completedAt).toISOString(),
+      }
+      const { data: vrow } = await supabase
+        .from('visits')
+        .select('id, checklist_data')
+        .eq('booking_id', args.bookingId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      const row = vrow as { id: string; checklist_data: Record<string, unknown> | null } | null
+      if (row) await supabase.from('visits').update({ checklist_data: { ...(row.checklist_data ?? {}), delivery } }).eq('id', row.id)
+    } catch {
+      /* non-fatal — delivery still happened */
+    }
+
     if (error) return { delivered: false, reason: error.message }
-    const res = data as { success?: boolean; skipped?: boolean; reason?: string } | null
-    return { delivered: Boolean(res?.success), reason: res?.reason }
+    return { delivered: Boolean(wa?.success), reason: wa?.reason }
   } catch (e) {
     return { delivered: false, reason: e instanceof Error ? e.message : 'error' }
   }

@@ -126,9 +126,11 @@ export function VoicePlayer({ src, durationSec, label }: { src: string; duration
       </div>
 
       {failed && (
-        <p className="mt-3 rounded-md bg-warning/[0.08] p-3.5 text-caption text-ink">
-          This voice note can&apos;t play in this browser. Tap <strong>Download</strong> to save and open it in your files.
-        </p>
+        <div className="mt-3 rounded-md bg-warning/[0.08] p-3.5">
+          <p className="text-caption text-ink">If the player above didn&apos;t start, use this one — or tap <strong>Download</strong>:</p>
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <audio controls preload="metadata" src={src} className="mt-2 w-full" />
+        </div>
       )}
 
       {showTranscript && (

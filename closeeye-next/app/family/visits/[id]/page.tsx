@@ -96,7 +96,7 @@ export default function VisitDetailPage() {
     return (
       <div className="flex flex-col gap-6">
         {back}
-        <VisitReportExperience report={full.report} stats={full.stats} recommendations={full.recommendations} followUps={full.followUps} />
+        <VisitReportExperience report={full.report} stats={full.stats} recommendations={full.recommendations} followUps={full.followUps} pdfUrl={full.pdfUrl} delivery={full.delivery} />
       </div>
     )
   }

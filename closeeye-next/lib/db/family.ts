@@ -159,6 +159,10 @@ export interface FullVisitReport {
   stats: { arrival: string; departure: string; durationLabel: string }
   recommendations: string[]
   followUps: string[]
+  /** Signed URL for the branded PDF uploaded at completion (the one WhatsApp used). */
+  pdfUrl?: string
+  /** Delivery outcome recorded at completion — for the report's status + tracing. */
+  delivery?: { emailOk: boolean; emailReason?: string; whatsappOk: boolean }
 }
 
 const NUM_TO_MOOD: Record<number, string> = { 5: 'Cheerful', 4: 'Good', 3: 'Calm', 2: 'Low', 1: 'Low' }
@@ -278,11 +282,38 @@ export async function fetchFullVisitReport(
   }
   const intel = processVisit(obs, fallback.memberName)
 
+  // The branded PDF uploaded at completion (served instead of client-side regen)
+  // + the recorded delivery outcome (for the report status + tracing).
+  const rawDelivery = (cd.delivery ?? null) as {
+    email?: { success?: boolean; error?: string; reason?: string; skipped?: boolean } | null
+    whatsapp?: { success?: boolean; error?: string; reason?: string } | null
+    pdfPath?: string
+  } | null
+
+  let pdfUrl: string | undefined
+  if (rawDelivery?.pdfPath) {
+    const { data: s } = await supabase.storage.from('visit-pdfs').createSignedUrl(rawDelivery.pdfPath, 3600)
+    pdfUrl = s?.signedUrl ?? undefined
+  }
+
+  const delivery = rawDelivery
+    ? {
+        emailOk: rawDelivery.email?.success === true,
+        emailReason:
+          rawDelivery.email?.success === true
+            ? undefined
+            : rawDelivery.email?.error || rawDelivery.email?.reason || (rawDelivery.email == null ? 'not attempted' : 'unknown'),
+        whatsappOk: rawDelivery.whatsapp?.success === true,
+      }
+    : undefined
+
   return {
     report,
     stats: { arrival: clockLabel(checkinAt), departure: clockLabel(completedAt), durationLabel: durationLabel(durationSec) },
     recommendations: intel.recommendations,
     followUps: intel.followUps,
+    pdfUrl,
+    delivery,
   }
 }
 
