@@ -46,7 +46,7 @@ const RED_FLAGS: { category: string; patterns: RegExp[] }[] = [
   {
     category: "consciousness",
     patterns: [
-      /(passed out|fainted|unconscious|won('| ?)t wake|can('| ?)t wake|unresponsive|not responding|collapsed)/,
+      /(passed out|pass(ed|es)? out|black(ed)? out|faint(ed|ing)|unconscious|unresponsive|not responding|won('| ?)t wake|can('| ?)t wake|not waking|collaps(e|ed|es|ing))/,
       /(suddenly )?(very )?confused|doesn('| ?)t know (where|who)/,
       /seizure|convuls|fitting/,
     ],
@@ -143,7 +143,13 @@ const RED_FLAGS: { category: string; patterns: RegExp[] }[] = [
 ];
 
 function normalise(text: string): string {
-  return text.toLowerCase().replace(/\s+/g, " ").trim();
+  return text
+    .toLowerCase()
+    // iOS / smart keyboards emit curly apostrophes (’) — normalise them to a
+    // straight ' so patterns like can't / won't / doesn't match regardless.
+    .replace(/[’‘‛`´ʼ]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function detectRedFlag(rawMessage: string): RedFlagResult {
