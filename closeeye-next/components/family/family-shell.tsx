@@ -22,7 +22,7 @@ import {
 import { Logo } from '@/components/ui/logo'
 import { Avatar } from '@/components/family/avatar'
 import { Overlay } from '@/components/family/overlay'
-import { UserMenu } from '@/components/ui/user-menu'
+import { AvatarLink } from '@/components/ui/avatar-link'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { SITE } from '@/lib/site'
 import type { LovedOne } from '@/lib/db/types'
@@ -58,17 +58,6 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
   // Real notifications feed isn't wired yet — show 0 rather than a fabricated count.
   const unread = 0
 
-  const menuProps = {
-    name: identity.fullName,
-    email: identity.email,
-    avatarUrl: identity.avatarUrl,
-    initials: identity.initials,
-    roleLabel: 'Family',
-    profileHref: '/family/profile',
-    accountHref: '/settings',
-    notificationsHref: '/settings',
-  }
-
   return (
     <div className="min-h-dvh bg-ivory">
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
@@ -79,7 +68,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
           </Link>
           <div className="flex items-center gap-1">
             <BellButton count={unread} onClick={() => setNotif(true)} />
-            <UserMenu {...menuProps} />
+            <AvatarLink href="/family/profile" initials={identity.initials} avatarUrl={identity.avatarUrl} name={identity.fullName} />
           </div>
         </div>
 
@@ -130,7 +119,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
           >
             <Siren className="h-6 w-6" strokeWidth={1.5} />
           </button>
-          <UserMenu {...menuProps} />
+          <AvatarLink href="/family/profile" initials={identity.initials} avatarUrl={identity.avatarUrl} name={identity.fullName} />
         </div>
       </header>
 

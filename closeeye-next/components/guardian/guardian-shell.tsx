@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { LogoMark } from '@/components/ui/logo'
 import { Overlay } from '@/components/family/overlay'
-import { UserMenu } from '@/components/ui/user-menu'
+import { AvatarLink } from '@/components/ui/avatar-link'
 import { SyncStatus } from '@/components/guardian/sync-status'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { PRESENCE_MANAGER } from '@/lib/guardian-data'
@@ -62,17 +62,6 @@ export function GuardianShell({ children }: { children: React.ReactNode }) {
   const unread = notifs.filter((n) => !n.read).length
   const fullName = profile?.full_name?.trim() || 'Guardian'
   const firstName = fullName.split(' ')[0]
-
-  const menuProps = {
-    name: identity.isPlaceholder ? fullName : identity.fullName,
-    email: identity.email,
-    avatarUrl: identity.avatarUrl,
-    initials: identity.initials,
-    roleLabel: 'Guardian',
-    profileHref: '/guardian/profile',
-    accountHref: '/guardian/profile',
-    notificationsHref: '/guardian/profile',
-  }
 
   useEffect(() => {
     if (!userId) return
@@ -123,7 +112,7 @@ export function GuardianShell({ children }: { children: React.ReactNode }) {
             >
               <Siren className="h-5 w-5" strokeWidth={1.75} />
             </button>
-            <UserMenu {...menuProps} />
+            <AvatarLink href="/guardian/profile" initials={identity.initials} avatarUrl={identity.avatarUrl} name={identity.isPlaceholder ? fullName : identity.fullName} />
           </div>
         </div>
         {/* Sync strip */}
