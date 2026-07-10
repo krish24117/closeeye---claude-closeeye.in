@@ -9,6 +9,9 @@ export interface ServiceDetail {
   includes: string[]
   priceFrom: string
   photoDirection: string
+  /** Real photo in /public. When set, ImageFrame renders it (with the warm treatment) instead of the placeholder. */
+  image?: string
+  imageAlt?: string
 }
 
 /** The three core ways to be there — detailed for the Services page. */
@@ -46,6 +49,9 @@ export const SERVICE_DETAILS: ServiceDetail[] = [
     priceFrom: '₹2,000',
     photoDirection:
       'A Guardian beside a patient in a real hospital room, calm and attentive — natural light, hand on the rail, unhurried care.',
+    image: '/hospital.png',
+    imageAlt:
+      'A Close Eye Guardian standing attentively beside an elderly patient resting in a hospital bed, warm natural light through the window.',
   },
   {
     id: 'custom-request',
@@ -63,6 +69,9 @@ export const SERVICE_DETAILS: ServiceDetail[] = [
     priceFrom: '₹500',
     photoDirection:
       'A Guardian arriving at a family home with groceries and flowers for a festival — warm street light, a welcoming doorway.',
+    image: '/welcoming.png',
+    imageAlt:
+      'A Close Eye Guardian arriving at a festively decorated home with flowers and groceries, warmly greeted by an elderly couple at their doorway.',
   },
 ]
 

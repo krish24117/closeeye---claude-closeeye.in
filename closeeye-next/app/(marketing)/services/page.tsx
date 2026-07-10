@@ -65,6 +65,8 @@ export default function ServicesPage() {
                   <ImageFrame
                     ratio="landscape"
                     gradient
+                    src={s.image}
+                    alt={s.imageAlt}
                     direction={s.photoDirection}
                     className="shadow-md"
                   />
