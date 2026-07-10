@@ -32,6 +32,9 @@ export const SERVICE_DETAILS: ServiceDetail[] = [
     priceFrom: '₹1,000',
     photoDirection:
       'A Guardian sitting with an elderly parent at home, sharing tea and conversation — soft window light, genuine ease.',
+    image: '/home-visit.png',
+    imageAlt:
+      'A Close Eye Guardian sitting at home beside an elderly gentleman over tea, sharing a video call with family abroad — soft window light, genuine ease.',
   },
   {
     id: 'hospital-companion',
