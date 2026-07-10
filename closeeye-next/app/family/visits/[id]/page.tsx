@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, CalendarClock, FileText, Loader2, MessageCircle } from 'lucide-react'
+import { ArrowLeft, CalendarClock, FileText, Loader2, MapPin, MessageCircle } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { Button } from '@/components/ui/button'
@@ -95,6 +95,18 @@ export default function VisitDetailPage() {
   const name = visit.recipient_name?.trim() || 'Your family'
   const m = statusMeta(visit.status)
 
+  // The logistics the family provided for this visit — reviewable any time.
+  const visitDetails: [string, string | null][] = [
+    ['Address', visit.recipient_address],
+    ['Landmark', visit.visit_landmark],
+    ['Visit contact', [visit.visit_contact_name, visit.visit_contact_phone].filter(Boolean).join(' · ') || null],
+    ['Preferred time', visit.visit_time_window],
+    ['Access', visit.visit_access_instructions],
+    ['Instructions', visit.visit_special_instructions],
+    ['Notes for the team', visit.visit_team_notes],
+  ]
+  const hasVisitDetails = visitDetails.some(([, v]) => v && v.trim())
+
   // Completed — render the full Human Presence Experience from real data.
   if (full) {
     return (
@@ -120,6 +132,20 @@ export default function VisitDetailPage() {
           <p className="mt-1 text-body-sm text-muted">For {name} · {fmtDate(visit.scheduled_at)}</p>
         </div>
       </header>
+
+      {hasVisitDetails && (
+        <section className="rounded-lg border border-line/70 bg-card p-6 shadow-sm">
+          <h2 className="flex items-center gap-2 text-h4"><MapPin className="h-5 w-5 text-green" strokeWidth={1.5} /> Your visit details</h2>
+          <dl className="mt-4 divide-y divide-line">
+            {visitDetails.filter(([, v]) => v && v.trim()).map(([label, value]) => (
+              <div key={label} className="flex items-start justify-between gap-4 py-2.5">
+                <dt className="shrink-0 text-body-sm text-muted">{label}</dt>
+                <dd className="min-w-0 whitespace-pre-line text-right text-body-sm font-medium text-ink">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
 
       <section className="rounded-lg border border-line/70 bg-card p-6 shadow-sm">
         <h2 className="flex items-center gap-2 text-h4">
