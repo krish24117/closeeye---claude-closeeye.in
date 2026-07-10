@@ -144,3 +144,108 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
     revenueByCity, revenueByService, alerts,
   }
 }
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+interface NameRow { id: string; full_name: string }
+
+/* ── Finance ─────────────────────────────────────────────────────────────── */
+
+export interface AdminPayment { id: string; who: string; service: string; amount: number; date: string }
+export interface AdminFinance {
+  revenueTotal: number
+  revenueMonth: number
+  outstanding: number
+  mrr: number
+  payouts: number
+  collectionRate: number
+  trend: InsightRow[]
+  payments: AdminPayment[]
+}
+
+export async function fetchAdminFinance(): Promise<AdminFinance> {
+  const [bk, lo, sub, req] = await Promise.all([
+    supabase.from('bookings').select('id, loved_one_id, status, payment_status, amount_paise, paid_at, service_type, companion_payout_paise'),
+    supabase.from('loved_ones').select('id, full_name'),
+    supabase.from('subscriptions').select('plan_id, status'),
+    supabase.from('booking_requests').select('payment_status, amount_paise'),
+  ])
+  const bookings = (bk.data as (BookingRow & { companion_payout_paise: number | null })[] | null) ?? []
+  const nameById = new Map(((lo.data as NameRow[] | null) ?? []).map((l) => [l.id, l.full_name]))
+  const subs = (sub.data as { plan_id: string; status: string }[] | null) ?? []
+  const reqs = (req.data as ReqRow[] | null) ?? []
+  const rupees = (p: number) => Math.round(p / 100)
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+
+  const paid = bookings.filter((b) => b.payment_status === 'paid' && (b.amount_paise ?? 0) > 0)
+  const revenueTotal = rupees(paid.reduce((s, b) => s + (b.amount_paise ?? 0), 0))
+  const revenueMonth = rupees(paid.filter((b) => b.paid_at && new Date(b.paid_at).getTime() >= monthStart).reduce((s, b) => s + (b.amount_paise ?? 0), 0))
+  const outstanding = rupees(reqs.filter((r) => r.payment_status !== 'paid').reduce((s, r) => s + (r.amount_paise ?? 0), 0))
+  const mrr = subs.filter((s) => s.status === 'active').reduce((sum, s) => sum + (PLAN_PRICE[s.plan_id] ?? 0), 0)
+  const payouts = rupees(bookings.reduce((s, b) => s + (b.companion_payout_paise ?? 0), 0))
+  const collectionRate = revenueTotal + outstanding > 0 ? Math.round((revenueTotal / (revenueTotal + outstanding)) * 100) : 100
+
+  const trend: InsightRow[] = []
+  for (let i = 5; i >= 0; i--) {
+    const dt = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const start = dt.getTime()
+    const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1).getTime()
+    const rev = rupees(paid.filter((b) => b.paid_at && new Date(b.paid_at).getTime() >= start && new Date(b.paid_at).getTime() < end).reduce((s, b) => s + (b.amount_paise ?? 0), 0))
+    trend.push({ label: MONTHS[dt.getMonth()] as string, value: rev })
+  }
+
+  const payments: AdminPayment[] = paid
+    .filter((b) => b.paid_at)
+    .sort((a, b) => (b.paid_at ?? '').localeCompare(a.paid_at ?? ''))
+    .slice(0, 12)
+    .map((b) => ({ id: b.id.slice(0, 8), who: (b.loved_one_id ? nameById.get(b.loved_one_id) : null) ?? 'A family', service: serviceLabel(b.service_type), amount: rupees(b.amount_paise ?? 0), date: b.paid_at ? new Date(b.paid_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '' }))
+
+  return { revenueTotal, revenueMonth, outstanding, mrr, payouts, collectionRate, trend, payments }
+}
+
+/* ── Bookings analytics ──────────────────────────────────────────────────── */
+
+const BK_STATUS_LABEL: Record<string, string> = {
+  completed: 'Completed', cancelled: 'Cancelled', in_progress: 'In progress', on_the_way: 'En route',
+  companion_assigned: 'Assigned', confirmed: 'Confirmed', scheduled: 'Scheduled', paid: 'Paid',
+}
+
+export interface AdminBookings {
+  total: number
+  completed: number
+  cancelled: number
+  active: number
+  completionRate: number
+  conversionRate: number
+  byStatus: InsightRow[]
+  recent: { id: string; who: string; service: string; status: string; date: string }[]
+}
+
+export async function fetchAdminBookings(): Promise<AdminBookings> {
+  const [bk, lo, req] = await Promise.all([
+    supabase.from('bookings').select('id, loved_one_id, status, scheduled_at, service_type'),
+    supabase.from('loved_ones').select('id, full_name'),
+    supabase.from('booking_requests').select('status'),
+  ])
+  const bookings = (bk.data as { id: string; loved_one_id: string | null; status: string; scheduled_at: string | null; service_type: string | null }[] | null) ?? []
+  const nameById = new Map(((lo.data as NameRow[] | null) ?? []).map((l) => [l.id, l.full_name]))
+  const reqs = (req.data as { status: string }[] | null) ?? []
+
+  const total = bookings.length
+  const completed = bookings.filter((b) => b.status === 'completed').length
+  const cancelled = bookings.filter((b) => b.status === 'cancelled').length
+  const active = total - completed - cancelled
+  const completionRate = completed + cancelled > 0 ? Math.round((completed / (completed + cancelled)) * 100) : 0
+  const conversionRate = reqs.length > 0 ? Math.round((reqs.filter((r) => r.status === 'paid').length / reqs.length) * 100) : 0
+
+  const statusMap = new Map<string, number>()
+  bookings.forEach((b) => { const l = BK_STATUS_LABEL[b.status] ?? b.status; statusMap.set(l, (statusMap.get(l) ?? 0) + 1) })
+  const byStatus = Array.from(statusMap.entries()).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value)
+
+  const recent = [...bookings]
+    .sort((a, b) => (b.scheduled_at ?? '').localeCompare(a.scheduled_at ?? ''))
+    .slice(0, 12)
+    .map((b) => ({ id: b.id.slice(0, 8), who: (b.loved_one_id ? nameById.get(b.loved_one_id) : null) ?? 'A family', service: serviceLabel(b.service_type), status: BK_STATUS_LABEL[b.status] ?? b.status, date: b.scheduled_at ? new Date(b.scheduled_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '' }))
+
+  return { total, completed, cancelled, active, completionRate, conversionRate, byStatus, recent }
+}
