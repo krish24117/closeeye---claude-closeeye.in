@@ -1,112 +1,174 @@
+'use client'
+
+import * as React from 'react'
 import Link from 'next/link'
-import { Sparkles, TrendingUp, MapPin, ShieldCheck, Users, ArrowRight } from 'lucide-react'
-import { KpiTile } from '@/components/admin/kpi-tile'
-import { AlertCard } from '@/components/admin/alert-card'
-import { InsightBars } from '@/components/admin/insight-bars'
-import { AIRecommendationCard } from '@/components/console/ai-recommendation'
-import {
-  ADMIN, KPI_FINANCE, KPI_OPERATIONS, KPI_GROWTH, ALERTS, AI_BUSINESS, fmtINR,
-  REVENUE_BY_CITY, REVENUE_BY_SERVICE, REVENUE_BY_MEMBERSHIP, REVENUE_BY_GUARDIAN, REVENUE_BY_COMPANION, INSIGHT_HIGHLIGHTS,
-} from '@/lib/admin-data'
+import { Loader2, Lock, ArrowRight, TriangleAlert, Info, CheckCircle2 } from 'lucide-react'
+import { EmptyState } from '@/components/ui/states'
+import { useFamilyData } from '@/components/family/family-data-provider'
+import { fetchAdminOverview, type AdminOverview, type InsightRow } from '@/lib/db/admin'
+import { fmtINR } from '@/lib/admin-data'
+import { isSuperAdmin } from '@/lib/roles'
+import { cn } from '@/lib/utils'
 
-function Panel({ title, children, cta }: { title: string; children: React.ReactNode; cta?: { label: string; href: string } }) {
+function Tile({ label, value, tone = 'ink' }: { label: string; value: string; tone?: 'ink' | 'green' | 'warning' }) {
+  const color = tone === 'green' ? 'text-green' : tone === 'warning' ? 'text-warning' : 'text-ink'
   return (
-    <section className="rounded-lg border border-line bg-card p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-h4">{title}</h2>
-        {cta && <Link href={cta.href} className="inline-flex items-center gap-1 text-caption font-semibold text-green hover:underline">{cta.label} <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>}
-      </div>
-      {children}
-    </section>
-  )
-}
-
-export default function AdminDashboard() {
-  return (
-    <div className="flex flex-col gap-8">
-      {/* Hero */}
-      <div>
-        <h1 className="text-h2">Good morning, {ADMIN.firstName}.</h1>
-        <p className="mt-1.5 text-body leading-relaxed text-muted">
-          Revenue is up <span className="font-semibold text-success">15%</span> this month · <span className="font-semibold text-ink">184 active families</span> · 2 things need your attention today.
-        </p>
-      </div>
-
-      {/* Financial KPIs */}
-      <section>
-        <p className="mb-3 text-caption font-semibold uppercase tracking-widest text-muted">Financial</p>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {KPI_FINANCE.map((k) => <KpiTile key={k.key} kpi={k} />)}
-        </div>
-      </section>
-
-      {/* Operational + Growth KPIs */}
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <section>
-          <p className="mb-3 text-caption font-semibold uppercase tracking-widest text-muted">Operational</p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {KPI_OPERATIONS.map((k) => <KpiTile key={k.key} kpi={k} />)}
-          </div>
-        </section>
-        <section>
-          <p className="mb-3 text-caption font-semibold uppercase tracking-widest text-muted">Growth</p>
-          <div className="grid grid-cols-3 gap-3">
-            {KPI_GROWTH.map((k) => <KpiTile key={k.key} kpi={k} />)}
-          </div>
-        </section>
-      </div>
-
-      {/* Attention Center + AI Assistant */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <h2 className="mb-3 text-h4">Attention center</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {ALERTS.map((a) => <AlertCard key={a.id} alert={a} />)}
-          </div>
-        </div>
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-h4"><Sparkles className="h-5 w-5 text-green" strokeWidth={1.75} /> Business assistant</h2>
-            <Link href="/admin/insights" className="inline-flex items-center gap-1 text-caption font-semibold text-green hover:underline">All insights <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>
-          </div>
-          <div className="flex flex-col gap-2.5">
-            {AI_BUSINESS.map((r) => <AIRecommendationCard key={r.id} rec={r} />)}
-          </div>
-        </div>
-      </div>
-
-      {/* Business Insights */}
-      <section>
-        <h2 className="mb-3 text-h4">Business insights</h2>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <Panel title="Revenue by city" cta={{ label: 'Finance', href: '/admin/finance' }}><InsightBars rows={REVENUE_BY_CITY} format={(n) => fmtINR(n)} /></Panel>
-          <Panel title="Revenue by service"><InsightBars rows={REVENUE_BY_SERVICE} format={(n) => fmtINR(n)} /></Panel>
-          <Panel title="Revenue by membership"><InsightBars rows={REVENUE_BY_MEMBERSHIP} format={(n) => fmtINR(n)} /></Panel>
-          <Panel title="Revenue by Guardian" cta={{ label: 'Care Team', href: '/admin/care-team' }}><InsightBars rows={REVENUE_BY_GUARDIAN} format={(n) => fmtINR(n)} /></Panel>
-          <Panel title="Revenue by Companion"><InsightBars rows={REVENUE_BY_COMPANION} format={(n) => fmtINR(n)} /></Panel>
-          <Panel title="Highlights">
-            <ul className="flex flex-col gap-3">
-              <Highlight icon={TrendingUp} tone="text-success" label="Fastest growing" value={INSIGHT_HIGHLIGHTS.fastestGrowingService.label} detail={INSIGHT_HIGHLIGHTS.fastestGrowingService.detail} />
-              <Highlight icon={MapPin} tone="text-warning" label="Lowest performing city" value={INSIGHT_HIGHLIGHTS.lowestCity.label} detail={INSIGHT_HIGHLIGHTS.lowestCity.detail} />
-              <Highlight icon={ShieldCheck} tone="text-green" label="Top Guardian" value={INSIGHT_HIGHLIGHTS.topGuardian.label} detail={INSIGHT_HIGHLIGHTS.topGuardian.detail} />
-              <Highlight icon={Users} tone="text-green" label="Top Companion" value={INSIGHT_HIGHLIGHTS.topCompanion.label} detail={INSIGHT_HIGHLIGHTS.topCompanion.detail} />
-            </ul>
-          </Panel>
-        </div>
-      </section>
+    <div className="rounded-lg border border-line bg-card p-4 shadow-sm">
+      <p className={cn('text-h3 leading-none', color)}>{value}</p>
+      <p className="mt-2 text-caption font-medium text-muted">{label}</p>
     </div>
   )
 }
 
-function Highlight({ icon: Icon, tone, label, value, detail }: { icon: typeof TrendingUp; tone: string; label: string; value: string; detail: string }) {
+function Bars({ rows }: { rows: InsightRow[] }) {
+  const max = Math.max(1, ...rows.map((r) => r.value))
+  if (rows.length === 0) return <p className="text-body-sm text-muted">No revenue recorded yet.</p>
   return (
-    <li className="flex items-start gap-3">
-      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft"><Icon className={`h-4 w-4 ${tone}`} strokeWidth={1.75} /></span>
-      <div className="min-w-0">
-        <p className="text-caption text-muted">{label}</p>
-        <p className="text-body-sm font-semibold text-ink">{value}</p>
-        <p className="text-caption text-muted">{detail}</p>
+    <div className="flex flex-col gap-3">
+      {rows.map((r) => (
+        <div key={r.label}>
+          <div className="flex items-center justify-between text-body-sm">
+            <span className="truncate font-medium text-ink">{r.label}</span>
+            <span className="shrink-0 font-semibold text-ink">{fmtINR(r.value)}</span>
+          </div>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-accent-soft">
+            <div className="h-full rounded-full bg-green" style={{ width: `${(r.value / max) * 100}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export default function AdminDashboard() {
+  const { profile, loading } = useFamilyData()
+  const isAdmin = isSuperAdmin(profile)
+  const [d, setD] = React.useState<AdminOverview | null>(null)
+  const [part, setPart] = React.useState('Hello')
+
+  React.useEffect(() => {
+    const h = new Date().getHours()
+    setPart(h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening')
+  }, [])
+  React.useEffect(() => {
+    if (!isAdmin) return
+    fetchAdminOverview()
+      .then(setD)
+      .catch(() => setD(null))
+  }, [isAdmin])
+
+  const first = profile?.full_name?.trim().split(/\s+/)[0] ?? 'there'
+
+  if (loading) {
+    return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
+  }
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-h2">Operations</h1>
+        <EmptyState icon={Lock} title="Restricted" hint="The founder console is only available to administrators." />
       </div>
-    </li>
+    )
+  }
+  if (d === null) {
+    return (
+      <div className="flex flex-col gap-8">
+        <h1 className="text-h2">{part}, {first}.</h1>
+        <div className="grid place-items-center rounded-lg border border-line bg-card py-20 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
+      </div>
+    )
+  }
+
+  const finance: { label: string; value: string; tone?: 'ink' | 'green' | 'warning' }[] = [
+    { label: 'Revenue this month', value: fmtINR(d.revenueMonth), tone: 'green' },
+    { label: 'Total revenue', value: fmtINR(d.revenueTotal) },
+    { label: 'MRR', value: fmtINR(d.mrr), tone: 'green' },
+    { label: 'Outstanding', value: fmtINR(d.outstanding), tone: d.outstanding > 0 ? 'warning' : 'ink' },
+  ]
+  const operational = [
+    { label: 'Active families', value: String(d.families) },
+    { label: 'Care Team', value: String(d.careTeam) },
+    { label: 'Bookings this month', value: String(d.bookingsMonth) },
+    { label: 'Completed', value: String(d.completedMonth) },
+    { label: 'Cancelled', value: String(d.cancelledMonth) },
+    { label: 'Presence today', value: String(d.presenceToday) },
+  ]
+  const growth: { label: string; value: string; tone?: 'ink' | 'green' | 'warning' }[] = [
+    { label: 'New families this month', value: String(d.newFamiliesMonth), tone: 'green' },
+    { label: 'Active subscriptions', value: String(d.activeSubs) },
+    { label: 'Active memberships', value: String(d.activeMemberships) },
+    { label: 'Applications to review', value: String(d.pendingApplications), tone: d.pendingApplications > 0 ? 'warning' : 'ink' },
+  ]
+
+  return (
+    <div className="flex flex-col gap-8">
+      <div>
+        <h1 className="text-h2">{part}, {first}.</h1>
+        <p className="mt-1.5 text-body leading-relaxed text-muted">
+          <span className="font-semibold text-success">{fmtINR(d.revenueMonth)}</span> this month · <span className="font-semibold text-ink">{d.families} active families</span>
+          {d.alerts.length > 0 ? <> · <span className="font-semibold text-warning">{d.alerts.length} thing{d.alerts.length > 1 ? 's' : ''} need your attention</span></> : ' · all clear today'}.
+        </p>
+      </div>
+
+      <section>
+        <p className="mb-3 text-caption font-semibold uppercase tracking-widest text-muted">Financial</p>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{finance.map((k) => <Tile key={k.label} {...k} />)}</div>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <section>
+          <p className="mb-3 text-caption font-semibold uppercase tracking-widest text-muted">Operational</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{operational.map((k) => <Tile key={k.label} {...k} />)}</div>
+        </section>
+        <section>
+          <p className="mb-3 text-caption font-semibold uppercase tracking-widest text-muted">Growth</p>
+          <div className="grid grid-cols-2 gap-3">{growth.map((k) => <Tile key={k.label} {...k} />)}</div>
+        </section>
+      </div>
+
+      <section>
+        <h2 className="mb-3 text-h4">Attention center</h2>
+        {d.alerts.length === 0 ? (
+          <div className="flex items-center gap-3 rounded-lg border border-line bg-card p-5 shadow-sm">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-success/12 text-success"><CheckCircle2 className="h-5 w-5" strokeWidth={1.75} /></span>
+            <p className="text-body-sm text-ink">Nothing needs your attention right now. The business is running smoothly.</p>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {d.alerts.map((a) => {
+              const warn = a.tone === 'warning'
+              const Icon = warn ? TriangleAlert : Info
+              return (
+                <Link key={a.id} href={a.href} className={cn('flex items-start gap-3 rounded-lg border bg-card p-4 shadow-sm transition-colors', warn ? 'border-warning/30 hover:bg-warning/[0.04]' : 'border-line hover:bg-accent-soft/30')}>
+                  <span className={cn('mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full', warn ? 'bg-warning/12 text-warning' : 'bg-accent-soft text-green')}><Icon className="h-5 w-5" strokeWidth={1.75} /></span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-body-sm font-bold text-ink">{a.title}</p>
+                    <p className="mt-0.5 text-caption text-muted">{a.detail}</p>
+                    <span className="mt-1.5 inline-flex items-center gap-1 text-caption font-bold text-green">Review <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></span>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-h4">Business insights</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-lg border border-line bg-card p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-h4">Revenue by city</h3>
+              <Link href="/admin/finance" className="inline-flex items-center gap-1 text-caption font-semibold text-green hover:underline">Finance <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>
+            </div>
+            <Bars rows={d.revenueByCity} />
+          </div>
+          <div className="rounded-lg border border-line bg-card p-5 shadow-sm">
+            <h3 className="mb-4 text-h4">Revenue by service</h3>
+            <Bars rows={d.revenueByService} />
+          </div>
+        </div>
+      </section>
+    </div>
   )
 }
