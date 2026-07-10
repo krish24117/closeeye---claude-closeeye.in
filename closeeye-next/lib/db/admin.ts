@@ -523,3 +523,90 @@ export async function fetchAdminAudit(limit = 100): Promise<AdminAuditEntry[]> {
     }
   })
 }
+
+/* ── Leads / pipeline ────────────────────────────────────────────────────── */
+
+export type LeadSource = 'waitlist' | 'consultation' | 'custom_care' | 'survey'
+
+export interface AdminLead {
+  id: string
+  source: LeadSource
+  sourceLabel: string
+  name: string
+  email: string | null
+  phone: string | null
+  city: string | null
+  detail: string
+  status: string | null
+  createdAt: string
+  at: string
+}
+
+const SOURCE_LABEL: Record<LeadSource, string> = {
+  waitlist: 'Waitlist',
+  consultation: 'Consultation',
+  custom_care: 'Custom care',
+  survey: 'Survey',
+}
+
+function fmtDay(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+interface WlRow { id: string; full_name: string | null; email: string | null; whatsapp_number: string | null; loved_one_city: string | null; urgency: string | null; support_needed: string | null; status: string | null; created_at: string }
+interface ConsRow { id: string; full_name: string | null; email: string | null; whatsapp_number: string | null; parent_city: string | null; best_time: string | null; note: string | null; status: string | null; created_at: string }
+interface CcRow { id: string; full_name: string | null; email: string | null; whatsapp_number: string | null; parent_city: string | null; care_types: string[] | null; situation: string | null; urgency: string | null; budget_range: string | null; status: string | null; created_at: string }
+interface SvRow { id: string; name: string | null; email: string | null; whatsapp: string | null; parent_city: string | null; q3_worries: string[] | null; status: string | null; created_at: string }
+
+/**
+ * The real sales pipeline — everyone who raised their hand — merged from the
+ * populated intent tables (waitlist / consultation_requests / custom_care_requests
+ * / survey_responses), each already admin-readable. Newest first. (The dedicated
+ * `leads` table is unused — nothing writes to it — so we surface real intent.)
+ */
+export async function fetchAdminLeads(limit = 200): Promise<AdminLead[]> {
+  const [wl, cons, cc, sv] = await Promise.all([
+    supabase.from('waitlist').select('id, full_name, email, whatsapp_number, loved_one_city, urgency, support_needed, status, created_at').order('created_at', { ascending: false }).limit(limit),
+    supabase.from('consultation_requests').select('id, full_name, email, whatsapp_number, parent_city, best_time, note, status, created_at').order('created_at', { ascending: false }).limit(limit),
+    supabase.from('custom_care_requests').select('id, full_name, email, whatsapp_number, parent_city, care_types, situation, urgency, budget_range, status, created_at').order('created_at', { ascending: false }).limit(limit),
+    supabase.from('survey_responses').select('id, name, email, whatsapp, parent_city, q3_worries, status, created_at').order('created_at', { ascending: false }).limit(limit),
+  ])
+
+  const leads: AdminLead[] = []
+
+  for (const r of (wl.data as WlRow[] | null) ?? []) {
+    leads.push({
+      id: `wl-${r.id}`, source: 'waitlist', sourceLabel: SOURCE_LABEL.waitlist,
+      name: r.full_name ?? 'Someone', email: r.email, phone: r.whatsapp_number, city: r.loved_one_city,
+      detail: r.support_needed?.trim() || (r.urgency ? `Urgency: ${r.urgency}` : 'Waitlist signup'),
+      status: r.status, createdAt: r.created_at, at: fmtDay(r.created_at),
+    })
+  }
+  for (const r of (cons.data as ConsRow[] | null) ?? []) {
+    leads.push({
+      id: `cons-${r.id}`, source: 'consultation', sourceLabel: SOURCE_LABEL.consultation,
+      name: r.full_name ?? 'Someone', email: r.email, phone: r.whatsapp_number, city: r.parent_city,
+      detail: r.note?.trim() || (r.best_time ? `Prefers ${r.best_time}` : 'Consultation request'),
+      status: r.status, createdAt: r.created_at, at: fmtDay(r.created_at),
+    })
+  }
+  for (const r of (cc.data as CcRow[] | null) ?? []) {
+    const bits = [r.care_types?.length ? r.care_types.join(', ') : null, r.urgency, r.budget_range].filter(Boolean).join(' · ')
+    leads.push({
+      id: `cc-${r.id}`, source: 'custom_care', sourceLabel: SOURCE_LABEL.custom_care,
+      name: r.full_name ?? 'Someone', email: r.email, phone: r.whatsapp_number, city: r.parent_city,
+      detail: bits || r.situation?.trim() || 'Custom care enquiry',
+      status: r.status, createdAt: r.created_at, at: fmtDay(r.created_at),
+    })
+  }
+  for (const r of (sv.data as SvRow[] | null) ?? []) {
+    leads.push({
+      id: `sv-${r.id}`, source: 'survey', sourceLabel: SOURCE_LABEL.survey,
+      name: r.name ?? 'Someone', email: r.email, phone: r.whatsapp, city: r.parent_city,
+      detail: r.q3_worries?.length ? r.q3_worries.join(', ') : 'Survey response',
+      status: r.status, createdAt: r.created_at, at: fmtDay(r.created_at),
+    })
+  }
+
+  return leads.sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+}
