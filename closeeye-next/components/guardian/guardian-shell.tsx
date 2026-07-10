@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -20,6 +20,7 @@ import { Overlay } from '@/components/family/overlay'
 import { SyncStatus } from '@/components/guardian/sync-status'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { PRESENCE_MANAGER } from '@/lib/guardian-data'
+import { fetchNotifications, markAllNotificationsRead, type AppNotification } from '@/lib/db/notifications'
 import { cn } from '@/lib/utils'
 
 const NAV = [
@@ -29,14 +30,52 @@ const NAV = [
   { href: '/guardian/profile', label: 'Profile', icon: User, match: (p: string) => p.startsWith('/guardian/profile') },
 ]
 
+function NotifIcon({ type }: { type: string }) {
+  const Icon =
+    type === 'companion_assigned' || type === 'booking_confirmed' ? CalendarDays
+    : type === 'visit_started' || type === 'report_ready' ? CircleCheckBig
+    : type === 'emergency_alert' ? Siren
+    : Bell
+  return <Icon className="h-4 w-4" strokeWidth={1.75} />
+}
+
+function timeAgo(iso: string): string {
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+  if (m < 1) return 'Just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  const d = Math.floor(h / 24)
+  if (d < 7) return `${d}d ago`
+  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+}
+
 export function GuardianShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { profile } = useFamilyData()
   const [sos, setSos] = useState(false)
   const [notif, setNotif] = useState(false)
+  const [notifs, setNotifs] = useState<AppNotification[]>([])
 
+  const userId = profile?.id
+  const unread = notifs.filter((n) => !n.read).length
   const fullName = profile?.full_name?.trim() || 'Guardian'
   const firstName = fullName.split(' ')[0]
+
+  useEffect(() => {
+    if (!userId) return
+    let live = true
+    void fetchNotifications(userId).then((rows) => { if (live) setNotifs(rows) }).catch(() => {})
+    return () => { live = false }
+  }, [userId])
+
+  function openNotifs() {
+    setNotif(true)
+    if (userId && unread > 0) {
+      void markAllNotificationsRead(userId).catch(() => {})
+      setNotifs((prev) => prev.map((n) => ({ ...n, read: true })))
+    }
+  }
 
   return (
     <div className="min-h-dvh bg-ivory">
@@ -53,11 +92,16 @@ export function GuardianShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => setNotif(true)}
-              aria-label="Notifications"
+              onClick={openNotifs}
+              aria-label={unread > 0 ? `Notifications (${unread} unread)` : 'Notifications'}
               className="relative grid h-11 w-11 place-items-center rounded-full text-ink transition-colors hover:bg-accent-soft"
             >
               <Bell className="h-5 w-5" strokeWidth={1.75} />
+              {unread > 0 && (
+                <span className="absolute right-1.5 top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-error px-1 text-[0.6rem] font-bold text-ivory ring-2 ring-ivory">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              )}
             </button>
             <button
               type="button"
@@ -113,11 +157,28 @@ export function GuardianShell({ children }: { children: React.ReactNode }) {
             <X className="h-5 w-5" strokeWidth={1.5} />
           </button>
         </div>
-        <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-          <span className="grid h-14 w-14 place-items-center rounded-full bg-accent-soft text-green"><BellOff className="h-6 w-6" strokeWidth={1.5} /></span>
-          <p className="text-body-sm font-semibold text-ink">You&apos;re all caught up</p>
-          <p className="max-w-xs text-body-sm text-muted">Care requests from families and schedule updates from your Presence Manager will appear here.</p>
-        </div>
+        {notifs.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+            <span className="grid h-14 w-14 place-items-center rounded-full bg-accent-soft text-green"><BellOff className="h-6 w-6" strokeWidth={1.5} /></span>
+            <p className="text-body-sm font-semibold text-ink">You&apos;re all caught up</p>
+            <p className="max-w-xs text-body-sm text-muted">New visit assignments and updates from your Presence Manager will appear here.</p>
+          </div>
+        ) : (
+          <ul className="max-h-[70vh] overflow-y-auto">
+            {notifs.map((n) => (
+              <li key={n.id} className="flex gap-3 border-b border-line px-6 py-3.5 last:border-b-0">
+                <span className={cn('mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full', n.type === 'emergency_alert' ? 'bg-error/12 text-error' : 'bg-accent-soft text-green')}>
+                  <NotifIcon type={n.type} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-body-sm font-semibold text-ink">{n.title}</p>
+                  {n.message && <p className="mt-0.5 text-body-sm leading-relaxed text-muted">{n.message}</p>}
+                  <p className="mt-1 text-caption text-muted">{timeAgo(n.created_at)}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </Overlay>
 
       {/* Emergency */}
