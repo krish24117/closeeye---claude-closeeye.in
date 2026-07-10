@@ -129,7 +129,7 @@ export default function ServicesPage() {
           title="The on-demand menu"
           intro="Pay for a single visit, or ask your Presence Manager about ongoing care. No subscriptions required."
         />
-        <Reveal className="mx-auto mt-14 max-w-3xl overflow-hidden rounded-xl border border-line bg-card shadow-sm">
+        <Reveal className="mx-auto mt-14 max-w-3xl overflow-hidden rounded-xl border border-line/70 bg-card shadow-md">
           {SERVICE_MENU.map((item, i) => (
             <div
               key={item.name}

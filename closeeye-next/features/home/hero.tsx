@@ -21,7 +21,7 @@ export function Hero() {
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <motion.span
             {...rise(0)}
-            className="inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-1.5 text-caption font-medium text-green shadow-sm"
+            className="inline-flex items-center gap-2 rounded-full border border-line/70 bg-card px-4 py-1.5 text-caption font-medium text-green shadow-sm"
           >
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/60" />

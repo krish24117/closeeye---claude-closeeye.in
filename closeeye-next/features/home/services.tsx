@@ -17,7 +17,7 @@ export function Services() {
 
       {/* One unified panel divided into three — reads as a single component. */}
       <Reveal className="mt-14">
-        <Stagger className="grid overflow-hidden rounded-xl border border-line bg-card shadow-sm md:grid-cols-3">
+        <Stagger className="grid overflow-hidden rounded-xl border border-line/70 bg-card shadow-md md:grid-cols-3">
           {SERVICES.map((service) => (
             <StaggerItem
               key={service.id}

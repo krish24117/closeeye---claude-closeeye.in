@@ -154,15 +154,15 @@ export default function DesignSystemPage() {
       <Row title="Radius, shadow & motion" note="One elevation language. Motion: ease-premium, ≤24px travel, reduced-motion safe.">
         <div className="flex flex-wrap gap-5">
           <div className="flex flex-col items-center gap-2">
-            <div className="h-20 w-20 rounded-md border border-line bg-card" />
+            <div className="h-20 w-20 rounded-md border border-line/70 bg-card" />
             <span className="text-caption text-muted">radius-md · 14px</span>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <div className="h-20 w-20 rounded-lg border border-line bg-card shadow-md" />
+            <div className="h-20 w-20 rounded-lg border border-line/70 bg-card shadow-md" />
             <span className="text-caption text-muted">shadow-md</span>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <div className="h-20 w-20 rounded-xl border border-line bg-card shadow-lg" />
+            <div className="h-20 w-20 rounded-xl border border-line/70 bg-card shadow-lg" />
             <span className="text-caption text-muted">shadow-lg</span>
           </div>
         </div>

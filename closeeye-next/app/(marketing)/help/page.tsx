@@ -48,7 +48,7 @@ export default function HelpPage() {
         <h2 className="text-h3">Frequently asked</h2>
         <div className="mt-6 flex flex-col gap-3">
           {FAQ.map((f) => (
-            <details key={f.q} className="group rounded-lg border border-line bg-card p-5 shadow-sm">
+            <details key={f.q} className="group rounded-lg border border-line/70 bg-card p-5 shadow-sm">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-h4 text-ink">
                 {f.q}
                 <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-line text-muted transition-transform group-open:rotate-45">+</span>

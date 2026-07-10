@@ -31,7 +31,7 @@ export function CompanionApplication() {
 
   if (done) {
     return (
-      <div className="rounded-lg border border-line bg-card p-8 text-center shadow-sm">
+      <div className="rounded-lg border border-line/70 bg-card p-8 text-center shadow-sm">
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-green">
           <Heart className="h-8 w-8" strokeWidth={1.5} />
         </span>
@@ -44,7 +44,7 @@ export function CompanionApplication() {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-lg border border-line bg-card p-6 shadow-sm sm:p-8">
+    <form onSubmit={submit} className="rounded-lg border border-line/70 bg-card p-6 shadow-sm sm:p-8">
       <h3 className="text-h3 text-ink">Apply to become a Companion</h3>
       <p className="mt-1.5 text-body-sm text-muted">A few details to get started. No experience needed — just warmth.</p>
 

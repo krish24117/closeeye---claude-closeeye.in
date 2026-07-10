@@ -42,7 +42,7 @@ export default function BecomeGuardianPage() {
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             {['Verified & trained', 'GPS-verified visits', 'Fair, on-time pay', 'Flexible hours', 'Work close to home'].map((s) => (
-              <span key={s} className="rounded-full border border-line bg-card px-3.5 py-1.5 text-caption font-medium text-muted">{s}</span>
+              <span key={s} className="rounded-full border border-line/70 bg-card px-3.5 py-1.5 text-caption font-medium text-muted">{s}</span>
             ))}
           </div>
         </div>
@@ -87,7 +87,7 @@ export default function BecomeGuardianPage() {
             </ul>
           </div>
 
-          <div className="rounded-xl border border-line bg-card p-8 shadow-sm">
+          <div className="rounded-xl border border-line/70 bg-card p-8 shadow-sm">
             <h3 className="text-h3 text-ink">Ready to apply?</h3>
             <p className="mt-3 text-body leading-relaxed text-muted">
               Start with a quick message and our team will guide you through verification and the

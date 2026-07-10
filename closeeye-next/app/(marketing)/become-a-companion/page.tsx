@@ -32,7 +32,7 @@ export default function BecomeCompanionPage() {
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             {['Conversation', 'Walks together', 'Reading', 'Hospital company', 'Shopping help'].map((s) => (
-              <span key={s} className="rounded-full border border-line bg-card px-3.5 py-1.5 text-caption font-medium text-muted">{s}</span>
+              <span key={s} className="rounded-full border border-line/70 bg-card px-3.5 py-1.5 text-caption font-medium text-muted">{s}</span>
             ))}
           </div>
         </div>

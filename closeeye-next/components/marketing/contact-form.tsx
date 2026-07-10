@@ -30,7 +30,7 @@ export function ContactForm() {
 
   if (done) {
     return (
-      <div className="rounded-lg border border-line bg-card p-8 text-center shadow-sm">
+      <div className="rounded-lg border border-line/70 bg-card p-8 text-center shadow-sm">
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-green">
           <MessageCircle className="h-8 w-8" strokeWidth={1.5} />
         </span>
@@ -45,7 +45,7 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-lg border border-line bg-card p-6 shadow-sm sm:p-8">
+    <form onSubmit={submit} className="rounded-lg border border-line/70 bg-card p-6 shadow-sm sm:p-8">
       <h2 className="text-h3 text-ink">Send us a message</h2>
       <p className="mt-1.5 text-body-sm text-muted">A real person reads every message. We usually reply the same day.</p>
 

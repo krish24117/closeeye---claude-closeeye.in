@@ -29,7 +29,7 @@ export function TrustSafety({ id = 'trust-safety' }: { id?: string }) {
 
       <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {CARDS.map((c) => (
-          <li key={c.title} className="rounded-lg border border-line bg-card p-6 shadow-sm">
+          <li key={c.title} className="rounded-lg border border-line/70 bg-card p-6 shadow-sm">
             <FeatureIcon icon={c.icon} size="sm" />
             <h3 className="mt-4 text-body font-semibold text-ink">{c.title}</h3>
             <p className="mt-1.5 text-body-sm leading-relaxed text-muted">{c.desc}</p>

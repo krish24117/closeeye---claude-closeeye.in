@@ -45,7 +45,7 @@ export default function MembershipPage() {
             </p>
           </div>
 
-          <aside className="rounded-xl border border-line bg-card p-8 shadow-sm">
+          <aside className="rounded-xl border border-line/70 bg-card p-8 shadow-sm">
             <p className="text-caption uppercase tracking-widest text-green">
               What every membership includes
             </p>

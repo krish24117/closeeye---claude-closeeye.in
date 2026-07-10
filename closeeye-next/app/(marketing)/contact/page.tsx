@@ -40,7 +40,7 @@ export default function ContactPage() {
                 key={m.label}
                 href={m.href}
                 {...(m.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                className="group flex items-center gap-4 rounded-lg border border-line bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-md"
+                className="group flex items-center gap-4 rounded-lg border border-line/70 bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-md"
               >
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><Icon className="h-5 w-5" strokeWidth={1.5} /></span>
                 <span>
@@ -52,7 +52,7 @@ export default function ContactPage() {
           })}
 
           {/* Address + hours */}
-          <div className="rounded-lg border border-line bg-card p-5 shadow-sm">
+          <div className="rounded-lg border border-line/70 bg-card p-5 shadow-sm">
             {SITE.address ? (
               <div className="flex items-start gap-4">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><MapPin className="h-5 w-5" strokeWidth={1.5} /></span>

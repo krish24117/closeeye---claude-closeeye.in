@@ -42,7 +42,7 @@ export default function AboutPage() {
           {PILLARS.map((p) => {
             const Icon = p.icon
             return (
-              <div key={p.h} className="rounded-lg border border-line bg-card p-6 shadow-sm">
+              <div key={p.h} className="rounded-lg border border-line/70 bg-card p-6 shadow-sm">
                 <span className="grid h-11 w-11 place-items-center rounded-full bg-accent-soft text-green"><Icon className="h-5 w-5" strokeWidth={1.5} /></span>
                 <h2 className="mt-4 text-h3">{p.h}</h2>
                 <p className="mt-2 text-body leading-relaxed text-muted">{p.p}</p>
@@ -66,7 +66,7 @@ export default function AboutPage() {
         <h2 className="text-h2">Join us, or say hello</h2>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {JOIN.map((j) => (
-            <Link key={j.href} href={j.href} className="group flex items-center justify-between gap-3 rounded-lg border border-line bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-md">
+            <Link key={j.href} href={j.href} className="group flex items-center justify-between gap-3 rounded-lg border border-line/70 bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-md">
               <span><span className="block text-h4 text-ink">{j.h}</span><span className="block text-caption text-muted">{j.sub}</span></span>
               <ArrowRight className="h-5 w-5 shrink-0 text-green transition-transform group-hover:translate-x-0.5" strokeWidth={1.5} />
             </Link>
