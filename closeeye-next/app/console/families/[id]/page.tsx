@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { ArrowLeft, Loader2, Lock, Users, Phone } from 'lucide-react'
 import { AdminMessageThread } from '@/components/console/admin-message-thread'
+import { AssignGuardian } from '@/components/console/assign-guardian'
 import { Avatar } from '@/components/family/avatar'
 import { EmptyState } from '@/components/ui/states'
 import { Button } from '@/components/ui/button'
@@ -19,12 +20,14 @@ export default function ConsoleFamilyWorkspace() {
   const isStaff = canUseConsole(profile)
   const [detail, setDetail] = React.useState<ConsoleFamilyDetail | null | undefined>(undefined)
 
-  React.useEffect(() => {
+  const load = React.useCallback(() => {
     if (!isStaff || !params.id) return
     fetchConsoleFamilyDetail(params.id)
       .then(setDetail)
       .catch(() => setDetail(null))
   }, [isStaff, params.id])
+
+  React.useEffect(() => { load() }, [load])
 
   if (loading) {
     return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
@@ -84,7 +87,16 @@ export default function ConsoleFamilyWorkspace() {
           <div className="rounded-lg border border-line bg-card p-5 shadow-sm">
             <p className="text-caption font-bold uppercase tracking-widest text-green">Next Presence</p>
             <p className="mt-2 text-body-sm font-semibold text-ink">{detail.nextVisitLabel ?? 'No visit scheduled'}</p>
-            {detail.nextGuardian && <p className="mt-0.5 text-caption text-muted">{detail.nextGuardian} · in person</p>}
+            {detail.nextGuardian ? (
+              <p className="mt-0.5 text-caption text-muted">{detail.nextGuardian} · in person</p>
+            ) : detail.nextBookingId ? (
+              <p className="mt-0.5 text-caption text-muted">No Guardian assigned yet</p>
+            ) : null}
+            {detail.nextBookingId && (
+              <div className="mt-3">
+                <AssignGuardian bookingId={detail.nextBookingId} currentGuardianId={detail.nextGuardianId} onAssigned={load} />
+              </div>
+            )}
           </div>
 
           {detail.glance.length > 0 && (

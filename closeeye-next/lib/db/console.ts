@@ -258,11 +258,13 @@ export interface ConsoleFamilyDetail {
   city: string | null
   phone: string | null
   nextVisitLabel: string | null
+  nextBookingId: string | null
+  nextGuardianId: string | null
   nextGuardian: string | null
   glance: { label: string; value: string }[]
 }
 
-interface DetailBookingRow { scheduled_at: string | null; status: string; companion_id: string | null }
+interface DetailBookingRow { id: string; scheduled_at: string | null; status: string; companion_id: string | null }
 
 /** One family's live workspace context — header, next Presence + Guardian, at-a-glance care brief. */
 export async function fetchConsoleFamilyDetail(lovedOneId: string): Promise<ConsoleFamilyDetail | null> {
@@ -271,7 +273,7 @@ export async function fetchConsoleFamilyDetail(lovedOneId: string): Promise<Cons
 
   const [{ data: loRow }, { data: bkRows }, ep] = await Promise.all([
     supabase.from('loved_ones').select('relationship, age, city, phone_number').eq('id', lovedOneId).maybeSingle(),
-    supabase.from('bookings').select('scheduled_at, status, companion_id').eq('loved_one_id', lovedOneId),
+    supabase.from('bookings').select('id, scheduled_at, status, companion_id').eq('loved_one_id', lovedOneId),
     fetchElderProfile(lovedOneId).catch(() => null),
   ])
   const lo = loRow as { relationship: string | null; age: number | null; city: string | null; phone_number: string | null } | null
@@ -304,6 +306,8 @@ export async function fetchConsoleFamilyDetail(lovedOneId: string): Promise<Cons
     city: lo?.city ?? null,
     phone: lo?.phone_number ?? null,
     nextVisitLabel: next?.scheduled_at ? fmtDate(next.scheduled_at) : null,
+    nextBookingId: next?.id ?? null,
+    nextGuardianId: next?.companion_id ?? null,
     nextGuardian,
     glance,
   }
@@ -405,4 +409,19 @@ interface CompDirRow { id: string; full_name: string | null; phone: string | nul
 export async function fetchConsoleGuardians(): Promise<ConsoleGuardianLive[]> {
   const { data } = await supabase.from('companions').select('id, full_name, phone, city, status').order('full_name')
   return ((data as CompDirRow[] | null) ?? []).map((c) => ({ id: c.id, name: c.full_name ?? 'Guardian', city: c.city, phone: c.phone, status: c.status }))
+}
+
+/**
+ * Assign (or reassign) a Guardian to a booked visit. Super Admins satisfy the
+ * bookings UPDATE RLS via is_admin(); Presence Managers via the additive
+ * "bookings: manager assign" policy (can_manage_family). Mirrors the proven Vite
+ * admin flow: set companion_id and move a still-open visit to companion_assigned.
+ * Pass companionId = null to clear the assignment (status is left unchanged).
+ */
+export async function assignGuardian(bookingId: string, companionId: string | null): Promise<void> {
+  const { data: bk } = await supabase.from('bookings').select('status').eq('id', bookingId).maybeSingle()
+  const status = (bk as { status: string } | null)?.status ?? 'confirmed'
+  const nextStatus = companionId && (status === 'pending' || status === 'confirmed') ? 'companion_assigned' : status
+  const { error } = await supabase.from('bookings').update({ companion_id: companionId, status: nextStatus }).eq('id', bookingId)
+  if (error) throw error
 }
