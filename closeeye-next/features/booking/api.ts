@@ -30,6 +30,7 @@ interface RequestBody {
   visit_special_instructions?: string | null
   visit_access_instructions?: string | null
   visit_team_notes?: string | null
+  visit_map_link?: string | null
 }
 
 /** Persist a booking request via the deployed edge function; return a friendly ref. */
@@ -69,12 +70,8 @@ export async function submitBooking(data: Partial<BookingData>): Promise<Booking
  * profile. The transaction never re-asks for master data (Family module owns it):
  * it only carries Service / Date / Time / Notes.
  */
-export async function requestVisit(input: {
-  serviceId: string
-  lovedOneId?: string
-  recipientName: string
+export interface VisitDetailInput {
   recipientAddress: string
-  requesterWhatsapp: string
   date: string | null
   timeSlotLabel?: string
   landmark?: string
@@ -83,19 +80,17 @@ export async function requestVisit(input: {
   specialInstructions?: string
   accessInstructions?: string
   teamNotes?: string
-}): Promise<BookingResult> {
-  const svc = serviceById(input.serviceId)
-  const dateIso = input.date && /^\d{4}-\d{2}-\d{2}$/.test(input.date) ? input.date : null
-  const trim = (v?: string) => (v && v.trim() ? v.trim() : null)
+  mapLink?: string
+}
 
-  return invokeBookingRequest({
-    service_id: CANONICAL_SERVICE_ID[input.serviceId] ?? input.serviceId,
-    service_name: svc?.name ?? 'Visit',
-    loved_one_id: input.lovedOneId ?? null,
-    scheduled_at_ist: dateIso,
-    recipient_name: input.recipientName,
+const trim = (v?: string) => (v && v.trim() ? v.trim() : null)
+const toIso = (d: string | null) => (d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null)
+
+/** The visit-detail fields shared by create + edit (the logistics the family owns). */
+function visitDetailBody(input: VisitDetailInput) {
+  return {
+    scheduled_at_ist: toIso(input.date),
     recipient_address: input.recipientAddress,
-    requester_whatsapp: input.requesterWhatsapp,
     visit_time_window: trim(input.timeSlotLabel),
     visit_landmark: trim(input.landmark),
     visit_contact_name: trim(input.contactName),
@@ -103,8 +98,32 @@ export async function requestVisit(input: {
     visit_special_instructions: trim(input.specialInstructions),
     visit_access_instructions: trim(input.accessInstructions),
     visit_team_notes: trim(input.teamNotes),
+    visit_map_link: trim(input.mapLink),
+  }
+}
+
+export async function requestVisit(
+  input: VisitDetailInput & { serviceId: string; lovedOneId?: string; recipientName: string; requesterWhatsapp: string },
+): Promise<BookingResult> {
+  const svc = serviceById(input.serviceId)
+  return invokeBookingRequest({
+    service_id: CANONICAL_SERVICE_ID[input.serviceId] ?? input.serviceId,
+    service_name: svc?.name ?? 'Visit',
+    loved_one_id: input.lovedOneId ?? null,
+    recipient_name: input.recipientName,
+    requester_whatsapp: input.requesterWhatsapp,
     notes: null,
+    ...visitDetailBody(input),
   })
+}
+
+/** Edit the visit-detail fields of an existing, still-pending request. */
+export async function updateVisitRequest(requestId: string, input: VisitDetailInput): Promise<void> {
+  const { data, error } = await supabase.functions.invoke('update-booking-request', {
+    body: { request_id: requestId, ...visitDetailBody(input) },
+  })
+  const json = data as { ok?: boolean; error?: string } | null
+  if (error || !json?.ok) throw new Error(json?.error || 'update_failed')
 }
 
 /**

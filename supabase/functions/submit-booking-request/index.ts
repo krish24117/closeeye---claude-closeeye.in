@@ -95,6 +95,7 @@ Deno.serve(async (req: Request) => {
     visit_special_instructions?: string | null;
     visit_access_instructions?: string | null;
     visit_team_notes?: string | null;
+    visit_map_link?: string | null;
   };
   try {
     body = await req.json();
@@ -106,7 +107,7 @@ Deno.serve(async (req: Request) => {
     service_id, service_name, variant_id, loved_one_id,
     scheduled_at_ist, recipient_name, recipient_address, requester_whatsapp, notes,
     visit_landmark, visit_contact_name, visit_contact_phone, visit_time_window,
-    visit_special_instructions, visit_access_instructions, visit_team_notes,
+    visit_special_instructions, visit_access_instructions, visit_team_notes, visit_map_link,
   } = body;
 
   if (!service_id || !service_name) {
@@ -196,6 +197,7 @@ Deno.serve(async (req: Request) => {
       visit_special_instructions: visit_special_instructions?.trim() || null,
       visit_access_instructions:  visit_access_instructions?.trim() || null,
       visit_team_notes:           visit_team_notes?.trim() || null,
+      visit_map_link:             visit_map_link?.trim() || null,
       status:             needsDetails ? "needs_details" : "pending_confirmation",
     })
     .select("id")
@@ -232,6 +234,7 @@ Deno.serve(async (req: Request) => {
         line("Access", visit_access_instructions) +
         line("Instructions", visit_special_instructions) +
         line("Notes for team", visit_team_notes) +
+        line("Map", visit_map_link) +
         (notes?.trim() ? `Notes: ${notes.trim()}\n` : "") +
         `closeeye.in/admin`;
       const params = new URLSearchParams({ From: wa(from), To: wa(adminTo), Body: msgBody });

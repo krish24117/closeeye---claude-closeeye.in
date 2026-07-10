@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, CalendarClock, FileText, Loader2, MapPin, MessageCircle } from 'lucide-react'
+import { ArrowLeft, CalendarClock, FileText, Loader2, MapPin, MessageCircle, Pencil } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,9 @@ import { useFamilyData } from '@/components/family/family-data-provider'
 import { isSuperAdmin } from '@/lib/roles'
 import { fetchMyBookingRequests, fetchFullVisitReport, type FullVisitReport } from '@/lib/db/family'
 import { VisitReportExperience } from '@/components/family/visit-experience'
+import { updateVisitRequest } from '@/features/booking/api'
+import { BOOKING_SERVICES } from '@/features/booking/schema'
+import { VisitDetailsForm, emptyVisitDetails, slotIdFromLabel, toVisitDetailInput, visitDetailsError, type VisitDetailsState } from '@/components/family/visit-details-form'
 import { whatsappLink } from '@/lib/site'
 import type { BookingRequest } from '@/lib/db/types'
 import { cn } from '@/lib/utils'
@@ -51,8 +54,12 @@ export default function VisitDetailPage() {
   const admin = isSuperAdmin(profile)
   const [visit, setVisit] = React.useState<BookingRequest | null | undefined>(undefined)
   const [full, setFull] = React.useState<FullVisitReport | null>(null)
+  const [editing, setEditing] = React.useState(false)
+  const [editDetails, setEditDetails] = React.useState<VisitDetailsState>(emptyVisitDetails)
+  const [saving, setSaving] = React.useState(false)
+  const [editError, setEditError] = React.useState('')
 
-  React.useEffect(() => {
+  const load = React.useCallback(() => {
     if (!user?.id) { setVisit(null); return }
     fetchMyBookingRequests(user.id)
       .then((rows) => {
@@ -67,6 +74,8 @@ export default function VisitDetailPage() {
       })
       .catch(() => setVisit(null))
   }, [user?.id, params.id])
+
+  React.useEffect(() => { load() }, [load])
 
   const back = (
     <Button asChild variant="text" className="self-start">
@@ -107,6 +116,43 @@ export default function VisitDetailPage() {
   ]
   const hasVisitDetails = visitDetails.some(([, v]) => v && v.trim())
 
+  // A pending request (not yet materialised into a booking) can still be edited.
+  const isEditable = !visit.booking_id && ['requested', 'pending_confirmation', 'needs_details'].includes(visit.status)
+  const allowsEmergency = !!BOOKING_SERVICES.find((s) => s.name === visit.service_name)?.allowsEmergency
+
+  function startEdit() {
+    setEditError('')
+    setEditDetails({
+      address: visit!.recipient_address ?? '',
+      landmark: visit!.visit_landmark ?? '',
+      contactName: visit!.visit_contact_name ?? '',
+      contactPhone: visit!.visit_contact_phone ?? '',
+      date: visit!.scheduled_at ? visit!.scheduled_at.slice(0, 10) : '',
+      timeSlot: slotIdFromLabel(visit!.visit_time_window),
+      specialInstructions: visit!.visit_special_instructions ?? '',
+      accessInstructions: visit!.visit_access_instructions ?? '',
+      teamNotes: visit!.visit_team_notes ?? '',
+      mapLink: visit!.visit_map_link ?? '',
+    })
+    setEditing(true)
+  }
+
+  async function saveEdit() {
+    const err = visitDetailsError(editDetails)
+    if (err) { setEditError(err); return }
+    setSaving(true); setEditError('')
+    try {
+      await updateVisitRequest(visit!.id, toVisitDetailInput(editDetails))
+      setEditing(false)
+      load()
+    } catch (e) {
+      console.error('[visit-edit] failed:', e)
+      setEditError('We couldn’t save your changes. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // Completed — render the full Human Presence Experience from real data.
   if (full) {
     return (
@@ -133,17 +179,41 @@ export default function VisitDetailPage() {
         </div>
       </header>
 
-      {hasVisitDetails && (
+      {(hasVisitDetails || isEditable) && (
         <section className="rounded-lg border border-line/70 bg-card p-6 shadow-sm">
-          <h2 className="flex items-center gap-2 text-h4"><MapPin className="h-5 w-5 text-green" strokeWidth={1.5} /> Your visit details</h2>
-          <dl className="mt-4 divide-y divide-line">
-            {visitDetails.filter(([, v]) => v && v.trim()).map(([label, value]) => (
-              <div key={label} className="flex items-start justify-between gap-4 py-2.5">
-                <dt className="shrink-0 text-body-sm text-muted">{label}</dt>
-                <dd className="min-w-0 whitespace-pre-line text-right text-body-sm font-medium text-ink">{value}</dd>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="flex items-center gap-2 text-h4"><MapPin className="h-5 w-5 text-green" strokeWidth={1.5} /> Your visit details</h2>
+            {isEditable && !editing && (
+              <button type="button" onClick={startEdit} className="inline-flex items-center gap-1.5 text-caption font-semibold text-green hover:underline"><Pencil className="h-3.5 w-3.5" strokeWidth={2} /> Edit</button>
+            )}
+          </div>
+
+          {editing ? (
+            <div className="mt-5 flex flex-col gap-5">
+              <VisitDetailsForm value={editDetails} onChange={(p) => setEditDetails((d) => ({ ...d, ...p }))} allowsEmergency={allowsEmergency} />
+              {editError && <p className="text-caption text-error">{editError}</p>}
+              <div className="flex gap-2.5">
+                <Button size="sm" variant="secondary" disabled={saving} onClick={() => { setEditing(false); setEditError('') }}>Cancel</Button>
+                <Button size="sm" disabled={saving} onClick={saveEdit}>{saving ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Saving…</> : 'Save changes'}</Button>
               </div>
-            ))}
-          </dl>
+            </div>
+          ) : (
+            <>
+              <dl className="mt-4 divide-y divide-line">
+                {visitDetails.filter(([, v]) => v && v.trim()).map(([label, value]) => (
+                  <div key={label} className="flex items-start justify-between gap-4 py-2.5">
+                    <dt className="shrink-0 text-body-sm text-muted">{label}</dt>
+                    <dd className="min-w-0 whitespace-pre-line text-right text-body-sm font-medium text-ink">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {visit.visit_map_link?.trim() && (
+                <a href={visit.visit_map_link.trim()} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1.5 text-body-sm font-semibold text-green hover:underline">
+                  <MapPin className="h-4 w-4" strokeWidth={1.75} /> Open map location →
+                </a>
+              )}
+            </>
+          )}
         </section>
       )}
 

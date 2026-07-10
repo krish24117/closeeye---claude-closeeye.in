@@ -71,6 +71,7 @@ export interface BookingRequest {
   visit_special_instructions: string | null
   visit_access_instructions: string | null
   visit_team_notes: string | null
+  visit_map_link: string | null
   payment_status: string | null
   amount_paise: number | null
   /** The materialised `bookings` row (set once paid) — the Guardian's visit. */
