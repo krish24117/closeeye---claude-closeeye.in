@@ -116,25 +116,50 @@ Deno.serve(async (req: Request) => {
   const sub = await rzRes.json();
 
   // ── Upsert into subscriptions table ──────────────────────────────────────
-  const { error: upsertErr } = await sb
+  // UPGRADE SAFETY: if the caller already has an ACTIVE subscription, this is an
+  // upgrade (e.g. Connect → Care). Do NOT overwrite the live row here — that would
+  // (a) clobber the active membership the moment checkout opens (and strand it if
+  // the user dismisses the sheet) and (b) point the row at an unpaid subscription.
+  // We leave the active row untouched; the webhook promotes the plan and cancels
+  // the old subscription only after the NEW one actually activates. The new
+  // subscription still carries notes.user_id/notes.plan so the webhook can find
+  // and promote the right row. For a fresh/pending member, upsert as before so the
+  // row tracks the just-created ('created') subscription.
+  const { data: existingSub } = await sb
     .from("subscriptions")
-    .upsert(
-      {
-        user_id: user.id,
-        plan_id: planId,
-        razorpay_subscription_id: sub.id,
-        status: sub.status,
-      },
-      { onConflict: "user_id" },
-    );
+    .select("status")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  if (upsertErr) {
-    console.error("subscriptions upsert error:", upsertErr);
-    // Non-fatal — Razorpay subscription was created
+  const isUpgrade = existingSub?.status === "active";
+
+  if (!isUpgrade) {
+    const { error: upsertErr } = await sb
+      .from("subscriptions")
+      .upsert(
+        {
+          user_id: user.id,
+          plan_id: planId,
+          razorpay_subscription_id: sub.id,
+          status: sub.status,
+        },
+        { onConflict: "user_id" },
+      );
+
+    if (upsertErr) {
+      console.error("subscriptions upsert error:", upsertErr);
+      // Non-fatal — Razorpay subscription was created
+    }
+  } else {
+    console.log(
+      `[create-subscription] upgrade for user ${user.id} → plan ${planId}; ` +
+        `new sub ${sub.id} created, active row left intact (webhook will promote)`,
+    );
   }
 
   return json({
     subscription_id: sub.id,
     key_id: Deno.env.get("RAZORPAY_KEY_ID")!,
+    is_upgrade: isUpgrade,
   });
 });

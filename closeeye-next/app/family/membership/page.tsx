@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Check, Loader2 } from 'lucide-react'
+import { Check, Loader2, Sparkles } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
+import { Overlay } from '@/components/family/overlay'
 import { Button } from '@/components/ui/button'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { useToast } from '@/components/ui/toast'
@@ -30,10 +31,19 @@ export default function MembershipPage() {
   const { subscription, profile, identity, refresh } = useFamilyData()
   const toast = useToast()
   const [busy, setBusy] = useState<PlanId | null>(null)
+  // Self-serve Connect → Care upgrade sheet. `upgradePaid` is a purely local UI
+  // flag (the client NEVER writes subscription state) — it shows the welcome +
+  // an "Activating…" card during the brief window before the webhook promotes.
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
+  const [upgradePaid, setUpgradePaid] = useState(false)
   const currentId = subscription?.plan_id
   const active = subscription?.status === 'active'
   const activating = subscription?.status === 'authenticated'
   const isCare = planById(currentId)?.key === 'care'
+  const onConnect = planById(currentId)?.key === 'connect'
+  // The additional benefits Care adds over Connect (drop the "Everything in
+  // Connect" umbrella line — the sheet is about what's NEW).
+  const careDelta = (planById('trust')?.benefits ?? []).filter((b) => !b.toLowerCase().startsWith('everything'))
 
   function handleOutcome(o: PayOutcome, short: string) {
     if (o.status === 'success') {
@@ -82,6 +92,47 @@ export default function MembershipPage() {
     } finally {
       setBusy(null)
     }
+  }
+
+  // Self-serve upgrade Connect → Care. Opens Razorpay for a NEW Care subscription;
+  // the create-subscription function leaves the live Connect row untouched, and the
+  // webhook promotes the plan + cancels the old subscription only after this payment
+  // activates. The client writes NO subscription state — it just opens checkout and,
+  // on success, shows the welcome message while polling for the webhook to land.
+  async function startUpgrade() {
+    if (busy) return
+    setBusy('trust')
+    try {
+      const outcome = await payForMembership({
+        planId: 'trust',
+        planName: 'CloseEye Care',
+        prefill: {
+          name: identity.fullName,
+          email: identity.email ?? undefined,
+          contact: profile?.whatsapp_number || profile?.phone || undefined,
+        },
+      })
+      if (outcome.status === 'success') {
+        setUpgradePaid(true)
+        void refresh()
+        for (let i = 1; i <= 6; i++) setTimeout(() => void refresh(), i * 2500)
+      } else if (outcome.status === 'dismissed') {
+        toast('No problem — you can upgrade to CloseEye Care anytime.')
+      } else {
+        toast(outcome.message) // failed / unavailable / error
+      }
+    } catch (e) {
+      console.error('[membership] upgrade failed:', e)
+      toast('We couldn’t start the upgrade. Please try again.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  // Don't let the sheet close mid-payment (Razorpay is open over it).
+  function closeUpgrade() {
+    if (busy) return
+    setUpgradeOpen(false)
   }
 
   return (
@@ -149,13 +200,24 @@ export default function MembershipPage() {
                   )}
                 </div>
               ) : active ? (
-                // Member already has an active plan — switching is handled by the
-                // care team (self-serve switching would clobber the live sub / double-bill).
-                <div className="mt-7 rounded-sm border border-line/70 px-4 py-3.5 text-center">
-                  <p className="text-caption text-muted">
-                    You&rsquo;re on {planById(currentId)?.name ?? 'a plan'}. To change plans, message your Presence Manager.
-                  </p>
-                </div>
+                plan.key === 'care' && onConnect ? (
+                  // Connect member looking at Care → self-serve upgrade.
+                  upgradePaid ? (
+                    <div className="mt-7 flex items-center justify-center gap-2 rounded-sm bg-accent-soft/60 px-4 py-3.5 text-center">
+                      <Loader2 className="h-4 w-4 animate-spin text-green" strokeWidth={2.5} />
+                      <p className="text-caption font-semibold text-green">Activating your CloseEye Care membership…</p>
+                    </div>
+                  ) : (
+                    <Button size="lg" variant="primary" className="mt-7 w-full" disabled={busy !== null} onClick={() => setUpgradeOpen(true)}>
+                      <Sparkles className="h-5 w-5" strokeWidth={2} /> Upgrade to CloseEye Care
+                    </Button>
+                  )
+                ) : (
+                  // Care member looking at Connect → Connect is already included; no downgrade offered.
+                  <div className="mt-7 rounded-sm border border-line/70 px-4 py-3.5 text-center">
+                    <p className="text-caption text-muted">Included in your CloseEye Care plan.</p>
+                  </div>
+                )
               ) : (
                 <Button
                   size="lg"
@@ -231,6 +293,63 @@ export default function MembershipPage() {
       </section>
 
       <p className="mt-8 text-center text-caption text-muted">You can choose a plan today and activate payment whenever you’re ready.</p>
+
+      {/* Self-serve Connect → Care upgrade sheet */}
+      <Overlay open={upgradeOpen} onClose={closeUpgrade}>
+        {upgradePaid ? (
+          <div className="flex flex-col gap-5 p-6">
+            <div className="flex items-center gap-3.5">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-success/12 text-success">
+                <Check className="h-5 w-5" strokeWidth={2.5} />
+              </span>
+              <h2 className="text-h4 text-ink">You’re now on CloseEye Care</h2>
+            </div>
+            <p className="text-body-sm leading-relaxed text-ink">
+              Welcome to CloseEye Care. Your Presence Manager will contact you within 24 hours to schedule your first monthly Presence Visit.
+            </p>
+            <Button className="w-full" onClick={() => setUpgradeOpen(false)}>Done</Button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-5 p-6">
+            <div className="flex items-center gap-3.5">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green">
+                <Sparkles className="h-5 w-5" strokeWidth={2} />
+              </span>
+              <div>
+                <h2 className="text-h4 text-ink">Upgrade to CloseEye Care</h2>
+                <p className="mt-0.5 text-caption text-muted">Everything in Connect, plus in-person monthly presence.</p>
+              </div>
+            </div>
+
+            <div className="rounded-sm bg-accent-soft/40 p-4">
+              <p className="text-caption font-semibold uppercase tracking-widest text-muted">What you’re adding</p>
+              <ul className="mt-3 flex flex-col gap-2.5">
+                {careDelta.map((b) => (
+                  <li key={b} className="flex items-start gap-2.5 text-body-sm text-ink">
+                    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-success/12 text-success"><Check className="h-3 w-3" strokeWidth={3} /></span>
+                    {b}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="flex items-baseline justify-between border-t border-line/70 pt-4">
+              <span className="text-body-sm text-muted">New monthly membership</span>
+              <span className="text-ink"><span className="text-h4 font-extrabold">₹1,500</span><span className="text-body-sm font-medium text-muted">/month</span></span>
+            </div>
+            <p className="-mt-2 text-caption text-muted">
+              This replaces your CloseEye Connect plan — you’re only ever billed for one membership.
+            </p>
+
+            <div className="flex gap-2.5">
+              <Button variant="secondary" className="flex-1" disabled={busy !== null} onClick={closeUpgrade}>Not now</Button>
+              <Button className="flex-1" disabled={busy !== null} onClick={startUpgrade}>
+                {busy === 'trust' ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Opening…</> : 'Confirm · ₹1,500/mo'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Overlay>
     </div>
   )
 }

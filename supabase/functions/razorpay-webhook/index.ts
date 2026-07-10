@@ -541,56 +541,127 @@ Deno.serve(async (req: Request) => {
   }
 
   const rzSubId = rzSub.id as string;
+  const rzSubNotes = (rzSub.notes ?? {}) as Record<string, unknown>;
+  const notesUserId = typeof rzSubNotes.user_id === "string" ? rzSubNotes.user_id : null;
+  const notesPlan = typeof rzSubNotes.plan === "string" ? rzSubNotes.plan : null;
 
-  // ── Fetch local subscription ──────────────────────────────────────────────
-  const { data: localSub, error: localSubErr } = await sb
+  const SUB_COLS =
+    "id, user_id, plan_id, invoice_count, total_paid_paise, last_charge_payment_id, razorpay_subscription_id, status";
+
+  // ── Locate the local subscription row ──────────────────────────────────────
+  // Primary match: the row already pointing at THIS Razorpay subscription.
+  const { data: rowBySub } = await sb
     .from("subscriptions")
-    .select("id, user_id, plan_id, invoice_count, total_paid_paise, last_charge_payment_id")
+    .select(SUB_COLS)
     .eq("razorpay_subscription_id", rzSubId)
-    .single();
+    .maybeSingle();
 
-  if (localSubErr || !localSub) {
-    console.warn("Subscription not found locally for rzSubId:", rzSubId, localSubErr);
-    return json({ ok: true });
+  // Cancel a superseded subscription so a member is never billed on two plans.
+  // Immediate cancel (cancel_at_cycle_end: 0) → only ONE active subscription ever
+  // exists in Razorpay. Called during promotion, BEFORE we hand the row over: if
+  // the row update later fails, Razorpay redelivers and we re-run this (cancel is
+  // idempotent — an already-cancelled sub just returns 400, which we ignore). The
+  // reverse order (promote then cancel) would lose the old-sub id on redelivery
+  // and risk leaving two live subscriptions — i.e. double billing.
+  async function cancelRazorpaySubscription(oldSubId: string): Promise<void> {
+    try {
+      const res = await fetch(
+        `https://api.razorpay.com/v1/subscriptions/${oldSubId}/cancel`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Basic ${btoa(`${Deno.env.get("RAZORPAY_KEY_ID")}:${Deno.env.get("RAZORPAY_KEY_SECRET")}`)}`,
+          },
+          body: JSON.stringify({ cancel_at_cycle_end: 0 }),
+        },
+      );
+      if (!res.ok) {
+        console.warn(`[razorpay-webhook] cancel old sub ${oldSubId} → ${res.status}: ${await res.text()}`);
+      } else {
+        console.log(`[razorpay-webhook] cancelled superseded sub ${oldSubId} on upgrade`);
+      }
+    } catch (e) {
+      console.error(`[razorpay-webhook] cancel old sub ${oldSubId} failed (non-fatal):`, e);
+    }
   }
 
   // ── Handle events ─────────────────────────────────────────────────────────
   switch (event) {
-    case "subscription.activated": {
-      await sb.from("subscriptions").update({
-        status: "active",
+    // Activation / charge either belong to the row already tracking this sub, OR
+    // announce a NEW subscription for the user (an upgrade, e.g. Connect → Care).
+    case "subscription.activated":
+    case "subscription.charged": {
+      // Resolve the row by sub id first, then fall back to the user in the notes
+      // (an upgrade's row still points at the OLD subscription).
+      let row = rowBySub;
+      if (!row && notesUserId) {
+        const { data: byUser } = await sb
+          .from("subscriptions")
+          .select(SUB_COLS)
+          .eq("user_id", notesUserId)
+          .maybeSingle();
+        row = byUser ?? null;
+      }
+      if (!row) {
+        console.warn("Subscription not found locally for rzSubId:", rzSubId, "notesUserId:", notesUserId);
+        return json({ ok: true });
+      }
+
+      // Upgrade = this event's subscription differs from the one the row holds.
+      const oldSubId = row.razorpay_subscription_id as string | null;
+      const isUpgrade = !!oldSubId && oldSubId !== rzSubId;
+      const promotedPlan = notesPlan ?? row.plan_id;
+
+      // Cancel the superseded subscription BEFORE handing the row over, so there is
+      // never a window with two live subscriptions. No-op if it was never live.
+      if (isUpgrade && oldSubId) {
+        await cancelRazorpaySubscription(oldSubId);
+      }
+
+      const timing = {
         current_start: rzSub.current_start ? new Date((rzSub.current_start as number) * 1000).toISOString() : null,
         current_end: rzSub.current_end ? new Date((rzSub.current_end as number) * 1000).toISOString() : null,
         next_billing_at: rzSub.charge_at ? new Date((rzSub.charge_at as number) * 1000).toISOString() : null,
-      }).eq("razorpay_subscription_id", rzSubId);
-      break;
-    }
+      };
 
-    case "subscription.charged": {
+      if (event === "subscription.activated") {
+        // Activation promotes plan + switches the row onto the new sub. Money is
+        // counted by subscription.charged (below), not here.
+        await sb.from("subscriptions").update({
+          status: "active",
+          plan_id: promotedPlan,
+          razorpay_subscription_id: rzSubId,
+          ...timing,
+        }).eq("id", row.id);
+        break;
+      }
+
+      // subscription.charged — the money event.
       const chargePaymentId = rzPayment?.id as string | undefined;
       // M7 — idempotency: Razorpay redelivers on any non-2xx; skip if we already
       // counted this exact charge (else invoice_count / total_paid inflate).
-      if (chargePaymentId && chargePaymentId === localSub.last_charge_payment_id) {
+      if (chargePaymentId && chargePaymentId === row.last_charge_payment_id) {
         console.log(`[razorpay-webhook] subscription.charged ${chargePaymentId} already applied — skipping`);
         return json({ ok: true, handled: "charge_duplicate_skipped" });
       }
       const paymentAmount = typeof rzPayment?.amount === "number" ? rzPayment.amount as number : 0;
-      const newInvoiceCount = (localSub.invoice_count ?? 0) + 1;
-      const newTotalPaid = (localSub.total_paid_paise ?? 0) + paymentAmount;
+      const newInvoiceCount = (row.invoice_count ?? 0) + 1;
+      const newTotalPaid = (row.total_paid_paise ?? 0) + paymentAmount;
 
       await sb.from("subscriptions").update({
         status: "active",
+        plan_id: promotedPlan,
+        razorpay_subscription_id: rzSubId,
         invoice_count: newInvoiceCount,
         total_paid_paise: newTotalPaid,
         last_charge_payment_id: chargePaymentId ?? null,
-        next_billing_at: rzSub.charge_at ? new Date((rzSub.charge_at as number) * 1000).toISOString() : null,
-        current_start: rzSub.current_start ? new Date((rzSub.current_start as number) * 1000).toISOString() : null,
-        current_end: rzSub.current_end ? new Date((rzSub.current_end as number) * 1000).toISOString() : null,
-      }).eq("razorpay_subscription_id", rzSubId);
+        ...timing,
+      }).eq("id", row.id);
 
       // Send invoice email — non-fatal
       try {
-        const { data: authUser } = await sb.auth.admin.getUserById(localSub.user_id);
+        const { data: authUser } = await sb.auth.admin.getUserById(row.user_id);
         const userEmail = authUser?.user?.email;
         const userName = authUser?.user?.user_metadata?.full_name || authUser?.user?.email || "Close Eye Member";
 
@@ -599,12 +670,12 @@ Deno.serve(async (req: Request) => {
           const { data: ccMembers } = await sb
             .from("family_members")
             .select("email")
-            .eq("family_user_id", localSub.user_id)
+            .eq("family_user_id", row.user_id)
             .eq("notify_visits", true);
 
           const ccEmails = (ccMembers ?? []).map((m: { email: string }) => m.email).filter(Boolean);
 
-          const planName = PLAN_DISPLAY[localSub.plan_id] ?? localSub.plan_id;
+          const planName = PLAN_DISPLAY[promotedPlan] ?? promotedPlan;
           const amountInr = (paymentAmount / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 });
           const dateStr = formatDate(rzPayment?.created_at as number | undefined ?? Math.floor(Date.now() / 1000));
           const nextBillingStr = formatDate(rzSub.charge_at as number | undefined);
@@ -649,28 +720,28 @@ Deno.serve(async (req: Request) => {
       break;
     }
 
-    case "subscription.paused": {
-      await sb.from("subscriptions").update({ status: "paused" }).eq("razorpay_subscription_id", rzSubId);
-      break;
-    }
-
-    case "subscription.resumed": {
-      await sb.from("subscriptions").update({ status: "active" }).eq("razorpay_subscription_id", rzSubId);
-      break;
-    }
-
-    case "subscription.cancelled": {
-      await sb.from("subscriptions").update({ status: "cancelled" }).eq("razorpay_subscription_id", rzSubId);
-      break;
-    }
-
-    case "subscription.completed": {
-      await sb.from("subscriptions").update({ status: "completed" }).eq("razorpay_subscription_id", rzSubId);
-      break;
-    }
-
+    // Lifecycle events apply ONLY to the subscription the row currently tracks.
+    // During an upgrade we immediately cancel the OLD subscription, which makes
+    // Razorpay emit subscription.cancelled for THAT (old) sub id. Matching by user
+    // here would let that stray event flip the freshly-promoted membership to
+    // 'cancelled', so we match STRICTLY by sub id and ignore anything else.
+    case "subscription.paused":
+    case "subscription.resumed":
+    case "subscription.cancelled":
+    case "subscription.completed":
     case "subscription.halted": {
-      await sb.from("subscriptions").update({ status: "halted" }).eq("razorpay_subscription_id", rzSubId);
+      if (!rowBySub) {
+        console.log(`[razorpay-webhook] ${event} for non-current sub ${rzSubId} — ignoring`);
+        return json({ ok: true, handled: "stale_subscription_ignored" });
+      }
+      const statusByEvent: Record<string, string> = {
+        "subscription.paused": "paused",
+        "subscription.resumed": "active",
+        "subscription.cancelled": "cancelled",
+        "subscription.completed": "completed",
+        "subscription.halted": "halted",
+      };
+      await sb.from("subscriptions").update({ status: statusByEvent[event] }).eq("id", rowBySub.id);
       break;
     }
 
