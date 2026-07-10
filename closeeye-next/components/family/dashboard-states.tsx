@@ -258,7 +258,7 @@ export function VisitBookedDashboard({ data, lovedOnes }: { data: DashboardData;
       {v && (
         <section className="flex flex-col gap-4">
           <SectionTitle>Your first Presence</SectionTitle>
-          <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+          <div className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
             <div className="flex items-center gap-3 bg-ink px-6 py-5 text-white">
               <span className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-accent"><CalendarClock className="h-5 w-5" strokeWidth={1.5} /></span>
               <div className="min-w-0">
@@ -266,14 +266,14 @@ export function VisitBookedDashboard({ data, lovedOnes }: { data: DashboardData;
                 <p className="truncate text-body font-semibold text-white">{v.service_name || 'Presence visit'}{v.recipient_name ? ` · for ${v.recipient_name}` : ''}</p>
               </div>
             </div>
-            <dl className="grid grid-cols-2 gap-px bg-line sm:grid-cols-4">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-5 px-6 py-5 sm:grid-cols-4">
               {[
                 { label: 'Guardian', value: GUARDIAN_ASSIGNED.includes(v.status) ? 'Confirmed' : 'Being matched' },
                 { label: 'Date', value: visitDate(v.scheduled_at) },
                 { label: 'Time', value: visitTime(v.scheduled_at) },
                 { label: 'Status', value: STATUS_LABEL[v.status] ?? v.status },
               ].map((s) => (
-                <div key={s.label} className="bg-card px-5 py-4">
+                <div key={s.label}>
                   <dt className="text-caption text-muted">{s.label}</dt>
                   <dd className="mt-1 text-body-sm font-semibold text-ink">{s.value}</dd>
                 </div>

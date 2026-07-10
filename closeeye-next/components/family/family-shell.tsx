@@ -149,7 +149,17 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
                 active ? 'text-green' : 'text-muted',
               )}
             >
-              <Icon className="h-6 w-6" strokeWidth={active ? 2 : 1.5} />
+              {item.href === '/family/profile' ? (
+                <Avatar
+                  initials={identity.initials}
+                  src={identity.avatarUrl}
+                  alt=""
+                  size="sm"
+                  className={cn('h-7 w-7 text-[0.6rem]', active && 'ring-2 ring-green ring-offset-1 ring-offset-card')}
+                />
+              ) : (
+                <Icon className="h-6 w-6" strokeWidth={active ? 2 : 1.5} />
+              )}
               {item.label}
             </Link>
           )

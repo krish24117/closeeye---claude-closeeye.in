@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { LogoMark } from '@/components/ui/logo'
 import { Overlay } from '@/components/family/overlay'
+import { Avatar } from '@/components/family/avatar'
 import { AvatarLink } from '@/components/ui/avatar-link'
 import { SyncStatus } from '@/components/guardian/sync-status'
 import { useFamilyData } from '@/components/family/family-data-provider'
@@ -143,7 +144,17 @@ export function GuardianShell({ children }: { children: React.ReactNode }) {
                 aria-current={active ? 'page' : undefined}
                 className={cn('flex flex-1 flex-col items-center justify-center gap-1 text-[0.72rem] font-semibold transition-colors', active ? 'text-green' : 'text-muted')}
               >
-                <Icon className="h-6 w-6" strokeWidth={active ? 2 : 1.5} />
+                {item.href === '/guardian/profile' ? (
+                  <Avatar
+                    initials={identity.initials}
+                    src={identity.avatarUrl}
+                    alt=""
+                    size="sm"
+                    className={cn('h-7 w-7 text-[0.6rem]', active && 'ring-2 ring-green ring-offset-1 ring-offset-card')}
+                  />
+                ) : (
+                  <Icon className="h-6 w-6" strokeWidth={active ? 2 : 1.5} />
+                )}
                 {item.label}
               </Link>
             )
