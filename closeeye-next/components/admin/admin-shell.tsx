@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Sparkles, Activity, IndianRupee, CalendarCheck, ShieldCheck, Users, UserPlus, CreditCard,
-  MapPin, FileText, ScrollText, Settings, Search, Bell, Menu, X, ArrowRight, ArrowUpRight,
+  MapPin, FileText, ScrollText, Menu, X, ArrowUpRight,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { LogoMark } from '@/components/ui/logo'
@@ -13,10 +13,9 @@ import { Avatar } from '@/components/family/avatar'
 import { Overlay } from '@/components/family/overlay'
 import { UserMenu } from '@/components/ui/user-menu'
 import { useFamilyData } from '@/components/family/family-data-provider'
-import { ALERTS, FAMILIES } from '@/lib/admin-data'
 import { cn } from '@/lib/utils'
 
-const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) => boolean; badge?: number }[] = [
+const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) => boolean }[] = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, match: (p) => p === '/admin' },
   { href: '/admin/insights', label: 'Insights', icon: Sparkles, match: (p) => p.startsWith('/admin/insights') },
   { href: '/admin/operations', label: 'Operations', icon: Activity, match: (p) => p.startsWith('/admin/operations') },
@@ -29,7 +28,6 @@ const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) =
   { href: '/admin/coverage', label: 'Coverage', icon: MapPin, match: (p) => p.startsWith('/admin/coverage') },
   { href: '/admin/content', label: 'Content', icon: FileText, match: (p) => p.startsWith('/admin/content') },
   { href: '/admin/audit', label: 'Audit Logs', icon: ScrollText, match: (p) => p.startsWith('/admin/audit') },
-  { href: '/admin/settings', label: 'Settings', icon: Settings, match: (p) => p.startsWith('/admin/settings') },
 ]
 
 function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
@@ -43,7 +41,6 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
             className={cn('flex items-center gap-3 rounded-sm px-3 py-2.5 text-body-sm font-medium transition-colors', active ? 'bg-accent-soft text-green' : 'text-muted hover:bg-ink/[0.03] hover:text-ink')}>
             <Icon className="h-5 w-5 shrink-0" strokeWidth={active ? 2 : 1.75} />
             <span className="flex-1">{item.label}</span>
-            {item.badge ? <span className="grid h-5 min-w-5 place-items-center rounded-full bg-error px-1 text-[0.6rem] font-bold text-ivory">{item.badge}</span> : null}
           </Link>
         )
       })}
@@ -55,9 +52,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { identity } = useFamilyData()
   const [menu, setMenu] = React.useState(false)
-  const [notif, setNotif] = React.useState(false)
-  const [q, setQ] = React.useState('')
-  const highAlerts = ALERTS.filter((a) => a.severity === 'high').length
 
   const menuProps = {
     name: identity.fullName,
@@ -65,16 +59,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     avatarUrl: identity.avatarUrl,
     initials: identity.initials,
     roleLabel: 'Super Admin',
-    profileHref: '/admin/settings',
-    accountHref: '/admin/settings',
-    notificationsHref: '/admin/settings',
+    profileHref: '/admin',
+    accountHref: '/admin',
+    notificationsHref: '/admin',
     avatarTone: 'solid' as const,
   }
-
-  const query = q.trim().toLowerCase()
-  const results = query
-    ? FAMILIES.filter((f) => `${f.familyName} ${f.memberName} ${f.area}`.toLowerCase().includes(query)).slice(0, 5)
-    : []
 
   const SidebarInner = (
     <>
@@ -111,26 +100,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <button type="button" onClick={() => setMenu(true)} className="grid h-10 w-10 place-items-center rounded-full text-ink hover:bg-ink/[0.04] lg:hidden" aria-label="Menu">
               <Menu className="h-5 w-5" strokeWidth={1.75} />
             </button>
-            <div className="relative max-w-md flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" strokeWidth={1.75} />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search families, invoices, a city…" className="w-full rounded-full border border-line bg-card py-2.5 pl-10 pr-16 text-body-sm text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20" />
-              <Link href="/search" aria-label="Global search" className="absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-line bg-ivory px-1.5 py-0.5 text-[0.65rem] font-semibold text-muted transition-colors hover:text-green sm:block">⌘K</Link>
-              {results.length > 0 && (
-                <div className="absolute left-0 right-0 top-12 z-40 overflow-hidden rounded-md border border-line bg-card shadow-lg">
-                  {results.map((f) => (
-                    <Link key={f.id} href={`/console/families/${f.id}`} onClick={() => setQ('')} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-accent-soft/40">
-                      <span className="min-w-0 flex-1"><span className="block truncate text-body-sm font-semibold text-ink">{f.memberName}</span><span className="block truncate text-caption text-muted">{f.familyName} · {f.area}</span></span>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-muted" strokeWidth={1.5} />
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+            <div className="flex-1" />
             <div className="ml-auto flex items-center gap-1">
-              <button type="button" onClick={() => setNotif(true)} className="relative grid h-10 w-10 place-items-center rounded-full text-ink hover:bg-ink/[0.04]" aria-label="Attention center">
-                <Bell className="h-5 w-5" strokeWidth={1.75} />
-                {highAlerts > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-error ring-2 ring-ivory" />}
-              </button>
               <UserMenu {...menuProps} className="ml-1" />
             </div>
           </div>
@@ -145,21 +116,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <button onClick={() => setMenu(false)} aria-label="Close" className="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-accent-soft"><X className="h-5 w-5" strokeWidth={1.5} /></button>
         </div>
         <div className="flex max-h-[75vh] flex-col overflow-y-auto py-3">{SidebarInner}</div>
-      </Overlay>
-
-      <Overlay open={notif} onClose={() => setNotif(false)}>
-        <div className="flex items-center justify-between border-b border-line px-6 py-4">
-          <h2 className="text-h4">Attention center</h2>
-          <button onClick={() => setNotif(false)} aria-label="Close" className="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-accent-soft"><X className="h-5 w-5" strokeWidth={1.5} /></button>
-        </div>
-        <ul className="max-h-[70vh] overflow-y-auto">
-          {ALERTS.map((a) => (
-            <li key={a.id} className="border-b border-line px-6 py-3.5 last:border-b-0">
-              <p className="text-body-sm font-semibold text-ink">{a.title}</p>
-              <p className="text-caption text-muted">{a.action}</p>
-            </li>
-          ))}
-        </ul>
       </Overlay>
     </div>
   )

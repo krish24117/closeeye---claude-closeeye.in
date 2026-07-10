@@ -1,9 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import { Check, Heart } from 'lucide-react'
+import { Check, Heart, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { addApplicant } from '@/lib/companion-applicants'
+import { submitCompanionApplication } from '@/lib/companion-applicants'
 import { cn } from '@/lib/utils'
 
 const SKILLS = ['Conversation', 'Walk', 'Reading', 'Hospital Companion', 'Shopping Assistance', 'Music', 'Cooking company']
@@ -15,6 +15,8 @@ export function CompanionApplication() {
   const [skills, setSkills] = React.useState<string[]>([])
   const [why, setWhy] = React.useState('')
   const [done, setDone] = React.useState(false)
+  const [submitting, setSubmitting] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
 
   const valid = name.trim() && phone.trim() && city.trim()
 
@@ -22,10 +24,15 @@ export function CompanionApplication() {
     setSkills((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]))
   }
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!valid) return
-    addApplicant({ name: name.trim(), phone: phone.trim(), city: city.trim(), skills, why: why.trim() })
+    if (!valid || submitting) return
+    setSubmitting(true)
+    setError(null)
+    // Real Supabase insert — the success screen only shows if it actually saved.
+    const res = await submitCompanionApplication({ name, phone, city, skills, why })
+    setSubmitting(false)
+    if (!res.ok) { setError(res.error ?? 'Something went wrong. Please try again.'); return }
     setDone(true)
   }
 
@@ -78,7 +85,10 @@ export function CompanionApplication() {
         <textarea value={why} onChange={(e) => setWhy(e.target.value)} rows={3} placeholder="A sentence about why you'd like to spend time with elders…" className="w-full resize-none rounded-sm border border-line bg-ivory px-3.5 py-2.5 text-body-sm text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20" />
       </label>
 
-      <Button type="submit" size="lg" className="mt-6 w-full" disabled={!valid}>Submit application</Button>
+      {error && <p className="mt-4 text-center text-body-sm text-error">{error}</p>}
+      <Button type="submit" size="lg" className="mt-6 w-full" disabled={!valid || submitting}>
+        {submitting ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Submitting…</> : 'Submit application'}
+      </Button>
       <p className="mt-3 text-center text-caption text-muted">By applying you agree to a background verification. We&apos;ll be in touch within a few days.</p>
     </form>
   )

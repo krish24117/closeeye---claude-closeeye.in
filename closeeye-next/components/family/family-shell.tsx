@@ -1,13 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Home,
   Users,
   CalendarDays,
-  FolderLock,
   BadgeCheck,
   MessageCircle,
   Settings,
@@ -23,7 +22,9 @@ import { Logo } from '@/components/ui/logo'
 import { Avatar } from '@/components/family/avatar'
 import { Overlay } from '@/components/family/overlay'
 import { AvatarLink } from '@/components/ui/avatar-link'
+import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { fetchNotifications, markAllNotificationsRead, type AppNotification } from '@/lib/db/notifications'
 import { SITE } from '@/lib/site'
 import type { LovedOne } from '@/lib/db/types'
 import { cn } from '@/lib/utils'
@@ -32,7 +33,6 @@ const DESKTOP_NAV = [
   { href: '/family', label: 'Overview', icon: Home },
   { href: '/family/members', label: 'Family', icon: Users },
   { href: '/family/visits', label: 'Visits', icon: CalendarDays },
-  { href: '/family/documents', label: 'Documents', icon: FolderLock },
   { href: '/family/membership', label: 'Membership', icon: BadgeCheck },
   { href: '/family/connect', label: 'Connect', icon: MessageCircle },
   { href: '/family/profile', label: 'Settings', icon: Settings },
@@ -53,10 +53,28 @@ function isActive(pathname: string, href: string) {
 export function FamilyShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { lovedOnes, identity } = useFamilyData()
+  const { user } = useAuth()
   const [emergency, setEmergency] = useState(false)
   const [notif, setNotif] = useState(false)
-  // Real notifications feed isn't wired yet — show 0 rather than a fabricated count.
-  const unread = 0
+  const [notifs, setNotifs] = useState<AppNotification[]>([])
+  const unread = notifs.filter((n) => !n.read).length
+
+  // Real notifications feed (user_id-scoped `notifications` table). Empty is honest,
+  // never fabricated.
+  useEffect(() => {
+    if (!user?.id) { setNotifs([]); return }
+    fetchNotifications(user.id).then(setNotifs).catch(() => setNotifs([]))
+  }, [user?.id])
+
+  async function openNotif() {
+    setNotif(true)
+    if (user?.id && notifs.some((n) => !n.read)) {
+      try {
+        await markAllNotificationsRead(user.id)
+        setNotifs((prev) => prev.map((n) => ({ ...n, read: true })))
+      } catch { /* best-effort */ }
+    }
+  }
 
   return (
     <div className="min-h-dvh bg-ivory">
@@ -67,7 +85,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
             <Logo />
           </Link>
           <div className="flex items-center gap-1">
-            <BellButton count={unread} onClick={() => setNotif(true)} />
+            <BellButton count={unread} onClick={openNotif} />
             <AvatarLink href="/family/profile" initials={identity.initials} avatarUrl={identity.avatarUrl} name={identity.fullName} />
           </div>
         </div>
@@ -110,7 +128,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
           <Logo />
         </Link>
         <div className="flex items-center gap-1">
-          <BellButton count={unread} onClick={() => setNotif(true)} />
+          <BellButton count={unread} onClick={openNotif} />
           <button
             type="button"
             onClick={() => setEmergency(true)}
@@ -166,7 +184,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
         })}
       </nav>
 
-      <NotifPanel open={notif} onClose={() => setNotif(false)} />
+      <NotifPanel open={notif} onClose={() => setNotif(false)} notifs={notifs} />
       <EmergencySheet open={emergency} onClose={() => setEmergency(false)} lovedOnes={lovedOnes} />
     </div>
   )
@@ -207,7 +225,18 @@ function PresenceManagerMini() {
 
 /* ── Overlays ──────────────────────────────────────────────────────────── */
 
-function NotifPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+function notifTime(iso: string): string {
+  try {
+    const d = new Date(iso)
+    return d.toDateString() === new Date().toDateString()
+      ? d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+      : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+  } catch {
+    return ''
+  }
+}
+
+function NotifPanel({ open, onClose, notifs }: { open: boolean; onClose: () => void; notifs: AppNotification[] }) {
   return (
     <Overlay open={open} onClose={onClose}>
       <div className="flex items-center justify-between border-b border-line px-6 py-4">
@@ -216,12 +245,27 @@ function NotifPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
           <X className="h-5 w-5" strokeWidth={1.5} />
         </button>
       </div>
-      <div className="px-6 py-12 text-center">
-        <p className="text-body-sm font-semibold text-ink">You&apos;re all caught up</p>
-        <p className="mx-auto mt-1 max-w-xs text-caption text-muted">
-          Updates about your family&apos;s visits and Presence Stories will appear here.
-        </p>
-      </div>
+      {notifs.length === 0 ? (
+        <div className="px-6 py-12 text-center">
+          <p className="text-body-sm font-semibold text-ink">You&apos;re all caught up</p>
+          <p className="mx-auto mt-1 max-w-xs text-caption text-muted">
+            Updates about your family&apos;s visits and Presence Stories will appear here.
+          </p>
+        </div>
+      ) : (
+        <ul className="max-h-[70vh] overflow-y-auto">
+          {notifs.map((n) => (
+            <li key={n.id} className="flex gap-3 border-b border-line px-6 py-3.5 last:border-b-0">
+              <span className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', n.read ? 'bg-transparent' : 'bg-green')} aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-body-sm font-semibold text-ink">{n.title}</p>
+                {n.message && <p className="mt-0.5 text-caption leading-relaxed text-muted">{n.message}</p>}
+                <p className="mt-0.5 text-caption text-muted/70">{notifTime(n.created_at)}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </Overlay>
   )
 }

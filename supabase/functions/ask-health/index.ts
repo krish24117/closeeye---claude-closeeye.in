@@ -134,7 +134,7 @@ const ANSWER_EMERGENCY_RE =
 async function sendCareTeamAlert(
   sb: ReturnType<typeof createClient>,
   opts: { userId: string; question: string; queryId: string; lovedOneId?: string | null; subjectLabel?: string; category: string },
-): Promise<void> {
+): Promise<{ delivered: boolean }> {
   let famName = "", famPhone = "";
   let patient = "", location = "", hospital = "", emgContact = "", medNotes = "";
   try {
@@ -178,6 +178,8 @@ async function sendCareTeamAlert(
     `Ref: query ${opts.queryId}`,
   ].filter(Boolean).join("\n");
 
+  let delivered = false;
+
   // WhatsApp — real-time (needs an open 24h session for the recipient).
   try {
     const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
@@ -186,15 +188,19 @@ async function sendCareTeamAlert(
     const careTeam   = Deno.env.get("CARE_TEAM_WHATSAPP");
     if (accountSid && authToken && fromNum && careTeam) {
       const numbers = careTeam.split(",").map((n: string) => n.trim()).filter(Boolean);
-      await Promise.all(numbers.map(async (to) => {
+      const waResults = await Promise.all(numbers.map(async (to) => {
         const waTo = to.startsWith("whatsapp:") ? to : `whatsapp:${to.startsWith("+") ? to : "+" + to}`;
-        const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
-          method: "POST",
-          headers: { Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`, "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ From: fromNum, To: waTo, Body: alertBody }),
-        });
-        if (!res.ok) console.error("[ask-health] care-team WhatsApp failed:", res.status, await res.text());
+        try {
+          const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+            method: "POST",
+            headers: { Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`, "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ From: fromNum, To: waTo, Body: alertBody }),
+          });
+          if (!res.ok) { console.error("[ask-health] care-team WhatsApp failed:", res.status, await res.text()); return false; }
+          return true;
+        } catch (e) { console.error("[ask-health] care-team WhatsApp send error:", e); return false; }
       }));
+      if (waResults.some(Boolean)) delivered = true;
     }
   } catch (e) { console.error("[ask-health] care-team WhatsApp error (non-fatal):", e); }
 
@@ -215,8 +221,14 @@ async function sendCareTeamAlert(
         }),
       });
       if (!res.ok) console.error("[ask-health] care-team email failed:", res.status, await res.text());
+      else delivered = true;
     }
   } catch (e) { console.error("[ask-health] care-team email error (non-fatal):", e); }
+
+  if (!delivered) {
+    console.error(`[ask-health] ⚠️ CARE-TEAM ALERT UNDELIVERED — query ${opts.queryId} category=${opts.category}: no channel configured or all sends failed`);
+  }
+  return { delivered };
 }
 
 Deno.serve(async (req: Request) => {
@@ -265,6 +277,9 @@ Deno.serve(async (req: Request) => {
   const redFlag = detectRedFlag(question);
 
   const sb = createClient(supabaseUrl, supabaseServiceKey);
+
+  // Human fallback number for when the automated care-team alert can't be delivered.
+  const SUPPORT_PHONE = Deno.env.get("CARE_TEAM_PHONE") || "+91 90002 21261";
 
   // ── Founding / paying-member exemption ────────────────────────────────────
   const { data: memberProf } = await sb
@@ -386,16 +401,21 @@ Deno.serve(async (req: Request) => {
   // ── Red-flag escalation ───────────────────────────────────────────────────
   if (redFlag.matched) {
     console.log(`[ask-health] escalation: category=${redFlag.category} query_id=${queryId}`);
-    await sendCareTeamAlert(sb, {
+    const alert = await sendCareTeamAlert(sb, {
       userId: user.id, question, queryId,
       lovedOneId: body.loved_one_id, subjectLabel: body.subject_label, category: redFlag.category,
     });
 
+    // Only claim the care team was alerted if a channel actually delivered.
+    const careLine = alert.delivered
+      ? "Our care team has been alerted and will follow up shortly."
+      : `We could not reach our care team automatically — please also call us now on ${SUPPORT_PHONE}. Do not wait.`;
+
     return json({
       query_id: queryId,
       lane:     "escalate",
-      message:  `**Call ${AMBULANCE_NUMBER} now.** This sounds like a medical emergency — please don't wait.\n\nCall **${AMBULANCE_NUMBER}** (ambulance) or take them to the nearest emergency room immediately. Stay on the line with the dispatcher — they will guide you until help arrives.\n\nOur care team has been alerted and will follow up shortly.`,
-      escalation: { ambulanceNumber: AMBULANCE_NUMBER },
+      message:  `**Call ${AMBULANCE_NUMBER} now.** This sounds like a medical emergency — please don't wait.\n\nCall **${AMBULANCE_NUMBER}** (ambulance) or take them to the nearest emergency room immediately. Stay on the line with the dispatcher — they will guide you until help arrives.\n\n${careLine}`,
+      escalation: { ambulanceNumber: AMBULANCE_NUMBER, careTeamAlerted: alert.delivered },
     });
   }
 
@@ -457,15 +477,18 @@ Deno.serve(async (req: Request) => {
     // card — so a real emergency is never silently shown as a normal answer.
     if (ANSWER_EMERGENCY_RE.test(rawAnswer)) {
       console.log(`[ask-health] ai-detected emergency query_id=${queryId}`);
-      await sendCareTeamAlert(sb, {
+      const alert = await sendCareTeamAlert(sb, {
         userId: user.id, question, queryId,
         lovedOneId: body.loved_one_id, subjectLabel: body.subject_label, category: "ai_detected",
       });
+      const careLine = alert.delivered
+        ? "\n\n---\nOur care team has also been alerted and will follow up shortly."
+        : `\n\n---\nWe could not reach our care team automatically — if you need us right now, please call ${SUPPORT_PHONE}.`;
       return json({
         query_id: queryId,
         lane:     "escalate",
-        message:  aiAnswer,
-        escalation: { ambulanceNumber: AMBULANCE_NUMBER },
+        message:  aiAnswer + careLine,
+        escalation: { ambulanceNumber: AMBULANCE_NUMBER, careTeamAlerted: alert.delivered },
       });
     }
 

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, CalendarClock, ShieldCheck, MessageCircle, MessagesSquare, TriangleAlert,
-  CalendarDays, BarChart3, Settings, Search, Bell, Siren, Menu, X, Phone, Ambulance, Headset, ArrowRight,
+  CalendarDays, BarChart3, Siren, Menu, X, Ambulance, Headset,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { LogoMark } from '@/components/ui/logo'
@@ -13,25 +13,20 @@ import { Avatar } from '@/components/family/avatar'
 import { Overlay } from '@/components/family/overlay'
 import { UserMenu } from '@/components/ui/user-menu'
 import { useFamilyData } from '@/components/family/family-data-provider'
-import { FAMILIES, GUARDIANS, ACTIVITY, STATS, guardianById } from '@/lib/console-data'
+import { SITE } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
-const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) => boolean; badge?: number }[] = [
+const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) => boolean }[] = [
   { href: '/console', label: 'Dashboard', icon: LayoutDashboard, match: (p) => p === '/console' },
   { href: '/console/families', label: 'Families', icon: Users, match: (p) => p.startsWith('/console/families') },
   { href: '/console/visits', label: "Today's Visits", icon: CalendarClock, match: (p) => p.startsWith('/console/visits') },
   { href: '/console/guardians', label: 'Care Team', icon: ShieldCheck, match: (p) => p.startsWith('/console/guardians') },
   { href: '/console/messages', label: 'Messages', icon: MessageCircle, match: (p) => p.startsWith('/console/messages') },
   { href: '/console/guardian-messages', label: 'Guardian chat', icon: MessagesSquare, match: (p) => p.startsWith('/console/guardian-messages') },
-  { href: '/console/escalations', label: 'Escalations', icon: TriangleAlert, match: (p) => p.startsWith('/console/escalations'), badge: STATS.highPriority },
+  { href: '/console/escalations', label: 'Escalations', icon: TriangleAlert, match: (p) => p.startsWith('/console/escalations') },
   { href: '/console/calendar', label: 'Calendar', icon: CalendarDays, match: (p) => p.startsWith('/console/calendar') },
   { href: '/console/reports', label: 'Reports', icon: BarChart3, match: (p) => p.startsWith('/console/reports') },
-  { href: '/console/settings', label: 'Settings', icon: Settings, match: (p) => p.startsWith('/console/settings') },
 ]
-
-const NOTIF_ICON: Record<string, LucideIcon> = {
-  checkin: ShieldCheck, completed: CalendarClock, voice: MessageCircle, photo: Users, request: MessageCircle, story: BarChart3, escalation: TriangleAlert, appointment: CalendarDays, delay: TriangleAlert,
-}
 
 function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   return (
@@ -52,7 +47,6 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
           >
             <Icon className="h-5 w-5 shrink-0" strokeWidth={active ? 2 : 1.75} />
             <span className="flex-1">{item.label}</span>
-            {item.badge ? <span className="grid h-5 min-w-5 place-items-center rounded-full bg-error px-1 text-[0.6rem] font-bold text-ivory">{item.badge}</span> : null}
           </Link>
         )
       })}
@@ -64,9 +58,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { identity } = useFamilyData()
   const [menu, setMenu] = React.useState(false)
-  const [notif, setNotif] = React.useState(false)
   const [sos, setSos] = React.useState(false)
-  const [q, setQ] = React.useState('')
 
   const menuProps = {
     name: identity.fullName,
@@ -74,18 +66,10 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
     avatarUrl: identity.avatarUrl,
     initials: identity.initials,
     roleLabel: 'Presence Manager',
-    profileHref: '/console/settings',
-    accountHref: '/console/settings',
-    notificationsHref: '/console/settings',
+    profileHref: '/console',
+    accountHref: '/console',
+    notificationsHref: '/console',
   }
-
-  const query = q.trim().toLowerCase()
-  const results = query
-    ? [
-        ...FAMILIES.filter((f) => `${f.familyName} ${f.memberName} ${f.area} ${f.phone}`.toLowerCase().includes(query)).slice(0, 4).map((f) => ({ href: `/console/families/${f.id}`, title: f.memberName, sub: `${f.familyName} · ${f.area}` })),
-        ...GUARDIANS.filter((g) => `${g.name} ${g.city}`.toLowerCase().includes(query)).slice(0, 3).map((g) => ({ href: '/console/guardians', title: g.name, sub: `Guardian · ${g.city}` })),
-      ]
-    : []
 
   const SidebarInner = (
     <>
@@ -121,50 +105,15 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
               <Menu className="h-5 w-5" strokeWidth={1.75} />
             </button>
 
-            <div className="relative max-w-md flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" strokeWidth={1.75} />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search families, guardians, a city…"
-                className="w-full rounded-full border border-line bg-card py-2.5 pl-10 pr-16 text-body-sm text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20"
-              />
-              <Link href="/search" aria-label="Global search" className="pointer-events-auto absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-line bg-ivory px-1.5 py-0.5 text-[0.65rem] font-semibold text-muted transition-colors hover:text-green sm:block">⌘K</Link>
-              {results.length > 0 && (
-                <div className="absolute left-0 right-0 top-12 z-40 overflow-hidden rounded-md border border-line bg-card shadow-lg">
-                  {results.map((r) => (
-                    <Link key={r.href + r.title} href={r.href} onClick={() => setQ('')} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-accent-soft/40">
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-body-sm font-semibold text-ink">{r.title}</span>
-                        <span className="block truncate text-caption text-muted">{r.sub}</span>
-                      </span>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-muted" strokeWidth={1.5} />
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+            <div className="flex-1" />
 
             <div className="ml-auto flex items-center gap-1">
-              <button type="button" onClick={() => setNotif(true)} className="relative grid h-10 w-10 place-items-center rounded-full text-ink hover:bg-ink/[0.04]" aria-label="Notifications">
-                <Bell className="h-5 w-5" strokeWidth={1.75} />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-success ring-2 ring-ivory" />
-              </button>
               <button type="button" onClick={() => setSos(true)} className="grid h-10 w-10 place-items-center rounded-full border border-error/30 text-error hover:bg-error/10" aria-label="Emergency">
                 <Siren className="h-5 w-5" strokeWidth={1.75} />
               </button>
               <UserMenu {...menuProps} className="ml-1" />
             </div>
           </div>
-
-          {/* Contextual high-priority banner (calm, not alarming) */}
-          {STATS.highPriority > 0 && (
-            <Link href="/console/escalations" className="flex items-center gap-2 border-t border-warning/30 bg-warning/[0.08] px-6 py-2 text-caption font-medium text-warning transition-colors hover:bg-warning/[0.12]">
-              <TriangleAlert className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-              {STATS.highPriority} {STATS.highPriority === 1 ? 'family needs' : 'families need'} attention today
-              <span className="ml-auto inline-flex items-center gap-1 font-semibold">Review <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></span>
-            </Link>
-          )}
         </header>
 
         <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
@@ -179,31 +128,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
         <div className="flex max-h-[70vh] flex-col overflow-y-auto py-3">{SidebarInner}</div>
       </Overlay>
 
-      {/* Notifications */}
-      <Overlay open={notif} onClose={() => setNotif(false)}>
-        <div className="flex items-center justify-between border-b border-line px-6 py-4">
-          <h2 className="text-h4">Notifications</h2>
-          <button onClick={() => setNotif(false)} aria-label="Close" className="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-accent-soft"><X className="h-5 w-5" strokeWidth={1.5} /></button>
-        </div>
-        <ul className="max-h-[70vh] overflow-y-auto">
-          {ACTIVITY.map((n) => {
-            const Icon = NOTIF_ICON[n.kind] ?? Bell
-            return (
-              <li key={n.id} className="flex gap-3 border-b border-line px-6 py-3.5 last:border-b-0">
-                <span className={cn('mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full', n.kind === 'escalation' || n.kind === 'delay' ? 'bg-warning/12 text-warning' : 'bg-accent-soft text-green')}>
-                  <Icon className="h-4 w-4" strokeWidth={1.75} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-body-sm text-ink">{n.text}</p>
-                  <p className="mt-0.5 text-caption text-muted">{n.timeLabel}</p>
-                </div>
-              </li>
-            )
-          })}
-        </ul>
-      </Overlay>
-
-      {/* Emergency */}
+      {/* Emergency — real numbers only (108 + CloseEye support line). */}
       <Overlay open={sos} onClose={() => setSos(false)}>
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
           <div className="flex items-center gap-2.5">
@@ -213,10 +138,8 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
           <button onClick={() => setSos(false)} aria-label="Close" className="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-accent-soft"><X className="h-5 w-5" strokeWidth={1.5} /></button>
         </div>
         <div className="flex flex-col gap-3 px-6 py-5">
-          <a href={`tel:${guardianById('g-arjun')?.phone.replace(/\s/g, '')}`} className="flex min-h-[3.25rem] items-center justify-center gap-2 rounded-sm border border-line py-3 text-body font-semibold text-ink hover:border-accent"><ShieldCheck className="h-5 w-5 text-green" strokeWidth={1.75} /> Call the Guardian</a>
-          <a href="tel:+919000221261" className="flex min-h-[3.25rem] items-center justify-center gap-2 rounded-sm border border-line py-3 text-body font-semibold text-ink hover:border-accent"><Phone className="h-5 w-5 text-green" strokeWidth={1.75} /> Call the family</a>
-          <a href="tel:+914040404040" className="flex min-h-[3.25rem] items-center justify-center gap-2 rounded-sm border border-line py-3 text-body font-semibold text-ink hover:border-accent"><Headset className="h-5 w-5 text-green" strokeWidth={1.75} /> Notify Operations</a>
           <a href="tel:108" className="flex min-h-[3.5rem] items-center justify-center gap-2 rounded-sm bg-error py-4 text-body font-semibold text-ivory hover:opacity-90"><Ambulance className="h-5 w-5" strokeWidth={1.75} /> Emergency services · 108</a>
+          <a href={SITE.phoneHref} className="flex min-h-[3.25rem] items-center justify-center gap-2 rounded-sm border border-line py-3 text-body font-semibold text-ink hover:border-accent"><Headset className="h-5 w-5 text-green" strokeWidth={1.75} /> Call {SITE.name} support</a>
         </div>
       </Overlay>
     </div>

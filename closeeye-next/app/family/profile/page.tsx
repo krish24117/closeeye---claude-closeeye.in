@@ -13,9 +13,10 @@ import { Overlay } from '@/components/family/overlay'
 import { ProfileIdentity } from '@/components/family/profile-identity'
 import { MembershipCard } from '@/components/family/membership-card'
 import { SignOutButton } from '@/components/auth/sign-out-button'
-import { RequestDataButton } from '@/components/family/profile-actions'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { useToast } from '@/components/ui/toast'
+import { supabase } from '@/lib/supabase'
 import { SITE } from '@/lib/site'
 
 // ── Reusable section primitives (existing design language) ───────────────────
@@ -84,6 +85,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const { user, signOut } = useAuth()
   const { identity, profile, subscription, lovedOnes } = useFamilyData()
+  const toast = useToast()
   const [confirmDelete, setConfirmDelete] = React.useState(false)
   const [deleting, setDeleting] = React.useState(false)
 
@@ -96,11 +98,22 @@ export default function ProfilePage() {
     : null
 
   async function deleteAccount() {
+    if (deleting) return
     setDeleting(true)
     try {
-      await signOut()
+      // Real deletion is server-side: cancels billing, removes the family's data,
+      // and closes the account. We only sign out + leave once it actually succeeds
+      // — never a fake confirmation.
+      const { data, error } = await supabase.functions.invoke('delete-account')
+      if (error || !data?.ok) {
+        toast((data?.error as string) || 'We couldn’t close your account just now. Please try again, or contact your Presence Manager.', 'info')
+        setDeleting(false)
+        return
+      }
+      try { await signOut() } catch { /* account already closed server-side */ }
       router.replace('/welcome')
     } catch {
+      toast('We couldn’t close your account just now. Please try again, or contact your Presence Manager.', 'info')
       setDeleting(false)
     }
   }
@@ -175,10 +188,6 @@ export default function ProfilePage() {
         <ComingSoonRow label="Change password" />
         <ComingSoonRow label="Manage login" />
         <ComingSoonRow label="Two-factor authentication" />
-        <div className="flex items-center justify-between gap-4 py-3.5">
-          <span className="text-body-sm font-medium text-ink">Download my data</span>
-          <RequestDataButton />
-        </div>
         <div className="flex flex-col gap-3 pt-4">
           <SignOutButton />
           <button
@@ -211,7 +220,7 @@ export default function ProfilePage() {
             <h3 className="text-h4 text-ink">Delete your account?</h3>
           </div>
           <p className="mt-3 text-body-sm leading-relaxed text-muted">
-            This starts permanent deletion of your Close Eye account and family data. You’ll be signed out now, and full removal completes within 30 days. This can’t be undone.
+            This permanently closes your Close Eye account. Your membership billing stops immediately, your family’s data is removed, and you’ll be signed out. This can’t be undone.
           </p>
           <div className="mt-5 flex flex-col gap-2.5">
             <Button size="lg" onClick={deleteAccount} disabled={deleting} className="w-full bg-error text-white hover:bg-error/90">

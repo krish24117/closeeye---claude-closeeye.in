@@ -8,7 +8,6 @@ import { AuthGate } from '@/components/auth/auth-gate'
 import { FamilyDataProvider } from '@/components/family/family-data-provider'
 import { ToastProvider } from '@/components/ui/toast'
 import { OfflineBanner } from '@/components/ui/offline-banner'
-import { CommandK } from '@/components/ui/command-k'
 import { SITE } from '@/lib/site'
 
 // Design Authority: Manrope primary, Inter fallback.
@@ -118,7 +117,6 @@ export default function RootLayout({
           </FamilyDataProvider>
         </AuthProvider>
         <OfflineBanner />
-        <CommandK />
         <RegisterSW />
         <NativeInit />
       </body>

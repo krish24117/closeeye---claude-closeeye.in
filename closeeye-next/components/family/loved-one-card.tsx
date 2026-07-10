@@ -7,8 +7,9 @@ import type { LucideIcon } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
 import { Overlay } from '@/components/family/overlay'
 import { Button } from '@/components/ui/button'
-import { useLovedOnes } from '@/components/family/family-data-provider'
+import { useFamilyData, useLovedOnes } from '@/components/family/family-data-provider'
 import { useToast } from '@/components/ui/toast'
+import { planById } from '@/lib/plans'
 import { getLocalPhoto } from '@/lib/local-photos'
 import type { LovedOne } from '@/lib/db/types'
 import { cn } from '@/lib/utils'
@@ -53,6 +54,7 @@ function CardAction({ href, icon: Icon, label, primary }: { href: string; icon: 
 /** A family member, from real Supabase data, with status badges + actions. */
 export function LovedOneCard({ lo }: { lo: LovedOne }) {
   const { removeLovedOne } = useLovedOnes()
+  const { subscription } = useFamilyData()
   const toast = useToast()
   const [photo, setPhoto] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -63,10 +65,14 @@ export function LovedOneCard({ lo }: { lo: LovedOne }) {
   const healthComplete = Boolean(lo.medical_notes?.trim() && lo.phone_number?.trim() && lo.emergency_contact_name?.trim())
   const meta = [lo.relationship, lo.city].filter(Boolean).join(' · ')
 
+  // Membership is account-level (one subscription per family), reflected on each
+  // card from real data. "Next visit" was a hardcoded placeholder — removed rather
+  // than fabricated; real visits live on the Visits screen.
+  const memberActive = subscription?.status === 'active'
+  const planShort = planById(subscription?.plan_id)?.short
   const rows: { label: string; value: string; tone: BadgeTone }[] = [
-    { label: 'Membership', value: 'Inactive', tone: 'grey' },
+    { label: 'Membership', value: memberActive ? (planShort ?? 'Active') : 'Not active', tone: memberActive ? 'green' : 'grey' },
     { label: 'Health profile', value: healthComplete ? 'Complete' : 'Incomplete', tone: healthComplete ? 'green' : 'yellow' },
-    { label: 'Next visit', value: 'Not scheduled', tone: 'grey' },
   ]
 
   async function remove() {
