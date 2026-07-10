@@ -38,7 +38,11 @@ export default function MembershipPage() {
   function handleOutcome(o: PayOutcome, short: string) {
     if (o.status === 'success') {
       toast(`Payment received — activating your CloseEye ${short} membership.`)
+      // The webhook is the sole authority for activation. Re-fetch a few times so
+      // the UI flips to Active as soon as the webhook lands (usually a second or
+      // two) — the client never writes status itself.
       void refresh()
+      for (let i = 1; i <= 4; i++) setTimeout(() => void refresh(), i * 2500)
     } else if (o.status === 'dismissed') {
       toast(`CloseEye ${short} selected — you can complete payment anytime.`)
     } else {

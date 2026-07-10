@@ -20,14 +20,29 @@ export async function saveProfileBasics(userId: string, input: { fullName: strin
 }
 
 /**
- * Store the chosen membership plan. No charge is taken — status is 'created'
- * and payment is completed later via Razorpay from the Membership page.
- * Upserts on the unique user_id so re-choosing updates the same row.
+ * Store the chosen membership plan. No charge is taken — a NEW row starts as
+ * 'created' and payment is completed later via Razorpay from the Membership page.
+ * NEVER overwrites status: the Razorpay webhook is the sole authority for it, so
+ * re-choosing on an existing (possibly 'active') subscription updates only the
+ * plan — never downgrading status back to 'created'.
  */
 export async function selectPlan(userId: string, planId: PlanId): Promise<{ error: string | null }> {
+  const { data: existing } = await supabase
+    .from('subscriptions')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (existing) {
+    // Row already exists — update only the plan; leave status to the webhook.
+    const { error } = await supabase.from('subscriptions').update({ plan_id: planId }).eq('user_id', userId)
+    return { error: error?.message ?? null }
+  }
+
+  // No subscription yet — create a fresh, unpaid row.
   const { error } = await supabase
     .from('subscriptions')
-    .upsert({ user_id: userId, plan_id: planId, status: 'created' }, { onConflict: 'user_id' })
+    .insert({ user_id: userId, plan_id: planId, status: 'created' })
   return { error: error?.message ?? null }
 }
 

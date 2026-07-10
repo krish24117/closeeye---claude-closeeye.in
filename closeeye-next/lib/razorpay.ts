@@ -73,14 +73,12 @@ export async function payForMembership(opts: {
       theme: THEME,
       prefill: opts.prefill,
       modal: { backdropclose: false, ondismiss: () => resolve({ status: 'dismissed' }) },
-      handler: async (resp: { razorpay_subscription_id?: string }) => {
-        try {
-          if (resp?.razorpay_subscription_id) {
-            await supabase.from('subscriptions').update({ status: 'authenticated' }).eq('razorpay_subscription_id', resp.razorpay_subscription_id)
-          }
-        } catch {
-          /* the webhook is the source of truth for activation */
-        }
+      handler: () => {
+        // The Razorpay webhook (subscription.activated / subscription.charged) is
+        // the SOLE authority for subscription status. Writing status from the
+        // client races the webhook and can downgrade an already-'active' row back
+        // to 'authenticated'. We only signal success here — the caller re-fetches
+        // and the webhook is what flips the row to 'active'.
         resolve({ status: 'success' })
       },
     })
