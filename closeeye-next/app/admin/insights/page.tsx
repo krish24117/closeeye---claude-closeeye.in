@@ -1,107 +1,76 @@
-import { HeartPulse, Users2, ShieldCheck, Radar, Network, MapPin } from 'lucide-react'
-import { InsightSearch } from '@/components/insights/insight-search'
-import { DailyBrief } from '@/components/insights/daily-brief'
-import { WellnessTrends } from '@/components/insights/wellness-trends'
-import { RelationshipInsights } from '@/components/insights/relationship-insights'
-import { CareQuality } from '@/components/insights/care-quality'
-import { OperationalIntelligence } from '@/components/insights/operational-intelligence'
-import { StoryStudio } from '@/components/insights/story-studio'
-import { ExecKpiStrip } from '@/components/insights/exec-kpi-strip'
-import { PriorityList } from '@/components/insights/priority-list'
-import { ZoneIntel } from '@/components/insights/zone-intel'
-import {
-  CancellationIntel, RevenueIntel, FinancialHealth, CompanionIntel, CareTeamIntel, GuardianCapacity, GrowthDashboard, CrossModuleIntel,
-} from '@/components/insights/exec-dashboards'
-import { AlertCard } from '@/components/admin/alert-card'
-import { proactiveAlerts } from '@/lib/cloza-engine'
+'use client'
 
-function Heading({ icon: Icon, title, sub }: { icon: typeof HeartPulse; title: string; sub: string }) {
+import * as React from 'react'
+import { Loader2, Lock, Sparkles } from 'lucide-react'
+import { EmptyState } from '@/components/ui/states'
+import { useFamilyData } from '@/components/family/family-data-provider'
+import { fetchAdminOverview, type AdminOverview, type InsightRow } from '@/lib/db/admin'
+import { fmtINR } from '@/lib/admin-data'
+import { isSuperAdmin } from '@/lib/roles'
+
+function Bars({ rows }: { rows: InsightRow[] }) {
+  const max = Math.max(1, ...rows.map((r) => r.value))
+  if (rows.length === 0) return <p className="text-body-sm text-muted">No revenue recorded yet.</p>
   return (
-    <div className="flex items-center gap-2.5">
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><Icon className="h-4 w-4" strokeWidth={1.75} /></span>
-      <div><h2 className="text-h4">{title}</h2><p className="text-caption text-muted">{sub}</p></div>
+    <div className="flex flex-col gap-3">
+      {rows.map((r) => (
+        <div key={r.label}>
+          <div className="flex items-center justify-between text-body-sm"><span className="truncate font-medium text-ink">{r.label}</span><span className="shrink-0 font-semibold text-ink">{fmtINR(r.value)}</span></div>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-accent-soft"><div className="h-full rounded-full bg-green" style={{ width: `${(r.value / max) * 100}%` }} /></div>
+        </div>
+      ))}
     </div>
   )
 }
 
 export default function InsightsPage() {
-  const alerts = proactiveAlerts()
+  const { profile, loading } = useFamilyData()
+  const isAdmin = isSuperAdmin(profile)
+  const [d, setD] = React.useState<AdminOverview | null>(null)
+
+  React.useEffect(() => {
+    if (!isAdmin) return
+    fetchAdminOverview().then(setD).catch(() => setD(null))
+  }, [isAdmin])
+
+  if (loading) return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
+  if (!isAdmin) return <div className="flex flex-col gap-6"><h1 className="text-h2">Insights</h1><EmptyState icon={Lock} title="Restricted" hint="Available to administrators only." /></div>
+  if (d === null) return <div className="flex flex-col gap-8"><h1 className="text-h2">Insights</h1><div className="grid place-items-center rounded-lg border border-line bg-card py-20 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div></div>
+
+  const tiles = [
+    { l: 'Revenue this month', v: fmtINR(d.revenueMonth) },
+    { l: 'MRR', v: fmtINR(d.mrr) },
+    { l: 'Active families', v: String(d.families) },
+    { l: 'New this month', v: String(d.newFamiliesMonth) },
+    { l: 'Active subscriptions', v: String(d.activeSubs) },
+    { l: 'Care Team', v: String(d.careTeam) },
+  ]
+
   return (
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-h2">Insights</h1>
-        <p className="mt-1.5 text-body leading-relaxed text-muted">What happened, why, and what to do next — read from everything Close Eye already knows.</p>
+        <p className="mt-1.5 text-body leading-relaxed text-muted">The numbers that matter, read from live data.</p>
       </div>
 
-      {/* Executive KPIs */}
-      <ExecKpiStrip />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        {tiles.map((t) => (
+          <div key={t.l} className="rounded-lg border border-line bg-card p-4 shadow-sm"><p className="text-h3 leading-none text-ink">{t.v}</p><p className="mt-1.5 text-caption text-muted">{t.l}</p></div>
+        ))}
+      </div>
 
-      {/* Today's top priorities */}
-      <PriorityList />
+      <div className="grid gap-4 md:grid-cols-2">
+        <section className="rounded-lg border border-line bg-card p-5 shadow-sm"><h2 className="mb-4 text-h4">Revenue by city</h2><Bars rows={d.revenueByCity} /></section>
+        <section className="rounded-lg border border-line bg-card p-5 shadow-sm"><h2 className="mb-4 text-h4">Revenue by service</h2><Bars rows={d.revenueByService} /></section>
+      </div>
 
-      {/* Ask anything */}
-      <InsightSearch />
-
-      {/* Daily brief */}
-      <DailyBrief />
-
-      {/* Needs attention */}
-      <section>
-        <h2 className="mb-3 text-h4">Needs your attention</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{alerts.map((a) => <AlertCard key={a.id} alert={a} />)}</div>
+      <section className="flex items-center gap-4 rounded-lg border border-dashed border-line bg-card/60 p-5">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink/[0.04] text-muted"><Sparkles className="h-5 w-5" strokeWidth={1.75} /></span>
+        <div>
+          <p className="text-body-sm font-semibold text-ink">Predictive &amp; wellness insights</p>
+          <p className="mt-0.5 text-caption text-muted">Coming soon — demand forecasting, family-wellness trends and cross-module intelligence build on top of these real numbers.</p>
+        </div>
       </section>
-
-      {/* Business intelligence — cross-module correlations */}
-      <div className="flex flex-col gap-3">
-        <Heading icon={Network} title="Connected insights" sub="What one part of the business is telling you about another" />
-        <CrossModuleIntel />
-      </div>
-
-      {/* Cancellation + Revenue + Financial */}
-      <CancellationIntel />
-      <RevenueIntel />
-      <FinancialHealth />
-
-      {/* Care team tickets */}
-      <CareTeamIntel />
-
-      {/* Family wellness */}
-      <div className="flex flex-col gap-3">
-        <Heading icon={HeartPulse} title="Family wellness" sub="Mood, mobility, sleep, medication and more — over time" />
-        <WellnessTrends />
-      </div>
-
-      {/* Relationships */}
-      <div className="flex flex-col gap-3">
-        <Heading icon={Users2} title="Relationships" sub="How connected each family feels — and who to reach out to" />
-        <RelationshipInsights />
-      </div>
-
-      {/* Care quality + Guardian capacity */}
-      <div className="flex flex-col gap-3">
-        <Heading icon={ShieldCheck} title="Care quality" sub="Consistency, punctuality and gentle coaching for the team" />
-        <CareQuality />
-      </div>
-      <GuardianCapacity />
-
-      {/* Companions */}
-      <CompanionIntel />
-
-      {/* What's coming + Zones */}
-      <div className="flex flex-col gap-3">
-        <Heading icon={Radar} title="What's coming" sub="Predicted shortages, hotspots and staffing" />
-        <OperationalIntelligence />
-      </div>
-      <div className="flex flex-col gap-3">
-        <Heading icon={MapPin} title="Zone intelligence" sub="A city heatmap of demand, supply and risk" />
-        <ZoneIntel />
-      </div>
-
-      {/* Growth */}
-      <GrowthDashboard />
-
-      {/* AI story engine */}
-      <StoryStudio />
     </div>
   )
 }
