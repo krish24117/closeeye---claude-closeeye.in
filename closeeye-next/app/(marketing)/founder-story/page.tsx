@@ -27,11 +27,13 @@ export default function FounderStoryPage() {
       {/* Editorial masthead */}
       <header className="bg-ink pt-32 sm:pt-36">
         <Container className="pb-14">
-          <Button asChild variant="text" onDark className="mb-8">
-            <Link href="/">
-              <ArrowLeft className="h-4 w-4" strokeWidth={1.5} /> Back home
-            </Link>
-          </Button>
+          <div className="mb-8">
+            <Button asChild variant="text" onDark>
+              <Link href="/">
+                <ArrowLeft className="h-4 w-4" strokeWidth={1.5} /> Back home
+              </Link>
+            </Button>
+          </div>
           <span className="eyebrow is-light">Founder Story</span>
           <h1 className="mt-5 max-w-3xl text-h1 text-white">
             When you can&apos;t be there.
@@ -46,16 +48,16 @@ export default function FounderStoryPage() {
       {/* Portrait — editorial, magazine register (not a passport photo) */}
       <div className="bg-ink">
         <Container className="pb-16">
-          <figure className="overflow-hidden rounded-xl">
+          <figure className="mx-auto max-w-sm">
             <ImageFrame
               src={FOUNDER.portrait}
               alt={`${FOUNDER.name}, Founder of Close Eye`}
-              ratio="landscape"
-              gradient
+              ratio="portrait"
               priority
-              sizes="(max-width: 1200px) 100vw, 1100px"
+              className="shadow-lg"
+              sizes="(max-width: 640px) 100vw, 384px"
             />
-            <figcaption className="mt-4 text-caption text-white/45">
+            <figcaption className="mt-4 text-center text-caption text-white/45">
               {FOUNDER.name}, Founder of Close Eye
             </figcaption>
           </figure>
@@ -86,13 +88,7 @@ export default function FounderStoryPage() {
             <p className="text-ink">— {FOUNDER.name}, Founder</p>
           </div>
 
-          <div className="mt-12 rounded-lg border border-line bg-card p-6 text-body-sm text-muted">
-            The full narrated chapter — with the founder&apos;s voice and synced
-            captions — lives inside the Close Eye experience. This page is its written
-            companion.
-          </div>
-
-          <div className="mt-10 flex flex-col gap-8 border-t border-line pt-8 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-12 flex flex-col gap-8 border-t border-line pt-8 sm:flex-row sm:items-center sm:justify-between">
             <Button asChild>
               <Link href="/book">
                 Check on My Family <ArrowRight className="h-5 w-5" strokeWidth={1.5} />

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, Headphones } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Section } from '@/components/ui/section'
 import { Split } from '@/components/ui/split'
 import { ImageFrame } from '@/components/ui/image-frame'
@@ -26,15 +26,10 @@ export function FounderTeaser() {
         <Quote className="mt-6" cite={`${FOUNDER.name}, Founder`}>
           {FOUNDER.excerpt}
         </Quote>
-        <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-9">
           <Button asChild>
             <Link href="/founder-story">
               Read the founder story <ArrowRight className="h-5 w-5" strokeWidth={1.5} />
-            </Link>
-          </Button>
-          <Button asChild variant="secondary">
-            <Link href="/founder-story">
-              <Headphones className="h-5 w-5" strokeWidth={1.5} /> Listen
             </Link>
           </Button>
         </div>
