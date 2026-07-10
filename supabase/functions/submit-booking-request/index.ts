@@ -87,6 +87,14 @@ Deno.serve(async (req: Request) => {
     recipient_address?: string;
     requester_whatsapp?: string;
     notes?: string | null;
+    // Visit-specific logistics captured at booking time (stored WITH the booking).
+    visit_landmark?: string | null;
+    visit_contact_name?: string | null;
+    visit_contact_phone?: string | null;
+    visit_time_window?: string | null;
+    visit_special_instructions?: string | null;
+    visit_access_instructions?: string | null;
+    visit_team_notes?: string | null;
   };
   try {
     body = await req.json();
@@ -97,6 +105,8 @@ Deno.serve(async (req: Request) => {
   const {
     service_id, service_name, variant_id, loved_one_id,
     scheduled_at_ist, recipient_name, recipient_address, requester_whatsapp, notes,
+    visit_landmark, visit_contact_name, visit_contact_phone, visit_time_window,
+    visit_special_instructions, visit_access_instructions, visit_team_notes,
   } = body;
 
   if (!service_id || !service_name) {
@@ -117,9 +127,13 @@ Deno.serve(async (req: Request) => {
 
   const addrClean = (recipient_address || "").trim();
   const waClean   = (requester_whatsapp || "").trim();
+  const visitContactClean = (visit_contact_phone || "").trim();
   const missingAddress  = addrClean === "";
   const missingWhatsapp = waClean   === "";
-  const needsDetails    = missingAddress || missingWhatsapp;
+  // Dispatchable when there's an address AND some way to reach the visit — the
+  // booker's WhatsApp OR the on-site visit contact. The in-app flow supplies both;
+  // this stays lenient for the guest wizard (which has no on-site contact field).
+  const needsDetails    = missingAddress || (missingWhatsapp && visitContactClean === "");
 
   const sb = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -175,6 +189,13 @@ Deno.serve(async (req: Request) => {
       recipient_address:  addrClean,
       requester_whatsapp: waClean,
       notes:              notes?.trim() || null,
+      visit_landmark:             visit_landmark?.trim() || null,
+      visit_contact_name:         visit_contact_name?.trim() || null,
+      visit_contact_phone:        visitContactClean || null,
+      visit_time_window:          visit_time_window?.trim() || null,
+      visit_special_instructions: visit_special_instructions?.trim() || null,
+      visit_access_instructions:  visit_access_instructions?.trim() || null,
+      visit_team_notes:           visit_team_notes?.trim() || null,
       status:             needsDetails ? "needs_details" : "pending_confirmation",
     })
     .select("id")
@@ -197,14 +218,20 @@ Deno.serve(async (req: Request) => {
         ? `⚠️ NEEDS DETAILS: ${[missingAddress && "address", missingWhatsapp && "WhatsApp"].filter(Boolean).join(", ")} missing\n`
         : "";
       const priceLabel = canonicalPrice ? ` (₹${(canonicalPrice / 100).toLocaleString("en-IN")})` : "";
+      const line = (label: string, v?: string | null) => (v && v.trim() ? `${label}: ${v.trim()}\n` : "");
       const msgBody =
         `🔔 New booking request\n` +
         missingNote +
         `Service: ${service_name}${priceLabel}\n` +
         `For: ${recipient_name || "—"}\n` +
-        `When: ${scheduled_at_ist || "—"}\n` +
+        `When: ${scheduled_at_ist || "—"}${visit_time_window ? ` (${visit_time_window.trim()})` : ""}\n` +
         `Address: ${addrClean || "—"}\n` +
-        `Contact: ${waClean || "—"}\n` +
+        line("Landmark", visit_landmark) +
+        `Visit contact: ${(visit_contact_name || "").trim() || "—"}${visitContactClean ? ` · ${visitContactClean}` : ""}\n` +
+        `Booker: ${waClean || "—"}\n` +
+        line("Access", visit_access_instructions) +
+        line("Instructions", visit_special_instructions) +
+        line("Notes for team", visit_team_notes) +
         (notes?.trim() ? `Notes: ${notes.trim()}\n` : "") +
         `closeeye.in/admin`;
       const params = new URLSearchParams({ From: wa(from), To: wa(adminTo), Body: msgBody });

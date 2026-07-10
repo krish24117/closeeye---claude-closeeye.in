@@ -23,6 +23,13 @@ interface RequestBody {
   recipient_address?: string
   requester_whatsapp?: string
   notes: string | null
+  visit_landmark?: string | null
+  visit_contact_name?: string | null
+  visit_contact_phone?: string | null
+  visit_time_window?: string | null
+  visit_special_instructions?: string | null
+  visit_access_instructions?: string | null
+  visit_team_notes?: string | null
 }
 
 /** Persist a booking request via the deployed edge function; return a friendly ref. */
@@ -70,14 +77,16 @@ export async function requestVisit(input: {
   requesterWhatsapp: string
   date: string | null
   timeSlotLabel?: string
-  notes?: string
+  landmark?: string
+  contactName?: string
+  contactPhone?: string
+  specialInstructions?: string
+  accessInstructions?: string
+  teamNotes?: string
 }): Promise<BookingResult> {
   const svc = serviceById(input.serviceId)
   const dateIso = input.date && /^\d{4}-\d{2}-\d{2}$/.test(input.date) ? input.date : null
-  const notes =
-    [input.date && `Requested date: ${input.date}`, input.timeSlotLabel && `Preferred time: ${input.timeSlotLabel}`, input.notes]
-      .filter(Boolean)
-      .join(' · ') || null
+  const trim = (v?: string) => (v && v.trim() ? v.trim() : null)
 
   return invokeBookingRequest({
     service_id: CANONICAL_SERVICE_ID[input.serviceId] ?? input.serviceId,
@@ -87,7 +96,14 @@ export async function requestVisit(input: {
     recipient_name: input.recipientName,
     recipient_address: input.recipientAddress,
     requester_whatsapp: input.requesterWhatsapp,
-    notes,
+    visit_time_window: trim(input.timeSlotLabel),
+    visit_landmark: trim(input.landmark),
+    visit_contact_name: trim(input.contactName),
+    visit_contact_phone: trim(input.contactPhone),
+    visit_special_instructions: trim(input.specialInstructions),
+    visit_access_instructions: trim(input.accessInstructions),
+    visit_team_notes: trim(input.teamNotes),
+    notes: null,
   })
 }
 

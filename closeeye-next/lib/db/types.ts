@@ -60,6 +60,17 @@ export interface BookingRequest {
   status: string
   scheduled_at: string | null
   recipient_name: string | null
+  /** Visit-specific logistics captured at booking time (stored with the booking). */
+  recipient_address: string | null
+  requester_whatsapp: string | null
+  notes: string | null
+  visit_landmark: string | null
+  visit_contact_name: string | null
+  visit_contact_phone: string | null
+  visit_time_window: string | null
+  visit_special_instructions: string | null
+  visit_access_instructions: string | null
+  visit_team_notes: string | null
   payment_status: string | null
   amount_paise: number | null
   /** The materialised `bookings` row (set once paid) — the Guardian's visit. */
