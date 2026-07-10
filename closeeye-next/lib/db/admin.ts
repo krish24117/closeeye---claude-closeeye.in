@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { planById } from '@/lib/plans'
+import { planById, PLANS } from '@/lib/plans'
 
 /**
  * Founder / business console (Module 6, /admin) — REAL business aggregates.
@@ -322,4 +322,99 @@ export async function fetchAdminCareTeam(): Promise<AdminCareTeam> {
   const rated = companions.filter((c) => c.rating != null)
   const avgRating = rated.length ? Math.round((rated.reduce((s, c) => s + (c.rating ?? 0), 0) / rated.length) * 10) / 10 : 0
   return { companions, approved, pendingApplications, avgRating }
+}
+
+/* ── Memberships ─────────────────────────────────────────────────────────── */
+
+export interface AdminPlanRow { name: string; price: string; period: string; benefits: string[]; active: number; popular: boolean }
+export interface AdminMemberships {
+  activeSubs: number
+  renewalsSoon: number
+  foundingActive: number
+  mrr: number
+  plans: AdminPlanRow[]
+}
+
+export async function fetchAdminMemberships(): Promise<AdminMemberships> {
+  const [sub, mem] = await Promise.all([
+    supabase.from('subscriptions').select('plan_id, status, next_billing_at'),
+    supabase.from('memberships').select('status'),
+  ])
+  const subs = (sub.data as { plan_id: string; status: string; next_billing_at: string | null }[] | null) ?? []
+  const mems = (mem.data as { status: string | null }[] | null) ?? []
+  const active = subs.filter((s) => s.status === 'active')
+  const activeByPlan = new Map<string, number>()
+  active.forEach((s) => activeByPlan.set(s.plan_id, (activeByPlan.get(s.plan_id) ?? 0) + 1))
+  const soon = Date.now() + 7 * 86400000
+  const renewalsSoon = active.filter((s) => s.next_billing_at && new Date(s.next_billing_at).getTime() <= soon).length
+  const foundingActive = mems.filter((m) => m.status === 'active').length
+  const mrr = active.reduce((sum, s) => sum + (PLAN_PRICE[s.plan_id] ?? 0), 0)
+  const plans: AdminPlanRow[] = PLANS.map((p) => ({ name: p.name, price: p.price, period: p.period, benefits: p.benefits, active: activeByPlan.get(p.id) ?? 0, popular: !!p.popular }))
+  return { activeSubs: active.length, renewalsSoon, foundingActive, mrr, plans }
+}
+
+/* ── Operations (business view) ──────────────────────────────────────────── */
+
+export interface AdminCoverageRow { city: string; families: number; guardians: number }
+export interface AdminOperations {
+  presenceToday: number
+  bookingsToday: number
+  completedToday: number
+  activeFamilies: number
+  careTeam: number
+  cancelledToday: number
+  cancelledWeek: number
+  cancelledMonth: number
+  coverage: AdminCoverageRow[]
+}
+
+export async function fetchAdminOperations(): Promise<AdminOperations> {
+  const [bk, lo, comp] = await Promise.all([
+    supabase.from('bookings').select('status, scheduled_at, loved_one_id'),
+    supabase.from('loved_ones').select('family_user_id, city'),
+    supabase.from('companions').select('city, status'),
+  ])
+  const bookings = (bk.data as { status: string; scheduled_at: string | null; loved_one_id: string | null }[] | null) ?? []
+  const lovedOnes = (lo.data as { family_user_id: string; city: string | null }[] | null) ?? []
+  const comps = (comp.data as { city: string | null; status: string | null }[] | null) ?? []
+
+  const now = new Date()
+  const isToday = (iso: string | null) => (iso ? new Date(iso).toDateString() === now.toDateString() : false)
+  const ws = new Date(now)
+  ws.setHours(0, 0, 0, 0)
+  ws.setDate(ws.getDate() - ws.getDay())
+  const weekStart = ws.getTime()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+  const inWeek = (iso: string | null) => (iso ? new Date(iso).getTime() >= weekStart && new Date(iso).getTime() < weekStart + 7 * 86400000 : false)
+  const inMonth = (iso: string | null) => (iso ? new Date(iso).getTime() >= monthStart : false)
+
+  const cancelled = bookings.filter((b) => b.status === 'cancelled')
+  const approvedComps = comps.filter((c) => c.status === 'approved')
+
+  const cityFamilies = new Map<string, Set<string>>()
+  lovedOnes.forEach((l) => {
+    const c = l.city ?? 'Other'
+    const s = cityFamilies.get(c) ?? new Set<string>()
+    s.add(l.family_user_id)
+    cityFamilies.set(c, s)
+  })
+  const cityGuardians = new Map<string, number>()
+  approvedComps.forEach((c) => { const city = c.city ?? 'Other'; cityGuardians.set(city, (cityGuardians.get(city) ?? 0) + 1) })
+  const cities = new Set([...cityFamilies.keys(), ...cityGuardians.keys()])
+  const coverage = Array.from(cities)
+    .map((city) => ({ city, families: cityFamilies.get(city)?.size ?? 0, guardians: cityGuardians.get(city) ?? 0 }))
+    .sort((a, b) => b.families - a.families)
+    .slice(0, 8)
+
+  return {
+    presenceToday: bookings.filter((b) => b.status !== 'cancelled' && isToday(b.scheduled_at)).length,
+    bookingsToday: bookings.filter((b) => isToday(b.scheduled_at)).length,
+    completedToday: bookings.filter((b) => b.status === 'completed' && isToday(b.scheduled_at)).length,
+    activeFamilies: new Set(lovedOnes.map((l) => l.family_user_id)).size,
+    careTeam: approvedComps.length,
+    cancelledToday: cancelled.filter((b) => isToday(b.scheduled_at)).length,
+    cancelledWeek: cancelled.filter((b) => inWeek(b.scheduled_at)).length,
+    cancelledMonth: cancelled.filter((b) => inMonth(b.scheduled_at)).length,
+    coverage,
+  }
 }
