@@ -153,8 +153,8 @@ export const FOUNDER = {
 /* ── Membership ────────────────────────────────────────────────────────── */
 export const MEMBERSHIP = {
   eyebrow: 'Membership',
-  title: 'Choose Your Membership',
-  body: 'Choose the level of care that best fits your family. Every membership includes trusted human support, thoughtful technology, and peace of mind.',
+  title: 'Choose the care that fits your family',
+  body: 'Two simple memberships — Connect and Care. Both include trusted human support, a dedicated Presence Manager, and clear pricing you can trust.',
   perks: [
     'Priority access to Guardians in your city',
     'A dedicated Presence Manager for your family',

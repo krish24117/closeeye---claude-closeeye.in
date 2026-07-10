@@ -9,6 +9,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { saveProfileBasics, selectPlan } from '@/lib/db/onboarding'
 import { PLANS, PROTECT_OPTIONS, type PlanId } from '@/lib/plans'
+import { getPendingPlan, setPendingPlan } from '@/lib/membership-intent'
 import { cn } from '@/lib/utils'
 import { haptic } from '@/lib/haptics'
 
@@ -34,12 +35,21 @@ export default function OnboardingPage() {
   const [protect, setProtect] = React.useState<string | null>(null)
   const [lovedName, setLovedName] = React.useState('')
   const [plan, setPlan] = React.useState<PlanId | null>(null)
+  const [hasIntent, setHasIntent] = React.useState(false)
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')
 
   React.useEffect(() => {
     if (metaName && !name) setName(metaName)
   }, [metaName]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Carried membership intent — the visitor chose a plan on /membership before
+  // signing up. Pre-select it so onboarding CONFIRMS the choice rather than
+  // re-asking, and route to Activate (not the dashboard) at the end.
+  React.useEffect(() => {
+    const pending = getPendingPlan()
+    if (pending) { setPlan(pending); setHasIntent(true) }
+  }, [])
 
   const id = STEPS[step]!
   const isSelf = protect === 'Self'
@@ -85,7 +95,14 @@ export default function OnboardingPage() {
       await refreshOnboarding()
       await refresh()
       haptic('success')
-      router.replace('/family')
+      // Arrived via the membership funnel → continue to Activate (payment), keeping
+      // the pending plan in sync with the final choice. Otherwise, open the dashboard.
+      if (hasIntent && plan) {
+        setPendingPlan(plan)
+        router.replace('/family/membership?activate=1')
+      } else {
+        router.replace('/family')
+      }
     } catch (e) {
       // Keep raw Postgres/Supabase errors out of the UI; log for debugging.
       console.error('[onboarding] setup failed:', e)
@@ -166,11 +183,15 @@ export default function OnboardingPage() {
 
           {id === 'plan' && (
             <>
-              <h1 className="text-h2 text-ink">Choose your membership</h1>
-              <p className="mt-2 text-body text-muted">Pick what fits — you won’t be charged now. You can activate and pay anytime from Membership.</p>
+              <h1 className="text-h2 text-ink">{hasIntent ? 'Confirm your membership' : 'Choose your membership'}</h1>
+              <p className="mt-2 text-body text-muted">
+                {hasIntent
+                  ? 'You chose this on the last step — confirm it or change your mind. You won’t be charged yet; you’ll activate payment next.'
+                  : 'Pick what fits — you won’t be charged now. You can activate and pay anytime from Membership.'}
+              </p>
               <div className="mt-6 flex flex-col gap-3">
                 {PLANS.map((pl) => (
-                  <button key={pl.id} type="button" onClick={() => { setPlan(pl.id); setError('') }} className={cn('rounded-lg border-2 bg-card p-4 text-left transition-colors', plan === pl.id ? 'border-green bg-accent-soft/30' : 'border-line hover:border-ink/20')}>
+                  <button key={pl.id} type="button" onClick={() => { setPlan(pl.id); if (hasIntent) setPendingPlan(pl.id); setError('') }} className={cn('rounded-lg border-2 bg-card p-4 text-left transition-colors', plan === pl.id ? 'border-green bg-accent-soft/30' : 'border-line hover:border-ink/20')}>
                     <div className="flex items-center justify-between gap-2">
                       <span className="flex items-center gap-2">
                         <span className="text-body font-bold text-ink">{pl.name}</span>

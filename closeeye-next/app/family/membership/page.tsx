@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Check, Loader2, Sparkles } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
+import { FunnelSteps } from '@/components/funnel/funnel-steps'
 import { Overlay } from '@/components/family/overlay'
 import { Button } from '@/components/ui/button'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { useToast } from '@/components/ui/toast'
 import { PLANS, SERVICES, planById, type PlanId } from '@/lib/plans'
+import { getPendingPlan, clearPendingPlan } from '@/lib/membership-intent'
 import { payForMembership, type PayOutcome } from '@/lib/razorpay'
 import { cn } from '@/lib/utils'
 
@@ -31,6 +33,16 @@ export default function MembershipPage() {
   const { subscription, profile, identity, refresh } = useFamilyData()
   const toast = useToast()
   const [busy, setBusy] = useState<PlanId | null>(null)
+  // Activation landing — arrived from the join funnel (onboarding → Activate). Read
+  // the carried plan + ?activate once on the client (in an effect, from
+  // window.location) to avoid a hydration mismatch and keep the page prerenderable.
+  const [joinFlow, setJoinFlow] = useState(false)
+  const [pendingPlanId, setPendingPlanId] = useState<PlanId | null>(null)
+  useEffect(() => {
+    const activate = new URLSearchParams(window.location.search).get('activate') === '1'
+    const pending = getPendingPlan()
+    if (activate || pending) { setJoinFlow(true); setPendingPlanId(pending) }
+  }, [])
   // Self-serve Connect → Care upgrade sheet. `upgradePaid` is a purely local UI
   // flag (the client NEVER writes subscription state) — it shows the welcome +
   // an "Activating…" card during the brief window before the webhook promotes.
@@ -41,12 +53,16 @@ export default function MembershipPage() {
   const activating = subscription?.status === 'authenticated'
   const isCare = planById(currentId)?.key === 'care'
   const onConnect = planById(currentId)?.key === 'connect'
+  // Keep the "complete your membership" framing until the plan is actually active.
+  const showActivate = joinFlow && !active
+  const activatePlan = planById(pendingPlanId) ?? planById(currentId)
   // The additional benefits Care adds over Connect (drop the "Everything in
   // Connect" umbrella line — the sheet is about what's NEW).
   const careDelta = (planById('trust')?.benefits ?? []).filter((b) => !b.toLowerCase().startsWith('everything'))
 
   function handleOutcome(o: PayOutcome, short: string) {
     if (o.status === 'success') {
+      clearPendingPlan() // join intent fulfilled — the plan is being activated
       toast(`Payment received — activating your CloseEye ${short} membership.`)
       // The webhook is the sole authority for activation. Re-fetch a few times so
       // the UI flips to Active as soon as the webhook lands (usually a second or
@@ -137,7 +153,11 @@ export default function MembershipPage() {
 
   return (
     <div className="flex flex-col">
-      <PageHeader title="Membership" subtitle="Trusted human presence for the people you love." />
+      {showActivate && <div className="mb-6"><FunnelSteps step={4} /></div>}
+      <PageHeader
+        title={showActivate ? `Complete your ${activatePlan?.name ?? 'CloseEye'} membership` : 'Membership'}
+        subtitle={showActivate ? 'One last step — activate your membership and your Presence Manager gets to work.' : 'Trusted human presence for the people you love.'}
+      />
 
       {/* Two plans — tightened gap below the heading */}
       <section className="mt-4 grid gap-5 md:grid-cols-2">
@@ -149,6 +169,7 @@ export default function MembershipPage() {
               className={cn(
                 'relative flex flex-col rounded-lg border bg-card p-6 sm:p-7',
                 plan.popular ? 'border-green/40 shadow-md' : 'border-line shadow-sm',
+                showActivate && plan.id === pendingPlanId && 'ring-2 ring-green ring-offset-2 ring-offset-ivory',
               )}
             >
               {plan.popular && (
@@ -195,7 +216,7 @@ export default function MembershipPage() {
                   )}
                   {!active && !activating && (
                     <Button size="sm" className="mt-3 w-full" disabled={busy !== null} onClick={() => choose(plan.id)}>
-                      {busy === plan.id ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Opening…</> : 'Complete payment'}
+                      {busy === plan.id ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Opening…</> : showActivate ? `Activate CloseEye ${plan.short} · ${plan.price}/mo` : 'Complete payment'}
                     </Button>
                   )}
                 </div>
@@ -226,7 +247,7 @@ export default function MembershipPage() {
                   disabled={busy !== null}
                   onClick={() => choose(plan.id)}
                 >
-                  {busy === plan.id ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Opening…</> : plan.cta}
+                  {busy === plan.id ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Opening…</> : (showActivate && plan.id === pendingPlanId) ? `Activate CloseEye ${plan.short} · ${plan.price}/mo` : plan.cta}
                 </Button>
               )}
             </div>

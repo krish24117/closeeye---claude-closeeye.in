@@ -8,8 +8,11 @@ import { ArrowLeft, ArrowRight, Loader2, MailCheck, RefreshCw, Clock } from 'luc
 import { LogoMark } from '@/components/ui/logo'
 import { Button } from '@/components/ui/button'
 import { ErrorState } from '@/components/ui/states'
+import { FunnelSteps } from '@/components/funnel/funnel-steps'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { signInWithGoogle, sendEmailOtp, verifyEmailOtp } from '@/lib/auth-actions'
+import { planById } from '@/lib/plans'
+import { setPendingPlan } from '@/lib/membership-intent'
 import { isNative } from '@/lib/native'
 import { haptic } from '@/lib/haptics'
 
@@ -55,6 +58,16 @@ function AuthFlow() {
   const [error, setError] = React.useState('')
   const [sentAt, setSentAt] = React.useState(0)
   const busy = pending !== null
+
+  // Membership join intent — the visitor arrived from /membership after choosing a
+  // plan. Keep the purchase framing here (sign-in is a step INSIDE the purchase),
+  // and persist the plan so it survives the OAuth round-trip to the Activate step.
+  const joinIntent = params.get('intent') === 'join'
+  const joinPlanId = joinIntent ? params.get('plan') : null
+  const joinPlan = joinPlanId ? planById(joinPlanId) : null
+  React.useEffect(() => {
+    if (joinPlan) setPendingPlan(joinPlan.id)
+  }, [joinPlanId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // A sign-in link returning on the web lands here with `?code=…`; the Supabase
   // client exchanges it automatically, so show a "signing you in" state (not the
@@ -153,11 +166,22 @@ function AuthFlow() {
 
   return (
     <Shell>
+      {joinPlan && <div className="mb-5"><FunnelSteps step={2} /></div>}
       <div className="rounded-lg border border-line bg-card p-6 shadow-sm">
         {stage === 'signin' ? (
           <>
-            <h1 className="text-h3 text-ink">Sign in to Close Eye</h1>
-            <p className="mt-1.5 text-body-sm text-muted">New here? Signing in creates your account.</p>
+            {joinPlan ? (
+              <>
+                <p className="text-caption font-semibold uppercase tracking-widest text-green">{joinPlan.name} · {joinPlan.price}{joinPlan.period}</p>
+                <h1 className="mt-1.5 text-h3 text-ink">Create your account to activate {joinPlan.name}</h1>
+                <p className="mt-1.5 text-body-sm text-muted">One quick step — then set up your family and activate your membership.</p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-h3 text-ink">Sign in to Close Eye</h1>
+                <p className="mt-1.5 text-body-sm text-muted">New here? Signing in creates your account.</p>
+              </>
+            )}
 
             {/* Primary: Google — no email needed, works on the app and the web. */}
             <button type="button" disabled={busy} onClick={google} className="mt-5 flex min-h-[3rem] w-full items-center justify-center gap-2.5 rounded-sm border border-ink/15 text-body-sm font-semibold text-ink transition-colors hover:border-ink/30 hover:bg-ink/[0.03] disabled:opacity-60">
