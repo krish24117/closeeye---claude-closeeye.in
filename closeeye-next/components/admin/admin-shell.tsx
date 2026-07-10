@@ -11,7 +11,9 @@ import type { LucideIcon } from 'lucide-react'
 import { LogoMark } from '@/components/ui/logo'
 import { Avatar } from '@/components/family/avatar'
 import { Overlay } from '@/components/family/overlay'
-import { ADMIN, ALERTS, FAMILIES } from '@/lib/admin-data'
+import { UserMenu } from '@/components/ui/user-menu'
+import { useFamilyData } from '@/components/family/family-data-provider'
+import { ALERTS, FAMILIES } from '@/lib/admin-data'
 import { cn } from '@/lib/utils'
 
 const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) => boolean; badge?: number }[] = [
@@ -51,10 +53,23 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const { identity } = useFamilyData()
   const [menu, setMenu] = React.useState(false)
   const [notif, setNotif] = React.useState(false)
   const [q, setQ] = React.useState('')
   const highAlerts = ALERTS.filter((a) => a.severity === 'high').length
+
+  const menuProps = {
+    name: identity.fullName,
+    email: identity.email,
+    avatarUrl: identity.avatarUrl,
+    initials: identity.initials,
+    roleLabel: 'Super Admin',
+    profileHref: '/admin/settings',
+    accountHref: '/admin/settings',
+    notificationsHref: '/admin/settings',
+    avatarTone: 'solid' as const,
+  }
 
   const query = q.trim().toLowerCase()
   const results = query
@@ -76,10 +91,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <ArrowUpRight className="h-4 w-4 text-green" strokeWidth={1.75} /> Presence Console
         </Link>
         <div className="flex items-center gap-3 rounded-md border border-line bg-ivory p-3">
-          <Avatar initials={ADMIN.initials} size="sm" tone="solid" />
+          <Avatar initials={identity.initials} src={identity.avatarUrl} alt={identity.fullName} size="sm" tone="solid" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-body-sm font-semibold text-ink">{ADMIN.name}</p>
-            <p className="truncate text-caption text-muted">{ADMIN.role}</p>
+            <p className="truncate text-body-sm font-semibold text-ink">{identity.fullName}</p>
+            <p className="truncate text-caption text-muted">Super Admin</p>
           </div>
         </div>
       </div>
@@ -116,7 +131,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <Bell className="h-5 w-5" strokeWidth={1.75} />
                 {highAlerts > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-error ring-2 ring-ivory" />}
               </button>
-              <Avatar initials={ADMIN.initials} size="sm" tone="solid" className="ml-1" />
+              <UserMenu {...menuProps} className="ml-1" />
             </div>
           </div>
         </header>

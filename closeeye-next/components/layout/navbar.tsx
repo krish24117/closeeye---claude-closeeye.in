@@ -7,14 +7,14 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { Button } from '@/components/ui/button'
+import { UserMenu } from '@/components/ui/user-menu'
+import { useAuth } from '@/components/auth/auth-provider'
+import { useFamilyData } from '@/components/family/family-data-provider'
 import { useScrolled } from '@/hooks/use-scrolled'
 import { NAV_ITEMS, type NavItem } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
 const EASE = [0.22, 1, 0.36, 1] as const
-
-// Approved mobile order: the primary nav, then Family Space, then the CTA.
-const MOBILE_ITEMS: NavItem[] = [...NAV_ITEMS, { label: 'Sign in to Family Space', href: '/family' }]
 
 // Pages whose masthead is dark ink — the transparent navbar sits over a dark hero
 // there, so its logo + controls must render light until the bar gets its own bg.
@@ -25,6 +25,31 @@ export function Navbar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
+
+  const { session } = useAuth()
+  const { identity, profile } = useFamilyData()
+  const signedIn = !!session
+
+  // A signed-in visitor's menu links to their own role's app surfaces.
+  const role = profile?.role
+  const dest =
+    role === 'companion'
+      ? { profileHref: '/guardian/profile', accountHref: '/guardian/profile', notificationsHref: '/guardian/profile' }
+      : role === 'admin'
+        ? { profileHref: '/admin/settings', accountHref: '/admin/settings', notificationsHref: '/admin/settings' }
+        : { profileHref: '/family/profile', accountHref: '/settings', notificationsHref: '/settings' }
+  const menuProps = {
+    name: identity.fullName,
+    email: identity.email,
+    avatarUrl: identity.avatarUrl,
+    initials: identity.initials,
+    roleLabel: role === 'companion' ? 'Guardian' : role === 'admin' ? 'Admin' : profile ? 'Family' : undefined,
+    ...dest,
+  }
+  const mobileItems: NavItem[] = [
+    ...NAV_ITEMS,
+    signedIn ? { label: 'Family Space', href: '/family' } : { label: 'Sign in to Family Space', href: '/family' },
+  ]
 
   // Transparent bar over a dark hero → go light so nothing disappears on dark.
   const overDark = DARK_HERO_ROUTES.has(pathname) && !scrolled && !open
@@ -74,39 +99,53 @@ export function Navbar() {
           ))}
         </ul>
         <div className="hidden items-center gap-2 lg:flex">
-          <Link
-            href="/family"
-            className={cn(
-              'rounded-full px-4 py-2 text-body-sm font-medium transition-colors',
-              overDark
-                ? 'text-white/85 hover:bg-white/10 hover:text-white'
-                : 'text-body/80 hover:bg-accent-soft hover:text-ink',
-            )}
-          >
-            Sign in
-          </Link>
-          <Button asChild size="sm">
-            <Link href="/book">Check on My Family</Link>
-          </Button>
+          {signedIn ? (
+            <>
+              <Button asChild size="sm">
+                <Link href="/book">Check on My Family</Link>
+              </Button>
+              <UserMenu {...menuProps} className="ml-1" />
+            </>
+          ) : (
+            <>
+              <Link
+                href="/family"
+                className={cn(
+                  'rounded-full px-4 py-2 text-body-sm font-medium transition-colors',
+                  overDark
+                    ? 'text-white/85 hover:bg-white/10 hover:text-white'
+                    : 'text-body/80 hover:bg-accent-soft hover:text-ink',
+                )}
+              >
+                Sign in
+              </Link>
+              <Button asChild size="sm">
+                <Link href="/book">Check on My Family</Link>
+              </Button>
+            </>
+          )}
         </div>
 
-        {/* Mobile toggle — 44×44 target, 20px icon, light circle when open */}
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className={cn(
-            'grid h-11 w-11 place-items-center rounded-full transition-colors lg:hidden',
-            open
-              ? 'bg-accent-soft text-ink'
-              : overDark
-                ? 'text-white hover:bg-white/10'
-                : 'text-ink hover:bg-accent-soft',
-          )}
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          aria-expanded={open}
-        >
-          {open ? <X className="h-5 w-5" strokeWidth={1.75} /> : <Menu className="h-5 w-5" strokeWidth={1.75} />}
-        </button>
+        {/* Mobile controls — avatar (when signed in) + the 44×44 menu toggle */}
+        <div className="flex items-center gap-1 lg:hidden">
+          {signedIn && <UserMenu {...menuProps} />}
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className={cn(
+              'grid h-11 w-11 place-items-center rounded-full transition-colors',
+              open
+                ? 'bg-accent-soft text-ink'
+                : overDark
+                  ? 'text-white hover:bg-white/10'
+                  : 'text-ink hover:bg-accent-soft',
+            )}
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open}
+          >
+            {open ? <X className="h-5 w-5" strokeWidth={1.75} /> : <Menu className="h-5 w-5" strokeWidth={1.75} />}
+          </button>
+        </div>
       </nav>
 
       {/* Mobile menu — full-height ivory panel, slides down + fades in */}
@@ -121,7 +160,7 @@ export function Navbar() {
           >
             <div className="mx-auto max-w-content px-8 pb-10 pt-4">
               <ul className="flex flex-col" aria-label="Menu">
-                {MOBILE_ITEMS.map((item) => (
+                {mobileItems.map((item) => (
                   <li key={item.href}>
                     <Link
                       href={item.href}

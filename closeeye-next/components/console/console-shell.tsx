@@ -11,7 +11,9 @@ import type { LucideIcon } from 'lucide-react'
 import { LogoMark } from '@/components/ui/logo'
 import { Avatar } from '@/components/family/avatar'
 import { Overlay } from '@/components/family/overlay'
-import { PM, FAMILIES, GUARDIANS, ACTIVITY, STATS, guardianById } from '@/lib/console-data'
+import { UserMenu } from '@/components/ui/user-menu'
+import { useFamilyData } from '@/components/family/family-data-provider'
+import { FAMILIES, GUARDIANS, ACTIVITY, STATS, guardianById } from '@/lib/console-data'
 import { cn } from '@/lib/utils'
 
 const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) => boolean; badge?: number }[] = [
@@ -60,10 +62,22 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
 
 export function ConsoleShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const { identity } = useFamilyData()
   const [menu, setMenu] = React.useState(false)
   const [notif, setNotif] = React.useState(false)
   const [sos, setSos] = React.useState(false)
   const [q, setQ] = React.useState('')
+
+  const menuProps = {
+    name: identity.fullName,
+    email: identity.email,
+    avatarUrl: identity.avatarUrl,
+    initials: identity.initials,
+    roleLabel: 'Presence Manager',
+    profileHref: '/console/settings',
+    accountHref: '/console/settings',
+    notificationsHref: '/console/settings',
+  }
 
   const query = q.trim().toLowerCase()
   const results = query
@@ -84,10 +98,10 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
       </Link>
       <NavList pathname={pathname} onNavigate={() => setMenu(false)} />
       <div className="m-3 flex items-center gap-3 rounded-md border border-line bg-ivory p-3">
-        <Avatar initials={PM.initials} size="sm" />
+        <Avatar initials={identity.initials} src={identity.avatarUrl} alt={identity.fullName} size="sm" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-body-sm font-semibold text-ink">{PM.name}</p>
-          <p className="truncate text-caption text-muted">{PM.role}</p>
+          <p className="truncate text-body-sm font-semibold text-ink">{identity.fullName}</p>
+          <p className="truncate text-caption text-muted">Presence Manager</p>
         </div>
         <span className="h-2 w-2 rounded-full bg-success" aria-label="Online" />
       </div>
@@ -139,7 +153,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
               <button type="button" onClick={() => setSos(true)} className="grid h-10 w-10 place-items-center rounded-full border border-error/30 text-error hover:bg-error/10" aria-label="Emergency">
                 <Siren className="h-5 w-5" strokeWidth={1.75} />
               </button>
-              <Avatar initials={PM.initials} size="sm" className="ml-1" />
+              <UserMenu {...menuProps} className="ml-1" />
             </div>
           </div>
 

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { LogoMark } from '@/components/ui/logo'
 import { Overlay } from '@/components/family/overlay'
+import { UserMenu } from '@/components/ui/user-menu'
 import { SyncStatus } from '@/components/guardian/sync-status'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { PRESENCE_MANAGER } from '@/lib/guardian-data'
@@ -52,7 +53,7 @@ function timeAgo(iso: string): string {
 
 export function GuardianShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { profile } = useFamilyData()
+  const { profile, identity } = useFamilyData()
   const [sos, setSos] = useState(false)
   const [notif, setNotif] = useState(false)
   const [notifs, setNotifs] = useState<AppNotification[]>([])
@@ -61,6 +62,17 @@ export function GuardianShell({ children }: { children: React.ReactNode }) {
   const unread = notifs.filter((n) => !n.read).length
   const fullName = profile?.full_name?.trim() || 'Guardian'
   const firstName = fullName.split(' ')[0]
+
+  const menuProps = {
+    name: identity.isPlaceholder ? fullName : identity.fullName,
+    email: identity.email,
+    avatarUrl: identity.avatarUrl,
+    initials: identity.initials,
+    roleLabel: 'Guardian',
+    profileHref: '/guardian/profile',
+    accountHref: '/guardian/profile',
+    notificationsHref: '/guardian/profile',
+  }
 
   useEffect(() => {
     if (!userId) return
@@ -111,6 +123,7 @@ export function GuardianShell({ children }: { children: React.ReactNode }) {
             >
               <Siren className="h-5 w-5" strokeWidth={1.75} />
             </button>
+            <UserMenu {...menuProps} />
           </div>
         </div>
         {/* Sync strip */}
