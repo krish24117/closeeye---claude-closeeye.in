@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X, LayoutDashboard, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { LogoLockup } from '@/components/ui/Logo'
+import { UserMenu } from '@/components/ui/UserMenu'
 import clsx from 'clsx'
 
 const NAV_LINKS = [
@@ -16,7 +17,7 @@ const NAV_LINKS = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false)
-  const { user, profile, signOut } = useAuth()
+  const { user, profile } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -35,7 +36,22 @@ export function Navbar() {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  const dashLink = profile?.role === 'companion' ? '/companion' : '/dashboard'
+  const role = profile?.role
+  const dashLink = role === 'companion' ? '/companion' : role === 'admin' ? '/admin' : '/dashboard'
+  const profileHref = role === 'companion' ? '/companion/me' : role === 'admin' ? '/admin/settings' : '/dashboard/profile'
+  const nameBase = (profile?.full_name || '').trim()
+  const menuProps = {
+    name: nameBase || user?.email?.split('@')[0] || 'Your account',
+    email: user?.email ?? null,
+    avatarUrl: profile?.avatar_url ?? null,
+    initials: nameBase
+      ? nameBase.split(/\s+/).map((s) => s[0]).slice(0, 2).join('').toUpperCase()
+      : user?.email?.[0]?.toUpperCase() || 'U',
+    roleLabel: role === 'companion' ? 'Companion' : role === 'admin' ? 'Admin' : 'Family',
+    profileHref,
+    accountHref: profileHref,
+    notificationsHref: profileHref,
+  }
 
   const isActive = (href: string) => {
     if (href === '/') return location.pathname === '/'
@@ -81,13 +97,7 @@ export function Navbar() {
                   <LayoutDashboard size={16} />
                   Dashboard
                 </button>
-                <div className="w-px h-4 bg-gray-200" />
-                <button
-                  onClick={async () => { await signOut(); window.location.replace('/auth') }}
-                  className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  Sign out
-                </button>
+                <UserMenu {...menuProps} />
               </div>
             ) : (
               <>
@@ -107,16 +117,19 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile hamburger */}
-          <button
-            className="md:hidden p-2 text-green-800 rounded-lg hover:bg-green-50 transition-colors"
-            onClick={() => setOpen(!open)}
-            aria-label={open ? 'Close menu' : 'Open menu'}
-            aria-expanded={open}
-            aria-controls="mobile-nav-drawer"
-          >
-            {open ? <X size={22} /> : <Menu size={22} />}
-          </button>
+          {/* Mobile controls — avatar menu (when signed in) + hamburger */}
+          <div className="md:hidden flex items-center gap-1">
+            {user && <UserMenu {...menuProps} />}
+            <button
+              className="p-2 text-green-800 rounded-lg hover:bg-green-50 transition-colors"
+              onClick={() => setOpen(!open)}
+              aria-label={open ? 'Close menu' : 'Open menu'}
+              aria-expanded={open}
+              aria-controls="mobile-nav-drawer"
+            >
+              {open ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -151,20 +164,12 @@ export function Navbar() {
         </div>
         <div className="px-4 pb-4 pt-2 border-t border-green-50 flex flex-col gap-2">
           {user ? (
-            <>
-              <Link
-                to={dashLink}
-                className="flex items-center justify-center gap-2 py-3 bg-green-800 text-white rounded-xl text-sm font-semibold"
-              >
-                <LayoutDashboard size={16} /> Dashboard
-              </Link>
-              <button
-                onClick={async () => { await signOut(); window.location.replace('/auth') }}
-                className="py-2.5 text-sm text-gray-400 text-center hover:text-gray-600"
-              >
-                Sign out
-              </button>
-            </>
+            <Link
+              to={dashLink}
+              className="flex items-center justify-center gap-2 py-3 bg-green-800 text-white rounded-xl text-sm font-semibold"
+            >
+              <LayoutDashboard size={16} /> Dashboard
+            </Link>
           ) : (
             <>
               <Link
