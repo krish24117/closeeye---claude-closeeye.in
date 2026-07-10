@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { fetchAdminThreads, fetchAdminThreadMeta, type AdminThreadRef } from '@/lib/db/messages'
-import { fetchElderProfile } from '@/lib/db/family'
+import { fetchElderProfile, fetchReportedBookingIds } from '@/lib/db/family'
 
 /**
  * Presence Console — the REAL caseload + Today overview for the signed-in staff
@@ -106,6 +106,7 @@ interface Caseload {
   awaiting: Map<string, boolean>
   guardians: Map<string, string>
   urgent: Map<string, string>
+  reported: Set<string> // booking ids with a completed visit report (visits row)
 }
 
 async function loadCaseload(): Promise<Caseload> {
@@ -114,7 +115,7 @@ async function loadCaseload(): Promise<Caseload> {
     .select('id, family_user_id, full_name, relationship, age, city, phone_number')
     .order('full_name')
   const lovedOnes = (loData as LovedOneRow[] | null) ?? []
-  if (lovedOnes.length === 0) return { lovedOnes: [], bookings: [], awaiting: new Map(), guardians: new Map(), urgent: new Map() }
+  if (lovedOnes.length === 0) return { lovedOnes: [], bookings: [], awaiting: new Map(), guardians: new Map(), urgent: new Map(), reported: new Set() }
   const ids = lovedOnes.map((l) => l.id)
 
   const [{ data: bkData }, threads, { data: mqData }] = await Promise.all([
@@ -138,7 +139,9 @@ async function loadCaseload(): Promise<Caseload> {
     const { data: cData } = await supabase.from('companions').select('id, full_name').in('id', compIds)
     ;((cData as CompanionRow[] | null) ?? []).forEach((c) => { if (c.full_name) guardians.set(c.id, c.full_name) })
   }
-  return { lovedOnes, bookings, awaiting, guardians, urgent }
+  const bookingIds = bookings.map((b) => b.id)
+  const reported = bookingIds.length ? await fetchReportedBookingIds(bookingIds).catch(() => new Set<string>()) : new Set<string>()
+  return { lovedOnes, bookings, awaiting, guardians, urgent, reported }
 }
 
 function mapFamilies({ lovedOnes, bookings, awaiting, urgent }: Caseload): ConsoleFamilyLive[] {
@@ -212,7 +215,7 @@ export async function fetchConsoleOverview(): Promise<ConsoleOverview> {
       memberName: (b.loved_one_id ? byId.get(b.loved_one_id)?.name : null) ?? 'A family member',
       guardianName: (b.companion_id ? data.guardians.get(b.companion_id) : null) ?? null,
       timeLabel: b.scheduled_at ? fmtTime(b.scheduled_at) : '—',
-      status: mapBookingStatus(b.status),
+      status: data.reported.has(b.id) ? 'completed' : mapBookingStatus(b.status),
     }))
 
   return { families, triage, schedule }
@@ -244,7 +247,7 @@ export async function fetchConsoleVisits(): Promise<ConsoleScheduleItem[]> {
       memberName: (b.loved_one_id ? nameById.get(b.loved_one_id) : null) ?? 'A family member',
       guardianName: (b.companion_id ? data.guardians.get(b.companion_id) : null) ?? null,
       timeLabel: b.scheduled_at ? fmtTime(b.scheduled_at) : '—',
-      status: mapBookingStatus(b.status),
+      status: data.reported.has(b.id) ? 'completed' : mapBookingStatus(b.status),
     }))
 }
 
@@ -339,7 +342,7 @@ export async function fetchConsoleCalendar(days = 14): Promise<ConsoleCalendarDa
         memberName: (b.loved_one_id ? nameById.get(b.loved_one_id) : null) ?? 'A family member',
         guardianName: (b.companion_id ? data.guardians.get(b.companion_id) : null) ?? null,
         timeLabel: fmtTime(at),
-        status: mapBookingStatus(b.status),
+        status: data.reported.has(b.id) ? 'completed' : mapBookingStatus(b.status),
       }
       const g = groups.get(key)
       if (g) g.items.push(item)
@@ -381,7 +384,7 @@ export async function fetchConsoleReports(): Promise<ConsoleReports> {
     awaitingReplies: families.filter((f) => f.awaitingReply).length,
     presenceToday: data.bookings.filter((b) => b.status !== 'cancelled' && b.scheduled_at && isToday(b.scheduled_at)).length,
     visitsThisWeek: data.bookings.filter((b) => b.status !== 'cancelled' && inWeek(b.scheduled_at)).length,
-    completedThisWeek: data.bookings.filter((b) => b.status === 'completed' && inWeek(b.scheduled_at)).length,
+    completedThisWeek: data.bookings.filter((b) => data.reported.has(b.id) && inWeek(b.scheduled_at)).length,
   }
 }
 
