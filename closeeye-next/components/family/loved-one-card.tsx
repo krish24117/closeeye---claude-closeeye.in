@@ -85,7 +85,7 @@ export function LovedOneCard({ lo }: { lo: LovedOne }) {
 
   return (
     <>
-      <article className="ce-fade-in overflow-hidden rounded-[20px] border border-line bg-card shadow-sm">
+      <article className="ce-fade-in overflow-hidden rounded-[20px] border border-line/70 bg-card shadow-sm">
         <header className="flex items-center gap-5 px-7 pb-6 pt-7">
           <Avatar initials={initialsOf(lo.full_name)} src={photo} alt={lo.full_name} size="xl" tone="solid" />
           <div className="min-w-0 flex-1">

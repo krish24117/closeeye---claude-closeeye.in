@@ -110,7 +110,7 @@ export default function VisitDetailPage() {
     <div className="flex flex-col gap-6">
       {back}
 
-      <header className="flex flex-wrap items-center gap-4 rounded-lg border border-line bg-card p-6 shadow-sm">
+      <header className="flex flex-wrap items-center gap-4 rounded-lg border border-line/70 bg-card p-6 shadow-sm">
         <Avatar initials={initialsOf(name)} size="lg" tone="solid" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -121,7 +121,7 @@ export default function VisitDetailPage() {
         </div>
       </header>
 
-      <section className="rounded-lg border border-line bg-card p-6 shadow-sm">
+      <section className="rounded-lg border border-line/70 bg-card p-6 shadow-sm">
         <h2 className="flex items-center gap-2 text-h4">
           <CalendarClock className="h-5 w-5 text-green" strokeWidth={1.5} /> {visit.status === 'cancelled' ? 'This visit was cancelled' : 'This visit is being arranged'}
         </h2>

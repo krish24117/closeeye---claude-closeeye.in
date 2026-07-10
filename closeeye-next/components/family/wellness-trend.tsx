@@ -12,7 +12,7 @@ const TONE: Record<TrendStatus, { chip: string; icon: typeof Minus }> = {
 export function WellnessTrendCard({ rows }: { rows: TrendRowData[] }) {
   if (rows.length === 0) return null
   return (
-    <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+    <div className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
       <ul className="divide-y divide-line">
         {rows.map((r) => {
           const tone = TONE[r.status]

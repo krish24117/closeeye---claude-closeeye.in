@@ -74,7 +74,7 @@ export function VoicePlayer({ src, durationSec, label }: { src: string; duration
   }
 
   return (
-    <div className="rounded-lg border border-line bg-card p-5 shadow-sm">
+    <div className="rounded-lg border border-line/70 bg-card p-5 shadow-sm">
       <p className="mb-3 text-body-sm font-semibold text-ink">{label}</p>
 
       <div className="flex items-center gap-4">

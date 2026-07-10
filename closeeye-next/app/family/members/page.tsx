@@ -23,7 +23,7 @@ export default function MembersPage() {
       </div>
 
       {loading && lovedOnes.length === 0 ? (
-        <div className="grid place-items-center rounded-lg border border-line bg-card py-16 shadow-sm">
+        <div className="grid place-items-center rounded-lg border border-line/70 bg-card py-16 shadow-sm">
           <Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} />
         </div>
       ) : lovedOnes.length === 0 ? (

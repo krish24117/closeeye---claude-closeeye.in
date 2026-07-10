@@ -52,7 +52,7 @@ export default function ConnectHome() {
       {updates.length > 0 && (
         <section className="flex flex-col gap-4">
           <SectionTitle>Care updates</SectionTitle>
-          <ul className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+          <ul className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
             {updates.map((u, i) => (
               <li key={u.id} className={cn(i > 0 && 'border-t border-line')}>
                 <Link
@@ -76,7 +76,7 @@ export default function ConnectHome() {
       <section className="flex flex-col gap-4">
         <SectionTitle>Conversations</SectionTitle>
         {loading ? (
-          <div className="grid place-items-center rounded-lg border border-line bg-card py-16 shadow-sm">
+          <div className="grid place-items-center rounded-lg border border-line/70 bg-card py-16 shadow-sm">
             <Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} />
           </div>
         ) : lovedOnes.length === 0 ? (
@@ -93,7 +93,7 @@ export default function ConnectHome() {
             }
           />
         ) : (
-          <ul className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+          <ul className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
             {lovedOnes.map((lo, i) => (
               <MemberRow key={lo.id} lo={lo} summary={summaries?.get(lo.id)} loading={summaries === null} border={i > 0} />
             ))}

@@ -71,7 +71,7 @@ export default function EditProfilePage() {
       </Link>
       <PageHeader title="Edit profile" subtitle="Your details and how we reach you." />
 
-      <div className="flex flex-col gap-6 rounded-[20px] border border-line bg-card p-6 shadow-sm sm:p-8">
+      <div className="flex flex-col gap-6 rounded-[20px] border border-line/70 bg-card p-6 shadow-sm sm:p-8">
         <PhotoPicker onChange={setPhoto} />
 
         <div>

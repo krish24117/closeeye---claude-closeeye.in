@@ -129,11 +129,11 @@ export default function VisitsPage() {
       </div>
 
       {requests === null ? (
-        <div className="grid place-items-center rounded-lg border border-line bg-card py-20 shadow-sm">
+        <div className="grid place-items-center rounded-lg border border-line/70 bg-card py-20 shadow-sm">
           <Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} />
         </div>
       ) : requests.length === 0 ? (
-        <section className="flex flex-col items-center rounded-lg border border-line bg-card px-6 py-14 text-center shadow-sm">
+        <section className="flex flex-col items-center rounded-lg border border-line/70 bg-card px-6 py-14 text-center shadow-sm">
           <span className="grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-green"><CalendarClock className="h-8 w-8" strokeWidth={1.5} /></span>
           <h2 className="mt-5 text-h3 text-ink">No visits yet</h2>
           <p className="mt-2 max-w-sm text-body text-muted">When you book a wellbeing visit, it appears here — with photos and a full Presence Story after each one.</p>
@@ -142,7 +142,7 @@ export default function VisitsPage() {
           </Button>
         </section>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
           {requests.map((r, i) => {
             const name = r.recipient_name?.trim() || 'Your family'
             const hasReport = Boolean(r.booking_id && reported.has(r.booking_id))

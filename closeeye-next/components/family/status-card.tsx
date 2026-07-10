@@ -15,7 +15,7 @@ export function StatusCard({ status }: { status: ReturnType<typeof todayStatus> 
   ]
 
   return (
-    <section className="overflow-hidden rounded-lg border border-line bg-card shadow-sm" aria-label="Today's status">
+    <section className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md" aria-label="Today's status">
       <div className="flex items-center gap-4 bg-accent-soft/50 px-6 py-6 sm:px-8">
         <Avatar initials={member.initials} size="lg" tone="solid" />
         <div className="min-w-0">
@@ -27,11 +27,11 @@ export function StatusCard({ status }: { status: ReturnType<typeof todayStatus> 
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-px bg-line sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-6 px-6 py-6 sm:grid-cols-4 sm:px-8">
         {stats.map((s) => {
           const Icon = s.icon
           return (
-            <div key={s.label} className="flex flex-col gap-2 bg-card px-6 py-5">
+            <div key={s.label} className="flex flex-col gap-2">
               <dt className="flex items-center gap-2 text-caption text-muted">
                 <Icon className="h-4 w-4 text-green" strokeWidth={1.5} /> {s.label}
               </dt>

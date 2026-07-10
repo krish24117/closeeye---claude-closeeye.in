@@ -20,7 +20,7 @@ const areaCls =
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-[20px] border border-line bg-card p-6 shadow-sm sm:p-7">
+    <div className="rounded-[20px] border border-line/70 bg-card p-6 shadow-sm sm:p-7">
       <h2 className="text-h4 text-ink">{title}</h2>
       {hint && <p className="mt-1 text-body-sm text-muted">{hint}</p>}
       <div className="mt-5 flex flex-col gap-5">{children}</div>
@@ -88,7 +88,7 @@ export default function HealthProfilePage() {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
         {back}
-        <div className="grid place-items-center rounded-lg border border-line bg-card py-20 shadow-sm">
+        <div className="grid place-items-center rounded-lg border border-line/70 bg-card py-20 shadow-sm">
           {loading || !member ? <Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /> : <Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} />}
         </div>
       </div>

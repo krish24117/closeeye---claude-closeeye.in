@@ -18,7 +18,7 @@ export function VisitTabs({ visits }: { visits: Visit[] }) {
 
   return (
     <div>
-      <div role="tablist" aria-label="Visit status" className="flex gap-1 rounded-sm border border-line bg-card p-1">
+      <div role="tablist" aria-label="Visit status" className="flex gap-1 rounded-sm border border-line/70 bg-card p-1">
         {TABS.map((t) => {
           const count = visits.filter((v) => v.status === t.key).length
           const active = tab === t.key

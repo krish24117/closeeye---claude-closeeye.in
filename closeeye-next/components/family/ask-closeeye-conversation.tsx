@@ -231,7 +231,7 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
               <span className="text-caption font-semibold uppercase tracking-widest text-muted">Recent questions</span>
               <span className="h-px flex-1 bg-line" />
             </div>
-            <ul className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+            <ul className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
               {history.map((h, i) => (
                 <li key={h.id} className={cn('px-4 py-3', i > 0 && 'border-t border-line')}>
                   <p className="truncate text-body-sm font-medium text-ink">{h.question}</p>
@@ -246,7 +246,7 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
       </div>
 
       {/* Composer */}
-      <div className="sticky bottom-2 mt-1 rounded-lg border border-line bg-card p-2.5 shadow-md">
+      <div className="sticky bottom-2 mt-1 rounded-lg border border-line/70 bg-card p-2.5 shadow-md">
         <div className="flex items-end gap-2">
           <textarea
             value={input}
@@ -311,7 +311,7 @@ function NextStepChip({ href, icon: Icon, children }: { href: string; icon: Luci
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-medium text-ink transition-colors hover:border-green hover:text-green"
+      className="inline-flex items-center gap-1.5 rounded-full border border-line/70 bg-card px-3.5 py-2 text-caption font-medium text-ink transition-colors hover:border-green hover:text-green"
     >
       <Icon className="h-3.5 w-3.5 text-green" strokeWidth={1.75} /> {children}
     </Link>
@@ -324,7 +324,7 @@ function AssistantBubble({ children }: { children: React.ReactNode }) {
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-green text-ivory">
         <Sparkles className="h-4 w-4" strokeWidth={1.75} />
       </span>
-      <div className="max-w-[86%] rounded-[4px_18px_18px_18px] border border-line bg-card px-4 py-3 shadow-sm">{children}</div>
+      <div className="max-w-[86%] rounded-[4px_18px_18px_18px] border border-line/70 bg-card px-4 py-3 shadow-sm">{children}</div>
     </div>
   )
 }

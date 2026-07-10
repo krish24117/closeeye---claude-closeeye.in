@@ -80,7 +80,7 @@ export function DocumentsVault() {
       </p>
 
       {uploads.length > 0 && (
-        <section className="rounded-lg border border-line bg-card p-6 shadow-sm">
+        <section className="rounded-lg border border-line/70 bg-card p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <FeatureIcon icon={UploadCloud} size="sm" />
             <h2 className="text-h4">Your uploads</h2>
@@ -103,7 +103,7 @@ export function DocumentsVault() {
 
       <div className="grid gap-5 sm:grid-cols-2">
         {DOCUMENTS.map((group) => (
-          <section key={group.category} className="rounded-lg border border-line bg-card p-6 shadow-sm">
+          <section key={group.category} className="rounded-lg border border-line/70 bg-card p-6 shadow-sm">
             <div className="flex items-center gap-3">
               <FeatureIcon icon={ICONS[group.icon]} size="sm" />
               <h2 className="text-h4">{group.category}</h2>

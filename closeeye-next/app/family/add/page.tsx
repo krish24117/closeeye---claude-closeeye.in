@@ -60,7 +60,7 @@ export default function AddFamilyMemberPage() {
         <p className="mt-2 text-body text-muted">Just the essentials — you can add health details and contacts later.</p>
       </div>
 
-      <div className="ce-fade-in flex flex-col gap-6 rounded-[20px] border border-line bg-card p-6 shadow-sm sm:p-8">
+      <div className="ce-fade-in flex flex-col gap-6 rounded-[20px] border border-line/70 bg-card p-6 shadow-sm sm:p-8">
         <PhotoPicker onChange={setPhoto} />
 
         <div>

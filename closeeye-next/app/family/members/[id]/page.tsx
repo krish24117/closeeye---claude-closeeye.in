@@ -22,7 +22,7 @@ const areaCls =
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-[20px] border border-line bg-card p-6 shadow-sm sm:p-7">
+    <div className="rounded-[20px] border border-line/70 bg-card p-6 shadow-sm sm:p-7">
       <h2 className="text-h4 text-ink">{title}</h2>
       <div className="mt-5 flex flex-col gap-5">{children}</div>
     </div>
@@ -109,9 +109,9 @@ export default function EditFamilyMemberPage() {
       <div className="flex flex-col gap-6">
         {back}
         {loading ? (
-          <div className="grid place-items-center rounded-lg border border-line bg-card py-20 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
+          <div className="grid place-items-center rounded-lg border border-line/70 bg-card py-20 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
         ) : (
-          <section className="flex flex-col items-center rounded-lg border border-line bg-card px-6 py-14 text-center shadow-sm">
+          <section className="flex flex-col items-center rounded-lg border border-line/70 bg-card px-6 py-14 text-center shadow-sm">
             <h2 className="text-h3 text-ink">Family member not found</h2>
             <p className="mt-2 text-body text-muted">They may have been removed from your family.</p>
             <Button asChild size="lg" className="mt-6"><Link href="/family/members">Back to family</Link></Button>

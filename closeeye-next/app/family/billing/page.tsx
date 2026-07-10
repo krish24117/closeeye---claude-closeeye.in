@@ -75,7 +75,7 @@ export default function BillingPage() {
 
       {/* Subscription summary */}
       {subscription && plan && (
-        <section className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+        <section className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
           <div className="flex flex-wrap items-center justify-between gap-3 bg-ink px-6 py-5 text-white">
             <div className="flex items-center gap-3">
               <span className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-accent"><BadgeCheck className="h-5 w-5" strokeWidth={1.5} /></span>
@@ -89,13 +89,13 @@ export default function BillingPage() {
               {subscription.status === 'active' ? 'Active' : 'Inactive'}
             </span>
           </div>
-          <dl className="grid grid-cols-2 gap-px bg-line sm:grid-cols-3">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-5 px-6 py-5 sm:grid-cols-3">
             {[
               { label: 'Next billing', value: fmt(subscription.next_billing_at) },
               { label: 'Total paid', value: inr(subscription.total_paid_paise ?? 0) },
               { label: 'Invoices', value: String(subscription.invoice_count ?? 0) },
             ].map((s) => (
-              <div key={s.label} className="bg-card px-6 py-4">
+              <div key={s.label}>
                 <dt className="text-caption text-muted">{s.label}</dt>
                 <dd className="mt-1 text-body font-semibold text-ink">{s.value}</dd>
               </div>
@@ -108,15 +108,15 @@ export default function BillingPage() {
       <section>
         <h2 className="text-h4">Payment history</h2>
         {rows === null ? (
-          <div className="mt-4 grid place-items-center rounded-lg border border-line bg-card py-16 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
+          <div className="mt-4 grid place-items-center rounded-lg border border-line/70 bg-card py-16 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
         ) : rows.length === 0 ? (
-          <section className="mt-4 flex flex-col items-center rounded-lg border border-line bg-card px-6 py-12 text-center shadow-sm">
+          <section className="mt-4 flex flex-col items-center rounded-lg border border-line/70 bg-card px-6 py-12 text-center shadow-sm">
             <span className="grid h-14 w-14 place-items-center rounded-full bg-accent-soft text-green"><Receipt className="h-7 w-7" strokeWidth={1.5} /></span>
             <p className="mt-4 text-body font-semibold text-ink">No payments yet</p>
             <p className="mt-1 max-w-sm text-body-sm text-muted">Receipts for your membership and visits will appear here once a payment is made.</p>
           </section>
         ) : (
-          <div className="mt-4 overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+          <div className="mt-4 overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
             {rows.map((r, i) => (
               <div key={r.id} className={cn('flex items-center gap-4 px-5 py-4', i > 0 && 'border-t border-line')}>
                 <div className="min-w-0 flex-1">

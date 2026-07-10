@@ -48,7 +48,7 @@ export function AIStoryCard({ report }: { report: SharedVisitReport }) {
   }
 
   return (
-    <article className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+    <article className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
       <div className="flex items-center gap-3 border-b border-line bg-accent-soft/40 px-6 py-4">
         <Avatar initials={report.memberName.split(' ').map((w) => w[0]).join('')} size="md" />
         <div className="min-w-0 flex-1">

@@ -15,7 +15,7 @@ function TimelineEntry({ visit, last }: { visit: Visit; last: boolean }) {
   const body = (
     <div
       className={cn(
-        'flex-1 rounded-lg border border-line bg-card p-5 shadow-sm transition-all duration-200 ease-premium',
+        'flex-1 rounded-lg border border-line/70 bg-card p-5 shadow-sm transition-all duration-200 ease-premium',
         clickable && 'group-hover:-translate-y-0.5 group-hover:border-accent group-hover:shadow-md',
       )}
     >

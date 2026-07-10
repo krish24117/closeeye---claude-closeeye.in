@@ -24,7 +24,7 @@ import { SITE } from '@/lib/site'
  *  Care, …) is just another <Card> in the list below — no layout redesign. */
 function Card({ icon, title, action, children }: { icon: LucideIcon; title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-line bg-card p-6 shadow-sm">
+    <section className="rounded-lg border border-line/70 bg-card p-6 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <FeatureIcon icon={icon} size="sm" />

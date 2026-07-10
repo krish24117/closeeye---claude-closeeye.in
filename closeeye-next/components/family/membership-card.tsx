@@ -23,7 +23,7 @@ export function MembershipCard() {
   // Empty state — no membership chosen yet.
   if (!subscription || !plan) {
     return (
-      <section className="flex flex-col items-start gap-4 rounded-lg border border-line bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <section className="flex flex-col items-start gap-4 rounded-lg border border-line/70 bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><ShieldPlus className="h-5 w-5" strokeWidth={1.5} /></span>
           <div>
@@ -40,7 +40,7 @@ export function MembershipCard() {
   const isConnect = plan.key === 'connect'
 
   return (
-    <section className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+    <section className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
       <div className="flex flex-wrap items-center justify-between gap-3 bg-ink px-6 py-5 text-white">
         <div className="flex items-center gap-3">
           <span className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-accent"><BadgeCheck className="h-5 w-5" strokeWidth={1.5} /></span>

@@ -38,7 +38,7 @@ export function CityField({
         />
       </div>
       {showList && (
-        <ul className="ce-fade-in absolute z-20 mt-2 max-h-56 w-full overflow-y-auto rounded-2xl border border-line bg-card py-1 shadow-lg">
+        <ul className="ce-fade-in absolute z-20 mt-2 max-h-56 w-full overflow-y-auto rounded-2xl border border-line/70 bg-card py-1 shadow-lg">
           {matches.map((c) => (
             <li key={c}>
               <button

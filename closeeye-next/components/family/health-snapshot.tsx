@@ -32,7 +32,7 @@ export function HealthSnapshotCard({ card }: { card: HealthCardData }) {
   const tone = TONE[card.status]
   const Icon = tone.icon
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-line bg-card p-4 shadow-sm">
+    <div className="flex flex-col gap-3 rounded-lg border border-line/70 bg-card p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-caption text-muted">{card.label}</p>

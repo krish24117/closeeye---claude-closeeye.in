@@ -84,7 +84,7 @@ export default function FamilyBookPage() {
   // ── Success ─────────────────────────────────────────────────────────────
   if (ref) {
     return (
-      <div className="ce-fade-in mx-auto flex max-w-lg flex-col items-center gap-4 rounded-lg border border-line bg-card px-6 py-12 text-center shadow-sm">
+      <div className="ce-fade-in mx-auto flex max-w-lg flex-col items-center gap-4 rounded-lg border border-line/70 bg-card px-6 py-12 text-center shadow-sm">
         <span className="grid h-16 w-16 place-items-center rounded-full bg-success/12 text-success"><CheckCircle2 className="h-9 w-9" strokeWidth={1.5} /></span>
         <h1 className="text-h3 text-ink">Visit requested</h1>
         <p className="max-w-sm text-body text-muted">
@@ -99,7 +99,7 @@ export default function FamilyBookPage() {
 
   // ── Loading loved ones ──────────────────────────────────────────────────
   if (loading && lovedOnes.length === 0) {
-    return <div className="grid place-items-center rounded-lg border border-line bg-card py-20 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
+    return <div className="grid place-items-center rounded-lg border border-line/70 bg-card py-20 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
   }
 
   // ── No family member yet ────────────────────────────────────────────────
@@ -107,7 +107,7 @@ export default function FamilyBookPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader title="Book a visit" subtitle="Trusted human presence for the people you love." />
-        <section className="flex flex-col items-center rounded-lg border border-line bg-card px-6 py-14 text-center shadow-sm">
+        <section className="flex flex-col items-center rounded-lg border border-line/70 bg-card px-6 py-14 text-center shadow-sm">
           <span className="grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-green"><UserPlus className="h-8 w-8" strokeWidth={1.5} /></span>
           <h2 className="mt-5 text-h3 text-ink">Add a family member first</h2>
           <p className="mt-2 max-w-sm text-body text-muted">Visits are booked for someone in your family. Add them once and we’ll use their details every time.</p>

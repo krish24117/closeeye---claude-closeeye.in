@@ -41,7 +41,7 @@ export default function FamilyHome() {
   if (loading || signals === null) {
     return (
       <div className="flex flex-col gap-8">
-        <div className="grid place-items-center rounded-lg border border-line bg-card py-20 shadow-sm">
+        <div className="grid place-items-center rounded-lg border border-line/70 bg-card py-20 shadow-sm">
           <Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} />
         </div>
       </div>

@@ -4,7 +4,7 @@ import { TRUST_SCORE } from '@/lib/family-data'
 /** Relationship confidence — NOT a medical score. Warm, never clinical. */
 export function TrustScore() {
   return (
-    <section className="rounded-lg border border-line bg-card p-6 shadow-sm" aria-label="Trust score">
+    <section className="rounded-lg border border-line/70 bg-card p-6 shadow-sm" aria-label="Trust score">
       <div className="flex items-start gap-4">
         <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-accent-soft text-green">
           <ShieldCheck className="h-7 w-7" strokeWidth={1.5} />

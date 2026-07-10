@@ -35,7 +35,7 @@ export function PresenceCheckIn({
   }, [])
 
   return (
-    <section aria-live="polite" className="relative overflow-hidden rounded-lg border border-line bg-card p-6 shadow-sm">
+    <section aria-live="polite" className="relative overflow-hidden rounded-lg border border-line/70 bg-card p-6 shadow-sm">
       <span aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent-soft/50 blur-3xl" />
 
       {/* Resolved reassurance — always in flow so the card height is stable. */}

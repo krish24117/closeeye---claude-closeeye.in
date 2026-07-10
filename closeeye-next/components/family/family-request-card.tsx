@@ -45,7 +45,7 @@ export function FamilyRequestCard({ memberName }: { memberName: string }) {
   const unused = SUGGESTIONS.filter((s) => !requests.some((r) => r.text === s))
 
   return (
-    <section className="rounded-lg border border-line bg-card p-6 shadow-sm" aria-label="Requests for the next visit">
+    <section className="rounded-lg border border-line/70 bg-card p-6 shadow-sm" aria-label="Requests for the next visit">
       <div className="flex items-center gap-2">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-green">
           <MessageSquareHeart className="h-5 w-5" strokeWidth={1.5} />
@@ -78,7 +78,7 @@ export function FamilyRequestCard({ memberName }: { memberName: string }) {
               key={s}
               type="button"
               onClick={() => add(s)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3 py-1.5 text-caption font-medium text-muted transition-colors hover:border-green/40 hover:text-green"
+              className="inline-flex items-center gap-1.5 rounded-full border border-line/70 bg-card px-3 py-1.5 text-caption font-medium text-muted transition-colors hover:border-green/40 hover:text-green"
             >
               <Plus className="h-3.5 w-3.5" strokeWidth={2} /> {s}
             </button>

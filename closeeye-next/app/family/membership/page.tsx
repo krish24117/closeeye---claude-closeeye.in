@@ -157,7 +157,7 @@ export default function MembershipPage() {
       <section className="mt-8">
         <h2 className="text-h4">How it works</h2>
         <p className="mt-1 text-body-sm text-muted">Four simple steps.</p>
-        <ol className="mt-4 overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+        <ol className="mt-4 overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
           {STEPS.map((s, i) => (
             <li key={s} className={cn('flex items-center gap-3 px-5 py-3.5', i > 0 && 'border-t border-line')}>
               <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent-soft text-caption font-bold text-green">{i + 1}</span>
@@ -171,7 +171,7 @@ export default function MembershipPage() {
       <section className="mt-8">
         <h2 className="text-h4">Other services</h2>
         <p className="mt-1 text-body-sm text-muted">One-off support, whenever your family needs it.</p>
-        <div className="mt-4 overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+        <div className="mt-4 overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
           {SERVICES.map((s, i) => {
             const careVisit = isCare && s.serviceId === 'home-wellbeing-visit'
             return (

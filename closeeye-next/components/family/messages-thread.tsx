@@ -319,7 +319,7 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
   const firstName = lovedOne.full_name.trim().split(/\s+/)[0]
 
   return (
-    <div className="flex h-[72vh] min-h-[28rem] flex-col overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+    <div className="flex h-[72vh] min-h-[28rem] flex-col overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
       {/* Thread header — whose conversation this is */}
       <div className="flex items-center gap-3 border-b border-line px-5 py-4">
         <Avatar initials={initialsOf(lovedOne.full_name)} src={photo} alt={lovedOne.full_name} size="md" tone="solid" />

@@ -8,7 +8,7 @@ import { PRESENCE_MANAGER, type Visit } from '@/lib/family-data'
 /** The latest visit, told personally — photos, a note, the Guardian's warmth. */
 export function LatestUpdate({ visit }: { visit: Visit }) {
   return (
-    <article className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+    <article className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
       <header className="flex items-center justify-between gap-3 border-b border-line px-6 py-4">
         <div className="flex items-center gap-3">
           <Avatar initials={visit.memberName.split(' ').map((w) => w[0]).join('')} size="sm" />

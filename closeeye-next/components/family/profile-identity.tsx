@@ -18,7 +18,7 @@ export function ProfileIdentity() {
 
   const sub = [identity.email, profile?.phone].filter(Boolean).join(' · ')
   return (
-    <section className="flex items-center gap-4 rounded-lg border border-line bg-card p-6 shadow-sm">
+    <section className="flex items-center gap-4 rounded-lg border border-line/70 bg-card p-6 shadow-sm">
       <Avatar initials={identity.initials} src={photo || identity.avatarUrl} alt={identity.fullName} size="xl" />
       <div className="min-w-0 flex-1">
         <p className="text-h4 text-ink">{identity.fullName}</p>

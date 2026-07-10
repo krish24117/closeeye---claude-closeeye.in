@@ -18,7 +18,7 @@ function InfoBlock({ icon: Icon, title, children }: { icon: typeof Heart; title:
 export function MemberCard({ member, onEdit }: { member: Member; onEdit?: () => void }) {
   const meta = [member.relationship, member.age > 0 ? member.age : null, member.city].filter(Boolean).join(' · ')
   return (
-    <article className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+    <article className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
       <header className="flex items-center gap-4 border-b border-line px-6 py-5">
         <Avatar initials={member.initials} size="lg" />
         <div className="min-w-0 flex-1">

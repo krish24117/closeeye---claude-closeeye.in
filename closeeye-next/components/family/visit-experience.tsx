@@ -27,7 +27,7 @@ import { healthSnapshot, momentItems, timelineEvents, wellnessTrend } from '@/li
 
 function FamilySection({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-line bg-card p-6 shadow-sm">
+    <section className="rounded-lg border border-line/70 bg-card p-6 shadow-sm">
       <h2 className="flex items-center gap-2 text-h4">
         <Icon className="h-5 w-5 text-green" strokeWidth={1.5} /> {title}
       </h2>
@@ -48,7 +48,7 @@ function StatCards({ stats }: { stats: VisitStats }) {
       ].map((t) => {
         const Icon = t.icon
         return (
-          <div key={t.label} className="flex flex-col items-start gap-2 rounded-md border border-line bg-card p-4 shadow-sm">
+          <div key={t.label} className="flex flex-col items-start gap-2 rounded-md border border-line/70 bg-card p-4 shadow-sm">
             <Icon className="h-5 w-5 text-green" strokeWidth={1.5} />
             <span className="text-caption text-muted">{t.label}</span>
             <span className="text-body font-semibold text-ink">{t.value ?? '—'}</span>
@@ -346,7 +346,7 @@ function StaticBody({ visit }: { visit: Visit }) {
       ) : null}
 
       {visit.hasVoiceNote && (
-        <div className="rounded-lg border border-line bg-card p-5 shadow-sm">
+        <div className="rounded-lg border border-line/70 bg-card p-5 shadow-sm">
           <CapturedVoice memberName={visit.memberName} guardianName={visit.guardianName} />
         </div>
       )}

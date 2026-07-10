@@ -16,7 +16,7 @@ export function PresenceManagerCard() {
   const nextMember = MEMBERS.find((m) => m.id === next?.memberId)
 
   return (
-    <section className="overflow-hidden rounded-lg border border-line bg-card shadow-sm" aria-label="Your Presence Manager">
+    <section className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md" aria-label="Your Presence Manager">
       {/* Identity */}
       <div className="flex items-start gap-4 border-b border-line p-6">
         <span className="relative shrink-0">

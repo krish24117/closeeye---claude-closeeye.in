@@ -110,7 +110,7 @@ export function AskCloseEyeCard({
               <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-green text-ivory">
                 <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} />
               </span>
-              <div className="max-w-[85%] rounded-[4px_16px_16px_16px] border border-line bg-card px-3.5 py-2 text-caption leading-relaxed text-ink">
+              <div className="max-w-[85%] rounded-[4px_16px_16px_16px] border border-line/70 bg-card px-3.5 py-2 text-caption leading-relaxed text-ink">
                 {last.answer ? plain(last.answer) : 'Our care team will follow up shortly.'}
               </div>
             </div>
@@ -120,7 +120,7 @@ export function AskCloseEyeCard({
             <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-green text-ivory">
               <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} />
             </span>
-            <div className="max-w-[90%] rounded-[4px_16px_16px_16px] border border-line bg-card px-3.5 py-2 text-body-sm leading-relaxed text-ink">
+            <div className="max-w-[90%] rounded-[4px_16px_16px_16px] border border-line/70 bg-card px-3.5 py-2 text-body-sm leading-relaxed text-ink">
               {first
                 ? `I'm keeping an eye on ${first}. Ask me anything about their day — or just say hello.`
                 : `I'm here for your family. Ask me anything about their care, or how ${SITE.name} works.`}
@@ -150,7 +150,7 @@ export function AskCloseEyeCard({
       </div>
 
       {/* Quiet input — present, never dominant. */}
-      <div className="mt-3.5 flex items-center gap-2 rounded-full border border-line bg-card px-3 py-1.5">
+      <div className="mt-3.5 flex items-center gap-2 rounded-full border border-line/70 bg-card px-3 py-1.5">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}

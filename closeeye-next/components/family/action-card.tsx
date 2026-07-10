@@ -22,7 +22,7 @@ export function ActionCard({ label, description, href, icon }: ActionCardData) {
     <Link
       href={href}
       className={cn(
-        'group flex items-start gap-4 rounded-lg border border-line bg-card p-5 shadow-sm',
+        'group flex items-start gap-4 rounded-lg border border-line/70 bg-card p-5 shadow-sm',
         'transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:border-accent hover:shadow-md active:translate-y-0 active:shadow-sm',
       )}
     >

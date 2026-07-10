@@ -9,7 +9,7 @@ import { useProfile } from '@/components/family/family-data-provider'
 export function EmptyFamily() {
   const { firstName } = useProfile()
   return (
-    <section className="flex flex-col items-center rounded-lg border border-line bg-card px-6 py-12 text-center shadow-sm">
+    <section className="flex flex-col items-center rounded-lg border border-line/70 bg-card px-6 py-12 text-center shadow-sm">
       <span className="grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-green">
         <Users className="h-8 w-8" strokeWidth={1.5} />
       </span>
