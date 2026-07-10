@@ -1,4 +1,4 @@
-import { isFounderPreLaunch, shouldGateFounderFunnel } from './launch'
+import { isFounderPreLaunch, shouldGateFounderFunnel, sanitizeRef } from './launch'
 
 /**
  * Founder Funnel — SESSION HINT (Phase 1). NOT the authority (Mandatory Change #1).
@@ -26,6 +26,23 @@ export function hasFounderSessionHint(): boolean {
 export function clearFounderSessionHint(): void {
   if (typeof window === 'undefined') return
   try { window.localStorage.removeItem(HINT_KEY) } catch { /* ignore */ }
+}
+
+/**
+ * The founder ref (attribution id) from /f/<ref>, stored alongside the hint so a
+ * later registration can be traced back to the founder's message. Sanitised.
+ */
+const REF_KEY = 'ce_founder_ref'
+
+export function setFounderRef(ref: string): void {
+  const clean = sanitizeRef(ref)
+  if (!clean || typeof window === 'undefined') return
+  try { window.localStorage.setItem(REF_KEY, clean) } catch { /* ignore */ }
+}
+
+export function getFounderRef(): string | null {
+  if (typeof window === 'undefined') return null
+  try { return window.localStorage.getItem(REF_KEY) } catch { return null }
 }
 
 /**

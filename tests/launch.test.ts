@@ -9,7 +9,7 @@
 // Run: node --test tests/launch.test.ts
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { isFounderPreLaunch, launchMode, shouldGateFounderFunnel } from '../closeeye-next/lib/launch.ts'
+import { isFounderPreLaunch, launchMode, shouldGateFounderFunnel, sanitizeRef } from '../closeeye-next/lib/launch.ts'
 
 const before = Date.parse('2026-07-11T12:00:00+05:30')
 const justBefore = Date.parse('2026-08-14T23:59:00+05:30')
@@ -43,4 +43,12 @@ test('shouldGateFounderFunnel: withholds ONLY for a founder registrant, pre-laun
 test('shouldGateFounderFunnel: nothing is gated once launched', () => {
   assert.equal(shouldGateFounderFunnel({ preLaunch: false, sessionHint: true }), false)
   assert.equal(shouldGateFounderFunnel({ preLaunch: false, accountIsFounderPrelaunch: true }), false)
+})
+
+test('sanitizeRef: trims, keeps url-safe chars, caps length, empties safely', () => {
+  assert.equal(sanitizeRef('  krishna-fam_01  '), 'krishna-fam_01')
+  assert.equal(sanitizeRef('drop</script>tags'), 'dropscripttags') // unsafe chars stripped
+  assert.equal(sanitizeRef(null), '')
+  assert.equal(sanitizeRef(undefined), '')
+  assert.equal(sanitizeRef('a'.repeat(200)).length, 64) // capped
 })

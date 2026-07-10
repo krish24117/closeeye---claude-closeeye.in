@@ -54,7 +54,7 @@ export const PLANS: Plan[] = [
       'Everything in CloseEye Connect',
       'One monthly wellbeing visit',
       'Visit report with photos',
-      'Medicine verification',
+      'Medication reminders',
       'Priority scheduling',
     ],
     cta: 'Choose Care',

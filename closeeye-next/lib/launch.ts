@@ -68,6 +68,14 @@ export function shouldGateFounderFunnel(input: {
   return input.preLaunch && (!!input.accountIsFounderPrelaunch || !!input.sessionHint)
 }
 
+/**
+ * A founder ref is an opaque prospect id carried by the landing (/f/<ref>) for
+ * attribution. Keep it safe: trim, allow only url-safe chars, cap length. '' if empty.
+ */
+export function sanitizeRef(raw: string | null | undefined): string {
+  return (raw ?? '').trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64)
+}
+
 /** Honest copy shown when the gate withholds an action during pre-launch. */
 export const PRELAUNCH_MEMBERSHIP_NOTE =
   `You're among the first Hyderabad families joining Close Eye. Your membership will become available from ${FOUNDER_LAUNCH_LABEL}.`
