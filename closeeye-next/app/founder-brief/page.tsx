@@ -80,7 +80,7 @@ export default function FounderBriefPage() {
           <Logo />
           <div className="text-right">
             <p className="text-caption font-semibold uppercase tracking-[0.14em] text-green">Founder Brief</p>
-            <p className="mt-1 text-caption text-muted">Confidential · T-Hub Briefing</p>
+            <p className="mt-1 text-caption text-muted">Confidential</p>
           </div>
         </header>
 
