@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard, Users, CalendarClock, ShieldCheck, MessageCircle, TriangleAlert,
+  LayoutDashboard, Users, CalendarClock, ShieldCheck, MessageCircle, MessagesSquare, TriangleAlert,
   CalendarDays, BarChart3, Settings, Search, Bell, Siren, Menu, X, Phone, Ambulance, Headset, ArrowRight,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -20,6 +20,7 @@ const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) =
   { href: '/console/visits', label: "Today's Visits", icon: CalendarClock, match: (p) => p.startsWith('/console/visits') },
   { href: '/console/guardians', label: 'Care Team', icon: ShieldCheck, match: (p) => p.startsWith('/console/guardians') },
   { href: '/console/messages', label: 'Messages', icon: MessageCircle, match: (p) => p.startsWith('/console/messages') },
+  { href: '/console/guardian-messages', label: 'Guardian chat', icon: MessagesSquare, match: (p) => p.startsWith('/console/guardian-messages') },
   { href: '/console/escalations', label: 'Escalations', icon: TriangleAlert, match: (p) => p.startsWith('/console/escalations'), badge: STATS.highPriority },
   { href: '/console/calendar', label: 'Calendar', icon: CalendarDays, match: (p) => p.startsWith('/console/calendar') },
   { href: '/console/reports', label: 'Reports', icon: BarChart3, match: (p) => p.startsWith('/console/reports') },
