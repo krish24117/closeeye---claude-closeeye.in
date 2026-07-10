@@ -66,6 +66,7 @@ export default function FounderLandingPage() {
         </span>
       </header>
 
+      <main id="main">
       {/* 1 · HERO — the invitation */}
       <Section className="pt-12 sm:pt-16">
         <h1 className="text-h1 leading-[1.05] tracking-tight text-balance">When you can’t be there, Close Eye can.</h1>
@@ -197,6 +198,7 @@ export default function FounderLandingPage() {
           <Button asChild variant="text" size="md" className="mt-1.5"><a href={founderWhatsApp()} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Message {FOUNDER} on WhatsApp</a></Button>
         </div>
       </Section>
+      </main>
 
       <footer className="mx-auto mt-16 w-full max-w-2xl px-5 text-center">
         <div className="border-t border-line/70 pt-6 text-caption text-muted">
