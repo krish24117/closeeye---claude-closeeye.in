@@ -60,11 +60,14 @@ export type NavItem = { label: string; href: string }
 // route — the navbar and footer render on every page.
 // Section links are absolute (`/#id`) so they resolve to the homepage from any
 // route — the navbar and footer render on every page.
+// Order is a deliberate trust-first funnel: What we do → Why trust us → What it
+// costs → Reach a human. Founder Story sits ABOVE Membership so emotional trust
+// is earned before price in a high-anxiety care purchase.
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/' },
   { label: 'How We Help', href: '/services' },
-  { label: 'Membership', href: '/membership' },
   { label: 'Founder Story', href: '/founder-story' },
+  { label: 'Membership', href: '/membership' },
   { label: 'Contact', href: '/#contact' },
 ]
 

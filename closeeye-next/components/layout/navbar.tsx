@@ -46,10 +46,11 @@ export function Navbar() {
     roleLabel: role === 'companion' ? 'Guardian' : role === 'admin' ? 'Admin' : profile ? 'Family' : undefined,
     ...dest,
   }
-  const mobileItems: NavItem[] = [
-    ...NAV_ITEMS,
-    signedIn ? { label: 'Family Space', href: '/family' } : { label: 'Sign in to Family Space', href: '/family' },
-  ]
+  // Returning-customer entry — kept OUT of the browse funnel and set off by a
+  // divider in the drawer, so first-time visitors aren't nudged to a login.
+  const accountItem: NavItem = signedIn
+    ? { label: 'Family Space', href: '/family' }
+    : { label: 'Sign in to Family Space', href: '/family' }
 
   // Transparent bar over a dark hero → go light so nothing disappears on dark.
   const overDark = DARK_HERO_ROUTES.has(pathname) && !scrolled && !open
@@ -160,7 +161,7 @@ export function Navbar() {
           >
             <div className="mx-auto max-w-content px-8 pb-10 pt-4">
               <ul className="flex flex-col" aria-label="Menu">
-                {mobileItems.map((item) => (
+                {NAV_ITEMS.map((item) => (
                   <li key={item.href}>
                     <Link
                       href={item.href}
@@ -171,6 +172,16 @@ export function Navbar() {
                     </Link>
                   </li>
                 ))}
+                {/* Returning customers — set off from the browse funnel */}
+                <li className="mt-2 border-t border-line pt-2">
+                  <Link
+                    href={accountItem.href}
+                    onClick={close}
+                    className="block py-3 text-lead text-ink transition-colors hover:text-green active:opacity-70"
+                  >
+                    {accountItem.label}
+                  </Link>
+                </li>
               </ul>
               <div className="mt-8">
                 <Button asChild size="lg" className="w-full">
