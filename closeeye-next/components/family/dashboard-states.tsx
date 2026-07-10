@@ -48,7 +48,7 @@ export function ActionCard({ href, icon: Icon, title, desc }: { href: string; ic
   return (
     <Link
       href={href}
-      className="group flex items-start gap-3 rounded-lg border border-line bg-card p-5 shadow-sm transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:shadow-md"
+      className="group flex items-start gap-3 rounded-lg border border-line/70 bg-card p-5 shadow-sm transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:shadow-md"
     >
       <IconChip icon={Icon} />
       <span className="min-w-0 flex-1">
@@ -122,7 +122,7 @@ export function NewUserDashboard() {
       <Greeting subtitle="Your trusted presence in India." />
 
       {/* The promise + the one primary action */}
-      <section className="flex flex-col gap-5 rounded-lg border border-line bg-card p-6 shadow-sm">
+      <section className="flex flex-col gap-5 rounded-lg border border-line/70 bg-card p-6 shadow-sm">
         <p className="text-h3 leading-tight text-ink">When you can&rsquo;t be there, {SITE.name} can.</p>
         <div className="flex items-start gap-3">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><Heart className="h-5 w-5" strokeWidth={1.5} /></span>
@@ -141,7 +141,7 @@ export function NewUserDashboard() {
         <SectionTitle>How {SITE.name} works</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-3">
           {steps.map((s) => (
-            <div key={s.n} className="rounded-lg border border-line bg-card p-5 shadow-sm">
+            <div key={s.n} className="rounded-lg border border-line/70 bg-card p-5 shadow-sm">
               <span className="grid h-9 w-9 place-items-center rounded-full bg-ink text-body-sm font-semibold text-ivory">{s.n}</span>
               <p className="mt-3 text-body-sm font-semibold text-ink">{s.t}</p>
               <p className="mt-1 text-caption text-muted">{s.d}</p>
@@ -155,7 +155,7 @@ export function NewUserDashboard() {
         <SectionTitle>Why families trust {SITE.name}</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-2">
           {trust.map((f) => (
-            <div key={f.t} className="flex items-start gap-3 rounded-lg border border-line bg-card p-5 shadow-sm">
+            <div key={f.t} className="flex items-start gap-3 rounded-lg border border-line/70 bg-card p-5 shadow-sm">
               <IconChip icon={f.icon} />
               <div>
                 <p className="text-body font-semibold text-ink">{f.t}</p>
@@ -185,7 +185,7 @@ export function FamilyAddedDashboard({ data, lovedOnes }: { data: DashboardData;
       {/* What a Presence feels like — the strongest emotional asset, before any price */}
       <section className="flex flex-col gap-4">
         <SectionTitle>What your first Presence feels like</SectionTitle>
-        <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
           <div className="grid aspect-[16/10] w-full place-items-center bg-gradient-to-br from-accent-soft to-ivory text-green">
             <Camera className="h-9 w-9" strokeWidth={1.25} />
           </div>
@@ -197,7 +197,7 @@ export function FamilyAddedDashboard({ data, lovedOnes }: { data: DashboardData;
       </section>
 
       {/* Guardian introduction — a person, chosen like family */}
-      <section className="flex items-start gap-4 rounded-lg border border-line bg-card p-6 shadow-sm">
+      <section className="flex items-start gap-4 rounded-lg border border-line/70 bg-card p-6 shadow-sm">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><ShieldCheck className="h-5 w-5" strokeWidth={1.5} /></span>
         <div className="min-w-0">
           <p className="text-body font-semibold text-ink">A verified Guardian, chosen like family</p>
@@ -206,7 +206,7 @@ export function FamilyAddedDashboard({ data, lovedOnes }: { data: DashboardData;
       </section>
 
       {/* Book the first Presence — lead with the feeling, not the price */}
-      <section className="flex flex-col gap-4 rounded-lg border border-line bg-card p-6 shadow-sm">
+      <section className="flex flex-col gap-4 rounded-lg border border-line/70 bg-card p-6 shadow-sm">
         <div>
           <p className="text-h4 text-ink">Book {first}&rsquo;s first Presence</p>
           <p className="mt-1 text-body-sm text-muted">You&rsquo;ll see them, hear about their day, and know they&rsquo;re okay.</p>
@@ -228,7 +228,7 @@ export function FamilyAddedDashboard({ data, lovedOnes }: { data: DashboardData;
 
       {/* Help us know them better */}
       {incomplete && (
-        <section className="flex flex-col items-start gap-4 rounded-lg border border-line bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <section className="flex flex-col items-start gap-4 rounded-lg border border-line/70 bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <IconChip icon={ClipboardList} />
             <div>
@@ -331,7 +331,7 @@ export function ActiveDashboard({ data, lovedOnes }: { data: DashboardData; love
       {/* 2 · Presence Story — photo first */}
       <section className="flex flex-col gap-4">
         <SectionTitle href="/family/visits" cta="All stories →">{first}&rsquo;s Presence Story</SectionTitle>
-        <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
           {primary && <PhotoFrame lovedOneId={primary.id} name={primary.full_name} />}
           <div className="flex flex-col gap-4 p-6">
             <p className="text-body text-ink">Photos and a warm story from {first}&rsquo;s latest Presence.</p>
@@ -355,7 +355,7 @@ export function ActiveDashboard({ data, lovedOnes }: { data: DashboardData; love
       {next && (
         <section className="flex flex-col gap-4">
           <SectionTitle href="/family/visits" cta="All visits →">Next Presence</SectionTitle>
-          <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+          <div className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
             <div className="flex items-center gap-4 px-5 py-4">
               <IconChip icon={CalendarClock} />
               <div className="min-w-0 flex-1">
@@ -399,7 +399,7 @@ function LovedOnesRoster({ lovedOnes, hasRecentPresence }: { lovedOnes: LovedOne
   return (
     <section className="flex flex-col gap-4">
       <SectionTitle href="/family/members" cta="Manage →">Your loved ones</SectionTitle>
-      <ul className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+      <ul className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
         {lovedOnes.map((lo, i) => (
           <li key={lo.id} className={cn(i > 0 && 'border-t border-line')}>
             <RosterRow lo={lo} mood={moodFor(i, hasRecentPresence)} />
@@ -436,7 +436,7 @@ function PresenceManagerContact() {
   return (
     <section className="flex flex-col gap-4">
       <SectionTitle>Your Presence Manager</SectionTitle>
-      <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col items-start gap-4 rounded-lg border border-line/70 bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Avatar initials="CE" size="lg" tone="soft" />
           <div className="min-w-0">
@@ -461,7 +461,7 @@ function SupportCard() {
     { icon: Mail, label: 'Email', href: `mailto:${SITE.email}` },
   ]
   return (
-    <section className="flex flex-col gap-4 rounded-lg border border-line bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+    <section className="flex flex-col gap-4 rounded-lg border border-line/70 bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p className="text-body font-semibold text-ink">Need help?</p>
         <p className="mt-0.5 text-body-sm text-muted">We&apos;re here whenever you need us.</p>
