@@ -27,7 +27,7 @@ function formatDate(iso: string): string {
 }
 
 export default function MembershipPage() {
-  const { subscription, chooseMembership, profile, identity, refresh } = useFamilyData()
+  const { subscription, profile, identity, refresh } = useFamilyData()
   const toast = useToast()
   const [busy, setBusy] = useState<PlanId | null>(null)
   const currentId = subscription?.plan_id
@@ -54,11 +54,18 @@ export default function MembershipPage() {
   // and for completing payment on an already-selected (pending) plan.
   async function choose(planId: PlanId) {
     if (busy) return
+    // An already-active member cannot re-pay or self-switch plans here — that
+    // would clobber the live subscription and could double-bill two Razorpay
+    // subscriptions. Plan changes go through the care team for now.
+    if (active) return
     const plan = planById(planId)
     if (!plan) return
     setBusy(planId)
     try {
-      await chooseMembership(planId)
+      // Do NOT pre-write the plan/status before payment — that optimistically
+      // flips the UI to the chosen plan (inheriting the current 'active' status).
+      // create-subscription + the webhook are the source of truth; we only open
+      // checkout, then re-fetch on success.
       const outcome = await payForMembership({
         planId,
         planName: `CloseEye ${plan.short}`,
@@ -140,6 +147,14 @@ export default function MembershipPage() {
                       {busy === plan.id ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Opening…</> : 'Complete payment'}
                     </Button>
                   )}
+                </div>
+              ) : active ? (
+                // Member already has an active plan — switching is handled by the
+                // care team (self-serve switching would clobber the live sub / double-bill).
+                <div className="mt-7 rounded-sm border border-line/70 px-4 py-3.5 text-center">
+                  <p className="text-caption text-muted">
+                    You&rsquo;re on {planById(currentId)?.name ?? 'a plan'}. To change plans, message your Presence Manager.
+                  </p>
                 </div>
               ) : (
                 <Button
