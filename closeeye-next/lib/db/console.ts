@@ -220,6 +220,36 @@ export async function fetchConsoleOverview(): Promise<ConsoleOverview> {
   return { families, triage, schedule }
 }
 
+function deriveTriage(families: ConsoleFamilyLive[]): ConsoleTriageItem[] {
+  const triage: ConsoleTriageItem[] = []
+  families.forEach((f) => { if (f.urgentQuestion) triage.push({ id: `u-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'urgent', tone: 'red', tag: 'Urgent', text: `Urgent health question: "${clip(f.urgentQuestion)}"`, href: `/console/families/${f.lovedOneId}` }) })
+  families.forEach((f) => { if (f.needsVisitAttention) triage.push({ id: `v-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'visit', tone: 'amber', tag: 'Needs action', text: 'A recent visit needs your attention.', href: `/console/families/${f.lovedOneId}` }) })
+  families.forEach((f) => { if (f.awaitingReply) triage.push({ id: `m-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'message', tone: 'amber', tag: 'Awaiting reply', text: 'A family message is waiting for your reply.', href: `/console/families/${f.lovedOneId}` }) })
+  return triage
+}
+
+/** The full "Needs you now" list — used by the Escalations page. */
+export async function fetchConsoleEscalations(): Promise<ConsoleTriageItem[]> {
+  return deriveTriage(mapFamilies(await loadCaseload()))
+}
+
+/** Today's Presence visits (incl. cancelled) — used by the live monitor. */
+export async function fetchConsoleVisits(): Promise<ConsoleScheduleItem[]> {
+  const data = await loadCaseload()
+  const nameById = new Map(mapFamilies(data).map((f) => [f.lovedOneId, f.name]))
+  return data.bookings
+    .filter((b) => b.scheduled_at && isToday(b.scheduled_at))
+    .sort((a, b) => (a.scheduled_at ?? '').localeCompare(b.scheduled_at ?? ''))
+    .map((b) => ({
+      id: b.id,
+      lovedOneId: b.loved_one_id ?? '',
+      memberName: (b.loved_one_id ? nameById.get(b.loved_one_id) : null) ?? 'A family member',
+      guardianName: (b.companion_id ? data.guardians.get(b.companion_id) : null) ?? null,
+      timeLabel: b.scheduled_at ? fmtTime(b.scheduled_at) : '—',
+      status: mapBookingStatus(b.status),
+    }))
+}
+
 export interface ConsoleFamilyDetail {
   meta: AdminThreadRef
   relationship: string | null
