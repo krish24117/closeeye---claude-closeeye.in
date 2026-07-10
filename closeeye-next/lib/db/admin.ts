@@ -451,3 +451,75 @@ export async function fetchAdminOperations(): Promise<AdminOperations> {
     coverage,
   }
 }
+
+/* ── Audit log ───────────────────────────────────────────────────────────── */
+
+export interface AdminAuditEntry {
+  id: string
+  bookingId: string
+  status: string
+  statusLabel: string
+  actor: string
+  memberName: string
+  familyName: string
+  note: string | null
+  at: string
+}
+
+interface BshRow { id: string; booking_id: string; status: string; changed_by: string | null; changed_at: string; note: string | null }
+
+function fmtDateTime(iso: string): string {
+  return new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })
+}
+
+/**
+ * The operational audit trail — every booking status change, newest first, from
+ * booking_status_history (written by update-booking-status; admin-readable via
+ * the existing bsh_admin_read policy). Resolves the actor (changed_by → staff
+ * name) and the booking's member + family. No fabrication: only real events.
+ */
+export async function fetchAdminAudit(limit = 100): Promise<AdminAuditEntry[]> {
+  const { data: bshData } = await supabase
+    .from('booking_status_history')
+    .select('id, booking_id, status, changed_by, changed_at, note')
+    .order('changed_at', { ascending: false })
+    .limit(limit)
+  const rows = (bshData as BshRow[] | null) ?? []
+  if (rows.length === 0) return []
+
+  const bookingIds = Array.from(new Set(rows.map((r) => r.booking_id)))
+  const { data: bkData } = await supabase
+    .from('bookings')
+    .select('id, loved_one_id, family_user_id')
+    .in('id', bookingIds)
+  const bookingById = new Map(
+    ((bkData as { id: string; loved_one_id: string | null; family_user_id: string | null }[] | null) ?? []).map((b) => [b.id, b]),
+  )
+
+  const actorIds = rows.map((r) => r.changed_by).filter(Boolean) as string[]
+  const familyIds = Array.from(bookingById.values()).map((b) => b.family_user_id).filter(Boolean) as string[]
+  const personIds = Array.from(new Set([...actorIds, ...familyIds]))
+  const lovedIds = Array.from(new Set(Array.from(bookingById.values()).map((b) => b.loved_one_id).filter(Boolean) as string[]))
+
+  const [{ data: profData }, { data: loData }] = await Promise.all([
+    personIds.length ? supabase.from('profiles').select('id, full_name').in('id', personIds) : Promise.resolve({ data: [] as { id: string; full_name: string | null }[] }),
+    lovedIds.length ? supabase.from('loved_ones').select('id, full_name').in('id', lovedIds) : Promise.resolve({ data: [] as { id: string; full_name: string | null }[] }),
+  ])
+  const nameById = new Map(((profData as { id: string; full_name: string | null }[] | null) ?? []).map((p) => [p.id, p.full_name]))
+  const memberById = new Map(((loData as { id: string; full_name: string | null }[] | null) ?? []).map((l) => [l.id, l.full_name]))
+
+  return rows.map((r) => {
+    const b = bookingById.get(r.booking_id)
+    return {
+      id: r.id,
+      bookingId: r.booking_id,
+      status: r.status,
+      statusLabel: BK_STATUS_LABEL[r.status] ?? r.status,
+      actor: (r.changed_by ? nameById.get(r.changed_by) : null) ?? (r.changed_by ? 'A staff member' : 'System'),
+      memberName: (b?.loved_one_id ? memberById.get(b.loved_one_id) : null) ?? 'A family member',
+      familyName: (b?.family_user_id ? nameById.get(b.family_user_id) : null) ?? 'A family',
+      note: r.note,
+      at: fmtDateTime(r.changed_at),
+    }
+  })
+}
