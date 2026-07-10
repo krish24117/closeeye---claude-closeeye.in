@@ -132,9 +132,7 @@ async function loadCaseload(): Promise<Caseload> {
   })
 
   // Best-effort Guardian names for today's visits (RLS may return none for a PM).
-  const compIds = Array.from(
-    new Set(bookings.filter((b) => b.companion_id && b.scheduled_at && isToday(b.scheduled_at)).map((b) => b.companion_id as string)),
-  )
+  const compIds = Array.from(new Set(bookings.filter((b) => b.companion_id).map((b) => b.companion_id as string)))
   const guardians = new Map<string, string>()
   if (compIds.length) {
     const { data: cData } = await supabase.from('companions').select('id, full_name').in('id', compIds)
@@ -306,4 +304,102 @@ export async function fetchConsoleFamilyDetail(lovedOneId: string): Promise<Cons
     nextGuardian,
     glance,
   }
+}
+
+export interface ConsoleCalendarDay {
+  key: string
+  label: string
+  isToday: boolean
+  items: ConsoleScheduleItem[]
+}
+
+/** Upcoming Presence grouped by day (next `days` days) — the Calendar. */
+export async function fetchConsoleCalendar(days = 14): Promise<ConsoleCalendarDay[]> {
+  const data = await loadCaseload()
+  const nameById = new Map(mapFamilies(data).map((f) => [f.lovedOneId, f.name]))
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  const endMs = start.getTime() + days * 86400000
+  const todayKey = new Date().toLocaleDateString('en-CA')
+
+  const groups = new Map<string, ConsoleCalendarDay>()
+  data.bookings
+    .filter((b) => b.scheduled_at && b.status !== 'cancelled')
+    .sort((a, b) => (a.scheduled_at ?? '').localeCompare(b.scheduled_at ?? ''))
+    .forEach((b) => {
+      const at = b.scheduled_at
+      if (!at) return
+      const t = new Date(at).getTime()
+      if (t < start.getTime() || t >= endMs) return
+      const d = new Date(at)
+      const key = d.toLocaleDateString('en-CA')
+      const item: ConsoleScheduleItem = {
+        id: b.id,
+        lovedOneId: b.loved_one_id ?? '',
+        memberName: (b.loved_one_id ? nameById.get(b.loved_one_id) : null) ?? 'A family member',
+        guardianName: (b.companion_id ? data.guardians.get(b.companion_id) : null) ?? null,
+        timeLabel: fmtTime(at),
+        status: mapBookingStatus(b.status),
+      }
+      const g = groups.get(key)
+      if (g) g.items.push(item)
+      else groups.set(key, { key, label: d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }), isToday: key === todayKey, items: [item] })
+    })
+  return Array.from(groups.values())
+}
+
+export interface ConsoleReports {
+  families: number
+  doingWell: number
+  needAttention: number
+  urgent: number
+  awaitingReplies: number
+  presenceToday: number
+  visitsThisWeek: number
+  completedThisWeek: number
+}
+
+/** Honest, real service counts — the Reports page (no fabricated percentages). */
+export async function fetchConsoleReports(): Promise<ConsoleReports> {
+  const data = await loadCaseload()
+  const families = mapFamilies(data)
+  const ws = new Date()
+  ws.setHours(0, 0, 0, 0)
+  ws.setDate(ws.getDate() - ws.getDay())
+  const weekStart = ws.getTime()
+  const weekEnd = weekStart + 7 * 86400000
+  const inWeek = (iso: string | null) => {
+    if (!iso) return false
+    const t = new Date(iso).getTime()
+    return t >= weekStart && t < weekEnd
+  }
+  return {
+    families: families.length,
+    doingWell: families.filter((f) => f.status === 'green').length,
+    needAttention: families.filter((f) => f.status !== 'green').length,
+    urgent: families.filter((f) => f.status === 'red').length,
+    awaitingReplies: families.filter((f) => f.awaitingReply).length,
+    presenceToday: data.bookings.filter((b) => b.status !== 'cancelled' && b.scheduled_at && isToday(b.scheduled_at)).length,
+    visitsThisWeek: data.bookings.filter((b) => b.status !== 'cancelled' && inWeek(b.scheduled_at)).length,
+    completedThisWeek: data.bookings.filter((b) => b.status === 'completed' && inWeek(b.scheduled_at)).length,
+  }
+}
+
+export interface ConsoleGuardianLive {
+  id: string
+  name: string
+  city: string | null
+  phone: string | null
+  status: string | null
+}
+interface CompDirRow { id: string; full_name: string | null; phone: string | null; city: string | null; status: string | null }
+
+/**
+ * The Care Team directory. RLS on `companions` is admin/own-only today, so a
+ * Super Admin sees the full roster and a Presence Manager sees an empty list
+ * (a "companions: manager read" policy would open it to a PM's assigned team).
+ */
+export async function fetchConsoleGuardians(): Promise<ConsoleGuardianLive[]> {
+  const { data } = await supabase.from('companions').select('id, full_name, phone, city, status').order('full_name')
+  return ((data as CompDirRow[] | null) ?? []).map((c) => ({ id: c.id, name: c.full_name ?? 'Guardian', city: c.city, phone: c.phone, status: c.status }))
 }
