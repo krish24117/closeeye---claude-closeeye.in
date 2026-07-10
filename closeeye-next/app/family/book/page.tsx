@@ -12,6 +12,8 @@ import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { BOOKING_SERVICES } from '@/features/booking/schema'
 import { requestVisit } from '@/features/booking/api'
+import { isFounderFunnelGated } from '@/lib/founder-funnel'
+import { PRELAUNCH_BOOKING_NOTE } from '@/lib/launch'
 import { updateFamilyMember } from '@/lib/db/family'
 import { VisitDetailsForm, emptyVisitDetails, slotLabelOf, toVisitDetailInput, visitDetailsError, type VisitDetailsState } from '@/components/family/visit-details-form'
 import type { LovedOne } from '@/lib/db/types'
@@ -121,6 +123,8 @@ export default function FamilyBookPage() {
 
   async function confirm() {
     if (!member || !service) return
+    // Founder Funnel (pre-launch): registrants don't book — visits open at launch.
+    if (isFounderFunnelGated()) { setError(PRELAUNCH_BOOKING_NOTE); return }
     setError(''); setBusy(true)
     try {
       const res = await requestVisit({

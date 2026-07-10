@@ -13,6 +13,8 @@ import { useToast } from '@/components/ui/toast'
 import { fetchMyBookingRequests, fetchReportedBookingIds } from '@/lib/db/family'
 import { useVisitSync } from '@/lib/use-visit-sync'
 import { payForBooking } from '@/lib/razorpay'
+import { isFounderFunnelGated } from '@/lib/founder-funnel'
+import { PRELAUNCH_BOOKING_NOTE } from '@/lib/launch'
 import type { BookingRequest } from '@/lib/db/types'
 import { cn } from '@/lib/utils'
 
@@ -91,6 +93,7 @@ export default function VisitsPage() {
 
   async function pay(r: BookingRequest) {
     if (paying) return
+    if (isFounderFunnelGated()) { toast(PRELAUNCH_BOOKING_NOTE); return }
     setPaying(r.id)
     try {
       const outcome = await payForBooking({

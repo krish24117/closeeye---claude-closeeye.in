@@ -11,6 +11,8 @@ import { useFamilyData } from '@/components/family/family-data-provider'
 import { useToast } from '@/components/ui/toast'
 import { PLANS, SERVICES, planById, type PlanId } from '@/lib/plans'
 import { getPendingPlan, clearPendingPlan } from '@/lib/membership-intent'
+import { isFounderFunnelGated } from '@/lib/founder-funnel'
+import { PRELAUNCH_MEMBERSHIP_NOTE } from '@/lib/launch'
 import { payForMembership, type PayOutcome } from '@/lib/razorpay'
 import { cn } from '@/lib/utils'
 
@@ -84,6 +86,8 @@ export default function MembershipPage() {
     // would clobber the live subscription and could double-bill two Razorpay
     // subscriptions. Plan changes go through the care team for now.
     if (active) return
+    // Founder Funnel (pre-launch): registrants select a plan but never pay here.
+    if (isFounderFunnelGated()) { toast(PRELAUNCH_MEMBERSHIP_NOTE); return }
     const plan = planById(planId)
     if (!plan) return
     setBusy(planId)
@@ -117,6 +121,7 @@ export default function MembershipPage() {
   // on success, shows the welcome message while polling for the webhook to land.
   async function startUpgrade() {
     if (busy) return
+    if (isFounderFunnelGated()) { toast(PRELAUNCH_MEMBERSHIP_NOTE); return }
     setBusy('trust')
     try {
       const outcome = await payForMembership({
