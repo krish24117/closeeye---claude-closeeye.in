@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { planById } from '@/lib/plans'
 
 /**
  * Founder / business console (Module 6, /admin) — REAL business aggregates.
@@ -248,4 +249,77 @@ export async function fetchAdminBookings(): Promise<AdminBookings> {
     .map((b) => ({ id: b.id.slice(0, 8), who: (b.loved_one_id ? nameById.get(b.loved_one_id) : null) ?? 'A family', service: serviceLabel(b.service_type), status: BK_STATUS_LABEL[b.status] ?? b.status, date: b.scheduled_at ? new Date(b.scheduled_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '' }))
 
   return { total, completed, cancelled, active, completionRate, conversionRate, byStatus, recent }
+}
+
+/* ── Families (business view) ────────────────────────────────────────────── */
+
+export interface AdminFamily {
+  userId: string
+  name: string
+  members: number
+  city: string | null
+  membership: string
+  active: boolean
+  joined: string
+}
+
+export async function fetchAdminFamilies(): Promise<AdminFamily[]> {
+  const [lo, prof, sub] = await Promise.all([
+    supabase.from('loved_ones').select('family_user_id, city, created_at'),
+    supabase.from('profiles').select('id, full_name'),
+    supabase.from('subscriptions').select('user_id, plan_id, status'),
+  ])
+  const lovedOnes = (lo.data as { family_user_id: string; city: string | null; created_at: string }[] | null) ?? []
+  const nameById = new Map(((prof.data as { id: string; full_name: string | null }[] | null) ?? []).map((p) => [p.id, p.full_name]))
+  const subByUser = new Map<string, { plan_id: string; status: string }>()
+  ;((sub.data as { user_id: string; plan_id: string; status: string }[] | null) ?? []).forEach((s) => subByUser.set(s.user_id, s))
+
+  const byFamily = new Map<string, { members: number; city: string | null; joined: string }>()
+  lovedOnes.forEach((l) => {
+    const g = byFamily.get(l.family_user_id)
+    if (g) {
+      g.members += 1
+      if (!g.city && l.city) g.city = l.city
+      if (l.created_at < g.joined) g.joined = l.created_at
+    } else {
+      byFamily.set(l.family_user_id, { members: 1, city: l.city, joined: l.created_at })
+    }
+  })
+
+  return Array.from(byFamily.entries())
+    .map(([userId, g]) => {
+      const s = subByUser.get(userId)
+      const plan = s ? planById(s.plan_id) : null
+      return {
+        userId,
+        name: nameById.get(userId) ?? 'Family',
+        members: g.members,
+        city: g.city,
+        membership: plan?.short ?? (s ? s.plan_id : '—'),
+        active: s?.status === 'active',
+        joined: new Date(g.joined).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+      }
+    })
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+/* ── Care Team ───────────────────────────────────────────────────────────── */
+
+export interface AdminCompanion { id: string; name: string; city: string | null; status: string | null; visits: number; rating: number | null }
+export interface AdminCareTeam { companions: AdminCompanion[]; approved: number; pendingApplications: number; avgRating: number }
+
+export async function fetchAdminCareTeam(): Promise<AdminCareTeam> {
+  const [comp, app] = await Promise.all([
+    supabase.from('companions').select('id, full_name, city, status, total_visits, avg_rating'),
+    supabase.from('companion_applications').select('status'),
+  ])
+  const companions = ((comp.data as { id: string; full_name: string | null; city: string | null; status: string | null; total_visits: number | null; avg_rating: number | null }[] | null) ?? [])
+    .map((c) => ({ id: c.id, name: c.full_name ?? 'Guardian', city: c.city, status: c.status, visits: c.total_visits ?? 0, rating: c.avg_rating }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+  const apps = (app.data as { status: string | null }[] | null) ?? []
+  const pendingApplications = apps.filter((a) => a.status === 'applied' || a.status === 'pending').length
+  const approved = companions.filter((c) => c.status === 'approved').length
+  const rated = companions.filter((c) => c.rating != null)
+  const avgRating = rated.length ? Math.round((rated.reduce((s, c) => s + (c.rating ?? 0), 0) / rated.length) * 10) / 10 : 0
+  return { companions, approved, pendingApplications, avgRating }
 }
