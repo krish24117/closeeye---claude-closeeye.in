@@ -306,22 +306,55 @@ export async function fetchAdminFamilies(): Promise<AdminFamily[]> {
 /* ── Care Team ───────────────────────────────────────────────────────────── */
 
 export interface AdminCompanion { id: string; name: string; city: string | null; status: string | null; visits: number; rating: number | null }
-export interface AdminCareTeam { companions: AdminCompanion[]; approved: number; pendingApplications: number; avgRating: number }
+export interface AdminApplication { id: string; name: string; email: string | null; phone: string | null; area: string | null; appliedAt: string | null }
+export interface AdminCareTeam { companions: AdminCompanion[]; applications: AdminApplication[]; approved: number; pendingApplications: number; avgRating: number }
 
 export async function fetchAdminCareTeam(): Promise<AdminCareTeam> {
   const [comp, app] = await Promise.all([
     supabase.from('companions').select('id, full_name, city, status, total_visits, avg_rating'),
-    supabase.from('companion_applications').select('status'),
+    supabase.from('companion_applications').select('id, full_name, email, phone, area, status, applied_at').order('applied_at', { ascending: false }),
   ])
   const companions = ((comp.data as { id: string; full_name: string | null; city: string | null; status: string | null; total_visits: number | null; avg_rating: number | null }[] | null) ?? [])
     .map((c) => ({ id: c.id, name: c.full_name ?? 'Guardian', city: c.city, status: c.status, visits: c.total_visits ?? 0, rating: c.avg_rating }))
     .sort((a, b) => a.name.localeCompare(b.name))
-  const apps = (app.data as { status: string | null }[] | null) ?? []
-  const pendingApplications = apps.filter((a) => a.status === 'applied' || a.status === 'pending').length
+  const appRows = (app.data as { id: string; full_name: string | null; email: string | null; phone: string | null; area: string | null; status: string | null; applied_at: string | null }[] | null) ?? []
+  const applications = appRows
+    .filter((a) => a.status === 'applied' || a.status === 'pending')
+    .map((a) => ({ id: a.id, name: a.full_name ?? 'Applicant', email: a.email, phone: a.phone, area: a.area, appliedAt: a.applied_at }))
+  const pendingApplications = applications.length
   const approved = companions.filter((c) => c.status === 'approved').length
   const rated = companions.filter((c) => c.rating != null)
   const avgRating = rated.length ? Math.round((rated.reduce((s, c) => s + (c.rating ?? 0), 0) / rated.length) * 10) / 10 : 0
-  return { companions, approved, pendingApplications, avgRating }
+  return { companions, applications, approved, pendingApplications, avgRating }
+}
+
+/** Read the JSON `error` message from a failed functions.invoke (FunctionsHttpError.context is the Response). */
+async function functionErrorMessage(error: unknown, fallback: string): Promise<string> {
+  const ctx = (error as { context?: Response }).context
+  if (ctx && typeof ctx.json === 'function') {
+    try {
+      const j = await ctx.json()
+      if (j && typeof j.error === 'string') return j.error
+    } catch { /* body was not JSON */ }
+  }
+  return fallback
+}
+
+/**
+ * Approve an application → provision a loginable Guardian via the
+ * provision-companion edge function (service role: creates the auth user, sets
+ * profiles.role='companion', writes the companions row, marks the application
+ * approved). Admin-only; the function re-checks the caller's role server-side.
+ */
+export async function approveApplication(applicationId: string): Promise<void> {
+  const { error } = await supabase.functions.invoke('provision-companion', { body: { application_id: applicationId } })
+  if (error) throw new Error(await functionErrorMessage(error, 'Could not approve the application. Please try again.'))
+}
+
+/** Decline an application (admin RLS allows the update; no account is created). */
+export async function rejectApplication(applicationId: string): Promise<void> {
+  const { error } = await supabase.from('companion_applications').update({ status: 'rejected' }).eq('id', applicationId)
+  if (error) throw error
 }
 
 /* ── Memberships ─────────────────────────────────────────────────────────── */
