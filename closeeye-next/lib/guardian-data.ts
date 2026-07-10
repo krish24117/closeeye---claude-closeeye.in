@@ -42,6 +42,18 @@ export interface GuardianVisit {
   thingsToObserve: string[]
   emergencyContacts: EmergencyContact[]
   previousSummary?: string
+  /**
+   * B1 — the per-visit logistics the family entered for THIS visit (materialised
+   * onto the booking). Optional so legacy visits without them render unchanged.
+   */
+  visitLogistics?: {
+    landmark?: string | null
+    contactName?: string | null
+    contactPhone?: string | null
+    accessInstructions?: string | null
+    timeWindow?: string | null
+  }
+  visitMapLink?: string | null
 }
 
 /* The structured visit-report / observation capture lives in `lib/cloza.ts` —

@@ -26,6 +26,10 @@ const RED_FLAGS: { category: string; patterns: RegExp[] }[] = [
     category: "breathing",
     patterns: [
       /(can('| ?)t|cannot|trouble|difficulty|struggling to) breath/,
+      // Absent / stopped breathing — the most textbook emergency phrasing, which
+      // the patterns above (which require can't/trouble/etc.) did not catch.
+      /(not|isn('| ?)t|aren('| ?)t|wasn('| ?)t|won('| ?)t|hasn('| ?)t|no longer|hardly|barely) breath/,
+      /(stopped|stops|ceased|quit) breath/,
       /short(ness)? of breath/,
       /gasping|choking|suffocat/,
       /(lips|face|skin|fingers|nails|hands)\b.{0,15}\b(blue|grey|gray|purple)/,

@@ -5,6 +5,7 @@ import { buildStory, moodLabel, pronounFor, wellnessScore } from '@/lib/family-r
 import { processVisit, type VisitObservations } from '@/lib/cloza'
 import { reportKey, type ReportVitals, type SharedVisitReport } from '@/lib/visit-reports'
 import type { CanonicalReport } from '@/lib/visit-report-canonical'
+import { resolveVisitAddress } from './guardian-visit-details'
 
 /** A companion's assigned visit, from the real `bookings` table. */
 export interface GuardianVisit {
@@ -40,6 +41,9 @@ interface BookingRow {
   scheduled_at: string | null
   status: string
   loved_one_id: string | null
+  /** B1 — the address the family entered for THIS visit (materialised onto the
+   *  booking). Preferred over the loved one's profile address. */
+  visit_address?: string | null
 }
 
 /**
@@ -50,7 +54,7 @@ interface BookingRow {
 export async function fetchGuardianVisits(companionId: string): Promise<GuardianVisit[]> {
   const { data, error } = await supabase
     .from('bookings')
-    .select('id, service_type, scheduled_at, status, loved_one_id')
+    .select('id, service_type, scheduled_at, status, loved_one_id, visit_address')
     .eq('companion_id', companionId)
     .not('status', 'in', '(completed,cancelled)')
     .order('scheduled_at', { ascending: true })
@@ -74,7 +78,7 @@ export async function fetchGuardianVisits(companionId: string): Promise<Guardian
       lovedOneId: r.loved_one_id,
       memberName: meta?.name ?? 'Family member',
       service: serviceLabel(r.service_type),
-      address: meta?.address ?? '',
+      address: resolveVisitAddress(r.visit_address, meta?.address, null),
       scheduledAt: r.scheduled_at,
       status: r.status,
     }
@@ -91,7 +95,7 @@ export interface GuardianVisitBrief extends GuardianVisit {
 export async function fetchGuardianVisit(companionId: string, bookingId: string): Promise<GuardianVisitBrief | null> {
   const { data, error } = await supabase
     .from('bookings')
-    .select('id, service_type, scheduled_at, status, loved_one_id')
+    .select('id, service_type, scheduled_at, status, loved_one_id, visit_address')
     .eq('id', bookingId)
     .eq('companion_id', companionId)
     .maybeSingle()
@@ -116,7 +120,7 @@ export async function fetchGuardianVisit(companionId: string, bookingId: string)
     } | null
     if (l) {
       name = l.full_name
-      address = l.address?.trim() || l.city?.trim() || ''
+      address = resolveVisitAddress(b.visit_address, l.address, l.city)
       medicalNotes = l.medical_notes?.trim() || ''
       emergencyContactName = l.emergency_contact_name?.trim() || ''
       emergencyContactPhone = l.emergency_contact_phone?.trim() || ''
@@ -284,11 +288,20 @@ export interface GuardianVisitFull {
 export async function fetchGuardianVisitFull(companionId: string, bookingId: string): Promise<GuardianVisitFull | null> {
   const { data: bk } = await supabase
     .from('bookings')
-    .select('id, service_type, scheduled_at, status, loved_one_id, special_instructions')
+    .select('id, service_type, scheduled_at, status, loved_one_id, special_instructions, visit_address, visit_landmark, visit_contact_name, visit_contact_phone, visit_time_window, visit_access_instructions, visit_map_link, visit_special_instructions')
     .eq('id', bookingId)
     .eq('companion_id', companionId)
     .maybeSingle()
-  const b = bk as (BookingRow & { special_instructions: string | null }) | null
+  const b = bk as (BookingRow & {
+    special_instructions: string | null
+    visit_landmark: string | null
+    visit_contact_name: string | null
+    visit_contact_phone: string | null
+    visit_time_window: string | null
+    visit_access_instructions: string | null
+    visit_map_link: string | null
+    visit_special_instructions: string | null
+  }) | null
   if (!b) return null
 
   // loved_one and elder_profile are independent reads for the same loved_one —
@@ -355,7 +368,7 @@ export async function fetchGuardianVisitFull(companionId: string, bookingId: str
     relationship: lo?.relationship?.trim() || '',
     age: lo?.age ?? 0,
     service: serviceLabel(b.service_type),
-    address: lo?.address?.trim() || lo?.city?.trim() || '',
+    address: resolveVisitAddress(b.visit_address, lo?.address, lo?.city),
     area: lo?.city?.trim() || '',
     timeLabel: timeLabelOf(b.scheduled_at),
     windowLabel: windowLabelOf(b.scheduled_at),
@@ -366,11 +379,20 @@ export async function fetchGuardianVisitFull(companionId: string, bookingId: str
     specialNotes,
     medicalNotes,
     preferences: toLines(elder?.food_preferences, elder?.daily_routine),
-    familyInstructions: toLines(b.special_instructions, elder?.pinned_note),
+    familyInstructions: toLines(b.visit_special_instructions, b.special_instructions, elder?.pinned_note),
     conversationSuggestions: toLines(elder?.conversation_interests),
     thingsToObserve: toLines(elder?.things_to_avoid, elder?.continuity_notes),
     emergencyContacts,
     previousSummary,
+    // B1 — the per-visit logistics the family entered, surfaced on arrival.
+    visitLogistics: {
+      landmark: b.visit_landmark,
+      contactName: b.visit_contact_name,
+      contactPhone: b.visit_contact_phone,
+      accessInstructions: b.visit_access_instructions,
+      timeWindow: b.visit_time_window,
+    },
+    visitMapLink: b.visit_map_link,
   }
 
   return { visit, elderProfileId: elder?.id ?? null, scheduledAt: b.scheduled_at }

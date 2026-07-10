@@ -7,6 +7,7 @@ import { Container } from '@/components/ui/container'
 import { Button } from '@/components/ui/button'
 import { SuccessState } from '@/components/ui/states'
 import { haptic } from '@/lib/haptics'
+import { submitFeedback } from '@/lib/db/feedback'
 import { cn } from '@/lib/utils'
 
 const CATEGORIES = ['Overall experience', 'A visit', 'A Guardian', 'A Companion', 'The Care Team']
@@ -18,11 +19,24 @@ export default function FeedbackPage() {
   const [kind, setKind] = React.useState<'praise' | 'bug' | 'idea'>('praise')
   const [message, setMessage] = React.useState('')
   const [sent, setSent] = React.useState(false)
+  const [busy, setBusy] = React.useState(false)
+  const [error, setError] = React.useState('')
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault()
-    haptic('success')
-    setSent(true)
+    if (busy) return
+    setBusy(true)
+    setError('')
+    // Persist first — only show the "goes straight to the team" success on a
+    // genuine write, never a fake confirmation.
+    const res = await submitFeedback({ rating, nps, category, kind, message })
+    if (res.ok) {
+      haptic('success')
+      setSent(true)
+    } else {
+      setError(res.error ?? 'Something went wrong. Please try again.')
+    }
+    setBusy(false)
   }
 
   if (sent) {
@@ -95,7 +109,8 @@ export default function FeedbackPage() {
           <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4} placeholder="In your own words…" className="mt-2 w-full resize-none rounded-sm border border-line bg-ivory px-4 py-3 text-body text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20" />
         </label>
 
-        <Button type="submit" size="lg" disabled={rating === 0 && nps === null && !message.trim()}>Send feedback</Button>
+        {error && <p className="text-body-sm text-error">{error}</p>}
+        <Button type="submit" size="lg" disabled={busy || (rating === 0 && nps === null && !message.trim())}>{busy ? 'Sending…' : 'Send feedback'}</Button>
       </form>
     </Container>
   )

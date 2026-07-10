@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { useToast } from '@/components/ui/toast'
 import { fetchElderProfile, upsertElderProfile, type ElderProfileForm } from '@/lib/db/family'
+import { healthFormPhase } from '@/lib/db/elder-profile-form'
 import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
 
@@ -32,29 +33,34 @@ export default function HealthProfilePage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const toast = useToast()
-  const { lovedOnes, loading } = useFamilyData()
+  const { lovedOnes } = useFamilyData()
   const member = lovedOnes.find((l) => l.id === id)
 
   const [form, setForm] = React.useState<ElderProfileForm | null>(null)
   const [meds, setMeds] = React.useState('') // one per line
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')
+  // B2 — a FAILED load must never fall through to a blank, editable form. That
+  // blank form is indistinguishable from "no profile yet", and saving it would
+  // full-row-upsert blanks over the saved allergies / medications. So on failure
+  // we flag loadError and show a retry — we never substitute an empty form.
+  const [loadError, setLoadError] = React.useState(false)
 
-  React.useEffect(() => {
+  const load = React.useCallback(() => {
     if (!id) return
+    setLoadError(false)
     fetchElderProfile(id)
       .then((p) => {
         setForm(p)
         setMeds(p.current_medications.join('\n'))
       })
-      .catch(() => {
-        setForm({
-          food_preferences: '', conversation_interests: '', daily_routine: '', things_to_avoid: '',
-          medical_conditions: '', allergies: '', current_medications: [], doctor_name: '', doctor_phone: '',
-          pinned_note: '', photo_consent: false,
-        })
+      .catch((e) => {
+        console.error('[health-profile] load failed:', e)
+        setLoadError(true)
       })
   }, [id])
+
+  React.useEffect(() => { load() }, [load])
 
   const set = <K extends keyof ElderProfileForm>(k: K, v: ElderProfileForm[K]) => setForm((f) => (f ? { ...f, [k]: v } : f))
 
@@ -84,12 +90,31 @@ export default function HealthProfilePage() {
     </Link>
   )
 
+  const phase = healthFormPhase({ loadError, memberResolved: !!member, formLoaded: !!form })
+
+  // A failed load shows a retry — NEVER a blank form that a save could wipe over.
+  if (phase === 'error') {
+    return (
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
+        {back}
+        <div className="rounded-[20px] border border-line/70 bg-card p-6 text-center shadow-sm sm:p-7">
+          <h2 className="text-h4 text-ink">We couldn’t load this health profile</h2>
+          <p className="mt-2 text-body-sm text-muted">
+            To protect what you’ve already saved, we won’t open the form until it loads. Please check your connection and try again.
+          </p>
+          <Button className="mt-5" onClick={load}>Try again</Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Still resolving the member or the profile (also narrows member/form for TS).
   if (!member || !form) {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
         {back}
         <div className="grid place-items-center rounded-lg border border-line/70 bg-card py-20 shadow-sm">
-          {loading || !member ? <Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /> : <Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} />}
+          <Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} />
         </div>
       </div>
     )
