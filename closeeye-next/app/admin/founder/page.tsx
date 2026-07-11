@@ -9,11 +9,11 @@ import { Avatar } from '@/components/family/avatar'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchFounderMetrics, type FounderMetrics } from '@/lib/db/founder-dashboard'
-import { fetchFounderRegistrants, fetchFounderActions, logFounderAction, setFollowedUp, setFounderNotes, type FounderRegistrant, type FounderActionType } from '@/lib/db/founder-ops'
+import { fetchFounderRegistrants, fetchFounderActions, logFounderAction, fetchReminders, addReminder, setReminderDone, setFollowedUp, setFounderNotes, type FounderRegistrant, type FounderActionType } from '@/lib/db/founder-ops'
 import {
   registrantStatus, STATUS_LABEL, matchesFilter, matchesSearch, toCSV, phoneList, whatsappList,
-  founderActivityToday, reachedIds, actionsFor, ACTION_LABEL,
-  type Filter, type RegStatus, type FounderAction,
+  founderActivityToday, reachedIds, actionsFor, ACTION_LABEL, dueReminders, remindersFor,
+  type Filter, type RegStatus, type FounderAction, type FounderReminder,
 } from '@/lib/founder-ops-view'
 import { FOUNDER_LAUNCH_LABEL, daysUntilLaunch, launchMode } from '@/lib/launch'
 import { planById } from '@/lib/plans'
@@ -72,25 +72,56 @@ function Tile({ label, value, hint, tone = 'ink' }: { label: string; value: stri
   )
 }
 
+const FUNNEL_COLORS = ['#a7d9b8', '#7cc79a', '#54b681', '#2f9e63', '#1f7a4a', '#155e37']
+
+/** Compact vertical-bar funnel — colourful, one band instead of 6 stacked rows. */
 function Funnel({ stages }: { stages: { label: string; value: number }[] }) {
   const max = Math.max(1, ...stages.map((s) => s.value))
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-line bg-card p-5 shadow-sm">
-      {stages.map((s, i) => {
-        const prev = i > 0 ? stages[i - 1]!.value : null
-        const step = prev && prev > 0 ? Math.round((s.value / prev) * 100) : null
-        return (
-          <div key={s.label}>
-            <div className="flex items-center justify-between text-body-sm">
-              <span className="font-medium text-ink">{s.label}</span>
-              <span className="flex items-center gap-2.5">{step !== null && <span className="text-caption text-muted">{step}%</span>}<span className="font-bold tabular-nums text-ink">{s.value}</span></span>
+    <div className="rounded-lg border border-line bg-card p-5 shadow-sm">
+      <div className="flex items-end justify-between gap-1.5" style={{ height: 108 }}>
+        {stages.map((s, i) => {
+          const prev = i > 0 ? stages[i - 1]!.value : null
+          const step = prev && prev > 0 ? Math.round((s.value / prev) * 100) : null
+          return (
+            <div key={s.label} className="flex flex-1 flex-col items-center justify-end gap-1.5" title={step !== null ? `${step}% from the previous stage` : undefined}>
+              <span className="text-body-sm font-bold tabular-nums text-ink">{s.value}</span>
+              <div className="w-full max-w-[3rem] rounded-t-md" style={{ height: `${Math.max(5, (s.value / max) * 82)}%`, background: FUNNEL_COLORS[i] ?? '#155e37' }} />
             </div>
-            <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-accent-soft"><div className="h-full rounded-full bg-green" style={{ width: `${Math.max(2, (s.value / max) * 100)}%` }} /></div>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
+      <div className="mt-2 flex justify-between gap-1.5">{stages.map((s) => <span key={s.label} className="flex-1 text-center text-[0.6rem] font-medium leading-tight text-muted">{s.label}</span>)}</div>
     </div>
   )
+}
+
+/** Connect vs Care donut — parts of a whole, so a ring reads correctly. */
+function Donut({ care, connect }: { care: number; connect: number }) {
+  const total = care + connect
+  const carePct = total ? care / total : 0
+  const C = 2 * Math.PI * 40
+  const careLen = carePct * C
+  return (
+    <div className="flex items-center gap-5">
+      <div className="relative h-28 w-28 shrink-0">
+        <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#e8f2ea" strokeWidth="13" />
+          {total > 0 && <circle cx="50" cy="50" r="40" fill="none" stroke="#8fc9a3" strokeWidth="13" />}
+          {total > 0 && <circle cx="50" cy="50" r="40" fill="none" stroke="#1f7a45" strokeWidth="13" strokeDasharray={`${careLen} ${C - careLen}`} strokeLinecap={care > 0 && care < total ? 'round' : 'butt'} />}
+        </svg>
+        <div className="absolute inset-0 grid place-items-center"><div className="text-center"><p className="text-h4 leading-none text-ink">{total}</p><p className="text-caption text-muted">plans</p></div></div>
+      </div>
+      <div className="flex flex-col gap-2 text-body-sm">
+        <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full" style={{ background: '#1f7a45' }} /> Care · <strong>{care}</strong> <span className="text-muted">({Math.round(carePct * 100)}%)</span></span>
+        <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full" style={{ background: '#8fc9a3' }} /> Connect · <strong>{connect}</strong> <span className="text-muted">({total ? 100 - Math.round(carePct * 100) : 0}%)</span></span>
+      </div>
+    </div>
+  )
+}
+
+function fmtDate(d: string): string {
+  try { return new Date(`${d}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) } catch { return d }
 }
 
 /* ── Family drawer ───────────────────────────────────────────────────────── */
@@ -117,18 +148,23 @@ function DrawerAction({ icon: Icon, label, href, external, tone, onClick }: { ic
   return <a href={href} onClick={onClick} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className={cls}><Icon className="h-4 w-4" strokeWidth={1.75} /> {label}</a>
 }
 
-function FamilyDrawer({ r, actions, nowIso, onClose, onToggleFollowedUp, onSaveNote, onAction }: {
+function FamilyDrawer({ r, actions, reminders, nowIso, onClose, onToggleFollowedUp, onSaveNote, onAction, onAddReminder, onCompleteReminder }: {
   r: FounderRegistrant
   actions: FounderAction[]
+  reminders: FounderReminder[]
   nowIso: string
   onClose: () => void
   onToggleFollowedUp: (r: FounderRegistrant) => Promise<void>
   onSaveNote: (r: FounderRegistrant, notes: string) => Promise<void>
   onAction: (registrantId: string, type: FounderActionType) => void
+  onAddReminder: (registrantId: string, dueOn: string, note: string) => void
+  onCompleteReminder: (id: string) => void
 }) {
   const [note, setNote] = React.useState(r.notes ?? '')
   const [savingNote, setSavingNote] = React.useState(false)
   const [busyFollow, setBusyFollow] = React.useState(false)
+  const [remDate, setRemDate] = React.useState(() => new Date(Date.now() + 19_800_000).toISOString().slice(0, 10))
+  const [remNote, setRemNote] = React.useState('')
   React.useEffect(() => { setNote(r.notes ?? '') }, [r.id, r.notes])
 
   const status = registrantStatus(r, nowIso)
@@ -187,6 +223,24 @@ function FamilyDrawer({ r, actions, nowIso, onClose, onToggleFollowedUp, onSaveN
           </ol>
         </Group>
 
+        <Group title="Reminders">
+          {reminders.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              {reminders.map((rem) => (
+                <div key={rem.id} className="flex items-center justify-between gap-2 text-body-sm">
+                  <span className="text-ink"><span className="font-semibold">{fmtDate(rem.dueOn)}</span>{rem.note ? ` — ${rem.note}` : ''}</span>
+                  <button type="button" onClick={() => onCompleteReminder(rem.id)} className="text-caption font-semibold text-green hover:underline">Done</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <input type="date" value={remDate} onChange={(e) => setRemDate(e.target.value)} className="rounded-sm border border-line bg-card px-2.5 py-1.5 text-body-sm text-ink focus:border-green focus:outline-none" />
+            <input value={remNote} onChange={(e) => setRemNote(e.target.value)} placeholder="e.g. Call after 8PM" className="min-w-[8rem] flex-1 rounded-sm border border-line bg-card px-2.5 py-1.5 text-body-sm text-ink placeholder:text-muted/50 focus:border-green focus:outline-none" />
+            <Button size="sm" disabled={!remDate} onClick={() => { onAddReminder(r.id, remDate, remNote); setRemNote('') }}>Add</Button>
+          </div>
+        </Group>
+
         <Group title="Founder notes">
           <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={4} placeholder="e.g. Lives in the US. Parents in Kondapur. Call after 8PM IST. Interested in Care." className="w-full rounded-sm border border-line bg-card px-3 py-2 text-body-sm text-ink placeholder:text-muted/50 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20" />
           <Button size="sm" className="mt-2 self-start" disabled={savingNote || note === (r.notes ?? '')} onClick={() => { setSavingNote(true); void onSaveNote(r, note).finally(() => setSavingNote(false)) }}>
@@ -206,6 +260,7 @@ export default function FounderDashboardPage() {
   const [d, setD] = React.useState<FounderMetrics | null>(null)
   const [rows, setRows] = React.useState<FounderRegistrant[] | null>(null)
   const [actions, setActions] = React.useState<FounderAction[]>([])
+  const [reminders, setReminders] = React.useState<FounderReminder[]>([])
   const [nowIso, setNowIso] = React.useState<string | null>(null)
   const [days, setDays] = React.useState<number | null>(null)
   const [live, setLive] = React.useState(false)
@@ -220,11 +275,20 @@ export default function FounderDashboardPage() {
     fetchFounderMetrics().then(setD).catch(() => setD(null))
     fetchFounderRegistrants().then(setRows).catch(() => setRows([]))
     fetchFounderActions().then(setActions).catch(() => setActions([]))
+    fetchReminders().then(setReminders).catch(() => setReminders([]))
   }, [isAdmin])
 
   function logAction(registrantId: string, type: FounderActionType) {
     setActions((cur) => [{ registrantId, actionType: type, createdAt: new Date().toISOString() }, ...cur])
     logFounderAction(registrantId, type)
+  }
+  function addReminderH(registrantId: string, dueOn: string, note: string) {
+    void addReminder(registrantId, dueOn, note).then(() => fetchReminders().then(setReminders))
+    showFlash('Reminder added')
+  }
+  function completeReminder(id: string) {
+    setReminders((cur) => cur.map((x) => (x.id === id ? { ...x, done: true } : x)))
+    void setReminderDone(id, true)
   }
 
   function showFlash(msg: string) { setFlash(msg); setTimeout(() => setFlash(''), 2000) }
@@ -255,6 +319,9 @@ export default function FounderDashboardPage() {
   const activity = founderActivityToday(actions, nowIso)
   const reached = new Set<string>([...reachedIds(actions), ...all.filter((r) => r.followedUp).map((r) => r.id)])
   const reachedPct = all.length ? Math.round((reached.size / all.length) * 100) : null
+  const byId = new Map(all.map((r) => [r.id, r]))
+  const todayKey = new Date(Date.parse(nowIso) + 19_800_000).toISOString().slice(0, 10)
+  const tasks = dueReminders(reminders, nowIso)
   const funnel = [
     { label: 'Landing views', value: d.landingViews },
     { label: 'WhatsApp clicks', value: d.whatsappClicks },
@@ -283,10 +350,36 @@ export default function FounderDashboardPage() {
         <p className="mt-2 text-caption text-muted">{goalPct}% of goal</p>
       </section>
 
-      {/* 2 · Today */}
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-green/30 bg-accent-soft/25 px-5 py-4 shadow-sm">
-        <p className="text-body text-ink"><span className="font-bold">{todayCount}</span> registered today · <span className="font-bold">{needsFollowUp}</span> waiting for your first call</p>
-        {needsFollowUp > 0 && <Button size="sm" variant="secondary" onClick={() => setFilter('follow_up')}>Show who to call →</Button>}
+      {/* 2 · Today's tasks */}
+      <section>
+        <p className={section}>Today’s tasks{todayCount > 0 && <span className="ml-1 font-normal normal-case tracking-normal text-muted">· {todayCount} registered today</span>}</p>
+        <div className="flex flex-col gap-2 rounded-lg border border-green/30 bg-accent-soft/20 p-4 shadow-sm">
+          {needsFollowUp > 0 && (
+            <div className="flex items-center justify-between gap-3 rounded-md bg-card px-4 py-3 shadow-sm">
+              <span className="flex items-center gap-2.5 text-body-sm text-ink"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-warning/12 text-warning"><Phone className="h-3.5 w-3.5" strokeWidth={2} /></span><span><strong>{needsFollowUp}</strong> famil{needsFollowUp === 1 ? 'y' : 'ies'} waiting for a first call</span></span>
+              <Button size="sm" variant="secondary" onClick={() => setFilter('follow_up')}>Show</Button>
+            </div>
+          )}
+          {tasks.map((rem) => {
+            const fam = byId.get(rem.registrantId)
+            const overdue = rem.dueOn < todayKey
+            return (
+              <div key={rem.id} className="flex items-center justify-between gap-3 rounded-md bg-card px-4 py-3 shadow-sm">
+                <span className="flex min-w-0 items-start gap-2.5">
+                  <button type="button" onClick={() => completeReminder(rem.id)} title="Mark done" className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border border-line text-transparent hover:border-green hover:bg-accent-soft hover:text-green"><Check className="h-3 w-3" strokeWidth={3} /></button>
+                  <span className="min-w-0 text-body-sm text-ink"><strong>{fam?.fullName ?? 'Family'}</strong>{rem.note ? ` — ${rem.note}` : ''} <span className={cn('text-caption', overdue ? 'font-semibold text-warning' : 'text-muted')}>· {overdue ? 'overdue' : 'today'}</span></span>
+                </span>
+                {fam?.phone && (
+                  <span className="flex shrink-0 items-center gap-1">
+                    <a href={waHref(fam.phone)} onClick={() => logAction(rem.registrantId, 'whatsapp')} target="_blank" rel="noopener noreferrer" title="WhatsApp" className="grid h-8 w-8 place-items-center rounded-full text-green hover:bg-accent-soft"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /></a>
+                    <a href={telHref(fam.phone)} onClick={() => logAction(rem.registrantId, 'call')} title="Call" className="grid h-8 w-8 place-items-center rounded-full text-ink hover:bg-ink/[0.05]"><Phone className="h-4 w-4" strokeWidth={1.75} /></a>
+                  </span>
+                )}
+              </div>
+            )
+          })}
+          {needsFollowUp === 0 && tasks.length === 0 && <p className="px-1 py-1 text-body-sm text-muted">You’re all caught up — no calls or reminders due today. 🎉</p>}
+        </div>
       </section>
 
       {/* 2b · Your activity today */}
@@ -375,37 +468,24 @@ export default function FounderDashboardPage() {
         )}
       </section>
 
-      {/* 4 · Registration funnel */}
+      {/* 4 · Funnel & plans — compact, side by side */}
       <section>
-        <p className={section}>Registration funnel</p>
-        <Funnel stages={funnel} />
-      </section>
-
-      {/* 5 · Plan distribution + funnel context */}
-      <section>
-        <p className={section}>Plan distribution</p>
-        <div className="grid gap-3 md:grid-cols-[1.4fr_1fr]">
-          <div className="rounded-lg border border-line bg-card p-5 shadow-sm">
-            {d.careSharePct === null ? (
-              <p className="text-body-sm text-muted">No plans chosen yet.</p>
-            ) : (
-              <>
-                <div className="flex items-center justify-between text-caption font-medium text-muted"><span className="text-green">Care · {d.careSelected} ({d.careSharePct}%)</span><span>Connect · {d.connectSelected} ({100 - d.careSharePct}%)</span></div>
-                <div className="mt-2 flex h-2.5 overflow-hidden rounded-full bg-accent-soft"><div className="h-full bg-green" style={{ width: `${d.careSharePct}%` }} /></div>
-              </>
-            )}
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Tile label="Today" value={String(d.registrationsToday)} tone="green" />
-            <Tile label="Waitlist" value={String(d.waitlist)} />
-            <Tile label="Conversion" value={pct(d.conversionPct)} />
+        <p className={section}>Funnel &amp; plans</p>
+        <div className="grid gap-3 lg:grid-cols-[1.7fr_1fr]">
+          <Funnel stages={funnel} />
+          <div className="flex flex-col justify-between gap-4 rounded-lg border border-line bg-card p-5 shadow-sm">
+            <Donut care={d.careSelected} connect={d.connectSelected} />
+            <div className="flex justify-between border-t border-line pt-3 text-caption text-muted">
+              <span>Waitlist · <strong className="text-ink">{d.waitlist}</strong></span>
+              <span>Conversion · <strong className="text-ink">{pct(d.conversionPct)}</strong></span>
+            </div>
           </div>
         </div>
       </section>
 
       <p className="text-caption text-muted">Click any family to open their profile, timeline and notes. Reminders, per-family event tracking and daily task list come next.</p>
 
-      {selected && <FamilyDrawer r={selected} actions={actionsFor(actions, selected.id)} nowIso={nowIso} onClose={() => setSelectedId(null)} onToggleFollowedUp={toggleFollowedUp} onSaveNote={saveNote} onAction={logAction} />}
+      {selected && <FamilyDrawer r={selected} actions={actionsFor(actions, selected.id)} reminders={remindersFor(reminders, selected.id)} nowIso={nowIso} onClose={() => setSelectedId(null)} onToggleFollowedUp={toggleFollowedUp} onSaveNote={saveNote} onAction={logAction} onAddReminder={addReminderH} onCompleteReminder={completeReminder} />}
       {flash && <div className="fixed bottom-5 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-body-sm font-medium text-ivory shadow-lg">{flash}</div>}
     </div>
   )

@@ -15,8 +15,11 @@ import {
   founderActivityToday,
   reachedIds,
   actionsFor,
+  dueReminders,
+  remindersFor,
   type RegistrantView,
   type FounderAction,
+  type FounderReminder,
 } from '../closeeye-next/lib/founder-ops-view.ts'
 
 const NOW = '2026-07-11T12:00:00+05:30'
@@ -88,4 +91,15 @@ test('founder actions: today counts, reached (call/wa only), per-registrant', ()
   const reached = reachedIds(actions)
   assert.deepEqual([reached.has('a'), reached.has('b'), reached.has('c'), reached.has('d')], [true, true, true, false])
   assert.equal(actionsFor(actions, 'a').length, 2)
+})
+
+test('reminders: due = open & on/before today (oldest first); per-registrant open', () => {
+  const rem: FounderReminder[] = [
+    { id: '1', registrantId: 'a', dueOn: '2026-07-10', note: 'call', done: false }, // overdue
+    { id: '2', registrantId: 'a', dueOn: '2026-07-11', note: 'wa', done: false }, // today
+    { id: '3', registrantId: 'b', dueOn: '2026-07-20', note: 'later', done: false }, // future
+    { id: '4', registrantId: 'a', dueOn: '2026-07-09', note: 'done', done: true }, // done
+  ]
+  assert.deepEqual(dueReminders(rem, NOW).map((r) => r.id), ['1', '2'])
+  assert.equal(remindersFor(rem, 'a').length, 2) // open a-reminders (excludes done)
 })

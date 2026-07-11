@@ -171,3 +171,24 @@ export function actionsFor(actions: FounderAction[], registrantId: string): Foun
     .filter((a) => a.registrantId === registrantId)
     .sort((x, y) => (x.createdAt < y.createdAt ? 1 : -1))
 }
+
+/* ── Reminders / daily tasks ─────────────────────────────────────────────── */
+
+export interface FounderReminder {
+  id: string
+  registrantId: string
+  dueOn: string // 'YYYY-MM-DD'
+  note: string | null
+  done: boolean
+}
+
+/** Open reminders due on/before today (IST), soonest first — the daily task list. */
+export function dueReminders(reminders: FounderReminder[], nowIso: string): FounderReminder[] {
+  const today = istDayKey(nowIso)
+  return reminders.filter((r) => !r.done && r.dueOn <= today).sort((a, b) => (a.dueOn < b.dueOn ? -1 : 1))
+}
+
+/** A registrant's open reminders, soonest first. */
+export function remindersFor(reminders: FounderReminder[], registrantId: string): FounderReminder[] {
+  return reminders.filter((r) => r.registrantId === registrantId && !r.done).sort((a, b) => (a.dueOn < b.dueOn ? -1 : 1))
+}

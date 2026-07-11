@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import type { FounderAction } from '@/lib/founder-ops-view'
+import type { FounderAction, FounderReminder } from '@/lib/founder-ops-view'
 
 /**
  * Founder ops — the registrant list for the operational dashboard. Reads through
@@ -106,4 +106,35 @@ export async function fetchFounderActions(): Promise<FounderAction[]> {
     actionType: a.action_type,
     createdAt: a.created_at,
   }))
+}
+
+export type { FounderReminder }
+
+/** All open + recent reminders (admin RLS), soonest due first. */
+export async function fetchReminders(): Promise<FounderReminder[]> {
+  const { data, error } = await supabase
+    .from('founder_reminders')
+    .select('id, registrant_id, due_on, note, done')
+    .order('due_on', { ascending: true })
+  if (error) {
+    console.error('[founder-ops] fetchReminders failed:', error.message)
+    return []
+  }
+  return ((data as { id: string; registrant_id: string; due_on: string; note: string | null; done: boolean }[] | null) ?? []).map((r) => ({
+    id: r.id,
+    registrantId: r.registrant_id,
+    dueOn: r.due_on,
+    note: r.note,
+    done: r.done,
+  }))
+}
+
+export async function addReminder(registrantId: string, dueOn: string, note: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('founder_reminders').insert({ registrant_id: registrantId, due_on: dueOn, note: note.trim() || null })
+  return { error: error?.message ?? null }
+}
+
+export async function setReminderDone(id: string, done: boolean): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('founder_reminders').update({ done }).eq('id', id)
+  return { error: error?.message ?? null }
 }
