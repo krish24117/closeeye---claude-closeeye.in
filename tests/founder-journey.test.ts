@@ -32,6 +32,7 @@ test('waitlistRowFor: trims and maps to the real waitlist columns', () => {
     full_name: 'Ravi Kumar',
     email: 'r@k.com',
     whatsapp_number: '99',
+    country: 'India',
     loved_one_city: 'Pune',
     urgency: 'exploring',
     support_needed: 'Founder Program — loved one outside Hyderabad',
@@ -43,10 +44,15 @@ test('waitlistRowFor: a Hyderabad lead is tagged Hyderabad, not "outside"', () =
   assert.equal(waitlistRowFor({ name: 'Ravi', city: 'Pune', phone: '9990001111' }).support_needed, 'Founder Program — loved one outside Hyderabad')
 })
 
-test('waitlistRowFor: empty optional contact becomes null (never empty string)', () => {
+test('waitlistRowFor: NOT NULL columns are never null — blank optional → "" (email is optional)', () => {
+  // The live waitlist columns are all NOT NULL, so a missing phone/email must be
+  // '' (never null) or the insert is rejected and the lead is lost.
   const row = waitlistRowFor({ name: 'Ravi', city: 'Pune', email: 'r@k.com' })
-  assert.equal(row.whatsapp_number, null)
+  assert.equal(row.whatsapp_number, '')
   assert.equal(row.email, 'r@k.com')
+  const noEmail = waitlistRowFor({ name: 'Ravi', city: 'Pune', phone: '9990001111' })
+  assert.equal(noEmail.email, '')
+  assert.equal(noEmail.country, 'India')
 })
 
 test('founderProfilePatch: stamps the durable marker; ref tidied; area defaults to Hyderabad', () => {

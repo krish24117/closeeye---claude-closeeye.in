@@ -40,20 +40,32 @@ export function founderWaitlistError(input: WaitlistInput): string | null {
   return null
 }
 
-/** Build the exact `waitlist` insert row (matches the waitlist-signup edge fn). */
+/**
+ * Build the exact `waitlist` insert row.
+ *
+ * The `waitlist` table dates from the old mandatory full-signup form, so
+ * `full_name`, `email`, `whatsapp_number`, `country` and `loved_one_city` are all
+ * NOT NULL (verified against the live table). The new low-friction lead capture
+ * makes email optional and never asks for country — so we must send a non-null
+ * value for every one of those columns or the insert is rejected (23502) and the
+ * lead is silently lost. Blank optional fields become '' (never null); country
+ * defaults to India (the service country); email is not unique, so '' is safe.
+ */
 export function waitlistRowFor(input: WaitlistInput): {
   full_name: string
-  email: string | null
-  whatsapp_number: string | null
-  loved_one_city: string | null
+  email: string
+  whatsapp_number: string
+  country: string
+  loved_one_city: string
   urgency: string
   support_needed: string
 } {
   return {
     full_name: input.name.trim(),
-    email: tidy(input.email),
-    whatsapp_number: tidy(input.phone),
-    loved_one_city: tidy(input.city),
+    email: (input.email ?? '').trim(),
+    whatsapp_number: (input.phone ?? '').trim(),
+    country: 'India',
+    loved_one_city: (input.city ?? '').trim(),
     urgency: 'exploring',
     // Tag the lead by area so /admin/leads reads truthfully (a Hyderabad
     // hand-raiser is NOT an "outside Hyderabad" waitlist entry).
