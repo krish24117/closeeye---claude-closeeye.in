@@ -122,8 +122,12 @@ export default function ProfilePage() {
     <div className="flex flex-col gap-8">
       <PageHeader title="Profile" subtitle="Your account, membership and preferences." />
 
-      {/* 1 · PERSONAL INFORMATION */}
       <ProfileIdentity />
+
+      {/* 1 · MEMBERSHIP — first: the primary action (protect the people you love) */}
+      <MembershipCard />
+
+      {/* 2 · PERSONAL INFORMATION */}
       <Card
         icon={UserRound}
         title="Personal information"
@@ -135,9 +139,6 @@ export default function ProfilePage() {
         <InfoRow label="Time zone" value={meta.timezone || 'IST · Asia/Kolkata'} />
         <InfoRow label="Preferred language" value={meta.language || 'English'} />
       </Card>
-
-      {/* 2 · MEMBERSHIP — existing membership UI (active → plan/renewal/manage; else → activate) */}
-      <MembershipCard />
 
       {/* 3 · FAMILY SUMMARY — summary only, never the family cards */}
       <Card icon={Users} title="Family">
@@ -188,16 +189,6 @@ export default function ProfilePage() {
         <ComingSoonRow label="Change password" />
         <ComingSoonRow label="Manage login" />
         <ComingSoonRow label="Two-factor authentication" />
-        <div className="flex flex-col gap-3 pt-4">
-          <SignOutButton />
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-sm py-2.5 text-body-sm font-semibold text-error transition-colors hover:bg-error/[0.06]"
-          >
-            <Trash2 className="h-4 w-4" strokeWidth={1.75} /> Delete account
-          </button>
-        </div>
       </Card>
 
       {/* 7 · SUPPORT */}
@@ -209,6 +200,18 @@ export default function ProfilePage() {
         <NavRow href="/terms" label="Terms & Conditions" />
         <NavRow href="/about" label={`About ${SITE.name}`} />
       </Card>
+
+      {/* 8 · ACCOUNT — sign out + delete account, always last */}
+      <section className="flex flex-col gap-3">
+        <SignOutButton />
+        <button
+          type="button"
+          onClick={() => setConfirmDelete(true)}
+          className="inline-flex items-center justify-center gap-2 rounded-sm py-2.5 text-body-sm font-semibold text-error transition-colors hover:bg-error/[0.06]"
+        >
+          <Trash2 className="h-4 w-4" strokeWidth={1.75} /> Delete account
+        </button>
+      </section>
 
       <p className="pb-2 text-center text-caption text-muted">{SITE.name}</p>
 
