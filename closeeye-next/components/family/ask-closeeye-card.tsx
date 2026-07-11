@@ -97,9 +97,12 @@ export function AskCloseEyeCard({
         </div>
       </div>
 
-      {/* Living conversation — the last exchange, or a warm opener. Never empty. */}
+      {/* Living conversation — the last exchange, or a warm opener. Never empty.
+          Only replay a past exchange while a loved one is still in the family: once
+          they're removed, the stored question may name them, so fall back to the
+          (name-free) opener instead of resurfacing a deleted member. */}
       <div className="mt-4 flex flex-col gap-2.5">
-        {loaded && last?.question ? (
+        {loaded && last?.question && primary ? (
           <>
             <div className="flex justify-end">
               <div className="max-w-[85%] rounded-[16px_16px_4px_16px] bg-ink px-3.5 py-2 text-caption leading-relaxed text-ivory">
