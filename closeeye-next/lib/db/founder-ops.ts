@@ -18,6 +18,7 @@ export interface FounderRegistrant {
   ref: string | null
   registeredAt: string | null
   followedUp: boolean
+  followedUpAt: string | null
   notes: string | null
 }
 
@@ -33,6 +34,7 @@ interface RawRegistrant {
   ref: string | null
   registered_at: string | null
   followed_up: boolean | null
+  followed_up_at: string | null
   notes: string | null
 }
 
@@ -54,12 +56,16 @@ export async function fetchFounderRegistrants(): Promise<FounderRegistrant[]> {
     ref: r.ref,
     registeredAt: r.registered_at,
     followedUp: !!r.followed_up,
+    followedUpAt: r.followed_up_at,
     notes: r.notes,
   }))
 }
 
 export async function setFollowedUp(userId: string, value: boolean): Promise<{ error: string | null }> {
-  const { error } = await supabase.from('profiles').update({ founder_followed_up: value }).eq('id', userId)
+  const { error } = await supabase
+    .from('profiles')
+    .update({ founder_followed_up: value, founder_followed_up_at: value ? new Date().toISOString() : null })
+    .eq('id', userId)
   return { error: error?.message ?? null }
 }
 
