@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowLeft, MessageCircle, Phone, Siren, Ticket, PlayCircle, HelpCircle } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Phone, Siren, Ticket, HelpCircle } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Container } from '@/components/ui/container'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,6 @@ const SUPPORT: { icon: LucideIcon; title: string; desc: string; href: string; to
   { icon: Phone, title: 'Call us', desc: 'Speak to a real person, Mon–Sat 8am–8pm', href: 'tel:+919000221261' },
   { icon: Ticket, title: 'Raise a ticket', desc: 'For something that needs following up', href: `mailto:${SITE.email}?subject=Support%20request` },
   { icon: Siren, title: 'Emergency help', desc: 'In a medical emergency, call 108 first', href: 'tel:108', tone: 'urgent' },
-  { icon: PlayCircle, title: 'Video tutorials', desc: 'Short walkthroughs of Family Space', href: '/#how-it-works' },
   { icon: HelpCircle, title: 'Browse FAQs', desc: 'Answers to the most common questions', href: '#faq' },
 ]
 
