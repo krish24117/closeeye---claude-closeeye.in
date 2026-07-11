@@ -92,7 +92,7 @@ export default function FounderLandingPage() {
         </p>
 
         <div className="mt-8">
-          <Button asChild size="lg"><Link href={REGISTER_HREF}>Reserve Your Family’s Place <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
+          <Button asChild size="lg"><Link href={REGISTER_HREF}>Start Your Close Eye Journey <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
         </div>
       </Section>
 
@@ -133,21 +133,32 @@ export default function FounderLandingPage() {
         </ol>
       </Section>
 
-      {/* 5 · HOW TO BEGIN — ONE simple starting point; Care is a quiet next step, not a comparison */}
+      {/* 5 · HOW TO BEGIN — both plans shown honestly, same ladder + wording as the funnel */}
       <Section className="mt-14">
-        <h2 className="text-h3 tracking-tight">A simple place to start</h2>
-        <div className="mt-6 rounded-xl border border-line/70 bg-card p-6 shadow-sm">
-          <p className="text-body font-semibold">Start with Close Eye Connect</p>
-          <p className="mt-1 text-body-sm font-semibold text-green">₹500 / month</p>
-          <p className="mt-3 text-body-sm leading-relaxed text-muted">Trusted coordination, ongoing support, and a simple way to stay connected with your parents.</p>
+        <h2 className="text-h3 tracking-tight">Two ways to begin</h2>
+        <p className="mt-3 text-body-sm leading-relaxed text-muted">
+          You’ll choose when you register — most families begin with Care for the monthly visit. There’s nothing to pay before {FOUNDER_LAUNCH_LABEL}.
+        </p>
+        <div className="mt-6 flex flex-col gap-3">
+          <div className="rounded-xl border border-line/70 bg-card p-5 shadow-sm">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-body font-semibold">Close Eye Connect</p>
+              <p className="shrink-0 whitespace-nowrap text-body-sm font-semibold text-green">₹500 / month</p>
+            </div>
+            <p className="mt-0.5 text-caption text-muted">A lighter way to begin</p>
+            <p className="mt-2 text-body-sm leading-relaxed text-muted">Trusted coordination and ongoing family support.</p>
+          </div>
+          <div className="rounded-xl border border-green/40 bg-card p-5 shadow-sm">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="flex items-center gap-2">
+                <p className="text-body font-semibold">Close Eye Care</p>
+                <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-green">Recommended</span>
+              </span>
+              <p className="shrink-0 whitespace-nowrap text-body-sm font-semibold text-green">₹1,500 / month</p>
+            </div>
+            <p className="mt-2 text-body-sm leading-relaxed text-muted">Everything in Connect, plus monthly Presence Visits, Presence Stories and priority coordination.</p>
+          </div>
         </div>
-        <p className="mt-4 text-body-sm text-muted">
-          Looking for monthly Presence Visits?{' '}
-          <a href={founderWhatsApp()} onClick={logWhatsApp} target="_blank" rel="noopener noreferrer" className="font-semibold text-green hover:underline">Ask me about Close Eye Care →</a>
-        </p>
-        <p className="mt-6 text-body-sm leading-relaxed text-muted">
-          You’ll choose your plan during registration. No payment is required before {FOUNDER_LAUNCH_LABEL}.
-        </p>
       </Section>
 
       {/* 6 · REGISTER TODAY / LAUNCH TIMELINE — clean numbered list, no box */}
@@ -197,7 +208,7 @@ export default function FounderLandingPage() {
         <div className="flex flex-col items-center rounded-2xl border border-line/70 bg-card px-6 py-11 text-center shadow-sm">
           <h2 className="text-h3 tracking-tight text-balance">Be one of Close Eye’s first families</h2>
           <p className="mt-2 max-w-md text-body-sm leading-relaxed text-muted">It takes two minutes, and there’s nothing to pay today.</p>
-          <Button asChild size="lg" className="mt-6"><Link href={REGISTER_HREF}>Reserve Your Family’s Place <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
+          <Button asChild size="lg" className="mt-6"><Link href={REGISTER_HREF}>Start Your Close Eye Journey <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
           <p className="mt-8 max-w-md text-body-sm leading-relaxed text-muted">Would you rather just talk? I read every message myself.</p>
           <Button asChild variant="text" size="md" className="mt-1.5"><a href={founderWhatsApp()} onClick={logWhatsApp} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Message {FOUNDER.name} on WhatsApp</a></Button>
         </div>

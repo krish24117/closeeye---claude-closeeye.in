@@ -19,6 +19,11 @@ export function friendlyAuthError(raw?: string): string {
   if (m.includes('email') && m.includes('valid')) return 'Please enter a valid email address.'
   if (m.includes('signups not allowed') || m.includes('disabled')) return 'Sign-ups are currently closed. Please contact support.'
   if (m.includes('popup') || m.includes('cancel')) return 'Sign-in was cancelled. Please try again.'
+  if (m.includes('already registered') || m.includes('already exists') || m.includes('user already')) return 'This email is already registered — please sign in instead.'
+  if (m.includes('invalid login credentials')) return 'That email or password isn’t right. Please check and try again.'
+  if (m.includes('password should be at least') || (m.includes('password') && m.includes('at least'))) return 'Please use a password with at least 8 characters.'
+  if (m.includes('not confirmed')) return 'Please confirm your email from the link we sent, then sign in.'
+  if (m.includes('weak password') || m.includes('pwned')) return 'Please choose a stronger password.'
   return 'Something went wrong. Please try again.'
 }
 
@@ -58,6 +63,23 @@ export async function signInWithGoogle(): Promise<{ error: string | null }> {
   const { Browser } = await import('@capacitor/browser')
   await Browser.open({ url: data.url, presentationStyle: 'popover' })
   return { error: null }
+}
+
+/**
+ * Create an account with email + password. `session` is true when Supabase
+ * "Confirm email" is OFF (the account is usable immediately); false when email
+ * confirmation is required (the user must confirm before signing in).
+ */
+export async function signUpWithPassword(email: string, password: string): Promise<{ error: string | null; session: boolean }> {
+  const { data, error } = await supabase.auth.signUp({ email: email.trim().toLowerCase(), password })
+  if (error) return { error: friendlyAuthError(error.message), session: false }
+  return { error: null, session: !!data.session }
+}
+
+/** Sign in with an existing email + password. */
+export async function signInWithPassword(email: string, password: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
+  return { error: error ? friendlyAuthError(error.message) : null }
 }
 
 /**

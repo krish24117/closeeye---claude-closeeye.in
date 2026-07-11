@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Check, Loader2, ArrowRight, MessageCircle, RefreshCw } from 'lucide-react'
+import { Check, Loader2, MessageCircle, RefreshCw, Calendar, HeartHandshake } from 'lucide-react'
 import { LogoMark } from '@/components/ui/logo'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/components/auth/auth-provider'
@@ -70,22 +70,37 @@ export default function FounderDonePage() {
         )}
 
         {state === 'done' && (
-          <div className="ce-fade-in flex flex-col items-center text-center">
+          <div className="ce-fade-in flex flex-col items-center">
             <span className="grid h-16 w-16 place-items-center rounded-full bg-success/12 text-success"><Check className="h-8 w-8" strokeWidth={2.5} /></span>
-            <h1 className="mt-6 text-h2 text-ink">Your place is reserved</h1>
-            <p className="mt-3 max-w-sm text-body leading-relaxed text-muted">
-              You’re among the first families joining Close Eye in Hyderabad. Your membership becomes available from <strong className="font-semibold text-ink">{FOUNDER_LAUNCH_LABEL}</strong> — there’s nothing to pay until then, and we’ll be in touch before we open.
+            <h1 className="mt-6 text-center text-h2 text-ink">You’re in — your place is reserved</h1>
+            <p className="mt-3 max-w-sm text-center text-body leading-relaxed text-muted">
+              You’re among the first families joining Close Eye in Hyderabad. There’s nothing to pay today.
             </p>
+
+            <div className="mt-8 w-full rounded-xl border border-line/70 bg-card p-5 shadow-sm">
+              <p className="text-caption font-semibold uppercase tracking-widest text-muted">What happens next</p>
+              <ol className="mt-4 flex flex-col gap-4">
+                {[
+                  { icon: MessageCircle, t: <><strong className="font-semibold text-ink">{FOUNDER.name} will message you personally on WhatsApp within a day or two</strong> — to say hello and answer anything you’re wondering about.</> },
+                  { icon: Calendar, t: <>Just before <strong className="font-semibold text-ink">{FOUNDER_LAUNCH_LABEL}</strong>, we’ll confirm your membership and take your parent’s details.</> },
+                  { icon: HeartHandshake, t: <>On <strong className="font-semibold text-ink">{FOUNDER_LAUNCH_LABEL}</strong> we open in Hyderabad and arrange your first Presence Visit.</> },
+                ].map(({ icon: Icon, t }, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><Icon className="h-4 w-4" strokeWidth={1.75} /></span>
+                    <span className="text-body-sm leading-relaxed text-ink">{t}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
 
             <div className="mt-8 w-full">
               <Button asChild size="lg" className="w-full">
-                <Link href="/family">Explore your Close Eye space <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link>
-              </Button>
-              <p className="mt-6 text-body-sm text-muted">Have a question in the meantime?</p>
-              <Button asChild variant="text" size="md" className="mt-1">
                 <a href={whatsappLink(`Hi ${FOUNDER.name}, I just reserved my family’s place with Close Eye.`)} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Message {FOUNDER.name} on WhatsApp
+                  <MessageCircle className="h-5 w-5" strokeWidth={2} /> Say hello to {FOUNDER.name}
                 </a>
+              </Button>
+              <Button asChild variant="text" size="md" className="mt-2 w-full">
+                <Link href="/family">View my account</Link>
               </Button>
             </div>
           </div>

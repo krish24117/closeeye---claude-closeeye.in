@@ -4,20 +4,22 @@ import * as React from 'react'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Loader2, MailCheck, RefreshCw, Clock } from 'lucide-react'
+import { ArrowRight, Loader2, Clock, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
 import { LogoMark } from '@/components/ui/logo'
 import { Button } from '@/components/ui/button'
 import { ErrorState } from '@/components/ui/states'
 import { FunnelSteps } from '@/components/funnel/funnel-steps'
 import { isSupabaseConfigured } from '@/lib/supabase'
-import { signInWithGoogle, sendEmailOtp, verifyEmailOtp } from '@/lib/auth-actions'
+import { signInWithGoogle, signUpWithPassword, signInWithPassword } from '@/lib/auth-actions'
 import { planById } from '@/lib/plans'
 import { setPendingPlan } from '@/lib/membership-intent'
 import { isNative } from '@/lib/native'
 import { haptic } from '@/lib/haptics'
+import { cn } from '@/lib/utils'
 
 const isEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
-type Pending = null | 'google' | 'email' | 'verify'
+type Pending = null | 'google' | 'email'
+type Mode = 'signin' | 'signup'
 
 /** The Google mark for the "Continue with Google" button. */
 function GoogleG() {
@@ -31,27 +33,11 @@ function GoogleG() {
   )
 }
 
-/** Resend countdown; resets each time a code is (re)sent. */
-function Resend({ seedKey, onResend }: { seedKey: number; onResend: () => void }) {
-  const [left, setLeft] = React.useState(30)
-  React.useEffect(() => setLeft(30), [seedKey])
-  React.useEffect(() => {
-    if (left <= 0) return
-    const t = setTimeout(() => setLeft((l) => l - 1), 1000)
-    return () => clearTimeout(t)
-  }, [left])
-  return left > 0 ? (
-    <span className="inline-flex items-center gap-1.5 text-caption text-muted"><Clock className="h-3.5 w-3.5" strokeWidth={1.75} /> Resend code in {left}s</span>
-  ) : (
-    <button type="button" onClick={onResend} className="inline-flex items-center gap-1.5 text-caption font-semibold text-green hover:underline"><RefreshCw className="h-3.5 w-3.5" strokeWidth={1.75} /> Resend code</button>
-  )
-}
-
 /**
  * The centred card frame shared by every auth state. Defined at MODULE scope on
  * purpose: a component declared inside AuthFlow would be a new function identity
- * on every render, so each keystroke would remount the email <input> — dropping
- * focus and dismissing the mobile keyboard after every character.
+ * on every render, so each keystroke would remount the inputs — dropping focus
+ * and dismissing the mobile keyboard after every character.
  */
 function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -74,17 +60,19 @@ function AuthFlow() {
   const router = useRouter()
   const params = useSearchParams()
   const native = isNative()
-  const [stage, setStage] = React.useState<'signin' | 'code'>('signin')
+  const [mode, setMode] = React.useState<Mode>('signin')
   const [email, setEmail] = React.useState('')
-  const [code, setCode] = React.useState('')
+  const [password, setPassword] = React.useState('')
+  const [confirm, setConfirm] = React.useState('')
+  const [showPw, setShowPw] = React.useState(false)
   const [pending, setPending] = React.useState<Pending>(null)
   const [error, setError] = React.useState('')
-  const [sentAt, setSentAt] = React.useState(0)
+  const [notice, setNotice] = React.useState('')
   const busy = pending !== null
 
-  // Membership join intent — the visitor arrived from /membership after choosing a
-  // plan. Keep the purchase framing here (sign-in is a step INSIDE the purchase),
-  // and persist the plan so it survives the OAuth round-trip to the Activate step.
+  // Membership join intent — arrived from /membership (with a plan) or the founder
+  // funnel. New customers start on "create account"; persist any chosen plan so it
+  // survives the round-trip.
   const joinIntent = params.get('intent') === 'join'
   const foundingIntent = params.get('intent') === 'founding'
   const joinPlanId = joinIntent ? params.get('plan') : null
@@ -92,10 +80,13 @@ function AuthFlow() {
   React.useEffect(() => {
     if (joinPlan) setPendingPlan(joinPlan.id)
   }, [joinPlanId]) // eslint-disable-line react-hooks/exhaustive-deps
+  React.useEffect(() => {
+    if (joinIntent || foundingIntent) setMode('signup')
+  }, [joinIntent, foundingIntent])
 
-  // A sign-in link returning on the web lands here with `?code=…`; the Supabase
-  // client exchanges it automatically, so show a "signing you in" state (not the
-  // form) while the auth gate routes on to the dashboard.
+  // A returning sign-in (Google, or an older email link) lands with `?code=…`; the
+  // Supabase client exchanges it, so show a "signing you in" state while the auth
+  // gate routes on to the dashboard.
   const returning = params.get('code') !== null || params.get('token_hash') !== null
   const [stuck, setStuck] = React.useState(false)
   React.useEffect(() => {
@@ -109,6 +100,7 @@ function AuthFlow() {
 
   async function google() {
     setError('')
+    setNotice('')
     setPending('google')
     const { error: err } = await signInWithGoogle()
     if (err) {
@@ -116,35 +108,49 @@ function AuthFlow() {
       setError(err)
       return
     }
-    // Web redirects away (spinner rides through the redirect). Native has just
-    // opened the system browser, so stop the spinner and wait for the deep link.
+    // Web redirects away (spinner rides through the redirect). Native has opened
+    // the system browser, so stop the spinner and wait for the deep link.
     if (native) setPending(null)
   }
 
-  async function sendCode(resend = false) {
+  function toggleMode() {
+    setMode((m) => (m === 'signup' ? 'signin' : 'signup'))
     setError('')
-    if (!isEmail(email)) return setError('Please enter a valid email address.')
-    if (!isSupabaseConfigured) return setError('Sign-in is temporarily unavailable. Please try again shortly.')
-    setPending('email')
-    const { error: err } = await sendEmailOtp(email)
-    setPending(null)
-    if (err) return setError(err)
-    haptic('light')
-    setSentAt(Date.now())
-    if (!resend) setStage('code')
+    setNotice('')
+    setConfirm('')
   }
 
-  async function verify() {
+  async function submit() {
     setError('')
-    if (code.trim().length < 6) return setError('Enter the 6-digit code from your email.')
-    setPending('verify')
-    const { error: err } = await verifyEmailOtp(email, code)
-    setPending(null)
-    if (err) return setError(err)
-    haptic('success')
-    // Signed in — the auth gate sends new accounts to onboarding, everyone else
-    // straight to their family space.
-    router.replace('/family')
+    setNotice('')
+    if (!isEmail(email)) return setError('Please enter a valid email address.')
+    if (password.length < 8) return setError('Please use a password with at least 8 characters.')
+    if (mode === 'signup' && password !== confirm) return setError('Those passwords don’t match.')
+    if (!isSupabaseConfigured) return setError('Sign-in is temporarily unavailable. Please try again shortly.')
+
+    setPending('email')
+    if (mode === 'signup') {
+      const { error: err, session } = await signUpWithPassword(email, password)
+      setPending(null)
+      if (err) return setError(err)
+      haptic('success')
+      if (session) {
+        // Account created and signed in — the auth gate routes on from here.
+        router.replace('/family')
+        return
+      }
+      // No session → Supabase "Confirm email" is ON. Ask them to confirm + sign in.
+      setMode('signin')
+      setPassword('')
+      setConfirm('')
+      setNotice('Account created. Please confirm your email, then sign in below.')
+    } else {
+      const { error: err } = await signInWithPassword(email, password)
+      setPending(null)
+      if (err) return setError(err)
+      haptic('success')
+      router.replace('/family')
+    }
   }
 
   if (params.get('timeout') === '1') {
@@ -161,83 +167,87 @@ function AuthFlow() {
     return (
       <Shell>
         {stuck ? (
-          <ErrorState icon={Clock} title="Couldn’t finish signing in" message="Your sign-in link may have expired, or it was opened in a different browser than the one that requested it. Please request a fresh code and open it on the same device." onRetry={() => router.replace('/auth')} retryLabel="Try again" />
+          <ErrorState icon={Clock} title="Couldn’t finish signing in" message="Your sign-in may have expired, or it was opened in a different browser than the one that started it. Please try again on the same device." onRetry={() => router.replace('/auth')} retryLabel="Try again" />
         ) : (
           <div className="flex flex-col items-center rounded-lg border border-line bg-card p-8 text-center shadow-sm">
             <Loader2 className="h-7 w-7 animate-spin text-green" strokeWidth={2} />
             <p className="mt-4 text-body-sm font-medium text-ink">Signing you in…</p>
-            <p className="mt-1 text-caption text-muted">Just a moment while we open your family space.</p>
+            <p className="mt-1 text-caption text-muted">Just a moment while we open your space.</p>
           </div>
         )}
       </Shell>
     )
   }
 
+  const signup = mode === 'signup'
+  const heading = signup
+    ? joinPlan
+      ? { eyebrow: `${joinPlan.name} · ${joinPlan.price}${joinPlan.period}`, title: `Create your account to activate ${joinPlan.name}`, sub: 'One quick step — then set up your family and activate your membership.' }
+      : foundingIntent
+      ? { eyebrow: null, title: 'Create your account', sub: 'One quick step — then choose your membership. Nothing to pay today.' }
+      : { eyebrow: null, title: 'Create your Close Eye account', sub: 'It only takes a moment.' }
+    : { eyebrow: null, title: 'Sign in to Close Eye', sub: 'Welcome back.' }
+
   return (
     <Shell>
       {joinPlan && <div className="mb-5"><FunnelSteps step={2} /></div>}
       <div className="rounded-lg border border-line bg-card p-6 shadow-sm">
-        {stage === 'signin' ? (
-          <>
-            {joinPlan ? (
-              <>
-                <p className="text-caption font-semibold uppercase tracking-widest text-green">{joinPlan.name} · {joinPlan.price}{joinPlan.period}</p>
-                <h1 className="mt-1.5 text-h3 text-ink">Create your account to activate {joinPlan.name}</h1>
-                <p className="mt-1.5 text-body-sm text-muted">One quick step — then set up your family and activate your membership.</p>
-              </>
-            ) : foundingIntent ? (
-              <>
-                <h1 className="text-h3 text-ink">Create your account to reserve your place</h1>
-                <p className="mt-1.5 text-body-sm text-muted">One quick step — then choose your membership. There’s nothing to pay today.</p>
-              </>
-            ) : (
-              <>
-                <h1 className="text-h3 text-ink">Sign in to Close Eye</h1>
-                <p className="mt-1.5 text-body-sm text-muted">New here? Signing in creates your account.</p>
-              </>
-            )}
+        {heading.eyebrow && <p className="text-caption font-semibold uppercase tracking-widest text-green">{heading.eyebrow}</p>}
+        <h1 className={cn('text-h3 text-ink', heading.eyebrow && 'mt-1.5')}>{heading.title}</h1>
+        <p className="mt-1.5 text-body-sm text-muted">{heading.sub}</p>
 
-            {/* Primary: Google — no email needed, works on the app and the web. */}
-            <button type="button" disabled={busy} onClick={google} className="mt-5 flex min-h-[3rem] w-full items-center justify-center gap-2.5 rounded-sm border border-ink/15 text-body-sm font-semibold text-ink transition-colors hover:border-ink/30 hover:bg-ink/[0.03] disabled:opacity-60">
-              {pending === 'google' ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Connecting to Google…</> : <><GoogleG /> Continue with Google</>}
-            </button>
+        {/* Primary: Google — no password to remember, works on app + web. */}
+        <button type="button" disabled={busy} onClick={google} className="mt-5 flex min-h-[3rem] w-full items-center justify-center gap-2.5 rounded-sm border border-ink/15 text-body-sm font-semibold text-ink transition-colors hover:border-ink/30 hover:bg-ink/[0.03] disabled:opacity-60">
+          {pending === 'google' ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Connecting to Google…</> : <><GoogleG /> Continue with Google</>}
+        </button>
 
-            <div className="my-4 flex items-center gap-3 text-caption text-muted"><span className="h-px flex-1 bg-line" /> or use email <span className="h-px flex-1 bg-line" /></div>
+        <div className="my-4 flex items-center gap-3 text-caption text-muted"><span className="h-px flex-1 bg-line" /> or use email <span className="h-px flex-1 bg-line" /></div>
 
-            {/* Email one-time passcode (arrives as a code with SMTP, else a link). */}
-            <label className="block">
-              <span className="mb-1.5 block text-body-sm font-medium text-ink">Email address</span>
-              <input
-                type="email" inputMode="email" autoComplete="email" placeholder="you@email.com"
-                value={email} onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && sendCode()}
-                className={inputCls}
-              />
-            </label>
-            {error && <p className="mt-3 text-caption text-error">{error}</p>}
-            <Button size="lg" className="mt-4 w-full" disabled={busy} onClick={() => sendCode()}>
-              {pending === 'email' ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Sending code…</> : <>Continue with Email <ArrowRight className="h-5 w-5" strokeWidth={2} /></>}
-            </Button>
-          </>
-        ) : (
-          <>
-            <button type="button" onClick={() => { setStage('signin'); setError(''); setCode('') }} className="mb-3 inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Change email</button>
-            <h1 className="text-h3 text-ink">Enter your code</h1>
-            <p className="mt-1.5 text-body-sm text-muted">We sent a 6-digit code to <span className="font-medium text-ink">{email}</span>.</p>
+        <label className="block">
+          <span className="mb-1.5 block text-body-sm font-medium text-ink">Email address</span>
+          <input type="email" inputMode="email" autoComplete="email" placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
+        </label>
+
+        <label className="mt-3 block">
+          <span className="mb-1.5 block text-body-sm font-medium text-ink">Password</span>
+          <div className="relative">
             <input
-              inputMode="numeric" maxLength={6} autoComplete="one-time-code" placeholder="••••••"
-              value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-              onKeyDown={(e) => e.key === 'Enter' && verify()}
-              className="mt-5 w-full rounded-sm border border-line bg-ivory px-4 py-3 text-center text-h3 tracking-[0.5em] text-ink placeholder:tracking-[0.5em] placeholder:text-muted/40 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20"
+              type={showPw ? 'text' : 'password'}
+              autoComplete={signup ? 'new-password' : 'current-password'}
+              placeholder={signup ? 'At least 8 characters' : 'Your password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !signup && submit()}
+              className={cn(inputCls, 'pr-10')}
             />
-            <div className="mt-3"><Resend seedKey={sentAt} onResend={() => sendCode(true)} /></div>
-            {error && <p className="mt-3 text-caption text-error">{error}</p>}
-            <Button size="lg" className="mt-5 w-full" disabled={busy} onClick={verify}>
-              {pending === 'verify' ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Verifying…</> : <><MailCheck className="h-5 w-5" strokeWidth={1.75} /> Verify &amp; continue</>}
-            </Button>
-            <p className="mt-4 text-center text-caption text-muted">No code in your inbox? Open the same email and tap the sign-in link instead.</p>
-          </>
+            <button type="button" onClick={() => setShowPw((s) => !s)} aria-label={showPw ? 'Hide password' : 'Show password'} className="absolute inset-y-0 right-0 grid w-10 place-items-center text-muted hover:text-ink">
+              {showPw ? <EyeOff className="h-4 w-4" strokeWidth={1.75} /> : <Eye className="h-4 w-4" strokeWidth={1.75} />}
+            </button>
+          </div>
+        </label>
+
+        {signup && (
+          <label className="mt-3 block">
+            <span className="mb-1.5 block text-body-sm font-medium text-ink">Confirm password</span>
+            <input type={showPw ? 'text' : 'password'} autoComplete="new-password" placeholder="Re-enter your password" value={confirm} onChange={(e) => setConfirm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} className={inputCls} />
+          </label>
         )}
+
+        {notice && (
+          <p className="mt-3 flex items-start gap-2 text-caption text-green"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2} /> {notice}</p>
+        )}
+        {error && <p className="mt-3 text-caption text-error">{error}</p>}
+
+        <Button size="lg" className="mt-4 w-full" disabled={busy} onClick={submit}>
+          {pending === 'email' ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> {signup ? 'Creating your account…' : 'Signing you in…'}</> : <>{signup ? 'Create account' : 'Sign in'} <ArrowRight className="h-5 w-5" strokeWidth={2} /></>}
+        </Button>
+
+        <p className="mt-4 text-center text-caption text-muted">
+          {signup ? 'Already have an account?' : 'New to Close Eye?'}{' '}
+          <button type="button" onClick={toggleMode} className="font-semibold text-green hover:underline">
+            {signup ? 'Sign in' : 'Create an account'}
+          </button>
+        </p>
       </div>
     </Shell>
   )
