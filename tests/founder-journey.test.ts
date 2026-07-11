@@ -38,6 +38,11 @@ test('waitlistRowFor: trims and maps to the real waitlist columns', () => {
   })
 })
 
+test('waitlistRowFor: a Hyderabad lead is tagged Hyderabad, not "outside"', () => {
+  assert.equal(waitlistRowFor({ name: 'Lalitha', city: 'Hyderabad', phone: '9990001111' }).support_needed, 'Founder Program — Hyderabad')
+  assert.equal(waitlistRowFor({ name: 'Ravi', city: 'Pune', phone: '9990001111' }).support_needed, 'Founder Program — loved one outside Hyderabad')
+})
+
 test('waitlistRowFor: empty optional contact becomes null (never empty string)', () => {
   const row = waitlistRowFor({ name: 'Ravi', city: 'Pune', email: 'r@k.com' })
   assert.equal(row.whatsapp_number, null)

@@ -55,7 +55,12 @@ export function waitlistRowFor(input: WaitlistInput): {
     whatsapp_number: tidy(input.phone),
     loved_one_city: tidy(input.city),
     urgency: 'exploring',
-    support_needed: 'Founder Program — loved one outside Hyderabad',
+    // Tag the lead by area so /admin/leads reads truthfully (a Hyderabad
+    // hand-raiser is NOT an "outside Hyderabad" waitlist entry).
+    support_needed:
+      (input.city ?? '').trim().toLowerCase() === 'hyderabad'
+        ? 'Founder Program — Hyderabad'
+        : 'Founder Program — loved one outside Hyderabad',
   }
 }
 
