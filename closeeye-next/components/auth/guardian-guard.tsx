@@ -44,7 +44,7 @@ export function GuardianGuard({ children }: { children: React.ReactNode }) {
           </p>
           <div className="mt-5 flex w-full flex-col gap-2.5">
             <Button asChild><a href="/family">Go to Family Space</a></Button>
-            <SignOutButton />
+            <SignOutButton redirectTo="/guardian/login" />
           </div>
         </div>
       </div>

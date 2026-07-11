@@ -99,7 +99,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </button>
             <div className="flex-1" />
             <div className="ml-auto flex items-center gap-1">
-              <UserMenu {...menuProps} className="ml-1" />
+              <UserMenu {...menuProps} loginPath="/auth" className="ml-1" />
             </div>
           </div>
         </header>

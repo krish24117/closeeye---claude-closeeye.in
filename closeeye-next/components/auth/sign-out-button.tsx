@@ -7,8 +7,12 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
 
-/** Real sign-out: clears the Supabase session, then returns to the entry flow. */
-export function SignOutButton({ className }: { className?: string }) {
+/**
+ * Real sign-out: clears the Supabase session, then returns to the entry flow.
+ * `redirectTo` defaults to the family welcome carousel; staff areas pass '/auth'
+ * (direct sign-in) and the Guardian app passes '/guardian/login'.
+ */
+export function SignOutButton({ className, redirectTo = '/welcome' }: { className?: string; redirectTo?: string }) {
   const { signOut } = useAuth()
   const router = useRouter()
   const [busy, setBusy] = React.useState(false)
@@ -17,7 +21,7 @@ export function SignOutButton({ className }: { className?: string }) {
     setBusy(true)
     haptic('warning')
     await signOut()
-    router.replace('/welcome')
+    router.replace(redirectTo)
   }
 
   return (

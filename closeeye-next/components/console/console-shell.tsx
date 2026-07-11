@@ -107,7 +107,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
               <button type="button" onClick={() => setSos(true)} className="grid h-10 w-10 place-items-center rounded-full border border-error/30 text-error hover:bg-error/10" aria-label="Emergency">
                 <Siren className="h-5 w-5" strokeWidth={1.75} />
               </button>
-              <UserMenu {...menuProps} className="ml-1" />
+              <UserMenu {...menuProps} loginPath="/auth" className="ml-1" />
             </div>
           </div>
         </header>

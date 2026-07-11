@@ -47,9 +47,15 @@ export function AuthGate() {
     let target: string | null = null
 
     if (!session) {
-      // Protect app routes. /guardian/login is public (in FLOW) so it renders;
-      // a signed-out guardian route sends to the Guardian login, not family welcome.
-      if (onApp && !onFlow) target = pathname.startsWith('/guardian') ? '/guardian/login' : '/welcome'
+      // Protect app routes. Staff (PM / Admin) go straight to the sign-in screen —
+      // no marketing carousel; families keep the /welcome onboarding intro; a
+      // signed-out guardian route sends to the Guardian login.
+      if (onApp && !onFlow)
+        target = pathname.startsWith('/guardian')
+          ? '/guardian/login'
+          : pathname.startsWith('/pm') || pathname.startsWith('/admin')
+          ? '/auth'
+          : '/welcome'
       else if (firstNative && !onFlow) target = '/welcome' // native launch on marketing
     } else if (onboardingComplete === false && !isSuperAdmin(profile) && !isPresenceManager(profile)) {
       // Family setup only. Founder pre-launch registrants finish a different,
