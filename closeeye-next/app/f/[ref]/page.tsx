@@ -200,8 +200,14 @@ export default function FounderLandingPage() {
       </main>
 
       <footer className="mx-auto mt-16 w-full max-w-2xl px-5 text-center">
-        <div className="border-t border-line/70 pt-6 text-caption text-muted">
-          Close Eye · Serving Hyderabad · Launching {FOUNDER_LAUNCH_LABEL}
+        <div className="border-t border-line/70 pt-6">
+          <p className="text-body-sm text-muted">
+            Need help?{' '}
+            <a href={founderWhatsApp()} target="_blank" rel="noopener noreferrer" className="font-semibold text-green hover:underline">
+              Message {FOUNDER.name} directly on WhatsApp
+            </a>
+          </p>
+          <p className="mt-3 text-caption text-muted">Close Eye · Serving Hyderabad · Launching {FOUNDER_LAUNCH_LABEL}</p>
         </div>
       </footer>
     </div>
