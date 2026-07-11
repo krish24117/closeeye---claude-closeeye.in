@@ -7,6 +7,11 @@ alter table public.profiles
 
 comment on column public.profiles.founder_followed_up_at is 'Founder ops: when this registrant was last marked followed up.';
 
+-- `create or replace` cannot change a function's return type, and we're adding
+-- followed_up_at to the returned row — so drop the earlier (20260720) definition
+-- first, then recreate.
+drop function if exists public.admin_founder_registrants();
+
 create or replace function public.admin_founder_registrants()
 returns table (
   id              uuid,
