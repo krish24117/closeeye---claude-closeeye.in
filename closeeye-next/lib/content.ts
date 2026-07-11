@@ -142,12 +142,47 @@ export const TRUST_PILLARS: TrustPillar[] = [
 ]
 
 /* ── Founder story excerpt (mirrors the production Founder's Story) ─────── */
+/**
+ * THE canonical Close Eye founder story — the single source of truth. Every
+ * surface (founder page, home teaser, founder landing, About) renders FROM here;
+ * do not write alternate versions elsewhere. Shorten only where space demands it
+ * (use `storyShort`) and never change the underlying narrative.
+ */
 export const FOUNDER = {
   name: 'Krishna',
+  fullName: 'Krishna Reddy',
   role: 'Founder',
   portrait: '/founder.png',
+  /** The one idea the whole company turns on. */
+  pledge: 'When you can’t be there, someone you trust can.',
+  /** Canonical hook, for teasers/quotes. */
   excerpt:
-    "On the day my daughter was born — the happiest day of my life — I realised I had almost no one to call. In that quiet, I understood a fear every family carries: what happens to the people we love when we can't be there? Close Eye is my answer.",
+    'On the day my daughter was born — the happiest day of my life, and one of the quietest, with most of the people I love far away — I understood the quiet worry behind every “we’re fine, don’t worry.” Close Eye is my answer: when you can’t be there, someone you trust can.',
+  /** The full canonical story. */
+  story: [
+    'A little while ago, my daughter was born. It was the happiest day of my life. But it was also one of the quietest.',
+    'As I held her for the first time, I wanted to share that moment with everyone I loved. Most of them were far away. I realised that even in life’s happiest moments, distance can make us feel unexpectedly alone.',
+    'That moment stayed with me. It made me think about my own parents.',
+    'Like millions of people, I live with a quiet worry. Every phone call ends with, “We’re fine, don’t worry.” But being told everything is fine is very different from knowing it.',
+    'I didn’t need another app. I didn’t need another emergency service. I didn’t need someone to replace my family. I simply wished there was someone I trusted who could spend real time with my parents, sit with them for a while, notice the small things, and let me know honestly how they were doing.',
+    'Not during an emergency. Not only when something goes wrong. Just because they matter.',
+    'That is why I built Close Eye.',
+    'Close Eye is not a healthcare company. It is not an emergency response service. It is a trust platform built around one simple idea: when you can’t be there, someone you trust can.',
+    'Every visit is about presence. Every conversation is about dignity. Every update is about giving families peace of mind instead of uncertainty.',
+    'We don’t replace family. We help families stay close, even when life keeps them apart.',
+  ],
+  /** The same narrative, shortened for space-limited surfaces (e.g. the landing). */
+  storyShort: [
+    'A little while ago, my daughter was born — the happiest day of my life, and one of the quietest, with most of the people I love far away.',
+    'It made me think of my own parents. Every call ends with “we’re fine, don’t worry” — but being told everything is fine is very different from knowing it.',
+    'I didn’t want an app, or an emergency service, or someone to replace family. I just wished someone I trusted could spend real time with them and tell me honestly how they are. That’s why I built Close Eye.',
+  ],
+  /** Founder sign-off, used at the end of the story wherever it appears. */
+  signature: {
+    name: 'Krishna Reddy',
+    role: 'Founder, Close Eye',
+    line: 'Thank you for trusting us with the people you love.',
+  },
 } as const
 
 /* ── Membership ────────────────────────────────────────────────────────── */

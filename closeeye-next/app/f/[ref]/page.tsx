@@ -10,11 +10,11 @@ import { LogoMark } from '@/components/ui/logo'
 import { setFounderSessionHint, setFounderRef } from '@/lib/founder-funnel'
 import { FOUNDER_LAUNCH_LABEL } from '@/lib/launch'
 import { whatsappLink } from '@/lib/site'
+import { FOUNDER } from '@/lib/content'
 
-const FOUNDER = 'Krishna'
 const REGISTER_HREF = '/auth?intent=join'
 const founderWhatsApp = () =>
-  whatsappLink(`Hi ${FOUNDER}, I saw the Close Eye invitation and I'd like to ask about my family in Hyderabad.`)
+  whatsappLink(`Hi ${FOUNDER.name}, I saw the Close Eye invitation and I'd like to ask about my family in Hyderabad.`)
 
 /** A calm, letter-like column — a personal invitation, not a marketing page. */
 function Section({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -76,9 +76,9 @@ export default function FounderLandingPage() {
         </p>
 
         <div className="mt-8 flex items-center gap-4">
-          <Image src="/founder.png" alt={`${FOUNDER}, founder of Close Eye`} width={72} height={72} className="h-[72px] w-[72px] shrink-0 rounded-full object-cover shadow-sm" />
+          <Image src="/founder.png" alt={`${FOUNDER.name}, founder of Close Eye`} width={72} height={72} className="h-[72px] w-[72px] shrink-0 rounded-full object-cover shadow-sm" />
           <div>
-            <p className="text-body font-semibold">Hi, I’m {FOUNDER}.</p>
+            <p className="text-body font-semibold">Hi, I’m {FOUNDER.name}.</p>
             <p className="text-body-sm text-muted">Founder • Close Eye · Hyderabad</p>
           </div>
         </div>
@@ -93,15 +93,15 @@ export default function FounderLandingPage() {
 
       <div className="mx-auto my-14 h-px w-full max-w-2xl bg-line/70" />
 
-      {/* 2 · FOUNDER STORY — short, emotional, memorable */}
+      {/* 2 · FOUNDER STORY — the canonical story (lib/content.ts), shortened for this space */}
       <Section>
         <h2 className="text-h3 tracking-tight">Why I built this</h2>
         <div className="mt-5 flex flex-col gap-3 text-body leading-relaxed text-ink/90">
-          <p>Every call with my parents ended the same way.</p>
-          <p className="text-lead font-medium text-ink">“We’re fine. Don’t worry.”</p>
-          <p>But I still worried. Not because something was wrong — because I couldn’t see for myself.</p>
-          <p>I realised thousands of families quietly carry the same feeling. That’s why I built Close Eye.</p>
+          {FOUNDER.storyShort.map((p) => (
+            <p key={p.slice(0, 24)}>{p}</p>
+          ))}
         </div>
+        <p className="mt-6 text-body-sm text-muted">— {FOUNDER.signature.name}, {FOUNDER.signature.role}</p>
       </Section>
 
       {/* 3 · WHY HYDERABAD — flows as a quiet thought, not a boxed module */}
@@ -194,7 +194,7 @@ export default function FounderLandingPage() {
           <p className="mt-2 max-w-md text-body-sm leading-relaxed text-muted">It takes two minutes, and there’s nothing to pay today.</p>
           <Button asChild size="lg" className="mt-6"><Link href={REGISTER_HREF}>Become a Founding Family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
           <p className="mt-8 max-w-md text-body-sm leading-relaxed text-muted">Would you rather just talk? I read every message myself.</p>
-          <Button asChild variant="text" size="md" className="mt-1.5"><a href={founderWhatsApp()} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Message {FOUNDER} on WhatsApp</a></Button>
+          <Button asChild variant="text" size="md" className="mt-1.5"><a href={founderWhatsApp()} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Message {FOUNDER.name} on WhatsApp</a></Button>
         </div>
       </Section>
       </main>

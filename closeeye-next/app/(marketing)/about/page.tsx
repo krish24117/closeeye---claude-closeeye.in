@@ -17,7 +17,7 @@ const PILLARS: { icon: LucideIcon; h: string; p: string }[] = [
 ]
 
 const STORY = [
-  { h: 'Our story', p: 'Close Eye began with a simple, personal worry — being far from ageing parents and wishing someone kind could just be there. We built the service we needed ourselves.' },
+  { h: 'Our story', p: 'Close Eye began on the day our founder’s daughter was born — a happy day made quiet by distance from the people he loved. It became a promise: when you can’t be there, someone you trust can.' },
   { h: 'Why Close Eye exists', p: 'Because distance shouldn’t mean absence. So many families live far from ageing parents; Close Eye is the trusted presence that stands beside them — never replacing family, always strengthening it.' },
   { h: 'How Close Eye works', p: 'You tell us about your family. We match a verified Guardian or Companion nearby, coordinate every visit through a Presence Manager, and keep you close with warm reports after each one.' },
   { h: 'Our human-presence philosophy', p: 'Technology can inform you, but only a person can reassure you. We lead with warmth — presence before procedure — and let software quietly handle the rest: coordination, records, and keeping you close.' },

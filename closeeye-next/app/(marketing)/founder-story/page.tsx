@@ -10,16 +10,8 @@ import { FOUNDER } from '@/lib/content'
 
 export const metadata: Metadata = {
   title: 'Founder Story',
-  description:
-    'Why Close Eye exists — the story of one quiet hospital room, and the promise it became.',
+  description: 'Why Close Eye exists — the founder’s story, and the promise behind it.',
 }
-
-const STORY: string[] = [
-  'A little while ago, on a June morning, my daughter was born. It was the happiest day of my life — and, unexpectedly, one of the loneliest. In that room there were only a few of us. Everyone else I loved was far away.',
-  'I held my daughter for the first time and wanted to tell the whole world. And I realised I had almost no one to call. For the first time, I understood what loneliness feels like in life’s most precious moment.',
-  'Then a thought came — the one every parent quietly carries. Not someone to replace family. Something to strengthen it. A trusted circle. A trusted presence. Someone who would stand beside the people we love, when we can’t be there ourselves.',
-  'That was the moment Close Eye stopped being a startup idea and became my responsibility. So that no family faces life’s most important moments alone.',
-]
 
 export default function FounderStoryPage() {
   return (
@@ -64,28 +56,31 @@ export default function FounderStoryPage() {
         </Container>
       </div>
 
-      {/* The story */}
+      {/* The story — rendered from the single canonical source (lib/content.ts). */}
       <Container className="section-pad">
         <div className="mx-auto max-w-prose">
-          <p className="text-lead text-ink">{FOUNDER.excerpt}</p>
-          <div className="mt-8 flex flex-col gap-6 text-body text-ink/85">
-            {STORY.slice(0, 2).map((p) => (
+          <h2 className="text-h3 text-ink">Why I built Close Eye</h2>
+          <div className="mt-6 flex flex-col gap-6 text-body text-ink/85">
+            {FOUNDER.story.slice(0, 7).map((p) => (
               <p key={p.slice(0, 24)}>{p}</p>
             ))}
           </div>
 
           <div className="my-12 border-y border-line py-10">
-            <Quote size="hero">
-              We don&apos;t replace family. We help it stay close — even across an
-              ocean.
-            </Quote>
+            <Quote size="hero">{FOUNDER.pledge}</Quote>
           </div>
 
           <div className="flex flex-col gap-6 text-body text-ink/85">
-            {STORY.slice(2).map((p) => (
+            {FOUNDER.story.slice(7).map((p) => (
               <p key={p.slice(0, 24)}>{p}</p>
             ))}
-            <p className="text-ink">— {FOUNDER.name}, Founder</p>
+          </div>
+
+          {/* Founder sign-off */}
+          <div className="mt-10 border-t border-line pt-8">
+            <p className="text-h4 text-ink">— {FOUNDER.signature.name}</p>
+            <p className="mt-0.5 text-body-sm text-muted">{FOUNDER.signature.role}</p>
+            <p className="mt-4 text-lead italic text-ink/85">“{FOUNDER.signature.line}”</p>
           </div>
 
           <div className="mt-12 flex flex-col gap-8 border-t border-line pt-8 sm:flex-row sm:items-center sm:justify-between">
