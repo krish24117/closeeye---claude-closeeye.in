@@ -128,3 +128,46 @@ export function whatsappList(rows: RegistrantView[]): string {
     .map((r) => `${(r.fullName ?? '').trim()} ${r.phone}`.trim())
     .join('\n')
 }
+
+/* ── Founder outbound actions (call / whatsapp / email) ──────────────────── */
+
+export interface FounderAction {
+  registrantId: string
+  actionType: string // 'call' | 'whatsapp' | 'email' | 'followed_up' | 'note'
+  createdAt: string
+}
+
+export const ACTION_LABEL: Record<string, string> = {
+  call: 'Called',
+  whatsapp: 'WhatsApp sent',
+  email: 'Emailed',
+  followed_up: 'Marked followed up',
+  note: 'Note added',
+}
+
+/** Founder's call/WhatsApp counts for the IST day of `nowIso`. */
+export function founderActivityToday(actions: FounderAction[], nowIso: string): { calls: number; whatsapps: number } {
+  const today = istDayKey(nowIso)
+  let calls = 0
+  let whatsapps = 0
+  for (const a of actions) {
+    if (istDayKey(a.createdAt) !== today) continue
+    if (a.actionType === 'call') calls++
+    else if (a.actionType === 'whatsapp') whatsapps++
+  }
+  return { calls, whatsapps }
+}
+
+/** Registrant ids the founder has actively reached (≥1 call or WhatsApp). */
+export function reachedIds(actions: FounderAction[]): Set<string> {
+  const s = new Set<string>()
+  for (const a of actions) if (a.actionType === 'call' || a.actionType === 'whatsapp') s.add(a.registrantId)
+  return s
+}
+
+/** One registrant's actions, newest first. */
+export function actionsFor(actions: FounderAction[], registrantId: string): FounderAction[] {
+  return actions
+    .filter((a) => a.registrantId === registrantId)
+    .sort((x, y) => (x.createdAt < y.createdAt ? 1 : -1))
+}

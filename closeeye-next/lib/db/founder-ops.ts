@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import type { FounderAction } from '@/lib/founder-ops-view'
 
 /**
  * Founder ops — the registrant list for the operational dashboard. Reads through
@@ -72,4 +73,37 @@ export async function setFollowedUp(userId: string, value: boolean): Promise<{ e
 export async function setFounderNotes(userId: string, notes: string): Promise<{ error: string | null }> {
   const { error } = await supabase.from('profiles').update({ founder_notes: notes.trim() || null }).eq('id', userId)
   return { error: error?.message ?? null }
+}
+
+export type FounderActionType = 'call' | 'whatsapp' | 'email'
+export type { FounderAction }
+
+/** Log a founder outbound action, fire-and-forget — never blocks the tap, and
+ *  swallows errors (incl. before the founder_actions migration lands). */
+export function logFounderAction(registrantId: string, actionType: FounderActionType): void {
+  try {
+    void supabase
+      .from('founder_actions')
+      .insert({ registrant_id: registrantId, action_type: actionType })
+      .then(() => {}, () => {})
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** All founder actions (admin RLS), newest first — for KPIs + per-family timelines. */
+export async function fetchFounderActions(): Promise<FounderAction[]> {
+  const { data, error } = await supabase
+    .from('founder_actions')
+    .select('registrant_id, action_type, created_at')
+    .order('created_at', { ascending: false })
+  if (error) {
+    console.error('[founder-ops] fetchFounderActions failed:', error.message)
+    return []
+  }
+  return ((data as { registrant_id: string; action_type: string; created_at: string }[] | null) ?? []).map((a) => ({
+    registrantId: a.registrant_id,
+    actionType: a.action_type,
+    createdAt: a.created_at,
+  }))
 }

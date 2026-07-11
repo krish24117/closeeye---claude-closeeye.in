@@ -12,7 +12,11 @@ import {
   phoneList,
   whatsappList,
   planLabel,
+  founderActivityToday,
+  reachedIds,
+  actionsFor,
   type RegistrantView,
+  type FounderAction,
 } from '../closeeye-next/lib/founder-ops-view.ts'
 
 const NOW = '2026-07-11T12:00:00+05:30'
@@ -68,4 +72,20 @@ test('export: CSV escapes commas; phone + whatsapp lists skip missing numbers', 
   assert.equal(planLabel('trust'), 'Care')
   assert.equal(phoneList(rows), '+919000000000')
   assert.equal(whatsappList(rows), 'Ravi, K +919000000000')
+})
+
+test('founder actions: today counts, reached (call/wa only), per-registrant', () => {
+  const actions: FounderAction[] = [
+    { registrantId: 'a', actionType: 'call', createdAt: NOW },
+    { registrantId: 'a', actionType: 'whatsapp', createdAt: NOW },
+    { registrantId: 'b', actionType: 'whatsapp', createdAt: NOW },
+    { registrantId: 'c', actionType: 'call', createdAt: '2026-07-01T09:00:00+05:30' }, // old day
+    { registrantId: 'd', actionType: 'email', createdAt: NOW }, // email ≠ "reached"
+  ]
+  const act = founderActivityToday(actions, NOW)
+  assert.equal(act.calls, 1) // only a's call is today (c is old)
+  assert.equal(act.whatsapps, 2) // a + b today
+  const reached = reachedIds(actions)
+  assert.deepEqual([reached.has('a'), reached.has('b'), reached.has('c'), reached.has('d')], [true, true, true, false])
+  assert.equal(actionsFor(actions, 'a').length, 2)
 })

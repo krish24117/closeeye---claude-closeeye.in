@@ -9,10 +9,11 @@ import { Avatar } from '@/components/family/avatar'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchFounderMetrics, type FounderMetrics } from '@/lib/db/founder-dashboard'
-import { fetchFounderRegistrants, setFollowedUp, setFounderNotes, type FounderRegistrant } from '@/lib/db/founder-ops'
+import { fetchFounderRegistrants, fetchFounderActions, logFounderAction, setFollowedUp, setFounderNotes, type FounderRegistrant, type FounderActionType } from '@/lib/db/founder-ops'
 import {
   registrantStatus, STATUS_LABEL, matchesFilter, matchesSearch, toCSV, phoneList, whatsappList,
-  type Filter, type RegStatus,
+  founderActivityToday, reachedIds, actionsFor, ACTION_LABEL,
+  type Filter, type RegStatus, type FounderAction,
 } from '@/lib/founder-ops-view'
 import { FOUNDER_LAUNCH_LABEL, daysUntilLaunch, launchMode } from '@/lib/launch'
 import { planById } from '@/lib/plans'
@@ -110,18 +111,20 @@ function Row({ label, value }: { label: string; value: string | null | undefined
     </div>
   )
 }
-function DrawerAction({ icon: Icon, label, href, external, tone }: { icon: LucideIcon; label: string; href?: string; external?: boolean; tone?: 'green' }) {
+function DrawerAction({ icon: Icon, label, href, external, tone, onClick }: { icon: LucideIcon; label: string; href?: string; external?: boolean; tone?: 'green'; onClick?: () => void }) {
   const cls = cn('flex flex-col items-center gap-1 rounded-lg border border-line bg-card py-2.5 text-caption font-semibold transition-colors', href ? cn('hover:border-green/40', tone === 'green' ? 'text-green' : 'text-ink') : 'cursor-not-allowed text-muted/40')
   if (!href) return <span className={cls}><Icon className="h-4 w-4" strokeWidth={1.75} /> {label}</span>
-  return <a href={href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className={cls}><Icon className="h-4 w-4" strokeWidth={1.75} /> {label}</a>
+  return <a href={href} onClick={onClick} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className={cls}><Icon className="h-4 w-4" strokeWidth={1.75} /> {label}</a>
 }
 
-function FamilyDrawer({ r, nowIso, onClose, onToggleFollowedUp, onSaveNote }: {
+function FamilyDrawer({ r, actions, nowIso, onClose, onToggleFollowedUp, onSaveNote, onAction }: {
   r: FounderRegistrant
+  actions: FounderAction[]
   nowIso: string
   onClose: () => void
   onToggleFollowedUp: (r: FounderRegistrant) => Promise<void>
   onSaveNote: (r: FounderRegistrant, notes: string) => Promise<void>
+  onAction: (registrantId: string, type: FounderActionType) => void
 }) {
   const [note, setNote] = React.useState(r.notes ?? '')
   const [savingNote, setSavingNote] = React.useState(false)
@@ -132,10 +135,11 @@ function FamilyDrawer({ r, nowIso, onClose, onToggleFollowedUp, onSaveNote }: {
   const plan = planById(r.planId)
   const timeline: { label: string; at: string | null; done: boolean }[] = [
     { label: 'Registered', at: r.registeredAt, done: !!r.registeredAt },
-    { label: `Chose ${plan ? `Close Eye ${plan.short}` : 'a plan'}`, at: r.registeredAt, done: !!r.planId },
-    { label: 'Followed up by founder', at: r.followedUpAt, done: r.followedUp },
-    { label: 'Activated', at: null, done: r.subStatus === 'active' },
-  ]
+    ...(r.planId ? [{ label: `Chose ${plan ? `Close Eye ${plan.short}` : 'a plan'}`, at: r.registeredAt, done: true }] : []),
+    ...actions.map((a) => ({ label: ACTION_LABEL[a.actionType] ?? a.actionType, at: a.createdAt, done: true })),
+    ...(r.followedUp ? [{ label: 'Marked followed up', at: r.followedUpAt, done: true }] : []),
+    ...(r.subStatus === 'active' ? [{ label: 'Activated', at: null, done: true }] : []),
+  ].sort((a, b) => (a.at && b.at ? (a.at < b.at ? -1 : 1) : a.at ? -1 : 1))
 
   return (
     <>
@@ -151,9 +155,9 @@ function FamilyDrawer({ r, nowIso, onClose, onToggleFollowedUp, onSaveNote }: {
         </div>
 
         <div className="grid grid-cols-4 gap-2 border-b border-line px-5 py-4">
-          <DrawerAction icon={Phone} label="Call" href={r.phone ? telHref(r.phone) : undefined} />
-          <DrawerAction icon={MessageCircle} label="WhatsApp" href={r.phone ? waHref(r.phone) : undefined} external tone="green" />
-          <DrawerAction icon={Mail} label="Email" href={r.email ? mailHref(r.email) : undefined} external />
+          <DrawerAction icon={Phone} label="Call" href={r.phone ? telHref(r.phone) : undefined} onClick={() => onAction(r.id, 'call')} />
+          <DrawerAction icon={MessageCircle} label="WhatsApp" href={r.phone ? waHref(r.phone) : undefined} external tone="green" onClick={() => onAction(r.id, 'whatsapp')} />
+          <DrawerAction icon={Mail} label="Email" href={r.email ? mailHref(r.email) : undefined} external onClick={() => onAction(r.id, 'email')} />
           <button type="button" onClick={() => { setBusyFollow(true); void onToggleFollowedUp(r).finally(() => setBusyFollow(false)) }} disabled={busyFollow} className={cn('flex flex-col items-center gap-1 rounded-lg border py-2.5 text-caption font-semibold transition-colors disabled:opacity-60', r.followedUp ? 'border-success/40 bg-success/5 text-success' : 'border-line bg-card text-ink hover:border-green/40')}>
             {busyFollow ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> : <Check className="h-4 w-4" strokeWidth={2} />} {r.followedUp ? 'Followed' : 'Mark done'}
           </button>
@@ -201,6 +205,7 @@ export default function FounderDashboardPage() {
   const isAdmin = isSuperAdmin(profile)
   const [d, setD] = React.useState<FounderMetrics | null>(null)
   const [rows, setRows] = React.useState<FounderRegistrant[] | null>(null)
+  const [actions, setActions] = React.useState<FounderAction[]>([])
   const [nowIso, setNowIso] = React.useState<string | null>(null)
   const [days, setDays] = React.useState<number | null>(null)
   const [live, setLive] = React.useState(false)
@@ -214,7 +219,13 @@ export default function FounderDashboardPage() {
     if (!isAdmin) return
     fetchFounderMetrics().then(setD).catch(() => setD(null))
     fetchFounderRegistrants().then(setRows).catch(() => setRows([]))
+    fetchFounderActions().then(setActions).catch(() => setActions([]))
   }, [isAdmin])
+
+  function logAction(registrantId: string, type: FounderActionType) {
+    setActions((cur) => [{ registrantId, actionType: type, createdAt: new Date().toISOString() }, ...cur])
+    logFounderAction(registrantId, type)
+  }
 
   function showFlash(msg: string) { setFlash(msg); setTimeout(() => setFlash(''), 2000) }
 
@@ -241,6 +252,9 @@ export default function FounderDashboardPage() {
   const needsFollowUp = all.filter((r) => matchesFilter(r, 'follow_up', nowIso)).length
   const filtered = all.filter((r) => matchesFilter(r, filter, nowIso) && matchesSearch(r, query))
   const selected = selectedId ? all.find((r) => r.id === selectedId) ?? null : null
+  const activity = founderActivityToday(actions, nowIso)
+  const reached = new Set<string>([...reachedIds(actions), ...all.filter((r) => r.followedUp).map((r) => r.id)])
+  const reachedPct = all.length ? Math.round((reached.size / all.length) * 100) : null
   const funnel = [
     { label: 'Landing views', value: d.landingViews },
     { label: 'WhatsApp clicks', value: d.whatsappClicks },
@@ -273,6 +287,17 @@ export default function FounderDashboardPage() {
       <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-green/30 bg-accent-soft/25 px-5 py-4 shadow-sm">
         <p className="text-body text-ink"><span className="font-bold">{todayCount}</span> registered today · <span className="font-bold">{needsFollowUp}</span> waiting for your first call</p>
         {needsFollowUp > 0 && <Button size="sm" variant="secondary" onClick={() => setFilter('follow_up')}>Show who to call →</Button>}
+      </section>
+
+      {/* 2b · Your activity today */}
+      <section>
+        <p className={section}>Your activity today</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Tile label="Calls today" value={String(activity.calls)} tone="green" />
+          <Tile label="WhatsApps today" value={String(activity.whatsapps)} tone="green" />
+          <Tile label="Follow-ups pending" value={String(needsFollowUp)} tone={needsFollowUp > 0 ? 'warning' : 'ink'} />
+          <Tile label="Reached" value={reachedPct === null ? '—' : `${reachedPct}%`} hint="Contacted ≥ once" />
+        </div>
       </section>
 
       {/* 3 · Registered families */}
@@ -335,9 +360,9 @@ export default function FounderDashboardPage() {
                         <td className="whitespace-nowrap px-4 py-3 text-muted">{r.followedUpAt ? fmtDateTime(r.followedUpAt) : '—'}</td>
                         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                           <span className="flex items-center justify-end gap-1">
-                            {r.phone && <a href={waHref(r.phone)} target="_blank" rel="noopener noreferrer" title="WhatsApp" className="grid h-8 w-8 place-items-center rounded-full text-green hover:bg-accent-soft"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /></a>}
-                            {r.phone && <a href={telHref(r.phone)} title="Call" className="grid h-8 w-8 place-items-center rounded-full text-ink hover:bg-ink/[0.05]"><Phone className="h-4 w-4" strokeWidth={1.75} /></a>}
-                            {r.email && <a href={mailHref(r.email)} title="Email" className="grid h-8 w-8 place-items-center rounded-full text-ink hover:bg-ink/[0.05]"><Mail className="h-4 w-4" strokeWidth={1.75} /></a>}
+                            {r.phone && <a href={waHref(r.phone)} onClick={() => logAction(r.id, 'whatsapp')} target="_blank" rel="noopener noreferrer" title="WhatsApp" className="grid h-8 w-8 place-items-center rounded-full text-green hover:bg-accent-soft"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /></a>}
+                            {r.phone && <a href={telHref(r.phone)} onClick={() => logAction(r.id, 'call')} title="Call" className="grid h-8 w-8 place-items-center rounded-full text-ink hover:bg-ink/[0.05]"><Phone className="h-4 w-4" strokeWidth={1.75} /></a>}
+                            {r.email && <a href={mailHref(r.email)} onClick={() => logAction(r.id, 'email')} title="Email" className="grid h-8 w-8 place-items-center rounded-full text-ink hover:bg-ink/[0.05]"><Mail className="h-4 w-4" strokeWidth={1.75} /></a>}
                           </span>
                         </td>
                       </tr>
@@ -380,7 +405,7 @@ export default function FounderDashboardPage() {
 
       <p className="text-caption text-muted">Click any family to open their profile, timeline and notes. Reminders, per-family event tracking and daily task list come next.</p>
 
-      {selected && <FamilyDrawer r={selected} nowIso={nowIso} onClose={() => setSelectedId(null)} onToggleFollowedUp={toggleFollowedUp} onSaveNote={saveNote} />}
+      {selected && <FamilyDrawer r={selected} actions={actionsFor(actions, selected.id)} nowIso={nowIso} onClose={() => setSelectedId(null)} onToggleFollowedUp={toggleFollowedUp} onSaveNote={saveNote} onAction={logAction} />}
       {flash && <div className="fixed bottom-5 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-body-sm font-medium text-ivory shadow-lg">{flash}</div>}
     </div>
   )
