@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Users, HeartHandshake, MessageSquareHeart, Sparkles, ArrowRight, ChevronRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { Logo, LogoMark } from '@/components/ui/logo'
+import { Logo } from '@/components/ui/logo'
 import { Button } from '@/components/ui/button'
 import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
@@ -41,9 +41,8 @@ export default function WelcomePage() {
     return (
       <div className="grid min-h-dvh place-items-center bg-ivory px-6">
         <div className="ce-fade-in flex flex-col items-center text-center">
-          <LogoMark className="ce-pulse-soft h-20 w-20" />
-          <p className="mt-6 text-[2.25rem] font-extrabold lowercase leading-none tracking-[-0.02em] text-ink">close eye</p>
-          <p className="mt-3 text-body text-muted">Care beyond presence</p>
+          <Logo lockup="stacked" height={176} className="ce-pulse-soft" />
+          <p className="mt-5 text-body text-muted">Care beyond presence</p>
         </div>
       </div>
     )
