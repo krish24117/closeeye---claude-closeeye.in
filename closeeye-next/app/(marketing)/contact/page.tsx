@@ -86,7 +86,7 @@ export default function ContactPage() {
       <section id="emergency" className="mt-14 scroll-mt-28 rounded-xl border border-line bg-ink p-8 text-white shadow-sm">
         <div className="flex items-start gap-4">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white/10 text-accent"><Siren className="h-6 w-6" strokeWidth={1.5} /></span>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <h2 className="text-h3 text-white">Need us urgently?</h2>
             <p className="mt-2 max-w-xl text-body leading-relaxed text-white/70">
               If a family already with Close Eye needs immediate help, contact us right away — every
