@@ -47,6 +47,29 @@ function Resend({ seedKey, onResend }: { seedKey: number; onResend: () => void }
   )
 }
 
+/**
+ * The centred card frame shared by every auth state. Defined at MODULE scope on
+ * purpose: a component declared inside AuthFlow would be a new function identity
+ * on every render, so each keystroke would remount the email <input> — dropping
+ * focus and dismissing the mobile keyboard after every character.
+ */
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="grid min-h-dvh place-items-center bg-ivory px-5 py-10">
+      <div className="ce-fade-in w-full max-w-sm">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <LogoMark className="h-11 w-11" />
+          <p className="mt-3 text-[1.5rem] font-extrabold lowercase leading-none tracking-[-0.02em] text-ink">close eye</p>
+        </div>
+        {children}
+        <p className="mt-6 text-center text-caption text-muted">
+          By continuing you agree to our <Link href="/terms" className="font-semibold text-green hover:underline">Terms</Link> &amp; <Link href="/privacy" className="font-semibold text-green hover:underline">Privacy</Link>.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function AuthFlow() {
   const router = useRouter()
   const params = useSearchParams()
@@ -123,21 +146,6 @@ function AuthFlow() {
     // straight to their family space.
     router.replace('/family')
   }
-
-  const Shell = ({ children }: { children: React.ReactNode }) => (
-    <div className="grid min-h-dvh place-items-center bg-ivory px-5 py-10">
-      <div className="ce-fade-in w-full max-w-sm">
-        <div className="mb-6 flex flex-col items-center text-center">
-          <LogoMark className="h-11 w-11" />
-          <p className="mt-3 text-[1.5rem] font-extrabold lowercase leading-none tracking-[-0.02em] text-ink">close eye</p>
-        </div>
-        {children}
-        <p className="mt-6 text-center text-caption text-muted">
-          By continuing you agree to our <Link href="/terms" className="font-semibold text-green hover:underline">Terms</Link> &amp; <Link href="/privacy" className="font-semibold text-green hover:underline">Privacy</Link>.
-        </p>
-      </div>
-    </div>
-  )
 
   if (params.get('timeout') === '1') {
     return (
