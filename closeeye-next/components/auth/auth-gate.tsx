@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { hasFounderSessionHint } from '@/lib/founder-funnel'
-import { isGuardian } from '@/lib/roles'
+import { isGuardian, isSuperAdmin, isPresenceManager } from '@/lib/roles'
 import { isNative } from '@/lib/native'
 import { LogoMark } from '@/components/ui/logo'
 
@@ -51,10 +51,11 @@ export function AuthGate() {
       // a signed-out guardian route sends to the Guardian login, not family welcome.
       if (onApp && !onFlow) target = pathname.startsWith('/guardian') ? '/guardian/login' : '/welcome'
       else if (firstNative && !onFlow) target = '/welcome' // native launch on marketing
-    } else if (onboardingComplete === false) {
-      // Founder pre-launch registrants finish a different, loved-one-free journey
-      // (/founder/*). A normal user (no hint, not on /founder) is routed to
-      // /onboarding exactly as before — this branch only adds the founder path.
+    } else if (onboardingComplete === false && !isSuperAdmin(profile) && !isPresenceManager(profile)) {
+      // Family setup only. Founder pre-launch registrants finish a different,
+      // loved-one-free journey (/founder/*); a normal user (no hint, not on
+      // /founder) goes to /onboarding as before. Staff (admin / Presence Manager)
+      // never do family onboarding — they're routed to their console below.
       if (pathname.startsWith('/founder/')) {
         // stay — the founder journey pages (/founder/*) guide the rest of setup.
         // (Precise trailing slash: NOT the /founder-story or /founder-brief pages.)
@@ -64,8 +65,17 @@ export function AuthGate() {
         target = '/onboarding' // must finish onboarding
       }
     } else {
-      // Guardians (companions) land in the Guardian app; everyone else in Family.
-      const home = isGuardian(profile) ? '/guardian' : '/family'
+      // Route each role to its home: Guardians → Guardian app, Super Admins →
+      // Admin console, Presence Managers → Presence Console, else → Family.
+      // (Previously every non-guardian landed in Family, so an admin who signed
+      // in was dropped into the family dashboard instead of /admin.)
+      const home = isGuardian(profile)
+        ? '/guardian'
+        : isSuperAdmin(profile)
+        ? '/admin'
+        : isPresenceManager(profile)
+        ? '/console'
+        : '/family'
       if (onFlow) target = home // skip the auth flow once fully set up
       else if (firstNative && !onApp) target = home // native launch on marketing
     }
