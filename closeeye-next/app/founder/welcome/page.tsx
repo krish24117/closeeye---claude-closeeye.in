@@ -16,6 +16,13 @@ const inputCls =
 
 const RELATIONSHIPS = ['My parents', 'My mother', 'My father', 'My spouse', 'Someone else'] as const
 
+/** Mobile is required to register a founding family — we need a way to reach them.
+ *  Lenient on format so NRI numbers pass: 10–15 digits, bare or with a country code. */
+function isValidPhone(p: string): boolean {
+  const digits = p.replace(/\D/g, '')
+  return digits.length >= 10 && digits.length <= 15
+}
+
 export default function FounderWelcomePage() {
   const router = useRouter()
   const { user, loading } = useAuth()
@@ -34,9 +41,9 @@ export default function FounderWelcomePage() {
   React.useEffect(() => { if (metaName) setName((n) => n || metaName) }, [metaName])
 
   async function next() {
-    if (busy || !user || name.trim().length < 2) return
+    if (busy || !user || name.trim().length < 2 || !isValidPhone(phone)) return
     setBusy(true)
-    // Save name + optional contact — onboarding is marked complete later, at the end.
+    // Save name + contact (mobile required) — onboarding is marked complete later, at the end.
     await saveFounderName(user.id, { fullName: name, phone, relationship })
     router.push('/founder/membership')
   }
@@ -83,8 +90,9 @@ export default function FounderWelcomePage() {
           </label>
 
           <label className="mt-4 block">
-            <span className="mb-1.5 block text-body-sm font-medium text-ink">Mobile number <span className="font-normal text-muted">(optional)</span></span>
+            <span className="mb-1.5 block text-body-sm font-medium text-ink">Mobile number</span>
             <input value={phone} onChange={(e) => setPhone(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="+91 90000 00000" type="tel" inputMode="tel" autoComplete="tel" className={inputCls} />
+            <span className="mt-1.5 block text-caption text-muted">So we can reach you about your first Presence Visit.{phone.trim() && !isValidPhone(phone) ? <span className="text-warning"> Please enter a valid mobile number.</span> : ''}</span>
           </label>
 
           <div className="mt-4">
@@ -97,7 +105,7 @@ export default function FounderWelcomePage() {
           </div>
 
           <div className="flex-1" />
-          <Button size="lg" className={cn('mt-8 w-full')} disabled={busy || name.trim().length < 2} onClick={next}>
+          <Button size="lg" className={cn('mt-8 w-full')} disabled={busy || name.trim().length < 2 || !isValidPhone(phone)} onClick={next}>
             {busy ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> One moment…</> : <>Continue <ArrowRight className="h-5 w-5" strokeWidth={2} /></>}
           </Button>
         </div>
