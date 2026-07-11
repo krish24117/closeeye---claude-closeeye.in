@@ -85,8 +85,9 @@ export default function AdminDashboard() {
     { label: 'MRR', value: fmtINR(d.mrr), tone: 'green' },
     { label: 'Outstanding', value: fmtINR(d.outstanding), tone: d.outstanding > 0 ? 'warning' : 'ink' },
   ]
-  const operational = [
+  const operational: { label: string; value: string; tone?: 'ink' | 'green' | 'warning' }[] = [
     { label: 'Active families', value: String(d.families) },
+    { label: 'Founding members', value: String(d.foundingMembers), tone: d.foundingMembers > 0 ? 'green' : 'ink' },
     { label: 'Care Team', value: String(d.careTeam) },
     { label: 'Bookings this month', value: String(d.bookingsMonth) },
     { label: 'Completed', value: String(d.completedMonth) },

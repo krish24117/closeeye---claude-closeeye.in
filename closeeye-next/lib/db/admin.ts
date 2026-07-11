@@ -46,6 +46,7 @@ export interface AdminOverview {
   // operational
   families: number
   newFamiliesMonth: number
+  foundingMembers: number
   careTeam: number
   pendingApplications: number
   bookingsMonth: number
@@ -75,7 +76,7 @@ interface StatusRow { status: string | null }
 interface ReqRow { payment_status: string | null; amount_paise: number | null }
 
 export async function fetchAdminOverview(): Promise<AdminOverview> {
-  const [bk, lo, sub, mem, comp, app, req] = await Promise.all([
+  const [bk, lo, sub, mem, comp, app, req, fnd] = await Promise.all([
     supabase.from('bookings').select('id, loved_one_id, status, payment_status, amount_paise, scheduled_at, paid_at, service_type, attention_needed'),
     supabase.from('loved_ones').select('id, family_user_id, city, created_at'),
     supabase.from('subscriptions').select('plan_id, status, current_end'),
@@ -83,6 +84,9 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
     supabase.from('companions').select('status'),
     supabase.from('companion_applications').select('status'),
     supabase.from('booking_requests').select('payment_status, amount_paise'),
+    // Founding members = the reserved founding families (is_founding_member flag +
+    // founding_number). Distinct from "families" (paying care customers = loved_ones).
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_founding_member', true),
   ])
   const bookings = (bk.data as BookingRow[] | null) ?? []
   const lovedOnes = (lo.data as LovedRow[] | null) ?? []
@@ -91,6 +95,7 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
   const comps = (comp.data as StatusRow[] | null) ?? []
   const apps = (app.data as StatusRow[] | null) ?? []
   const reqs = (req.data as ReqRow[] | null) ?? []
+  const foundingMembers = fnd.count ?? 0
 
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
@@ -140,7 +145,7 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
 
   return {
     revenueTotal, revenueMonth, outstanding, mrr, activeSubs, activeMemberships,
-    families, newFamiliesMonth, careTeam, pendingApplications,
+    families, newFamiliesMonth, foundingMembers, careTeam, pendingApplications,
     bookingsMonth, completedMonth, cancelledMonth, presenceToday,
     revenueByCity, revenueByService, alerts,
   }
