@@ -122,7 +122,7 @@ export default function OnboardingPage() {
           {step > 0 ? (
             <button type="button" onClick={back} aria-label="Back" className="grid h-9 w-9 place-items-center rounded-full text-ink hover:bg-ink/[0.05]"><ArrowLeft className="h-5 w-5" strokeWidth={1.75} /></button>
           ) : (
-            <LogoMark className="h-9 w-9" />
+            <LogoMark variant="mobile" />
           )}
           <div className="flex flex-1 items-center gap-1.5">
             {STEPS.map((_, n) => (

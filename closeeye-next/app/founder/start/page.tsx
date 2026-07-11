@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { MapPin, ArrowRight, ArrowLeft, Loader2, Check, MessageCircle } from 'lucide-react'
-import { LogoMark } from '@/components/ui/logo'
+import { Logo } from '@/components/ui/logo'
 import { Button } from '@/components/ui/button'
 import { FounderSteps } from '@/components/founder/founder-steps'
 import { setFounderSessionHint, getFounderRef } from '@/lib/founder-funnel'
@@ -57,8 +57,7 @@ export default function FounderServiceAreaPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-ivory">
       <header className="mx-auto flex w-full max-w-md items-center gap-2 px-5 pt-6">
-        <LogoMark className="h-8 w-8" />
-        <span className="text-body-sm font-semibold tracking-tight text-ink">Close Eye</span>
+        <Logo variant="mobile" />
         <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1 text-caption font-semibold text-green">
           <MapPin className="h-3.5 w-3.5" strokeWidth={2} /> Serving Hyderabad
         </span>

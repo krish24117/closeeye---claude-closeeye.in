@@ -54,7 +54,7 @@ export default function GuardianLogin() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-12">
       <div className="flex flex-col items-center text-center">
-        <Logo />
+        <Logo variant="mobile" />
         <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1 text-caption font-semibold text-green">
           <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} /> Guardian sign in
         </span>

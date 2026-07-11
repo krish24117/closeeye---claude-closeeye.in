@@ -5,7 +5,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowRight, Loader2, Clock, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
-import { LogoMark } from '@/components/ui/logo'
+import { Logo } from '@/components/ui/logo'
 import { Button } from '@/components/ui/button'
 import { ErrorState } from '@/components/ui/states'
 import { FunnelSteps } from '@/components/funnel/funnel-steps'
@@ -45,8 +45,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="grid min-h-dvh place-items-center bg-ivory px-5 py-10">
       <div className="ce-fade-in w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center text-center">
-          <LogoMark className="h-11 w-11" />
-          <p className="mt-3 text-[1.5rem] font-extrabold lowercase leading-none tracking-[-0.02em] text-ink">close eye</p>
+          <Logo variant="mobile" />
         </div>
         {children}
         <p className="mt-6 text-center text-caption text-muted">

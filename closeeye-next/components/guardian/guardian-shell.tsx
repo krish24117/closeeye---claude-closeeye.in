@@ -15,7 +15,7 @@ import {
   Bell,
   BellOff,
 } from 'lucide-react'
-import { LogoMark } from '@/components/ui/logo'
+import { Logo } from '@/components/ui/logo'
 import { Overlay } from '@/components/family/overlay'
 import { Avatar } from '@/components/family/avatar'
 import { AvatarLink } from '@/components/ui/avatar-link'
@@ -85,11 +85,7 @@ export function GuardianShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-line bg-ivory/90 backdrop-blur-xl">
         <div className="mx-auto flex h-[3.75rem] max-w-lg items-center justify-between gap-3 px-5">
           <Link href="/guardian" aria-label="Guardian Console" className="flex items-center gap-2.5">
-            <LogoMark className="h-8 w-8 shrink-0" />
-            <span className="flex flex-col leading-none">
-              <span className="text-[1.15rem] font-extrabold lowercase leading-none tracking-[-0.02em] text-ink">close eye</span>
-              <span className="mt-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-muted">Guardian Console</span>
-            </span>
+            <Logo variant="sidebar" sublabel="Guardian Console" />
           </Link>
           <div className="flex items-center gap-1">
             <button

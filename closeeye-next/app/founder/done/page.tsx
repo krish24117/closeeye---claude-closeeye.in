@@ -46,7 +46,7 @@ export default function FounderDonePage() {
     <div className="grid min-h-dvh place-items-center bg-ivory px-5 py-10">
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center">
-          <LogoMark className="h-9 w-9" />
+          <LogoMark variant="marketing" />
         </div>
 
         {state === 'saving' && (

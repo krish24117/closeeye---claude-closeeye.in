@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { MapPin, ShieldCheck, HeartHandshake, MessageCircle, Camera, Clock, ArrowRight, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { LogoMark } from '@/components/ui/logo'
+import { Logo } from '@/components/ui/logo'
 import { setFounderSessionHint, setFounderRef } from '@/lib/founder-funnel'
 import { logFounderEvent } from '@/lib/founder-events'
 import { FOUNDER_LAUNCH_LABEL } from '@/lib/launch'
@@ -84,8 +84,7 @@ export default function FounderLandingPage() {
     <div className="min-h-dvh bg-ivory pb-24 text-ink">
       {/* Minimal chrome — just the mark, so the focus stays on the invitation. */}
       <header className="mx-auto flex w-full max-w-2xl items-center gap-2 px-5 pt-7">
-        <LogoMark className="h-7 w-7" />
-        <span className="text-body-sm font-semibold tracking-tight">Close Eye</span>
+        <Logo variant="marketing" />
         <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1 text-caption font-semibold text-green">
           <MapPin className="h-3.5 w-3.5" strokeWidth={2} /> Serving Hyderabad
         </span>

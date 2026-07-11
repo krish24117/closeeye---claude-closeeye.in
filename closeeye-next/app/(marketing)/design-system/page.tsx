@@ -69,7 +69,7 @@ export default function DesignSystemPage() {
   return (
     <Container className="section-pad pt-32 sm:pt-36">
       <header className="max-w-2xl">
-        <Logo />
+        <Logo variant="marketing" />
         <h1 className="mt-8 text-h1">The Close Eye Design System</h1>
         <p className="mt-5 text-lead text-muted">
           One language for the website, app, WhatsApp, deck and print. If the logo

@@ -82,7 +82,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-card px-4 py-6 lg:flex">
         <div className="flex items-center justify-between px-2">
           <Link href="/family" aria-label="Family Space home">
-            <Logo />
+            <Logo variant="sidebar" />
           </Link>
           <div className="flex items-center gap-1">
             <BellButton count={unread} onClick={openNotif} />
@@ -125,7 +125,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
       {/* ── Mobile top bar ──────────────────────────────────────────────── */}
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-ivory/90 px-5 backdrop-blur-xl lg:hidden">
         <Link href="/family" aria-label="Family Space home">
-          <Logo />
+          <Logo variant="sidebar" />
         </Link>
         <div className="flex items-center gap-1">
           <BellButton count={unread} onClick={openNotif} />

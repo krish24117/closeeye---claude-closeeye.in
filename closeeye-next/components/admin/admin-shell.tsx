@@ -8,7 +8,7 @@ import {
   MapPin, FileText, ScrollText, Menu, X, ArrowUpRight, Rocket,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { LogoMark } from '@/components/ui/logo'
+import { Logo } from '@/components/ui/logo'
 import { Avatar } from '@/components/family/avatar'
 import { Overlay } from '@/components/family/overlay'
 import { UserMenu } from '@/components/ui/user-menu'
@@ -69,11 +69,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const SidebarInner = (
     <>
       <Link href="/admin" className="flex items-center gap-2.5 px-6 py-5" onClick={() => setMenu(false)}>
-        <LogoMark className="h-8 w-8 shrink-0" />
-        <span className="flex flex-col leading-none">
-          <span className="text-[1.15rem] font-extrabold lowercase leading-none tracking-[-0.02em] text-ink">close eye</span>
-          <span className="mt-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-muted">Operations Admin</span>
-        </span>
+        <Logo variant="sidebar" sublabel="Operations Admin" />
       </Link>
       <NavList pathname={pathname} onNavigate={() => setMenu(false)} />
       <div className="m-3 flex flex-col gap-2">

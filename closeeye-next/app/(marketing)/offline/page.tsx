@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function OfflinePage() {
   return (
     <Container className="flex min-h-[70vh] flex-col items-center justify-center py-24 text-center">
-      <Logo />
+      <Logo variant="marketing" />
       <span className="mt-10 grid h-14 w-14 place-items-center rounded-lg bg-accent-soft text-green">
         <WifiOff className="h-6 w-6" strokeWidth={1.5} />
       </span>

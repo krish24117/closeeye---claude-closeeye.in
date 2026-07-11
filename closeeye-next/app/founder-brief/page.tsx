@@ -77,7 +77,7 @@ export default function FounderBriefPage() {
 
         {/* Masthead */}
         <header className="fb-section flex items-start justify-between gap-6">
-          <Logo />
+          <Logo variant="marketing" />
           <div className="text-right">
             <p className="text-caption font-semibold uppercase tracking-[0.14em] text-green">Founder Brief</p>
             <p className="mt-1 text-caption text-muted">Confidential</p>

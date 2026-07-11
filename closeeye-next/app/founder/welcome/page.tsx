@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, Loader2, Calendar, CreditCard, HeartHandshake } from 'lucide-react'
-import { LogoMark } from '@/components/ui/logo'
+import { Logo } from '@/components/ui/logo'
 import { Button } from '@/components/ui/button'
 import { FounderSteps } from '@/components/founder/founder-steps'
 import { useAuth } from '@/components/auth/auth-provider'
@@ -61,8 +61,7 @@ export default function FounderWelcomePage() {
   return (
     <div className="flex min-h-dvh flex-col bg-ivory">
       <header className="mx-auto flex w-full max-w-md items-center gap-2 px-5 pt-6">
-        <LogoMark className="h-8 w-8" />
-        <span className="text-body-sm font-semibold tracking-tight text-ink">Close Eye</span>
+        <Logo variant="mobile" />
       </header>
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 py-8">

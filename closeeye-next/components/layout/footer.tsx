@@ -12,7 +12,7 @@ export function Footer() {
         <div className="grid gap-12 lg:grid-cols-[1.5fr_1fr_1fr_1.2fr]">
           {/* Brand */}
           <div className="max-w-xs">
-            <Logo tone="light" />
+            <Logo variant="footer" tone="light" />
             <p className="mt-4 text-body-sm font-medium text-white/80">{SITE.shortTagline}</p>
             <p className="mt-3 text-body-sm leading-relaxed text-white/55">
               {SITE.legalName} is a trusted human presence for the people you love —

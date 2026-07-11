@@ -78,7 +78,7 @@ export function Navbar() {
         aria-label="Primary"
       >
         <Link href="/" aria-label="Close Eye home" className="-my-2 rounded-md py-2">
-          <Logo tone={overDark ? 'light' : 'dark'} />
+          <Logo variant="marketing" tone={overDark ? 'light' : 'dark'} />
         </Link>
 
         {/* Desktop */}
