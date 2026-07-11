@@ -81,10 +81,12 @@ export function toVisitDetailInput(d: VisitDetailsState): VisitDetailInput {
   }
 }
 
-export function VisitDetailsForm({ value, onChange, allowsEmergency }: {
+export function VisitDetailsForm({ value, onChange, allowsEmergency, hideSpecialInstructions }: {
   value: VisitDetailsState
   onChange: (patch: Partial<VisitDetailsState>) => void
   allowsEmergency: boolean
+  /** Custom Requests capture the task in their own step, so hide the generic field. */
+  hideSpecialInstructions?: boolean
 }) {
   const slots = TIME_SLOTS.filter((t) => !t.emergencyOnly || allowsEmergency)
   return (
@@ -129,9 +131,11 @@ export function VisitDetailsForm({ value, onChange, allowsEmergency }: {
       <Field label="Building / access instructions" htmlFor="v-access" optional hint="Gate code, which floor, lift or stairs, who to ask for.">
         <Textarea id="v-access" value={value.accessInstructions} onChange={(e) => onChange({ accessInstructions: e.target.value })} rows={2} placeholder="e.g. 3rd floor, no lift. Ring bell twice." />
       </Field>
-      <Field label="Special instructions for this visit" htmlFor="v-special" optional hint="A task or preference for the Guardian.">
-        <Textarea id="v-special" value={value.specialInstructions} onChange={(e) => onChange({ specialInstructions: e.target.value })} rows={2} placeholder="e.g. Please check the medicine box and go for a short walk." />
-      </Field>
+      {!hideSpecialInstructions && (
+        <Field label="Special instructions for this visit" htmlFor="v-special" optional hint="A task or preference for the Guardian.">
+          <Textarea id="v-special" value={value.specialInstructions} onChange={(e) => onChange({ specialInstructions: e.target.value })} rows={2} placeholder="e.g. Please check the medicine box and go for a short walk." />
+        </Field>
+      )}
       <Field label="Notes for the CloseEye team" htmlFor="v-team" optional hint="Anything your Presence Manager should know.">
         <Textarea id="v-team" value={value.teamNotes} onChange={(e) => onChange({ teamNotes: e.target.value })} rows={2} placeholder="e.g. Please call me before the visit." />
       </Field>

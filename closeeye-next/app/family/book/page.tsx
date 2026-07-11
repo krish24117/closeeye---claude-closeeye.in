@@ -7,7 +7,8 @@ import { ArrowLeft, ArrowRight, CalendarCheck, Check, CheckCircle2, Loader2, Map
 import { PageHeader } from '@/components/family/page-header'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/family/avatar'
-import { OptionCard } from '@/components/ui/choice'
+import { OptionCard, Chip } from '@/components/ui/choice'
+import { Field, Textarea } from '@/components/ui/field'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { BOOKING_SERVICES } from '@/features/booking/schema'
@@ -39,17 +40,21 @@ function memberToInput(m: LovedOne) {
   }
 }
 
-type Step = 'type' | 'details' | 'review'
+type Step = 'type' | 'requirement' | 'details' | 'review'
 
-function BookingSteps({ step }: { step: Step }) {
+// Quick-pick prompts for a Custom Request — the family can tap any, then describe.
+const CUSTOM_NEEDS = ['Groceries', 'Medicines', 'Paperwork', 'Festival visit', 'Errands', 'Other']
+
+function BookingSteps({ step, custom }: { step: Step; custom: boolean }) {
   const steps: { id: Step; label: string }[] = [
     { id: 'type', label: 'Visit type' },
+    ...(custom ? [{ id: 'requirement' as Step, label: 'What you need' }] : []),
     { id: 'details', label: 'Visit details' },
     { id: 'review', label: 'Review' },
   ]
   const idx = steps.findIndex((s) => s.id === step)
   return (
-    <ol className="flex items-center gap-2" aria-label={`Step ${idx + 1} of 3`}>
+    <ol className="flex items-center gap-2" aria-label={`Step ${idx + 1} of ${steps.length}`}>
       {steps.map((s, i) => (
         <li key={s.id} className="flex items-center gap-2">
           <span className={cn('inline-flex items-center gap-1.5 text-caption font-medium', i <= idx ? 'text-green' : 'text-muted/60')}>
@@ -77,6 +82,9 @@ export default function FamilyBookPage() {
   const patch = (p: Partial<VisitDetailsState>) => setDetails((d) => ({ ...d, ...p }))
   const [updateProfile, setUpdateProfile] = React.useState(false)
   const [prefilledFor, setPrefilledFor] = React.useState('')
+  // Custom Request only — what the family actually needs (chips + free text).
+  const [reqTags, setReqTags] = React.useState<string[]>([])
+  const [requirement, setRequirement] = React.useState('')
 
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')
@@ -99,6 +107,13 @@ export default function FamilyBookPage() {
   const slotLabel = slotLabelOf(details.timeSlot)
   const firstName = member?.full_name?.split(/\s+/)[0] ?? ''
 
+  // A Custom Request carries its own "what you need" step; the composed requirement
+  // rides into the existing visit_special_instructions field (no backend change).
+  const isCustom = serviceId === 'custom-request'
+  const customRequirement = [reqTags.join(', '), requirement.trim()].filter(Boolean).join(' — ')
+  const effectiveInstructions = isCustom ? customRequirement : details.specialInstructions
+  const instructionsLabel = isCustom ? 'What you need' : 'Instructions'
+
   // Prefill from the member's saved profile (once per member) — prefer the saved
   // emergency contact as the on-site visit contact (often a local relative better
   // placed to coordinate access than the elder). Everything stays editable.
@@ -118,7 +133,8 @@ export default function FamilyBookPage() {
   }, [member, prefilledFor])
 
   function changePerson() { setMemberId(''); setPickChoice(member?.id ?? ''); setStep('type'); setPrefilledFor('') }
-  function goToDetails() { setError(''); if (!service) return setError('Please choose a visit type.'); setStep('details') }
+  function goFromType() { setError(''); if (!service) return setError('Please choose a visit type.'); setStep(isCustom ? 'requirement' : 'details') }
+  function goFromRequirement() { setError(''); if (requirement.trim().length < 4) return setError('Please tell us what you need for this visit.'); setStep('details') }
   function goToReview() { setError(''); const err = visitDetailsError(details); if (err) return setError(err); setStep('review') }
 
   async function confirm() {
@@ -132,7 +148,7 @@ export default function FamilyBookPage() {
         lovedOneId: member.id,
         recipientName: member.full_name,
         requesterWhatsapp: profile?.whatsapp_number || profile?.phone || '',
-        ...toVisitDetailInput(details),
+        ...toVisitDetailInput({ ...details, specialInstructions: effectiveInstructions }),
       })
       // Opt-in only: persist to the durable profile. Address always; the visit
       // contact maps safely — the elder's own phone is filled only if empty, and a
@@ -168,7 +184,7 @@ export default function FamilyBookPage() {
       ['Landmark', details.landmark.trim() || undefined],
       ['Visit contact', `${details.contactName.trim()} · ${details.contactPhone.trim()}`],
       ['Access', details.accessInstructions.trim() || undefined],
-      ['Instructions', details.specialInstructions.trim() || undefined],
+      [instructionsLabel, effectiveInstructions.trim() || undefined],
       ['Notes for the team', details.teamNotes.trim() || undefined],
     ]
     return (
@@ -245,7 +261,8 @@ export default function FamilyBookPage() {
   }
 
   // ── Stepped booking (member resolved) ───────────────────────────────────────
-  const backTo = step === 'type' ? null : step === 'details' ? 'type' : 'details'
+  const backTo: Step | null =
+    step === 'type' ? null : step === 'requirement' ? 'type' : step === 'details' ? (isCustom ? 'requirement' : 'type') : 'details'
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-7">
       <div>
@@ -258,7 +275,7 @@ export default function FamilyBookPage() {
         {lovedOnes.length > 1 && step === 'type' && (
           <button type="button" onClick={changePerson} className="mt-2 text-caption font-semibold text-green hover:underline">Change person</button>
         )}
-        <div className="mt-4"><BookingSteps step={step} /></div>
+        <div className="mt-4"><BookingSteps step={step} custom={isCustom} /></div>
       </div>
 
       {step === 'type' && (
@@ -272,7 +289,26 @@ export default function FamilyBookPage() {
             </div>
           </section>
           {error && <p className="text-caption text-error">{error}</p>}
-          <Button size="lg" className="w-full sm:w-auto sm:self-start" onClick={goToDetails}>Continue <ArrowRight className="h-5 w-5" strokeWidth={2} /></Button>
+          <Button size="lg" className="w-full sm:w-auto sm:self-start" onClick={goFromType}>Continue <ArrowRight className="h-5 w-5" strokeWidth={2} /></Button>
+        </>
+      )}
+
+      {step === 'requirement' && (
+        <>
+          <div>
+            <h2 className="text-h4 text-ink">What do you need?</h2>
+            <p className="mt-1 text-body-sm text-muted">Tell us what {firstName} needs for this visit, so your Guardian arrives ready to help.</p>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            {CUSTOM_NEEDS.map((c) => (
+              <Chip key={c} selected={reqTags.includes(c)} onClick={() => setReqTags((t) => (t.includes(c) ? t.filter((x) => x !== c) : [...t, c]))}>{c}</Chip>
+            ))}
+          </div>
+          <Field label="Describe the request" htmlFor="v-req" hint="The more detail you give, the better we can help.">
+            <Textarea id="v-req" value={requirement} onChange={(e) => setRequirement(e.target.value)} rows={4} placeholder="e.g. Pick up this month’s medicines from Apollo Pharmacy and drop them home; please check the BP monitor is working." />
+          </Field>
+          {error && <p className="text-caption text-error">{error}</p>}
+          <Button size="lg" className="w-full sm:w-auto sm:self-start" onClick={goFromRequirement}>Continue <ArrowRight className="h-5 w-5" strokeWidth={2} /></Button>
         </>
       )}
 
@@ -282,7 +318,16 @@ export default function FamilyBookPage() {
             <h2 className="text-h4 text-ink">Details for this visit</h2>
             <p className="mt-1 text-body-sm text-muted">Prefilled from {firstName}’s profile — review and edit anything for this visit.</p>
           </div>
-          <VisitDetailsForm value={details} onChange={patch} allowsEmergency={!!service?.allowsEmergency} />
+          {isCustom && customRequirement && (
+            <div className="flex items-start justify-between gap-4 rounded-lg border border-line bg-accent-soft/30 p-4">
+              <div className="min-w-0">
+                <p className="text-caption font-semibold uppercase tracking-wide text-green">What you need</p>
+                <p className="mt-1 whitespace-pre-line text-body-sm text-ink">{customRequirement}</p>
+              </div>
+              <button type="button" onClick={() => { setError(''); setStep('requirement') }} className="shrink-0 text-caption font-semibold text-green hover:underline">Edit</button>
+            </div>
+          )}
+          <VisitDetailsForm value={details} onChange={patch} allowsEmergency={!!service?.allowsEmergency} hideSpecialInstructions={isCustom} />
 
           {/* Opt-in — profile stays separate unless the family chooses to save. */}
           <button type="button" role="checkbox" aria-checked={updateProfile} onClick={() => setUpdateProfile((v) => !v)} className="flex items-start gap-3 rounded-lg border border-line bg-card p-4 text-left transition-colors hover:border-ink/20">
@@ -314,7 +359,7 @@ export default function FamilyBookPage() {
                 ['Visit contact', `${details.contactName.trim()} · ${details.contactPhone.trim()}`],
                 ['When', `${new Date(details.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })} · ${slotLabel}`],
                 ['Access', details.accessInstructions.trim() || undefined],
-                ['Instructions', details.specialInstructions.trim() || undefined],
+                [instructionsLabel, effectiveInstructions.trim() || undefined],
                 ['Notes for the team', details.teamNotes.trim() || undefined],
               ] as [string, string | undefined][]).filter(([, v]) => v).map(([label, value], i) => (
                 <div key={label} className={cn('flex items-start justify-between gap-4 px-5 py-3.5', i > 0 && 'border-t border-line')}>
