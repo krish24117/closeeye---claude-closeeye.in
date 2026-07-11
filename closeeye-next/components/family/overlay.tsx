@@ -1,10 +1,20 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
-/** Reusable modal/sheet: bottom-sheet on mobile, centred dialog on desktop. */
+/**
+ * Reusable modal/sheet: bottom-sheet on mobile, centred dialog on desktop.
+ *
+ * Rendered through a portal to `document.body` so its `position: fixed` layer
+ * always resolves against the viewport — never a trapped ancestor. A `transform`,
+ * `filter`, or `backdrop-filter` on any parent (e.g. the frosted admin/console
+ * headers' `backdrop-blur-xl`) otherwise becomes the containing block for fixed
+ * descendants, which would pin and clip this modal inside that header instead of
+ * centring it on screen. The portal is the root-cause fix, not a per-header patch.
+ */
 export function Overlay({
   open,
   onClose,
@@ -16,6 +26,11 @@ export function Overlay({
   children: React.ReactNode
   align?: 'end' | 'center'
 }) {
+  // Portal target (document.body) only exists on the client — gate on mount so
+  // this is SSR-safe. The overlay is closed at mount, so no animation is lost.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -27,7 +42,9 @@ export function Overlay({
     }
   }, [open, onClose])
 
-  return (
+  if (!mounted) return null
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -54,6 +71,7 @@ export function Overlay({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }
