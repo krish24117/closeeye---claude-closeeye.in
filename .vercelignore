@@ -1,11 +1,9 @@
-# This repo hosts TWO Vercel projects that share the same root:
-#   • the Vite app (src/)        → closeeye.in
-#   • closeeye-next/ (Next.js)   → closeeye-next.vercel.app
-#
-# BOTH projects read THIS root .vercelignore during upload, so we must NOT
-# exclude all of closeeye-next/ — doing so starved the closeeye-next project's
-# own build of its source ("No Next.js version detected"). Exclude only the
-# heavy folders that NEITHER web build needs (native shells, build output).
+# closeeye-next/ (Next.js) is the single Close Eye product, deployed from this
+# repo (the Vercel project's Root Directory = closeeye-next). Vercel reads this
+# root .vercelignore during upload, so exclude ONLY the heavy folders the web
+# build does not need — the native Capacitor shells and the Next build output.
+# NEVER exclude any of closeeye-next/'s source, or the build fails with
+# "No Next.js version detected".
 closeeye-next/android
 closeeye-next/ios
 closeeye-next/.next

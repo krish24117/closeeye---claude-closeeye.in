@@ -1,52 +1,24 @@
 {
-  "name": "closeeye-in",
+  "name": "closeeye",
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "description": "Close Eye monorepo root. The product application is closeeye-next/ (Next.js) — the single authoritative Close Eye codebase. This root holds shared infrastructure only: the Supabase backend (supabase/), production E2E tests (e2e/, Playwright), unit tests (tests/), CI (.github/workflows — Android/iOS builds run inside closeeye-next/), and dev scripts (scripts/).",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "postbuild": "node scripts/inject-meta.mjs",
-    "preview": "vite preview",
-    "icons": "node scripts/generate-icons.mjs",
-    "pwa-icons": "node scripts/generate-pwa-icons.mjs",
-    "brand": "node scripts/generate-brand-assets.mjs"
-  },
-  "dependencies": {
-    "@fontsource/open-sauce-one": "^5.2.5",
-    "@hookform/resolvers": "^3.9.0",
-    "@react-google-maps/api": "^2.20.0",
-    "@react-pdf/renderer": "^4.5.1",
-    "@stripe/react-stripe-js": "^2.4.0",
-    "@stripe/stripe-js": "^3.0.0",
-    "@supabase/supabase-js": "^2.108.1",
-    "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0",
-    "clsx": "^2.1.1",
-    "date-fns": "^3.6.0",
-    "lucide-react": "^0.400.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-hook-form": "^7.52.0",
-    "react-markdown": "^10.1.0",
-    "react-router-dom": "^6.26.0",
-    "zod": "^3.23.0"
+    "test": "node --test tests/*.test.ts",
+    "e2e": "playwright test",
+    "e2e:report": "playwright show-report e2e-report",
+    "transcribe": "node scripts/transcribe.mjs",
+    "align-vtt": "node scripts/align-vtt.mjs"
   },
   "devDependencies": {
-    "@fontsource/dm-serif-display": "^5.2.8",
     "@huggingface/transformers": "^4.2.0",
     "@playwright/test": "^1.61.1",
-    "@types/react": "^18.3.1",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.0",
-    "autoprefixer": "^10.4.19",
+    "@supabase/supabase-js": "^2.108.1",
     "lighthouse": "^13.4.0",
     "node-web-audio-api": "^2.0.0",
     "nodejs-whisper": "^0.3.0",
-    "postcss": "^8.4.40",
     "sharp": "^0.35.1",
-    "tailwindcss": "^3.4.7",
-    "typescript": "^5.5.3",
-    "vite": "^5.3.4"
+    "typescript": "^5.5.3"
   }
 }
