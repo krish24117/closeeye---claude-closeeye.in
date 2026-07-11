@@ -182,20 +182,6 @@ export function FamilyAddedDashboard({ data, lovedOnes }: { data: DashboardData;
     <>
       <Greeting subtitle={`${first} now has a trusted presence. Let's plan their first Presence Visit together.`} />
 
-      {/* What a Presence feels like — the strongest emotional asset, before any price */}
-      <section className="flex flex-col gap-4">
-        <SectionTitle>What your first Presence feels like</SectionTitle>
-        <div className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
-          <div className="grid aspect-[16/10] w-full place-items-center bg-gradient-to-br from-accent-soft to-ivory text-green">
-            <Camera className="h-9 w-9" strokeWidth={1.25} />
-          </div>
-          <div className="flex flex-col gap-3 p-6">
-            <p className="text-body italic text-ink">&ldquo;We had tea on the balcony and talked about the garden for a while. {first} was in wonderful spirits.&rdquo;</p>
-            <p className="text-caption text-muted">An example of the Presence Story you&rsquo;ll receive after every visit.</p>
-          </div>
-        </div>
-      </section>
-
       {/* Guardian introduction — a person, chosen like family */}
       <section className="flex items-start gap-4 rounded-lg border border-line/70 bg-card p-6 shadow-sm">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><ShieldCheck className="h-5 w-5" strokeWidth={1.5} /></span>
