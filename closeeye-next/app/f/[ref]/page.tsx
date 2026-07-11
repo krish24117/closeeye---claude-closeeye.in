@@ -21,16 +21,17 @@ function Section({ children, className = '' }: { children: React.ReactNode; clas
   return <section className={`mx-auto w-full max-w-2xl px-5 ${className}`}>{children}</section>
 }
 
+// Real trust signals — no "secure payments" before anyone has paid (reads fintech).
 const TRUST_SIGNALS = [
-  { icon: MapPin, label: 'Hyderabad-based' },
-  { icon: ShieldCheck, label: 'Secure online payments' },
-  { icon: HeartHandshake, label: 'Human-first service' },
-  { icon: MessageCircle, label: 'Personal founder support' },
+  'Hyderabad-based',
+  'Founder-led, personal support',
+  'Human-first service, never automated',
+  'Launching with our first founding families',
 ]
 
 const HOW = [
   { icon: HeartHandshake, title: 'A trusted Guardian visits your parents', body: 'A real person from Close Eye, at a time that suits your family.' },
-  { icon: Clock, title: 'They spend real, unhurried time', body: 'Company, a gentle check that all is well, a little warmth in the day.' },
+  { icon: Clock, title: 'Spend meaningful time together', body: 'Company, a gentle check that all is well, a little warmth in the day.' },
   { icon: Camera, title: 'You receive a warm Presence Story', body: 'A few honest words and photos, so you can breathe easier from wherever you are.' },
 ]
 
@@ -67,18 +68,18 @@ export default function FounderLandingPage() {
       </header>
 
       <main id="main">
-      {/* 1 · HERO — the invitation */}
+      {/* 1 · HERO — the invitation. Customer-situation first, then the founder. */}
       <Section className="pt-12 sm:pt-16">
         <h1 className="text-h1 leading-[1.05] tracking-tight text-balance">When you can’t be there, Close Eye can.</h1>
         <p className="mt-5 text-lead leading-relaxed text-ink/90">
-          A trusted Close Eye Guardian visits your parents in Hyderabad, spends real time with them, and sends you a warm update after — so you can breathe easier from anywhere.
+          When you can’t be with your parents in Hyderabad, a trusted Close Eye Guardian visits them, spends real time with them, and keeps you connected through thoughtful updates.
         </p>
 
         <div className="mt-8 flex items-center gap-4">
           <Image src="/founder.png" alt={`${FOUNDER}, founder of Close Eye`} width={72} height={72} className="h-[72px] w-[72px] shrink-0 rounded-full object-cover shadow-sm" />
           <div>
             <p className="text-body font-semibold">Hi, I’m {FOUNDER}.</p>
-            <p className="text-body-sm text-muted">Founder, Close Eye</p>
+            <p className="text-body-sm text-muted">Founder • Close Eye · Hyderabad</p>
           </div>
         </div>
         <p className="mt-5 text-body leading-relaxed text-muted">
@@ -86,31 +87,20 @@ export default function FounderLandingPage() {
         </p>
 
         <div className="mt-8">
-          <Button asChild size="lg"><Link href={REGISTER_HREF}>Register your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
+          <Button asChild size="lg"><Link href={REGISTER_HREF}>Become a Founding Family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
         </div>
-
-        {/* Quiet trust signals — real, not testimonials */}
-        <ul className="mt-9 flex flex-wrap gap-x-5 gap-y-2.5">
-          {TRUST_SIGNALS.map(({ icon: Icon, label }) => (
-            <li key={label} className="inline-flex items-center gap-1.5 text-caption font-medium text-muted">
-              <Icon className="h-4 w-4 text-green" strokeWidth={1.75} /> {label}
-            </li>
-          ))}
-          <li className="inline-flex items-center gap-1.5 text-caption font-medium text-muted">
-            <span className="h-1.5 w-1.5 rounded-full bg-green" /> Launching with our first founding families
-          </li>
-        </ul>
       </Section>
 
       <div className="mx-auto my-14 h-px w-full max-w-2xl bg-line/70" />
 
-      {/* 2 · FOUNDER STORY — emotion before product */}
+      {/* 2 · FOUNDER STORY — short, emotional, memorable */}
       <Section>
         <h2 className="text-h3 tracking-tight">Why I built this</h2>
-        <div className="mt-5 flex flex-col gap-4 text-body leading-relaxed text-ink/90">
-          <p>For years, I carried the same worry many families carry today — the quiet ache of being far from the people who raised me.</p>
-          <p>Every call ended the same way: “we’re fine, don’t worry.” And every time, I worried a little more — not because anything was wrong, but because I couldn’t see for myself that all was well. I didn’t want a hospital, or an emergency line, or a stranger with a clipboard. I wanted what most of us quietly want: to know that someone kind was looking in on them, sitting with them a while, and telling me honestly how they are.</p>
-          <p>So I built Close Eye — not a healthcare service, and not an app that replaces family. It’s a way to stay present in the lives of the people we love, even from far away.</p>
+        <div className="mt-5 flex flex-col gap-3 text-body leading-relaxed text-ink/90">
+          <p>Every call with my parents ended the same way.</p>
+          <p className="text-lead font-medium text-ink">“We’re fine. Don’t worry.”</p>
+          <p>But I still worried. Not because something was wrong — because I couldn’t see for myself.</p>
+          <p>I realised thousands of families quietly carry the same feeling. That’s why I built Close Eye.</p>
         </div>
       </Section>
 
@@ -138,23 +128,20 @@ export default function FounderLandingPage() {
         </ol>
       </Section>
 
-      {/* 5 · CHOOSE HOW YOU'D LIKE TO BEGIN — no pricing table, no comparison grid */}
+      {/* 5 · HOW TO BEGIN — ONE simple starting point; Care is a quiet next step, not a comparison */}
       <Section className="mt-14">
-        <h2 className="text-h3 tracking-tight">Choose how you’d like to begin</h2>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col rounded-xl border border-line/70 bg-card p-6 shadow-sm">
-            <p className="text-body font-semibold">Close Eye Connect</p>
-            <p className="mt-1 text-body-sm font-semibold text-green">₹500 / month</p>
-            <p className="mt-3 text-body-sm leading-relaxed text-muted">For families who want trusted coordination, ongoing support, and a simple way to stay connected.</p>
-          </div>
-          <div className="flex flex-col rounded-xl border border-green/30 bg-card p-6 shadow-sm">
-            <p className="text-body font-semibold">Close Eye Care</p>
-            <p className="mt-1 text-body-sm font-semibold text-green">₹1,500 / month</p>
-            <p className="mt-3 text-body-sm leading-relaxed text-muted">Includes monthly Presence Visits, Presence Stories, and priority coordination.</p>
-          </div>
+        <h2 className="text-h3 tracking-tight">A simple place to start</h2>
+        <div className="mt-6 rounded-xl border border-line/70 bg-card p-6 shadow-sm">
+          <p className="text-body font-semibold">Start with Close Eye Connect</p>
+          <p className="mt-1 text-body-sm font-semibold text-green">₹500 / month</p>
+          <p className="mt-3 text-body-sm leading-relaxed text-muted">Trusted coordination, ongoing support, and a simple way to stay connected with your parents.</p>
         </div>
-        <p className="mt-5 text-body-sm leading-relaxed text-muted">
-          You’ll choose your preferred plan during registration. No payment is required before {FOUNDER_LAUNCH_LABEL}.
+        <p className="mt-4 text-body-sm text-muted">
+          Looking for monthly Presence Visits?{' '}
+          <a href={founderWhatsApp()} target="_blank" rel="noopener noreferrer" className="font-semibold text-green hover:underline">Ask me about Close Eye Care →</a>
+        </p>
+        <p className="mt-6 text-body-sm leading-relaxed text-muted">
+          You’ll choose your plan during registration. No payment is required before {FOUNDER_LAUNCH_LABEL}.
         </p>
       </Section>
 
@@ -175,6 +162,18 @@ export default function FounderLandingPage() {
         </ol>
       </Section>
 
+      {/* 6.5 · WHY FAMILIES TRUST CLOSE EYE — real signals, given real prominence */}
+      <Section className="mt-14">
+        <h2 className="text-h3 tracking-tight">Why families trust Close Eye</h2>
+        <ul className="mt-6 flex flex-col gap-3">
+          {TRUST_SIGNALS.map((t) => (
+            <li key={t} className="flex items-start gap-3 text-body leading-relaxed text-ink/90">
+              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-green" strokeWidth={1.75} /> {t}
+            </li>
+          ))}
+        </ul>
+      </Section>
+
       {/* 7 · QUESTIONS FAMILIES ASK ME */}
       <Section className="mt-14">
         <h2 className="text-h3 tracking-tight">Questions families ask me</h2>
@@ -193,7 +192,7 @@ export default function FounderLandingPage() {
         <div className="flex flex-col items-center rounded-2xl border border-line/70 bg-card px-6 py-11 text-center shadow-sm">
           <h2 className="text-h3 tracking-tight text-balance">Be one of Close Eye’s first families</h2>
           <p className="mt-2 max-w-md text-body-sm leading-relaxed text-muted">It takes two minutes, and there’s nothing to pay today.</p>
-          <Button asChild size="lg" className="mt-6"><Link href={REGISTER_HREF}>Register your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
+          <Button asChild size="lg" className="mt-6"><Link href={REGISTER_HREF}>Become a Founding Family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
           <p className="mt-8 max-w-md text-body-sm leading-relaxed text-muted">Would you rather just talk? I read every message myself.</p>
           <Button asChild variant="text" size="md" className="mt-1.5"><a href={founderWhatsApp()} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Message {FOUNDER} on WhatsApp</a></Button>
         </div>
