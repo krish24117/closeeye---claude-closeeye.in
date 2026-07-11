@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Bell, ChevronRight, CreditCard, LifeBuoy, Loader2, ShieldCheck, Trash2, UserRound, Users } from 'lucide-react'
+import { Bell, ChevronRight, CreditCard, Heart, LifeBuoy, Loader2, ShieldCheck, Trash2, UserRound, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
 import { FeatureIcon } from '@/components/ui/feature-icon'
@@ -18,6 +18,12 @@ import { useFamilyData } from '@/components/family/family-data-provider'
 import { useToast } from '@/components/ui/toast'
 import { supabase } from '@/lib/supabase'
 import { SITE } from '@/lib/site'
+import { Chip } from '@/components/ui/choice'
+import { Textarea } from '@/components/ui/field'
+import { submitFeedback } from '@/lib/db/feedback'
+
+// Exit-feedback reasons shown when a family member closes their account.
+const DELETE_REASONS = ['Too expensive', 'Not using it enough', 'Found another option', 'Not what I expected', 'A privacy concern', 'Just taking a break', 'Other']
 
 // ── Reusable section primitives (existing design language) ───────────────────
 
@@ -88,6 +94,8 @@ export default function ProfilePage() {
   const toast = useToast()
   const [confirmDelete, setConfirmDelete] = React.useState(false)
   const [deleting, setDeleting] = React.useState(false)
+  const [reason, setReason] = React.useState('')
+  const [exitNote, setExitNote] = React.useState('')
 
   const meta = (user?.user_metadata ?? {}) as { language?: string; country?: string; timezone?: string }
   const memberCount = lovedOnes.length
@@ -100,6 +108,14 @@ export default function ProfilePage() {
   async function deleteAccount() {
     if (deleting) return
     setDeleting(true)
+    // Capture why they're leaving BEFORE the account closes — the feedback row's
+    // user_id is SET NULL on delete, so it survives (de-identified). Best-effort:
+    // a feedback hiccup must never block the deletion they asked for.
+    const exit = [reason, exitNote.trim()].filter(Boolean).join(' — ')
+    if (exit) {
+      try { await submitFeedback({ rating: 0, nps: null, category: 'Account deletion', kind: 'idea', message: exit }) }
+      catch { /* best-effort — proceed with deletion regardless */ }
+    }
     try {
       // Real deletion is server-side: cancels billing, removes the family's data,
       // and closes the account. We only sign out + leave once it actually succeeds
@@ -219,17 +235,31 @@ export default function ProfilePage() {
         <div className="p-6">
           <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line sm:hidden" />
           <div className="flex items-center gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-error/10 text-error"><Trash2 className="h-5 w-5" strokeWidth={1.75} /></span>
-            <h3 className="text-h4 text-ink">Delete your account?</h3>
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><Heart className="h-5 w-5" strokeWidth={1.75} /></span>
+            <h3 className="text-h4 text-ink">We’re sorry to see you go</h3>
           </div>
           <p className="mt-3 text-body-sm leading-relaxed text-muted">
-            This permanently closes your Close Eye account. Your membership billing stops immediately, your family’s data is removed, and you’ll be signed out. This can’t be undone.
+            Before you close your account, would you tell us why? It genuinely helps us care for other families — no pressure, and you can skip it.
           </p>
-          <div className="mt-5 flex flex-col gap-2.5">
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {DELETE_REASONS.map((r) => (
+              <Chip key={r} selected={reason === r} onClick={() => setReason((cur) => (cur === r ? '' : r))}>{r}</Chip>
+            ))}
+          </div>
+          <div className="mt-3">
+            <Textarea value={exitNote} onChange={(e) => setExitNote(e.target.value)} rows={2} placeholder="Anything else you’d like us to know? (optional)" />
+          </div>
+
+          <p className="mt-4 rounded-sm border border-error/20 bg-error/[0.04] px-3.5 py-3 text-caption leading-relaxed text-muted">
+            Deleting permanently closes your Close Eye account. Billing stops immediately, your family’s data is removed, and you’ll be signed out. This can’t be undone.
+          </p>
+
+          <div className="mt-4 flex flex-col gap-2.5">
+            <Button variant="secondary" size="lg" onClick={() => setConfirmDelete(false)} disabled={deleting} className="w-full">Keep my account</Button>
             <Button size="lg" onClick={deleteAccount} disabled={deleting} className="w-full bg-error text-white hover:bg-error/90">
               {deleting ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Deleting…</> : <><Trash2 className="h-5 w-5" strokeWidth={1.75} /> Delete account</>}
             </Button>
-            <Button variant="secondary" size="lg" onClick={() => setConfirmDelete(false)} disabled={deleting} className="w-full">Keep my account</Button>
           </div>
         </div>
       </Overlay>
