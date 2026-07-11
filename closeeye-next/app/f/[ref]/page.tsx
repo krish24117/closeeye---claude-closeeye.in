@@ -12,7 +12,7 @@ import { FOUNDER_LAUNCH_LABEL } from '@/lib/launch'
 import { whatsappLink } from '@/lib/site'
 import { FOUNDER } from '@/lib/content'
 
-const REGISTER_HREF = '/auth?intent=join'
+const REGISTER_HREF = '/founder/start'
 const founderWhatsApp = () =>
   whatsappLink(`Hi ${FOUNDER.name}, I saw the Close Eye invitation and I'd like to ask about my family in Hyderabad.`)
 

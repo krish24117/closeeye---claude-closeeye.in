@@ -3,7 +3,8 @@ import type { BookingRequest, LovedOne, NewLovedOne, Profile } from '@/lib/db/ty
 import { reportKey, type Pronoun, type ReportPhoto, type SharedVisitReport } from '@/lib/visit-reports'
 import { processVisit, type VisitObservations } from '@/lib/cloza'
 
-const PROFILE_COLS = 'id, full_name, role, admin_role, phone, whatsapp_number, address'
+const PROFILE_COLS_BASE = 'id, full_name, role, admin_role, phone, whatsapp_number, address'
+const PROFILE_COLS = `${PROFILE_COLS_BASE}, founder_prelaunch`
 const LOVED_ONE_COLS =
   'id, family_user_id, full_name, relationship, age, city, address, phone_number, medical_notes, doctor_name, nearest_hospital, emergency_contact_name, emergency_contact_phone, created_at'
 
@@ -17,8 +18,14 @@ const orEmpty = (v?: string | null): string => (v ?? '').trim()
 /** The signed-in user's own profile row (RLS lets a user read their own row). */
 export async function fetchMyProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase.from('profiles').select(PROFILE_COLS).eq('id', userId).maybeSingle()
-  if (error) throw new Error(error.message)
-  return (data as Profile | null) ?? null
+  if (!error) return (data as Profile | null) ?? null
+  // Resilience: in the brief window before the founder_prelaunch migration lands
+  // in prod, selecting that column errors. Fall back to the base columns so the
+  // family app never breaks — founder gating simply stays off until the column
+  // exists (it only affects pre-launch payment/booking, so this is safe).
+  const base = await supabase.from('profiles').select(PROFILE_COLS_BASE).eq('id', userId).maybeSingle()
+  if (base.error) throw new Error(base.error.message)
+  return (base.data as Profile | null) ?? null
 }
 
 /**

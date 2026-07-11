@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { hasFounderSessionHint } from '@/lib/founder-funnel'
 import { isGuardian } from '@/lib/roles'
 import { isNative } from '@/lib/native'
 import { LogoMark } from '@/components/ui/logo'
@@ -51,7 +52,17 @@ export function AuthGate() {
       if (onApp && !onFlow) target = pathname.startsWith('/guardian') ? '/guardian/login' : '/welcome'
       else if (firstNative && !onFlow) target = '/welcome' // native launch on marketing
     } else if (onboardingComplete === false) {
-      if (pathname !== '/onboarding') target = '/onboarding' // must finish onboarding
+      // Founder pre-launch registrants finish a different, loved-one-free journey
+      // (/founder/*). A normal user (no hint, not on /founder) is routed to
+      // /onboarding exactly as before — this branch only adds the founder path.
+      if (pathname.startsWith('/founder/')) {
+        // stay — the founder journey pages (/founder/*) guide the rest of setup.
+        // (Precise trailing slash: NOT the /founder-story or /founder-brief pages.)
+      } else if (hasFounderSessionHint()) {
+        target = '/founder/welcome' // resume the founder journey, not generic onboarding
+      } else if (pathname !== '/onboarding') {
+        target = '/onboarding' // must finish onboarding
+      }
     } else {
       // Guardians (companions) land in the Guardian app; everyone else in Family.
       const home = isGuardian(profile) ? '/guardian' : '/family'

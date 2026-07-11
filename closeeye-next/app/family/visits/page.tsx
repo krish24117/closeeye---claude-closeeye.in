@@ -93,7 +93,7 @@ export default function VisitsPage() {
 
   async function pay(r: BookingRequest) {
     if (paying) return
-    if (isFounderFunnelGated()) { toast(PRELAUNCH_BOOKING_NOTE); return }
+    if (isFounderFunnelGated(profile?.founder_prelaunch ?? false)) { toast(PRELAUNCH_BOOKING_NOTE); return }
     setPaying(r.id)
     try {
       const outcome = await payForBooking({

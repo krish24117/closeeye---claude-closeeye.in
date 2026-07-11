@@ -87,7 +87,7 @@ export default function MembershipPage() {
     // subscriptions. Plan changes go through the care team for now.
     if (active) return
     // Founder Funnel (pre-launch): registrants select a plan but never pay here.
-    if (isFounderFunnelGated()) { toast(PRELAUNCH_MEMBERSHIP_NOTE); return }
+    if (isFounderFunnelGated(profile?.founder_prelaunch ?? false)) { toast(PRELAUNCH_MEMBERSHIP_NOTE); return }
     const plan = planById(planId)
     if (!plan) return
     setBusy(planId)
@@ -121,7 +121,7 @@ export default function MembershipPage() {
   // on success, shows the welcome message while polling for the webhook to land.
   async function startUpgrade() {
     if (busy) return
-    if (isFounderFunnelGated()) { toast(PRELAUNCH_MEMBERSHIP_NOTE); return }
+    if (isFounderFunnelGated(profile?.founder_prelaunch ?? false)) { toast(PRELAUNCH_MEMBERSHIP_NOTE); return }
     setBusy('trust')
     try {
       const outcome = await payForMembership({

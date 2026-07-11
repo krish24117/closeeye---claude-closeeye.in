@@ -13,6 +13,9 @@ export interface Profile {
   phone: string | null
   whatsapp_number: string | null
   address: string | null
+  /** True = registered via the Founder Program before launch. Durable authority
+   *  for the pre-launch funnel gate (see lib/founder-funnel + lib/launch). */
+  founder_prelaunch?: boolean | null
 }
 
 export interface LovedOne {

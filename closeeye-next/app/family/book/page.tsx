@@ -124,7 +124,7 @@ export default function FamilyBookPage() {
   async function confirm() {
     if (!member || !service) return
     // Founder Funnel (pre-launch): registrants don't book — visits open at launch.
-    if (isFounderFunnelGated()) { setError(PRELAUNCH_BOOKING_NOTE); return }
+    if (isFounderFunnelGated(profile?.founder_prelaunch ?? false)) { setError(PRELAUNCH_BOOKING_NOTE); return }
     setError(''); setBusy(true)
     try {
       const res = await requestVisit({

@@ -63,6 +63,7 @@ function AuthFlow() {
   // plan. Keep the purchase framing here (sign-in is a step INSIDE the purchase),
   // and persist the plan so it survives the OAuth round-trip to the Activate step.
   const joinIntent = params.get('intent') === 'join'
+  const foundingIntent = params.get('intent') === 'founding'
   const joinPlanId = joinIntent ? params.get('plan') : null
   const joinPlan = joinPlanId ? planById(joinPlanId) : null
   React.useEffect(() => {
@@ -175,6 +176,11 @@ function AuthFlow() {
                 <p className="text-caption font-semibold uppercase tracking-widest text-green">{joinPlan.name} · {joinPlan.price}{joinPlan.period}</p>
                 <h1 className="mt-1.5 text-h3 text-ink">Create your account to activate {joinPlan.name}</h1>
                 <p className="mt-1.5 text-body-sm text-muted">One quick step — then set up your family and activate your membership.</p>
+              </>
+            ) : foundingIntent ? (
+              <>
+                <h1 className="text-h3 text-ink">Create your account to reserve your place</h1>
+                <p className="mt-1.5 text-body-sm text-muted">One quick step — then choose your membership. There’s nothing to pay today.</p>
               </>
             ) : (
               <>
