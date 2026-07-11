@@ -30,7 +30,8 @@ const base: RegistrantView = {
 }
 const mk = (o: Partial<RegistrantView>): RegistrantView => ({ ...base, ...o })
 
-test('registrantStatus: activated > waiting(contacted) > new(today) > follow_up(older)', () => {
+test('registrantStatus: founding > activated > waiting(contacted) > new(today) > follow_up(older)', () => {
+  assert.equal(registrantStatus(mk({ isFoundingMember: true, subStatus: 'active' }), NOW), 'founding')
   assert.equal(registrantStatus(mk({ subStatus: 'active' }), NOW), 'activated')
   assert.equal(registrantStatus(mk({ followedUp: true }), NOW), 'waiting')
   assert.equal(registrantStatus(mk({ registeredAt: NOW }), NOW), 'new')
@@ -52,6 +53,8 @@ test('matchesFilter: date windows + plan + city + follow-up + activated', () => 
   assert.equal(matchesFilter(today, 'follow_up', NOW), true) // new + not contacted counts as "to call"
   assert.equal(matchesFilter(mk({ followedUp: true }), 'follow_up', NOW), false)
   assert.equal(matchesFilter(mk({ subStatus: 'active' }), 'activated', NOW), true)
+  assert.equal(matchesFilter(mk({ isFoundingMember: true }), 'founding', NOW), true)
+  assert.equal(matchesFilter(mk({}), 'founding', NOW), false)
 })
 
 test('matchesSearch: name/email/phone/ref/city, case-insensitive; empty matches all', () => {

@@ -24,11 +24,14 @@ export interface RegistrantView {
   registeredAt: string | null
   followedUp: boolean
   followedUpAt?: string | null
+  isFoundingMember?: boolean
+  foundingNumber?: number | null
 }
 
-export type RegStatus = 'activated' | 'waiting' | 'new' | 'follow_up'
+export type RegStatus = 'founding' | 'activated' | 'waiting' | 'new' | 'follow_up'
 
 export const STATUS_LABEL: Record<RegStatus, string> = {
+  founding: 'Founding member',
   new: 'New',
   follow_up: 'Needs follow-up',
   waiting: 'Waiting launch',
@@ -37,10 +40,12 @@ export const STATUS_LABEL: Record<RegStatus, string> = {
 
 /**
  * What the founder should read at a glance:
- *   Activated (paid/active) → Waiting launch (already contacted) →
- *   New (registered today, not contacted) → Needs follow-up (older, not contacted).
+ *   Founding member (a reserved founding family) → Activated (paid/active) →
+ *   Waiting launch (already contacted) → New (registered today, not contacted) →
+ *   Needs follow-up (older, not contacted).
  */
 export function registrantStatus(r: RegistrantView, nowIso: string): RegStatus {
+  if (r.isFoundingMember) return 'founding'
   if (r.subStatus === 'active') return 'activated'
   if (r.followedUp) return 'waiting'
   const reg = r.registeredAt ? istDayKey(r.registeredAt) : ''
@@ -49,7 +54,7 @@ export function registrantStatus(r: RegistrantView, nowIso: string): RegStatus {
 
 export type Filter =
   | 'all' | 'today' | 'yesterday' | 'week'
-  | 'connect' | 'care' | 'hyderabad' | 'follow_up' | 'activated'
+  | 'connect' | 'care' | 'hyderabad' | 'follow_up' | 'activated' | 'founding'
 
 function dayKeyAgo(nowIso: string, n: number): string {
   const ms = Date.parse(nowIso)
@@ -71,6 +76,7 @@ export function matchesFilter(r: RegistrantView, filter: Filter, nowIso: string)
     case 'hyderabad': return (r.serviceArea ?? '').trim().toLowerCase() === 'hyderabad'
     case 'follow_up': { const s = registrantStatus(r, nowIso); return s === 'new' || s === 'follow_up' }
     case 'activated': return r.subStatus === 'active'
+    case 'founding': return !!r.isFoundingMember
   }
 }
 

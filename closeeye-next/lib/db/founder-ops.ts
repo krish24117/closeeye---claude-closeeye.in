@@ -21,6 +21,8 @@ export interface FounderRegistrant {
   followedUp: boolean
   followedUpAt: string | null
   notes: string | null
+  isFoundingMember: boolean
+  foundingNumber: number | null
 }
 
 interface RawRegistrant {
@@ -37,6 +39,8 @@ interface RawRegistrant {
   followed_up: boolean | null
   followed_up_at: string | null
   notes: string | null
+  is_founding_member: boolean | null
+  founding_number: number | null
 }
 
 export async function fetchFounderRegistrants(): Promise<FounderRegistrant[]> {
@@ -59,6 +63,8 @@ export async function fetchFounderRegistrants(): Promise<FounderRegistrant[]> {
     followedUp: !!r.followed_up,
     followedUpAt: r.followed_up_at,
     notes: r.notes,
+    isFoundingMember: !!r.is_founding_member,
+    foundingNumber: r.founding_number,
   }))
 }
 

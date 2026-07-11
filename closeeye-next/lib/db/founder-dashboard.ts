@@ -12,15 +12,23 @@ export type { FounderMetrics }
  * rather than throwing, so the page still renders.
  */
 export async function fetchFounderMetrics(): Promise<FounderMetrics> {
-  // 1. Founder registrants (durable marker on profiles).
+  // 1. Founder families — the pre-launch funnel registrants (founder_prelaunch)
+  //    AND the original founding members (is_founding_member + founding_number,
+  //    from the founding-member checkout). Both are real founding families and
+  //    count toward the goal; founding members predate founder_registered_at, so
+  //    we fall back to their founding date / location.
   const { data: regs, error: regErr } = await supabase
     .from('profiles')
-    .select('id, founder_service_area, founder_registered_at')
-    .eq('founder_prelaunch', true)
-  const registrations = regErr
+    .select('id, founder_service_area, founder_registered_at, is_founding_member, founding_date, created_at, address')
+    .or('founder_prelaunch.eq.true,is_founding_member.eq.true')
+  const rawRegs = regErr
     ? []
-    : ((regs ?? []) as { id: string; founder_service_area: string | null; founder_registered_at: string | null }[])
-  const ids = registrations.map((r) => r.id)
+    : ((regs ?? []) as { id: string; founder_service_area: string | null; founder_registered_at: string | null; is_founding_member: boolean | null; founding_date: string | null; created_at: string | null; address: string | null }[])
+  const registrations = rawRegs.map((r) => ({
+    service_area: r.founder_service_area ?? (r.is_founding_member ? r.address : null),
+    registered_at: r.founder_registered_at ?? r.founding_date ?? r.created_at,
+  }))
+  const ids = rawRegs.map((r) => r.id)
 
   // 2. Their membership choice (unpaid 'created' now; 'active' after launch).
   let subs: { plan_id: string | null; status: string | null }[] = []
@@ -42,7 +50,7 @@ export async function fetchFounderMetrics(): Promise<FounderMetrics> {
   ])
 
   return deriveFounderMetrics({
-    registrations: registrations.map((r) => ({ service_area: r.founder_service_area, registered_at: r.founder_registered_at })),
+    registrations,
     subs,
     waitlist: waitlistCount ?? 0,
     landingViews: views ?? 0,

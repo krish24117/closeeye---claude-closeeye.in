@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Loader2, Lock, MessageCircle, Phone, Mail, Users, Search, X, Check, Download, Copy } from 'lucide-react'
+import { Loader2, Lock, MessageCircle, Phone, Mail, Users, Search, X, Check, Download, Copy, Star } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { EmptyState } from '@/components/ui/states'
 import { Button } from '@/components/ui/button'
@@ -25,6 +25,7 @@ const section = 'mb-3 text-caption font-semibold uppercase tracking-widest text-
 const pct = (n: number | null) => (n === null ? '—' : `${n}%`)
 
 const STATUS_STYLE: Record<RegStatus, string> = {
+  founding: 'bg-green text-ivory',
   new: 'bg-accent-soft text-green',
   follow_up: 'bg-warning/12 text-warning',
   waiting: 'bg-ink/[0.06] text-muted',
@@ -33,6 +34,7 @@ const STATUS_STYLE: Record<RegStatus, string> = {
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' },
+  { key: 'founding', label: 'Founding members' },
   { key: 'today', label: 'Today' },
   { key: 'yesterday', label: 'Yesterday' },
   { key: 'week', label: 'This week' },
@@ -208,6 +210,7 @@ function FamilyDrawer({ r, actions, reminders, nowIso, onClose, onToggleFollowed
         </Group>
 
         <Group title="Membership">
+          {r.isFoundingMember && <Row label="Founding member" value={r.foundingNumber != null ? `#${r.foundingNumber}` : 'Yes'} />}
           <Row label="Plan" value={plan ? `Close Eye ${plan.short} · ${plan.price}/mo` : 'Not chosen'} />
           <Row label="Status" value={STATUS_LABEL[status]} />
         </Group>
@@ -443,7 +446,7 @@ export default function FounderDashboardPage() {
                     const st = registrantStatus(r, nowIso)
                     return (
                       <tr key={r.id} onClick={() => setSelectedId(r.id)} className="cursor-pointer align-middle transition-colors hover:bg-accent-soft/25">
-                        <td className="px-4 py-3"><span className="flex items-center gap-2.5"><Avatar initials={initialsOf(r.fullName ?? 'Family')} size="sm" tone="solid" /><span className="font-semibold text-ink">{r.fullName ?? '—'}</span></span></td>
+                        <td className="px-4 py-3"><span className="flex items-center gap-2.5"><Avatar initials={initialsOf(r.fullName ?? 'Family')} size="sm" tone="solid" /><span className="font-semibold text-ink">{r.fullName ?? '—'}</span>{r.isFoundingMember && r.foundingNumber != null && <span title={`Founding Member #${r.foundingNumber}`} className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-green/12 px-1.5 py-0.5 text-[0.6rem] font-bold text-green"><Star className="h-2.5 w-2.5 fill-green" strokeWidth={0} />#{r.foundingNumber}</span>}</span></td>
                         <td className="whitespace-nowrap px-4 py-3 text-ink">{r.phone ?? '—'}</td>
                         <td className="px-4 py-3 text-muted">{r.serviceArea ?? '—'}</td>
                         <td className="px-4 py-3 text-muted">{r.relationship ?? '—'}</td>
