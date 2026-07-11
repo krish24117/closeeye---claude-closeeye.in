@@ -67,7 +67,7 @@ export function LiveVisitCard({ visit, actions }: { visit: ConsoleVisit; actions
       {actions ?? (
         <div className="mt-3 grid grid-cols-2 gap-2">
           <a href={`tel:${guardian?.phone.replace(/\s/g, '')}`} className="flex min-h-[2.5rem] items-center justify-center gap-1.5 rounded-sm border border-ink/15 text-caption font-semibold text-ink transition-colors hover:border-ink/30 hover:bg-ink/[0.03]"><Phone className="h-3.5 w-3.5 text-green" strokeWidth={1.75} /> Guardian</a>
-          <Link href={`/console/families/${visit.familyId}`} className="flex min-h-[2.5rem] items-center justify-center gap-1.5 rounded-sm border border-ink/15 text-caption font-semibold text-ink transition-colors hover:border-ink/30 hover:bg-ink/[0.03]">Open <ArrowRight className="h-3.5 w-3.5 text-green" strokeWidth={1.75} /></Link>
+          <Link href={`/pm/families/${visit.familyId}`} className="flex min-h-[2.5rem] items-center justify-center gap-1.5 rounded-sm border border-ink/15 text-caption font-semibold text-ink transition-colors hover:border-ink/30 hover:bg-ink/[0.03]">Open <ArrowRight className="h-3.5 w-3.5 text-green" strokeWidth={1.75} /></Link>
         </div>
       )}
     </article>

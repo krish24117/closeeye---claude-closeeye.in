@@ -45,7 +45,7 @@ export default function ConsoleThreadPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Link href="/console/messages" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
+      <Link href="/pm/messages" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> All messages
       </Link>
       {meta === undefined ? (
@@ -59,7 +59,7 @@ export default function ConsoleThreadPage() {
           hint="This family member may have been removed."
           action={
             <Button asChild>
-              <Link href="/console/messages">Back to messages</Link>
+              <Link href="/pm/messages">Back to messages</Link>
             </Button>
           }
         />

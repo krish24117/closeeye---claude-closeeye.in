@@ -28,7 +28,7 @@ export function FounderTeaser() {
         </Quote>
         <div className="mt-9">
           <Button asChild>
-            <Link href="/founder-story">
+            <Link href="/founder">
               Read the founder story <ArrowRight className="h-5 w-5" strokeWidth={1.5} />
             </Link>
           </Button>

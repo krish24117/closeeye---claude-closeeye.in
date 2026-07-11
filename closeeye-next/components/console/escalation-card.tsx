@@ -50,7 +50,7 @@ export function EscalationCard({ escalation }: { escalation: Escalation }) {
             <span className="ml-1 text-caption text-muted">{STATUS_LABEL[escalation.status]}</span>
           </>
         )}
-        <Link href={`/console/families/${escalation.familyId}`} className="ml-auto inline-flex items-center gap-1 text-caption font-semibold text-green hover:underline">Open profile <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>
+        <Link href={`/pm/families/${escalation.familyId}`} className="ml-auto inline-flex items-center gap-1 text-caption font-semibold text-green hover:underline">Open profile <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>
       </div>
     </article>
   )

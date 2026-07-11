@@ -120,7 +120,7 @@ export default function ConsoleDashboard() {
           <section>
             <div className="mb-3 flex items-end justify-between">
               <h2 className="text-h4">Today&apos;s Presence</h2>
-              <Link href="/console/visits" className="inline-flex items-center gap-1 text-caption font-semibold text-green hover:underline">Live monitor <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>
+              <Link href="/pm/visits" className="inline-flex items-center gap-1 text-caption font-semibold text-green hover:underline">Live monitor <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>
             </div>
             <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
               {schedule.length === 0 ? (
@@ -129,7 +129,7 @@ export default function ConsoleDashboard() {
                 <ul className="divide-y divide-line">
                   {schedule.map((s) => (
                     <li key={s.id}>
-                      <Link href={s.lovedOneId ? `/console/families/${s.lovedOneId}` : '/console/visits'} className="flex flex-col gap-1.5 px-4 py-3 transition-colors hover:bg-accent-soft/30">
+                      <Link href={s.lovedOneId ? `/pm/families/${s.lovedOneId}` : '/pm/visits'} className="flex flex-col gap-1.5 px-4 py-3 transition-colors hover:bg-accent-soft/30">
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate text-body-sm font-semibold text-ink">{s.memberName}</span>
                           <VisitStatusBadge status={s.status} />
@@ -169,7 +169,7 @@ export default function ConsoleDashboard() {
       <section>
         <div className="mb-3 flex items-end justify-between">
           <h2 className="text-h4">In your care</h2>
-          <Link href="/console/families" className="inline-flex items-center gap-1 text-caption font-semibold text-green hover:underline">All {families.length} <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>
+          <Link href="/pm/families" className="inline-flex items-center gap-1 text-caption font-semibold text-green hover:underline">All {families.length} <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>
         </div>
         {roster.length === 0 ? (
           <EmptyState icon={Users} title="No families yet" hint="Families assigned to you will appear here." />
@@ -178,7 +178,7 @@ export default function ConsoleDashboard() {
             {roster.slice(0, 8).map((f) => {
               const st = FAM_STATUS[f.status]
               return (
-                <Link key={f.lovedOneId} href={`/console/families/${f.lovedOneId}`} className="group flex flex-col gap-3 rounded-lg border border-line bg-card p-4 shadow-sm transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:shadow-md">
+                <Link key={f.lovedOneId} href={`/pm/families/${f.lovedOneId}`} className="group flex flex-col gap-3 rounded-lg border border-line bg-card p-4 shadow-sm transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:shadow-md">
                   <div className="flex items-center gap-3">
                     <Avatar initials={initialsOf(f.name)} size="md" tone="solid" />
                     <div className="min-w-0 flex-1">

@@ -119,7 +119,7 @@ export function TodaysVisitsBoard() {
               <LiveVisitCard key={v.id} visit={v} actions={
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <button type="button" onClick={() => { reset(v.id); toast('Restored to the schedule.') }} className="flex min-h-[2.5rem] items-center justify-center gap-1.5 rounded-sm border border-ink/15 text-caption font-semibold text-ink transition-colors hover:border-ink/30 hover:bg-ink/[0.03]"><Undo2 className="h-3.5 w-3.5 text-green" strokeWidth={1.75} /> Undo</button>
-                  <Link href={`/console/families/${v.familyId}`} className="flex min-h-[2.5rem] items-center justify-center gap-1.5 rounded-sm border border-ink/15 text-caption font-semibold text-ink transition-colors hover:border-ink/30 hover:bg-ink/[0.03]">Open <ArrowRight className="h-3.5 w-3.5 text-green" strokeWidth={1.75} /></Link>
+                  <Link href={`/pm/families/${v.familyId}`} className="flex min-h-[2.5rem] items-center justify-center gap-1.5 rounded-sm border border-ink/15 text-caption font-semibold text-ink transition-colors hover:border-ink/30 hover:bg-ink/[0.03]">Open <ArrowRight className="h-3.5 w-3.5 text-green" strokeWidth={1.75} /></Link>
                 </div>
               } />
             ))}

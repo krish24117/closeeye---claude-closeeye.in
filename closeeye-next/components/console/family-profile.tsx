@@ -68,7 +68,7 @@ export function ConsoleFamilyProfile({ family }: { family: ConsoleFamily }) {
   return (
     <div className="flex flex-col gap-6">
       <Button asChild variant="text" className="self-start">
-        <Link href="/console/families"><ArrowLeft className="h-4 w-4" strokeWidth={1.5} /> Families</Link>
+        <Link href="/pm/families"><ArrowLeft className="h-4 w-4" strokeWidth={1.5} /> Families</Link>
       </Button>
 
       {/* Header */}

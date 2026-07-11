@@ -45,7 +45,7 @@ export default function FounderWelcomePage() {
     setBusy(true)
     // Save name + contact (mobile required) — onboarding is marked complete later, at the end.
     await saveFounderName(user.id, { fullName: name, phone, relationship })
-    router.push('/founder/membership')
+    router.push('/join/membership')
   }
 
   if (loading || !user) {

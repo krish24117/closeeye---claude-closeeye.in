@@ -66,7 +66,7 @@ export type NavItem = { label: string; href: string }
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/' },
   { label: 'How We Help', href: '/services' },
-  { label: 'Founder Story', href: '/founder-story' },
+  { label: 'Founder Story', href: '/founder' },
   { label: 'Membership', href: '/membership' },
   { label: 'Contact', href: '/#contact' },
 ]
@@ -89,7 +89,7 @@ export const FOOTER_GROUPS: { title: string; links: NavItem[] }[] = [
     links: [
       { label: 'Help Center', href: '/help' },
       { label: 'Family Space', href: '/family' },
-      { label: 'Founder Story', href: '/founder-story' },
+      { label: 'Founder Story', href: '/founder' },
       { label: 'Share feedback', href: '/feedback' },
       { label: 'Emergency support', href: '/contact#emergency' },
     ],

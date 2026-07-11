@@ -17,15 +17,15 @@ import { SITE } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
 const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) => boolean }[] = [
-  { href: '/console', label: 'Dashboard', icon: LayoutDashboard, match: (p) => p === '/console' },
-  { href: '/console/families', label: 'Families', icon: Users, match: (p) => p.startsWith('/console/families') },
-  { href: '/console/visits', label: "Today's Visits", icon: CalendarClock, match: (p) => p.startsWith('/console/visits') },
-  { href: '/console/guardians', label: 'Care Team', icon: ShieldCheck, match: (p) => p.startsWith('/console/guardians') },
-  { href: '/console/messages', label: 'Messages', icon: MessageCircle, match: (p) => p.startsWith('/console/messages') },
-  { href: '/console/guardian-messages', label: 'Guardian chat', icon: MessagesSquare, match: (p) => p.startsWith('/console/guardian-messages') },
-  { href: '/console/escalations', label: 'Escalations', icon: TriangleAlert, match: (p) => p.startsWith('/console/escalations') },
-  { href: '/console/calendar', label: 'Calendar', icon: CalendarDays, match: (p) => p.startsWith('/console/calendar') },
-  { href: '/console/reports', label: 'Reports', icon: BarChart3, match: (p) => p.startsWith('/console/reports') },
+  { href: '/pm', label: 'Dashboard', icon: LayoutDashboard, match: (p) => p === '/pm' },
+  { href: '/pm/families', label: 'Families', icon: Users, match: (p) => p.startsWith('/pm/families') },
+  { href: '/pm/visits', label: "Today's Visits", icon: CalendarClock, match: (p) => p.startsWith('/pm/visits') },
+  { href: '/pm/guardians', label: 'Care Team', icon: ShieldCheck, match: (p) => p.startsWith('/pm/guardians') },
+  { href: '/pm/messages', label: 'Messages', icon: MessageCircle, match: (p) => p.startsWith('/pm/messages') },
+  { href: '/pm/guardian-messages', label: 'Guardian chat', icon: MessagesSquare, match: (p) => p.startsWith('/pm/guardian-messages') },
+  { href: '/pm/escalations', label: 'Escalations', icon: TriangleAlert, match: (p) => p.startsWith('/pm/escalations') },
+  { href: '/pm/schedule', label: 'Schedule', icon: CalendarDays, match: (p) => p.startsWith('/pm/schedule') },
+  { href: '/pm/reports', label: 'Reports', icon: BarChart3, match: (p) => p.startsWith('/pm/reports') },
 ]
 
 function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
@@ -66,14 +66,14 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
     avatarUrl: identity.avatarUrl,
     initials: identity.initials,
     roleLabel: 'Presence Manager',
-    profileHref: '/console',
-    accountHref: '/console',
-    notificationsHref: '/console',
+    profileHref: '/pm',
+    accountHref: '/pm',
+    notificationsHref: '/pm',
   }
 
   const SidebarInner = (
     <>
-      <Link href="/console" className="flex items-center gap-2.5 px-6 py-5" onClick={() => setMenu(false)}>
+      <Link href="/pm" className="flex items-center gap-2.5 px-6 py-5" onClick={() => setMenu(false)}>
         <Logo variant="sidebar" sublabel="Presence Console" />
       </Link>
       <NavList pathname={pathname} onNavigate={() => setMenu(false)} />

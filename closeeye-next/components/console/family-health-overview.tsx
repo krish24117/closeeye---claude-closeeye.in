@@ -23,7 +23,7 @@ export function FamilyHealthOverview() {
     <section className="rounded-lg border border-line bg-card p-5 shadow-sm">
       <div className="flex items-center justify-between">
         <h2 className="text-h4">Family health overview</h2>
-        <Link href="/console/families" className="inline-flex items-center gap-1 text-caption font-semibold text-green hover:underline">All <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>
+        <Link href="/pm/families" className="inline-flex items-center gap-1 text-caption font-semibold text-green hover:underline">All <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>
       </div>
 
       <div className="mt-4 flex h-3 overflow-hidden rounded-full">

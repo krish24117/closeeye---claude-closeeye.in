@@ -60,7 +60,7 @@ export default function FounderMembershipPage() {
     // happens after launch, from the Membership page.
     const { error: e } = await selectPlan(user.id, id)
     if (e) { console.error('[founder/membership] selectPlan failed:', e); setBusy(null); setError('We couldn’t save that just now. Please try again.'); return }
-    router.push('/founder/done')
+    router.push('/join/done')
   }
 
   if (loading || !user) {

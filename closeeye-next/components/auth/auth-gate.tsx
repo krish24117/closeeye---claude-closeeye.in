@@ -12,7 +12,7 @@ import { LogoMark } from '@/components/ui/logo'
 // The unauthenticated / setup flow (allowed before the dashboard).
 const FLOW = ['/welcome', '/auth', '/permissions', '/onboarding', '/guardian/login']
 // The signed-in app surfaces (require auth + completed onboarding).
-const APP = ['/family', '/guardian', '/console', '/admin', '/settings', '/notifications', '/search']
+const APP = ['/family', '/guardian', '/pm', '/admin', '/settings', '/notifications', '/search']
 const inList = (p: string, l: string[]) => l.some((f) => p === f || p.startsWith(`${f}/`))
 
 /**
@@ -53,14 +53,13 @@ export function AuthGate() {
       else if (firstNative && !onFlow) target = '/welcome' // native launch on marketing
     } else if (onboardingComplete === false && !isSuperAdmin(profile) && !isPresenceManager(profile)) {
       // Family setup only. Founder pre-launch registrants finish a different,
-      // loved-one-free journey (/founder/*); a normal user (no hint, not on
-      // /founder) goes to /onboarding as before. Staff (admin / Presence Manager)
-      // never do family onboarding — they're routed to their console below.
-      if (pathname.startsWith('/founder/')) {
-        // stay — the founder journey pages (/founder/*) guide the rest of setup.
-        // (Precise trailing slash: NOT the /founder-story or /founder-brief pages.)
+      // loved-one-free journey (/join/*); a normal user (no hint, not on /join)
+      // goes to /onboarding as before. Staff (admin / Presence Manager) never do
+      // family onboarding — they're routed to their console below.
+      if (pathname.startsWith('/join')) {
+        // stay — the founder join journey (/join/*) guides the rest of setup.
       } else if (hasFounderSessionHint()) {
-        target = '/founder/welcome' // resume the founder journey, not generic onboarding
+        target = '/join/welcome' // resume the founder journey, not generic onboarding
       } else if (pathname !== '/onboarding') {
         target = '/onboarding' // must finish onboarding
       }
@@ -74,7 +73,7 @@ export function AuthGate() {
         : isSuperAdmin(profile)
         ? '/admin'
         : isPresenceManager(profile)
-        ? '/console'
+        ? '/pm'
         : '/family'
       if (onFlow) target = home // skip the auth flow once fully set up
       else if (firstNative && !onApp) target = home // native launch on marketing

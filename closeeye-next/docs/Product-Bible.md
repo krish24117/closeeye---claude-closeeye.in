@@ -63,7 +63,7 @@ The product's core loop connects the Guardian's care to the family's peace of mi
    moment-by-moment timeline, a memory book, health snapshot and wellness trend, photos
    and voice — surfaced by enhancing the **existing** screens.
 
-5. The **Presence Manager** oversees it all from the Console (`/console`) — the
+5. The **Presence Manager** oversees it all from the Console (`/pm`) — the
    operational brain. The Family Health Widget answers "who needs attention?" in five
    seconds; completed visits and family requests surface live via the same shared stores.
 

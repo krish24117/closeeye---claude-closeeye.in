@@ -39,7 +39,7 @@ frontend audit to the backend.
 
 1. **Server-side RBAC in V2 (highest).** Roles are enforced by routing today. Before real
    users, add Supabase-Auth session checks + a `middleware.ts` guard so a Family JWT can't
-   reach `/admin` or `/console` routes/data. RLS is the backstop, but the app must enforce too.
+   reach `/admin` or `/pm` routes/data. RLS is the backstop, but the app must enforce too.
 2. **Rate limiting on public endpoints.** `submit-booking-request`, `waitlist-signup`,
    `ask-health-public` run without JWT. Add per-IP/e.164 throttling (Upstash/edge) + a
    lightweight bot check to prevent abuse/spam.

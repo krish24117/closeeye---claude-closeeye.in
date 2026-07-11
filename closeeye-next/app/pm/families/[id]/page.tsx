@@ -42,7 +42,7 @@ export default function ConsoleFamilyWorkspace() {
   }
 
   const back = (
-    <Link href="/console/families" className="inline-flex items-center gap-1.5 self-start text-caption font-semibold text-muted hover:text-ink">
+    <Link href="/pm/families" className="inline-flex items-center gap-1.5 self-start text-caption font-semibold text-muted hover:text-ink">
       <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> In your care
     </Link>
   )
@@ -54,7 +54,7 @@ export default function ConsoleFamilyWorkspace() {
     return (
       <div className="flex flex-col gap-5">
         {back}
-        <EmptyState icon={Users} title="Family not found" hint="This family member may have been removed." action={<Button asChild><Link href="/console/families">Back to families</Link></Button>} />
+        <EmptyState icon={Users} title="Family not found" hint="This family member may have been removed." action={<Button asChild><Link href="/pm/families">Back to families</Link></Button>} />
       </div>
     )
   }

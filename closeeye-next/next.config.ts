@@ -40,6 +40,21 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [],
   },
+  // Canonical IA back-compat (permanent 308s). Console → PM, founder funnel → /join,
+  // Founder Story → /founder. Specific rules precede the /console/:path* catch-all.
+  async redirects() {
+    return [
+      { source: '/console/calendar', destination: '/pm/schedule', permanent: true },
+      { source: '/console/settings', destination: '/pm', permanent: true },
+      { source: '/console', destination: '/pm', permanent: true },
+      { source: '/console/:path*', destination: '/pm/:path*', permanent: true },
+      { source: '/founder-story', destination: '/founder', permanent: true },
+      { source: '/founder/start', destination: '/join', permanent: true },
+      { source: '/founder/welcome', destination: '/join/welcome', permanent: true },
+      { source: '/founder/membership', destination: '/join/membership', permanent: true },
+      { source: '/founder/done', destination: '/join/done', permanent: true },
+    ]
+  },
   async headers() {
     return [
       {

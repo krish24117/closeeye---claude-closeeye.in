@@ -196,13 +196,13 @@ export async function fetchConsoleOverview(): Promise<ConsoleOverview> {
   // Needs you now — urgent (red) first, then visit attention, then awaiting replies.
   const triage: ConsoleTriageItem[] = []
   families.forEach((f) => {
-    if (f.urgentQuestion) triage.push({ id: `u-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'urgent', tone: 'red', tag: 'Urgent', text: `Urgent health question: “${clip(f.urgentQuestion)}”`, href: `/console/families/${f.lovedOneId}` })
+    if (f.urgentQuestion) triage.push({ id: `u-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'urgent', tone: 'red', tag: 'Urgent', text: `Urgent health question: “${clip(f.urgentQuestion)}”`, href: `/pm/families/${f.lovedOneId}` })
   })
   families.forEach((f) => {
-    if (f.needsVisitAttention) triage.push({ id: `v-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'visit', tone: 'amber', tag: 'Needs action', text: 'A recent visit needs your attention.', href: `/console/families/${f.lovedOneId}` })
+    if (f.needsVisitAttention) triage.push({ id: `v-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'visit', tone: 'amber', tag: 'Needs action', text: 'A recent visit needs your attention.', href: `/pm/families/${f.lovedOneId}` })
   })
   families.forEach((f) => {
-    if (f.awaitingReply) triage.push({ id: `m-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'message', tone: 'amber', tag: 'Awaiting reply', text: 'A family message is waiting for your reply.', href: `/console/families/${f.lovedOneId}` })
+    if (f.awaitingReply) triage.push({ id: `m-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'message', tone: 'amber', tag: 'Awaiting reply', text: 'A family message is waiting for your reply.', href: `/pm/families/${f.lovedOneId}` })
   })
 
   // Today's Presence.
@@ -223,9 +223,9 @@ export async function fetchConsoleOverview(): Promise<ConsoleOverview> {
 
 function deriveTriage(families: ConsoleFamilyLive[]): ConsoleTriageItem[] {
   const triage: ConsoleTriageItem[] = []
-  families.forEach((f) => { if (f.urgentQuestion) triage.push({ id: `u-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'urgent', tone: 'red', tag: 'Urgent', text: `Urgent health question: "${clip(f.urgentQuestion)}"`, href: `/console/families/${f.lovedOneId}` }) })
-  families.forEach((f) => { if (f.needsVisitAttention) triage.push({ id: `v-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'visit', tone: 'amber', tag: 'Needs action', text: 'A recent visit needs your attention.', href: `/console/families/${f.lovedOneId}` }) })
-  families.forEach((f) => { if (f.awaitingReply) triage.push({ id: `m-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'message', tone: 'amber', tag: 'Awaiting reply', text: 'A family message is waiting for your reply.', href: `/console/families/${f.lovedOneId}` }) })
+  families.forEach((f) => { if (f.urgentQuestion) triage.push({ id: `u-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'urgent', tone: 'red', tag: 'Urgent', text: `Urgent health question: "${clip(f.urgentQuestion)}"`, href: `/pm/families/${f.lovedOneId}` }) })
+  families.forEach((f) => { if (f.needsVisitAttention) triage.push({ id: `v-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'visit', tone: 'amber', tag: 'Needs action', text: 'A recent visit needs your attention.', href: `/pm/families/${f.lovedOneId}` }) })
+  families.forEach((f) => { if (f.awaitingReply) triage.push({ id: `m-${f.lovedOneId}`, lovedOneId: f.lovedOneId, memberName: f.name, kind: 'message', tone: 'amber', tag: 'Awaiting reply', text: 'A family message is waiting for your reply.', href: `/pm/families/${f.lovedOneId}` }) })
   return triage
 }
 

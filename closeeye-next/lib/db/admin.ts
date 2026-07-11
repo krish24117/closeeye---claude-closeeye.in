@@ -136,7 +136,7 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
   const alerts: AdminAlert[] = []
   if (pendingApplications > 0) alerts.push({ id: 'apps', tone: 'warning', title: `${pendingApplications} Guardian application${pendingApplications > 1 ? 's' : ''} to review`, detail: 'New Care Team applicants are waiting.', href: '/admin/care-team' })
   const overdue = bookings.filter((b) => b.attention_needed && b.status !== 'cancelled' && b.status !== 'completed').length
-  if (overdue > 0) alerts.push({ id: 'overdue', tone: 'warning', title: `${overdue} visit${overdue > 1 ? 's' : ''} need${overdue === 1 ? 's' : ''} attention`, detail: 'Overdue or stalled visits flagged by the system.', href: '/console' })
+  if (overdue > 0) alerts.push({ id: 'overdue', tone: 'warning', title: `${overdue} visit${overdue > 1 ? 's' : ''} need${overdue === 1 ? 's' : ''} attention`, detail: 'Overdue or stalled visits flagged by the system.', href: '/pm' })
   const soon = now.getTime() + 7 * 86400000
   const expiring = activeSubList.filter((s) => s.current_end && new Date(s.current_end).getTime() <= soon).length
   if (expiring > 0) alerts.push({ id: 'expiring', tone: 'info', title: `${expiring} membership${expiring > 1 ? 's' : ''} renewing this week`, detail: 'Active plans reaching their renewal date.', href: '/admin/memberships' })

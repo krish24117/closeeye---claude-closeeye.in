@@ -207,7 +207,7 @@
 - Design language untouched — extended only. Docs: Presence-Manager updated.
 
 ### 2026-07-07 — Module 05: Presence Manager Console
-- The operational brain at `/console` (desktop-first) — not a CRM. `ConsoleShell`:
+- The operational brain at `/pm` (desktop-first) — not a CRM. `ConsoleShell`:
   sidebar + topbar (global search, notifications, emergency) + contextual banner.
 - **Dashboard**: greeting + hero stats + KPI row + **FamilyHealthWidget** (the hero:
   🟢🟡🔴 relationship-health, filter/search/sort, quick actions) + Today's schedule +
@@ -319,7 +319,7 @@
 - Documented design system + `/design-system` reference page.
 - Shorter homepage with layout variety (unified service panel, dark timeline,
   editorial trust split, featured testimonial). Founder story after trust.
-- Dedicated `/services`, `/membership`, `/founder-story`, `/privacy` pages.
+- Dedicated `/services`, `/membership`, `/founder`, `/privacy` pages.
 
 ### 2026-07-06 — Homepage V1 (initial)
 - First Next.js 15 / React 19 build of Close Eye Next: full homepage, design tokens,

@@ -39,7 +39,7 @@ export default function ConsoleGuardianThreadPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Link href="/console/guardian-messages" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
+      <Link href="/pm/guardian-messages" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> All Guardian messages
       </Link>
       {meta === undefined ? (
@@ -49,7 +49,7 @@ export default function ConsoleGuardianThreadPage() {
           icon={MessageCircle}
           title="Conversation not found"
           hint="This Guardian may have been removed."
-          action={<Button asChild><Link href="/console/guardian-messages">Back to messages</Link></Button>}
+          action={<Button asChild><Link href="/pm/guardian-messages">Back to messages</Link></Button>}
         />
       ) : (
         <AdminGuardianThread thread={meta} />

@@ -7,18 +7,18 @@ import { Avatar } from '@/components/family/avatar'
 import { EmptyState } from '@/components/ui/states'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
-import { fetchAdminThreads, type AdminThread } from '@/lib/db/messages'
-import type { Message } from '@/lib/db/types'
+import { fetchGuardianThreadsAsAdmin, type GuardianThread, type GuardianMessage } from '@/lib/db/guardian-messages'
 import { canUseConsole } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 
 type Filter = 'all' | 'awaiting'
 
-function preview(m: Message): string {
+function preview(m: GuardianMessage): string {
   const mine = m.sender === 'closeeye' ? 'You: ' : ''
   if (m.body) return mine + m.body
   if (m.attachment_type === 'image') return mine + 'Photo'
   if (m.attachment_type === 'pdf') return mine + 'Document'
+  if (m.attachment_type === 'audio') return mine + 'Voice note'
   return mine + 'Message'
 }
 
@@ -30,34 +30,28 @@ function rowTime(iso: string): string {
     : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 
-export default function ConsoleMessagesPage() {
+export default function ConsoleGuardianMessagesPage() {
   const { profile, loading } = useFamilyData()
   const isStaff = canUseConsole(profile)
-  const [threads, setThreads] = React.useState<AdminThread[] | null>(null)
+  const [threads, setThreads] = React.useState<GuardianThread[] | null>(null)
   const [filter, setFilter] = React.useState<Filter>('all')
   const [q, setQ] = React.useState('')
 
   React.useEffect(() => {
     if (!isStaff) return
-    fetchAdminThreads()
+    fetchGuardianThreadsAsAdmin()
       .then(setThreads)
       .catch(() => setThreads([]))
   }, [isStaff])
 
   if (loading) {
-    return (
-      <div className="grid place-items-center py-24">
-        <Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} />
-      </div>
-    )
+    return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
   }
 
   if (!isStaff) {
     return (
       <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-h2">Messages</h1>
-        </div>
+        <h1 className="text-h2">Guardian messages</h1>
         <EmptyState icon={Lock} title="Restricted" hint="This inbox is only available to Close Eye team members." />
       </div>
     )
@@ -66,13 +60,13 @@ export default function ConsoleMessagesPage() {
   const query = q.trim().toLowerCase()
   const list = (threads ?? [])
     .filter((t) => (filter === 'awaiting' ? t.awaitingReply : true))
-    .filter((t) => (query ? `${t.lovedOneName} ${t.familyName} ${t.lastMessage.body ?? ''}`.toLowerCase().includes(query) : true))
+    .filter((t) => (query ? `${t.guardianName} ${t.guardianCity ?? ''} ${t.lastMessage.body ?? ''}`.toLowerCase().includes(query) : true))
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-h2">Messages</h1>
-        <p className="mt-1.5 text-body leading-relaxed text-muted">Reply to families across every care conversation.</p>
+        <h1 className="text-h2">Guardian messages</h1>
+        <p className="mt-1.5 text-body leading-relaxed text-muted">Stay in touch with the Guardians serving your families.</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
@@ -81,7 +75,7 @@ export default function ConsoleMessagesPage() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search conversations…"
+            placeholder="Search Guardians…"
             className="w-full rounded-full border border-line bg-card py-2 pl-9 pr-4 text-body-sm text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20"
           />
         </div>
@@ -112,22 +106,23 @@ export default function ConsoleMessagesPage() {
           title={threads.length === 0 ? 'No conversations yet' : 'Nothing here'}
           hint={
             threads.length === 0
-              ? 'Family messages will appear here as soon as a family writes in.'
+              ? 'A Guardian conversation appears here as soon as one of them writes in.'
               : 'No conversations match your search or filter.'
           }
         />
       ) : (
         <ul className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
           {list.map((t) => (
-            <li key={t.lovedOneId}>
+            <li key={t.companionId}>
               <Link
-                href={`/console/messages/${t.lovedOneId}`}
+                href={`/pm/guardian-messages/${t.companionId}`}
                 className="flex w-full items-center gap-3 border-b border-line px-4 py-3.5 text-left transition-colors last:border-b-0 hover:bg-accent-soft/30"
               >
-                <Avatar initials={initialsOf(t.lovedOneName)} size="sm" tone="solid" />
+                <Avatar initials={initialsOf(t.guardianName)} size="sm" tone="solid" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-body-sm font-semibold text-ink">
-                    {t.lovedOneName} <span className="font-normal text-muted">· {t.familyName}</span>
+                    {t.guardianName}
+                    {t.guardianCity && <span className="font-normal text-muted"> · {t.guardianCity}</span>}
                   </span>
                   <span className={cn('block truncate text-caption', t.awaitingReply ? 'font-medium text-ink' : 'text-muted')}>
                     {preview(t.lastMessage)}

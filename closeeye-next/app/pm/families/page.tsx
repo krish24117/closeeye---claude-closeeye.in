@@ -104,7 +104,7 @@ export default function FamiliesPage() {
             return (
               <Link
                 key={f.lovedOneId}
-                href={`/console/families/${f.lovedOneId}`}
+                href={`/pm/families/${f.lovedOneId}`}
                 className="group flex flex-col gap-3 rounded-lg border border-line bg-card p-4 shadow-sm transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="flex items-center gap-3">

@@ -14,12 +14,12 @@ storage, no duplicate dashboards.
 
 | # | Module | Route(s) | Status |
 |---|---|---|---|
-| 0–1 | Marketing site + Design Authority | `/`, `/services`, `/membership`, `/founder-story`, `/become-a-companion` | ✅ |
+| 0–1 | Marketing site + Design Authority | `/`, `/services`, `/membership`, `/founder`, `/become-a-companion` | ✅ |
 | 2 | Booking Experience | `/book` | ✅ |
 | 3 | Family Space | `/family` | ✅ |
 | 3.1 | Human Presence Experience (Guardian→Family) | `/family/*` | ✅ |
 | 4 | Guardian App (M1 dashboard, M2 visit journey, media capture) | `/guardian` | ✅ |
-| 5 | Presence Manager Console (+ V1 operational completeness) | `/console` | ✅ |
+| 5 | Presence Manager Console (+ V1 operational completeness) | `/pm` | ✅ |
 | 6 | Operations Admin (Founder OS) | `/admin` | ✅ |
 | 7 | **Intelligence Layer (CLOza)** | `/admin/insights` | ✅ |
 | 8+ | TBD — pending Product Director approval | — | ⏳ |

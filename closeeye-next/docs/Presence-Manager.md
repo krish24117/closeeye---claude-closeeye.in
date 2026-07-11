@@ -6,7 +6,7 @@ concierge. Within five seconds a Presence Manager should know: who needs help, w
 safe, who needs follow-up, what changed, and what to do next. Everything reduces
 operational stress.
 
-Route: **`/console`** (desktop-first, `noindex`). Reuses the Design System entirely —
+Route: **`/pm`** (desktop-first, `noindex`). Reuses the Design System entirely —
 no new colours, type, spacing, motion, or duplicated components.
 
 ## Architecture
@@ -23,16 +23,16 @@ no new colours, type, spacing, motion, or duplicated components.
 
 | Route | Screen | Highlights |
 |---|---|---|
-| `/console` | **Dashboard** | Greeting · hero stats (families / active / upcoming / high-priority) · KPI row · **FamilyHealthWidget** · Today's schedule · **AI Operations Assistant** · Recent activity |
-| `/console/families` | Families | The `FamilyHealthWidget` as a searchable, filterable directory |
-| `/console/families/[id]` | **Family Profile** | Live AI story, timeline, moments, photos, voice, health snapshot, wellness trend (reused from Family Space) · guardian · family requests · documents · emergency contacts · actions (Call · WhatsApp · Schedule · Assign · Escalate) |
-| `/console/visits` | Today's Visits / **Live Monitor** | `LiveVisitCard` grouped by In progress · Delayed · En route · Upcoming · Completed (check-in, GPS, duration, AI status, media) |
-| `/console/guardians` | Guardians | `GuardianCard` directory — availability, load, rating, training, call / message / assign |
-| `/console/escalations` | Escalations | `EscalationCard` by priority with a recommended next step + resolve |
-| `/console/calendar` | Calendar | Day / Week / Month agenda (`CalendarCard`) — visits, appointments, birthdays, leave, requests |
-| `/console/reports` | Reports | Today / week / month — satisfaction, completion, response, family-health trends, guardian performance (plain-language bars, no charts) |
-| `/console/messages` | Messages | Unified inbox — Families · Guardians · Team, search, quick-reply templates |
-| `/console/settings` | Settings | Profile · notification toggles · your guardians |
+| `/pm` | **Dashboard** | Greeting · hero stats (families / active / upcoming / high-priority) · KPI row · **FamilyHealthWidget** · Today's schedule · **AI Operations Assistant** · Recent activity |
+| `/pm/families` | Families | The `FamilyHealthWidget` as a searchable, filterable directory |
+| `/pm/families/[id]` | **Family Profile** | Live AI story, timeline, moments, photos, voice, health snapshot, wellness trend (reused from Family Space) · guardian · family requests · documents · emergency contacts · actions (Call · WhatsApp · Schedule · Assign · Escalate) |
+| `/pm/visits` | Today's Visits / **Live Monitor** | `LiveVisitCard` grouped by In progress · Delayed · En route · Upcoming · Completed (check-in, GPS, duration, AI status, media) |
+| `/pm/guardians` | Guardians | `GuardianCard` directory — availability, load, rating, training, call / message / assign |
+| `/pm/escalations` | Escalations | `EscalationCard` by priority with a recommended next step + resolve |
+| `/pm/schedule` | Calendar | Day / Week / Month agenda (`CalendarCard`) — visits, appointments, birthdays, leave, requests |
+| `/pm/reports` | Reports | Today / week / month — satisfaction, completion, response, family-health trends, guardian performance (plain-language bars, no charts) |
+| `/pm/messages` | Messages | Unified inbox — Families · Guardians · Team, search, quick-reply templates |
+| `/pm/settings` | Settings | Profile · notification toggles · your guardians |
 
 ## Family Health Widget (the primary hero)
 

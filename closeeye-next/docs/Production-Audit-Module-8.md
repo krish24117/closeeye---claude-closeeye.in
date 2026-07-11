@@ -151,7 +151,7 @@ RLS. **This is the single largest pre-launch backend task.** Documented, not hid
 
 Every role has its own reachable surface, and no role's nav links leak another role's routes
 (verified via the link-graph sweep). Screens by role: **Family** (`/family/*`), **Guardian**
-(`/guardian/*`), **Presence Manager** (`/console/*`), **Care Team / Operations / Super Admin**
+(`/guardian/*`), **Presence Manager** (`/pm/*`), **Care Team / Operations / Super Admin**
 (`/admin/*` with `admin_role` sub-roles). **Access is presentation-correct today; server-side
 enforcement is the §6 RBAC backend task.**
 

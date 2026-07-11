@@ -39,7 +39,7 @@ export default function OperationsPage() {
           <h1 className="text-h2">Operations</h1>
           <p className="mt-1.5 text-body leading-relaxed text-muted">Today&apos;s operations and coverage, from live data.</p>
         </div>
-        <Link href="/console" className="inline-flex items-center gap-1.5 rounded-sm border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40">
+        <Link href="/pm" className="inline-flex items-center gap-1.5 rounded-sm border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40">
           <ArrowUpRight className="h-4 w-4 text-green" strokeWidth={1.75} /> Live monitor (Presence Console)
         </Link>
       </div>

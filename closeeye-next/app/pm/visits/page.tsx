@@ -68,7 +68,7 @@ export default function VisitsPage() {
                   <ul className="divide-y divide-line">
                     {rows.map((v) => (
                       <li key={v.id}>
-                        <Link href={v.lovedOneId ? `/console/families/${v.lovedOneId}` : '/console/families'} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-accent-soft/30">
+                        <Link href={v.lovedOneId ? `/pm/families/${v.lovedOneId}` : '/pm/families'} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-accent-soft/30">
                           <span className="w-16 shrink-0 text-caption font-bold text-ink">{v.timeLabel}</span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-body-sm font-semibold text-ink">{v.memberName}</span>

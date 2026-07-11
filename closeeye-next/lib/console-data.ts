@@ -217,8 +217,8 @@ export interface AIRecommendation {
 }
 
 export const AI_RECOMMENDATIONS: AIRecommendation[] = [
-  { id: 'r-1', tone: 'warning', text: 'Three families need a follow-up today — Sheikh, Lakshmi Rao and Yusuf Khan. The Sheikh family is most time-sensitive.', action: { label: 'Review escalations', href: '/console/escalations' } },
-  { id: 'r-2', tone: 'warning', text: 'Mrs Lakshmi has shown lower energy for three consecutive visits. A wellbeing review may be worth scheduling.', action: { label: 'Open her profile', href: '/console/families/f-lakshmi' } },
-  { id: 'r-3', tone: 'info', text: 'Sana is running 15 minutes behind for Yusuf Khan. Meena is available nearby if you’d like a backup.', action: { label: 'View guardians', href: '/console/guardians' } },
+  { id: 'r-1', tone: 'warning', text: 'Three families need a follow-up today — Sheikh, Lakshmi Rao and Yusuf Khan. The Sheikh family is most time-sensitive.', action: { label: 'Review escalations', href: '/pm/escalations' } },
+  { id: 'r-2', tone: 'warning', text: 'Mrs Lakshmi has shown lower energy for three consecutive visits. A wellbeing review may be worth scheduling.', action: { label: 'Open her profile', href: '/pm/families/f-lakshmi' } },
+  { id: 'r-3', tone: 'info', text: 'Sana is running 15 minutes behind for Yusuf Khan. Meena is available nearby if you’d like a backup.', action: { label: 'View guardians', href: '/pm/guardians' } },
   { id: 'r-4', tone: 'positive', text: 'Arjun has completed every visit on time today. Gopal Reddy and Radha Menon both had wonderful mornings.' },
 ]

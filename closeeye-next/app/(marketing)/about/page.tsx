@@ -27,7 +27,7 @@ const STORY = [
 const JOIN = [
   { href: '/become-a-guardian', h: 'Become a Guardian', sub: 'Join our verified care team' },
   { href: '/become-a-companion', h: 'Become a Companion', sub: 'Spend meaningful time with elders' },
-  { href: '/founder-story', h: 'The founder’s story', sub: 'Why we started' },
+  { href: '/founder', h: 'The founder’s story', sub: 'Why we started' },
 ]
 
 export default function AboutPage() {

@@ -89,7 +89,7 @@ export const ALERTS: AdminAlert[] = [
   { id: 'al-3', severity: 'medium', title: '2 refunds pending approval', detail: '₹24,000 awaiting your sign-off for over 24 hours.', action: 'Review and approve refunds', href: '/admin/finance' },
   { id: 'al-4', severity: 'medium', title: '14 memberships expiring in 7 days', detail: '₹1.12L of MRR at risk if not renewed.', action: 'Trigger renewal outreach', href: '/admin/memberships' },
   { id: 'al-5', severity: 'medium', title: 'Companion shortage · weekends', detail: 'Companion demand up 22% on weekends; supply flat.', action: 'Open a Companion recruitment drive', href: '/become-a-companion' },
-  { id: 'al-6', severity: 'low', title: '1 high-priority family needs review', detail: 'Sheikh family flagged after a cancelled cardiology visit.', action: 'Open the escalation', href: '/console/escalations' },
+  { id: 'al-6', severity: 'low', title: '1 high-priority family needs review', detail: 'Sheikh family flagged after a cancelled cardiology visit.', action: 'Open the escalation', href: '/pm/escalations' },
 ]
 
 /* ── Business Insights ───────────────────────────────────────────────────── */

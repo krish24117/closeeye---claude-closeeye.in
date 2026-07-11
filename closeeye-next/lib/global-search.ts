@@ -21,12 +21,12 @@ export interface SearchItem {
 }
 
 const DOCTORS: SearchItem[] = [
-  { id: 'doc-1', type: 'Doctor', title: 'Dr. Suresh Rao', sub: 'Cardiologist · Apollo Hospitals', href: '/console/families/f-sheikh', keywords: 'heart cardiology physician' },
-  { id: 'doc-2', type: 'Doctor', title: 'Dr. Meera Nair', sub: 'General physician · panel', href: '/console', keywords: 'gp physician family doctor' },
+  { id: 'doc-1', type: 'Doctor', title: 'Dr. Suresh Rao', sub: 'Cardiologist · Apollo Hospitals', href: '/pm/families/f-sheikh', keywords: 'heart cardiology physician' },
+  { id: 'doc-2', type: 'Doctor', title: 'Dr. Meera Nair', sub: 'General physician · panel', href: '/pm', keywords: 'gp physician family doctor' },
 ]
 const MEDICINES: SearchItem[] = [
-  { id: 'med-1', type: 'Medicine', title: 'Amlodipine 5mg', sub: 'Blood pressure · Ramesh Rao', href: '/console/families/f-rao', keywords: 'bp hypertension' },
-  { id: 'med-2', type: 'Medicine', title: 'Metformin 500mg', sub: 'Diabetes · Lakshmi Rao', href: '/console/families/f-lakshmi', keywords: 'sugar diabetic adherence' },
+  { id: 'med-1', type: 'Medicine', title: 'Amlodipine 5mg', sub: 'Blood pressure · Ramesh Rao', href: '/pm/families/f-rao', keywords: 'bp hypertension' },
+  { id: 'med-2', type: 'Medicine', title: 'Metformin 500mg', sub: 'Diabetes · Lakshmi Rao', href: '/pm/families/f-lakshmi', keywords: 'sugar diabetic adherence' },
 ]
 const TICKETS: SearchItem[] = [
   { id: 'tk-1', type: 'Care ticket', title: 'Medicine coordination', sub: 'Rao family · resolved today', href: '/admin/insights', keywords: 'pharmacy medicine care team' },
@@ -34,17 +34,17 @@ const TICKETS: SearchItem[] = [
   { id: 'tk-3', type: 'Care ticket', title: 'Lab test scheduling', sub: 'Mehta family · pending', href: '/admin/insights', keywords: 'blood test diagnostics' },
 ]
 const OPERATIONS: SearchItem[] = [
-  { id: 'op-1', type: 'Operations', title: 'Live visit monitor', sub: 'Today’s visits, check-ins & GPS', href: '/console/visits', keywords: 'operations live monitor visits today' },
+  { id: 'op-1', type: 'Operations', title: 'Live visit monitor', sub: 'Today’s visits, check-ins & GPS', href: '/pm/visits', keywords: 'operations live monitor visits today' },
   { id: 'op-2', type: 'Operations', title: 'Cancellation center', sub: 'Reasons, trend & recovery', href: '/admin/operations', keywords: 'cancellations refunds' },
   { id: 'op-3', type: 'Operations', title: 'Coverage & zones', sub: 'Cities, pincodes, supply health', href: '/admin/coverage', keywords: 'zones hyderabad west coverage gap' },
-  { id: 'op-4', type: 'Operations', title: 'Escalations', sub: 'Anything needing a decision', href: '/console/escalations', keywords: 'escalation priority urgent' },
+  { id: 'op-4', type: 'Operations', title: 'Escalations', sub: 'Anything needing a decision', href: '/pm/escalations', keywords: 'escalation priority urgent' },
 ]
 
 let cache: SearchItem[] | null = null
 export function index(): SearchItem[] {
   if (cache) return cache
   const items: SearchItem[] = []
-  for (const f of FAMILIES) items.push({ id: `fam-${f.id}`, type: 'Family', title: f.memberName, sub: `${f.familyName} · ${f.relationship} · ${f.area}`, href: `/console/families/${f.id}`, keywords: `${f.familyName} ${f.area} ${f.status}` })
+  for (const f of FAMILIES) items.push({ id: `fam-${f.id}`, type: 'Family', title: f.memberName, sub: `${f.familyName} · ${f.relationship} · ${f.area}`, href: `/pm/families/${f.id}`, keywords: `${f.familyName} ${f.area} ${f.status}` })
   for (const g of GUARDIANS) items.push({ id: `gd-${g.id}`, type: g.role === 'companion' ? 'Companion' : 'Guardian', title: g.name, sub: `${g.role === 'companion' ? 'Companion' : 'Guardian'} · ${g.area} · ${g.rating}★`, href: '/admin/care-team', keywords: `${g.training.join(' ')} ${g.availabilityLabel}` })
   for (const inv of INVOICES) items.push({ id: `inv-${inv.id}`, type: 'Invoice', title: inv.id, sub: `${inv.family} · ${inv.plan} · ${fmtINR(inv.amount, false)}`, href: '/admin/finance', keywords: `${inv.status} payment invoice ${inv.family}` })
   for (const v of VISITS) {

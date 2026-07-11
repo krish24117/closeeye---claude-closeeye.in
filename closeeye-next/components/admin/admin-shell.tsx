@@ -73,7 +73,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </Link>
       <NavList pathname={pathname} onNavigate={() => setMenu(false)} />
       <div className="m-3 flex flex-col gap-2">
-        <Link href="/console" className="flex items-center gap-2 rounded-md border border-line bg-ivory px-3 py-2.5 text-caption font-semibold text-ink transition-colors hover:border-green/40">
+        <Link href="/pm" className="flex items-center gap-2 rounded-md border border-line bg-ivory px-3 py-2.5 text-caption font-semibold text-ink transition-colors hover:border-green/40">
           <ArrowUpRight className="h-4 w-4 text-green" strokeWidth={1.75} /> Presence Console
         </Link>
         <div className="flex items-center gap-3 rounded-md border border-line bg-ivory p-3">

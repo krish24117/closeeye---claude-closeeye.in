@@ -51,7 +51,7 @@ Three personas, one design language — hide the logo and it's still Close Eye. 
 a shell tuned to its context, all from the same tokens/components:
 - **Family Space** (`/family`) — mobile-first, reassurance-first (bottom nav + sidebar).
 - **Guardian App** (`/guardian`) — mobile-first, one-handed field app (console header + bottom nav).
-- **Presence Console** (`/console`) — **desktop-first** operations (left sidebar + topbar).
+- **Presence Console** (`/pm`) — **desktop-first** operations (left sidebar + topbar).
 
 The console reuses the Family Space experience components verbatim (`AIStoryCard`,
 `PhotoGallery`, `VoicePlayer`, `HealthSnapshot`, …) and semantic colours for
