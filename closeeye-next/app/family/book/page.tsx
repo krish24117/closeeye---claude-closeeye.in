@@ -284,7 +284,15 @@ export default function FamilyBookPage() {
             <h2 className="text-h4 text-ink">What kind of visit?</h2>
             <div className="grid gap-4 sm:grid-cols-3">
               {BOOKING_SERVICES.map((s) => (
-                <OptionCard key={s.id} icon={s.icon} title={s.name} description={s.blurb} selected={serviceId === s.id} onClick={() => setServiceId(s.id)} />
+                <OptionCard
+                  key={s.id}
+                  icon={s.icon}
+                  title={s.name}
+                  description={s.blurb}
+                  meta={<>Starting at <span className="font-semibold text-ink">{s.priceFrom}</span></>}
+                  selected={serviceId === s.id}
+                  onClick={() => setServiceId(s.id)}
+                />
               ))}
             </div>
           </section>
