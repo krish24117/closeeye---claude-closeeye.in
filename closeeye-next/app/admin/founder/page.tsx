@@ -271,6 +271,7 @@ export default function FounderDashboardPage() {
   const [query, setQuery] = React.useState('')
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
   const [flash, setFlash] = React.useState('')
+  const familiesRef = React.useRef<HTMLElement>(null)
 
   React.useEffect(() => { setNowIso(new Date().toISOString()); setDays(daysUntilLaunch()); setLive(launchMode() === 'live') }, [])
   React.useEffect(() => {
@@ -295,6 +296,10 @@ export default function FounderDashboardPage() {
   }
 
   function showFlash(msg: string) { setFlash(msg); setTimeout(() => setFlash(''), 2000) }
+  function jumpTo(f: Filter) {
+    setFilter(f)
+    requestAnimationFrame(() => familiesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
 
   async function toggleFollowedUp(r: FounderRegistrant) {
     const next = !r.followedUp
@@ -359,8 +364,8 @@ export default function FounderDashboardPage() {
         <div className="flex flex-col gap-2 rounded-lg border border-green/30 bg-accent-soft/20 p-4 shadow-sm">
           {needsFollowUp > 0 && (
             <div className="flex items-center justify-between gap-3 rounded-md bg-card px-4 py-3 shadow-sm">
-              <span className="flex items-center gap-2.5 text-body-sm text-ink"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-warning/12 text-warning"><Phone className="h-3.5 w-3.5" strokeWidth={2} /></span><span><strong>{needsFollowUp}</strong> famil{needsFollowUp === 1 ? 'y' : 'ies'} waiting for a first call</span></span>
-              <Button size="sm" variant="secondary" onClick={() => setFilter('follow_up')}>Show</Button>
+              <span className="flex items-center gap-2.5 text-body-sm text-ink"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-warning/12 text-warning"><Phone className="h-3.5 w-3.5" strokeWidth={2} /></span><span><strong>{needsFollowUp}</strong> famil{needsFollowUp === 1 ? 'y' : 'ies'} to reach out to</span></span>
+              <Button size="sm" variant="secondary" onClick={() => jumpTo('follow_up')}>Show</Button>
             </div>
           )}
           {tasks.map((rem) => {
@@ -397,7 +402,7 @@ export default function FounderDashboardPage() {
       </section>
 
       {/* 3 · Registered families */}
-      <section>
+      <section ref={familiesRef}>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <p className={cn(section, 'mb-0')}>Registered families · {filtered.length}{filtered.length !== all.length ? ` of ${all.length}` : ''}</p>
           <div className="flex items-center gap-1.5">
@@ -447,7 +452,7 @@ export default function FounderDashboardPage() {
                     return (
                       <tr key={r.id} onClick={() => setSelectedId(r.id)} className="cursor-pointer align-middle transition-colors hover:bg-accent-soft/25">
                         <td className="px-4 py-3"><span className="flex items-center gap-2.5"><Avatar initials={initialsOf(r.fullName ?? 'Family')} size="sm" tone="solid" /><span className="font-semibold text-ink">{r.fullName ?? '—'}</span>{r.isFoundingMember && r.foundingNumber != null && <span title={`Founding Member #${r.foundingNumber}`} className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-green/12 px-1.5 py-0.5 text-[0.6rem] font-bold text-green"><Star className="h-2.5 w-2.5 fill-green" strokeWidth={0} />#{r.foundingNumber}</span>}</span></td>
-                        <td className="whitespace-nowrap px-4 py-3 text-ink">{r.phone ?? '—'}</td>
+                        <td className="whitespace-nowrap px-4 py-3">{r.phone ? <span className="text-ink">{r.phone}</span> : <span className="text-muted/60">No phone · email only</span>}</td>
                         <td className="px-4 py-3 text-muted">{r.serviceArea ?? '—'}</td>
                         <td className="px-4 py-3 text-muted">{r.relationship ?? '—'}</td>
                         <td className="px-4 py-3">{plan ? <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[0.65rem] font-bold uppercase text-green">{plan.short}</span> : <span className="text-muted">—</span>}</td>
