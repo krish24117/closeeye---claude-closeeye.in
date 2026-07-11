@@ -4,7 +4,7 @@ import * as React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { MapPin, ShieldCheck, HeartHandshake, MessageCircle, Camera, Clock, ArrowRight } from 'lucide-react'
+import { MapPin, ShieldCheck, HeartHandshake, MessageCircle, Camera, Clock, ArrowRight, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LogoMark } from '@/components/ui/logo'
 import { setFounderSessionHint, setFounderRef } from '@/lib/founder-funnel'
@@ -18,8 +18,8 @@ const founderWhatsApp = () =>
   whatsappLink(`Hi ${FOUNDER.name}, I saw the Close Eye invitation and I'd like to ask about my family in Hyderabad.`)
 
 /** A calm, letter-like column — a personal invitation, not a marketing page. */
-function Section({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <section className={`mx-auto w-full max-w-2xl px-5 ${className}`}>{children}</section>
+function Section({ children, className = '', id }: { children: React.ReactNode; className?: string; id?: string }) {
+  return <section id={id} className={`mx-auto w-full max-w-2xl px-5 ${className}`}>{children}</section>
 }
 
 // Real trust signals — no "secure payments" before anyone has paid (reads fintech).
@@ -61,6 +61,25 @@ export default function FounderLandingPage() {
 
   const logWhatsApp = () => logFounderEvent('whatsapp_click', refStr)
 
+  // Sticky CTA appears once the visitor has scrolled past the hero (so the top of
+  // the page invites reading the story rather than a premature exit), and hides
+  // again at the close, where the full CTA already lives.
+  const [showSticky, setShowSticky] = React.useState(false)
+  React.useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY
+      const nearBottom = y + window.innerHeight > document.documentElement.scrollHeight - 280
+      setShowSticky(y > 520 && !nearBottom)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [])
+
   return (
     <div className="min-h-dvh bg-ivory pb-24 text-ink">
       {/* Minimal chrome — just the mark, so the focus stays on the invitation. */}
@@ -92,14 +111,16 @@ export default function FounderLandingPage() {
         </p>
 
         <div className="mt-8">
-          <Button asChild size="lg"><Link href={REGISTER_HREF}>Start Your Close Eye Journey <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
+          <a href="#story" className="inline-flex items-center gap-2 text-body font-semibold text-green transition-colors hover:text-ink">
+            Read Krishna’s story <ChevronDown className="h-5 w-5" strokeWidth={2} />
+          </a>
         </div>
       </Section>
 
       <div className="mx-auto my-14 h-px w-full max-w-2xl bg-line/70" />
 
       {/* 2 · FOUNDER STORY — the canonical story (lib/content.ts), shortened for this space */}
-      <Section>
+      <Section id="story">
         <h2 className="text-h3 tracking-tight">Why I built this</h2>
         <div className="mt-5 flex flex-col gap-3 text-body leading-relaxed text-ink/90">
           {FOUNDER.storyShort.map((p) => (
@@ -226,6 +247,16 @@ export default function FounderLandingPage() {
           <p className="mt-3 text-caption text-muted">Close Eye · Serving Hyderabad · Launching {FOUNDER_LAUNCH_LABEL}</p>
         </div>
       </footer>
+
+      {/* Sticky CTA — slides in once past the hero, hides at the close (which has its own CTA) */}
+      <div className={`fixed inset-x-0 bottom-0 z-40 transition-transform duration-300 ${showSticky ? 'translate-y-0' : 'translate-y-full pointer-events-none'}`} aria-hidden={!showSticky}>
+        <div className="mx-auto w-full max-w-2xl px-4 pb-4">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-ivory/95 px-4 py-3 shadow-lg backdrop-blur">
+            <p className="min-w-0 text-caption leading-tight text-muted">Free — nothing to pay until <span className="font-semibold text-ink">{FOUNDER_LAUNCH_LABEL}</span></p>
+            <Button asChild size="md" className="shrink-0"><Link href={REGISTER_HREF}>Start Your Journey <ArrowRight className="h-4 w-4" strokeWidth={2} /></Link></Button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
