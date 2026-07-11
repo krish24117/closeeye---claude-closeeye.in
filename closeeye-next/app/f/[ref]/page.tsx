@@ -87,7 +87,7 @@ export default function FounderLandingPage() {
         </p>
 
         <div className="mt-8">
-          <Button asChild size="lg"><Link href={REGISTER_HREF}>Become a Founding Family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
+          <Button asChild size="lg"><Link href={REGISTER_HREF}>Reserve Your Family’s Place <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
         </div>
       </Section>
 
@@ -192,7 +192,7 @@ export default function FounderLandingPage() {
         <div className="flex flex-col items-center rounded-2xl border border-line/70 bg-card px-6 py-11 text-center shadow-sm">
           <h2 className="text-h3 tracking-tight text-balance">Be one of Close Eye’s first families</h2>
           <p className="mt-2 max-w-md text-body-sm leading-relaxed text-muted">It takes two minutes, and there’s nothing to pay today.</p>
-          <Button asChild size="lg" className="mt-6"><Link href={REGISTER_HREF}>Become a Founding Family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
+          <Button asChild size="lg" className="mt-6"><Link href={REGISTER_HREF}>Reserve Your Family’s Place <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
           <p className="mt-8 max-w-md text-body-sm leading-relaxed text-muted">Would you rather just talk? I read every message myself.</p>
           <Button asChild variant="text" size="md" className="mt-1.5"><a href={founderWhatsApp()} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Message {FOUNDER.name} on WhatsApp</a></Button>
         </div>
