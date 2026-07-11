@@ -8,6 +8,7 @@ import { MapPin, ShieldCheck, HeartHandshake, MessageCircle, Camera, Clock, Arro
 import { Button } from '@/components/ui/button'
 import { LogoMark } from '@/components/ui/logo'
 import { setFounderSessionHint, setFounderRef } from '@/lib/founder-funnel'
+import { logFounderEvent } from '@/lib/founder-events'
 import { FOUNDER_LAUNCH_LABEL } from '@/lib/launch'
 import { whatsappLink } from '@/lib/site'
 import { FOUNDER } from '@/lib/content'
@@ -47,14 +48,18 @@ const QUESTIONS = [
 export default function FounderLandingPage() {
   const params = useParams<{ ref: string }>()
   const ref = params?.ref
+  const refStr = Array.isArray(ref) ? ref[0] ?? '' : ref ?? ''
 
   // Entering the founder funnel: remember this visit (session hint) + the ref for
   // attribution. This is what brings Phase 1's pre-launch gate to life for founder
-  // visitors — nothing else in the app sets it.
+  // visitors — nothing else in the app sets it. We also log the view (honest funnel).
   React.useEffect(() => {
     setFounderSessionHint()
-    if (ref) setFounderRef(Array.isArray(ref) ? ref[0]! : ref)
-  }, [ref])
+    if (refStr) setFounderRef(refStr)
+    logFounderEvent('landing_view', refStr)
+  }, [refStr])
+
+  const logWhatsApp = () => logFounderEvent('whatsapp_click', refStr)
 
   return (
     <div className="min-h-dvh bg-ivory pb-24 text-ink">
@@ -138,7 +143,7 @@ export default function FounderLandingPage() {
         </div>
         <p className="mt-4 text-body-sm text-muted">
           Looking for monthly Presence Visits?{' '}
-          <a href={founderWhatsApp()} target="_blank" rel="noopener noreferrer" className="font-semibold text-green hover:underline">Ask me about Close Eye Care →</a>
+          <a href={founderWhatsApp()} onClick={logWhatsApp} target="_blank" rel="noopener noreferrer" className="font-semibold text-green hover:underline">Ask me about Close Eye Care →</a>
         </p>
         <p className="mt-6 text-body-sm leading-relaxed text-muted">
           You’ll choose your plan during registration. No payment is required before {FOUNDER_LAUNCH_LABEL}.
@@ -194,7 +199,7 @@ export default function FounderLandingPage() {
           <p className="mt-2 max-w-md text-body-sm leading-relaxed text-muted">It takes two minutes, and there’s nothing to pay today.</p>
           <Button asChild size="lg" className="mt-6"><Link href={REGISTER_HREF}>Reserve Your Family’s Place <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
           <p className="mt-8 max-w-md text-body-sm leading-relaxed text-muted">Would you rather just talk? I read every message myself.</p>
-          <Button asChild variant="text" size="md" className="mt-1.5"><a href={founderWhatsApp()} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Message {FOUNDER.name} on WhatsApp</a></Button>
+          <Button asChild variant="text" size="md" className="mt-1.5"><a href={founderWhatsApp()} onClick={logWhatsApp} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Message {FOUNDER.name} on WhatsApp</a></Button>
         </div>
       </Section>
       </main>
@@ -203,7 +208,7 @@ export default function FounderLandingPage() {
         <div className="border-t border-line/70 pt-6">
           <p className="text-body-sm text-muted">
             Need help?{' '}
-            <a href={founderWhatsApp()} target="_blank" rel="noopener noreferrer" className="font-semibold text-green hover:underline">
+            <a href={founderWhatsApp()} onClick={logWhatsApp} target="_blank" rel="noopener noreferrer" className="font-semibold text-green hover:underline">
               Message {FOUNDER.name} directly on WhatsApp
             </a>
           </p>
