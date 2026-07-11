@@ -13,6 +13,7 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { signInWithGoogle, signUpWithPassword, signInWithPassword } from '@/lib/auth-actions'
 import { planById } from '@/lib/plans'
 import { setPendingPlan } from '@/lib/membership-intent'
+import { hasFounderSessionHint } from '@/lib/founder-funnel'
 import { isNative } from '@/lib/native'
 import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
@@ -81,7 +82,11 @@ function AuthFlow() {
     if (joinPlan) setPendingPlan(joinPlan.id)
   }, [joinPlanId]) // eslint-disable-line react-hooks/exhaustive-deps
   React.useEffect(() => {
-    if (joinIntent || foundingIntent) setMode('signup')
+    // New customers create an account. Founder-funnel visitors default to signup
+    // even if the ?intent flag was lost (e.g. a reload) — the durable session hint
+    // (set on the landing / service-area step) carries the context so they never
+    // land on the "Sign in" screen by mistake.
+    if (joinIntent || foundingIntent || hasFounderSessionHint()) setMode('signup')
   }, [joinIntent, foundingIntent])
 
   // A returning sign-in (Google, or an older email link) lands with `?code=…`; the
