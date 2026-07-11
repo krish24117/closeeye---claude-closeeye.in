@@ -59,7 +59,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32.png', type: 'image/png', sizes: '32x32' },
       { url: '/favicon.ico', sizes: '48x48' },
     ],
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],

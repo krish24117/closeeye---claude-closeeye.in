@@ -14,7 +14,7 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: 'en-IN',
     categories: ['health', 'lifestyle', 'medical'],
     icons: [
-      { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+      { src: '/favicon-32.png', sizes: '32x32', type: 'image/png', purpose: 'any' },
       {
         src: '/icons/android-chrome-192x192.png',
         sizes: '192x192',
