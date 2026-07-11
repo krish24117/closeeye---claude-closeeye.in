@@ -4,7 +4,7 @@ import * as React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { MapPin, ShieldCheck, HeartHandshake, MessageCircle, Camera, Clock, ArrowRight, ChevronDown } from 'lucide-react'
+import { MapPin, ShieldCheck, Home, HeartHandshake, HandHeart, MessageCircle, Camera, ArrowRight, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
 import { setFounderSessionHint, setFounderRef } from '@/lib/founder-funnel'
@@ -30,10 +30,11 @@ const TRUST_SIGNALS = [
   'Launching with our first founding families',
 ]
 
-const HOW = [
-  { icon: HeartHandshake, title: 'A trusted Guardian visits your parents', body: 'A real person from Close Eye, at a time that suits your family.' },
-  { icon: Clock, title: 'Spend meaningful time together', body: 'Company, a gentle check that all is well, a little warmth in the day.' },
-  { icon: Camera, title: 'You receive a warm Presence Story', body: 'A few honest words and photos, so you can breathe easier from wherever you are.' },
+const HELP = [
+  { icon: Home, title: 'Home Visits', body: 'A trusted Close Eye Guardian visits your parents, spends time with them, checks how they are doing, and keeps them company.' },
+  { icon: HeartHandshake, title: 'Hospital Companion', body: 'Need someone to accompany your parent to a hospital or doctor’s appointment? Our Guardian can be there when you can’t.' },
+  { icon: HandHeart, title: 'Everyday Support', body: 'Errands, paperwork, picking up a prescription, or simply someone to be there — we’re just a call away.' },
+  { icon: Camera, title: 'Updates for You', body: 'After every visit, you’ll receive photos and a simple update, so you always know how your loved ones are doing.' },
 ]
 
 const QUESTIONS = [
@@ -137,20 +138,20 @@ export default function FounderLandingPage() {
         </p>
       </Section>
 
-      {/* 4 · HOW CLOSE EYE WORKS */}
+      {/* 4 · HOW CLOSE EYE HELPS — the concrete solutions, plain language anyone gets in seconds */}
       <Section className="mt-14">
-        <h2 className="text-h3 tracking-tight">What actually happens</h2>
-        <ol className="mt-6 flex flex-col gap-4">
-          {HOW.map(({ icon: Icon, title, body }, i) => (
+        <h2 className="text-h3 tracking-tight">How Close Eye helps your family</h2>
+        <ul className="mt-6 flex flex-col gap-4">
+          {HELP.map(({ icon: Icon, title, body }) => (
             <li key={title} className="flex items-start gap-4 rounded-xl border border-line/70 bg-card p-5 shadow-sm">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><Icon className="h-5 w-5" strokeWidth={1.75} /></span>
               <div>
-                <p className="text-body font-semibold">{i + 1}. {title}</p>
+                <p className="text-body font-semibold">{title}</p>
                 <p className="mt-0.5 text-body-sm leading-relaxed text-muted">{body}</p>
               </div>
             </li>
           ))}
-        </ol>
+        </ul>
       </Section>
 
       {/* 5 · HOW TO BEGIN — both plans shown honestly, same ladder + wording as the funnel */}
