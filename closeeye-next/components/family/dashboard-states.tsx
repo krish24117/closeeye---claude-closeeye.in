@@ -24,7 +24,6 @@ import { AskCloseEyeCard } from '@/components/family/ask-closeeye-card'
 import { SectionTitle } from '@/components/family/section-title'
 import { LovedOneCard, initialsOf } from '@/components/family/loved-one-card'
 import { Avatar } from '@/components/family/avatar'
-import { StatusBadge, type StatusTone } from '@/components/family/badges'
 import { PresenceCheckIn } from '@/components/family/presence-check-in'
 import { Button } from '@/components/ui/button'
 import { SITE, whatsappLink } from '@/lib/site'
@@ -304,8 +303,8 @@ export function ActiveDashboard({ data, lovedOnes }: { data: DashboardData; love
   const lastCompleted = [...data.completedVisits].sort((a, b) => (b.scheduled_at ?? '').localeCompare(a.scheduled_at ?? ''))[0]
   const next = data.upcomingVisit
   const reassure = lastCompleted
-    ? `Last Presence ${visitDate(lastCompleted.scheduled_at)} · all has been calm since.`
-    : `Your ${SITE.name} team is watching over ${first}.`
+    ? `Last Presence · ${visitDate(lastCompleted.scheduled_at)}.`
+    : `Your ${SITE.name} team is here for ${first}.`
 
   return (
     <>
@@ -320,7 +319,7 @@ export function ActiveDashboard({ data, lovedOnes }: { data: DashboardData; love
         <div className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
           {primary && <PhotoFrame lovedOneId={primary.id} name={primary.full_name} />}
           <div className="flex flex-col gap-4 p-6">
-            <p className="text-body text-ink">Photos and a warm story from {first}&rsquo;s latest Presence.</p>
+            <p className="text-body text-ink">A warm story from {first}&rsquo;s latest Presence.</p>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
               <Button asChild size="md"><Link href="/family/visits"><FileText className="h-4 w-4" strokeWidth={1.75} /> View Presence Story</Link></Button>
               <Link
@@ -362,8 +361,8 @@ export function ActiveDashboard({ data, lovedOnes }: { data: DashboardData; love
         </section>
       )}
 
-      {/* 5 · Loved ones — human states, not clinical status */}
-      <LovedOnesRoster lovedOnes={lovedOnes} hasRecentPresence={!!lastCompleted} />
+      {/* 5 · Loved ones — real identity only, no invented wellbeing status */}
+      <LovedOnesRoster lovedOnes={lovedOnes} />
 
       {/* 6 · Presence Manager */}
       <PresenceManagerContact />
@@ -374,21 +373,14 @@ export function ActiveDashboard({ data, lovedOnes }: { data: DashboardData; love
   )
 }
 
-// A warm, human status. Absent a live alert (handled by the emergency system),
-// CloseEye's default is reassurance — never clinical language.
-function moodFor(index: number, hasRecentPresence: boolean): { label: string; tone: StatusTone } {
-  if (index === 0) return { label: hasRecentPresence ? 'Doing well' : 'Calm', tone: 'positive' }
-  return { label: 'Comfortable', tone: 'positive' }
-}
-
-function LovedOnesRoster({ lovedOnes, hasRecentPresence }: { lovedOnes: LovedOne[]; hasRecentPresence: boolean }) {
+function LovedOnesRoster({ lovedOnes }: { lovedOnes: LovedOne[] }) {
   return (
     <section className="flex flex-col gap-4">
       <SectionTitle href="/family/members" cta="Manage →">Your loved ones</SectionTitle>
       <ul className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
         {lovedOnes.map((lo, i) => (
           <li key={lo.id} className={cn(i > 0 && 'border-t border-line')}>
-            <RosterRow lo={lo} mood={moodFor(i, hasRecentPresence)} />
+            <RosterRow lo={lo} />
           </li>
         ))}
       </ul>
@@ -396,7 +388,7 @@ function LovedOnesRoster({ lovedOnes, hasRecentPresence }: { lovedOnes: LovedOne
   )
 }
 
-function RosterRow({ lo, mood }: { lo: LovedOne; mood: { label: string; tone: StatusTone } }) {
+function RosterRow({ lo }: { lo: LovedOne }) {
   const [photo, setPhoto] = useState<string | null>(null)
   useEffect(() => { setPhoto(getLocalPhoto(lo.id)) }, [lo.id])
   const meta = [lo.relationship, lo.city].filter(Boolean).join(' · ')
@@ -408,7 +400,7 @@ function RosterRow({ lo, mood }: { lo: LovedOne; mood: { label: string; tone: St
         <p className="truncate text-body-sm font-semibold text-ink">{lo.full_name}</p>
         <p className="truncate text-caption text-muted">{meta || 'In your care'}</p>
       </div>
-      <StatusBadge label={mood.label} tone={mood.tone} />
+      <ArrowRight className="h-4 w-4 shrink-0 text-muted" strokeWidth={1.75} />
     </Link>
   )
 }
