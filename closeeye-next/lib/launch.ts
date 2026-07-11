@@ -53,6 +53,11 @@ export function launchMode(nowMs: number = Date.now()): LaunchMode {
   return isFounderPreLaunch(nowMs) ? 'pre-launch' : 'live'
 }
 
+/** Whole days remaining until launch (0 at/after launch). `nowMs` injectable. */
+export function daysUntilLaunch(nowMs: number = Date.now()): number {
+  return Math.max(0, Math.ceil((LAUNCH_MS - nowMs) / 86_400_000))
+}
+
 /**
  * The pure gate. Block only when pre-launch AND this visitor is a founder
  * registrant. The AUTHORITY is `accountIsFounderPrelaunch` — a durable Supabase

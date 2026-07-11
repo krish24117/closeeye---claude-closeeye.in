@@ -9,7 +9,7 @@
 // Run: node --test tests/launch.test.ts
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { isFounderPreLaunch, launchMode, shouldGateFounderFunnel, sanitizeRef } from '../closeeye-next/lib/launch.ts'
+import { isFounderPreLaunch, launchMode, daysUntilLaunch, shouldGateFounderFunnel, sanitizeRef } from '../closeeye-next/lib/launch.ts'
 
 const before = Date.parse('2026-07-11T12:00:00+05:30')
 const justBefore = Date.parse('2026-08-14T23:59:00+05:30')
@@ -28,6 +28,14 @@ test('launchMode: "pre-launch" before the launch date, "live" at and after', () 
   assert.equal(launchMode(justBefore), 'pre-launch')
   assert.equal(launchMode(atLaunch), 'live')
   assert.equal(launchMode(after), 'live')
+})
+
+test('daysUntilLaunch: whole days remaining, floored at 0 once launched', () => {
+  assert.equal(daysUntilLaunch(Date.parse('2026-08-14T00:00:00+05:30')), 1)
+  assert.equal(daysUntilLaunch(Date.parse('2026-08-13T12:00:00+05:30')), 2) // 1.5 days → ceil 2
+  assert.equal(daysUntilLaunch(Date.parse('2026-07-11T00:00:00+05:30')), 35)
+  assert.equal(daysUntilLaunch(atLaunch), 0)
+  assert.equal(daysUntilLaunch(after), 0)
 })
 
 test('shouldGateFounderFunnel: withholds ONLY for a founder registrant, pre-launch', () => {

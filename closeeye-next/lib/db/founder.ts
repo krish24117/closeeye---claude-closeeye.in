@@ -20,15 +20,22 @@ export async function submitFounderWaitlist(input: WaitlistInput): Promise<{ err
 }
 
 /**
- * Save just the family's name during the founder journey — WITHOUT marking
- * onboarding complete (that happens only at the end, in registerFounder). Both
- * metadata (authoritative for the name) and the profiles row are updated.
+ * Save the family's name (+ optional mobile / who-they're-registering-for) during
+ * the founder journey — WITHOUT marking onboarding complete (that happens only at
+ * the end, in registerFounder). Metadata is authoritative for the name; the
+ * profiles row also holds the phone + relationship for the ops dashboard.
  */
-export async function saveFounderName(userId: string, fullName: string): Promise<{ error: string | null }> {
-  const full_name = fullName.trim()
+export async function saveFounderName(
+  userId: string,
+  input: { fullName: string; phone?: string; relationship?: string },
+): Promise<{ error: string | null }> {
+  const full_name = input.fullName.trim()
   if (!full_name) return { error: null }
+  const patch: Record<string, string | null> = { full_name }
+  if (input.phone !== undefined) patch.phone = input.phone.trim() || null
+  if (input.relationship !== undefined) patch.founder_relationship = input.relationship.trim() || null
   try {
-    await supabase.from('profiles').update({ full_name }).eq('id', userId)
+    await supabase.from('profiles').update(patch).eq('id', userId)
   } catch {
     /* best-effort; metadata below is authoritative for the name */
   }

@@ -14,11 +14,15 @@ import { cn } from '@/lib/utils'
 const inputCls =
   'w-full rounded-sm border border-line bg-ivory px-3.5 py-3 text-body text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20'
 
+const RELATIONSHIPS = ['My parents', 'My mother', 'My father', 'My spouse', 'Someone else'] as const
+
 export default function FounderWelcomePage() {
   const router = useRouter()
   const { user, loading } = useAuth()
   const metaName = ((user?.user_metadata?.full_name as string) || (user?.user_metadata?.name as string) || '').trim()
   const [name, setName] = React.useState('')
+  const [phone, setPhone] = React.useState('')
+  const [relationship, setRelationship] = React.useState('')
   const [busy, setBusy] = React.useState(false)
 
   // Self-guard: this step needs an account. If the visitor isn't signed in
@@ -32,8 +36,8 @@ export default function FounderWelcomePage() {
   async function next() {
     if (busy || !user || name.trim().length < 2) return
     setBusy(true)
-    // Save the name only — onboarding is marked complete later, at the end.
-    await saveFounderName(user.id, name)
+    // Save name + optional contact — onboarding is marked complete later, at the end.
+    await saveFounderName(user.id, { fullName: name, phone, relationship })
     router.push('/founder/membership')
   }
 
@@ -77,6 +81,20 @@ export default function FounderWelcomePage() {
             <span className="mb-1.5 block text-body-sm font-medium text-ink">What should we call you?</span>
             <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="Your name" autoComplete="name" className={inputCls} />
           </label>
+
+          <label className="mt-4 block">
+            <span className="mb-1.5 block text-body-sm font-medium text-ink">Mobile number <span className="font-normal text-muted">(optional)</span></span>
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="+91 90000 00000" type="tel" inputMode="tel" autoComplete="tel" className={inputCls} />
+          </label>
+
+          <div className="mt-4">
+            <span className="mb-2 block text-body-sm font-medium text-ink">Who are you registering for? <span className="font-normal text-muted">(optional)</span></span>
+            <div className="flex flex-wrap gap-2">
+              {RELATIONSHIPS.map((r) => (
+                <button key={r} type="button" onClick={() => setRelationship((cur) => (cur === r ? '' : r))} className={cn('rounded-full border px-3.5 py-1.5 text-body-sm transition-colors', relationship === r ? 'border-green bg-accent-soft/50 font-semibold text-green' : 'border-line text-muted hover:border-ink/20')}>{r}</button>
+              ))}
+            </div>
+          </div>
 
           <div className="flex-1" />
           <Button size="lg" className={cn('mt-8 w-full')} disabled={busy || name.trim().length < 2} onClick={next}>
