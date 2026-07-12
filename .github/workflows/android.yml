@@ -29,9 +29,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -39,7 +39,7 @@ jobs:
           # without this, setup-node searches root, finds no lockfile, and fails.
           cache-dependency-path: closeeye-next/package-lock.json
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
@@ -60,7 +60,7 @@ jobs:
 
       - name: Upload debug APK
         if: github.ref_type != 'tag'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: closeeye-debug-apk
           path: closeeye-next/android/app/build/outputs/apk/debug/app-debug.apk
@@ -98,7 +98,7 @@ jobs:
 
       - name: Upload release AAB
         if: github.ref_type == 'tag'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: closeeye-release-aab
           path: closeeye-next/android/app/build/outputs/bundle/release/app-release.aab

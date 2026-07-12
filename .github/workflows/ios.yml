@@ -33,9 +33,9 @@ jobs:
     runs-on: macos-15 # Xcode 16 / iOS 18 SDK
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -126,7 +126,7 @@ jobs:
 
       - name: Upload IPA artifact
         if: github.ref_type == 'tag'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: closeeye-ios-ipa
           path: ${{ runner.temp }}/export/App.ipa
