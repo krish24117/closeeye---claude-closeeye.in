@@ -13,7 +13,8 @@ import { FOUNDER_LAUNCH_LABEL } from '@/lib/launch'
 import { whatsappLink } from '@/lib/site'
 import { FOUNDER } from '@/lib/content'
 
-const REGISTER_HREF = '/join'
+const REGISTER_HREF = '/join' // low-friction: leave your details, no account
+const RESERVE_HREF = '/auth?intent=founding' // full: create account + choose a plan
 const founderWhatsApp = () =>
   whatsappLink(`Hi ${FOUNDER.name}, I saw the Close Eye invitation and I'd like to ask about my family in Hyderabad.`)
 
@@ -187,7 +188,7 @@ export default function FounderLandingPage() {
         <h2 className="text-h3 tracking-tight">Register today. We open on {FOUNDER_LAUNCH_LABEL}.</h2>
         <ol className="mt-6 flex flex-col gap-4">
           {[
-            'Register now — create your account and choose a plan. Nothing to pay.',
+            'Register in a couple of minutes — reserve your place, or simply leave your details. Nothing to pay.',
             `On ${FOUNDER_LAUNCH_LABEL}, we open in Hyderabad.`,
             'We activate your membership and arrange your first Presence Visit.',
           ].map((t, i) => (
@@ -225,13 +226,30 @@ export default function FounderLandingPage() {
       </Section>
 
       {/* 8 · CLOSE — one calm action, the human fallback quietly beneath it */}
-      <Section className="mt-16">
-        <div className="flex flex-col items-center rounded-2xl border border-line/70 bg-card px-6 py-11 text-center shadow-sm">
-          <h2 className="text-h3 tracking-tight text-balance">Be one of Close Eye’s first families</h2>
-          <p className="mt-2 max-w-md text-body-sm leading-relaxed text-muted">It takes two minutes, and there’s nothing to pay today.</p>
-          <Button asChild size="lg" className="mt-6"><Link href={REGISTER_HREF}>Start Your Close Eye Journey <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link></Button>
-          <p className="mt-8 max-w-md text-body-sm leading-relaxed text-muted">Would you rather just talk? I read every message myself.</p>
-          <Button asChild variant="text" size="md" className="mt-1.5"><a href={founderWhatsApp()} onClick={logWhatsApp} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Message {FOUNDER.name} on WhatsApp</a></Button>
+      <Section id="begin" className="mt-16 scroll-mt-6">
+        <div className="flex flex-col rounded-2xl border border-line/70 bg-card px-6 py-11 shadow-sm">
+          <h2 className="text-center text-h3 tracking-tight text-balance">Be one of Close Eye’s first families</h2>
+          <p className="mx-auto mt-2 max-w-md text-center text-body-sm leading-relaxed text-muted">How would you like to start? Either way, there’s nothing to pay before {FOUNDER_LAUNCH_LABEL}.</p>
+          <div className="mt-7 flex flex-col gap-3">
+            {/* Primary — reserve (account + plan): the family's place is held */}
+            <Link href={RESERVE_HREF} className="group flex items-center justify-between gap-3 rounded-xl border-2 border-green bg-accent-soft/40 px-5 py-4 text-left transition-colors hover:bg-accent-soft/70">
+              <span>
+                <span className="block text-body font-bold text-ink">Reserve your family’s place</span>
+                <span className="mt-0.5 block text-caption text-muted">Create your account &amp; choose a plan — your spot is held</span>
+              </span>
+              <ArrowRight className="h-5 w-5 shrink-0 text-green transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
+            </Link>
+            {/* Secondary — low-friction: just leave a number */}
+            <Link href={REGISTER_HREF} className="group flex items-center justify-between gap-3 rounded-xl border-2 border-line bg-card px-5 py-4 text-left transition-colors hover:border-ink/20">
+              <span>
+                <span className="block text-body font-bold text-ink">Just leave your details</span>
+                <span className="mt-0.5 block text-caption text-muted">30 seconds — {FOUNDER.name} reaches out personally. No account needed</span>
+              </span>
+              <ArrowRight className="h-5 w-5 shrink-0 text-muted transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
+            </Link>
+          </div>
+          <p className="mx-auto mt-8 max-w-md text-center text-body-sm leading-relaxed text-muted">Would you rather just talk? I read every message myself.</p>
+          <Button asChild variant="text" size="md" className="mx-auto mt-1.5"><a href={founderWhatsApp()} onClick={logWhatsApp} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Message {FOUNDER.name} on WhatsApp</a></Button>
         </div>
       </Section>
       </main>
@@ -253,7 +271,7 @@ export default function FounderLandingPage() {
         <div className="mx-auto w-full max-w-2xl px-4 pb-4">
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-ivory/95 px-4 py-3 shadow-lg backdrop-blur">
             <p className="min-w-0 text-caption leading-tight text-muted">Free — nothing to pay until <span className="font-semibold text-ink">{FOUNDER_LAUNCH_LABEL}</span></p>
-            <Button asChild size="md" className="shrink-0"><Link href={REGISTER_HREF}>Start Your Journey <ArrowRight className="h-4 w-4" strokeWidth={2} /></Link></Button>
+            <Button asChild size="md" className="shrink-0"><a href="#begin">Get started <ArrowRight className="h-4 w-4" strokeWidth={2} /></a></Button>
           </div>
         </div>
       </div>
