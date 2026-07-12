@@ -20,7 +20,7 @@ const config: CapacitorConfig = {
   webDir: 'mobile-shell',
   backgroundColor: '#F6F3EC', // Close Eye warm white (ivory)
   server: {
-    url: process.env.CAP_SERVER_URL ?? 'https://closeeye-next.vercel.app',
+    url: process.env.CAP_SERVER_URL ?? 'https://www.closeeye.in',
     cleartext: false,
     androidScheme: 'https',
     iosScheme: 'https',
