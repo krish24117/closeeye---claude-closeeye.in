@@ -17,17 +17,17 @@ const PILLARS: { icon: LucideIcon; h: string; p: string }[] = [
 ]
 
 const STORY = [
-  { h: 'Our story', p: 'Close Eye began on the day our founder’s daughter was born — a happy day made quiet by distance from the people he loved. It became a promise: when you can’t be there, someone you trust can.' },
+  { h: 'Our story', p: 'Close Eye began from a worry that millions of families share — living far from ageing parents, and never quite knowing how they truly are. It became a promise: when you can’t be there, someone you trust can.' },
   { h: 'Why Close Eye exists', p: 'Because distance shouldn’t mean absence. So many families live far from ageing parents; Close Eye is the trusted presence that stands beside them — never replacing family, always strengthening it.' },
   { h: 'How Close Eye works', p: 'You tell us about your family. We match a verified Guardian nearby, coordinate every visit through a Presence Manager, and keep you close with warm reports after each one.' },
   { h: 'Our human-presence philosophy', p: 'Technology can inform you, but only a person can reassure you. We lead with warmth — presence before procedure — and let software quietly handle the rest: coordination, records, and keeping you close.' },
-  { h: 'Our promise', p: 'We treat your parents as we would our own — with punctuality, dignity and honesty. If we ever fall short, your Presence Manager will make it right, personally.' },
+  { h: 'Our promise', p: 'We treat your parents as we would our own — with punctuality, dignity and honesty. Close Eye is founded and led by Krishna, who stands personally behind the care we provide; if we ever fall short, your Presence Manager will make it right.' },
 ]
 
 const JOIN = [
   { href: '/become-a-guardian', h: 'Become a Guardian', sub: 'Join our verified care team' },
   { href: '/become-a-companion', h: 'Become a Companion', sub: 'Spend meaningful time with elders' },
-  { href: '/founder', h: 'The founder’s story', sub: 'Why we started' },
+  { href: '/trust-safety', h: 'Trust & Safety', sub: 'The people who’ll be there' },
 ]
 
 export default function AboutPage() {

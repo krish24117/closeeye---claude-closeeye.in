@@ -90,7 +90,6 @@ export const FOOTER_GROUPS: { title: string; links: NavItem[] }[] = [
     links: [
       { label: 'Help Center', href: '/help' },
       { label: 'Family Space', href: '/family' },
-      { label: 'Founder Story', href: '/founder' },
       { label: 'Share feedback', href: '/feedback' },
       { label: 'Emergency support', href: '/contact#emergency' },
     ],

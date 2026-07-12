@@ -4,7 +4,7 @@ import * as React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { MapPin, ShieldCheck, Home, HeartHandshake, HandHeart, MessageCircle, Camera, ArrowRight, ChevronDown } from 'lucide-react'
+import { MapPin, ShieldCheck, Home, HeartHandshake, HandHeart, MessageCircle, Camera, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
 import { setFounderSessionHint, setFounderRef } from '@/lib/founder-funnel'
@@ -113,25 +113,6 @@ export default function FounderLandingPage() {
         </p>
 
         <FoundingCounter className="mt-6 max-w-md" />
-
-        <div className="mt-8">
-          <a href="#story" className="inline-flex items-center gap-2 text-body font-semibold text-green transition-colors hover:text-ink">
-            Read Krishna’s story <ChevronDown className="h-5 w-5" strokeWidth={2} />
-          </a>
-        </div>
-      </Section>
-
-      <div className="mx-auto my-14 h-px w-full max-w-2xl bg-line/70" />
-
-      {/* 2 · FOUNDER STORY — the canonical story (lib/content.ts), shortened for this space */}
-      <Section id="story">
-        <h2 className="text-h3 tracking-tight">Why I built this</h2>
-        <div className="mt-5 flex flex-col gap-3 text-body leading-relaxed text-ink/90">
-          {FOUNDER.storyShort.map((p) => (
-            <p key={p.slice(0, 24)}>{p}</p>
-          ))}
-        </div>
-        <p className="mt-6 text-body-sm text-muted">— {FOUNDER.signature.name}, {FOUNDER.signature.role}</p>
       </Section>
 
       {/* 3 · WHY HYDERABAD — flows as a quiet thought, not a boxed module */}

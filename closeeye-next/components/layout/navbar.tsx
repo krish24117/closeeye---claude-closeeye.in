@@ -18,7 +18,7 @@ const EASE = [0.22, 1, 0.36, 1] as const
 
 // Pages whose masthead is dark ink — the transparent navbar sits over a dark hero
 // there, so its logo + controls must render light until the bar gets its own bg.
-const DARK_HERO_ROUTES = new Set(['/founder'])
+const DARK_HERO_ROUTES = new Set<string>([])
 
 export function Navbar() {
   const scrolled = useScrolled(24)

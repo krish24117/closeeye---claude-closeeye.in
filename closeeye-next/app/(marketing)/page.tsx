@@ -6,7 +6,6 @@ import {
   Testimonials,
   Faq,
   FinalCta,
-  FounderTeaser,
 } from '@/features/home'
 import { homeJsonLd } from '@/lib/schema'
 
@@ -18,7 +17,7 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd()) }}
       />
 
-      {/* Trust-first conversion journey. Founder story comes after trust is earned. */}
+      {/* Trust-first conversion journey — team & verification lead; no founder story. */}
       <Hero />
       <Services />
       <HowItWorks />
@@ -26,7 +25,6 @@ export default function HomePage() {
       <Testimonials />
       <Faq />
       <FinalCta />
-      <FounderTeaser />
     </>
   )
 }
