@@ -182,10 +182,10 @@ export default function FounderBriefPage() {
         {/* Founder */}
         <footer className="fb-section flex flex-wrap items-end justify-between gap-6">
           <div className="flex items-center gap-4">
-            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-accent-soft text-h4 font-bold text-green" aria-hidden>KS</span>
+            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-accent-soft text-h4 font-bold text-green" aria-hidden>K</span>
             <div>
               <p className="text-caption font-semibold uppercase tracking-[0.14em] text-green">Founder</p>
-              <p className="mt-1.5 text-h4 text-ink">Krishna Seerla</p>
+              <p className="mt-1.5 text-h4 text-ink">Krishna</p>
               <p className="text-body-sm text-muted">Founder · {SITE.name}</p>
             </div>
           </div>

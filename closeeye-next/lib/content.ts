@@ -151,7 +151,7 @@ export const TRUST_PILLARS: TrustPillar[] = [
  */
 export const FOUNDER = {
   name: 'Krishna',
-  fullName: 'Krishna Reddy',
+  fullName: 'Krishna',
   role: 'Founder',
   portrait: '/founder.png',
   /** The one idea the whole company turns on. */
@@ -180,7 +180,7 @@ export const FOUNDER = {
   ],
   /** Founder sign-off, used at the end of the story wherever it appears. */
   signature: {
-    name: 'Krishna Reddy',
+    name: 'Krishna',
     role: 'Founder, Close Eye',
     line: 'Thank you for trusting us with the people you love.',
   },

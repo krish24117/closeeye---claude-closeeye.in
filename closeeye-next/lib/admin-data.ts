@@ -11,7 +11,7 @@ import { FAMILIES, GUARDIANS } from '@/lib/console-data'
 export { FAMILIES, GUARDIANS }
 
 export const ADMIN = {
-  name: 'Krishna Reddy',
+  name: 'Krishna',
   firstName: 'Krishna',
   initials: 'KR',
   role: 'Founder & CEO',
@@ -304,18 +304,18 @@ export interface AuditEntry { id: string; actor: string; action: string; target:
 export const AUDIT: AuditEntry[] = [
   { id: 'lg-1', actor: 'Priya Menon', action: 'cancelled visit', target: 'Yusuf Khan · reason: Medical emergency', time: '2 min ago', kind: 'care' },
   { id: 'lg-2', actor: 'System', action: 'auto-retried payment', target: 'INV-2612 · Mehta family', time: '18 min ago', kind: 'finance' },
-  { id: 'lg-3', actor: 'Krishna Reddy', action: 'approved refund', target: 'RF-116 · ₹4,000', time: '1 hr ago', kind: 'finance' },
+  { id: 'lg-3', actor: 'Krishna', action: 'approved refund', target: 'RF-116 · ₹4,000', time: '1 hr ago', kind: 'finance' },
   { id: 'lg-4', actor: 'Priya Menon', action: 'reassigned Guardian', target: 'Nair family → Karthik Rao', time: '2 hr ago', kind: 'care' },
   { id: 'lg-5', actor: 'System', action: 'membership renewed', target: 'Rao family · Family Care', time: '3 hr ago', kind: 'family' },
   { id: 'lg-6', actor: 'Ops Team', action: 'published FAQ', target: '“How do reschedules work?”', time: 'Yesterday', kind: 'content' },
-  { id: 'lg-7', actor: 'Krishna Reddy', action: 'updated pricing', target: 'Premium plan → ₹12,000', time: 'Yesterday', kind: 'system' },
+  { id: 'lg-7', actor: 'Krishna', action: 'updated pricing', target: 'Premium plan → ₹12,000', time: 'Yesterday', kind: 'system' },
   { id: 'lg-8', actor: 'System', action: 'verified Companion', target: 'Anita Rao · background check', time: '2 days ago', kind: 'care' },
 ]
 
 /* ── Settings ────────────────────────────────────────────────────────────── */
 
 export const TEAM_ROLES = [
-  { name: 'Krishna Reddy', role: 'Founder & CEO', access: 'Full access' },
+  { name: 'Krishna', role: 'Founder & CEO', access: 'Full access' },
   { name: 'Priya Menon', role: 'Presence Manager', access: 'Operations' },
   { name: 'Ops Team', role: 'Operations Lead', access: 'Operations · Finance (read)' },
 ]

@@ -36,7 +36,7 @@ Every visit is about presence. Every conversation is about dignity. Every update
 
 We don’t replace family. We help families stay close, even when life keeps them apart.
 
-**— Krishna Reddy**
+**— Krishna**
 Founder, Close Eye
 
 > “Thank you for trusting us with the people you love.”
@@ -51,7 +51,7 @@ It made me think of my own parents. Every call ends with “we’re fine, don’
 
 I didn’t want an app, or an emergency service, or someone to replace family. I just wished someone I trusted could spend real time with them and tell me honestly how they are. That’s why I built Close Eye.
 
-**— Krishna Reddy, Founder, Close Eye**
+**— Krishna, Founder, Close Eye**
 
 ---
 
