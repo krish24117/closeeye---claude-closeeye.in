@@ -10,7 +10,7 @@ import {
   BadgeCheck,
   MessageCircle,
   Settings,
-  User,
+  HeartHandshake,
   Bell,
   Siren,
   Phone,
@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils'
 
 const DESKTOP_NAV = [
   { href: '/family', label: 'Overview', icon: Home },
+  { href: '/family/services', label: 'Services', icon: HeartHandshake },
   { href: '/family/members', label: 'Family', icon: Users },
   { href: '/family/visits', label: 'Visits', icon: CalendarDays },
   { href: '/family/membership', label: 'Membership', icon: BadgeCheck },
@@ -40,10 +41,10 @@ const DESKTOP_NAV = [
 
 const MOBILE_NAV = [
   { href: '/family', label: 'Home', icon: Home },
+  { href: '/family/services', label: 'Services', icon: HeartHandshake },
   { href: '/family/members', label: 'Family', icon: Users },
   { href: '/family/visits', label: 'Visits', icon: CalendarDays },
   { href: '/family/connect', label: 'Connect', icon: MessageCircle },
-  { href: '/family/profile', label: 'Profile', icon: User },
 ]
 
 function isActive(pathname: string, href: string) {
