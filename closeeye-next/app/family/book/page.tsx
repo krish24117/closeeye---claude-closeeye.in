@@ -16,6 +16,7 @@ import { requestVisit } from '@/features/booking/api'
 import { isFounderFunnelGated } from '@/lib/founder-funnel'
 import { PRELAUNCH_BOOKING_NOTE } from '@/lib/launch'
 import { updateFamilyMember } from '@/lib/db/family'
+import { planById } from '@/lib/plans'
 import { VisitDetailsForm, emptyVisitDetails, slotLabelOf, toVisitDetailInput, visitDetailsError, type VisitDetailsState } from '@/components/family/visit-details-form'
 import type { LovedOne } from '@/lib/db/types'
 import { haptic } from '@/lib/haptics'
@@ -72,7 +73,7 @@ function BookingSteps({ step, custom }: { step: Step; custom: boolean }) {
 
 export default function FamilyBookPage() {
   const params = useSearchParams()
-  const { lovedOnes, profile, loading } = useFamilyData()
+  const { lovedOnes, profile, loading, subscription } = useFamilyData()
 
   const [memberId, setMemberId] = React.useState('')
   const [pickChoice, setPickChoice] = React.useState('')
@@ -114,6 +115,15 @@ export default function FamilyBookPage() {
   const effectiveInstructions = isCustom ? customRequirement : details.specialInstructions
   const instructionsLabel = isCustom ? 'What you need' : 'Instructions'
 
+  // Care members schedule their INCLUDED monthly visit (via ?included=1 from the
+  // membership page). Show it as included (₹0) and tell the PM not to charge —
+  // never a "₹1,000" price or a payment link on a benefit they've already paid for.
+  const isIncludedVisit =
+    params.get('included') === '1' && serviceId === 'home-wellbeing-visit' && planById(subscription?.plan_id)?.key === 'care'
+  const effectiveTeamNotes = isIncludedVisit
+    ? ['Included monthly visit (Care plan) — nothing to charge.', details.teamNotes.trim()].filter(Boolean).join(' — ')
+    : details.teamNotes
+
   // Prefill from the member's saved profile (once per member) — prefer the saved
   // emergency contact as the on-site visit contact (often a local relative better
   // placed to coordinate access than the elder). Everything stays editable.
@@ -148,7 +158,7 @@ export default function FamilyBookPage() {
         lovedOneId: member.id,
         recipientName: member.full_name,
         requesterWhatsapp: profile?.whatsapp_number || profile?.phone || '',
-        ...toVisitDetailInput({ ...details, specialInstructions: effectiveInstructions }),
+        ...toVisitDetailInput({ ...details, specialInstructions: effectiveInstructions, teamNotes: effectiveTeamNotes }),
       })
       // Opt-in only: persist to the durable profile. Address always; the visit
       // contact maps safely — the elder's own phone is filled only if empty, and a
@@ -280,20 +290,29 @@ export default function FamilyBookPage() {
 
       {step === 'type' && (
         <>
+          {isIncludedVisit && (
+            <div className="flex items-start gap-3 rounded-lg border border-green/30 bg-accent-soft/40 p-4">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green" strokeWidth={1.75} />
+              <p className="text-body-sm text-ink">This is your <span className="font-semibold">monthly visit, included with Care</span> — there’s nothing to pay. Your Presence Manager will confirm and arrange it.</p>
+            </div>
+          )}
           <section className="flex flex-col gap-4">
             <h2 className="text-h4 text-ink">What kind of visit?</h2>
             <div className="grid gap-4 sm:grid-cols-3">
-              {BOOKING_SERVICES.map((s) => (
-                <OptionCard
-                  key={s.id}
-                  icon={s.icon}
-                  title={s.name}
-                  description={s.blurb}
-                  meta={<>Starting at <span className="font-semibold text-ink">{s.priceFrom}</span></>}
-                  selected={serviceId === s.id}
-                  onClick={() => setServiceId(s.id)}
-                />
-              ))}
+              {BOOKING_SERVICES.map((s) => {
+                const included = isIncludedVisit && s.id === 'home-wellbeing-visit'
+                return (
+                  <OptionCard
+                    key={s.id}
+                    icon={s.icon}
+                    title={s.name}
+                    description={s.blurb}
+                    meta={included ? <span className="font-semibold text-green">Included with your Care plan</span> : <>Starting at <span className="font-semibold text-ink">{s.priceFrom}</span></>}
+                    selected={serviceId === s.id}
+                    onClick={() => setServiceId(s.id)}
+                  />
+                )
+              })}
             </div>
           </section>
           {error && <p className="text-caption text-error">{error}</p>}
@@ -384,7 +403,7 @@ export default function FamilyBookPage() {
           </section>
 
           <div className="rounded-lg border border-accent/40 bg-accent-soft/40 px-5 py-4">
-            <p className="text-body-sm text-ink">Nothing is charged now. Your Presence Manager confirms availability, then sends a secure payment link.</p>
+            <p className="text-body-sm text-ink">{isIncludedVisit ? 'This visit is included with your Care plan — nothing to pay. Your Presence Manager will confirm and arrange it.' : 'Nothing is charged now. Your Presence Manager confirms availability, then sends a secure payment link.'}</p>
           </div>
 
           {error && <p className="text-caption text-error">{error}</p>}

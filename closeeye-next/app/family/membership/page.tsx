@@ -300,7 +300,7 @@ export default function MembershipPage() {
                   {careVisit ? (
                     <>
                       <Button asChild size="sm">
-                        <Link href={`/family/book?service=${s.serviceId}`}>Schedule Monthly Visit</Link>
+                        <Link href={`/family/book?service=${s.serviceId}&included=1`}>Schedule Monthly Visit</Link>
                       </Button>
                       <Link href={`/family/book?service=${s.serviceId}`} className="text-caption font-semibold text-green hover:underline">
                         Book Extra Visit · ₹1,000
