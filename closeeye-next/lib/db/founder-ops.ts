@@ -23,6 +23,8 @@ export interface FounderRegistrant {
   notes: string | null
   isFoundingMember: boolean
   foundingNumber: number | null
+  stage: string | null
+  source: string | null
 }
 
 interface RawRegistrant {
@@ -41,6 +43,8 @@ interface RawRegistrant {
   notes: string | null
   is_founding_member: boolean | null
   founding_number: number | null
+  founder_stage: string | null
+  founder_source: string | null
 }
 
 export async function fetchFounderRegistrants(): Promise<FounderRegistrant[]> {
@@ -65,6 +69,8 @@ export async function fetchFounderRegistrants(): Promise<FounderRegistrant[]> {
     notes: r.notes,
     isFoundingMember: !!r.is_founding_member,
     foundingNumber: r.founding_number,
+    stage: r.founder_stage,
+    source: r.founder_source,
   }))
 }
 
@@ -112,6 +118,19 @@ export async function setFollowedUp(userId: string, value: boolean): Promise<{ e
 
 export async function setFounderNotes(userId: string, notes: string): Promise<{ error: string | null }> {
   const { error } = await supabase.from('profiles').update({ founder_notes: notes.trim() || null }).eq('id', userId)
+  return { error: error?.message ?? null }
+}
+
+/** Set the manual pipeline stage (new|qualified|conversation|offer|referred; 'won' is
+ *  derived from a live subscription, never written here). Admin-update RLS on profiles. */
+export async function setFounderStage(userId: string, stage: string | null): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('profiles').update({ founder_stage: stage }).eq('id', userId)
+  return { error: error?.message ?? null }
+}
+
+/** Set the lead source (channel attribution). Admin-update RLS on profiles. */
+export async function setFounderSource(userId: string, source: string | null): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('profiles').update({ founder_source: source || null }).eq('id', userId)
   return { error: error?.message ?? null }
 }
 

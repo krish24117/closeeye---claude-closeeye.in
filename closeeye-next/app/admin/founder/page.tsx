@@ -9,10 +9,11 @@ import { Avatar } from '@/components/family/avatar'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchFounderMetrics, type FounderMetrics } from '@/lib/db/founder-dashboard'
-import { fetchFounderRegistrants, fetchFounderLeads, fetchFounderActions, logFounderAction, fetchReminders, addReminder, setReminderDone, setFollowedUp, setFounderNotes, type FounderRegistrant, type FounderLead, type FounderActionType } from '@/lib/db/founder-ops'
+import { fetchFounderRegistrants, fetchFounderLeads, fetchFounderActions, logFounderAction, fetchReminders, addReminder, setReminderDone, setFollowedUp, setFounderNotes, setFounderStage, setFounderSource, type FounderRegistrant, type FounderLead, type FounderActionType } from '@/lib/db/founder-ops'
 import {
   registrantStatus, STATUS_LABEL, matchesFilter, matchesSearch, toCSV, phoneList, whatsappList,
   founderActivityToday, reachedIds, actionsFor, ACTION_LABEL, dueReminders, remindersFor,
+  effectiveStage, scoreRegistrant, STAGE_LABEL, MANUAL_STAGES,
   type Filter, type RegStatus, type FounderAction, type FounderReminder,
 } from '@/lib/founder-ops-view'
 import { FOUNDER_LAUNCH_LABEL, daysUntilLaunch, launchMode } from '@/lib/launch'
@@ -44,6 +45,17 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'hyderabad', label: 'Hyderabad' },
   { key: 'activated', label: 'Activated' },
 ]
+
+const SOURCE_LABEL: Record<string, string> = {
+  referral: 'Referral', rwa: 'Apartment / RWA', hospital: 'Hospital', nri_group: 'NRI group',
+  linkedin: 'LinkedIn', temple: 'Temple / senior', corporate: 'Corporate HR', organic: 'Organic', other: 'Other',
+}
+const SOURCE_KEYS = ['referral', 'rwa', 'hospital', 'nri_group', 'linkedin', 'temple', 'corporate', 'organic', 'other']
+
+/** Lead-score → badge style: hot >=60, warm 40-59, cool below. */
+function scoreStyle(score: number): string {
+  return score >= 60 ? 'bg-green text-ivory' : score >= 40 ? 'bg-accent-soft text-green' : 'bg-ink/[0.06] text-muted'
+}
 
 function fmtDateTime(iso: string | null): string {
   if (!iso) return '—'
@@ -150,7 +162,7 @@ function DrawerAction({ icon: Icon, label, href, external, tone, onClick }: { ic
   return <a href={href} onClick={onClick} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className={cls}><Icon className="h-4 w-4" strokeWidth={1.75} /> {label}</a>
 }
 
-function FamilyDrawer({ r, actions, reminders, nowIso, onClose, onToggleFollowedUp, onSaveNote, onAction, onAddReminder, onCompleteReminder }: {
+function FamilyDrawer({ r, actions, reminders, nowIso, onClose, onToggleFollowedUp, onSaveNote, onSetStage, onSetSource, onAction, onAddReminder, onCompleteReminder }: {
   r: FounderRegistrant
   actions: FounderAction[]
   reminders: FounderReminder[]
@@ -158,6 +170,8 @@ function FamilyDrawer({ r, actions, reminders, nowIso, onClose, onToggleFollowed
   onClose: () => void
   onToggleFollowedUp: (r: FounderRegistrant) => Promise<void>
   onSaveNote: (r: FounderRegistrant, notes: string) => Promise<void>
+  onSetStage: (r: FounderRegistrant, stage: string) => Promise<void>
+  onSetSource: (r: FounderRegistrant, source: string) => Promise<void>
   onAction: (registrantId: string, type: FounderActionType) => void
   onAddReminder: (registrantId: string, dueOn: string, note: string) => void
   onCompleteReminder: (id: string) => void
@@ -213,6 +227,33 @@ function FamilyDrawer({ r, actions, reminders, nowIso, onClose, onToggleFollowed
           {r.isFoundingMember && <Row label="Founding member" value={r.foundingNumber != null ? `#${r.foundingNumber}` : 'Yes'} />}
           <Row label="Plan" value={plan ? `Close Eye ${plan.short} · ${plan.price}/mo` : 'Not chosen'} />
           <Row label="Status" value={STATUS_LABEL[status]} />
+        </Group>
+
+        <Group title="Pipeline">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-body-sm text-muted">Lead score</span>
+            <span className={cn('inline-grid h-7 min-w-[1.75rem] place-items-center rounded-full px-1.5 text-[0.7rem] font-bold tabular-nums', scoreStyle(scoreRegistrant(r, nowIso)))}>{scoreRegistrant(r, nowIso)}</span>
+          </div>
+          <div>
+            <p className="mb-1.5 text-body-sm text-muted">Stage</p>
+            {r.subStatus === 'active' ? (
+              <span className="inline-block rounded-full bg-success/12 px-2.5 py-1 text-caption font-bold text-success">Won · paying</span>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {MANUAL_STAGES.map((s) => (
+                  <button key={s} type="button" onClick={() => void onSetStage(r, s)} className={cn('rounded-full border px-2.5 py-1 text-caption font-semibold transition-colors', effectiveStage(r) === s ? 'border-green bg-green text-ivory' : 'border-line bg-card text-ink hover:border-green/40')}>{STAGE_LABEL[s]}</button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div>
+            <p className="mb-1.5 mt-1 text-body-sm text-muted">Source</p>
+            <div className="flex flex-wrap gap-1.5">
+              {SOURCE_KEYS.map((s) => (
+                <button key={s} type="button" onClick={() => void onSetSource(r, s)} className={cn('rounded-full border px-2.5 py-1 text-caption font-semibold transition-colors', r.source === s ? 'border-green bg-green text-ivory' : 'border-line bg-card text-ink hover:border-green/40')}>{SOURCE_LABEL[s]}</button>
+              ))}
+            </div>
+          </div>
         </Group>
 
         <Group title="Timeline">
@@ -271,6 +312,7 @@ export default function FounderDashboardPage() {
   const [live, setLive] = React.useState(false)
   const [filter, setFilter] = React.useState<Filter>('all')
   const [query, setQuery] = React.useState('')
+  const [sortHot, setSortHot] = React.useState(false)
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
   const [flash, setFlash] = React.useState('')
   const familiesRef = React.useRef<HTMLElement>(null)
@@ -317,6 +359,16 @@ export default function FounderDashboardPage() {
     await setFounderNotes(r.id, notes)
     showFlash('Note saved')
   }
+  async function saveStage(r: FounderRegistrant, stage: string) {
+    setRows((cur) => cur?.map((x) => (x.id === r.id ? { ...x, stage } : x)) ?? null)
+    await setFounderStage(r.id, stage)
+    showFlash('Stage updated')
+  }
+  async function saveSource(r: FounderRegistrant, source: string) {
+    setRows((cur) => cur?.map((x) => (x.id === r.id ? { ...x, source } : x)) ?? null)
+    await setFounderSource(r.id, source)
+    showFlash('Source updated')
+  }
 
   if (loading) return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
   if (!isAdmin) return <div className="flex flex-col gap-6"><h1 className="text-h2">Founder Activation</h1><EmptyState icon={Lock} title="Restricted" hint="Only administrators can open the Founder workspace." /></div>
@@ -329,6 +381,7 @@ export default function FounderDashboardPage() {
   const todayCount = all.filter((r) => matchesFilter(r, 'today', nowIso)).length
   const needsFollowUp = all.filter((r) => matchesFilter(r, 'follow_up', nowIso)).length
   const filtered = all.filter((r) => matchesFilter(r, filter, nowIso) && matchesSearch(r, query))
+  const displayed = sortHot ? [...filtered].sort((a, b) => scoreRegistrant(b, nowIso) - scoreRegistrant(a, nowIso)) : filtered
   const selected = selectedId ? all.find((r) => r.id === selectedId) ?? null : null
   const activity = founderActivityToday(actions, nowIso)
   const reached = new Set<string>([...reachedIds(actions), ...all.filter((r) => r.followedUp).map((r) => r.id)])
@@ -428,6 +481,7 @@ export default function FounderDashboardPage() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" strokeWidth={1.75} />
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name, mobile, email, referral, city…" className="w-full rounded-full border border-line bg-card py-2 pl-9 pr-4 text-body-sm text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20" />
           </div>
+          <button type="button" onClick={() => setSortHot((v) => !v)} title="Sort by lead score" className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-caption font-semibold transition-colors', sortHot ? 'border-green bg-green text-ivory' : 'border-line bg-card text-ink hover:border-green/40')}>🔥 Hottest first</button>
         </div>
 
         {rows === null ? (
@@ -437,14 +491,16 @@ export default function FounderDashboardPage() {
         ) : (
           <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[860px] text-left text-body-sm">
+              <table className="w-full min-w-[1000px] text-left text-body-sm">
                 <thead>
                   <tr className="border-b border-line text-caption font-semibold uppercase tracking-wide text-muted">
                     <th className="px-4 py-3 font-semibold">Name</th>
+                    <th className="px-4 py-3 font-semibold">Score</th>
                     <th className="px-4 py-3 font-semibold">Mobile</th>
                     <th className="px-4 py-3 font-semibold">City</th>
                     <th className="px-4 py-3 font-semibold">For</th>
                     <th className="px-4 py-3 font-semibold">Plan</th>
+                    <th className="px-4 py-3 font-semibold">Stage</th>
                     <th className="px-4 py-3 font-semibold">Status</th>
                     <th className="px-4 py-3 font-semibold">Registered</th>
                     <th className="px-4 py-3 font-semibold">Last follow-up</th>
@@ -452,16 +508,20 @@ export default function FounderDashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {filtered.map((r) => {
+                  {displayed.map((r) => {
                     const plan = planById(r.planId)
                     const st = registrantStatus(r, nowIso)
+                    const score = scoreRegistrant(r, nowIso)
+                    const stage = effectiveStage(r)
                     return (
                       <tr key={r.id} onClick={() => setSelectedId(r.id)} className="cursor-pointer align-middle transition-colors hover:bg-accent-soft/25">
                         <td className="px-4 py-3"><span className="flex items-center gap-2.5"><Avatar initials={initialsOf(r.fullName ?? 'Family')} size="sm" tone="solid" /><span className="font-semibold text-ink">{r.fullName ?? '—'}</span>{r.isFoundingMember && r.foundingNumber != null && <span title={`Founding Member #${r.foundingNumber}`} className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-green/12 px-1.5 py-0.5 text-[0.6rem] font-bold text-green"><Star className="h-2.5 w-2.5 fill-green" strokeWidth={0} />#{r.foundingNumber}</span>}</span></td>
+                        <td className="px-4 py-3"><span className={cn('inline-grid h-7 w-7 place-items-center rounded-full text-[0.7rem] font-bold tabular-nums', scoreStyle(score))} title="Lead score">{score}</span></td>
                         <td className="whitespace-nowrap px-4 py-3">{r.phone ? <span className="text-ink">{r.phone}</span> : <span className="text-muted/60">No phone · email only</span>}</td>
                         <td className="px-4 py-3 text-muted">{r.serviceArea ?? '—'}</td>
                         <td className="px-4 py-3 text-muted">{r.relationship ?? '—'}</td>
                         <td className="px-4 py-3">{plan ? <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[0.65rem] font-bold uppercase text-green">{plan.short}</span> : <span className="text-muted">—</span>}</td>
+                        <td className="px-4 py-3"><span className="whitespace-nowrap rounded-full bg-ink/[0.05] px-2 py-0.5 text-[0.65rem] font-semibold text-ink">{STAGE_LABEL[stage]}</span></td>
                         <td className="px-4 py-3"><span className={cn('whitespace-nowrap rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase', STATUS_STYLE[st])}>{STATUS_LABEL[st]}</span></td>
                         <td className="whitespace-nowrap px-4 py-3 text-muted">{fmtDateTime(r.registeredAt)}</td>
                         <td className="whitespace-nowrap px-4 py-3 text-muted">{r.followedUpAt ? fmtDateTime(r.followedUpAt) : '—'}</td>
@@ -529,7 +589,7 @@ export default function FounderDashboardPage() {
 
       <p className="text-caption text-muted">Click any family to open their profile, timeline and notes. Reminders, per-family event tracking and daily task list come next.</p>
 
-      {selected && <FamilyDrawer r={selected} actions={actionsFor(actions, selected.id)} reminders={remindersFor(reminders, selected.id)} nowIso={nowIso} onClose={() => setSelectedId(null)} onToggleFollowedUp={toggleFollowedUp} onSaveNote={saveNote} onAction={logAction} onAddReminder={addReminderH} onCompleteReminder={completeReminder} />}
+      {selected && <FamilyDrawer r={selected} actions={actionsFor(actions, selected.id)} reminders={remindersFor(reminders, selected.id)} nowIso={nowIso} onClose={() => setSelectedId(null)} onToggleFollowedUp={toggleFollowedUp} onSaveNote={saveNote} onSetStage={saveStage} onSetSource={saveSource} onAction={logAction} onAddReminder={addReminderH} onCompleteReminder={completeReminder} />}
       {flash && <div className="fixed bottom-5 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-body-sm font-medium text-ivory shadow-lg">{flash}</div>}
     </div>
   )

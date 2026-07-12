@@ -26,6 +26,8 @@ export interface RegistrantView {
   followedUpAt?: string | null
   isFoundingMember?: boolean
   foundingNumber?: number | null
+  stage?: string | null
+  source?: string | null
 }
 
 export type RegStatus = 'founding' | 'activated' | 'waiting' | 'new' | 'follow_up'
@@ -50,6 +52,85 @@ export function registrantStatus(r: RegistrantView, nowIso: string): RegStatus {
   if (r.followedUp) return 'waiting'
   const reg = r.registeredAt ? istDayKey(r.registeredAt) : ''
   return reg && reg === istDayKey(nowIso) ? 'new' : 'follow_up'
+}
+
+/* ── Pipeline stage + lead score ─────────────────────────────────────────── */
+
+export type PipelineStage = 'new' | 'qualified' | 'conversation' | 'offer' | 'won' | 'referred'
+
+/** The stages the founder sets manually — 'won' is derived, never picked. */
+export const MANUAL_STAGES: PipelineStage[] = ['new', 'qualified', 'conversation', 'offer', 'referred']
+
+export const STAGE_LABEL: Record<PipelineStage, string> = {
+  new: 'New',
+  qualified: 'Qualified',
+  conversation: 'In conversation',
+  offer: 'Offer made',
+  won: 'Won · paying',
+  referred: 'Referred',
+}
+
+function isPipelineStage(v: string | null | undefined): v is PipelineStage {
+  return v === 'new' || v === 'qualified' || v === 'conversation' || v === 'offer' || v === 'won' || v === 'referred'
+}
+
+/**
+ * The stage to show. The founder sets new|qualified|conversation|offer|referred; 'won'
+ * is DERIVED from a live subscription so the pipeline can never disagree with the
+ * payment truth — a paid family always reads as Won (unless flagged Referred after).
+ */
+export function effectiveStage(r: RegistrantView): PipelineStage {
+  if (r.stage === 'referred') return 'referred'
+  if (r.subStatus === 'active') return 'won'
+  return isPipelineStage(r.stage) ? r.stage : 'new'
+}
+
+/**
+ * A 0–100 lead score for the founder's daily prioritisation — additive over signals we
+ * already hold; higher = work first. Paying families are excluded from the "to-work"
+ * lists at the call site, so this scores winnable leads. Deterministic (time injected).
+ */
+export function scoreRegistrant(r: RegistrantView, nowIso: string): number {
+  let s = 0
+  if ((r.ref ?? '').trim()) s += 20                                        // came via a referral
+  if ((r.serviceArea ?? '').toLowerCase().includes('hyderabad')) s += 15   // in our launch city
+  if (r.followedUp) s += 15                                                // we've engaged them
+  if ((r.relationship ?? '').trim()) s += 10                               // told us who it's for
+  if (r.registeredAt) {                                                    // recent intent
+    const age = Date.parse(nowIso) - Date.parse(r.registeredAt)
+    if (!Number.isNaN(age) && age >= 0 && age <= 7 * 86_400_000) s += 10
+  }
+  const st = effectiveStage(r)                                             // pipeline depth
+  if (st === 'offer') s += 20
+  else if (st === 'conversation') s += 12
+  else if (st === 'qualified') s += 6
+  return Math.min(100, s)
+}
+
+/** Short human reasons behind a score — for the daily briefing's "why". */
+export function scoreReasons(r: RegistrantView, nowIso: string): string[] {
+  const out: string[] = []
+  if ((r.ref ?? '').trim()) out.push('referral')
+  if ((r.serviceArea ?? '').toLowerCase().includes('hyderabad')) out.push('Hyderabad')
+  const st = effectiveStage(r)
+  if (st === 'offer') out.push('offer made')
+  else if (st === 'conversation') out.push('in conversation')
+  else if (st === 'qualified') out.push('qualified')
+  if (r.followedUp) out.push('contacted')
+  if (r.registeredAt) {
+    const age = Date.parse(nowIso) - Date.parse(r.registeredAt)
+    if (!Number.isNaN(age) && age >= 0 && age <= 7 * 86_400_000) out.push('registered this week')
+  }
+  return out
+}
+
+/** The founder's top N leads to work now: winnable (not yet paying), by score desc. */
+export function topLeads<T extends RegistrantView>(rows: T[], nowIso: string, n: number): (T & { score: number })[] {
+  return rows
+    .filter((r) => r.subStatus !== 'active')
+    .map((r) => ({ ...r, score: scoreRegistrant(r, nowIso) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, n)
 }
 
 export type Filter =
