@@ -89,13 +89,16 @@ export default function ContactPage() {
           <div className="min-w-0 flex-1">
             <h2 className="text-h3 text-white">Need us urgently?</h2>
             <p className="mt-2 max-w-xl text-body leading-relaxed text-white/70">
-              If a family already with Close Eye needs immediate help, contact us right away — every
-              case follows our emergency escalation process, with a Presence Manager on point.
+              For any medical emergency, call 108 first — always. Then reach us right away: your
+              Presence Manager coordinates on the ground and keeps you updated, alongside emergency services.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <Button asChild onDark>
+                <a href="tel:108"><Phone className="h-4 w-4" strokeWidth={1.5} /> Call 108 (emergency)</a>
+              </Button>
+              <Button asChild variant="secondary" onDark>
                 <a href={whatsappLink('Hi Close Eye — this is urgent. I need help now.')} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-4 w-4" strokeWidth={1.5} /> WhatsApp now
+                  <MessageCircle className="h-4 w-4" strokeWidth={1.5} /> WhatsApp us
                 </a>
               </Button>
               <Button asChild variant="secondary" onDark>

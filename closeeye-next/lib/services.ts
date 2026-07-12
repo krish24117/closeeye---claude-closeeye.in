@@ -89,7 +89,7 @@ export const SERVICE_MENU: MenuItem[] = [
   { name: 'Home wellbeing visit', price: '₹1,000', note: 'In-person check-in, safety observation, family update' },
   { name: 'Hospital assistance — half day', price: '₹2,000', note: 'Coordination, registration and updates' },
   { name: 'Hospital assistance — full day', price: '₹4,000', note: 'End-to-end support and care coordination' },
-  { name: 'Emergency support visit', price: '₹3,000', note: 'Immediate local response and assessment' },
+  { name: 'Urgent support visit', price: '₹3,000', note: 'A Guardian there fast to be present and coordinate — alongside 108, not a medical response' },
   { name: 'Grocery or medicine assistance', price: '₹500', note: 'Purchase, delivery and confirmation' },
   { name: 'Home maintenance coordination', price: '₹500', note: 'Plumber, electrician or repair coordination' },
 ]

@@ -256,6 +256,6 @@ export const FAQS: FaqItem[] = [
   {
     question: 'What happens in an emergency?',
     answer:
-      'Your Presence Manager coordinates an immediate local response and keeps you informed at every step. For medical emergencies, we help reach the right care fast while you are looped in on WhatsApp.',
+      'For any medical emergency, call 108 (India’s emergency number) first — that always comes first. Then tell us: your Presence Manager reaches your loved one on the ground, coordinates support and keeps you updated on WhatsApp. Close Eye is a trusted-presence service that works alongside emergency services, never in place of them.',
   },
 ]

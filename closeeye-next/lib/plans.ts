@@ -36,7 +36,7 @@ export const PLANS: Plan[] = [
       'Dedicated Presence Manager',
       'Phone & WhatsApp coordination',
       'Family updates',
-      'Emergency coordination',
+      'Emergency escalation (108 & family)',
       'Dashboard access',
     ],
     cta: 'Choose Connect',
