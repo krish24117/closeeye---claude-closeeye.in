@@ -29,6 +29,25 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
   )
 }
 
+/** A normalized snapshot of exactly what save() would persist — lets us keep
+ *  "Save changes" disabled until the family has actually entered or changed
+ *  something (no empty / no-op saves, no misleading "saved" toast). */
+function snapshot(f: ElderProfileForm, meds: string): string {
+  return JSON.stringify({
+    food_preferences: f.food_preferences.trim(),
+    conversation_interests: f.conversation_interests.trim(),
+    daily_routine: f.daily_routine.trim(),
+    things_to_avoid: f.things_to_avoid.trim(),
+    medical_conditions: f.medical_conditions.trim(),
+    allergies: f.allergies.trim(),
+    doctor_name: f.doctor_name.trim(),
+    doctor_phone: f.doctor_phone.trim(),
+    pinned_note: f.pinned_note.trim(),
+    photo_consent: f.photo_consent,
+    meds: meds.split('\n').map((m) => m.trim()).filter(Boolean),
+  })
+}
+
 export default function HealthProfilePage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
@@ -45,6 +64,7 @@ export default function HealthProfilePage() {
   // full-row-upsert blanks over the saved allergies / medications. So on failure
   // we flag loadError and show a retry — we never substitute an empty form.
   const [loadError, setLoadError] = React.useState(false)
+  const pristineRef = React.useRef('')
 
   const load = React.useCallback(() => {
     if (!id) return
@@ -53,6 +73,7 @@ export default function HealthProfilePage() {
       .then((p) => {
         setForm(p)
         setMeds(p.current_medications.join('\n'))
+        pristineRef.current = snapshot(p, p.current_medications.join('\n'))
       })
       .catch((e) => {
         console.error('[health-profile] load failed:', e)
@@ -121,6 +142,7 @@ export default function HealthProfilePage() {
   }
 
   const firstName = member.full_name.trim().split(/\s+/)[0]
+  const dirty = snapshot(form, meds) !== pristineRef.current
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
@@ -198,7 +220,7 @@ export default function HealthProfilePage() {
 
       {error && <p className="text-caption text-error">{error}</p>}
 
-      <Button size="lg" className="w-full sm:w-auto sm:self-start" disabled={busy} onClick={save}>
+      <Button size="lg" className="w-full sm:w-auto sm:self-start" disabled={busy || !dirty} onClick={save}>
         {busy ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Saving…</> : <><Check className="h-5 w-5" strokeWidth={2} /> Save health profile</>}
       </Button>
     </div>
