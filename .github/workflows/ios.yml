@@ -39,6 +39,9 @@ jobs:
         with:
           node-version: 20
           cache: npm
+          # The app (and its lockfile) live in closeeye-next/, not the repo root —
+          # without this, setup-node searches root, finds no lockfile, and fails.
+          cache-dependency-path: closeeye-next/package-lock.json
 
       - name: Install dependencies
         run: npm ci
