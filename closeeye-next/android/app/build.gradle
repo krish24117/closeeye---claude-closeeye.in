@@ -10,8 +10,10 @@ android {
         // Release builds get versionName + a monotonic versionCode injected from
         // the git tag by CI (see .github/workflows/android.yml). Local/debug builds
         // fall back to these. Never hand-edit for a release — bump the tag instead.
-        versionCode (project.findProperty('ceVersionCode') ?: '1').toString().toInteger()
-        versionName (project.findProperty('ceVersionName') ?: '1.0').toString()
+        def ceVerCode = (project.findProperty('ceVersionCode') ?: '1').toString().toInteger()
+        def ceVerName = (project.findProperty('ceVersionName') ?: '1.0').toString()
+        versionCode ceVerCode
+        versionName ceVerName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
