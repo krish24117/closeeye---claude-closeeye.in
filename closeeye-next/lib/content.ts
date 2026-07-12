@@ -20,7 +20,6 @@ import type {
   ServiceCard,
   JourneyStep,
   TrustPillar,
-  Testimonial,
   FaqItem,
 } from '@/types'
 
@@ -200,33 +199,8 @@ export const MEMBERSHIP = {
   ],
 } as const
 
-/* ── Testimonials (placeholder — real quotes drop straight in) ─────────── */
-export const TESTIMONIALS: Testimonial[] = [
-  {
-    id: 't1',
-    quote:
-      'I live in Toronto and my parents are in Hyderabad. For the first time in years, I sleep through the night.',
-    author: 'Placeholder Name',
-    relation: 'Daughter',
-    location: 'Toronto → Hyderabad',
-  },
-  {
-    id: 't2',
-    quote:
-      'The Guardian sat with my father through his entire procedure. The photos afterwards meant everything to us.',
-    author: 'Placeholder Name',
-    relation: 'Son',
-    location: 'London → Chennai',
-  },
-  {
-    id: 't3',
-    quote:
-      'It never feels like a service. It feels like family showing up when we cannot.',
-    author: 'Placeholder Name',
-    relation: 'Granddaughter',
-    location: 'Dubai → Pune',
-  },
-]
+/* Testimonials are shown as an honest "coming soon" message by
+   features/home/testimonials.tsx — no placeholder quotes ever ship. */
 
 /* ── FAQ ───────────────────────────────────────────────────────────────── */
 export const FAQS: FaqItem[] = [
