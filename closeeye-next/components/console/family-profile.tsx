@@ -105,7 +105,7 @@ export function ConsoleFamilyProfile({ family }: { family: ConsoleFamily }) {
               {report.photos.length > 0 && <Section icon={Camera} title="Photos"><PhotoGallery photos={report.photos} /></Section>}
               {report.voice && <Section icon={Mic} title="Voice note"><VoicePlayer src={report.voice.dataUrl} durationSec={report.voice.durationSec} label={`From ${report.guardianName}`} /></Section>}
               {health.length > 0 && <Section icon={HeartPulse} title="Health snapshot"><HealthSnapshot cards={health} /></Section>}
-              {trend.length > 0 && <Section icon={Activity} title="Wellness this week"><WellnessTrendCard rows={trend} /></Section>}
+              {trend.length > 0 && <Section icon={Activity} title="Wellbeing this visit"><WellnessTrendCard rows={trend} /></Section>}
             </>
           ) : (
             <Section icon={History} title="Latest visit">

@@ -40,7 +40,7 @@ export function TimelineEvent({ event, last }: { event: TimelineEventData; last:
         <Icon className="h-4 w-4" strokeWidth={1.75} />
       </span>
       <div className="min-w-0 flex-1 pt-1">
-        <p className="text-caption font-semibold uppercase tracking-wide text-muted">{event.timeLabel}</p>
+        {event.timeLabel && <p className="text-caption font-semibold uppercase tracking-wide text-muted">{event.timeLabel}</p>}
         <p className="text-body-sm font-semibold text-ink">{event.title}</p>
         {event.detail && <p className="text-caption text-muted">{event.detail}</p>}
         {(event.hasPhoto || event.hasVoice) && (

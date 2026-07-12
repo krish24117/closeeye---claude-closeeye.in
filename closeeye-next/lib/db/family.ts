@@ -261,7 +261,7 @@ export async function fetchFullVisitReport(
     summary: v.one_moment || v.report_text || '',
     story: (cd.story as string) || v.one_moment || v.report_text || '',
     mood: (cd.moodLabel as string) || (v.mood_score ? NUM_TO_MOOD[v.mood_score] : undefined),
-    wellnessScore: asNum(cd.wellnessScore) ?? 82,
+    wellnessScore: asNum(cd.wellnessScore) ?? -1,
     scales,
     moments,
     social,

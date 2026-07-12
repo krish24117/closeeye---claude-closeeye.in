@@ -33,7 +33,7 @@ export function pronounFor(relationship: string): Pronoun {
 
 export function wellnessScore(scales: Record<string, string>): number {
   const noted = ALL_SCALES.filter((s) => scales[s.key])
-  if (!noted.length) return 82
+  if (!noted.length) return -1 // no scales recorded → "no reading", never a fabricated score
   let sum = 0
   for (const s of noted) {
     const idx = s.options.indexOf(scales[s.key]!)
@@ -44,6 +44,7 @@ export function wellnessScore(scales: Record<string, string>): number {
 }
 
 export function wellnessLabel(score: number): string {
+  if (score < 0) return '' // no wellness reading — show nothing rather than invent "A good day"
   if (score >= 88) return 'A wonderful day'
   if (score >= 75) return 'A good day'
   if (score >= 60) return 'A steady day'
@@ -200,16 +201,14 @@ export function timelineEvents(r: SharedVisitReport): TimelineEventData[] {
   if (r.photos.length) middle.push({ icon: 'photo', title: `${r.photos.length} photo${r.photos.length === 1 ? '' : 's'} added`, hasPhoto: true })
   if (r.voice) middle.push({ icon: 'voice', title: 'Voice note recorded', hasVoice: true })
 
-  const start = r.checkinAt
-  const end = Math.max(r.completedAt, start + middle.length * 60000)
-  const span = end - start
-
-  const events: TimelineEventData[] = [{ id: 'arrive', timeLabel: fmtTime(start), icon: 'arrive', title: 'Guardian arrived' }]
+  // Only the real anchors carry a clock time (check-in + completion). The middle
+  // events are shown in order but WITHOUT a fabricated precise time — we never
+  // recorded the exact minute each happened.
+  const events: TimelineEventData[] = [{ id: 'arrive', timeLabel: fmtTime(r.checkinAt), icon: 'arrive', title: 'Guardian arrived' }]
   middle.forEach((e, i) => {
-    const t = start + Math.round(((i + 1) / (middle.length + 1)) * span)
-    events.push({ ...e, id: `ev-${i}`, timeLabel: fmtTime(t) })
+    events.push({ ...e, id: `ev-${i}`, timeLabel: '' })
   })
-  events.push({ id: 'complete', timeLabel: fmtTime(Math.max(r.completedAt, end)), icon: 'complete', title: 'Visit completed' })
+  events.push({ id: 'complete', timeLabel: fmtTime(r.completedAt), icon: 'complete', title: 'Visit completed' })
   return events
 }
 
@@ -223,18 +222,11 @@ export interface HealthCardData {
   value: string
   status: HealthStatus
   statusLabel: string
-  spark: number[]
   note: string
 }
 
 function statusLabel(s: HealthStatus): string {
   return s === 'normal' ? 'Normal' : s === 'watch' ? 'Keep an eye' : 'Needs attention'
-}
-
-// A gentle, illustrative sparkline settling on the latest reading (single-visit demo).
-function spark(v: number): number[] {
-  const base = [0.97, 1.02, 0.99, 1.01, 0.98, 1.0, 1.0]
-  return base.map((f) => Math.round(v * f))
 }
 
 export function healthSnapshot(r: SharedVisitReport): HealthCardData[] {
@@ -243,26 +235,25 @@ export function healthSnapshot(r: SharedVisitReport): HealthCardData[] {
   if (v.bp) {
     const sys = parseInt(v.bp, 10) || 120
     const status: HealthStatus = sys < 130 ? 'normal' : sys <= 140 ? 'watch' : 'attention'
-    cards.push({ key: 'bp', label: 'Blood pressure', unit: 'mmHg', value: v.bp, status, statusLabel: statusLabel(status), spark: spark(sys), note: 'Systolic / diastolic' })
+    cards.push({ key: 'bp', label: 'Blood pressure', unit: 'mmHg', value: v.bp, status, statusLabel: statusLabel(status), note: 'Systolic / diastolic' })
   }
   if (v.pulse) {
     const p = parseInt(v.pulse, 10) || 72
     const status: HealthStatus = p >= 60 && p <= 100 ? 'normal' : p < 55 || p > 110 ? 'attention' : 'watch'
-    cards.push({ key: 'pulse', label: 'Pulse', unit: 'bpm', value: v.pulse, status, statusLabel: statusLabel(status), spark: spark(p), note: 'Resting heart rate' })
+    cards.push({ key: 'pulse', label: 'Pulse', unit: 'bpm', value: v.pulse, status, statusLabel: statusLabel(status), note: 'Resting heart rate' })
   }
   if (v.temp) {
     const t = parseFloat(v.temp) || 98.4
     const status: HealthStatus = t <= 99 ? 'normal' : t <= 100.4 ? 'watch' : 'attention'
-    cards.push({ key: 'temp', label: 'Temperature', unit: '°F', value: v.temp, status, statusLabel: statusLabel(status), spark: spark(Math.round(t)), note: 'Body temperature' })
+    cards.push({ key: 'temp', label: 'Temperature', unit: '°F', value: v.temp, status, statusLabel: statusLabel(status), note: 'Body temperature' })
   }
   if (v.sugar) {
     const g = parseInt(v.sugar, 10) || 110
     const status: HealthStatus = g >= 70 && g <= 140 ? 'normal' : g <= 180 ? 'watch' : 'attention'
-    cards.push({ key: 'sugar', label: 'Blood sugar', unit: 'mg/dL', value: v.sugar, status, statusLabel: statusLabel(status), spark: spark(g), note: 'Fasting / random' })
+    cards.push({ key: 'sugar', label: 'Blood sugar', unit: 'mg/dL', value: v.sugar, status, statusLabel: statusLabel(status), note: 'Fasting / random' })
   }
   if (v.weight) {
-    const w = parseFloat(v.weight) || 68
-    cards.push({ key: 'weight', label: 'Weight', unit: 'kg', value: v.weight, status: 'normal', statusLabel: 'Tracking', spark: spark(Math.round(w)), note: 'Recorded this visit' })
+    cards.push({ key: 'weight', label: 'Weight', unit: 'kg', value: v.weight, status: 'normal', statusLabel: 'Tracking', note: 'Recorded this visit' })
   }
   return cards
 }
@@ -295,7 +286,7 @@ export function wellnessTrend(r: SharedVisitReport): TrendRowData[] {
     const scale = ALL_SCALES.find((s) => s.key === dim.key)
     const isBest = scale ? scale.options.indexOf(val) === 0 : false
     const status: TrendStatus = CONCERN_VALUES.has(val) ? 'attention' : isBest ? 'good' : 'stable'
-    rows.push({ label: dim.label, value: val, status, statusLabel: status === 'good' ? 'Improving' : status === 'stable' ? 'Stable' : 'Needs attention' })
+    rows.push({ label: dim.label, value: val, status, statusLabel: status === 'good' ? 'Good' : status === 'stable' ? 'Steady' : 'Needs attention' })
   }
   return rows
 }

@@ -8,26 +8,7 @@ const TONE: Record<HealthStatus, { text: string; chip: string; stroke: string; i
   attention: { text: 'text-error', chip: 'bg-error/10 text-error', stroke: 'stroke-error', icon: AlertTriangle },
 }
 
-/** A small, gentle trend line — illustrative, never a clinical chart. */
-function Spark({ points, className }: { points: number[]; className?: string }) {
-  const min = Math.min(...points)
-  const max = Math.max(...points)
-  const span = max - min || 1
-  const d = points
-    .map((p, i) => {
-      const x = (i / (points.length - 1)) * 100
-      const y = 26 - ((p - min) / span) * 22
-      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`
-    })
-    .join(' ')
-  return (
-    <svg viewBox="0 0 100 30" preserveAspectRatio="none" className={cn('h-7 w-full', className)} aria-hidden>
-      <path d={d} fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-    </svg>
-  )
-}
-
-/** HealthSnapshotCard — one reading, its status, and a subtle trend. Reusable. */
+/** HealthSnapshotCard — one reading and its status. Reusable. */
 export function HealthSnapshotCard({ card }: { card: HealthCardData }) {
   const tone = TONE[card.status]
   const Icon = tone.icon
@@ -44,7 +25,6 @@ export function HealthSnapshotCard({ card }: { card: HealthCardData }) {
           <Icon className="h-3 w-3" strokeWidth={2} /> {card.statusLabel}
         </span>
       </div>
-      <Spark points={card.spark} className={tone.stroke} />
       <p className="text-caption text-muted">{card.note}</p>
     </div>
   )

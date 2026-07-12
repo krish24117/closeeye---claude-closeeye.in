@@ -76,9 +76,11 @@ export function AIStoryCard({ report }: { report: SharedVisitReport }) {
           </button>
         )}
 
-        <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1 text-caption font-semibold text-green">
-          {wellnessLabel(report.wellnessScore)}
-        </p>
+        {wellnessLabel(report.wellnessScore) && (
+          <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1 text-caption font-semibold text-green">
+            {wellnessLabel(report.wellnessScore)}
+          </p>
+        )}
 
         <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
           <Button variant="secondary" size="sm" onClick={share}>

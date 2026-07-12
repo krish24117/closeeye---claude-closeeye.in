@@ -218,7 +218,7 @@ export function VisitReportExperience({
       )}
 
       {trend.length > 0 && (
-        <FamilySection icon={Activity} title="Wellness this week">
+        <FamilySection icon={Activity} title="Wellbeing this visit">
           <WellnessTrendCard rows={trend} />
         </FamilySection>
       )}
