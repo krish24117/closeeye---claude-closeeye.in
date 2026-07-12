@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
-import { ArrowRight, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { Container } from '@/components/ui/container'
 import { Section, SectionHeading } from '@/components/ui/section'
 import { Split } from '@/components/ui/split'
@@ -9,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { FeatureIcon } from '@/components/ui/feature-icon'
 import { Reveal, Stagger, StaggerItem } from '@/components/ui/reveal'
+import { ServiceBookButton } from '@/components/marketing/service-book-button'
 import { SERVICE_DETAILS, SERVICE_MENU } from '@/lib/services'
 import { HERO_TRUST } from '@/lib/content'
 import { whatsappLink } from '@/lib/site'
@@ -91,9 +91,7 @@ export default function ServicesPage() {
                 </ul>
 
                 <div className="mt-8 flex flex-wrap items-center gap-5">
-                  <Button asChild>
-                    <Link href="/book">Book a visit</Link>
-                  </Button>
+                  <ServiceBookButton serviceId={s.id} serviceName={s.name} />
                   <span className="text-body-sm text-muted">
                     Starting at <span className="font-semibold text-ink">{s.priceFrom}</span>
                   </span>
@@ -161,11 +159,7 @@ export default function ServicesPage() {
               visit — with the care we&apos;d want for our own family.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" onDark>
-                <Link href="/book">
-                  Book a visit <ArrowRight className="h-5 w-5" strokeWidth={1.5} />
-                </Link>
-              </Button>
+              <ServiceBookButton size="lg" onDark />
               <Button asChild size="lg" variant="secondary" onDark>
                 <a href={whatsappLink()} target="_blank" rel="noopener noreferrer">
                   WhatsApp us
