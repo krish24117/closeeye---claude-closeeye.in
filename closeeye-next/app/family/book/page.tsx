@@ -46,9 +46,9 @@ type Step = 'type' | 'requirement' | 'details' | 'review'
 // Quick-pick prompts for a Custom Request — the family can tap any, then describe.
 const CUSTOM_NEEDS = ['Groceries', 'Medicines', 'Paperwork', 'Festival visit', 'Errands', 'Other']
 
-function BookingSteps({ step, custom }: { step: Step; custom: boolean }) {
+function BookingSteps({ step, custom, preset }: { step: Step; custom: boolean; preset: boolean }) {
   const steps: { id: Step; label: string }[] = [
-    { id: 'type', label: 'Visit type' },
+    ...(preset ? [] : [{ id: 'type' as Step, label: 'Visit type' }]),
     ...(custom ? [{ id: 'requirement' as Step, label: 'What you need' }] : []),
     { id: 'details', label: 'Visit details' },
     { id: 'review', label: 'Review' },
@@ -79,6 +79,7 @@ export default function FamilyBookPage() {
   const [pickChoice, setPickChoice] = React.useState('')
   const [step, setStep] = React.useState<Step>('type')
   const [serviceId, setServiceId] = React.useState('')
+  const [servicePreset, setServicePreset] = React.useState(false)
   const [details, setDetails] = React.useState<VisitDetailsState>(emptyVisitDetails)
   const patch = (p: Partial<VisitDetailsState>) => setDetails((d) => ({ ...d, ...p }))
   const [updateProfile, setUpdateProfile] = React.useState(false)
@@ -100,7 +101,13 @@ export default function FamilyBookPage() {
 
   React.useEffect(() => {
     const s = params.get('service')
-    if (s && BOOKING_SERVICES.some((b) => b.id === s)) setServiceId(s)
+    if (s && BOOKING_SERVICES.some((b) => b.id === s)) {
+      setServiceId(s)
+      setServicePreset(true)
+      // Service already chosen (e.g. from the Services tab) — skip the "what kind of
+      // visit?" picker and open that visit directly.
+      setStep(s === 'custom-request' ? 'requirement' : 'details')
+    }
   }, [params])
 
   const member = lovedOnes.find((l) => l.id === memberId)
@@ -142,7 +149,7 @@ export default function FamilyBookPage() {
     setPrefilledFor(member.id)
   }, [member, prefilledFor])
 
-  function changePerson() { setMemberId(''); setPickChoice(member?.id ?? ''); setStep('type'); setPrefilledFor('') }
+  function changePerson() { setMemberId(''); setPickChoice(member?.id ?? ''); setStep(servicePreset ? (isCustom ? 'requirement' : 'details') : 'type'); setPrefilledFor('') }
   function goFromType() { setError(''); if (!service) return setError('Please choose a visit type.'); setStep(isCustom ? 'requirement' : 'details') }
   function goFromRequirement() { setError(''); if (requirement.trim().length < 4) return setError('Please tell us what you need for this visit.'); setStep('details') }
   function goToReview() { setError(''); const err = visitDetailsError(details); if (err) return setError(err); setStep('review') }
@@ -272,7 +279,10 @@ export default function FamilyBookPage() {
 
   // ── Stepped booking (member resolved) ───────────────────────────────────────
   const backTo: Step | null =
-    step === 'type' ? null : step === 'requirement' ? 'type' : step === 'details' ? (isCustom ? 'requirement' : 'type') : 'details'
+    step === 'type' ? null
+      : step === 'requirement' ? (servicePreset ? null : 'type')
+      : step === 'details' ? (isCustom ? 'requirement' : servicePreset ? null : 'type')
+      : 'details'
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-7">
       <div>
@@ -282,10 +292,10 @@ export default function FamilyBookPage() {
           <Link href="/family/visits" className="mb-3 inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to visits</Link>
         )}
         <PageHeader title="Book a visit" subtitle={`For ${member.full_name}`} />
-        {lovedOnes.length > 1 && step === 'type' && (
+        {lovedOnes.length > 1 && backTo === null && (
           <button type="button" onClick={changePerson} className="mt-2 text-caption font-semibold text-green hover:underline">Change person</button>
         )}
-        <div className="mt-4"><BookingSteps step={step} custom={isCustom} /></div>
+        <div className="mt-4"><BookingSteps step={step} custom={isCustom} preset={servicePreset} /></div>
       </div>
 
       {step === 'type' && (
