@@ -152,7 +152,7 @@ export default function ServicesPage() {
       </Section>
 
       {/* CTA */}
-      <section id="contact" className="bg-ink">
+      <section id="get-started" className="bg-ink">
         <Container className="section-pad">
           <Reveal className="mx-auto flex max-w-2xl flex-col items-center text-center">
             <h2 className="text-h2 text-white">Tell us who you&apos;d like us to check on</h2>

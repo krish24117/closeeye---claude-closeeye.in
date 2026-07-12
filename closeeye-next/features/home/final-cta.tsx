@@ -7,7 +7,7 @@ import { whatsappLink } from '@/lib/site'
 
 export function FinalCta() {
   return (
-    <section id="contact" className="bg-ink">
+    <section id="get-started" className="bg-ink">
       <Container className="section-pad">
         <Reveal className="mx-auto flex max-w-2xl flex-col items-center text-center">
           <span className="eyebrow is-light is-centered">Peace of mind, today</span>
