@@ -13,6 +13,7 @@ import { useFamilyData } from '@/components/family/family-data-provider'
 import { isSuperAdmin } from '@/lib/roles'
 import { fetchMyBookingRequests, fetchFullVisitReport, type FullVisitReport } from '@/lib/db/family'
 import { VisitReportExperience } from '@/components/family/visit-experience'
+import { WhatYouToldUs } from '@/components/family/what-you-told-us'
 import { updateVisitRequest } from '@/features/booking/api'
 import { BOOKING_SERVICES } from '@/features/booking/schema'
 import { VisitDetailsForm, emptyVisitDetails, slotIdFromLabel, toVisitDetailInput, visitDetailsError, type VisitDetailsState } from '@/components/family/visit-details-form'
@@ -50,7 +51,7 @@ function fmtDate(iso: string | null): string {
 export default function VisitDetailPage() {
   const params = useParams<{ id: string }>()
   const { user } = useAuth()
-  const { profile } = useFamilyData()
+  const { profile, lovedOnes } = useFamilyData()
   const admin = isSuperAdmin(profile)
   const [visit, setVisit] = React.useState<BookingRequest | null | undefined>(undefined)
   const [full, setFull] = React.useState<FullVisitReport | null>(null)
@@ -102,6 +103,9 @@ export default function VisitDetailPage() {
   }
 
   const name = visit.recipient_name?.trim() || 'Your family'
+  // Link this visit's loved one to the family roster (BookingRequest carries only the
+  // name) so we can reflect their wellbeing profile back in the Story.
+  const lovedOneId = lovedOnes.find((l) => l.full_name.trim().toLowerCase() === name.toLowerCase())?.id
   const m = statusMeta(visit.status)
 
   // The logistics the family provided for this visit — reviewable any time.
@@ -159,6 +163,7 @@ export default function VisitDetailPage() {
       <div className="flex flex-col gap-6">
         {back}
         <VisitReportExperience report={full.report} stats={full.stats} recommendations={full.recommendations} followUps={full.followUps} pdfUrl={full.pdfUrl} delivery={full.delivery} admin={admin} />
+        {lovedOneId && <WhatYouToldUs lovedOneId={lovedOneId} name={name} />}
       </div>
     )
   }
