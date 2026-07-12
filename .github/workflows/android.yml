@@ -67,7 +67,9 @@ jobs:
           if-no-files-found: error
 
       # ── Production build: signed App Bundle (version tags only) ──
-      # Signs via AGP's injected-signing properties — no build.gradle edits needed.
+      # Signs via AGP's injected-signing properties. versionName/versionCode are
+      # derived from the tag and passed as -PceVersion* (consumed in app/build.gradle),
+      # so every release auto-bumps — never hand-edit the version, just tag.
       - name: Build & sign release AAB
         if: github.ref_type == 'tag'
         working-directory: closeeye-next/android
@@ -79,7 +81,16 @@ jobs:
         run: |
           chmod +x ./gradlew
           echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/closeeye.jks"
+          # Derive versionName + a unique, monotonic versionCode from the tag:
+          # v1.2.3 → versionName 1.2.3, versionCode 1*10000 + 2*100 + 3 = 10203.
+          VER="${GITHUB_REF_NAME#v}"        # strip leading "v" → 1.2.3
+          VER="${VER%%-*}"                  # drop any -prerelease suffix
+          IFS=. read -r MAJ MIN PAT <<< "$VER"
+          VCODE=$(( ${MAJ:-0} * 10000 + ${MIN:-0} * 100 + ${PAT:-0} ))
+          echo "Release $GITHUB_REF_NAME → versionName=$VER versionCode=$VCODE"
           ./gradlew bundleRelease --no-daemon \
+            -PceVersionName="$VER" \
+            -PceVersionCode="$VCODE" \
             -Pandroid.injected.signing.store.file="$RUNNER_TEMP/closeeye.jks" \
             -Pandroid.injected.signing.store.password="$STORE_PW" \
             -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
