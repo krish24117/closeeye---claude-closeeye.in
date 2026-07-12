@@ -6,6 +6,7 @@ import { ArrowRight, ShieldAlert, Sparkles } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useLovedOnes } from '@/components/family/family-data-provider'
 import { fetchAskHistory, type AskHistoryItem } from '@/lib/db/ask'
+import { fetchElderProfile, type ElderProfileForm } from '@/lib/db/family'
 import { SITE } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
@@ -25,6 +26,20 @@ interface Prompt {
   label: string
   href: string
   urgent?: boolean
+}
+
+/** A loved one with no wellbeing details yet — Connect can't personalise its
+ *  answers until the family fills the profile, so the card gently nudges them. */
+function profileIsThin(ep: ElderProfileForm): boolean {
+  return !(
+    ep.medical_conditions.trim() ||
+    ep.current_medications.length ||
+    ep.things_to_avoid.trim() ||
+    ep.daily_routine.trim() ||
+    ep.conversation_interests.trim() ||
+    ep.food_preferences.trim() ||
+    ep.allergies.trim()
+  )
 }
 
 /**
@@ -62,6 +77,11 @@ export function AskCloseEyeCard({
   const primary = lovedOnes[0]
   const first = primary ? primary.full_name.trim().split(/\s+/)[0] : null
   const primaryId = primary?.id
+  const [needsProfile, setNeedsProfile] = React.useState(false)
+  React.useEffect(() => {
+    if (!primaryId) { setNeedsProfile(false); return }
+    fetchElderProfile(primaryId).then((ep) => setNeedsProfile(profileIsThin(ep))).catch(() => setNeedsProfile(false))
+  }, [primaryId])
   const askHref = (q: string) => `/family/connect/ask?q=${encodeURIComponent(q)}`
   const go = (q: string) => {
     const t = q.trim()
@@ -131,6 +151,19 @@ export function AskCloseEyeCard({
           </div>
         )}
       </div>
+
+      {/* Wellbeing nudge — surfaces the loop: filling {first}'s profile lets Connect know them. Self-hides once any detail is saved. */}
+      {needsProfile && primaryId && (
+        <button
+          type="button"
+          onClick={() => router.push(`/family/members/${primaryId}/health`)}
+          className="mt-3.5 flex w-full items-center gap-2.5 rounded-xl border border-green/20 bg-card px-3.5 py-2.5 text-left text-caption text-ink transition-colors hover:border-green/40"
+        >
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} /></span>
+          <span className="min-w-0 flex-1">Tell me a little about {first} so I can help better.</span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-green" strokeWidth={2} />
+        </button>
+      )}
 
       {/* Context-aware follow-ups — continue the conversation, don't start one. */}
       <div className="mt-3.5 flex flex-wrap gap-2">
