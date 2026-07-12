@@ -34,3 +34,7 @@ verify_jwt = false
 # Cron — 7am IST founder daily briefing push
 [functions.founder-daily-briefing]
 verify_jwt = false
+
+# Cron — daily WhatsApp nurture sequence for un-converted registrants
+[functions.founder-nurture-sequences]
+verify_jwt = false

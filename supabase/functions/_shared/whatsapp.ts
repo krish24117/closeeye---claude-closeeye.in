@@ -139,6 +139,63 @@ export async function sendWhatsAppTemplate({
   return result;
 }
 
+// ── sendWhatsAppTemplateBySid ───────────────────────────────────────────────
+// Send an approved template by its raw ContentSid — for CONFIG-DRIVEN templates
+// (e.g. founder nurture) whose SIDs live in env vars rather than the fixed TEMPLATES
+// registry above. Same Twilio call + logging as sendWhatsAppTemplate. Never throws.
+export async function sendWhatsAppTemplateBySid({
+  to, sid, variables, tag, sb,
+}: { to: string; sid: string; variables: string[]; tag: string; sb?: SupabaseLike }): Promise<SendResult> {
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
+  const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM");
+  if (!accountSid || !authToken || !fromNum) {
+    return { success: false, error: "Twilio credentials not configured" };
+  }
+  let toNorm: string;
+  try { toNorm = normalisePhone(to); } catch (e) { return { success: false, error: `phone_normalise_failed: ${e}` }; }
+
+  const contentVars: Record<string, string> = {};
+  variables.forEach((v, i) => { contentVars[String(i + 1)] = v; });
+  const params = new URLSearchParams({
+    From: fromNum, To: toNorm, ContentSid: sid, ContentVariables: JSON.stringify(contentVars),
+  });
+
+  let result: SendResult;
+  try {
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+      { method: "POST", headers: { Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`, "Content-Type": "application/x-www-form-urlencoded" }, body: params },
+    );
+    if (res.ok) {
+      const data = await res.json() as { sid?: string };
+      result = { success: true, twilioSid: data.sid };
+      console.log(`[whatsapp] ${tag} → ${toNorm} ok (${data.sid})`);
+    } else {
+      const errText = await res.text();
+      console.error(`[whatsapp] ${tag} → ${toNorm} HTTP ${res.status}:`, errText);
+      result = { success: false, error: `Twilio HTTP ${res.status}: ${errText.slice(0, 400)}` };
+    }
+  } catch (e) {
+    result = { success: false, error: `fetch_error: ${e}` };
+    console.error(`[whatsapp] ${tag} → ${toNorm} fetch error:`, result.error);
+  }
+
+  if (sb) {
+    try {
+      await sb.from("whatsapp_messages").insert({
+        to_number: toNorm, template: tag, content_sid: sid,
+        status: result.success ? "sent" : "failed",
+        twilio_sid: result.twilioSid ?? null, error: result.error ?? null,
+        payload: { contentVars, sid },
+      });
+    } catch (e) {
+      console.error("[whatsapp] log insert failed (non-fatal):", e);
+    }
+  }
+  return result;
+}
+
 // ── sendWhatsAppFreeText ───────────────────────────────────────────────────
 // For status notifications that don't yet have an approved Twilio template.
 // Uses Body= (free-form) instead of ContentSid= — works within a 24-h session
