@@ -103,11 +103,13 @@ function visitDetailBody(input: VisitDetailInput) {
 }
 
 export async function requestVisit(
-  input: VisitDetailInput & { serviceId: string; lovedOneId?: string; recipientName: string; requesterWhatsapp: string },
+  input: VisitDetailInput & { serviceId: string; canonicalServiceId?: string; lovedOneId?: string; recipientName: string; requesterWhatsapp: string },
 ): Promise<BookingResult> {
   const svc = serviceById(input.serviceId)
   return invokeBookingRequest({
-    service_id: CANONICAL_SERVICE_ID[input.serviceId] ?? input.serviceId,
+    // A variant (e.g. Hospital half/full day) can override the canonical price id;
+    // the edge function already knows both and prices the request server-side.
+    service_id: input.canonicalServiceId ?? CANONICAL_SERVICE_ID[input.serviceId] ?? input.serviceId,
     service_name: svc?.name ?? 'Visit',
     loved_one_id: input.lovedOneId ?? null,
     recipient_name: input.recipientName,

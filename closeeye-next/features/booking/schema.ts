@@ -47,6 +47,17 @@ export const BOOKING_SERVICES: BookingService[] = [
   },
 ]
 
+/** Hospital Companion is booked by duration — the family picks half or full day.
+ *  Prices mirror the published menu (lib/services.ts SERVICE_MENU) and the edge
+ *  function price maps (submit-booking-request / razorpay-*), which already know
+ *  both variants — so this is a client-only choice, no backend change. */
+export const HOSPITAL_DURATIONS = [
+  { id: 'half_day', label: 'Half day', note: 'Coordination, registration and updates', priceValue: 2000, priceFrom: '₹2,000', canonicalId: 'hospital_assistance_half_day' },
+  { id: 'full_day', label: 'Full day', note: 'End-to-end support and care coordination', priceValue: 4000, priceFrom: '₹4,000', canonicalId: 'hospital_assistance_full_day' },
+] as const
+
+export type HospitalDurationId = (typeof HOSPITAL_DURATIONS)[number]['id']
+
 export const RELATIONSHIPS = ['Father', 'Mother', 'Grandparents', 'Spouse', 'Sibling', 'Friend', 'Other'] as const
 
 export const PURPOSES = [

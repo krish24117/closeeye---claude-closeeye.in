@@ -11,7 +11,7 @@ import { OptionCard, Chip } from '@/components/ui/choice'
 import { Field, Textarea } from '@/components/ui/field'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
-import { BOOKING_SERVICES } from '@/features/booking/schema'
+import { BOOKING_SERVICES, HOSPITAL_DURATIONS, type HospitalDurationId } from '@/features/booking/schema'
 import { requestVisit } from '@/features/booking/api'
 import { isFounderFunnelGated } from '@/lib/founder-funnel'
 import { PRELAUNCH_BOOKING_NOTE } from '@/lib/launch'
@@ -80,6 +80,7 @@ export default function FamilyBookPage() {
   const [step, setStep] = React.useState<Step>('type')
   const [serviceId, setServiceId] = React.useState('')
   const [servicePreset, setServicePreset] = React.useState(false)
+  const [hospitalDuration, setHospitalDuration] = React.useState<HospitalDurationId>('half_day')
   const [details, setDetails] = React.useState<VisitDetailsState>(emptyVisitDetails)
   const patch = (p: Partial<VisitDetailsState>) => setDetails((d) => ({ ...d, ...p }))
   const [updateProfile, setUpdateProfile] = React.useState(false)
@@ -118,6 +119,8 @@ export default function FamilyBookPage() {
   // A Custom Request carries its own "what you need" step; the composed requirement
   // rides into the existing visit_special_instructions field (no backend change).
   const isCustom = serviceId === 'custom-request'
+  const isHospital = serviceId === 'hospital-companion'
+  const duration = HOSPITAL_DURATIONS.find((d) => d.id === hospitalDuration) ?? HOSPITAL_DURATIONS[0]
   const customRequirement = [reqTags.join(', '), requirement.trim()].filter(Boolean).join(' — ')
   const effectiveInstructions = isCustom ? customRequirement : details.specialInstructions
   const instructionsLabel = isCustom ? 'What you need' : 'Instructions'
@@ -127,9 +130,11 @@ export default function FamilyBookPage() {
   // never a "₹1,000" price or a payment link on a benefit they've already paid for.
   const isIncludedVisit =
     params.get('included') === '1' && serviceId === 'home-wellbeing-visit' && planById(subscription?.plan_id)?.key === 'care'
-  const effectiveTeamNotes = isIncludedVisit
-    ? ['Included monthly visit (Care plan) — nothing to charge.', details.teamNotes.trim()].filter(Boolean).join(' — ')
-    : details.teamNotes
+  const effectiveTeamNotes = [
+    isIncludedVisit ? 'Included monthly visit (Care plan) — nothing to charge.' : '',
+    isHospital ? `Hospital Companion — ${duration.label} (${duration.priceFrom})` : '',
+    details.teamNotes.trim(),
+  ].filter(Boolean).join(' — ')
 
   // Prefill from the member's saved profile (once per member) — prefer the saved
   // emergency contact as the on-site visit contact (often a local relative better
@@ -162,6 +167,7 @@ export default function FamilyBookPage() {
     try {
       const res = await requestVisit({
         serviceId: service.id,
+        canonicalServiceId: isHospital ? duration.canonicalId : undefined,
         lovedOneId: member.id,
         recipientName: member.full_name,
         requesterWhatsapp: profile?.whatsapp_number || profile?.phone || '',
@@ -194,6 +200,7 @@ export default function FamilyBookPage() {
   if (ref && member && service) {
     const rows: [string, string | undefined][] = [
       ['Service', service.name],
+      ['Duration', isHospital ? `${duration.label} · ${duration.priceFrom}` : undefined],
       ['For', member.full_name],
       ['When', `${new Date(details.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })} · ${slotLabel}`],
       ['Address', details.address.trim()],
@@ -355,6 +362,32 @@ export default function FamilyBookPage() {
             <h2 className="text-h4 text-ink">Details for this visit</h2>
             <p className="mt-1 text-body-sm text-muted">Prefilled from {firstName}’s profile — review and edit anything for this visit.</p>
           </div>
+          {isHospital && (
+            <section className="flex flex-col gap-3">
+              <h3 className="text-body font-semibold text-ink">How long will {firstName} need someone?</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {HOSPITAL_DURATIONS.map((d) => {
+                  const on = hospitalDuration === d.id
+                  return (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => setHospitalDuration(d.id)}
+                      aria-pressed={on}
+                      className={cn('flex flex-col gap-1 rounded-lg border-2 bg-card p-4 text-left transition-colors', on ? 'border-green bg-accent-soft/30' : 'border-line hover:border-ink/20')}
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="text-body-sm font-semibold text-ink">{d.label}</span>
+                        <span className="text-body-sm font-semibold text-green">{d.priceFrom}</span>
+                      </span>
+                      <span className="text-caption text-muted">{d.note}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-caption text-muted">Nothing is charged now — your Presence Manager confirms and sends a secure payment link.</p>
+            </section>
+          )}
           {isCustom && customRequirement && (
             <div className="flex items-start justify-between gap-4 rounded-lg border border-line bg-accent-soft/30 p-4">
               <div className="min-w-0">
@@ -389,6 +422,7 @@ export default function FamilyBookPage() {
             <div className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-sm">
               {([
                 ['Visit type', service.name],
+                ['Duration', isHospital ? `${duration.label} · ${duration.priceFrom}` : undefined],
                 ['For', member.full_name],
                 ['Address', details.address.trim()],
                 ['Map link', details.mapLink.trim() || undefined],
