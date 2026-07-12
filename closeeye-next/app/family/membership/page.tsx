@@ -14,6 +14,8 @@ import { getPendingPlan, clearPendingPlan } from '@/lib/membership-intent'
 import { isFounderFunnelGated } from '@/lib/founder-funnel'
 import { PRELAUNCH_MEMBERSHIP_NOTE } from '@/lib/launch'
 import { payForMembership, type PayOutcome } from '@/lib/razorpay'
+import { MembershipPrepare } from '@/components/family/membership-prepare'
+import { fetchElderProfile, type ElderProfileForm } from '@/lib/db/family'
 import { cn } from '@/lib/utils'
 
 const STEPS = [
@@ -31,10 +33,21 @@ function formatDate(iso: string): string {
   }
 }
 
+/** A loved one with no wellbeing details yet — drives the pre-payment nudge. */
+function isWellbeingThin(ep: ElderProfileForm): boolean {
+  return !(
+    ep.medical_conditions.trim() || ep.current_medications.length || ep.allergies.trim() ||
+    ep.things_to_avoid.trim() || ep.daily_routine.trim() || ep.conversation_interests.trim() || ep.food_preferences.trim()
+  )
+}
+
 export default function MembershipPage() {
-  const { subscription, profile, identity, refresh } = useFamilyData()
+  const { subscription, profile, identity, refresh, lovedOnes } = useFamilyData()
   const toast = useToast()
   const [busy, setBusy] = useState<PlanId | null>(null)
+  // Pre-payment collection gate — set to the plan being purchased while we gather the
+  // loved one + wellbeing, before payForMembership.
+  const [preparing, setPreparing] = useState<{ planId: PlanId; mode: 'choose' | 'upgrade' } | null>(null)
   // Activation landing — arrived from the join funnel (onboarding → Activate). Read
   // the carried plan + ?activate once on the client (in an effect, from
   // window.location) to avoid a hydration mismatch and keep the page prerenderable.
@@ -62,6 +75,23 @@ export default function MembershipPage() {
   // Connect" umbrella line — the sheet is about what's NEW).
   const careDelta = (planById('trust')?.benefits ?? []).filter((b) => !b.toLowerCase().startsWith('everything'))
 
+  // The primary loved one + whether their wellbeing is still thin — so choose()/startUpgrade()
+  // can decide whether to open the collection gate before payment.
+  const primaryLovedOne = lovedOnes[0] ?? null
+  const [wellbeingThin, setWellbeingThin] = useState(false)
+  useEffect(() => {
+    if (!primaryLovedOne) return
+    let alive = true
+    fetchElderProfile(primaryLovedOne.id).then((ep) => { if (alive) setWellbeingThin(isWellbeingThin(ep)) }).catch(() => {})
+    return () => { alive = false }
+  }, [primaryLovedOne?.id])
+
+  function gateNeeded(): boolean {
+    if (!primaryLovedOne) return true
+    if (!primaryLovedOne.address?.trim()) return true
+    return wellbeingThin
+  }
+
   function handleOutcome(o: PayOutcome, short: string) {
     if (o.status === 'success') {
       clearPendingPlan() // join intent fulfilled — the plan is being activated
@@ -88,6 +118,13 @@ export default function MembershipPage() {
     if (active) return
     // Founder Funnel (pre-launch): registrants select a plan but never pay here.
     if (isFounderFunnelGated(profile?.founder_prelaunch ?? false)) { toast(PRELAUNCH_MEMBERSHIP_NOTE); return }
+    if (!planById(planId)) return
+    // Collect the loved one + a wellbeing nudge before we ever open payment.
+    if (gateNeeded()) { setPreparing({ planId, mode: 'choose' }); return }
+    await payChoose(planId)
+  }
+
+  async function payChoose(planId: PlanId) {
     const plan = planById(planId)
     if (!plan) return
     setBusy(planId)
@@ -122,6 +159,12 @@ export default function MembershipPage() {
   async function startUpgrade() {
     if (busy) return
     if (isFounderFunnelGated(profile?.founder_prelaunch ?? false)) { toast(PRELAUNCH_MEMBERSHIP_NOTE); return }
+    // Same collection gate before an upgrade opens payment.
+    if (gateNeeded()) { setUpgradeOpen(false); setPreparing({ planId: 'trust', mode: 'upgrade' }); return }
+    await payUpgrade()
+  }
+
+  async function payUpgrade() {
     setBusy('trust')
     try {
       const outcome = await payForMembership({
@@ -154,6 +197,24 @@ export default function MembershipPage() {
   function closeUpgrade() {
     if (busy) return
     setUpgradeOpen(false)
+  }
+
+  // The pre-payment collection gate takes over the page until it's satisfied (or cancelled),
+  // then hands back to the exact payment path the CTA would have run.
+  if (preparing) {
+    const prep = preparing
+    const plan = planById(prep.planId)
+    if (plan) {
+      return (
+        <div className="flex flex-col">
+          <MembershipPrepare
+            plan={{ name: plan.name, short: plan.short, price: plan.price }}
+            onCancel={() => setPreparing(null)}
+            onReady={() => { setPreparing(null); if (prep.mode === 'choose') void payChoose(prep.planId); else void payUpgrade() }}
+          />
+        </div>
+      )
+    }
   }
 
   return (
