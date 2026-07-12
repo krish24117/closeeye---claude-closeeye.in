@@ -4,6 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { ArrowLeft, BadgeCheck, Loader2, Receipt } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
+import { ErrorState } from '@/components/ui/states'
 import { DownloadButton } from '@/components/family/download-button'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
@@ -51,10 +52,12 @@ export default function BillingPage() {
   const { user } = useAuth()
   const { subscription, identity } = useFamilyData()
   const [rows, setRows] = React.useState<Row[] | null>(null)
+  const [error, setError] = React.useState(false)
   const plan = planById(subscription?.plan_id)
 
-  React.useEffect(() => {
-    if (!user?.id) { setRows([]); return }
+  const load = React.useCallback(() => {
+    if (!user?.id) { setRows([]); setError(false); return }
+    setError(false)
     Promise.all([fetchMyMemberships(user.id), fetchMyBookingRequests(user.id)])
       .then(([memberships, bookings]) => {
         const out: Row[] = [
@@ -63,8 +66,10 @@ export default function BillingPage() {
         ].sort((a, b) => (b.date || '').localeCompare(a.date || ''))
         setRows(out)
       })
-      .catch(() => setRows([]))
+      .catch(() => { setRows(null); setError(true) })
   }, [user?.id])
+
+  React.useEffect(() => { load() }, [load])
 
   return (
     <div className="flex flex-col gap-6">
@@ -107,7 +112,15 @@ export default function BillingPage() {
       {/* Receipts */}
       <section>
         <h2 className="text-h4">Payment history</h2>
-        {rows === null ? (
+        {error ? (
+          <div className="mt-4">
+            <ErrorState
+              title="We couldn’t load your payments"
+              message="Something interrupted the connection — nothing was lost. Please check your connection and try again."
+              onRetry={load}
+            />
+          </div>
+        ) : rows === null ? (
           <div className="mt-4 grid place-items-center rounded-lg border border-line/70 bg-card py-16 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
         ) : rows.length === 0 ? (
           <section className="mt-4 flex flex-col items-center rounded-lg border border-line/70 bg-card px-6 py-12 text-center shadow-sm">

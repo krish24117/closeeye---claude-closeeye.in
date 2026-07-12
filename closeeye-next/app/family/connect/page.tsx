@@ -7,7 +7,7 @@ import { Greeting } from '@/components/family/greeting'
 import { SectionTitle } from '@/components/family/section-title'
 import { Avatar } from '@/components/family/avatar'
 import { Button } from '@/components/ui/button'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { AskCloseEyeCard } from '@/components/family/ask-closeeye-card'
 import { useAuth } from '@/components/auth/auth-provider'
@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils'
  */
 export default function ConnectHome() {
   const { user } = useAuth()
-  const { lovedOnes, loading } = useLovedOnes()
+  const { lovedOnes, loading, error, refresh } = useLovedOnes()
   const [summaries, setSummaries] = React.useState<Map<string, ThreadSummary> | null>(null)
   const [updates, setUpdates] = React.useState<Message[]>([])
 
@@ -74,7 +74,13 @@ export default function ConnectHome() {
 
       <section className="flex flex-col gap-4">
         <SectionTitle>Conversations</SectionTitle>
-        {loading ? (
+        {error ? (
+          <ErrorState
+            title="We couldn’t load your conversations"
+            message="Something interrupted the connection — nothing was lost. Please check your connection and try again."
+            onRetry={() => void refresh()}
+          />
+        ) : loading ? (
           <div className="grid place-items-center rounded-lg border border-line/70 bg-card py-16 shadow-sm">
             <Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} />
           </div>

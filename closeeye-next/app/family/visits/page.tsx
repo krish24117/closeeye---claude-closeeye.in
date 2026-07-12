@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { CalendarClock, CalendarPlus, Loader2 } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
 import { Button } from '@/components/ui/button'
+import { ErrorState } from '@/components/ui/states'
 import { Avatar } from '@/components/family/avatar'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useAuth } from '@/components/auth/auth-provider'
@@ -58,19 +59,21 @@ export default function VisitsPage() {
   const [requests, setRequests] = React.useState<BookingRequest[] | null>(null)
   const [reported, setReported] = React.useState<Set<string>>(new Set())
   const [paying, setPaying] = React.useState<string | null>(null)
+  const [error, setError] = React.useState(false)
 
   const reload = React.useCallback(() => {
     if (!user?.id) {
-      setRequests([])
+      setRequests([]); setError(false)
       return
     }
+    setError(false)
     fetchMyBookingRequests(user.id)
       .then((rows) => {
         setRequests(rows)
         const ids = rows.map((r) => r.booking_id).filter(Boolean) as string[]
         if (ids.length) fetchReportedBookingIds(ids).then(setReported).catch(() => {})
       })
-      .catch(() => setRequests([]))
+      .catch(() => { setRequests(null); setError(true) })
   }, [user?.id])
 
   React.useEffect(() => { reload() }, [reload])
@@ -131,7 +134,13 @@ export default function VisitsPage() {
         )}
       </div>
 
-      {requests === null ? (
+      {error ? (
+        <ErrorState
+          title="We couldn’t load your visits"
+          message="Something interrupted the connection — nothing was lost. Please check your connection and try again."
+          onRetry={reload}
+        />
+      ) : requests === null ? (
         <div className="grid place-items-center rounded-lg border border-line/70 bg-card py-20 shadow-sm">
           <Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} />
         </div>

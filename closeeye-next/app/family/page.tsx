@@ -6,6 +6,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { deriveDashboard, fetchDashboardSignals } from '@/lib/db/dashboard'
 import { useVisitSync } from '@/lib/use-visit-sync'
+import { ErrorState } from '@/components/ui/states'
 import {
   ActiveDashboard,
   FamilyAddedDashboard,
@@ -22,21 +23,38 @@ import type { BookingRequest } from '@/lib/db/types'
  */
 export default function FamilyHome() {
   const { user } = useAuth()
-  const { lovedOnes, subscription, loading } = useFamilyData()
+  const { lovedOnes, subscription, loading, error, refresh } = useFamilyData()
   const [signals, setSignals] = React.useState<{ visits: BookingRequest[]; unreadMessages: number; reportedBookingIds: Set<string> } | null>(null)
+  const [signalsError, setSignalsError] = React.useState(false)
 
   const reload = React.useCallback(() => {
     if (!user?.id) {
       setSignals({ visits: [], unreadMessages: 0, reportedBookingIds: new Set() })
+      setSignalsError(false)
       return
     }
+    setSignalsError(false)
     fetchDashboardSignals(user.id)
-      .then(setSignals)
-      .catch(() => setSignals({ visits: [], unreadMessages: 0, reportedBookingIds: new Set() }))
+      .then((s) => { setSignals(s); setSignalsError(false) })
+      .catch(() => { setSignals(null); setSignalsError(true) })
   }, [user?.id])
 
   React.useEffect(() => { reload() }, [reload])
   useVisitSync(user?.id, reload)
+
+  // A failed load must NEVER masquerade as the new-user ("add your family") state —
+  // a returning customer would read that as their loved ones being deleted.
+  if (error || signalsError) {
+    return (
+      <div className="flex flex-col gap-8">
+        <ErrorState
+          title="We couldn’t load your family space"
+          message="Something interrupted the connection — nothing was lost. Please check your connection and try again."
+          onRetry={() => { void refresh(); reload() }}
+        />
+      </div>
+    )
+  }
 
   if (loading || signals === null) {
     return (
