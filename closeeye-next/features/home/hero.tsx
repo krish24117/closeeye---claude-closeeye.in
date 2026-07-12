@@ -52,10 +52,13 @@ export function Hero() {
             </Button>
           </motion.div>
 
-          <motion.ul {...rise(0.34)} className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-caption text-muted">
-            {HERO_TRUST.map(({ label }, i) => (
-              <li key={label} className="inline-flex items-center gap-2">
-                {i > 0 && <span className="hidden h-1 w-1 rounded-full bg-line sm:inline-block" />}
+          <motion.ul {...rise(0.34)} className="mt-10 flex flex-wrap items-center justify-center gap-2.5">
+            {HERO_TRUST.map(({ icon: Icon, label }) => (
+              <li
+                key={label}
+                className="inline-flex items-center gap-1.5 rounded-full border border-line/70 bg-card px-3 py-1.5 text-caption font-medium text-ink shadow-sm"
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0 text-green" strokeWidth={2} />
                 {label}
               </li>
             ))}
