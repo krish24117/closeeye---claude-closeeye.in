@@ -66,15 +66,15 @@ export function ActionCard({ href, icon: Icon, title, desc }: { href: string; ic
 /** "Ways to be there for {name}" — the emotional services strip. Reuses the
  *  Services-page photos + copy in a calm, horizontal, editorial scroll. Additive;
  *  each card deep-links into the existing booking flow with the service preselected. */
-function WaysToBeThere({ name, memberId }: { name: string; memberId?: string }) {
+function WaysToBeThere({ name, memberId }: { name?: string; memberId?: string }) {
   return (
     <section className="flex flex-col gap-4">
-      <SectionTitle href="/services" cta="See all →">Ways to be there for {name}</SectionTitle>
+      <SectionTitle href="/services" cta="See all →">{name ? `Ways to be there for ${name}` : 'Three ways to be there'}</SectionTitle>
       <div className="no-scrollbar -mx-1 flex snap-x gap-4 overflow-x-auto px-1 pb-1">
         {SERVICE_DETAILS.map((s) => (
           <Link
             key={s.id}
-            href={`/family/book?${memberId ? `member=${memberId}&` : ''}service=${s.id}`}
+            href={memberId ? `/family/book?member=${memberId}&service=${s.id}` : `/services#${s.id}`}
             className="group w-64 shrink-0 snap-start overflow-hidden rounded-lg border border-line/70 bg-card shadow-sm transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:shadow-md"
           >
             <ImageFrame ratio="landscape" gradient src={s.image} alt={s.imageAlt} direction={s.photoDirection} sizes="256px" className="rounded-none border-0" />
@@ -177,6 +177,9 @@ export function NewUserDashboard() {
           ))}
         </div>
       </section>
+
+      {/* Three ways to be there — services + pricing, for the empty state (additive) */}
+      <WaysToBeThere />
 
       {/* Why families trust Close Eye */}
       <section className="flex flex-col gap-4">
