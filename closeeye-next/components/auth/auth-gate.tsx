@@ -21,8 +21,11 @@ const inList = (p: string, l: string[]) => l.some((f) => p === f || p.startsWith
  *   • Onboarding gating: a signed-in user with incomplete onboarding is always
  *     sent to /onboarding; the dashboard opens only once onboarding is done.
  *   • Skip-auth: a fully signed-in user never sees the welcome/login flow.
- *   • Native entry: on launch the app enters the correct screen (not marketing).
- * A splash covers the native app until routing resolves — no marketing flash.
+ *   • Native entry: an unauthenticated launch shows the marketing home (/); a
+ *     signed-in launch goes straight to the role dashboard. The "Check on My
+ *     Family" CTA (/book) resolves to sign-in in the native app.
+ * A splash covers the native app until routing resolves — no dashboard flash for
+ * returning users.
  */
 export function AuthGate() {
   const { session, loading, configured, onboardingComplete } = useAuth()
@@ -56,7 +59,12 @@ export function AuthGate() {
           : pathname.startsWith('/pm') || pathname.startsWith('/admin')
           ? '/auth'
           : '/welcome'
-      else if (firstNative && !onFlow) target = '/welcome' // native launch on marketing
+      // Native "Check on My Family" → authenticate: the guest booking flow (/book)
+      // is web-only, so an unauthenticated tap in the app resolves to sign-in.
+      else if (native && (pathname === '/book' || pathname.startsWith('/book/')))
+        target = '/auth'
+      // Unauthenticated native launch now shows the marketing home at / (the former
+      // redirect to /welcome is removed — Mobile Entry Experience spec, FR-1).
     } else if (onboardingComplete === false && !isSuperAdmin(profile) && !isPresenceManager(profile)) {
       // Family setup only. Founder pre-launch registrants finish a different,
       // loved-one-free journey (/join/*); a normal user (no hint, not on /join)
