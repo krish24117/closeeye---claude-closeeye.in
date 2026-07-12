@@ -6,6 +6,7 @@ import {
   ArrowRight,
   CalendarCheck,
   CalendarClock,
+  CalendarHeart,
   CalendarPlus,
   Camera,
   ClipboardList,
@@ -25,10 +26,12 @@ import { SectionTitle } from '@/components/family/section-title'
 import { LovedOneCard, initialsOf } from '@/components/family/loved-one-card'
 import { Avatar } from '@/components/family/avatar'
 import { PresenceCheckIn } from '@/components/family/presence-check-in'
+import { useMembership } from '@/components/family/family-data-provider'
 import { Button } from '@/components/ui/button'
 import { ImageFrame } from '@/components/ui/image-frame'
 import { SITE, whatsappLink } from '@/lib/site'
 import { SERVICE_DETAILS } from '@/lib/services'
+import { planById } from '@/lib/plans'
 import { getLocalPhoto } from '@/lib/local-photos'
 import type { DashboardData } from '@/lib/db/dashboard'
 import type { LovedOne } from '@/lib/db/types'
@@ -85,6 +88,52 @@ function WaysToBeThere({ name }: { name?: string }) {
             </div>
           </Link>
         ))}
+      </div>
+    </section>
+  )
+}
+
+/** Beat 2 — "…and we can be there every month." State-aware monthly-presence:
+ *  invite (no plan) · upgrade (on Connect) · a quiet reassurance (on Care — never a
+ *  pitch). Reads the current plan; reuses the locked plans + the membership page. */
+function MonthlyPresence({ name }: { name: string }) {
+  const { subscription, loading } = useMembership()
+  if (loading) return null
+  const planKey = subscription?.status === 'active' ? (planById(subscription?.plan_id)?.key ?? null) : null
+
+  if (planKey === 'care') {
+    return (
+      <section className="flex items-start gap-4 rounded-lg border border-green/20 bg-accent-soft/40 p-6 shadow-sm">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-green text-ivory"><ShieldCheck className="h-5 w-5" strokeWidth={1.5} /></span>
+        <div>
+          <p className="text-body font-semibold text-ink">You&rsquo;re on Care 💛</p>
+          <p className="mt-1 text-body-sm text-muted">{name}&rsquo;s monthly wellbeing visit is covered — a verified Guardian visits every month, with a photo report and medication reminders. We&rsquo;ll be there.</p>
+        </div>
+      </section>
+    )
+  }
+
+  const upgrading = planKey === 'connect'
+  return (
+    <section className="flex flex-col gap-4 rounded-lg border border-line/70 bg-card p-6 shadow-sm">
+      <div className="flex items-start gap-4">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><CalendarHeart className="h-5 w-5" strokeWidth={1.5} /></span>
+        <div>
+          <p className="text-body font-semibold text-ink">{upgrading ? `Add a monthly visit for ${name}` : `Be there for ${name} every month`}</p>
+          <p className="mt-1 text-body-sm text-muted">
+            {upgrading
+              ? `Upgrade to Care and a verified Guardian visits ${name} every month — with a photo report and medication reminders.`
+              : `A verified Guardian visits ${name} every month, with a photo report and medication reminders — so their care never depends on remembering to book.`}
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+        <Button asChild>
+          <Link href="/family/membership">
+            {upgrading ? 'Upgrade to Care · ₹1,500' : 'See membership'} <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
+          </Link>
+        </Button>
+        {!upgrading && <span className="text-body-sm text-muted">Connect ₹500 · Care ₹1,500 / month</span>}
       </div>
     </section>
   )
@@ -243,6 +292,9 @@ export function FamilyAddedDashboard({ data, lovedOnes }: { data: DashboardData;
       {/* Ways to be there for {first} — emotional services strip (additive) */}
       <WaysToBeThere name={first} />
 
+      {/* Beat 2 — monthly presence (state-aware membership invitation) */}
+      <MonthlyPresence name={first} />
+
       {/* Ask Close Eye — free value */}
       <AskCloseEyeCard variant="compact" />
 
@@ -398,6 +450,9 @@ export function ActiveDashboard({ data, lovedOnes }: { data: DashboardData; love
 
       {/* Ways to be there for {first} — calm placement below the reassurance (additive) */}
       <WaysToBeThere name={first} />
+
+      {/* Beat 2 — monthly presence (state-aware membership invitation) */}
+      <MonthlyPresence name={first} />
 
       {/* 5 · Loved ones — real identity only, no invented wellbeing status */}
       <LovedOnesRoster lovedOnes={lovedOnes} />
