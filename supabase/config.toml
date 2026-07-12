@@ -30,3 +30,7 @@ verify_jwt = true
 # Cron — called by pg_cron / Supabase scheduled jobs with service-role key
 [functions.check-overdue-bookings]
 verify_jwt = false
+
+# Cron — 7am IST founder daily briefing push
+[functions.founder-daily-briefing]
+verify_jwt = false
