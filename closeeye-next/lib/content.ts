@@ -13,6 +13,7 @@ import {
   HandHeart,
   Footprints,
   Smile,
+  MapPin,
 } from 'lucide-react'
 import type {
   TrustPoint,
@@ -25,6 +26,7 @@ import type {
 
 /* ── Hero trust strip ──────────────────────────────────────────────────── */
 export const HERO_TRUST: TrustPoint[] = [
+  { icon: MapPin, label: 'Serving Hyderabad' },
   { icon: ShieldCheck, label: 'Verified Guardians' },
   { icon: UserRoundCheck, label: 'Dedicated Presence Manager' },
   { icon: MessageSquareText, label: 'WhatsApp Updates' },

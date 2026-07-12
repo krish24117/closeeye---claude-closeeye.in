@@ -12,14 +12,14 @@ export const metadata: Metadata = { title: 'About', description: 'Why Close Eye 
 const PILLARS: { icon: LucideIcon; h: string; p: string }[] = [
   { icon: Target, h: 'Mission', p: 'To be a trusted human presence for the people you love — so no family faces life’s important moments alone.' },
   { icon: Eye, h: 'Vision', p: 'A world where distance never means absence, and every elder is cared for with dignity, warmth and consistency.' },
-  { icon: ShieldCheck, h: 'Trust & safety', p: 'Every Guardian and Companion is background-verified, trained and rated. A dedicated Presence Manager oversees your family personally.' },
+  { icon: ShieldCheck, h: 'Trust & safety', p: 'Every Guardian is background-verified, trained and rated. A dedicated Presence Manager oversees your family personally.' },
   { icon: HeartHandshake, h: 'Care standards', p: 'Presence before procedure. We show up on time, notice what matters, and share it in warm, human words — never clinical jargon.' },
 ]
 
 const STORY = [
   { h: 'Our story', p: 'Close Eye began on the day our founder’s daughter was born — a happy day made quiet by distance from the people he loved. It became a promise: when you can’t be there, someone you trust can.' },
   { h: 'Why Close Eye exists', p: 'Because distance shouldn’t mean absence. So many families live far from ageing parents; Close Eye is the trusted presence that stands beside them — never replacing family, always strengthening it.' },
-  { h: 'How Close Eye works', p: 'You tell us about your family. We match a verified Guardian or Companion nearby, coordinate every visit through a Presence Manager, and keep you close with warm reports after each one.' },
+  { h: 'How Close Eye works', p: 'You tell us about your family. We match a verified Guardian nearby, coordinate every visit through a Presence Manager, and keep you close with warm reports after each one.' },
   { h: 'Our human-presence philosophy', p: 'Technology can inform you, but only a person can reassure you. We lead with warmth — presence before procedure — and let software quietly handle the rest: coordination, records, and keeping you close.' },
   { h: 'Our promise', p: 'We treat your parents as we would our own — with punctuality, dignity and honesty. If we ever fall short, your Presence Manager will make it right, personally.' },
 ]

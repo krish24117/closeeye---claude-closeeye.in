@@ -37,8 +37,8 @@ export function Hero() {
           </motion.h1>
 
           <motion.p {...rise(0.16)} className="mt-6 max-w-xl text-lead text-muted">
-            Someone you trust, physically there for your parents — for wellbeing
-            visits, hospital days, and the moments that matter most.
+            Someone you trust, physically there for your parents in Hyderabad — for
+            wellbeing visits, hospital days, and the moments that matter most.
           </motion.p>
 
           <motion.div {...rise(0.24)} className="mt-9 flex w-full flex-col items-center justify-center gap-3 sm:flex-row">

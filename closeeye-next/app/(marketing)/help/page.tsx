@@ -18,7 +18,7 @@ const SUPPORT: { icon: LucideIcon; title: string; desc: string; href: string; to
 
 const FAQ = [
   { q: 'How quickly can a visit be arranged?', a: 'Usually within a day in the cities we serve. Your Presence Manager will confirm the earliest slot for your zone.' },
-  { q: 'Who are the Guardians and Companions?', a: 'Verified, trained, background-checked people who care for elders professionally. Guardians handle wellbeing and hospital support; Companions bring conversation, walks and warmth.' },
+  { q: 'Who is the Guardian who visits my parents?', a: 'A verified, trained, background-checked person who cares for elders professionally — the same trusted Guardian who spends time with your parents, whether it’s a wellbeing check-in, a hospital day, or simply warm company.' },
   { q: 'How do I see how my parent is doing?', a: 'After every visit you receive a warm report in Family Space — a human summary, photos, mood and any readings the family asked for.' },
   { q: 'Can I reschedule or cancel?', a: 'Any time, free of charge, from Family Space or by messaging your Presence Manager. See our Cancellation Policy.' },
   { q: 'Is this a medical service?', a: 'No — Close Eye provides presence and support, not diagnosis or treatment. In emergencies we support alongside 108 and your physician. See our Medical Disclaimer.' },
