@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Bell, ChevronRight, Compass, CreditCard, Heart, LifeBuoy, Loader2, ShieldCheck, Trash2, UserRound, Users } from 'lucide-react'
+import { Bell, ChevronRight, CreditCard, Heart, LifeBuoy, Loader2, ShieldCheck, Trash2, UserRound, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
 import { FeatureIcon } from '@/components/ui/feature-icon'
@@ -233,14 +233,7 @@ export default function ProfilePage() {
         <NavRow href="/about" label={`About ${SITE.name}`} />
       </Card>
 
-      {/* 8 · DISCOVER — reuse the public marketing pages so members can explore */}
-      <Card icon={Compass} title="Discover Close Eye">
-        <NavRow href="/services" label="Our services" />
-        <NavRow href="/membership" label="Plans & pricing" />
-        <NavRow href="/founder" label="Our story" />
-      </Card>
-
-      {/* 9 · ACCOUNT — sign out + delete account, always last */}
+      {/* 8 · ACCOUNT — sign out + delete account, always last */}
       <section className="flex flex-col gap-3">
         <SignOutButton />
         <button

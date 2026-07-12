@@ -26,7 +26,9 @@ import { LovedOneCard, initialsOf } from '@/components/family/loved-one-card'
 import { Avatar } from '@/components/family/avatar'
 import { PresenceCheckIn } from '@/components/family/presence-check-in'
 import { Button } from '@/components/ui/button'
+import { ImageFrame } from '@/components/ui/image-frame'
 import { SITE, whatsappLink } from '@/lib/site'
+import { SERVICE_DETAILS } from '@/lib/services'
 import { getLocalPhoto } from '@/lib/local-photos'
 import type { DashboardData } from '@/lib/db/dashboard'
 import type { LovedOne } from '@/lib/db/types'
@@ -58,6 +60,33 @@ export function ActionCard({ href, icon: Icon, title, desc }: { href: string; ic
         <span className="mt-0.5 block text-caption text-muted">{desc}</span>
       </span>
     </Link>
+  )
+}
+
+/** "Ways to be there for {name}" — the emotional services strip. Reuses the
+ *  Services-page photos + copy in a calm, horizontal, editorial scroll. Additive;
+ *  each card deep-links into the existing booking flow with the service preselected. */
+function WaysToBeThere({ name, memberId }: { name: string; memberId?: string }) {
+  return (
+    <section className="flex flex-col gap-4">
+      <SectionTitle href="/services" cta="See all →">Ways to be there for {name}</SectionTitle>
+      <div className="no-scrollbar -mx-1 flex snap-x gap-4 overflow-x-auto px-1 pb-1">
+        {SERVICE_DETAILS.map((s) => (
+          <Link
+            key={s.id}
+            href={`/family/book?${memberId ? `member=${memberId}&` : ''}service=${s.id}`}
+            className="group w-64 shrink-0 snap-start overflow-hidden rounded-lg border border-line/70 bg-card shadow-sm transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <ImageFrame ratio="landscape" gradient src={s.image} alt={s.imageAlt} direction={s.photoDirection} sizes="256px" className="rounded-none border-0" />
+            <div className="flex flex-col gap-1 p-4">
+              <p className="text-body font-semibold text-ink">{s.name}</p>
+              <p className="line-clamp-2 text-caption text-muted">{s.tagline}</p>
+              <p className="mt-1 text-caption font-semibold text-green">From {s.priceFrom}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -207,6 +236,9 @@ export function FamilyAddedDashboard({ data, lovedOnes }: { data: DashboardData;
           )}
         </div>
       </section>
+
+      {/* Ways to be there for {first} — emotional services strip (additive) */}
+      <WaysToBeThere name={first} memberId={primary?.id} />
 
       {/* Ask Close Eye — free value */}
       <AskCloseEyeCard variant="compact" />
@@ -360,6 +392,9 @@ export function ActiveDashboard({ data, lovedOnes }: { data: DashboardData; love
           </div>
         </section>
       )}
+
+      {/* Ways to be there for {first} — calm placement below the reassurance (additive) */}
+      <WaysToBeThere name={first} memberId={primary?.id} />
 
       {/* 5 · Loved ones — real identity only, no invented wellbeing status */}
       <LovedOnesRoster lovedOnes={lovedOnes} />
