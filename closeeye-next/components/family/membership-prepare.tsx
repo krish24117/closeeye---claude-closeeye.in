@@ -7,12 +7,11 @@ import { Field, Input, Textarea } from '@/components/ui/field'
 import { Chip } from '@/components/ui/choice'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchElderProfile, upsertElderProfile, type ElderProfileForm } from '@/lib/db/family'
+import { recordConsent } from '@/lib/db/consent'
 import { RELATIONSHIPS } from '@/features/booking/schema'
 import type { LovedOne, NewLovedOne } from '@/lib/db/types'
 import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
-
-const WELLBEING_CONSENT_KEY = 'ce_membership_wellbeing_consent_v1'
 
 const EMPTY_WELLBEING: ElderProfileForm = {
   food_preferences: '', conversation_interests: '', daily_routine: '', things_to_avoid: '',
@@ -123,7 +122,8 @@ export function MembershipPrepare({
           { ...form, current_medications: meds.split('\n').map((m) => m.trim()).filter(Boolean) },
           { name: fullName.trim(), age: existing?.age ?? null },
         )
-        try { localStorage.setItem(WELLBEING_CONSENT_KEY, '1') } catch {}
+        // Durable, auditable consent record (best-effort — never block payment on it).
+        try { await recordConsent({ lovedOneId }) } catch (err) { console.error('[membership-prepare] consent record failed (non-fatal):', err) }
       }
       await refresh()
       haptic('success')
