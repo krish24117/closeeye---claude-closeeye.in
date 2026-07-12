@@ -93,7 +93,7 @@ export function AskCloseEyeCard({
         </span>
         <div className="min-w-0">
           <h2 className="text-h4 text-ink">{SITE.name} Connect</h2>
-          <p className="text-caption text-muted">Your ongoing conversation with {SITE.name}.</p>
+          <p className="text-caption text-muted">Always a message away.</p>
         </div>
       </div>
 

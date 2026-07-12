@@ -420,10 +420,7 @@ export function ActiveDashboard({ data, lovedOnes }: { data: DashboardData; love
         </div>
       </section>
 
-      {/* 3 · CloseEye Connect */}
-      <AskCloseEyeCard variant="compact" />
-
-      {/* 4 · Next Presence */}
+      {/* 3 · Next Presence */}
       {next && (
         <section className="flex flex-col gap-4">
           <SectionTitle href="/family/visits" cta="All visits →">Next Presence</SectionTitle>
@@ -453,6 +450,9 @@ export function ActiveDashboard({ data, lovedOnes }: { data: DashboardData; love
 
       {/* Beat 2 — monthly presence (state-aware membership invitation) */}
       <MonthlyPresence name={first} />
+
+      {/* Beat 3 — CloseEye Connect, always a message away */}
+      <AskCloseEyeCard variant="compact" />
 
       {/* 5 · Loved ones — real identity only, no invented wellbeing status */}
       <LovedOnesRoster lovedOnes={lovedOnes} />
