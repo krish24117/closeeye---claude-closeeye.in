@@ -45,7 +45,8 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="grid min-h-dvh place-items-center bg-ivory px-5 py-10">
       <div className="ce-fade-in w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center text-center">
-          <Logo variant="mobile" />
+          {/* Icon-only mark — the "Sign in to Close Eye" heading already carries the name. */}
+          <Logo variant="mobile" lockup="icon" height={44} />
         </div>
         {children}
         <p className="mt-6 text-center text-caption text-muted">
