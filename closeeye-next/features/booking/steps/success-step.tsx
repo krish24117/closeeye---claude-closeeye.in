@@ -21,8 +21,8 @@ export function SuccessStep() {
       <h1 className="mt-7 text-h2">You&apos;re not alone anymore.</h1>
       <p className="mt-4 text-lead text-muted">
         Your Presence Manager has received your request. We&apos;re matching the best
-        Guardian for {data.name ? <span className="text-ink">{data.name}</span> : 'your family'}. You&apos;ll
-        receive updates on WhatsApp shortly.
+        Guardian for {data.name ? <span className="text-ink">{data.name}</span> : 'your family'}. Once we
+        confirm, you&apos;ll get a secure payment link on WhatsApp to lock in the visit.
       </p>
 
       {ref && (
@@ -36,8 +36,8 @@ export function SuccessStep() {
       <ul className="mt-9 flex w-full flex-col gap-3 text-left">
         {[
           `Your Presence Manager reviews your ${service?.name ?? 'visit'} request`,
-          'We match and brief the right verified Guardian',
-          'You get a WhatsApp introduction and a clear timeline',
+          'We confirm a verified Guardian is available near you',
+          'You get a secure payment link on WhatsApp to confirm the visit',
         ].map((t, i) => (
           <li key={t} className="flex items-start gap-3 rounded-md border border-line bg-card px-5 py-4 shadow-sm">
             <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent-soft text-caption font-semibold text-green">

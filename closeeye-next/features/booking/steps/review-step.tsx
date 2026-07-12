@@ -67,7 +67,7 @@ export function ReviewStep() {
       <span className="text-caption font-semibold uppercase tracking-widest text-green">Step 6 of 6</span>
       <h1 className="mt-3 text-h3">Review your booking</h1>
       <p className="mt-3 max-w-xl text-body text-muted">
-        A quick look before you confirm. Nothing is charged until you tap confirm.
+        A quick look before you send this. Nothing is charged now — once we confirm a Guardian, your Presence Manager sends you a secure payment link on WhatsApp.
       </p>
 
       {/* Order summary */}
@@ -128,8 +128,8 @@ export function ReviewStep() {
 
       {/* Payment */}
       <div className="mt-8">
-        <p className="text-body-sm font-semibold text-ink">How would you like to pay?</p>
-        <p className="text-caption text-muted">Simple and secure. No hidden charges.</p>
+        <p className="text-body-sm font-semibold text-ink">How would you prefer to pay?</p>
+        <p className="text-caption text-muted">We&apos;ll send a secure payment link on WhatsApp once your Guardian is confirmed — no charge now.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {PAYMENT_METHODS.map((m) => {
             const selected = payment === m.id
