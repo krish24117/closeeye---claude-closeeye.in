@@ -364,7 +364,7 @@ export default function FamilyBookPage() {
               <button type="button" onClick={() => { setError(''); setStep('requirement') }} className="shrink-0 text-caption font-semibold text-green hover:underline">Edit</button>
             </div>
           )}
-          <VisitDetailsForm value={details} onChange={patch} allowsEmergency={!!service?.allowsEmergency} hideSpecialInstructions={isCustom} />
+          <VisitDetailsForm value={details} onChange={patch} allowsEmergency={!!service?.allowsEmergency} hideSpecialInstructions={isCustom} savedAddress={member.address?.trim() ? { value: member.address, name: firstName } : undefined} />
 
           {/* Opt-in — profile stays separate unless the family chooses to save. */}
           <button type="button" role="checkbox" aria-checked={updateProfile} onClick={() => setUpdateProfile((v) => !v)} className="flex items-start gap-3 rounded-lg border border-line bg-card p-4 text-left transition-colors hover:border-ink/20">

@@ -81,18 +81,26 @@ export function toVisitDetailInput(d: VisitDetailsState): VisitDetailInput {
   }
 }
 
-export function VisitDetailsForm({ value, onChange, allowsEmergency, hideSpecialInstructions }: {
+export function VisitDetailsForm({ value, onChange, allowsEmergency, hideSpecialInstructions, savedAddress }: {
   value: VisitDetailsState
   onChange: (patch: Partial<VisitDetailsState>) => void
   allowsEmergency: boolean
   /** Custom Requests capture the task in their own step, so hide the generic field. */
   hideSpecialInstructions?: boolean
+  /** When the visit address is prefilled from a loved one's saved profile, show a
+   *  gentle "using their saved address" note so it reads as reuse, not re-entry. */
+  savedAddress?: { value: string; name: string }
 }) {
   const slots = TIME_SLOTS.filter((t) => !t.emergencyOnly || allowsEmergency)
+  const reusedAddress =
+    !!savedAddress && value.address.trim().length > 0 && value.address.trim() === savedAddress.value.trim()
   return (
     <div className="flex flex-col gap-5">
       <Field label="Visit address" htmlFor="v-address" hint="Where the Guardian should go.">
         <Textarea id="v-address" value={value.address} onChange={(e) => onChange({ address: e.target.value })} rows={2} placeholder="Flat / house no., street, area, city, PIN" />
+        {reusedAddress && (
+          <p className="mt-1.5 text-caption text-green">Using {savedAddress!.name}&rsquo;s saved address — edit above if this visit is somewhere else.</p>
+        )}
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-2">
@@ -128,7 +136,7 @@ export function VisitDetailsForm({ value, onChange, allowsEmergency, hideSpecial
         </Field>
       </div>
 
-      <Field label="Building / access instructions" htmlFor="v-access" optional hint="Gate code, which floor, lift or stairs, who to ask for.">
+      <Field label="Access instructions" htmlFor="v-access" optional hint="Gate code, which floor, lift or stairs, who to ask for.">
         <Textarea id="v-access" value={value.accessInstructions} onChange={(e) => onChange({ accessInstructions: e.target.value })} rows={2} placeholder="e.g. 3rd floor, no lift. Ring bell twice." />
       </Field>
       {!hideSpecialInstructions && (
