@@ -37,12 +37,16 @@ export function friendlyAuthError(raw?: string): string {
  * browser (@capacitor/browser) and let it deep-link back to the app; the session
  * is then completed in the app's deep-link handler (see native-init.tsx).
  */
-export async function signInWithGoogle(): Promise<{ error: string | null }> {
+export async function signInWithGoogle(redirectQuery = ''): Promise<{ error: string | null }> {
   if (!isNative()) {
+    // Carry founder intent/ref THROUGH the OAuth redirect so it survives a WhatsApp
+    // in-app browser handing OAuth to the system browser — localStorage does not
+    // cross that boundary, but the return URL does. (Supabase appends &code=… itself.)
+    const redirectTo = `${window.location.origin}/auth${redirectQuery ? `?${redirectQuery}` : ''}`
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth`,
+        redirectTo,
         queryParams: { prompt: 'select_account' },
       },
     })

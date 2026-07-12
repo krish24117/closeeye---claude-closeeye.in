@@ -13,7 +13,7 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { signInWithGoogle, signUpWithPassword, signInWithPassword } from '@/lib/auth-actions'
 import { planById } from '@/lib/plans'
 import { setPendingPlan } from '@/lib/membership-intent'
-import { hasFounderSessionHint } from '@/lib/founder-funnel'
+import { hasFounderSessionHint, setFounderSessionHint, setFounderRef, getFounderRef } from '@/lib/founder-funnel'
 import { isNative } from '@/lib/native'
 import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
@@ -81,12 +81,18 @@ function AuthFlow() {
     if (joinPlan) setPendingPlan(joinPlan.id)
   }, [joinPlanId]) // eslint-disable-line react-hooks/exhaustive-deps
   React.useEffect(() => {
-    // New customers create an account. Founder-funnel visitors default to signup
-    // even if the ?intent flag was lost (e.g. a reload) — the durable session hint
-    // (set on the landing / service-area step) carries the context so they never
-    // land on the "Sign in" screen by mistake.
+    // Founder-funnel visitors default to signup. Also RE-HYDRATE the founder hint +
+    // ref from the URL: on a Google return in a fresh/system browser the localStorage
+    // hint is gone, but ?intent=founding&ref=… rode back on the redirect — restore it
+    // so the auth gate routes to the founder journey (not generic onboarding), and
+    // attribution + the pre-launch payment gate survive the browser handoff.
+    if (foundingIntent) {
+      setFounderSessionHint()
+      const ref = params.get('ref')
+      if (ref) setFounderRef(ref)
+    }
     if (joinIntent || foundingIntent || hasFounderSessionHint()) setMode('signup')
-  }, [joinIntent, foundingIntent])
+  }, [joinIntent, foundingIntent]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // A returning sign-in (Google, or an older email link) lands with `?code=…`; the
   // Supabase client exchanges it, so show a "signing you in" state while the auth
@@ -106,7 +112,11 @@ function AuthFlow() {
     setError('')
     setNotice('')
     setPending('google')
-    const { error: err } = await signInWithGoogle()
+    // Preserve founder context across the OAuth browser handoff via the return URL.
+    const isFounder = foundingIntent || hasFounderSessionHint()
+    const ref = getFounderRef()
+    const q = isFounder ? `intent=founding${ref ? `&ref=${encodeURIComponent(ref)}` : ''}` : ''
+    const { error: err } = await signInWithGoogle(q)
     if (err) {
       setPending(null)
       setError(err)
