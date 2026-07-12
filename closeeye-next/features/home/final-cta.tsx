@@ -4,6 +4,7 @@ import { Container } from '@/components/ui/container'
 import { Button } from '@/components/ui/button'
 import { Reveal } from '@/components/ui/reveal'
 import { whatsappLink } from '@/lib/site'
+import { FoundingCounter } from '@/components/marketing/founding-counter'
 
 export function FinalCta() {
   return (
@@ -17,6 +18,8 @@ export function FinalCta() {
             where they are — we&apos;ll take it from there, with the care we&apos;d want
             for our own family.
           </p>
+
+          <FoundingCounter onDark className="mt-8 w-full max-w-md" />
 
           <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild size="lg" onDark className="w-full sm:w-auto">

@@ -12,6 +12,7 @@ import { logFounderEvent } from '@/lib/founder-events'
 import { FOUNDER_LAUNCH_LABEL } from '@/lib/launch'
 import { whatsappLink } from '@/lib/site'
 import { FOUNDER } from '@/lib/content'
+import { FoundingCounter } from '@/components/marketing/founding-counter'
 
 const REGISTER_HREF = '/join' // low-friction: leave your details, no account
 const RESERVE_HREF = '/auth?intent=founding' // full: create account + choose a plan
@@ -110,6 +111,8 @@ export default function FounderLandingPage() {
         <p className="mt-5 text-body leading-relaxed text-muted">
           I’m inviting a small number of families to join before we open on <strong className="font-semibold text-ink">{FOUNDER_LAUNCH_LABEL}</strong>. Registering is free — you’re not charged until then.
         </p>
+
+        <FoundingCounter className="mt-6 max-w-md" />
 
         <div className="mt-8">
           <a href="#story" className="inline-flex items-center gap-2 text-body font-semibold text-green transition-colors hover:text-ink">
