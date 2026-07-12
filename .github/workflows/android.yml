@@ -93,13 +93,21 @@ jobs:
           path: closeeye-next/android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
 
-      # ── Optional: publish to Play Internal testing (uncomment + add the service account) ──
-      # - name: Upload to Google Play (internal)
-      #   if: github.ref_type == 'tag'
-      #   uses: r0adkll/upload-google-play@v1
-      #   with:
-      #     serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-      #     packageName: in.closeeye.app
-      #     releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
-      #     track: internal
-      #     status: completed
+      # ── Publish to Play Internal testing (tag builds only) ──
+      # Needs the PLAY_SERVICE_ACCOUNT_JSON secret: a Google Cloud service-account
+      # JSON key, granted "Release to testing tracks" in Play Console (Users &
+      # permissions), with the Google Play Android Developer API enabled. The app
+      # must already exist in Play Console — create it and do ONE manual .aab upload
+      # first; the API cannot create an app's very first release. Each build also
+      # needs a unique, higher versionCode than the last (see versionCode note).
+      # If Google returns "Changes cannot be sent for review automatically", add
+      # `changesNotSentForReview: true` below.
+      - name: Upload to Google Play (internal testing)
+        if: github.ref_type == 'tag'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: in.closeeye.app
+          releaseFiles: closeeye-next/android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
