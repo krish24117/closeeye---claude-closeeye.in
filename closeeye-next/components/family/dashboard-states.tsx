@@ -96,7 +96,7 @@ function WaysToBeThere({ name }: { name?: string }) {
 /** Beat 2 — "…and we can be there every month." State-aware monthly-presence:
  *  invite (no plan) · upgrade (on Connect) · a quiet reassurance (on Care — never a
  *  pitch). Reads the current plan; reuses the locked plans + the membership page. */
-function MonthlyPresence({ name }: { name: string }) {
+function MonthlyPresence({ name }: { name?: string }) {
   const { subscription, loading } = useMembership()
   if (loading) return null
   const planKey = subscription?.status === 'active' ? (planById(subscription?.plan_id)?.key ?? null) : null
@@ -119,11 +119,13 @@ function MonthlyPresence({ name }: { name: string }) {
       <div className="flex items-start gap-4">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><CalendarHeart className="h-5 w-5" strokeWidth={1.5} /></span>
         <div>
-          <p className="text-body font-semibold text-ink">{upgrading ? `Add a monthly visit for ${name}` : `Be there for ${name} every month`}</p>
+          <p className="text-body font-semibold text-ink">{upgrading ? `Add a monthly visit for ${name}` : name ? `Be there for ${name} every month` : 'Be there every month'}</p>
           <p className="mt-1 text-body-sm text-muted">
             {upgrading
               ? `Upgrade to Care and a verified Guardian visits ${name} every month — with a photo report and medication reminders.`
-              : `A verified Guardian visits ${name} every month, with a photo report and medication reminders — so their care never depends on remembering to book.`}
+              : name
+                ? `A verified Guardian visits ${name} every month, with a photo report and medication reminders — so their care never depends on remembering to book.`
+                : 'A verified Guardian visits every month, with a photo report and medication reminders — so care never depends on remembering to book.'}
           </p>
         </div>
       </div>
@@ -229,6 +231,13 @@ export function NewUserDashboard() {
 
       {/* Three ways to be there — services + pricing, for the empty state (additive) */}
       <WaysToBeThere />
+
+      {/* Beat 2 — membership, so a brand-new account can still discover the monthly
+          plans (name-free until they add a loved one). */}
+      <MonthlyPresence />
+
+      {/* Beat 3 — Connect: always a message away, even before adding someone. */}
+      <AskCloseEyeCard variant="compact" />
 
       {/* Why families trust Close Eye */}
       <section className="flex flex-col gap-4">

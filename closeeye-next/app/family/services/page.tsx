@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/family/page-header'
 import { ImageFrame } from '@/components/ui/image-frame'
 import { Button } from '@/components/ui/button'
 import { SERVICE_DETAILS } from '@/lib/services'
+import { ServicesMembership } from '@/components/family/services-membership'
 
 /**
  * The in-app Services space — browse the three ways Close Eye can be there and
@@ -57,6 +58,8 @@ export default function FamilyServicesPage() {
           </section>
         ))}
       </div>
+
+      <ServicesMembership />
     </div>
   )
 }
