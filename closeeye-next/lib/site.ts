@@ -9,7 +9,7 @@ export const SITE = {
   // Registered entity behind the Close Eye brand (from closeeye.in).
   legalEntity: 'Stexa Products & Services Pvt. Ltd.',
   tagline: "When you can't be there, Close Eye can.",
-  shortTagline: 'Care beyond presence',
+  shortTagline: 'Your trusted presence in India',
   description:
     'Trusted human presence for the people you love — home wellbeing visits, hospital companionship, and custom support across India.',
   url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://closeeye.in',
@@ -66,7 +66,7 @@ export type NavItem = { label: string; href: string }
 // story now lives in the footer + /about — the team leads, the founder supports.)
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/' },
-  { label: 'How We Help', href: '/services' },
+  { label: 'Services', href: '/services' },
   { label: 'Trust & Safety', href: '/trust-safety' },
   { label: 'Membership', href: '/membership' },
   { label: 'Contact', href: '/contact' },

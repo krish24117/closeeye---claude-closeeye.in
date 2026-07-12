@@ -83,28 +83,26 @@ export default function ContactPage() {
       </div>
 
       {/* Emergency */}
-      <section id="emergency" className="mt-14 scroll-mt-28 rounded-xl border border-line bg-ink p-8 text-white shadow-sm">
-        <div className="flex items-start gap-4">
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white/10 text-accent"><Siren className="h-6 w-6" strokeWidth={1.5} /></span>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-h3 text-white">Need us urgently?</h2>
-            <p className="mt-2 max-w-xl text-body leading-relaxed text-white/70">
-              For any medical emergency, call 108 first — always. Then reach us right away: your
-              Presence Manager coordinates on the ground and keeps you updated, alongside emergency services.
-            </p>
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <Button asChild onDark>
-                <a href="tel:108"><Phone className="h-4 w-4" strokeWidth={1.5} /> Call 108 (emergency)</a>
-              </Button>
-              <Button asChild variant="secondary" onDark>
-                <a href={whatsappLink('Hi Close Eye — this is urgent. I need help now.')} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-4 w-4" strokeWidth={1.5} /> WhatsApp us
-                </a>
-              </Button>
-              <Button asChild variant="secondary" onDark>
-                <a href={SITE.phoneHref}><Phone className="h-4 w-4" strokeWidth={1.5} /> Call {SITE.phoneDisplay}</a>
-              </Button>
-            </div>
+      <section id="emergency" className="mt-14 scroll-mt-28 rounded-xl border border-line bg-ink p-8 text-white shadow-sm sm:p-10">
+        <div className="mx-auto flex max-w-xl flex-col items-center text-center">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white/10 text-accent"><Siren className="h-7 w-7" strokeWidth={1.5} /></span>
+          <h2 className="mt-5 text-h3 text-white">Need us urgently?</h2>
+          <p className="mt-3 text-body leading-relaxed text-white/70">
+            For any medical emergency, call 108 first — always. Then reach us right away: your
+            Presence Manager coordinates on the ground and keeps you updated, alongside emergency services.
+          </p>
+          <div className="mt-6 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:justify-center">
+            <Button asChild onDark className="w-full sm:w-auto">
+              <a href="tel:108"><Phone className="h-4 w-4" strokeWidth={1.5} /> Call 108 (emergency)</a>
+            </Button>
+            <Button asChild variant="secondary" onDark className="w-full sm:w-auto">
+              <a href={whatsappLink('Hi Close Eye — this is urgent. I need help now.')} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="h-4 w-4" strokeWidth={1.5} /> WhatsApp us
+              </a>
+            </Button>
+            <Button asChild variant="secondary" onDark className="w-full sm:w-auto">
+              <a href={SITE.phoneHref}><Phone className="h-4 w-4" strokeWidth={1.5} /> Call {SITE.phoneDisplay}</a>
+            </Button>
           </div>
         </div>
       </section>
