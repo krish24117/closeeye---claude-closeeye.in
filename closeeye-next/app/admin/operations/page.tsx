@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { Loader2, Lock, ArrowRight, ArrowUpRight, MapPin } from 'lucide-react'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchAdminOperations, type AdminOperations } from '@/lib/db/admin'
 import { isSuperAdmin } from '@/lib/roles'
@@ -12,14 +12,19 @@ export default function OperationsPage() {
   const { profile, loading } = useFamilyData()
   const isAdmin = isSuperAdmin(profile)
   const [d, setD] = React.useState<AdminOperations | null>(null)
+  const [error, setError] = React.useState(false)
 
-  React.useEffect(() => {
+  const load = React.useCallback(() => {
     if (!isAdmin) return
-    fetchAdminOperations().then(setD).catch(() => setD(null))
+    setError(false)
+    fetchAdminOperations().then((x) => { setD(x); setError(false) }).catch(() => { setError(true) })
   }, [isAdmin])
+
+  React.useEffect(() => { load() }, [load])
 
   if (loading) return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
   if (!isAdmin) return <div className="flex flex-col gap-6"><h1 className="text-h2">Operations</h1><EmptyState icon={Lock} title="Restricted" hint="Available to administrators only." /></div>
+  if (error) return <div className="flex flex-col gap-8"><h1 className="text-h2">Operations</h1><ErrorState title="Couldn’t load Operations" message="A connection error — please retry." onRetry={load} /></div>
   if (d === null) return <div className="flex flex-col gap-8"><h1 className="text-h2">Operations</h1><div className="grid place-items-center rounded-lg border border-line bg-card py-20 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div></div>
 
   const today = [

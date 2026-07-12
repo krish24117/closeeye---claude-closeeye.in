@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Loader2, Lock, Check, Tag } from 'lucide-react'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchAdminMemberships, type AdminMemberships } from '@/lib/db/admin'
 import { fmtINR } from '@/lib/admin-data'
@@ -13,14 +13,19 @@ export default function MembershipsPage() {
   const { profile, loading } = useFamilyData()
   const isAdmin = isSuperAdmin(profile)
   const [d, setD] = React.useState<AdminMemberships | null>(null)
+  const [error, setError] = React.useState(false)
 
-  React.useEffect(() => {
+  const load = React.useCallback(() => {
     if (!isAdmin) return
-    fetchAdminMemberships().then(setD).catch(() => setD(null))
+    setError(false)
+    fetchAdminMemberships().then((x) => { setD(x); setError(false) }).catch(() => { setError(true) })
   }, [isAdmin])
+
+  React.useEffect(() => { load() }, [load])
 
   if (loading) return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
   if (!isAdmin) return <div className="flex flex-col gap-6"><h1 className="text-h2">Memberships</h1><EmptyState icon={Lock} title="Restricted" hint="Available to administrators only." /></div>
+  if (error) return <div className="flex flex-col gap-8"><h1 className="text-h2">Memberships</h1><ErrorState title="Couldn’t load memberships" message="A connection error — please retry." onRetry={load} /></div>
   if (d === null) return <div className="flex flex-col gap-8"><h1 className="text-h2">Memberships</h1><div className="grid place-items-center rounded-lg border border-line bg-card py-20 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div></div>
 
   const stats = [

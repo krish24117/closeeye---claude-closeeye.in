@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Loader2, Lock, Search, Users } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchAdminFamilies, type AdminFamily } from '@/lib/db/admin'
@@ -21,13 +21,17 @@ export default function AdminFamiliesPage() {
   const { profile, loading } = useFamilyData()
   const isAdmin = isSuperAdmin(profile)
   const [families, setFamilies] = React.useState<AdminFamily[] | null>(null)
+  const [error, setError] = React.useState(false)
   const [tab, setTab] = React.useState<Tab>('all')
   const [q, setQ] = React.useState('')
 
-  React.useEffect(() => {
+  const load = React.useCallback(() => {
     if (!isAdmin) return
-    fetchAdminFamilies().then(setFamilies).catch(() => setFamilies([]))
+    setError(false)
+    fetchAdminFamilies().then((x) => { setFamilies(x); setError(false) }).catch(() => { setFamilies(null); setError(true) })
   }, [isAdmin])
+
+  React.useEffect(() => { load() }, [load])
 
   if (loading) return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
   if (!isAdmin) return <div className="flex flex-col gap-6"><h1 className="text-h2">Families</h1><EmptyState icon={Lock} title="Restricted" hint="Available to administrators only." /></div>
@@ -60,7 +64,9 @@ export default function AdminFamiliesPage() {
         </div>
       </div>
 
-      {families === null ? (
+      {error ? (
+        <ErrorState title="Couldn’t load families" message="A connection error — please retry." onRetry={load} />
+      ) : families === null ? (
         <div className="grid place-items-center rounded-lg border border-line bg-card py-16 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
       ) : list.length === 0 ? (
         <EmptyState icon={Users} title={(families ?? []).length === 0 ? 'No families yet' : 'Nothing here'} hint={(families ?? []).length === 0 ? 'Families will appear here as they sign up.' : 'No families match your search or filter.'} />

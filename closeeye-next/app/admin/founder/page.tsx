@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Loader2, Lock, MessageCircle, Phone, Mail, Users, Search, X, Check, Download, Copy, Star } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/family/avatar'
 import { initialsOf } from '@/components/family/loved-one-card'
@@ -264,6 +264,7 @@ export default function FounderDashboardPage() {
   const [rows, setRows] = React.useState<FounderRegistrant[] | null>(null)
   const [actions, setActions] = React.useState<FounderAction[]>([])
   const [reminders, setReminders] = React.useState<FounderReminder[]>([])
+  const [error, setError] = React.useState(false)
   const [nowIso, setNowIso] = React.useState<string | null>(null)
   const [days, setDays] = React.useState<number | null>(null)
   const [live, setLive] = React.useState(false)
@@ -274,13 +275,15 @@ export default function FounderDashboardPage() {
   const familiesRef = React.useRef<HTMLElement>(null)
 
   React.useEffect(() => { setNowIso(new Date().toISOString()); setDays(daysUntilLaunch()); setLive(launchMode() === 'live') }, [])
-  React.useEffect(() => {
+  const load = React.useCallback(() => {
     if (!isAdmin) return
-    fetchFounderMetrics().then(setD).catch(() => setD(null))
-    fetchFounderRegistrants().then(setRows).catch(() => setRows([]))
+    setError(false)
+    fetchFounderMetrics().then((x) => { setD(x); setError(false) }).catch(() => { setError(true) })
+    fetchFounderRegistrants().then(setRows).catch(() => { setRows(null); setError(true) })
     fetchFounderActions().then(setActions).catch(() => setActions([]))
     fetchReminders().then(setReminders).catch(() => setReminders([]))
   }, [isAdmin])
+  React.useEffect(() => { load() }, [load])
 
   function logAction(registrantId: string, type: FounderActionType) {
     setActions((cur) => [{ registrantId, actionType: type, createdAt: new Date().toISOString() }, ...cur])
@@ -315,6 +318,7 @@ export default function FounderDashboardPage() {
 
   if (loading) return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
   if (!isAdmin) return <div className="flex flex-col gap-6"><h1 className="text-h2">Founder Activation</h1><EmptyState icon={Lock} title="Restricted" hint="Only administrators can open the Founder workspace." /></div>
+  if (error) return <div className="flex flex-col gap-8"><h1 className="text-h2">Founder Activation</h1><ErrorState title="Couldn’t load the Founder workspace" message="A connection error — please retry." onRetry={load} /></div>
   if (d === null || nowIso === null) return <div className="flex flex-col gap-8"><h1 className="text-h2">Founder Activation</h1><div className="grid place-items-center rounded-lg border border-line bg-card py-20 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div></div>
 
   const goalPct = Math.min(100, Math.round((d.totalRegistrations / FOUNDER_GOAL) * 100))

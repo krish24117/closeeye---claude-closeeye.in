@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Loader2, Lock, UserPlus, Search, Mail, Phone, MapPin } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchAdminLeads, type AdminLead, type LeadSource } from '@/lib/db/admin'
@@ -24,13 +24,17 @@ export default function AdminLeadsPage() {
   const { profile, loading } = useFamilyData()
   const isAdmin = isSuperAdmin(profile)
   const [leads, setLeads] = React.useState<AdminLead[] | null>(null)
+  const [error, setError] = React.useState(false)
   const [filter, setFilter] = React.useState<Filter>('all')
   const [q, setQ] = React.useState('')
 
-  React.useEffect(() => {
+  const load = React.useCallback(() => {
     if (!isAdmin) return
-    fetchAdminLeads().then(setLeads).catch(() => setLeads([]))
+    setError(false)
+    fetchAdminLeads().then((x) => { setLeads(x); setError(false) }).catch(() => { setLeads(null); setError(true) })
   }, [isAdmin])
+
+  React.useEffect(() => { load() }, [load])
 
   if (loading) return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
   if (!isAdmin) return <div className="flex flex-col gap-6"><h1 className="text-h2">Leads</h1><EmptyState icon={Lock} title="Restricted" hint="Available to administrators only." /></div>
@@ -76,7 +80,9 @@ export default function AdminLeadsPage() {
         </div>
       </div>
 
-      {leads === null ? (
+      {error ? (
+        <ErrorState title="Couldn’t load leads" message="A connection error — please retry." onRetry={load} />
+      ) : leads === null ? (
         <div className="grid place-items-center rounded-lg border border-line bg-card py-16 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
       ) : list.length === 0 ? (
         <EmptyState

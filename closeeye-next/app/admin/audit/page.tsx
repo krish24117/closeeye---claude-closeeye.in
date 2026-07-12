@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Loader2, Lock, ScrollText, Search } from 'lucide-react'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchAdminAudit, type AdminAuditEntry } from '@/lib/db/admin'
 import { isSuperAdmin } from '@/lib/roles'
@@ -19,12 +19,16 @@ export default function AuditPage() {
   const { profile, loading } = useFamilyData()
   const isAdmin = isSuperAdmin(profile)
   const [rows, setRows] = React.useState<AdminAuditEntry[] | null>(null)
+  const [error, setError] = React.useState(false)
   const [q, setQ] = React.useState('')
 
-  React.useEffect(() => {
+  const load = React.useCallback(() => {
     if (!isAdmin) return
-    fetchAdminAudit().then(setRows).catch(() => setRows([]))
+    setError(false)
+    fetchAdminAudit().then((x) => { setRows(x); setError(false) }).catch(() => { setRows(null); setError(true) })
   }, [isAdmin])
+
+  React.useEffect(() => { load() }, [load])
 
   if (loading) return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
   if (!isAdmin) return <div className="flex flex-col gap-6"><h1 className="text-h2">Audit log</h1><EmptyState icon={Lock} title="Restricted" hint="Available to administrators only." /></div>
@@ -51,7 +55,9 @@ export default function AuditPage() {
         />
       </div>
 
-      {rows === null ? (
+      {error ? (
+        <ErrorState title="Couldn’t load the audit log" message="A connection error — please retry." onRetry={load} />
+      ) : rows === null ? (
         <div className="grid place-items-center rounded-lg border border-line bg-card py-16 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
       ) : list.length === 0 ? (
         <EmptyState
