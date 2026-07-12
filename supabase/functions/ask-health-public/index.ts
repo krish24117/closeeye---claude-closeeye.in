@@ -14,13 +14,17 @@
 //      there is no user — this is the free public hook.
 
 import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
+// Single source of truth for the emergency safety floor — the SAME module the authed
+// engine uses, so the two can never drift again (that drift is what let "not breathing"
+// slip past this public endpoint).
+import { detectRedFlag } from "../ask-health/redflags.ts";
 
 const AMBULANCE_NUMBER = Deno.env.get("CLOSEEYE_AMBULANCE_NUMBER") ?? "108";
 
-// ── Red-flag patterns ────────────────────────────────────────────────────────
-// IDENTICAL to supabase/functions/ask-health/redflags.ts
-// Medical team owns both; any change here must be mirrored there and vice-versa.
-const RED_FLAGS: { category: string; patterns: RegExp[] }[] = [
+// ── Red-flag patterns — SUPERSEDED, kept for reviewer reference only ──────────
+// The LIVE safety floor is now the shared `../ask-health/redflags.ts` (imported at
+// top). This array is unused; do not edit it — edit the shared module.
+const _RED_FLAGS_REFERENCE: { category: string; patterns: RegExp[] }[] = [
   {
     category: "cardiac",
     patterns: [
@@ -140,15 +144,7 @@ const RED_FLAGS: { category: string; patterns: RegExp[] }[] = [
   { category: "ml_self_harm", patterns: [/(marna|mar jana) chahta/, /jeena nahi chahta|jeena nai chahta/] },
 ];
 
-function detectRedFlag(rawMessage: string): { matched: boolean; category?: string } {
-  const msg = rawMessage.toLowerCase().replace(/\s+/g, " ").trim();
-  for (const flag of RED_FLAGS) {
-    for (const pattern of flag.patterns) {
-      if (pattern.test(msg)) return { matched: true, category: flag.category };
-    }
-  }
-  return { matched: false };
-}
+// detectRedFlag is imported from the shared authed safety module (top of file).
 
 // ── Service intent detection ─────────────────────────────────────────────────
 const SERVICE_TRIGGERS: RegExp[] = [

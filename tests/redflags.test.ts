@@ -49,3 +49,21 @@ test('benign "breathing" talk does NOT false-positive', () => {
   miss('how is her appetite today')
   miss('what time should the guardian arrive')
 })
+
+test('audit gaps closed — stroke, falls, serious bleeding now escalate', () => {
+  assert.equal(hit('I think he is having a stroke').category, 'stroke')
+  assert.equal(hit('she had a stroke this morning').category, 'stroke')
+  assert.equal(hit('grandma had a fall').category, 'fall_injury')
+  assert.equal(hit('he fell down in the bathroom').category, 'fall_injury')
+  assert.equal(hit('she took a bad fall').category, 'fall_injury')
+  assert.equal(hit('he slipped on the floor').category, 'fall_injury')
+  assert.equal(hit('he is still bleeding').category, 'bleeding')
+  assert.equal(hit('there is bleeding from his head').category, 'bleeding')
+})
+
+test('bare falls do NOT false-positive on benign phrases', () => {
+  miss('he fell asleep in his chair')
+  miss('she fell ill last week but is fine now')
+  miss('they fell in love many years ago')
+  miss('the temperature fell overnight')
+})

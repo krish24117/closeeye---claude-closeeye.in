@@ -40,6 +40,9 @@ const RED_FLAGS: { category: string; patterns: RegExp[] }[] = [
   {
     category: "stroke",
     patterns: [
+      // The bare word "stroke" — recall-biased: a historical/benign mention is an
+      // acceptable false positive; a missed "he's having a stroke" is not.
+      /\bstroke\b/,
       /face (is |looks |looking )?(drooping|droopy|crooked|twisted)/,
       /slurred speech|can('| ?)t speak|words? (are )?jumbled|speech (is )?slurred/,
       /one side (of (his|her|the) )?(body|face) (is )?(weak|numb|paralys|drooping)/,
@@ -61,6 +64,11 @@ const RED_FLAGS: { category: string; patterns: RegExp[] }[] = [
       /(fell|fallen|had a fall).*(can('| ?)t get up|hurt|bleeding|head|hip|broke|broken|unconscious|not moving)/,
       /(can('| ?)t get up|unable to get up).*(fell|fall)/,
       /hit (his|her|their) head/,
+      // Bare falls — a leading cause of elder emergencies. Qualified enough to avoid
+      // "fell asleep" / "fell ill" / "fell in love" false positives.
+      /(had|has|have|took|having) (a|an|another) (bad |hard |serious |big |nasty |sudden |terrible )?fall\b/,
+      /(fell|slipped|tripped) (down|over|badly|hard|flat)\b/,
+      /(fell|slipped) (in the|on the|from|off|out of) /,
     ],
   },
   {
@@ -68,6 +76,8 @@ const RED_FLAGS: { category: string; patterns: RegExp[] }[] = [
     patterns: [
       /(heavy|severe|won('| ?)t stop|(a )?lot of|lots of|uncontrolled|excessive|profuse|badly|heavily) bleed/,
       /bleed(ing)? (heavily|badly|a lot|lot|profusely|uncontrollably|everywhere|non ?stop)/,
+      /(still|keeps|keep|not stopping|non ?stop|constant(ly)?|continuous(ly)?) bleed/,
+      /bleeding (from|out of) (his|her|their|the)? ?(head|mouth|ear|eyes?|nose and|chest|stomach|gut|rectum|wound|badly)/,
       /(losing|lost) (a lot of |lots of )?blood/,
       /blood (everywhere|all over|gushing|pouring)/,
       /vomit(ing|ed)? blood|throwing up blood|coughing (up )?blood/,
