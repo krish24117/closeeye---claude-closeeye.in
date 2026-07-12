@@ -68,6 +68,40 @@ export async function fetchFounderRegistrants(): Promise<FounderRegistrant[]> {
   }))
 }
 
+/** A founder-funnel hand-raiser who left their details (the low-friction /join
+ *  path → waitlist, tagged "Founder Program"). Not an account yet — so they sit
+ *  in their own "Interested" list on the Founder page, distinct from registrants. */
+export interface FounderLead {
+  id: string
+  fullName: string | null
+  phone: string | null
+  email: string | null
+  city: string | null
+  outsideHyderabad: boolean
+  createdAt: string | null
+}
+
+export async function fetchFounderLeads(): Promise<FounderLead[]> {
+  const { data, error } = await supabase
+    .from('waitlist')
+    .select('id, full_name, whatsapp_number, email, loved_one_city, support_needed, created_at')
+    .ilike('support_needed', 'Founder Program%')
+    .order('created_at', { ascending: false })
+  if (error) {
+    console.error('[founder-ops] fetchFounderLeads failed:', error.message)
+    return []
+  }
+  return ((data as { id: string; full_name: string | null; whatsapp_number: string | null; email: string | null; loved_one_city: string | null; support_needed: string | null; created_at: string | null }[] | null) ?? []).map((r) => ({
+    id: r.id,
+    fullName: r.full_name,
+    phone: r.whatsapp_number,
+    email: r.email,
+    city: r.loved_one_city,
+    outsideHyderabad: (r.support_needed ?? '').toLowerCase().includes('outside'),
+    createdAt: r.created_at,
+  }))
+}
+
 export async function setFollowedUp(userId: string, value: boolean): Promise<{ error: string | null }> {
   const { error } = await supabase
     .from('profiles')

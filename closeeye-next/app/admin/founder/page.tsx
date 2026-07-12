@@ -9,7 +9,7 @@ import { Avatar } from '@/components/family/avatar'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchFounderMetrics, type FounderMetrics } from '@/lib/db/founder-dashboard'
-import { fetchFounderRegistrants, fetchFounderActions, logFounderAction, fetchReminders, addReminder, setReminderDone, setFollowedUp, setFounderNotes, type FounderRegistrant, type FounderActionType } from '@/lib/db/founder-ops'
+import { fetchFounderRegistrants, fetchFounderLeads, fetchFounderActions, logFounderAction, fetchReminders, addReminder, setReminderDone, setFollowedUp, setFounderNotes, type FounderRegistrant, type FounderLead, type FounderActionType } from '@/lib/db/founder-ops'
 import {
   registrantStatus, STATUS_LABEL, matchesFilter, matchesSearch, toCSV, phoneList, whatsappList,
   founderActivityToday, reachedIds, actionsFor, ACTION_LABEL, dueReminders, remindersFor,
@@ -264,6 +264,7 @@ export default function FounderDashboardPage() {
   const [rows, setRows] = React.useState<FounderRegistrant[] | null>(null)
   const [actions, setActions] = React.useState<FounderAction[]>([])
   const [reminders, setReminders] = React.useState<FounderReminder[]>([])
+  const [leads, setLeads] = React.useState<FounderLead[]>([])
   const [error, setError] = React.useState(false)
   const [nowIso, setNowIso] = React.useState<string | null>(null)
   const [days, setDays] = React.useState<number | null>(null)
@@ -282,6 +283,7 @@ export default function FounderDashboardPage() {
     fetchFounderRegistrants().then(setRows).catch(() => { setRows(null); setError(true) })
     fetchFounderActions().then(setActions).catch(() => setActions([]))
     fetchReminders().then(setReminders).catch(() => setReminders([]))
+    fetchFounderLeads().then(setLeads).catch(() => setLeads([]))
   }, [isAdmin])
   React.useEffect(() => { load() }, [load])
 
@@ -479,6 +481,36 @@ export default function FounderDashboardPage() {
           </div>
         )}
       </section>
+
+      {/* 3.5 · Interested — founder-funnel hand-raisers (waitlist, "Founder Program"), not registered yet */}
+      {leads.length > 0 && (
+        <section>
+          <p className={section}>Interested · left their details · {leads.length}</p>
+          <p className="mb-3 text-caption text-muted">Founder-funnel hand-raisers who left a number but haven’t registered yet — reach out and invite them to reserve their place.</p>
+          <div className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+            <ul className="divide-y divide-line">
+              {leads.map((l) => (
+                <li key={l.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                  <Avatar initials={initialsOf(l.fullName ?? 'Lead')} size="sm" tone="solid" />
+                  <div className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="truncate font-semibold text-ink">{l.fullName ?? '—'}</span>
+                      <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-green">Interested</span>
+                      {l.outsideHyderabad && <span className="shrink-0 rounded-full bg-warning/12 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-warning">Outside Hyd</span>}
+                    </span>
+                    <span className="mt-0.5 block truncate text-caption text-muted">{[l.city, l.phone, l.email].filter(Boolean).join(' · ') || '—'} · {fmtDateTime(l.createdAt)}</span>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-1">
+                    {l.phone && <a href={waHref(l.phone)} target="_blank" rel="noopener noreferrer" title="WhatsApp" className="grid h-8 w-8 place-items-center rounded-full text-green hover:bg-accent-soft"><MessageCircle className="h-4 w-4" strokeWidth={1.75} /></a>}
+                    {l.phone && <a href={telHref(l.phone)} title="Call" className="grid h-8 w-8 place-items-center rounded-full text-ink hover:bg-ink/[0.05]"><Phone className="h-4 w-4" strokeWidth={1.75} /></a>}
+                    {l.email && <a href={mailHref(l.email)} title="Email" className="grid h-8 w-8 place-items-center rounded-full text-ink hover:bg-ink/[0.05]"><Mail className="h-4 w-4" strokeWidth={1.75} /></a>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
       {/* 4 · Funnel & plans — compact, side by side */}
       <section>
