@@ -7,7 +7,7 @@ import { ArrowLeft, Loader2, Lock, Users, Phone } from 'lucide-react'
 import { AdminMessageThread } from '@/components/console/admin-message-thread'
 import { AssignGuardian } from '@/components/console/assign-guardian'
 import { Avatar } from '@/components/family/avatar'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { Button } from '@/components/ui/button'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
@@ -19,12 +19,16 @@ export default function ConsoleFamilyWorkspace() {
   const { profile, loading } = useFamilyData()
   const isStaff = canUseConsole(profile)
   const [detail, setDetail] = React.useState<ConsoleFamilyDetail | null | undefined>(undefined)
+  const [error, setError] = React.useState(false)
 
   const load = React.useCallback(() => {
     if (!isStaff || !params.id) return
+    setError(false)
+    // A thrown error is a LOAD failure, not a missing family — keep them distinct
+    // (detail === null is only a genuine not-found returned by the fetcher).
     fetchConsoleFamilyDetail(params.id)
-      .then(setDetail)
-      .catch(() => setDetail(null))
+      .then((d) => { setDetail(d); setError(false) })
+      .catch(() => { setError(true) })
   }, [isStaff, params.id])
 
   React.useEffect(() => { load() }, [load])
@@ -47,6 +51,14 @@ export default function ConsoleFamilyWorkspace() {
     </Link>
   )
 
+  if (error) {
+    return (
+      <div className="flex flex-col gap-5">
+        {back}
+        <ErrorState title="Couldn’t load this family" message="A connection error — this does NOT mean the family was removed. Please retry." onRetry={load} />
+      </div>
+    )
+  }
   if (detail === undefined) {
     return <div className="flex flex-col gap-5">{back}<div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div></div>
   }

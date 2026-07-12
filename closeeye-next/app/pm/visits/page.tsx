@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { Loader2, Lock, CalendarClock } from 'lucide-react'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { VisitStatusBadge } from '@/components/console/visit-status-badge'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchConsoleVisits, type ConsoleScheduleItem, type ConsoleVisitStatus } from '@/lib/db/console'
@@ -20,13 +20,17 @@ export default function VisitsPage() {
   const { profile, loading } = useFamilyData()
   const isStaff = canUseConsole(profile)
   const [visits, setVisits] = React.useState<ConsoleScheduleItem[] | null>(null)
+  const [error, setError] = React.useState(false)
 
-  React.useEffect(() => {
+  const load = React.useCallback(() => {
     if (!isStaff) return
+    setError(false)
     fetchConsoleVisits()
-      .then(setVisits)
-      .catch(() => setVisits([]))
+      .then((r) => { setVisits(r); setError(false) })
+      .catch(() => { setVisits(null); setError(true) })
   }, [isStaff])
+
+  React.useEffect(() => { load() }, [load])
 
   if (loading) {
     return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
@@ -52,7 +56,9 @@ export default function VisitsPage() {
         </p>
       </div>
 
-      {visits === null ? (
+      {error ? (
+        <ErrorState title="Couldn’t load today’s Presence" message="This is a connection error — NOT an all-clear. Please retry." onRetry={load} />
+      ) : visits === null ? (
         <div className="grid place-items-center rounded-lg border border-line bg-card py-16 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
       ) : visits.length === 0 ? (
         <EmptyState icon={CalendarClock} title="No Presence today" hint="Visits scheduled for your families will appear here as they happen." />

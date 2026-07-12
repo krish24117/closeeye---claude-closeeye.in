@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { Loader2, Lock, TriangleAlert, MessageCircle, CheckCircle2, ArrowRight } from 'lucide-react'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchConsoleEscalations, type ConsoleTriageItem } from '@/lib/db/console'
 import { canUseConsole } from '@/lib/roles'
@@ -13,13 +13,17 @@ export default function EscalationsPage() {
   const { profile, loading } = useFamilyData()
   const isStaff = canUseConsole(profile)
   const [items, setItems] = React.useState<ConsoleTriageItem[] | null>(null)
+  const [error, setError] = React.useState(false)
 
-  React.useEffect(() => {
+  const load = React.useCallback(() => {
     if (!isStaff) return
+    setError(false)
     fetchConsoleEscalations()
-      .then(setItems)
-      .catch(() => setItems([]))
+      .then((r) => { setItems(r); setError(false) })
+      .catch(() => { setItems(null); setError(true) })
   }, [isStaff])
+
+  React.useEffect(() => { load() }, [load])
 
   if (loading) {
     return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
@@ -45,7 +49,9 @@ export default function EscalationsPage() {
         </p>
       </div>
 
-      {items === null ? (
+      {error ? (
+        <ErrorState title="Couldn’t load escalations" message="This is a connection error — NOT an all-clear. An urgent item could be waiting. Please retry." onRetry={load} />
+      ) : items === null ? (
         <div className="grid place-items-center rounded-lg border border-line bg-card py-16 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
       ) : items.length === 0 ? (
         <EmptyState icon={CheckCircle2} title="Nothing open" hint="Every family is accounted for. 💚" />

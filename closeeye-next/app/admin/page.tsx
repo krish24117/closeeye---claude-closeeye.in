@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { Loader2, Lock, ArrowRight, TriangleAlert, Info, CheckCircle2 } from 'lucide-react'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchAdminOverview, type AdminOverview, type InsightRow } from '@/lib/db/admin'
 import { fmtINR } from '@/lib/admin-data'
@@ -44,18 +44,23 @@ export default function AdminDashboard() {
   const { profile, loading } = useFamilyData()
   const isAdmin = isSuperAdmin(profile)
   const [d, setD] = React.useState<AdminOverview | null>(null)
+  const [error, setError] = React.useState(false)
   const [part, setPart] = React.useState('Hello')
 
   React.useEffect(() => {
     const h = new Date().getHours()
     setPart(h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening')
   }, [])
-  React.useEffect(() => {
+
+  const load = React.useCallback(() => {
     if (!isAdmin) return
+    setError(false)
     fetchAdminOverview()
-      .then(setD)
-      .catch(() => setD(null))
+      .then((x) => { setD(x); setError(false) })
+      .catch(() => { setError(true) })
   }, [isAdmin])
+
+  React.useEffect(() => { load() }, [load])
 
   const first = profile?.full_name?.trim().split(/\s+/)[0] ?? 'there'
 
@@ -67,6 +72,14 @@ export default function AdminDashboard() {
       <div className="flex flex-col gap-6">
         <h1 className="text-h2">Operations</h1>
         <EmptyState icon={Lock} title="Restricted" hint="The founder console is only available to administrators." />
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div className="flex flex-col gap-8">
+        <h1 className="text-h2">{part}, {first}.</h1>
+        <ErrorState title="Couldn’t load the console" message="A connection error — the numbers didn’t load (they aren’t zero). Please retry." onRetry={load} />
       </div>
     )
   }

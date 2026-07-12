@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Loader2, Lock, ArrowUpRight, Star, ShieldCheck, BadgeCheck, Clock, Check } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
 import { Button } from '@/components/ui/button'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { useToast } from '@/components/ui/toast'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
@@ -21,10 +21,12 @@ export default function AdminCareTeamPage() {
   const toast = useToast()
   const [d, setD] = React.useState<AdminCareTeam | null>(null)
   const [busy, setBusy] = React.useState<string | null>(null)
+  const [error, setError] = React.useState(false)
 
   const load = React.useCallback(() => {
     if (!isAdmin) return
-    fetchAdminCareTeam().then(setD).catch(() => setD(null))
+    setError(false)
+    fetchAdminCareTeam().then((x) => { setD(x); setError(false) }).catch(() => { setError(true) })
   }, [isAdmin])
 
   React.useEffect(() => { load() }, [load])
@@ -57,6 +59,7 @@ export default function AdminCareTeamPage() {
 
   if (loading) return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
   if (!isAdmin) return <div className="flex flex-col gap-6"><h1 className="text-h2">Care Team</h1><EmptyState icon={Lock} title="Restricted" hint="Available to administrators only." /></div>
+  if (error) return <div className="flex flex-col gap-8"><h1 className="text-h2">Care Team</h1><ErrorState title="Couldn’t load the Care Team" message="A connection error — please retry." onRetry={load} /></div>
   if (d === null) return <div className="flex flex-col gap-8"><h1 className="text-h2">Care Team</h1><div className="grid place-items-center rounded-lg border border-line bg-card py-20 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div></div>
 
   const stats = [

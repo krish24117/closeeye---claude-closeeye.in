@@ -6,7 +6,7 @@ import { TriangleAlert, ArrowRight, MessageCircle, CalendarClock, CheckCircle2, 
 import { ConsoleGreeting } from '@/components/console/console-greeting'
 import { VisitStatusBadge } from '@/components/console/visit-status-badge'
 import { Avatar } from '@/components/family/avatar'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchConsoleOverview, CASE_RANK, type ConsoleOverview, type CaseStatus } from '@/lib/db/console'
@@ -23,13 +23,17 @@ export default function ConsoleDashboard() {
   const { profile, loading } = useFamilyData()
   const isStaff = canUseConsole(profile)
   const [data, setData] = React.useState<ConsoleOverview | null>(null)
+  const [error, setError] = React.useState(false)
 
-  React.useEffect(() => {
+  const load = React.useCallback(() => {
     if (!isStaff) return
+    setError(false)
     fetchConsoleOverview()
-      .then(setData)
-      .catch(() => setData({ families: [], triage: [], schedule: [] }))
+      .then((d) => { setData(d); setError(false) })
+      .catch(() => { setData(null); setError(true) })
   }, [isStaff])
+
+  React.useEffect(() => { load() }, [load])
 
   if (loading) {
     return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
@@ -39,6 +43,14 @@ export default function ConsoleDashboard() {
       <div className="flex flex-col gap-6">
         <ConsoleGreeting />
         <EmptyState icon={Lock} title="Restricted" hint="The Presence Console is only available to Close Eye team members." />
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div className="flex flex-col gap-8">
+        <ConsoleGreeting />
+        <ErrorState title="Couldn’t load your console" message="This is a connection error — NOT an all-clear. Please retry." onRetry={load} />
       </div>
     )
   }
