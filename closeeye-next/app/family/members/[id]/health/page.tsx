@@ -42,6 +42,8 @@ function snapshot(f: ElderProfileForm, meds: string): string {
     allergies: f.allergies.trim(),
     doctor_name: f.doctor_name.trim(),
     doctor_phone: f.doctor_phone.trim(),
+    language: f.language.trim(),
+    important_dates: f.important_dates.trim(),
     pinned_note: f.pinned_note.trim(),
     photo_consent: f.photo_consent,
     meds: meds.split('\n').map((m) => m.trim()).filter(Boolean),
@@ -162,6 +164,14 @@ export default function HealthProfilePage() {
           <div>
             <label htmlFor="h-routine" className={labelCls}>Daily routine</label>
             <textarea id="h-routine" value={form.daily_routine} onChange={(e) => set('daily_routine', e.target.value)} placeholder="e.g. Morning walk, rest after lunch, tea around 5 pm" className={areaCls} />
+          </div>
+          <div>
+            <label htmlFor="h-lang" className={labelCls}>Preferred language</label>
+            <input id="h-lang" value={form.language} onChange={(e) => set('language', e.target.value)} placeholder="e.g. Telugu, Hindi, English" className={inputCls} autoComplete="off" />
+          </div>
+          <div>
+            <label htmlFor="h-dates" className={labelCls}>Important dates <span className="font-normal text-muted">(birthdays, anniversaries, festivals)</span></label>
+            <textarea id="h-dates" value={form.important_dates} onChange={(e) => set('important_dates', e.target.value)} placeholder="e.g. Birthday 12 March · Wedding anniversary 5 June · Loves Sankranti & Diwali" className={areaCls} />
           </div>
         </Section>
 

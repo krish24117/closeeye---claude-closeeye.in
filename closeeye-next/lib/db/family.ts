@@ -366,6 +366,10 @@ export interface ElderProfileForm {
   current_medications: string[]
   doctor_name: string
   doctor_phone: string
+  /** The language they're most comfortable in (Family Intelligence + Memory). */
+  language: string
+  /** Free text — birthdays, anniversaries, festivals they cherish (Family Memory). */
+  important_dates: string
   pinned_note: string
   /** Allow the Guardian to share visit photos with the family on WhatsApp. */
   photo_consent: boolean
@@ -374,14 +378,14 @@ export interface ElderProfileForm {
 const EMPTY_ELDER: ElderProfileForm = {
   food_preferences: '', conversation_interests: '', daily_routine: '', things_to_avoid: '',
   medical_conditions: '', allergies: '', current_medications: [], doctor_name: '', doctor_phone: '',
-  pinned_note: '', photo_consent: false,
+  language: '', important_dates: '', pinned_note: '', photo_consent: false,
 }
 
 /** The Health Profile for a loved one (RLS: family read own). Empty form if none. */
 export async function fetchElderProfile(lovedOneId: string): Promise<ElderProfileForm> {
   const { data, error } = await supabase
     .from('elder_profiles')
-    .select('food_preferences, conversation_interests, daily_routine, things_to_avoid, medical_conditions, allergies, current_medications, doctor_name, doctor_phone, pinned_note, photo_consent')
+    .select('food_preferences, conversation_interests, daily_routine, things_to_avoid, medical_conditions, allergies, current_medications, doctor_name, doctor_phone, language, important_dates, pinned_note, photo_consent')
     .eq('loved_one_id', lovedOneId)
     .maybeSingle()
   if (error) throw new Error(error.message)
@@ -397,6 +401,8 @@ export async function fetchElderProfile(lovedOneId: string): Promise<ElderProfil
     current_medications: Array.isArray(d.current_medications) ? (d.current_medications as unknown[]).map(String) : [],
     doctor_name: (d.doctor_name as string) ?? '',
     doctor_phone: (d.doctor_phone as string) ?? '',
+    language: (d.language as string) ?? '',
+    important_dates: (d.important_dates as string) ?? '',
     pinned_note: (d.pinned_note as string) ?? '',
     photo_consent: Boolean(d.photo_consent),
   }
@@ -426,6 +432,8 @@ export async function upsertElderProfile(
     current_medications: input.current_medications.map((m) => m.trim()).filter(Boolean),
     doctor_name: t(input.doctor_name),
     doctor_phone: t(input.doctor_phone),
+    language: t(input.language),
+    important_dates: t(input.important_dates),
     pinned_note: t(input.pinned_note),
     photo_consent: input.photo_consent,
   }

@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 const EMPTY_WELLBEING: ElderProfileForm = {
   food_preferences: '', conversation_interests: '', daily_routine: '', things_to_avoid: '',
   medical_conditions: '', allergies: '', current_medications: [], doctor_name: '', doctor_phone: '',
-  pinned_note: '', photo_consent: false,
+  language: '', important_dates: '', pinned_note: '', photo_consent: false,
 }
 
 /** A full NewLovedOne from an existing record, so an address update never wipes the

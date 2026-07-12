@@ -68,6 +68,8 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
     if (ep?.daily_routine.trim()) bits.push(`Daily routine: ${ep.daily_routine.trim()}`)
     if (ep?.conversation_interests.trim()) bits.push(`Loves talking about: ${ep.conversation_interests.trim()}`)
     if (ep?.food_preferences.trim()) bits.push(`Food & drink they like: ${ep.food_preferences.trim()}`)
+    if (ep?.language.trim()) bits.push(`Most comfortable speaking: ${ep.language.trim()}`)
+    if (ep?.important_dates.trim()) bits.push(`Important dates: ${ep.important_dates.trim()}`)
     if (ep?.pinned_note.trim()) bits.push(`A note the family wants kept in mind: ${ep.pinned_note.trim()}`)
     const whoStr = who.length ? ` (${who.join(', ')})` : ''
     const preamble = `[Background about ${lo.full_name}${whoStr}, so you can answer personally and warmly for this family. ${bits.join('. ')}${bits.length ? '.' : ''} Use what is relevant; weave it in naturally, never restate it mechanically.]`
