@@ -8,7 +8,6 @@ import type { LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
 import { FeatureIcon } from '@/components/ui/feature-icon'
 import { Button } from '@/components/ui/button'
-import { SettingsToggle } from '@/components/family/settings-toggle'
 import { Overlay } from '@/components/family/overlay'
 import { ProfileIdentity } from '@/components/family/profile-identity'
 import { MembershipCard } from '@/components/family/membership-card'
@@ -81,6 +80,22 @@ function ComingSoonRow({ label }: { label: string }) {
     <div className="flex items-center justify-between gap-4 py-3.5">
       <span className="text-body-sm font-medium text-ink">{label}</span>
       <span className="shrink-0 rounded-full bg-ink/[0.05] px-2.5 py-1 text-caption font-medium text-muted">Coming soon</span>
+    </div>
+  )
+}
+
+/** A read-only notification-channel row — states the truth (On / Always on) rather
+ *  than a switch we can't yet persist. Never misrepresent a safety or consent state. */
+function PrefRow({ label, hint, state }: { label: string; hint?: string; state: 'On' | 'Always on' }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-3.5">
+      <div className="min-w-0">
+        <p className="text-body-sm font-medium text-ink">{label}</p>
+        {hint && <p className="text-caption text-muted">{hint}</p>}
+      </div>
+      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-success/12 px-2.5 py-1 text-caption font-semibold text-success">
+        <span className="h-1.5 w-1.5 rounded-full bg-success" /> {state}
+      </span>
     </div>
   )
 }
@@ -191,13 +206,14 @@ export default function ProfilePage() {
         )}
       </Card>
 
-      {/* 5 · NOTIFICATIONS */}
-      <Card icon={Bell} title="Notifications">
-        <SettingsToggle label="WhatsApp updates" hint="Photos and notes after every visit" defaultOn />
-        <SettingsToggle label="Email updates" defaultOn />
-        <SettingsToggle label="Push notifications" defaultOn />
-        <SettingsToggle label="Emergency alerts" hint="Always on for your family's safety" defaultOn />
-        <SettingsToggle label="Marketing updates" />
+      {/* 5 · NOTIFICATIONS — honest read-only state. Preferences aren't self-service
+          yet, so we never render a switch that silently resets (safety + consent). */}
+      <Card icon={Bell} title="How we keep you updated">
+        <PrefRow label="WhatsApp updates" hint="Photos and notes after every visit" state="On" />
+        <PrefRow label="Email updates" state="On" />
+        <PrefRow label="In-app notifications" state="On" />
+        <PrefRow label="Emergency alerts" hint="Always on for your family's safety" state="Always on" />
+        <p className="pt-3 text-caption text-muted">Want to change how we reach you? Message your Presence Manager and we&rsquo;ll set it up.</p>
       </Card>
 
       {/* 6 · SECURITY */}
