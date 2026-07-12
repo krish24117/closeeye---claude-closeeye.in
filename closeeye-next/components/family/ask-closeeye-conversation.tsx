@@ -53,15 +53,24 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
     const lo = lovedOnes.find((l) => l.id === lovedOneId)
     if (!lo) return null
     const who: string[] = []
+    if (lo.relationship) who.push(`my ${lo.relationship.toLowerCase()}`)
     if (lo.age) who.push(`age ${lo.age}`)
     if (lo.city) who.push(lo.city)
     const ep = await fetchElderProfile(lovedOneId).catch(() => null)
     const bits: string[] = []
-    if (ep?.medical_conditions.trim()) bits.push(`Conditions: ${ep.medical_conditions.trim()}`)
+    // Health — the safety-relevant facts.
+    if (ep?.medical_conditions.trim()) bits.push(`Health conditions: ${ep.medical_conditions.trim()}`)
     if (ep?.allergies.trim()) bits.push(`Allergies: ${ep.allergies.trim()}`)
     if (ep?.current_medications.length) bits.push(`Medications: ${ep.current_medications.join(', ')}`)
-    if (ep?.things_to_avoid.trim()) bits.push(`Avoid: ${ep.things_to_avoid.trim()}`)
-    const preamble = `[Background for my question — about ${lo.full_name}${who.length ? ` (${who.join(', ')})` : ''}. ${bits.join('. ')}${bits.length ? '.' : ''} Use only if relevant.]`
+    if (ep?.things_to_avoid.trim()) bits.push(`Things to avoid: ${ep.things_to_avoid.trim()}`)
+    // The little things the family told us — this is what makes Connect feel like it
+    // knows their loved one, not a generic assistant. (Family Memory, Pillar 6.)
+    if (ep?.daily_routine.trim()) bits.push(`Daily routine: ${ep.daily_routine.trim()}`)
+    if (ep?.conversation_interests.trim()) bits.push(`Loves talking about: ${ep.conversation_interests.trim()}`)
+    if (ep?.food_preferences.trim()) bits.push(`Food & drink they like: ${ep.food_preferences.trim()}`)
+    if (ep?.pinned_note.trim()) bits.push(`A note the family wants kept in mind: ${ep.pinned_note.trim()}`)
+    const whoStr = who.length ? ` (${who.join(', ')})` : ''
+    const preamble = `[Background about ${lo.full_name}${whoStr}, so you can answer personally and warmly for this family. ${bits.join('. ')}${bits.length ? '.' : ''} Use what is relevant; weave it in naturally, never restate it mechanically.]`
     return { preamble, label: lo.full_name }
   }
 
