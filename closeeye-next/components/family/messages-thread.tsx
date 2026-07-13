@@ -150,6 +150,7 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
   const [sending, setSending] = useState(false)
   const [photo, setPhoto] = useState<string | null>(null)
   const [pm, setPm] = useState<{ id: string; firstName: string } | null>(null)
+  const taRef = useRef<HTMLTextAreaElement>(null)
   const [recording, setRecording] = useState(false)
   const [recSeconds, setRecSeconds] = useState(0)
 
@@ -163,6 +164,14 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
 
   useEffect(() => setPhoto(getLocalPhoto(lovedOne.id)), [lovedOne.id])
   useEffect(() => { void fetchMyPresenceManager().then(setPm).catch(() => {}) }, [])
+  // Auto-grow the composer with its content up to ~5 lines, then scroll — the design
+  // standard for a message input (iOS field-sizing isn't reliable, so size it in JS).
+  useEffect(() => {
+    const el = taRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 128)}px`
+  }, [draft])
 
   const addMessage = useCallback((m: Message) => {
     setMessages((prev) =>
@@ -439,7 +448,7 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-end gap-2">
             <input
               ref={imageInputRef}
               type="file"
@@ -487,12 +496,14 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
             >
               <Mic className="h-5 w-5" strokeWidth={1.5} />
             </button>
-            <input
+            <textarea
+              ref={taRef}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
+              rows={1}
               placeholder={`Message about ${firstName}…`}
               aria-label="Message"
-              className="h-11 min-w-0 flex-1 rounded-full border border-line bg-ivory px-4 text-body-sm text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/25"
+              className="max-h-32 min-h-[2.75rem] min-w-0 flex-1 resize-none rounded-3xl border border-line bg-ivory px-4 py-2.5 text-body-sm leading-relaxed text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/25"
             />
             <button
               type="submit"
