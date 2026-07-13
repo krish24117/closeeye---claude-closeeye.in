@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { ArrowLeft, Loader2, UserRound } from 'lucide-react'
 import { MessagesThread } from '@/components/family/messages-thread'
+import { MemberAskHistory } from '@/components/family/member-ask-history'
 import { EmptyState } from '@/components/ui/states'
 import { Button } from '@/components/ui/button'
 import { useFamilyData } from '@/components/family/family-data-provider'
@@ -46,6 +47,7 @@ export default function MemberConversationPage() {
       <Link href="/family/connect" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> All conversations
       </Link>
+      <MemberAskHistory lovedOneId={member.id} firstName={member.full_name.split(' ')[0] || 'them'} />
       <MessagesThread lovedOne={member} />
     </div>
   )

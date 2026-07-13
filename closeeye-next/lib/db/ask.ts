@@ -127,3 +127,31 @@ export async function fetchAskHistory(userId: string, limit = 6): Promise<AskHis
     createdAt: q.created_at,
   }))
 }
+
+/**
+ * Ask history for ONE family member — the Q&A the family asked CloseEye about this
+ * person. Scoped by `loved_one_id` so it can live inside that member's conversation
+ * (unifying the AI and PM timelines). RLS still restricts to the caller's own rows.
+ */
+export async function fetchAskHistoryForMember(
+  userId: string,
+  lovedOneId: string,
+  limit = 4,
+): Promise<AskHistoryItem[]> {
+  const { data } = await supabase
+    .from('member_queries')
+    .select('id, question, answer, ai_answer, status, created_at')
+    .eq('user_id', userId)
+    .eq('loved_one_id', lovedOneId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  const rows =
+    (data as Array<{ id: string; question: string; answer: string | null; ai_answer: string | null; status: string; created_at: string }> | null) ?? []
+  return rows.map((q) => ({
+    id: q.id,
+    question: q.question,
+    answer: q.answer || q.ai_answer,
+    status: q.status,
+    createdAt: q.created_at,
+  }))
+}
