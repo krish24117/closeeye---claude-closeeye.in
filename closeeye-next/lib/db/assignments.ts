@@ -108,3 +108,16 @@ export async function setFamilyManager(
     await assignFamilyToManager(newManagerId, familyUserId, assignedBy)
   }
 }
+
+/**
+ * The calling family's assigned Presence Manager — first name only, via the
+ * get_my_presence_manager RPC (security definer; a family can't read staff profiles
+ * directly). Returns null when no PM is assigned, so Connect falls back gracefully.
+ */
+export async function fetchMyPresenceManager(): Promise<{ id: string; firstName: string } | null> {
+  const { data, error } = await supabase.rpc('get_my_presence_manager')
+  if (error) return null
+  const row = (data as { manager_id: string; first_name: string | null }[] | null)?.[0]
+  if (!row || !row.first_name?.trim()) return null
+  return { id: row.manager_id, firstName: row.first_name.trim() }
+}

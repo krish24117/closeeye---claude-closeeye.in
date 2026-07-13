@@ -21,6 +21,7 @@ import {
   uploadVoiceNote,
 } from '@/lib/db/messages'
 import type { LovedOne, Message } from '@/lib/db/types'
+import { fetchMyPresenceManager } from '@/lib/db/assignments'
 import { cn } from '@/lib/utils'
 
 type Status = 'loading' | 'ready' | 'error'
@@ -148,6 +149,7 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
   const [uploading, setUploading] = useState(false)
   const [sending, setSending] = useState(false)
   const [photo, setPhoto] = useState<string | null>(null)
+  const [pm, setPm] = useState<{ id: string; firstName: string } | null>(null)
   const [recording, setRecording] = useState(false)
   const [recSeconds, setRecSeconds] = useState(0)
 
@@ -160,6 +162,7 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
   const recSecRef = useRef(0)
 
   useEffect(() => setPhoto(getLocalPhoto(lovedOne.id)), [lovedOne.id])
+  useEffect(() => { void fetchMyPresenceManager().then(setPm).catch(() => {}) }, [])
 
   const addMessage = useCallback((m: Message) => {
     setMessages((prev) =>
@@ -326,7 +329,7 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
         <Avatar initials={initialsOf(lovedOne.full_name)} src={photo} alt={lovedOne.full_name} size="md" tone="solid" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-body font-semibold text-ink">{lovedOne.full_name}</p>
-          <p className="text-caption text-muted">Care conversation · Close Eye team</p>
+          <p className="text-caption text-muted">{pm ? `${pm.firstName} · your Close Eye team` : 'Care conversation · Close Eye team'}</p>
         </div>
         <a
           href={whatsappLink(`Hi Close Eye — a quick note about ${lovedOne.full_name}.`)}
@@ -353,7 +356,7 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
             <EmptyState
               icon={MessageCircle}
               title="Start the conversation"
-              hint={`Send a message, photo, or document about ${firstName}. Your Close Eye team will reply right here.`}
+              hint={`Send a message, photo, or document about ${firstName}. ${pm ? `${pm.firstName} from your Close Eye team` : 'Your Close Eye team'} will reply right here.`}
             />
           </div>
         ) : (
