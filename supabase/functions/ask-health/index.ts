@@ -128,6 +128,51 @@ function looksOffTopic(text: string): boolean {
 const ANSWER_EMERGENCY_RE =
   /(medical emergency|call an ambulance|call 108 (immediately|now|right away|straight)|rush (him|her|them|to)|(go|get) (to|him|her|them).{0,20}(hospital|emergency|\ber\b).{0,14}(now|immediately|right away)|emergency room (right )?now|life[- ]threatening|every (second|minute|moment) (counts|matters))/i;
 
+// A clean, Apple-style HTML layout for the care-team email — system font, a red
+// emergency header, the report front-and-centre, and a big tap-to-call button. Plain
+// text (alertBody) is still sent alongside as a fallback for text-only clients.
+function emergencyEmailHtml(o: {
+  category: string; patient: string; subjectLabel?: string; question: string;
+  famName: string; famPhone: string; location: string; hospital: string;
+  emgContact: string; medNotes: string; nowIST: string; queryId: string;
+}): string {
+  const esc = (s: string) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const telHref = (o.famPhone || "").replace(/[^\d+]/g, "");
+  const row = (label: string, val: string) =>
+    val
+      ? `<tr><td style="padding:9px 0;color:#8a8a8e;font-size:13px;width:130px;vertical-align:top">${esc(label)}</td><td style="padding:9px 0;color:#1d1d1f;font-size:15px;line-height:1.45">${esc(val)}</td></tr>`
+      : "";
+  return `<!doctype html><html><body style="margin:0;background:#f2f2f7;padding:24px 12px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+    <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,0.07)">
+      <tr><td style="background:#d70015;padding:20px 24px">
+        <div style="color:#ffffff;font-size:12px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;opacity:0.92">Emergency · Ask CloseEye</div>
+        <div style="color:#ffffff;font-size:22px;font-weight:700;margin-top:3px">${esc(o.category.replace(/_/g, " "))}</div>
+      </td></tr>
+      <tr><td style="padding:24px">
+        <div style="color:#8a8a8e;font-size:13px">Reported</div>
+        <div style="color:#1d1d1f;font-size:17px;line-height:1.5;margin-top:4px;font-weight:600">&ldquo;${esc(o.question)}&rdquo;</div>
+        ${telHref
+          ? `<a href="tel:${telHref}" style="display:block;margin-top:22px;background:#34c759;color:#ffffff;text-decoration:none;text-align:center;padding:16px;border-radius:12px;font-size:17px;font-weight:600">Call ${esc(o.famName || "the family")} now</a>
+        <div style="text-align:center;color:#8a8a8e;font-size:14px;margin-top:8px">${esc(o.famPhone)}</div>`
+          : `<div style="margin-top:18px;padding:14px;background:#fff2f2;border-radius:12px;color:#d70015;font-size:15px;font-weight:600;text-align:center">No phone number on file — open the console.</div>`}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px;border-top:1px solid #f2f2f7">
+          ${row("About", o.patient || o.subjectLabel || "")}
+          ${row("Location", o.location)}
+          ${row("Nearest hospital", o.hospital)}
+          ${row("Emergency contact", o.emgContact)}
+          ${row("Medical notes", o.medNotes)}
+        </table>
+      </td></tr>
+      <tr><td style="padding:16px 24px;background:#fafafa;border-top:1px solid #f2f2f7">
+        <div style="color:#8a8a8e;font-size:12px">${esc(o.nowIST)} · Ref ${esc(o.queryId)}</div>
+        <div style="color:#8a8a8e;font-size:12px;margin-top:2px">CloseEye Care — automated safety alert.</div>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+}
+
 // Build a fully-actionable alert (WHO / WHAT / WHERE + the number to CALL NOW) and
 // push it to the care team on every configured channel. Best-effort — never throws,
 // so it can never block the caller's response.
@@ -210,19 +255,25 @@ async function sendCareTeamAlert(
     }
   } catch (e) { console.error("[ask-health] care-team WhatsApp error (non-fatal):", e); }
 
-  // Email — reliable (no 24h window, no DLT). Fires when CARE_TEAM_EMAIL is set.
+  // Email — reliable (no 24h window). From a proper "CloseEye Care" sender (NOT the
+  // invoices@ address) with a clean Apple-style HTML layout; plain text kept as a
+  // fallback. Override the sender with CARE_ALERT_FROM_EMAIL if needed.
   try {
     const resendKey = Deno.env.get("RESEND_API_KEY");
-    const emailFrom = Deno.env.get("RESEND_FROM_EMAIL");
+    const emailFrom = Deno.env.get("CARE_ALERT_FROM_EMAIL") || "CloseEye Care <connect@closeeye.in>";
     const emailTo   = Deno.env.get("CARE_TEAM_EMAIL");
-    if (resendKey && emailFrom && emailTo) {
+    if (resendKey && emailTo) {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           from: emailFrom,
           to: emailTo.split(",").map((e: string) => e.trim()).filter(Boolean),
-          subject: `🚨 EMERGENCY — ${famName || "Family"}${patient ? ` · ${patient}` : ""}`,
+          subject: `🚨 Emergency — ${famName || "Family"}${patient ? ` · ${patient}` : ""}`,
+          html: emergencyEmailHtml({
+            category: opts.category, patient, subjectLabel: opts.subjectLabel, question: opts.question,
+            famName, famPhone, location, hospital, emgContact, medNotes, nowIST, queryId: opts.queryId,
+          }),
           text: alertBody,
         }),
       });
