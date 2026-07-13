@@ -329,15 +329,15 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
         <Avatar initials={initialsOf(lovedOne.full_name)} src={photo} alt={lovedOne.full_name} size="md" tone="solid" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-body font-semibold text-ink">{lovedOne.full_name}</p>
-          <p className="text-caption text-muted">{pm ? `${pm.firstName} · your Close Eye team` : 'Care conversation · Close Eye team'}</p>
+          <p className="truncate text-caption text-muted">{pm ? `${pm.firstName} · your Close Eye team` : 'Care conversation · Close Eye team'}</p>
         </div>
         <a
           href={whatsappLink(`Hi Close Eye — a quick note about ${lovedOne.full_name}.`)}
           target="_blank"
           rel="noreferrer"
-          className="shrink-0 text-caption font-semibold text-green hover:underline"
+          className="shrink-0 whitespace-nowrap text-caption font-semibold text-green hover:underline"
         >
-          Continue on WhatsApp
+          WhatsApp
         </a>
       </div>
 
