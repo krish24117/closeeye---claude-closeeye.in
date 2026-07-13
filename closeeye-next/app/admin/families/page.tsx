@@ -7,6 +7,12 @@ import { EmptyState, ErrorState } from '@/components/ui/states'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchAdminFamilies, type AdminFamily } from '@/lib/db/admin'
+import {
+  fetchPresenceManagers,
+  fetchFamilyManagerMap,
+  setFamilyManager,
+  type PresenceManagerLite,
+} from '@/lib/db/assignments'
 import { isSuperAdmin } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 
@@ -24,14 +30,42 @@ export default function AdminFamiliesPage() {
   const [error, setError] = React.useState(false)
   const [tab, setTab] = React.useState<Tab>('all')
   const [q, setQ] = React.useState('')
+  const [managers, setManagers] = React.useState<PresenceManagerLite[]>([])
+  const [managerMap, setManagerMap] = React.useState<Map<string, string>>(new Map())
+  const [saving, setSaving] = React.useState<string | null>(null)
 
   const load = React.useCallback(() => {
     if (!isAdmin) return
     setError(false)
     fetchAdminFamilies().then((x) => { setFamilies(x); setError(false) }).catch(() => { setFamilies(null); setError(true) })
+    fetchPresenceManagers().then(setManagers).catch(() => setManagers([]))
+    fetchFamilyManagerMap().then(setManagerMap).catch(() => setManagerMap(new Map()))
   }, [isAdmin])
 
   React.useEffect(() => { load() }, [load])
+
+  // Assign / reassign / clear a family's Presence Manager. Optimistic; reverts on failure.
+  const changePM = React.useCallback(async (familyUserId: string, newPmId: string | null) => {
+    const prev = managerMap.get(familyUserId) ?? null
+    if (prev === newPmId) return
+    setSaving(familyUserId)
+    setManagerMap((m) => {
+      const n = new Map(m)
+      if (newPmId) n.set(familyUserId, newPmId); else n.delete(familyUserId)
+      return n
+    })
+    try {
+      await setFamilyManager(familyUserId, newPmId, prev, profile?.id)
+    } catch {
+      setManagerMap((m) => {
+        const n = new Map(m)
+        if (prev) n.set(familyUserId, prev); else n.delete(familyUserId)
+        return n
+      })
+    } finally {
+      setSaving(null)
+    }
+  }, [managerMap, profile?.id])
 
   if (loading) return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
   if (!isAdmin) return <div className="flex flex-col gap-6"><h1 className="text-h2">Families</h1><EmptyState icon={Lock} title="Restricted" hint="Available to administrators only." /></div>
@@ -64,6 +98,12 @@ export default function AdminFamiliesPage() {
         </div>
       </div>
 
+      {families !== null && managers.length === 0 && (
+        <p className="rounded-lg border border-line bg-accent-soft/40 px-4 py-2.5 text-caption text-muted">
+          No Presence Managers yet — assignment stays disabled until you make a staff member a PM in <span className="font-semibold text-ink">Care Team</span>.
+        </p>
+      )}
+
       {error ? (
         <ErrorState title="Couldn’t load families" message="A connection error — please retry." onRetry={load} />
       ) : families === null ? (
@@ -74,9 +114,9 @@ export default function AdminFamiliesPage() {
         <section className="overflow-hidden rounded-lg border border-line bg-card shadow-sm">
           <div className="flex items-center gap-3 border-b border-line px-5 py-3 text-caption font-semibold uppercase tracking-wide text-muted">
             <span className="flex-1">Family</span>
-            <span className="hidden w-24 sm:block">Members</span>
-            <span className="hidden w-28 sm:block">Membership</span>
-            <span className="w-28 text-right">Joined</span>
+            <span className="w-40 sm:w-52">Presence Manager</span>
+            <span className="hidden w-24 md:block">Membership</span>
+            <span className="hidden w-24 text-right lg:block">Joined</span>
           </div>
           <ul className="divide-y divide-line">
             {list.map((f) => (
@@ -85,11 +125,25 @@ export default function AdminFamiliesPage() {
                   <Avatar initials={initialsOf(f.name)} size="sm" tone="solid" />
                   <span className="min-w-0"><span className="block truncate text-body-sm font-semibold text-ink">{f.name}</span>{f.city && <span className="block truncate text-caption text-muted">{f.city}</span>}</span>
                 </span>
-                <span className="hidden w-24 text-body-sm text-ink sm:block">{f.members}</span>
-                <span className="hidden w-28 sm:block">
+                <span className="flex w-40 items-center gap-1.5 sm:w-52">
+                  <select
+                    value={managerMap.get(f.userId) ?? ''}
+                    onChange={(e) => void changePM(f.userId, e.target.value || null)}
+                    disabled={saving === f.userId || managers.length === 0}
+                    aria-label={`Presence Manager for ${f.name}`}
+                    className="w-full rounded-lg border border-line bg-card px-2 py-1.5 text-caption text-ink focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20 disabled:opacity-60"
+                  >
+                    <option value="">Unassigned</option>
+                    {managers.map((m) => (
+                      <option key={m.id} value={m.id}>{m.full_name || 'Unnamed PM'}</option>
+                    ))}
+                  </select>
+                  {saving === f.userId && <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-green" strokeWidth={2} />}
+                </span>
+                <span className="hidden w-24 md:block">
                   <span className={cn('rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase', f.active ? 'bg-success/12 text-success' : 'bg-muted/12 text-muted')}>{f.active ? f.membership : '—'}</span>
                 </span>
-                <span className="w-28 text-right text-caption text-muted">{f.joined}</span>
+                <span className="hidden w-24 text-right text-caption text-muted lg:block">{f.joined}</span>
               </li>
             ))}
           </ul>

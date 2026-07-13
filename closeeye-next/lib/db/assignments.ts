@@ -55,3 +55,56 @@ export async function fetchManagerAssignments(presenceManagerId: string): Promis
   if (error) throw new Error(error.message)
   return (data as FamilyAssignment[] | null) ?? []
 }
+
+export interface PresenceManagerLite {
+  id: string
+  full_name: string | null
+}
+
+/** The staff users who are Presence Managers — the pool the admin assigns from. */
+export async function fetchPresenceManagers(): Promise<PresenceManagerLite[]> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .eq('admin_role', 'presence_manager')
+    .order('full_name', { ascending: true })
+  if (error) throw new Error(error.message)
+  return (data as PresenceManagerLite[] | null) ?? []
+}
+
+/**
+ * family_user_id → assigned presence_manager_id, for the admin families list.
+ * Our product model is one PM per family; if a family carries more than one row we
+ * keep the most recent. Super Admin RLS returns all rows.
+ */
+export async function fetchFamilyManagerMap(): Promise<Map<string, string>> {
+  const { data, error } = await supabase
+    .from('family_assignments')
+    .select('presence_manager_id, family_user_id, assigned_at')
+    .order('assigned_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  const map = new Map<string, string>()
+  for (const r of (data as { presence_manager_id: string; family_user_id: string }[] | null) ?? []) {
+    if (!map.has(r.family_user_id)) map.set(r.family_user_id, r.presence_manager_id) // first = most recent
+  }
+  return map
+}
+
+/**
+ * Set (or clear) a family's Presence Manager, keeping one-PM-per-family: unassign the
+ * previous PM (if different) then assign the new one. Pass newManagerId = null to clear.
+ * Super Admin only, per RLS.
+ */
+export async function setFamilyManager(
+  familyUserId: string,
+  newManagerId: string | null,
+  prevManagerId: string | null,
+  assignedBy?: string,
+): Promise<void> {
+  if (prevManagerId && prevManagerId !== newManagerId) {
+    await unassignFamilyFromManager(prevManagerId, familyUserId)
+  }
+  if (newManagerId && newManagerId !== prevManagerId) {
+    await assignFamilyToManager(newManagerId, familyUserId, assignedBy)
+  }
+}
