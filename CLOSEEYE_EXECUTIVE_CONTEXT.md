@@ -136,12 +136,20 @@ gate — never "it compiles."**
   lines), *not* 108. Tuned against harmful false positives: it routes to human judgment, never
   auto-accuses a family. Imminent physical danger (a baby being shaken *now*) is still an
   emergency.
-- **The release gate is the Red Flag Simulator.** Before the Safety Engine is enabled in
-  production, run 100 → 500 → 1000 simulated conversations, each Expected vs Actual → Pass/Fail.
-  **100% pass is required on the deterministic safety outputs** (red-flag catch, subject,
-  escalation, terminal state) — one missed life-threat = fail = no ship. AI-answer *quality* is
-  held to a high bar with human review — never a fake "100%" on a metric that can't be measured
-  deterministically.
+- **The release gate is the Trust Simulator.** We validate the whole customer journey, not the
+  AI in isolation. Every scenario checks eleven dimensions: intent · subject · risk · Safety
+  Engine · family context · LLM response · human escalation · operational routing · audit trail
+  · customer experience · **Trust Score**. Run 100 → 500 → 1000 scenarios spanning medical
+  *and* operational, platform, network, Guardian and Presence-Manager failures, missing
+  context, incomplete onboarding, free vs premium, known vs unknown members — across real
+  personas. **Two gates:** (1) **100% pass on the deterministic safety + routing outputs** —
+  one missed life-threat or misroute = no ship; (2) the **Trust Score** — did we answer,
+  reassure, avoid panic, avoid *false* reassurance, escalate appropriately, stay compassionate,
+  stay honest, and *would a real family trust us?* **A scenario that passes safety but fails the
+  Trust Score is a failed scenario** — a medically-correct-but-cold answer ("falls are common in
+  older adults") fails. Trust, not correctness and never "it compiles," is the release gate. The
+  product must also **fail gracefully** — a Guardian no-show, an LLM/DB outage, a failed push
+  must degrade honestly and offer a human path; graceful failure is itself trust.
 
 ## 7. The Family Graph — the long-term moat
 
