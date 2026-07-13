@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { detectRedFlag } from "./redflags.ts";
 import { answerService } from "./service.ts";
-import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
+import { sendWhatsAppTemplate, sendWhatsAppTemplateBySid, sendWhatsAppFreeText } from "../_shared/whatsapp.ts";
 import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 
 // Ask Close Eye — health guidance for families caring for elderly parents.
@@ -180,25 +180,31 @@ async function sendCareTeamAlert(
 
   let delivered = false;
 
-  // WhatsApp — real-time (needs an open 24h session for the recipient).
+  // WhatsApp — prefer an APPROVED TEMPLATE (delivers anytime, even outside a 24h
+  // session window); fall back to free-text (which only lands inside an open session)
+  // so nothing regresses before TWILIO_EMERGENCY_CONTENT_SID is configured. Both paths
+  // log to whatsapp_messages via the shared helpers.
   try {
-    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const authToken  = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const fromNum    = Deno.env.get("TWILIO_WHATSAPP_FROM");
-    const careTeam   = Deno.env.get("CARE_TEAM_WHATSAPP");
-    if (accountSid && authToken && fromNum && careTeam) {
+    const careTeam     = Deno.env.get("CARE_TEAM_WHATSAPP");
+    const emergencySid = Deno.env.get("TWILIO_EMERGENCY_CONTENT_SID");
+    if (careTeam) {
       const numbers = careTeam.split(",").map((n: string) => n.trim()).filter(Boolean);
+      // Positional template variables — order MUST match the approved template's {{1}}..{{5}}.
+      const tplVars = [
+        opts.category.toUpperCase().replace(/_/g, " "),                                  // {{1}} category
+        patient || opts.subjectLabel || "an elderly parent",                            // {{2}} who
+        opts.question.slice(0, 240),                                                     // {{3}} what they said
+        `${famName || "Family"}${famPhone ? ` ${famPhone}` : " (no phone on file)"}`,    // {{4}} who to call now
+        location || hospital || "Location not on file",                                  // {{5}} where
+      ];
       const waResults = await Promise.all(numbers.map(async (to) => {
-        const waTo = to.startsWith("whatsapp:") ? to : `whatsapp:${to.startsWith("+") ? to : "+" + to}`;
-        try {
-          const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
-            method: "POST",
-            headers: { Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`, "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({ From: fromNum, To: waTo, Body: alertBody }),
-          });
-          if (!res.ok) { console.error("[ask-health] care-team WhatsApp failed:", res.status, await res.text()); return false; }
-          return true;
-        } catch (e) { console.error("[ask-health] care-team WhatsApp send error:", e); return false; }
+        if (emergencySid) {
+          const r = await sendWhatsAppTemplateBySid({ to, sid: emergencySid, variables: tplVars, tag: "emergency_alert", sb });
+          if (r.success) return true;
+          // template send failed (e.g. not yet approved) — fall through to a free-text backstop
+        }
+        const f = await sendWhatsAppFreeText({ to, body: alertBody, sb, tag: "emergency_alert" });
+        return f.success;
       }));
       if (waResults.some(Boolean)) delivered = true;
     }
