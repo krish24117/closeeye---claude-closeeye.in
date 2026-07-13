@@ -83,6 +83,12 @@ red-flag set and which escalation apply (elder vs child vs adult vs self).
 
 ## 6a. Connect's operating spec — the four states and the Trust Test
 
+*This section is the **permanent operating specification for CloseEye Connect** and governs
+all future AI work on it. Any change to Connect's AI proceeds in a fixed, safety-first order —
+**① Product Law → ② Architecture review → ③ Safety Engine design → ④ Validation suite →
+⑤ UI-honesty audit → ⑥ incremental implementation** — and ships only behind a passing
+validation suite. Trust is the release gate, never "it compiles."*
+
 **Every request resolves into exactly ONE of four terminal states** (we never think "elderly
 support" vs "child support"):
 1. **Safe General Guidance** — evidence-based information; no profile needed.
