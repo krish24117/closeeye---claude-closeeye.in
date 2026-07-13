@@ -406,6 +406,20 @@ Deno.serve(async (req: Request) => {
       lovedOneId: body.loved_one_id, subjectLabel: body.subject_label, category: redFlag.category,
     });
 
+    // Record the incident (audit trail) and — ONLY when the alert actually delivered —
+    // mark it alerted so the sla-escalation cron doesn't fire a second, redundant alert.
+    // If it did NOT deliver, admin_alerted_at is left null so the cron backstops it.
+    // Best-effort: a persist failure must never block the escalation response.
+    try {
+      const ts = new Date().toISOString();
+      await sb.from("member_queries").update({
+        escalated_at:         ts,
+        escalation_category:  redFlag.category,
+        escalation_delivered: alert.delivered,
+        ...(alert.delivered ? { admin_alerted_at: ts, escalation_75_sent_at: ts } : {}),
+      }).eq("id", queryId);
+    } catch (e) { console.error("[ask-health] escalation persist failed (non-fatal):", e); }
+
     // Only claim the care team was alerted if a channel actually delivered.
     const careLine = alert.delivered
       ? "Our care team has been alerted and will follow up shortly."
@@ -481,6 +495,16 @@ Deno.serve(async (req: Request) => {
         userId: user.id, question, queryId,
         lovedOneId: body.loved_one_id, subjectLabel: body.subject_label, category: "ai_detected",
       });
+      // Same incident-persist + SLA de-dup as the deterministic red-flag path above.
+      try {
+        const ts = new Date().toISOString();
+        await sb.from("member_queries").update({
+          escalated_at:         ts,
+          escalation_category:  "ai_detected",
+          escalation_delivered: alert.delivered,
+          ...(alert.delivered ? { admin_alerted_at: ts, escalation_75_sent_at: ts } : {}),
+        }).eq("id", queryId);
+      } catch (e) { console.error("[ask-health] escalation persist failed (non-fatal):", e); }
       const careLine = alert.delivered
         ? "\n\n---\nOur care team has also been alerted and will follow up shortly."
         : `\n\n---\nWe could not reach our care team automatically — if you need us right now, please call ${SUPPORT_PHONE}.`;
