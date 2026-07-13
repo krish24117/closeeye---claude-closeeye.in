@@ -1,5 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { detectRedFlag } from "./redflags.ts";
+import { classifyCrisis } from "./safety-engine.ts";
+import { routeResources } from "./resource-router.ts";
+import { INDIA_RESOURCE_PACK } from "./resources.india.ts";
+import { detectSubject } from "./subject.ts";
 import { answerService } from "./service.ts";
 import { sendWhatsAppTemplate, sendWhatsAppTemplateBySid, sendWhatsAppFreeText } from "../_shared/whatsapp.ts";
 import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
@@ -8,7 +11,7 @@ import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 // Restricted to: elderly health, wellbeing, medication, elder-care topics, Close Eye services.
 // Monthly cap: 5 questions per user (free tier only). Founding/paying members are exempt.
 // Burst cap: 3/min for free users, 10/min for exempt users — prevents Claude API abuse.
-// Emergencies detected by detectRedFlag() bypass the cap entirely and never reach Claude.
+// Crises detected by classifyCrisis() bypass the cap entirely and never reach Claude.
 // Every response appends a standard disclaimer.
 
 const MONTHLY_LIMIT = 5;
@@ -350,7 +353,7 @@ Deno.serve(async (req: Request) => {
 
   // ── Red-flag check — runs BEFORE cap and BEFORE any model call.
   //    Emergencies bypass the monthly cap entirely — a safety question is never blocked.
-  const redFlag = detectRedFlag(question);
+  const crisis = classifyCrisis(question);
 
   const sb = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -366,7 +369,7 @@ Deno.serve(async (req: Request) => {
   const isExempt = !!memberProf?.is_founding_member;
 
   // ── Rate limits — first turns only, non-emergency only ───────────────────
-  if (!redFlag.matched && !isFollowUp) {
+  if (!crisis && !isFollowUp) {
     // Monthly cap — free-tier users only
     if (!isExempt) {
       const now          = new Date();
@@ -412,7 +415,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // ── Out-of-scope boundary ─────────────────────────────────────────────────
-  if (!redFlag.matched && !isFollowUp) {
+  if (!crisis && !isFollowUp) {
     // A child, a spouse or a friend is NOT out of scope — those flow to guidance below.
     // Only genuinely non-wellbeing topics (sports, finance, legal) are declined here.
     if (looksOffTopic(question)) {
@@ -446,7 +449,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // ── Service routing ───────────────────────────────────────────────────────
-  if (!redFlag.matched && !isFollowUp && isServiceQuestion(question)) {
+  if (!crisis && !isFollowUp && isServiceQuestion(question)) {
     const emptyCtx = {
       parentId: user.id, parentName: "", age: undefined,
       conditions: [], medications: [], recentVitals: [],
@@ -466,38 +469,73 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // ── Red-flag escalation ───────────────────────────────────────────────────
-  if (redFlag.matched) {
-    console.log(`[ask-health] escalation: category=${redFlag.category} query_id=${queryId}`);
+  // ── Crisis escalation — routed by lane (medical / mental-health / safeguarding) ──
+  if (crisis) {
+    console.log(`[ask-health] escalation: category=${crisis.category} query_id=${queryId}`);
     const alert = await sendCareTeamAlert(sb, {
       userId: user.id, question, queryId,
-      lovedOneId: body.loved_one_id, subjectLabel: body.subject_label, category: redFlag.category,
+      lovedOneId: body.loved_one_id, subjectLabel: body.subject_label, category: crisis.category,
     });
 
-    // Record the incident (audit trail) and — ONLY when the alert actually delivered —
-    // mark it alerted so the sla-escalation cron doesn't fire a second, redundant alert.
-    // If it did NOT deliver, admin_alerted_at is left null so the cron backstops it.
-    // Best-effort: a persist failure must never block the escalation response.
+    // Record the incident (audit trail) and — ONLY when the alert actually delivered — mark
+    // it alerted so the sla-escalation cron doesn't double-alert. Best-effort.
     try {
       const ts = new Date().toISOString();
       await sb.from("member_queries").update({
         escalated_at:         ts,
-        escalation_category:  redFlag.category,
+        escalation_category:  crisis.category,
         escalation_delivered: alert.delivered,
         ...(alert.delivered ? { admin_alerted_at: ts, escalation_75_sent_at: ts } : {}),
       }).eq("id", queryId);
     } catch (e) { console.error("[ask-health] escalation persist failed (non-fatal):", e); }
 
-    // Only claim the care team was alerted if a channel actually delivered.
+    // Resources come from the regional pack — NO numbers live in the Safety Engine.
+    const routed  = routeResources(crisis.action, crisis.category, INDIA_RESOURCE_PACK);
+    const line    = routed.primary && routed.primary.number ? routed.primary : null;
+    const lineTxt = line ? `**${line.label} — ${line.number}**` : "";
+
+    // Subject-honest follow-up: CloseEye's Guardians/PMs serve ELDERS, so only imply a
+    // visit-style follow-up for an elder (or unspecified). For a child/adult/self, be honest
+    // — a human is alerted, but we never imply a visit we don't provide.
+    const subject = detectSubject(question).subject;
+    const teamCanFollowUp = subject === "elder" || subject === "unspecified";
     const careLine = alert.delivered
-      ? "Our care team has been alerted and will follow up shortly."
-      : `We could not reach our care team automatically — please also call us now on ${SUPPORT_PHONE}. Do not wait.`;
+      ? (teamCanFollowUp
+          ? "I've let your CloseEye care team know so someone can follow up."
+          : "I've alerted a member of the CloseEye team.")
+      : `I could not reach our team automatically — you can also reach us on ${SUPPORT_PHONE}.`;
+
+    let message: string;
+    if (crisis.category === "medical_emergency") {
+      message =
+        `**Call ${AMBULANCE_NUMBER} now.** This sounds like a medical emergency — please don't wait.\n\n` +
+        `Call **${AMBULANCE_NUMBER}** (ambulance) or go to the nearest emergency room immediately. Stay on the line with the dispatcher until help arrives.\n\n${careLine}`;
+    } else if (crisis.category === "mental_health_crisis") {
+      // TODO(clinical): review the exact crisis wording with the medical team before launch.
+      message =
+        `I'm really glad you told me — you don't have to carry this alone.` +
+        (lineTxt ? ` Please reach ${lineTxt} — they listen, any time, day or night.` : "") +
+        `\n\n${careLine}\n\nIf you might act on these thoughts right now, please call ${AMBULANCE_NUMBER}.`;
+    } else {
+      // safeguarding_child / safeguarding_adult — support, never accusation.
+      // TODO(safeguarding): review wording + any reporting duties with the safeguarding lead.
+      message =
+        `Thank you for telling me — you are not alone, and there is help.` +
+        (lineTxt ? ` ${lineTxt} can support you, without judgement.` : "") +
+        `\n\n${careLine}\n\nIf anyone is in danger right now, call ${AMBULANCE_NUMBER}.`;
+    }
 
     return json({
       query_id: queryId,
       lane:     "escalate",
-      message:  `**Call ${AMBULANCE_NUMBER} now.** This sounds like a medical emergency — please don't wait.\n\nCall **${AMBULANCE_NUMBER}** (ambulance) or take them to the nearest emergency room immediately. Stay on the line with the dispatcher — they will guide you until help arrives.\n\n${careLine}`,
-      escalation: { ambulanceNumber: AMBULANCE_NUMBER, careTeamAlerted: alert.delivered },
+      message,
+      escalation: {
+        category:        crisis.category,
+        action:          crisis.action,
+        ambulanceNumber: crisis.category === "medical_emergency" ? AMBULANCE_NUMBER : undefined,
+        helpline:        line ? { label: line.label, number: line.number } : undefined,
+        careTeamAlerted: alert.delivered,
+      },
     });
   }
 
