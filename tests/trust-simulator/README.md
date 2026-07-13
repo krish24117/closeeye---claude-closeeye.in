@@ -62,3 +62,18 @@ Honest TDD: the suite exists *before* the Safety Engine, and its gaps are the Ph
   judge** (needs live responses).
 - Build is green because only the regression invariants are asserted. **The safety gate is
   reported as NOT MET until Phase 6 closes the worklist to zero.**
+
+### At scale (`generator.ts` → 100 / 500 / 1000)
+
+The universal life-threats × every subject prove **"intent before age"** — the same emergency
+fires for a newborn, a child, a spouse or a father:
+
+| N | emergencies firing | false positives |
+|---|---|---|
+| 100 | ~90% | **0** |
+| 500 | ~90% | **0** |
+| 1000 | ~91% | **0** |
+
+**Zero false positives at 1,000** — the engine never over-fires on a calm question, at any
+volume (the hard regression gate). The ~10% shortfall is the battery/poison detection the
+Phase-6 engine adds; 100% emergency coverage is the reported Phase-6 target.

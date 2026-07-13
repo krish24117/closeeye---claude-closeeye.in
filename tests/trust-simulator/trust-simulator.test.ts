@@ -15,6 +15,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { detectRedFlag } from '../../supabase/functions/ask-health/redflags.ts'
 import { SCENARIOS } from './scenarios.ts'
+import { expand } from './generator.ts'
 
 const strip = (s) => s.replace(/^\[[A-Z_]+\]\s*/, '')
 const UTTERANCE = new Set(['medical', 'safeguarding', 'context', 'onboarding', 'platform-failure'])
@@ -92,3 +93,23 @@ test('every scenario is well-formed (schema guard for the growing suite)', () =>
     assert.ok(sc.expect, `${sc.id}: missing expect block`)
   }
 })
+
+// ── At scale: 100 → 500 → 1000 — the universal life-threats across every subject ──
+// Proves "intent before age": the same life-threat fires whether it's a newborn, a child,
+// a spouse or a father. 100% emergency coverage is the Phase-6 gate (reported); the hard
+// regression here is that the engine NEVER over-fires on a calm question, at any volume.
+for (const N of [100, 500, 1000]) {
+  test(`Trust Simulator at scale — N=${N}`, () => {
+    const gen = expand(N)
+    let emerg = 0, caught = 0, benign = 0, fp = 0
+    const fpEx = new Set()
+    for (const sc of gen) {
+      const fired = detectRedFlag(strip(sc.input)).matched
+      if (sc.expect.redFlag) { emerg++; if (fired) caught++ }
+      else { benign++; if (fired) { fp++; if (fpEx.size < 8) fpEx.add(sc.input) } }
+    }
+    const pct = emerg ? Math.round((caught / emerg) * 100) : 0
+    console.log(`  N=${String(N).padStart(4)} · emergencies ${caught}/${emerg} fire (${pct}%) · benign ${benign} clean · false-positive ${fp}`)
+    assert.equal(fp, 0, `false positives at N=${N} (the engine must never over-fire on calm questions):\n${[...fpEx].join('\n')}`)
+  })
+}
