@@ -234,6 +234,73 @@ export async function fetchConsoleEscalations(): Promise<ConsoleTriageItem[]> {
   return deriveTriage(mapFamilies(await loadCaseload()))
 }
 
+// ── Active incidents (Escalation Matrix, Phase 1) ───────────────────────────
+export interface ActiveIncident {
+  id: string
+  lovedOneId: string | null
+  memberName: string
+  question: string
+  category: string | null
+  escalatedAt: string
+  delivered: boolean | null
+  acknowledgedAt: string | null
+}
+
+interface IncidentRow {
+  id: string
+  loved_one_id: string | null
+  question: string
+  escalation_category: string | null
+  escalated_at: string
+  escalation_delivered: boolean | null
+  acknowledged_at: string | null
+}
+
+/**
+ * Open red-flag incidents (escalated, not yet resolved) for the caller's families.
+ * Scoped like the rest of the console: loved_ones RLS returns only manageable families,
+ * and member_queries is filtered to those ids. Newest first.
+ */
+export async function fetchActiveIncidents(): Promise<ActiveIncident[]> {
+  const { data: loData } = await supabase.from('loved_ones').select('id, full_name')
+  const los = (loData as { id: string; full_name: string }[] | null) ?? []
+  if (los.length === 0) return []
+  const nameById = new Map(los.map((l) => [l.id, l.full_name]))
+  const ids = los.map((l) => l.id)
+
+  const { data, error } = await supabase
+    .from('member_queries')
+    .select('id, loved_one_id, question, escalation_category, escalated_at, escalation_delivered, acknowledged_at')
+    .in('loved_one_id', ids)
+    .not('escalated_at', 'is', null)
+    .is('resolved_at', null)
+    .order('escalated_at', { ascending: false })
+  if (error) throw new Error(error.message)
+
+  return ((data as IncidentRow[] | null) ?? []).map((r) => ({
+    id: r.id,
+    lovedOneId: r.loved_one_id,
+    memberName: (r.loved_one_id ? nameById.get(r.loved_one_id) : null) ?? 'A family member',
+    question: r.question,
+    category: r.escalation_category,
+    escalatedAt: r.escalated_at,
+    delivered: r.escalation_delivered,
+    acknowledgedAt: r.acknowledged_at,
+  }))
+}
+
+/** Take ownership of an incident — "I've got this." Assigned PM or admin only (RPC-gated). */
+export async function acknowledgeIncident(queryId: string): Promise<void> {
+  const { error } = await supabase.rpc('acknowledge_incident', { p_query_id: queryId })
+  if (error) throw new Error(error.message)
+}
+
+/** Mark an incident handled — it leaves the active queue. Assigned PM or admin only. */
+export async function resolveIncident(queryId: string): Promise<void> {
+  const { error } = await supabase.rpc('resolve_incident', { p_query_id: queryId })
+  if (error) throw new Error(error.message)
+}
+
 /** Today's Presence visits (incl. cancelled) — used by the live monitor. */
 export async function fetchConsoleVisits(): Promise<ConsoleScheduleItem[]> {
   const data = await loadCaseload()
