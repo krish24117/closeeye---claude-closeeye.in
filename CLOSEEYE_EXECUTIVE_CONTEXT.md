@@ -118,6 +118,31 @@ scenarios, every subject and risk level) passes on: subject · intent · risk ·
 result · response quality · personalization · escalation · Trust Test. **Trust is the release
 gate — never "it compiles."**
 
+## 6b. The Safety Engine — product law
+
+- **It is a product capability, not an AI capability.** Every entry point — chat, the future
+  voice interface (SIA), WhatsApp, any future API — passes through the *exact same* Safety
+  Engine, as one shared module. No channel ever reimplements safety. The trust promise is
+  identical everywhere CloseEye appears.
+- **Life-Threatening Red Flags** — one module, with subsets: *Children · Adults · Elderly ·
+  Pregnancy · Mental Health · Trauma · Poison · Safeguarding*. Pediatric is one subset, not the
+  whole. **Intent before age:** the universal life-threat set fires *subject-independently*
+  ("swallowed a battery" is an emergency for a son or a father alike). Subject Detection *adds*
+  subject-specific flags and *selects the honest escalation* — it never gates the universal
+  set. Doubt always widens the net, never narrows it.
+- **Safeguarding is its own lane, not the medical lane.** Abuse, violence, a shaken baby,
+  neglect, an unsafe home, a suicidal parent affecting a child — **detect, never try to solve,
+  escalate to a human** and the right helpline (India: Childline 1098, and the relevant crisis
+  lines), *not* 108. Tuned against harmful false positives: it routes to human judgment, never
+  auto-accuses a family. Imminent physical danger (a baby being shaken *now*) is still an
+  emergency.
+- **The release gate is the Red Flag Simulator.** Before the Safety Engine is enabled in
+  production, run 100 → 500 → 1000 simulated conversations, each Expected vs Actual → Pass/Fail.
+  **100% pass is required on the deterministic safety outputs** (red-flag catch, subject,
+  escalation, terminal state) — one missed life-threat = fail = no ship. AI-answer *quality* is
+  held to a high bar with human review — never a fake "100%" on a metric that can't be measured
+  deterministically.
+
 ## 7. The Family Graph — the long-term moat
 
 Think beyond conversations. CloseEye owns the **Family Graph**. Every recommendation should
