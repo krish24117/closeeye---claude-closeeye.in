@@ -16,6 +16,7 @@ import assert from 'node:assert/strict'
 import { detectRedFlag } from '../../supabase/functions/ask-health/redflags.ts'
 import { SCENARIOS } from './scenarios.ts'
 import { expand } from './generator.ts'
+import { classifyCrisis } from '../../supabase/functions/ask-health/safety-engine.ts'
 
 const strip = (s) => s.replace(/^\[[A-Z_]+\]\s*/, '')
 const UTTERANCE = new Set(['medical', 'safeguarding', 'context', 'onboarding', 'platform-failure'])
@@ -27,7 +28,7 @@ test('Trust Simulator — deterministic safety report (honest gate status)', () 
   for (const sc of SCENARIOS) {
     if (!UTTERANCE.has(sc.category)) continue
     if (sc.expect.redFlag === undefined) continue
-    const fired = detectRedFlag(strip(sc.input)).matched
+    const fired = classifyCrisis(strip(sc.input)) !== null
     if (sc.expect.redFlag) {
       emergencies++
       ;(fired ? caught : gap).push(`${sc.id}  "${sc.input}"`)
@@ -104,7 +105,7 @@ for (const N of [100, 500, 1000]) {
     let emerg = 0, caught = 0, benign = 0, fp = 0
     const fpEx = new Set()
     for (const sc of gen) {
-      const fired = detectRedFlag(strip(sc.input)).matched
+      const fired = classifyCrisis(strip(sc.input)) !== null
       if (sc.expect.redFlag) { emerg++; if (fired) caught++ }
       else { benign++; if (fired) { fp++; if (fpEx.size < 8) fpEx.add(sc.input) } }
     }
