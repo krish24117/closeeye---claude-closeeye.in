@@ -14,10 +14,12 @@
 //      there is no user — this is the free public hook.
 
 import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
-// Single source of truth for the emergency safety floor — the SAME module the authed
-// engine uses, so the two can never drift again (that drift is what let "not breathing"
-// slip past this public endpoint).
-import { detectRedFlag } from "../ask-health/redflags.ts";
+// Single source of truth — the SAME Safety Engine the authed path uses, so the two can never
+// drift again (that drift is what let "not breathing" slip past this public endpoint). The
+// engine returns category/severity/action; the router maps action -> India resources.
+import { classifyCrisis } from "../ask-health/safety-engine.ts";
+import { routeResources } from "../ask-health/resource-router.ts";
+import { INDIA_RESOURCE_PACK } from "../ask-health/resources.india.ts";
 
 const AMBULANCE_NUMBER = Deno.env.get("CLOSEEYE_AMBULANCE_NUMBER") ?? "108";
 
@@ -222,14 +224,15 @@ async function generateGeneralAnswer(question: string): Promise<string> {
     body: JSON.stringify({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 280,
-      system: `You are Ask Close Eye, a warm and knowledgeable health advisor for families with elderly parents in India. Give caring, practical guidance.
+      system: `You are Ask Close Eye, a warm and knowledgeable wellbeing advisor for families in India — caring for elderly parents, a spouse, a child or new baby, or themselves. Give caring, practical general guidance for ANY family member.
 
 Rules:
 - 2-4 sentences. Lead with the most useful thing.
-- Warm but direct — NRI families need clarity.
-- General guidance only (you don't know this family's specific parent).
+- Warm but direct.
+- General guidance only (you don't know this family's specific member).
+- For a child, infant, or pregnancy, include the warning signs that mean "see a doctor now" — a parent may not know them.
 - Be honest: say when a doctor is needed, not just "consult a doctor" every time.
-- Never diagnose. End with one gentle prompt toward professional care if relevant.
+- Never diagnose. Never turn a worried family member away because of who they ask about.
 - Don't mention you are an AI.`,
       messages: [{ role: "user", content: question }],
     }),
@@ -264,13 +267,28 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (!question) return json({ error: "question is required" }, 400);
   if (question.length > 800) return json({ error: "Question too long (max 800 chars)" }, 400);
 
-  // Safety floor — never gated, never paywalled
-  const flag = detectRedFlag(question);
-  if (flag.matched) {
+  // Safety floor — never gated, never paywalled. Same Safety Engine as the authed path,
+  // routed by lane: medical -> 108; mental-health/safeguarding -> the helpline lane.
+  const crisis = classifyCrisis(question);
+  if (crisis) {
+    const routed  = routeResources(crisis.action, crisis.category, INDIA_RESOURCE_PACK);
+    const line    = routed.primary && routed.primary.number ? routed.primary : null;
+    const lineTxt = line ? `**${line.label} — ${line.number}**` : "";
+    let message: string;
+    if (crisis.category === "medical_emergency") {
+      message = `This sounds like it needs urgent help right now. Please call **${AMBULANCE_NUMBER}** (ambulance) immediately, or go to the nearest emergency room. Don't wait to see if it passes.`;
+    } else if (crisis.category === "mental_health_crisis") {
+      // TODO(clinical): review crisis wording with the medical team before launch.
+      message = `I'm really glad you reached out — you don't have to carry this alone.${lineTxt ? ` Please reach ${lineTxt} — they listen, any time, day or night.` : ""}\n\nIf you might act on these thoughts right now, please call ${AMBULANCE_NUMBER}.`;
+    } else {
+      // TODO(safeguarding): review wording + reporting duties with the safeguarding lead.
+      message = `Thank you for telling me — you are not alone, and there is help.${lineTxt ? ` ${lineTxt} can support you, without judgement.` : ""}\n\nIf anyone is in danger right now, please call ${AMBULANCE_NUMBER}.`;
+    }
     return json({
       lane: "escalate",
-      message: `This sounds like it needs urgent help right now. Please call **${AMBULANCE_NUMBER}** (ambulance) immediately. Don't wait to see if it passes — go to the nearest hospital emergency department now.`,
-      ambulanceNumber: AMBULANCE_NUMBER,
+      message,
+      ambulanceNumber: crisis.category === "medical_emergency" ? AMBULANCE_NUMBER : undefined,
+      helpline: line ? { label: line.label, number: line.number } : undefined,
       disclaimer: "This is not a diagnosis. In any emergency, call professional help immediately.",
       requiresHuman: true,
     });
@@ -294,7 +312,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     message = await generateGeneralAnswer(question);
     if (!message) throw new Error("empty response");
   } catch {
-    message = "That's a caring question. Our medical team would be happy to give you a personalised answer — register your parent for free to ask directly and get guidance specific to their health history.";
+    message = "That's a caring question. Our team would be happy to give you a personalised answer — register your family for free to ask directly and get guidance specific to their history.";
   }
 
   return json({
@@ -302,6 +320,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
     message,
     disclaimer: "General guidance from Ask Close Eye, guided by our medical team. Not a substitute for professional medical advice.",
     requiresHuman: false,
-    nudge: "Want answers specific to your parent — their conditions, medicines, and history? Register to unlock personalised Ask Close Eye.",
+    nudge: "Want answers specific to your family member — their conditions, medicines, and history? Register to unlock personalised Ask Close Eye.",
   });
 });
