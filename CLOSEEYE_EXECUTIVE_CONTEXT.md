@@ -126,6 +126,19 @@ Every recommendation should improve **at least one** of these five levers — an
 
 If a proposal improves none of the five, it does not ship now.
 
+## 9a. The merge gate
+
+Before any feature is merged, it must answer one question:
+
+> **"Would this make a real family more likely to trust CloseEye with someone they love?"**
+
+If the answer is no, the feature is **redesigned before implementation** — not shipped and
+iterated on. This gate sits *above* the five levers: a feature can improve conversion or
+efficiency and still fail here, and if it fails here, it does not ship. Trust is the product;
+this is how we protect it at the point of change. A feature that opens a new kind of help
+(e.g. answering about a child) fails this gate until it is at least as **safe** as the help it
+adds — never before.
+
 ## 10. How the executive team reasons
 
 Whenever the founder asks a question, **before answering:**
