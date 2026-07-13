@@ -440,6 +440,54 @@ Deno.serve(async (req: Request) => {
     return json({ query_id: queryId, ai_answer: null, pending: true });
   }
 
+  // ── Server-trusted patient context ────────────────────────────────────────
+  // Fetched HERE with the service role, so the model always has the family member's
+  // brief regardless of what the client sends. Additive — a thin or tampered client can
+  // no longer starve the AI of context. First turns only (follow-ups carry their thread).
+  let patientContext = "";
+  if (!isFollowUp && body.loved_one_id) {
+    try {
+      const [{ data: lo }, { data: ep }] = await Promise.all([
+        sb.from("loved_ones")
+          .select("full_name, relationship, age, city")
+          .eq("id", body.loved_one_id).maybeSingle(),
+        sb.from("elder_profiles")
+          .select("medical_conditions, allergies, current_medications, things_to_avoid, daily_routine, conversation_interests, food_preferences, language, important_dates, pinned_note")
+          .eq("loved_one_id", body.loved_one_id).maybeSingle(),
+      ]);
+      if (lo) {
+        const who: string[] = [];
+        if (lo.relationship) who.push(`the family's ${String(lo.relationship).toLowerCase()}`);
+        if (lo.age) who.push(`age ${lo.age}`);
+        if (lo.city) who.push(String(lo.city));
+        const bits: string[] = [];
+        const add = (label: string, v: unknown) => {
+          const s = (v == null ? "" : String(v)).trim();
+          if (s) bits.push(`${label}: ${s}`);
+        };
+        add("Health conditions", ep?.medical_conditions);
+        add("Allergies", ep?.allergies);
+        if (Array.isArray(ep?.current_medications) && ep!.current_medications.length) {
+          bits.push(`Medications: ${ep!.current_medications.join(", ")}`);
+        }
+        add("Things to avoid", ep?.things_to_avoid);
+        add("Daily routine", ep?.daily_routine);
+        add("Loves talking about", ep?.conversation_interests);
+        add("Food & drink they like", ep?.food_preferences);
+        add("Most comfortable speaking", ep?.language);
+        add("Important dates", ep?.important_dates);
+        add("A note the family wants kept in mind", ep?.pinned_note);
+        const whoStr = who.length ? ` (${who.join(", ")})` : "";
+        patientContext =
+          `\n\nPATIENT CONTEXT — background about ${String(lo.full_name || "this family member")}${whoStr}, ` +
+          `so you can answer personally and warmly for this family. ${bits.join(". ")}${bits.length ? "." : ""} ` +
+          `Use what is relevant; weave it in naturally, never restate it mechanically.`;
+      }
+    } catch (e) {
+      console.error("[ask-health] patient context fetch failed (non-fatal):", e);
+    }
+  }
+
   const userContent = body.subject_label
     ? `About: ${body.subject_label}\n\nQuestion: ${question}`
     : question;
@@ -459,7 +507,7 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         model:      "claude-haiku-4-5-20251001",
         max_tokens: 400,
-        system:     SYSTEM_PROMPT,
+        system:     SYSTEM_PROMPT + patientContext,
         messages:   claudeMessages,
       }),
     });
