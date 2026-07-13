@@ -9,12 +9,11 @@ import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 
 // Ask Close Eye — health guidance for families caring for elderly parents.
 // Restricted to: elderly health, wellbeing, medication, elder-care topics, Close Eye services.
-// Monthly cap: 5 questions per user (free tier only). Founding/paying members are exempt.
+// No monthly question cap — Ask CloseEye is free to use. Only a per-minute burst cap remains.
 // Burst cap: 3/min for free users, 10/min for exempt users — prevents Claude API abuse.
 // Crises detected by classifyCrisis() bypass the cap entirely and never reach Claude.
 // Every response appends a standard disclaimer.
 
-const MONTHLY_LIMIT = 5;
 // Max first-turn questions per 60-second window (burst abuse prevention)
 const BURST_LIMIT_FREE   = 3;
 const BURST_LIMIT_EXEMPT = 10;
@@ -369,25 +368,9 @@ Deno.serve(async (req: Request) => {
   const isExempt = !!memberProf?.is_founding_member;
 
   // ── Rate limits — first turns only, non-emergency only ───────────────────
+  // Ask CloseEye is free to use — no monthly question cap. A per-minute burst cap remains,
+  // purely to protect the model API from a runaway or automated client.
   if (!crisis && !isFollowUp) {
-    // Monthly cap — free-tier users only
-    if (!isExempt) {
-      const now          = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const { count: monthCount } = await sb
-        .from("member_queries")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .gte("created_at", startOfMonth);
-
-      if ((monthCount ?? 0) >= MONTHLY_LIMIT) {
-        return json({
-          error:   "monthly_limit_reached",
-          message: "You've used your 5 free questions this month. They refresh on the 1st. For urgent health concerns, please contact a doctor or call 108.",
-        }, 429);
-      }
-    }
-
     // Burst cap — protects Claude API from rapid automated requests
     const burstLimit  = isExempt ? BURST_LIMIT_EXEMPT : BURST_LIMIT_FREE;
     const burstSince  = new Date(Date.now() - 60_000).toISOString();
