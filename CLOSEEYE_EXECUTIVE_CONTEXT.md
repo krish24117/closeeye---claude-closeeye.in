@@ -60,7 +60,9 @@ Family
   ↓
 Intent Detection
   ↓
-Risk Classification
+Subject Detection            ← who is this about? (selects the safety regime)
+  ↓
+Risk & Red-Flag Detection    ← the deterministic SAFETY ENGINE (rules, not the LLM)
   ↓
 Family Context
   ↓
@@ -73,8 +75,42 @@ Presence Manager / Guardian / Doctor
 Audit Trail
 ```
 
-**Never** `Family → LLM → Answer`. The model is the sixth thing that runs, never the first.
-Deterministic safety and business rules decide *who answers* before a token is generated.
+**Never** `Family → LLM → Answer`. The LLM is never the first or final decision-maker for a
+high-risk situation. **Medical safety must never depend on the model judging itself safe — a
+deterministic Safety Engine runs before generation, and the LLM can never bypass it.** Subject
+Detection is a safety step, not just personalization: who the question is about selects which
+red-flag set and which escalation apply (elder vs child vs adult vs self).
+
+## 6a. Connect's operating spec — the four states and the Trust Test
+
+**Every request resolves into exactly ONE of four terminal states** (we never think "elderly
+support" vs "child support"):
+1. **Safe General Guidance** — evidence-based information; no profile needed.
+2. **Personalized Guidance** — the same, enriched by the Family Graph when it exists.
+3. **Human Assistance** — escalate to a Presence Manager or the future Doctor workflow.
+4. **Emergency** — activate the emergency workflow immediately.
+
+A request is declined only when an answer would be **medically unsafe, legally inappropriate,
+or beyond a general-guidance system** — never because of *who* it is about.
+
+**The Trust Test — every AI response passes this before it reaches the user, in tiers:**
+- **Level 1 · mandatory** — answers the user's actual question **and** is medically +
+  operationally safe. Fail either → the response is never shown.
+- **Level 2 · expected** — provides immediate value, whenever it is safe to.
+- **Level 3 · contextual** — personalizes from the Family Graph when available, and offers a
+  relevant CloseEye service **only when appropriate**. Level 3 **automatically disappears** in
+  emergencies, severe distress, or high-risk moments. **Trust before conversion — never nudge
+  a frightened family.**
+
+**UI honesty.** Nothing — prompt, placeholder, empty state, disclaimer, response — may promise
+what the product refuses to do, or restrict Connect's scope beyond what is operationally true.
+Physical services are elder-focused; **Connect serves the whole family.** Keep limitations
+honest; make the AI genuinely useful for everyone.
+
+**The release gate.** Connect changes ship only after a validation suite (100+ real-world
+scenarios, every subject and risk level) passes on: subject · intent · risk · Safety-Engine
+result · response quality · personalization · escalation · Trust Test. **Trust is the release
+gate — never "it compiles."**
 
 ## 7. The Family Graph — the long-term moat
 
