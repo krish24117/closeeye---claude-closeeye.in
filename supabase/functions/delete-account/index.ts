@@ -8,11 +8,12 @@ import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 //   2. Deletes the family's owned data (best-effort per table; cascades handle
 //      most child rows). booking_requests + leads are SET-NULL FKs, so their PII
 //      rows must be deleted explicitly here.
-//   3. Scrubs any residual PII from the profiles row.
-//   4. Removes the identity: tries a hard auth-user delete; if a foreign-key
-//      blocks it, falls back to BANNING the user (they can never sign in again).
-// Returns ok:true only when the account is genuinely closed (hard-deleted OR
-// banned). The client shows success only on ok:true, and an honest error otherwise.
+//   3. Deletes the profiles row (so the hard delete leaves no orphan).
+//   4. Removes the identity: a hard auth-user delete — the blocking FKs are now SET NULL, so
+//      it succeeds and FREES the email for a clean re-registration. A 100-year ban remains
+//      only as a last-resort fallback. The deleted email is recorded so a return visit is
+//      greeted "welcome back", not treated as a stranger.
+// Returns ok:true only when the account is genuinely closed. Client shows success on ok:true.
 
 function razorpayAuth(): string {
   return `Basic ${btoa(`${Deno.env.get("RAZORPAY_KEY_ID")}:${Deno.env.get("RAZORPAY_KEY_SECRET")}`)}`;
@@ -44,6 +45,11 @@ Deno.serve(async (req: Request) => {
   const uid = user.id;
 
   const sb = createClient(supabaseUrl, supabaseServiceKey);
+
+  // 0) Remember this email so a return visit is greeted "welcome back", not treated as new.
+  try {
+    if (user.email) await sb.from("deleted_accounts").upsert({ email: user.email.toLowerCase() }, { onConflict: "email" });
+  } catch (e) { console.error("[delete-account] deleted_accounts record failed (non-fatal):", e); }
 
   // 1) Stop billing — cancel any live Razorpay subscription immediately.
   try {
@@ -84,16 +90,16 @@ Deno.serve(async (req: Request) => {
   await purge("family_members", "family_user_id");
   await purge("memberships", "user_id");
   await purge("subscriptions", "user_id");
+  await purge("bookings", "family_user_id");        // cascades booking_status_history
   await purge("loved_ones", "family_user_id");
 
-  // 3) Scrub residual PII from the profiles row (guaranteed columns first, then
-  //    optional ones best-effort so an absent column can't skip the core scrub).
+  // 3) Delete the profiles row outright (was: scrub) so the hard auth delete leaves no orphan
+  //    and the email re-registers cleanly.
   try {
-    await sb.from("profiles").update({ full_name: "Deleted account", phone: null, whatsapp_number: null }).eq("id", uid);
+    await sb.from("profiles").delete().eq("id", uid);
   } catch (e) {
-    console.error("[delete-account] profile scrub error:", e);
+    console.error("[delete-account] profile delete error:", e);
   }
-  try { await sb.from("profiles").update({ address: null }).eq("id", uid); } catch (_e) { /* column may not exist */ }
 
   // 4) Remove the identity. Try a hard delete; if an FK blocks it, ban instead so
   //    the person can never sign in again (proper deactivation).
