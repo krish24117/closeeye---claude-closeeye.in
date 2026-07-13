@@ -2,6 +2,7 @@
 'use client'
 
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { FileText, Image as ImageIcon, Loader2, MessageCircle, Mic, Paperclip, Send, Square, X } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
 import { initialsOf } from '@/components/family/loved-one-card'
@@ -370,9 +371,16 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
                     </div>
                   )}
                   {m.sender === 'system' ? (
-                    <div className="mx-auto max-w-[90%] px-2 text-center text-caption leading-relaxed text-muted">
-                      {m.body}
-                    </div>
+                    m.related_booking_id ? (
+                      <Link href={`/family/visits/${m.related_booking_id}`} className="mx-auto flex max-w-[90%] flex-col items-center px-2 text-center transition-opacity hover:opacity-80">
+                        <span className="text-caption leading-relaxed text-muted">{m.body}</span>
+                        <span className="mt-0.5 text-caption font-semibold text-green">View the Presence Story →</span>
+                      </Link>
+                    ) : (
+                      <div className="mx-auto max-w-[90%] px-2 text-center text-caption leading-relaxed text-muted">
+                        {m.body}
+                      </div>
+                    )
                   ) : (
                     <MessageBubble m={m} />
                   )}
