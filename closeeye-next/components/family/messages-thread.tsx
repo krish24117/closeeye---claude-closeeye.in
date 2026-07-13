@@ -492,7 +492,7 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
               onChange={(e) => setDraft(e.target.value)}
               placeholder={`Message about ${firstName}…`}
               aria-label="Message"
-              className="h-11 flex-1 rounded-full border border-line bg-ivory px-4 text-body-sm text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/25"
+              className="h-11 min-w-0 flex-1 rounded-full border border-line bg-ivory px-4 text-body-sm text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/25"
             />
             <button
               type="submit"
