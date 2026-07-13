@@ -5,7 +5,9 @@ import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { deriveDashboard, fetchDashboardSignals } from '@/lib/db/dashboard'
+import { claimWelcomeBack } from '@/lib/db/account'
 import { useVisitSync } from '@/lib/use-visit-sync'
+import { useToast } from '@/components/ui/toast'
 import { ErrorState } from '@/components/ui/states'
 import {
   ActiveDashboard,
@@ -24,6 +26,8 @@ import type { BookingRequest } from '@/lib/db/types'
 export default function FamilyHome() {
   const { user } = useAuth()
   const { lovedOnes, subscription, loading, error, refresh } = useFamilyData()
+  const toast = useToast()
+  const welcomedRef = React.useRef(false)
   const [signals, setSignals] = React.useState<{ visits: BookingRequest[]; unreadMessages: number; reportedBookingIds: Set<string> } | null>(null)
   const [signalsError, setSignalsError] = React.useState(false)
 
@@ -41,6 +45,13 @@ export default function FamilyHome() {
 
   React.useEffect(() => { reload() }, [reload])
   useVisitSync(user?.id, reload)
+
+  // Greet a returning family (a previously-deleted email that has rejoined) exactly once.
+  React.useEffect(() => {
+    if (!user?.id || welcomedRef.current) return
+    welcomedRef.current = true
+    claimWelcomeBack().then((back) => { if (back) toast('Welcome back to Close Eye 💚', 'success') }).catch(() => {})
+  }, [user?.id, toast])
 
   // A failed load must NEVER masquerade as the new-user ("add your family") state —
   // a returning customer would read that as their loved ones being deleted.
