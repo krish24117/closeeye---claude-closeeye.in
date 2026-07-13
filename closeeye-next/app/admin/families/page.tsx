@@ -1,9 +1,11 @@
 'use client'
 
 import * as React from 'react'
-import { Loader2, Lock, Search, Users } from 'lucide-react'
+import { Loader2, Lock, Search, ShieldCheck, UserPlus, Users, X } from 'lucide-react'
 import { Avatar } from '@/components/family/avatar'
+import { Button } from '@/components/ui/button'
 import { EmptyState, ErrorState } from '@/components/ui/states'
+import { useToast } from '@/components/ui/toast'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchAdminFamilies, type AdminFamily } from '@/lib/db/admin'
@@ -11,6 +13,8 @@ import {
   fetchPresenceManagers,
   fetchFamilyManagerMap,
   setFamilyManager,
+  promotePresenceManager,
+  demotePresenceManager,
   type PresenceManagerLite,
 } from '@/lib/db/assignments'
 import { isSuperAdmin } from '@/lib/roles'
@@ -26,6 +30,7 @@ const TABS: { key: Tab; label: string }[] = [
 export default function AdminFamiliesPage() {
   const { profile, loading } = useFamilyData()
   const isAdmin = isSuperAdmin(profile)
+  const toast = useToast()
   const [families, setFamilies] = React.useState<AdminFamily[] | null>(null)
   const [error, setError] = React.useState(false)
   const [tab, setTab] = React.useState<Tab>('all')
@@ -33,6 +38,8 @@ export default function AdminFamiliesPage() {
   const [managers, setManagers] = React.useState<PresenceManagerLite[]>([])
   const [managerMap, setManagerMap] = React.useState<Map<string, string>>(new Map())
   const [saving, setSaving] = React.useState<string | null>(null)
+  const [pmEmail, setPmEmail] = React.useState('')
+  const [pmBusy, setPmBusy] = React.useState(false)
 
   const load = React.useCallback(() => {
     if (!isAdmin) return
@@ -67,6 +74,42 @@ export default function AdminFamiliesPage() {
     }
   }, [managerMap, profile?.id])
 
+  const reloadPMs = React.useCallback(() => {
+    fetchPresenceManagers().then(setManagers).catch(() => {})
+    fetchFamilyManagerMap().then(setManagerMap).catch(() => {})
+  }, [])
+
+  const addPM = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const email = pmEmail.trim()
+    if (!email || pmBusy) return
+    setPmBusy(true)
+    try {
+      const r = await promotePresenceManager(email)
+      toast(`${r.fullName || email} is now a Presence Manager`, 'success')
+      setPmEmail('')
+      reloadPMs()
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Could not add this Presence Manager.', 'info')
+    } finally {
+      setPmBusy(false)
+    }
+  }
+
+  const removePM = async (id: string, name: string) => {
+    if (pmBusy) return
+    setPmBusy(true)
+    try {
+      await demotePresenceManager(id)
+      toast(`${name ? name + ' is' : 'They are'} no longer a Presence Manager`, 'info')
+      reloadPMs()
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Could not remove this Presence Manager.', 'info')
+    } finally {
+      setPmBusy(false)
+    }
+  }
+
   if (loading) return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
   if (!isAdmin) return <div className="flex flex-col gap-6"><h1 className="text-h2">Families</h1><EmptyState icon={Lock} title="Restricted" hint="Available to administrators only." /></div>
 
@@ -85,6 +128,35 @@ export default function AdminFamiliesPage() {
           {families && <> {families.length} total · <span className="font-semibold text-success">{activeCount} on a plan</span>.</>}
         </p>
       </div>
+
+      <section className="rounded-lg border border-line bg-card p-4 shadow-sm">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-green" strokeWidth={2} />
+          <h2 className="text-body-sm font-semibold text-ink">Presence Managers</h2>
+          <span className="text-caption text-muted">· {managers.length}</span>
+        </div>
+        <p className="mt-1 text-caption text-muted">The staff who look after families. Add someone by the email on their CloseEye account; removing them also unassigns their families.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {managers.length === 0 ? (
+            <span className="text-caption text-muted">None yet.</span>
+          ) : (
+            managers.map((m) => (
+              <span key={m.id} className="inline-flex items-center gap-1 rounded-full border border-line bg-accent-soft/40 py-1 pl-3 pr-1 text-caption font-medium text-ink">
+                {m.full_name || 'Unnamed'}
+                <button type="button" onClick={() => void removePM(m.id, m.full_name || '')} disabled={pmBusy} aria-label={`Remove ${m.full_name || 'this manager'}`} className="grid h-5 w-5 place-items-center rounded-full text-muted transition-colors hover:bg-ink/10 hover:text-ink disabled:opacity-50">
+                  <X className="h-3 w-3" strokeWidth={2.5} />
+                </button>
+              </span>
+            ))
+          )}
+        </div>
+        <form onSubmit={addPM} className="mt-3 flex flex-wrap items-center gap-2">
+          <input value={pmEmail} onChange={(e) => setPmEmail(e.target.value)} type="email" placeholder="name@email.com" className="min-w-[14rem] flex-1 rounded-lg border border-line bg-card px-3 py-2 text-body-sm text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20" />
+          <Button type="submit" size="sm" disabled={pmBusy || !pmEmail.trim()}>
+            {pmBusy ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> : <UserPlus className="h-4 w-4" strokeWidth={2} />} Make PM
+          </Button>
+        </form>
+      </section>
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="inline-flex flex-wrap gap-1 rounded-full border border-line bg-card p-1">

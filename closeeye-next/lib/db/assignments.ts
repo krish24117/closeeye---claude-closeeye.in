@@ -121,3 +121,18 @@ export async function fetchMyPresenceManager(): Promise<{ id: string; firstName:
   if (!row || !row.first_name?.trim()) return null
   return { id: row.manager_id, firstName: row.first_name.trim() }
 }
+
+/** Promote the account with this email to Presence Manager (Super Admin only, per RPC). */
+export async function promotePresenceManager(email: string): Promise<{ id: string; fullName: string | null }> {
+  const { data, error } = await supabase.rpc('admin_promote_pm', { p_email: email })
+  if (error) throw new Error(error.message)
+  const row = (data as { user_id: string; full_name: string | null }[] | null)?.[0]
+  if (!row) throw new Error('Could not add this Presence Manager.')
+  return { id: row.user_id, fullName: row.full_name }
+}
+
+/** Remove a Presence Manager — clears the role and their family assignments. */
+export async function demotePresenceManager(userId: string): Promise<void> {
+  const { error } = await supabase.rpc('admin_demote_pm', { p_user_id: userId })
+  if (error) throw new Error(error.message)
+}
