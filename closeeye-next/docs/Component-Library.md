@@ -60,8 +60,6 @@ See [Booking-Flow](./Booking-Flow.md) for the flow and integration points.
 | `ActionCard` | `action-card.tsx` | Reusable action card (icon · title · description · arrow · press) |
 | `QuickActions` | `quick-actions.tsx` | 4 primary actions (built on `ActionCard`) |
 | `LatestUpdate` | `latest-update.tsx` | Rich latest-visit card |
-| `FamilyTimeline` | `family-timeline.tsx` | Visits as a dated journal of memories (spine + rich entries) |
-| `VisitTabs` | `visit-tabs.tsx` | Upcoming/Completed/Cancelled → `FamilyTimeline` + empty state |
 | `MembersManager` | `members-manager.tsx` | Client owner of the family list + add/edit state |
 | `MemberCard` | `member-card.tsx` | Family profile card (`onEdit`, graceful empty states) |
 | `AddMemberDialog` | `add-member-dialog.tsx` | Add / edit a family member (validated form) |
