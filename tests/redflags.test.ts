@@ -67,3 +67,33 @@ test('bare falls do NOT false-positive on benign phrases', () => {
   miss('they fell in love many years ago')
   miss('the temperature fell overnight')
 })
+
+// Phase 6 — Life-Threatening Red Flags: the universal + infant additions.
+test('Phase 6 — poisoning / foreign body fires', () => {
+  assert.equal(hit('my toddler swallowed a button battery').category, 'poisoning')
+  assert.equal(hit('he drank kerosene').category, 'poisoning')
+  assert.equal(hit('a coin is stuck in her throat').category, 'poisoning')
+  assert.equal(hit('the baby swallowed a magnet').category, 'poisoning')
+})
+
+test('Phase 6 — burns / drowning fire', () => {
+  assert.equal(hit('she has a deep burn on her hand').category, 'burns')
+  assert.equal(hit('it was an electrical burn').category, 'burns')
+  assert.equal(hit('we pulled him out of the pool and he isnt responding').matched, true)
+  assert.equal(hit('my son nearly drowned').category, 'drowning')
+})
+
+test('Phase 6 — infant-critical fires (subject-dependent) and rash', () => {
+  assert.equal(hit('my 2 month old has a fever of 39').category, 'infant_critical')
+  assert.equal(hit('my newborn is burning up').category, 'infant_critical')
+  assert.equal(hit('the baby is floppy and wont wake').matched, true)
+  assert.equal(hit('a rash that doesnt fade when I press a glass on it').category, 'meningitis_rash')
+})
+
+test('Phase 6 — infant fever does NOT fire for an adult, and calm baby talk stays benign', () => {
+  miss('my father has a mild fever and is resting comfortably')   // adult fever ≠ infant emergency
+  miss('my baby has a mild cold and is eating well')
+  miss('my baby has been crying for two hours, how can I calm her') // the trust case — must stay benign
+  miss('my baby wont settle at night')
+  miss('we had swimming lessons at the pool today')
+})

@@ -1,7 +1,11 @@
-// Ask Close Eye · Red-flag detection (Lane 3 safety floor)
+// Ask Close Eye · Life-Threatening Red Flags (the deterministic Safety Engine floor)
 //
-// Runs BEFORE any model call. Bias is toward recall — a false positive only
-// offers help that wasn't strictly needed; a false negative could miss a real emergency.
+// Runs BEFORE any model call and is subject-INDEPENDENT: a life-threat fires for a
+// newborn, a child, a spouse or a father alike (intent before age). Bias is toward
+// recall — a false positive only offers help that wasn't strictly needed; a false
+// negative could miss a real emergency. Categories below are the subsets: cardiac,
+// breathing, stroke, consciousness, trauma, bleeding, poisoning, burns, drowning,
+// infant-critical, allergic, self-harm, plus multilingual variants.
 //
 // OWNED BY THE MEDICAL TEAM. Dr. Sidharth should review and extend this list.
 
@@ -56,6 +60,7 @@ const RED_FLAGS: { category: string; patterns: RegExp[] }[] = [
       /(passed out|pass(ed|es)? out|black(ed)? out|faint(ed|ing)|unconscious|unresponsive|not responding|won('| ?)t wake|can('| ?)t wake|not waking|collaps(e|ed|es|ing))/,
       /(suddenly )?(very )?confused|doesn('| ?)t know (where|who)/,
       /seizure|convuls|fitting/,
+      /(went|gone|is|completely|totally|has gone) (limp|floppy|lifeless)/,
     ],
   },
   {
@@ -123,6 +128,61 @@ const RED_FLAGS: { category: string; patterns: RegExp[] }[] = [
     patterns: [
       /(worst|unbearable|extreme|severe) (pain|headache)/,
       /sudden (severe|terrible) (pain|headache)/,
+    ],
+  },
+  {
+    // Poisoning / foreign body / ingestion — universal (a son or a father alike).
+    category: "poisoning",
+    patterns: [
+      /swallow(ed|ing|s)?\b.{0,25}(battery|button ?cell|magnet|coin|poison|chemical|bleach|detergent|acid|kerosene|petrol|pesticide|rat poison|phenyl|naphthalene|sanitizer)/,
+      /(ate|eaten|drank|drunk|took).{0,20}(poison|chemical|bleach|detergent|acid|kerosene|pesticide|rat poison|cleaning (liquid|fluid|agent)|mothball)/,
+      /swallowed (something|an object|a coin|a battery|a magnet|a sharp|a pointed|a nail|a pin|a bead|a marble)/,
+      /(object|coin|battery|button|toy|bead|marble|nut|seed|bone|pin|needle)\b.{0,15}(stuck|lodged|caught) (in|up|down) (his|her|their|the)? ?(throat|nose|ear|windpipe|food ?pipe|gullet)/,
+      /(stuck|lodged) in (his|her|their|the) (throat|windpipe|nose|ear|gullet)/,
+    ],
+  },
+  {
+    // Severe burns — universal.
+    category: "burns",
+    patterns: [
+      /(large|big|serious|severe|major|deep|third.?degree|second.?degree|bad|whole) burn/,
+      /(electric(al)?|chemical|acid|hot oil|boiling water) burn/,
+      /burn(t|ed|s|ing)?\b.{0,20}(face|hand|hands|genital|eyes?|large|whole|badly|all over)/,
+      /(scald|scalded|scalding)\b.{0,20}(badly|severe|large|face|whole|all over)/,
+      /(caught|catch|on) fire\b/,
+    ],
+  },
+  {
+    // Drowning / near-drowning — universal.
+    category: "drowning",
+    patterns: [
+      /drown(ing|ed)?|near[- ]?drowning/,
+      /(pulled|taken|got|dragged|lifted) (him|her|them|it)? ?(out )?(of|from) the (water|pool|pond|bathtub|tub|lake|sea|river|bucket|well)/,
+      /(fell|slipped|went) (in|into|under) the (water|pool|pond|tub|bucket|well|lake|river)/,
+      /(unconscious|not breathing|not responding|limp) (after|from|when).{0,20}(water|pool|swim|bath)/,
+    ],
+  },
+  {
+    // Infant-specific critical signs — subject-dependent (requires an infant marker), so
+    // an adult "fever" never fires here.
+    category: "infant_critical",
+    patterns: [
+      /(newborn|new born|infant|\d+ ?(week|month)s? old|my baby|the baby|small baby|tiny baby).{0,40}(fever|temperature|high temp|burning up|very hot|running a temp)/,
+      /(fever|temperature|running a temp|burning up).{0,40}(newborn|new born|infant|\d+ ?(week|month)s? old|(my|the) baby)/,
+      /(bulging|sunken|soft) (spot|fontanelle)/,
+      /fontanelle/,
+      /(baby|infant|newborn)\b.{0,15}(floppy|limp|lifeless|not moving|won('| ?)t move)/,
+      /(floppy|limp|lifeless)\b.{0,15}(baby|infant|newborn)/,
+      /(weak|high.?pitched|constant|inconsolable) cry.{0,30}(not feed|won('| ?)t feed|refus\w+ (to )?feed|not eating|no wet)/,
+    ],
+  },
+  {
+    // Non-blanching rash — meningitis / sepsis signal, serious at any age.
+    category: "meningitis_rash",
+    patterns: [
+      /rash.{0,30}(doesn('| ?)t|does not|won('| ?)t|will not|not) (fade|go away|go|disappear|blanch|change|vanish)/,
+      /(non.?blanching) rash|rash.{0,20}(glass|tumbler|press|pressing|pressed)/,
+      /(purple|red|dark) (spots|rash|blotches|patches).{0,25}(spreading|all over|with (a )?fever|and (a )?fever|not fad)/,
     ],
   },
 
