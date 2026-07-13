@@ -469,47 +469,56 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
                 e.target.value = ''
               }}
             />
-            <button
-              type="button"
-              onClick={() => imageInputRef.current?.click()}
-              disabled={uploading || !!pending}
-              aria-label="Attach photo"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-ink disabled:opacity-40"
-            >
-              <ImageIcon className="h-5 w-5" strokeWidth={1.5} />
-            </button>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading || !!pending}
-              aria-label="Attach document"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-ink disabled:opacity-40"
-            >
-              <Paperclip className="h-5 w-5" strokeWidth={1.5} />
-            </button>
-            <button
-              type="button"
-              onClick={() => void startRecording()}
-              disabled={uploading || !!pending}
-              aria-label="Record voice note"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-ink disabled:opacity-40"
-            >
-              <Mic className="h-5 w-5" strokeWidth={1.5} />
-            </button>
-            <textarea
-              ref={taRef}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              rows={1}
-              placeholder={`Message about ${firstName}…`}
-              aria-label="Message"
-              className="max-h-32 min-h-[2.75rem] min-w-0 flex-1 resize-none rounded-3xl border border-line bg-ivory px-4 py-2.5 text-body-sm leading-relaxed text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/25"
-            />
+            {/* Attachments — compact group */}
+            <div className="flex shrink-0 items-center">
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={uploading || !!pending}
+                aria-label="Attach photo"
+                className="grid h-9 w-9 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-ink disabled:opacity-40"
+              >
+                <ImageIcon className="h-[1.15rem] w-[1.15rem]" strokeWidth={1.75} />
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || !!pending}
+                aria-label="Attach document"
+                className="grid h-9 w-9 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-ink disabled:opacity-40"
+              >
+                <Paperclip className="h-[1.15rem] w-[1.15rem]" strokeWidth={1.75} />
+              </button>
+              <button
+                type="button"
+                onClick={() => void startRecording()}
+                disabled={uploading || !!pending}
+                aria-label="Record voice note"
+                className="grid h-9 w-9 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-ink disabled:opacity-40"
+              >
+                <Mic className="h-[1.15rem] w-[1.15rem]" strokeWidth={1.75} />
+              </button>
+            </div>
+
+            {/* Input — flex-1 wrapper + w-full textarea so it fills reliably (incl. iOS) */}
+            <div className="min-w-0 flex-1">
+              <textarea
+                ref={taRef}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                rows={1}
+                placeholder={`Message about ${firstName}…`}
+                aria-label="Message"
+                className="block max-h-32 min-h-[2.75rem] w-full resize-none rounded-3xl border border-line bg-ivory px-4 py-[0.65rem] text-body-sm leading-relaxed text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20"
+              />
+            </div>
+
+            {/* Send */}
             <button
               type="submit"
               aria-label="Send"
               disabled={(!draft.trim() && !pending) || sending || uploading}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ink text-ivory transition-opacity disabled:opacity-40"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-green text-ivory transition-opacity disabled:opacity-30"
             >
               {sending || uploading ? (
                 <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} />
