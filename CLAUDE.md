@@ -5,6 +5,15 @@ it governs product truths, design authority, architecture, locked decisions, and
 working protocol. The founder's direct instruction always wins; otherwise the
 Constitution decides, then [`closeeye-next/docs/`](closeeye-next/docs/), then the code.
 
+**[CLOSEEYE_EXECUTIVE_CONTEXT.md](./CLOSEEYE_EXECUTIVE_CONTEXT.md) is the executive operating
+charter** — CloseEye's identity (a **Trust Infrastructure Platform**, not elder-care / not a
+chatbot), the AI philosophy, the mandatory architecture order (**never `Family → LLM →
+Answer`**), the **Family Graph** moat, the 5 business levers behind "first 100 paying
+families," and how to reason like a co-founder. It sits *beside* the Constitution: the
+Constitution is **product law**; the charter is **how we think and extend**. Precedence is
+unchanged — founder's word, then Constitution, then this charter; it never overrides a locked
+decision or the 5-step protocol.
+
 ## Non-negotiables (full detail in the Constitution)
 
 - **Machines** — Windows = primary development; Mac = iOS build / Simulator / App Store
