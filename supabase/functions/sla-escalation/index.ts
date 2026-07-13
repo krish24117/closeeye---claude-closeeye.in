@@ -43,6 +43,23 @@ async function sendWhatsApp(sid: string, token: string, from: string, to: string
   return true;
 }
 
+// Escalation email via Resend — the reliable channel for a widened, unacknowledged
+// emergency (no 24h window, no DLT). Never throws.
+async function sendEscalationEmail(to: string, subject: string, text: string): Promise<boolean> {
+  const key  = Deno.env.get("RESEND_API_KEY");
+  const from = Deno.env.get("CARE_ALERT_FROM_EMAIL") || "CloseEye Care <connect@closeeye.in>";
+  if (!key) return false;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from, to: to.split(",").map((e) => e.trim()).filter(Boolean), subject, text }),
+    });
+    if (!res.ok) { console.error("[sla] escalation email failed", res.status, await res.text()); return false; }
+    return true;
+  } catch (e) { console.error("[sla] escalation email error", e); return false; }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
@@ -254,9 +271,50 @@ Deno.serve(async (req: Request) => {
     log.push(`[breach] ${q.id} — alerted admin, ${familyWa ? "sent" : "skipped"} interim family msg`);
   }
 
+  // 3. Auto-escalation — red-flag incidents that NOBODY acknowledged in time. Widen to the
+  //    escalation contact (WhatsApp + the reliable email) so an emergency is never dropped.
+  //    Fires ONCE per incident (guarded on escalation_widened_at).
+  const widenMin       = Number(Deno.env.get("INCIDENT_ACK_WIDEN_MINUTES") || "5");
+  const escalationWa    = Deno.env.get("CARE_ESCALATION_WHATSAPP") || adminWa;
+  const escalationEmail = Deno.env.get("CARE_ESCALATION_EMAIL") || Deno.env.get("CARE_TEAM_EMAIL") || "";
+  const consoleUrl      = (Deno.env.get("CLOSEEYE_CONSOLE_URL") || "https://closeeye.in") + "/pm/escalations";
+
+  const { data: openInc } = await db.from("member_queries")
+    .select("id, user_id, question, subject_label, escalated_at, escalation_category")
+    .not("escalated_at", "is", null)
+    .is("resolved_at", null)
+    .is("acknowledged_at", null)
+    .is("escalation_widened_at", null);
+
+  const toWiden = (openInc || []).filter((q) =>
+    q.escalated_at && Date.now() - new Date(q.escalated_at).getTime() > widenMin * 60 * 1000);
+
+  log.push(`[widen] ${toWiden.length} unacknowledged incident(s) past ${widenMin}min`);
+
+  for (const q of toWiden) {
+    const { data: fam } = await db.from("profiles").select("full_name, whatsapp_number").eq("id", q.user_id).maybeSingle();
+    const famName = fam?.full_name || "A family";
+    const famWa   = fam?.whatsapp_number || "";
+    const mins    = Math.round((Date.now() - new Date(q.escalated_at).getTime()) / 60000);
+    const cat     = (q.escalation_category || "emergency").toUpperCase().replace(/_/g, " ");
+    const msg =
+      `🚨 UNACKNOWLEDGED EMERGENCY — ${mins} min, no one has picked this up.\n\n` +
+      `⚠️ ${cat}\nFamily: ${famName}\nFor: ${q.subject_label || "—"}\n` +
+      `💬 "${(q.question || "").slice(0, 160)}"\n${famWa ? `📞 Call: ${famWa}\n` : ""}` +
+      `\nAcknowledge NOW: ${consoleUrl}`;
+
+    let sent = false, emailed = false;
+    if (escalationWa && twilioReady && !dryRun) sent = await sendWhatsApp(sid!, twilioToken!, from!, escalationWa, msg);
+    if (escalationEmail && !dryRun) emailed = await sendEscalationEmail(escalationEmail, `🚨 UNACKNOWLEDGED EMERGENCY — ${famName}`, msg);
+    if (!dryRun) await db.from("member_queries").update({ escalation_widened_at: now }).eq("id", q.id);
+
+    actions.push({ queryId: q.id, action: "auto_escalate_widen", to: escalationWa || escalationEmail || "none", sent: sent || emailed });
+    log.push(`[widen] ${q.id} — widened (wa:${sent} email:${emailed})`);
+  }
+
   return json({
     mode: dryRun ? "dry-run" : "live",
-    checked: { at75: queries75.length, breached: breached.length },
+    checked: { at75: queries75.length, breached: breached.length, widened: toWiden.length },
     actions,
     log,
   });

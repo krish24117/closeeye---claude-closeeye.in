@@ -134,7 +134,7 @@ const ANSWER_EMERGENCY_RE =
 function emergencyEmailHtml(o: {
   category: string; patient: string; subjectLabel?: string; question: string;
   famName: string; famPhone: string; location: string; hospital: string;
-  emgContact: string; medNotes: string; nowIST: string; queryId: string;
+  emgContact: string; medNotes: string; nowIST: string; queryId: string; consoleUrl?: string;
 }): string {
   const esc = (s: string) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const telHref = (o.famPhone || "").replace(/[^\d+]/g, "");
@@ -163,6 +163,7 @@ function emergencyEmailHtml(o: {
           ${row("Emergency contact", o.emgContact)}
           ${row("Medical notes", o.medNotes)}
         </table>
+        ${o.consoleUrl ? `<a href="${o.consoleUrl}" style="display:block;margin-top:18px;text-align:center;padding:12px;border:1px solid #d1d1d6;border-radius:12px;color:#204034;text-decoration:none;font-size:14px;font-weight:600">Acknowledge in the CloseEye console</a>` : ""}
       </td></tr>
       <tr><td style="padding:16px 24px;background:#fafafa;border-top:1px solid #f2f2f7">
         <div style="color:#8a8a8e;font-size:12px">${esc(o.nowIST)} · Ref ${esc(o.queryId)}</div>
@@ -203,6 +204,29 @@ async function sendCareTeamAlert(
       }
     } catch (_e) { /* ignore */ }
   }
+
+  // The family's assigned Presence Manager — alert them DIRECTLY, not just the shared
+  // care team, so an emergency reaches the human who owns this family. Best-effort.
+  let pmWhatsApp = "", pmEmail = "";
+  try {
+    const { data: fa } = await sb.from("family_assignments")
+      .select("presence_manager_id")
+      .eq("family_user_id", opts.userId)
+      .order("assigned_at", { ascending: false })
+      .limit(1).maybeSingle();
+    const pmId = (fa?.presence_manager_id as string | undefined) || undefined;
+    if (pmId) {
+      const { data: pmProf } = await sb.from("profiles").select("whatsapp_number").eq("id", pmId).maybeSingle();
+      pmWhatsApp = (pmProf?.whatsapp_number || "").trim();
+      try {
+        const { data: pmUser } = await sb.auth.admin.getUserById(pmId);
+        pmEmail = (pmUser?.user?.email || "").trim();
+      } catch (_e) { /* ignore */ }
+    }
+  } catch (_e) { /* ignore */ }
+
+  const consoleUrl = (Deno.env.get("CLOSEEYE_CONSOLE_URL") || "https://closeeye.in") + "/pm/escalations";
+
   let nowIST: string;
   try { nowIST = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" }); }
   catch { nowIST = new Date().toISOString(); }
@@ -220,6 +244,7 @@ async function sendCareTeamAlert(
     emgContact ? `🆘 Emergency contact: ${emgContact}` : "",
     medNotes ? `📝 Medical: ${medNotes.slice(0, 160)}` : "",
     "",
+    `🔗 Acknowledge & manage: ${consoleUrl}`,
     `Ref: query ${opts.queryId}`,
   ].filter(Boolean).join("\n");
 
@@ -230,10 +255,11 @@ async function sendCareTeamAlert(
   // so nothing regresses before TWILIO_EMERGENCY_CONTENT_SID is configured. Both paths
   // log to whatsapp_messages via the shared helpers.
   try {
-    const careTeam     = Deno.env.get("CARE_TEAM_WHATSAPP");
+    const careTeam     = Deno.env.get("CARE_TEAM_WHATSAPP") || "";
     const emergencySid = Deno.env.get("TWILIO_EMERGENCY_CONTENT_SID");
-    if (careTeam) {
-      const numbers = careTeam.split(",").map((n: string) => n.trim()).filter(Boolean);
+    // Shared care team + the family's assigned Presence Manager (deduped).
+    const numbers = Array.from(new Set([...careTeam.split(","), pmWhatsApp].map((n) => n.trim()).filter(Boolean)));
+    if (numbers.length) {
       // Positional template variables — order MUST match the approved template's {{1}}..{{5}}.
       const tplVars = [
         opts.category.toUpperCase().replace(/_/g, " "),                                  // {{1}} category
@@ -261,18 +287,20 @@ async function sendCareTeamAlert(
   try {
     const resendKey = Deno.env.get("RESEND_API_KEY");
     const emailFrom = Deno.env.get("CARE_ALERT_FROM_EMAIL") || "CloseEye Care <connect@closeeye.in>";
-    const emailTo   = Deno.env.get("CARE_TEAM_EMAIL");
-    if (resendKey && emailTo) {
+    const emailTo   = Deno.env.get("CARE_TEAM_EMAIL") || "";
+    // Shared care team + the family's assigned Presence Manager (deduped).
+    const recipients = Array.from(new Set([...emailTo.split(","), pmEmail].map((e) => e.trim()).filter(Boolean)));
+    if (resendKey && recipients.length) {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           from: emailFrom,
-          to: emailTo.split(",").map((e: string) => e.trim()).filter(Boolean),
+          to: recipients,
           subject: `🚨 Emergency — ${famName || "Family"}${patient ? ` · ${patient}` : ""}`,
           html: emergencyEmailHtml({
             category: opts.category, patient, subjectLabel: opts.subjectLabel, question: opts.question,
-            famName, famPhone, location, hospital, emgContact, medNotes, nowIST, queryId: opts.queryId,
+            famName, famPhone, location, hospital, emgContact, medNotes, nowIST, queryId: opts.queryId, consoleUrl,
           }),
           text: alertBody,
         }),
