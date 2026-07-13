@@ -37,19 +37,12 @@ export interface AskInput {
   /** The first turn's queryId — continues the conversation (skips re-capping). */
   conversationId?: string | null
   priorTurns?: AskTurn[]
-  /** Minimal health context, injected into the first-turn message content only
-   *  (the persisted `question` stays clean — the function uses `messages` for
-   *  the Claude call and `question` for logging + the safety checks). */
-  contextPreamble?: string | null
 }
 
 export async function askCloseEye(input: AskInput): Promise<AskResult> {
-  const isFirst = !input.conversationId
-  const content =
-    isFirst && input.contextPreamble
-      ? `${input.contextPreamble}\n\n${input.question}`
-      : input.question
-  const messages: AskTurn[] = [...(input.priorTurns ?? []), { role: 'user', content }]
+  // Patient context is assembled server-side in ask-health now, so the client just
+  // sends the question (plus prior turns on a follow-up).
+  const messages: AskTurn[] = [...(input.priorTurns ?? []), { role: 'user', content: input.question }]
 
   const { data, error } = await supabase.functions.invoke('ask-health', {
     body: {

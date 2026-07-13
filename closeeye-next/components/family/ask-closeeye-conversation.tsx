@@ -11,7 +11,6 @@ import { Chip } from '@/components/ui/choice'
 import { Overlay } from '@/components/family/overlay'
 import { MarkdownAnswer } from '@/components/family/markdown-answer'
 import { askCloseEye, fetchAskHistory, type AskTurn, type AskHistoryItem } from '@/lib/db/ask'
-import { fetchElderProfile } from '@/lib/db/family'
 import { cn } from '@/lib/utils'
 
 const ACK_KEY = 'ce_ask_privacy_ack_v1'
@@ -49,33 +48,6 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [msgs])
 
-  async function buildContext(lovedOneId: string): Promise<{ preamble: string; label: string } | null> {
-    const lo = lovedOnes.find((l) => l.id === lovedOneId)
-    if (!lo) return null
-    const who: string[] = []
-    if (lo.relationship) who.push(`my ${lo.relationship.toLowerCase()}`)
-    if (lo.age) who.push(`age ${lo.age}`)
-    if (lo.city) who.push(lo.city)
-    const ep = await fetchElderProfile(lovedOneId).catch(() => null)
-    const bits: string[] = []
-    // Health — the safety-relevant facts.
-    if (ep?.medical_conditions.trim()) bits.push(`Health conditions: ${ep.medical_conditions.trim()}`)
-    if (ep?.allergies.trim()) bits.push(`Allergies: ${ep.allergies.trim()}`)
-    if (ep?.current_medications.length) bits.push(`Medications: ${ep.current_medications.join(', ')}`)
-    if (ep?.things_to_avoid.trim()) bits.push(`Things to avoid: ${ep.things_to_avoid.trim()}`)
-    // The little things the family told us — this is what makes Connect feel like it
-    // knows their loved one, not a generic assistant. (Family Memory, Pillar 6.)
-    if (ep?.daily_routine.trim()) bits.push(`Daily routine: ${ep.daily_routine.trim()}`)
-    if (ep?.conversation_interests.trim()) bits.push(`Loves talking about: ${ep.conversation_interests.trim()}`)
-    if (ep?.food_preferences.trim()) bits.push(`Food & drink they like: ${ep.food_preferences.trim()}`)
-    if (ep?.language.trim()) bits.push(`Most comfortable speaking: ${ep.language.trim()}`)
-    if (ep?.important_dates.trim()) bits.push(`Important dates: ${ep.important_dates.trim()}`)
-    if (ep?.pinned_note.trim()) bits.push(`A note the family wants kept in mind: ${ep.pinned_note.trim()}`)
-    const whoStr = who.length ? ` (${who.join(', ')})` : ''
-    const preamble = `[Background about ${lo.full_name}${whoStr}, so you can answer personally and warmly for this family. ${bits.join('. ')}${bits.length ? '.' : ''} Use what is relevant; weave it in naturally, never restate it mechanically.]`
-    return { preamble, label: lo.full_name }
-  }
-
   async function doSend(raw: string) {
     const q = raw.trim()
     if (!q || thinking || !user?.id) return
@@ -100,21 +72,12 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
     ])
     setThinking(true)
 
-    let contextPreamble: string | null = null
-    let subjectLabel: string | null = null
+    // Patient context is now built server-side in ask-health (trusted, always present),
+    // so the client only needs to name the subject.
     const lovedOneId = subjectId
-    if (subjectId) {
-      subjectLabel = lovedOnes.find((l) => l.id === subjectId)?.full_name ?? null
-      if (!conversationId) {
-        const ctx = await buildContext(subjectId)
-        if (ctx) {
-          contextPreamble = ctx.preamble
-          subjectLabel = ctx.label
-        }
-      }
-    }
+    const subjectLabel = subjectId ? (lovedOnes.find((l) => l.id === subjectId)?.full_name ?? null) : null
 
-    const res = await askCloseEye({ question: q, subjectLabel, lovedOneId, conversationId, priorTurns, contextPreamble })
+    const res = await askCloseEye({ question: q, subjectLabel, lovedOneId, conversationId, priorTurns })
 
     setThinking(false)
     setMsgs((p) => p.filter((m) => m.id !== thinkingId))
