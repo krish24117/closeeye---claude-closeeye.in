@@ -87,6 +87,21 @@ Family Memory · Emergency History · Consent · Membership · Timeline.
 The Family Graph — real human observation, accumulated with consent — is the asset no
 pure-software competitor can clone. Protect it; feed it; make it the memory layer.
 
+**The Family Graph is not a project — it is a property of every feature.** We never build
+graph infrastructure for its own sake. Every meaningful interaction should naturally enrich
+the family's trusted context *while solving today's problem*: a visit produces a report **and**
+a preference; a festival visit strengthens a relationship; a medicine reminder captures a
+routine. **Every customer interaction should leave the product smarter than before** — same
+work, stronger future. So every feature asks one question at design time: *what does this add
+to the graph?*
+
+**The trust guardrail on this principle.** "Smarter" means *better able to serve this family*
+— not better data for us. The graph grows **only** through knowledge the family chose to share
+or a Guardian earned by showing up; never data harvested, inferred, or captured without
+consent. Enrichment that doesn't serve the family, or that they didn't consent to, is
+surveillance, not memory. The graph is a **trust asset first, a moat second** — and the moment
+those two conflict, trust wins.
+
 ## 8. Product principles
 
 - Reuse existing components. Never duplicate functionality.
