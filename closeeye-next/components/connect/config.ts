@@ -52,9 +52,9 @@ export const MODE_CONFIG: Record<LaunchMode, ModeConfig> = {
   early_access: {
     pill: 'Early access · by invitation',
     founding: {
-      headline: 'Your founding place is waiting.',
-      body: 'You’ve been invited to join Close Eye Connect ahead of launch, as one of our first founding families.',
-      cta: 'Claim your place',
+      headline: 'Reserve your family’s place.',
+      body: 'You’ve been invited to join Close Eye Connect ahead of launch, as one of our first founding families. Your place is held.',
+      cta: 'Reserve your place',
       note: 'By invitation. Nothing to pay today.',
     },
     handoff: true,
@@ -64,10 +64,10 @@ export const MODE_CONFIG: Record<LaunchMode, ModeConfig> = {
   public: {
     pill: 'Founding 1,000 · Launching August 1',
     founding: {
-      headline: 'Be one of the first 1,000 families.',
-      body: 'We’re opening Close Eye Connect to a thousand founding families first — the ones who help shape it. Your place is held.',
-      cta: 'Request your place',
-      note: 'A founding place, saved to your email. Nothing to pay today.',
+      headline: 'Reserve your family’s place.',
+      body: 'We’re holding a founding place for the first 1,000 families — the ones who help shape Close Eye Connect. Claim yours before we open on August 1.',
+      cta: 'Reserve your family’s place',
+      note: 'Your place, held to your email. Nothing to pay today.',
     },
     handoff: true,
     showRibbon: false,
@@ -77,7 +77,7 @@ export const MODE_CONFIG: Record<LaunchMode, ModeConfig> = {
     pill: 'Founding 1,000 — now full',
     founding: {
       headline: 'The first 1,000 places are taken.',
-      body: 'Our founding families are in. Join the waitlist and we’ll hold the next place for you.',
+      body: 'Our founding families are in. Join the waitlist and we’ll hold the next place for the people you love.',
       cta: 'Join the waitlist',
       note: 'We’ll be in touch as places open.',
     },
