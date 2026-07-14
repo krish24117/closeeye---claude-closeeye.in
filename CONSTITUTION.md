@@ -142,6 +142,26 @@ Changes to this V1 infrastructure require the founder's explicit sign-off.
 
 ---
 
+## 2f · The Seven-Layer Intelligence Stack (frozen)
+
+_Founder-approved &amp; frozen as Version 1, 2026-07-14._ The Family Intelligence System (§2b) is built as **seven layers in strict dependency order** — trusted family knowledge at the base, reasoning applied near the top, the experience outermost. Each layer answers one architectural question and provides a capability the next consumes:
+
+1. **Identity** — Family · Person · Relationships · Consent. _Who are these people?_
+2. **Event Store** — the append-only spine. _What happened?_
+3. **Family Graph** — relationships &amp; facts. _How are they connected?_
+4. **Family Life Memory** — durable understanding (AI-powered indexing is support, not reasoning). _What should never be forgotten?_
+5. **Retrieval** — the consent-filtered brief. _What information matters now?_
+6. **Intelligence Runtime** — the **provider-independent** reasoning boundary. _What does it mean?_
+7. **Connect Experience** — the family-facing response. _How should Connect respond?_
+
+Layers 1–5 are trusted family knowledge; Layer 6 applies reasoning to it (rented, swappable — never the source of truth, per §2d); Layer 7 is the experience the family touches.
+
+**Law — strict layering.** Every layer exposes a **stable interface** and communicates **only with its adjacent layers**. No layer may bypass another, reach across the stack, or depend on another layer's internal implementation details. Any layer may be reimplemented freely so long as its interface holds.
+
+Changes to this Version 1 architecture require the founder's explicit sign-off.
+
+---
+
 ## 3 · Design Authority
 
 - **Name** — "Close Eye", two words, always.
