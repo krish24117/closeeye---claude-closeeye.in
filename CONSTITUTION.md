@@ -274,6 +274,9 @@ _Full history: [Decision-Log](closeeye-next/docs/Decision-Log.md)._
   the exit criteria over an agreed observation window, with founder review. Status must never
   claim a validation phase "Complete" before that evidence exists — a phase like this sits at
   **🟡 Ready (Dormant / Awaiting Validation)** until the evidence earns the ✅.
+- **Advance only on validated evidence.** Implementation proves that software was built
+  correctly; **validation proves that the system behaves correctly in production.** Close Eye
+  advances only on validated evidence, never on implementation alone.
 
 ---
 
