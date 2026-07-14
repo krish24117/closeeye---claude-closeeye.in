@@ -93,6 +93,29 @@ _Approved &amp; frozen by the founder, 2026-07-14._ The full blueprint is the **
 
 ---
 
+## 2c · Law — Memory is Understanding, Never Storage
+
+_Constitutional law. Founder, 2026-07-14._ In the same category as the inviolable order (§2b) and Trust-first — a principle that must guide every future feature, UX decision, AI workflow, and monetization strategy.
+
+Close Eye Connect is **not a cloud storage service.** Photos, videos, documents, reports, voice notes, and other files are **never the product** — they are inputs that help Connect understand a family.
+
+- Families never have to remember where something is kept. They **ask** — search is replaced by understanding.
+- The product **never competes on storage capacity, folders, or gigabytes.** It competes on its ability to remember, understand, and answer in the context of a specific family.
+- Every uploaded memory must **strengthen the Family Graph** and improve future understanding.
+- **Storage is invisible. Understanding is the product.**
+
+**The interaction model — the pair:** _Remember, don't organize. Ask, don't search._ The customer never organizes folders and never searches directories. They simply ask Connect.
+
+**The three constitutional moats** — stronger together than any single AI feature:
+
+1. **Family Graph** — relationships.
+2. **Family Life Memory** — understanding of life's moments.
+3. **Ask, Don't Search** — the interaction model.
+
+**The gate.** Every future proposal is checked against one question: **"Does this help the family ask instead of search?"** If the answer is no, it is challenged before implementation.
+
+---
+
 ## 3 · Design Authority
 
 - **Name** — "Close Eye", two words, always.
