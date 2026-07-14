@@ -162,6 +162,18 @@ Changes to this Version 1 architecture require the founder's explicit sign-off.
 
 ---
 
+## 2g · Law — Backward Compatibility is Constitutional
+
+_Constitutional engineering law. Founder, 2026-07-14._ The family must **never experience a migration.**
+
+- Every new subsystem must **coexist** with the current production system until it has been **validated in production** — additive first, canonical later.
+- **No big-bang migration. No production risk.** The current schema (`profiles`, `loved_ones`, `elder_profiles`, `family_assignments`, and the rest) stays operational; the new architecture grows beside it and becomes canonical gradually and reversibly.
+- **No architectural purity justifies breaking a working customer experience.** When elegance and a live family's experience conflict, the family wins.
+
+This governs the whole platform's evolution — the Intelligence Stack (§2f) included.
+
+---
+
 ## 3 · Design Authority
 
 - **Name** — "Close Eye", two words, always.
