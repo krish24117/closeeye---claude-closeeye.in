@@ -117,6 +117,31 @@ Close Eye Connect is **not a cloud storage service.** Photos, videos, documents,
 
 ---
 
+## 2d · Law — AI is Infrastructure; Family Intelligence is the Product
+
+_Constitutional law. Founder, 2026-07-14._ In the same category as the inviolable order (§2b) and Memory-is-Understanding (§2c).
+
+**AI providers are infrastructure. Family Intelligence is the product.**
+
+- The **Family Graph**, **Family Life Memory** (internally "Family Memory"), the **Consent Engine**, and the **Retrieval layer** are **permanent company assets** — the accumulated, private, consent-based understanding of each family. They are what Close Eye owns and what compounds.
+- **LLMs are interchangeable reasoning engines** behind a stable interface (§2e / B5). They are rented, swappable, and must **never become the centre of the architecture.** A provider change must never touch business logic.
+- **Corollary.** We never build a moat on a model, a prompt, or a vendor — only on a family's understanding and the trust that created it. When a provider improves or is replaced, the product is unchanged; when a family's understanding deepens, the product improves.
+
+---
+
+## 2e · Version 1 Infrastructure (frozen)
+
+_Founder-approved &amp; frozen, 2026-07-14. Full rationale: the Infrastructure Decision Paper (B2–B5)._ Sized deliberately for **100,000 families over three years** — robust, privacy-first, extensible, and free of premature complexity. The rule through all four: **one Postgres, one consent gate, one AI interface.**
+
+- **B2 · Data platform** — **one Postgres (Supabase) as the single system of record.** The Event Store (append-only table), the Family Graph (adjacency + recursive CTEs), and the Vector Index (`pgvector` / HNSW) all live *inside* it, every row family-scoped behind RLS. No separate graph DB, vector DB, or event bus until a named trigger demands it.
+- **B3 · Consent** — **inherited object-level consent, enforced by one gate** (`can_access(grantee, object, purpose)`). Append-only records; coarse grants inherit down `Family → Person → object`; most-specific override wins; default deny. Nothing is retrieved or sent to a model without passing the gate.
+- **B4 · Identity** — **manual tagging first; face recognition opt-in, per-family, suggest-then-confirm.** No biometric processing without explicit consent; embeddings are per-tenant, never pooled, deletable; the family is always the authority on identity.
+- **B5 · AI provider** — **one internal interface, default Anthropic, swap by config.** Provider-agnostic by abstraction; zero-retention and no-training-on-family-data enforced contractually and at the single egress choke-point.
+
+Changes to this V1 infrastructure require the founder's explicit sign-off.
+
+---
+
 ## 3 · Design Authority
 
 - **Name** — "Close Eye", two words, always.
