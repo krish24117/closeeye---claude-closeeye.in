@@ -53,6 +53,26 @@ _Source: [Product-Bible](closeeye-next/docs/Product-Bible.md)._
 
 ---
 
+## 2a · Product Architecture — Connect & Care
+
+_Founder decision, 2026-07-14._ Close Eye is delivered as **two products under one trust brand** — the intelligence and the human network, kept distinct:
+
+- **Close Eye** — the trust brand and company.
+- **Close Eye Connect** (₹500 / month) — the **primary product**: a **global intelligence layer**, the operating system for a family. Because it is software, it works **anywhere in the world**. It *remembers, understands, and stays with* the family every day — family intelligence, personalized guidance, emergency escalation, health records, family timeline, doctor network (future), and care orchestration.
+- **Close Eye Care** — the **trusted human network**, activated **on demand**. Never framed as an "upgrade" — it is a capability of the ecosystem: Guardian visit, hospital companion, medicine pickup, festival visit, emergency response, Presence Manager. **India-based** (physical presence).
+
+**Connect orchestrates; Care fulfills.** Connect detects that something is wrong and offers to arrange real-world help; Care carries it out. The family never has to understand the distinction — the platform orchestrates it.
+
+> **Close Eye Connect is the intelligence that stays with your family. Close Eye Care is the trusted human network it activates whenever real-world presence is needed.**
+
+**Surfaces:** `closeeye.in` = brand & company · `/connect` = the Connect product (sells Connect-the-SKU; Care appears only as a capability it activates, never the hero) · `/care` (future) = the physical service network.
+
+**The remove-AI test.** Every headline must pass it: if the value proposition needs the word "AI" to be compelling, it is too weak. Lead with trust, family, memory, and continuity — the parts that are hard to copy.
+
+This reconciles the locked pricing (Connect ₹500 / Care ₹1,500) by defining what each product **is**.
+
+---
+
 ## 3 · Design Authority
 
 - **Name** — "Close Eye", two words, always.
