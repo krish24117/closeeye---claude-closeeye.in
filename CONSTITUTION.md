@@ -253,6 +253,13 @@ _Full history: [Decision-Log](closeeye-next/docs/Decision-Log.md)._
   about and verify beats a faster one until correctness is proven. Do not optimise a phase
   whose job is to prove the model. Keep each phase **small, measurable, reversible, and
   independently approvable**; never combine phases or merge migration steps to "save time."
+- **Zero secrets.** No credential, key, token, or connection string ever lives in source
+  code, logs, error messages, or a client bundle. Secrets come only from server-side
+  environment / secure config — never committed, never logged, never shipped to the browser.
+- **Observability before access.** No subsystem reads or touches production data before the
+  means to observe it exist — metrics, an access log, and a kill-switch must be in place
+  first. Instrument, then access; never point code at production data blind. On failure,
+  **fail closed** (disable the subsystem) — never fall back to touching production behaviour.
 
 ---
 
