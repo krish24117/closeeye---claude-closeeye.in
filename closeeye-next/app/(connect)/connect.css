@@ -184,7 +184,7 @@
 .cx-network { display: grid; gap: clamp(1.25rem, 3vw, 2rem); margin-top: clamp(2.5rem, 5vw, 3.5rem); }
 @media (min-width: 760px) { .cx-network { grid-template-columns: 1fr 1fr; } }
 .cx-person { background: var(--cx-card); border: 1px solid var(--cx-line); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-md); display: flex; flex-direction: column; }
-.cx-photo { position: relative; aspect-ratio: 3 / 2; }
+.cx-photo { position: relative; aspect-ratio: 16 / 9; }
 .cx-photo img { object-fit: cover; }
 .cx-person .cx-pbody { padding: clamp(1.4rem, 2.5vw, 2rem); display: flex; flex-direction: column; gap: .55rem; }
 .cx-role { font-size: .8125rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--cx-green); }

@@ -135,9 +135,9 @@ export default function ConnectPage() {
         <section className="cx-section cx-wrap" aria-labelledby="cx-care-h">
           <Reveal>
             <div className="cx-head">
-              <p className="cx-eyebrow">When someone needs to be there</p>
-              <h2 id="cx-care-h">And when it calls for a real person — Close&nbsp;Eye Care.</h2>
-              <p>Connect stays with your family every day. When something needs a human — a check-in, a hospital visit, an emergency — it activates <b>Close&nbsp;Eye Care</b>: a verified person, there in&nbsp;India, within hours. You never have to arrange it. Connect does.</p>
+              <p className="cx-eyebrow">One of the ways Connect helps</p>
+              <h2 id="cx-care-h">And when someone truly needs to be there, Connect activates Close&nbsp;Eye Care.</h2>
+              <p>Close&nbsp;Eye Connect understands, remembers and helps you stay close every day. And when someone truly needs a human beside them — a check-in, a hospital visit, an emergency — Connect activates <b>Close&nbsp;Eye Care</b>: a verified person in&nbsp;India, arranged for you. You never set it up — Connect does.</p>
             </div>
           </Reveal>
           <Reveal>
@@ -146,8 +146,8 @@ export default function ConnectPage() {
                 <div className="cx-photo"><Image src="/connect/guardian-companion.png" alt="A Close Eye Guardian sitting with an elderly woman, looking through a photo album together" fill sizes="(max-width: 760px) 90vw, 46vw" /></div>
                 <div className="cx-pbody">
                   <span className="cx-role">A Guardian</span>
-                  <h3>Someone who shows up</h3>
-                  <p>A caring companion who visits in person — sits a while, checks in, and notices what a screen never could.</p>
+                  <h3>Shows up in person</h3>
+                  <p>A caring, verified companion who visits — and tells Connect what a screen never could.</p>
                   <span className="cx-verify"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></svg> Background-verified &amp; trained</span>
                 </div>
               </article>
@@ -155,8 +155,8 @@ export default function ConnectPage() {
                 <div className="cx-photo"><Image src="/connect/human-videocall.png" alt="A Close Eye Guardian with an elder on a video call with their distant family" fill sizes="(max-width: 760px) 90vw, 46vw" /></div>
                 <div className="cx-pbody">
                   <span className="cx-role">A Presence Manager</span>
-                  <h3>Someone who holds it together</h3>
-                  <p>A single, named person who oversees your family’s care, coordinates every visit, and answers whenever you need them.</p>
+                  <h3>Holds it together</h3>
+                  <p>One named person who coordinates every Care visit and is there when you need a human.</p>
                   <span className="cx-verify"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg> Your dedicated point of contact</span>
                 </div>
               </article>
