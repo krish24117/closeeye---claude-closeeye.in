@@ -160,7 +160,7 @@ export default function ConnectPage() {
               <div className="cx-appcopy">
                 <p className="cx-eyebrow">In your hand</p>
                 <h2 id="cx-app-h">The whole family, gently in the loop.</h2>
-                <p>One calm home for everything — visits, updates, reports, and Ask Close Eye. Open it from anywhere in the world and feel how they&rsquo;re doing, today.</p>
+                <p>One calm home for everything — visits, updates, reports, and Ask Close Eye. Open it from anywhere in the world and feel how they&rsquo;re doing back home, today.</p>
               </div>
             </Reveal>
             <Reveal>
@@ -225,7 +225,7 @@ export default function ConnectPage() {
             <div className="cx-faq">
               <details><summary>Is this only for elderly parents?</summary><div className="cx-ans">No. Close Eye Connect is for anyone you love and can&rsquo;t always be near — a parent, a grandparent, a child, a whole family across cities or countries.</div></details>
               <details><summary>Is it a chatbot?</summary><div className="cx-ans">No. It&rsquo;s real people who look in on your loved ones, and a caring intelligence that helps you stay close. Never a script, never a bot pretending to be human.</div></details>
-              <details><summary>Where can I use it?</summary><div className="cx-ans">We&rsquo;re launching in India and opening to families around the world. Wherever you are, we help you stay close to home.</div></details>
+              <details><summary>Where can I use it?</summary><div className="cx-ans">Your loved ones are looked after in India, where our Guardians are today — and you can be anywhere in the world. Close Eye Connect was built for families living apart, however many miles apart that is.</div></details>
               <details><summary>Is my family&rsquo;s information safe?</summary><div className="cx-ans">Trust is the entire point. Nothing is shared without your consent, and your family&rsquo;s details always stay yours.</div></details>
               <details><summary>What does it cost?</summary><div className="cx-ans">Founding families receive founding pricing, shared clearly before you ever commit. Today, there&rsquo;s nothing to pay — just your place, held.</div></details>
             </div>
