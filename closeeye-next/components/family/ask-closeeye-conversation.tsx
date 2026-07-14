@@ -90,7 +90,7 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
     } else if (res.kind === 'pending') {
       setMsgs((p) => [
         ...p,
-        { id: nextId(), role: 'assistant', notice: true, text: 'Thank you — our care team will review this and follow up shortly. For anything urgent, call 108.' },
+        { id: nextId(), role: 'assistant', notice: true, text: 'Thank you — someone from Close Eye will review this and follow up shortly. For anything urgent, call 108.' },
       ])
       if (!conversationId && res.queryId) setConversationId(res.queryId)
     } else {
@@ -189,7 +189,7 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
                 <div className="ml-[2.625rem] flex flex-wrap gap-2">
                   <NextStepChip href="/family/book" icon={CalendarPlus}>Book a visit</NextStepChip>
                   <NextStepChip href={subjectId ? `/family/connect/${subjectId}` : '/family/connect'} icon={MessageCircle}>
-                    Message care team
+                    Message your Presence Manager
                   </NextStepChip>
                 </div>
               )}

@@ -44,7 +44,7 @@ export default function ConnectHome() {
 
   return (
     <div className="flex flex-col gap-8">
-      <Greeting subtitle="Stay connected with your family and your CloseEye Care Team." />
+      <Greeting subtitle="Everything about the people you love, in one calm place." />
 
       <AskCloseEyeCard />
 
@@ -87,8 +87,8 @@ export default function ConnectHome() {
         ) : lovedOnes.length === 0 ? (
           <EmptyState
             icon={MessageCircle}
-            title="No conversations yet"
-            hint="Add a family member to open a private care conversation with your CloseEye team."
+            title="No one added yet"
+            hint="Add someone you love, and Close Eye starts holding everything that matters about them — ready the moment you ask."
             action={
               <Button asChild>
                 <Link href="/family/members">

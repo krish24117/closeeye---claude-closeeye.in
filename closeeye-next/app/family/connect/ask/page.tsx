@@ -23,7 +23,7 @@ export default function AskCloseEyePage() {
       </Link>
       <div>
         <h1 className="text-h3 text-ink">Ask CloseEye</h1>
-        <p className="mt-1 text-body-sm text-muted">Warm, direct guidance for your family — guided by our care team.</p>
+        <p className="mt-1 text-body-sm text-muted">The place that knows your family — ask anything about the people you love.</p>
       </div>
       <React.Suspense fallback={null}>
         <AskInner />
