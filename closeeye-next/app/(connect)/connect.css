@@ -229,3 +229,77 @@
   .cx-glow, .cx-bubble.cx-enter, .cx-thanks, .cx-typing i { animation: none !important; }
   .cx-btn, .cx-chip { transition: none; }
 }
+
+/* ============================================================================
+   Redesign — six sections, alive. Motion is purposeful, calm, reduced-motion-safe.
+   ========================================================================== */
+
+/* Typography pass — tighter, more deliberate display */
+.cx-hero h1 { letter-spacing: -.043em; font-weight: 640; }
+.cx-lead { font-weight: 430; }
+.cx-head h2, .cx-previewcopy h2, .cx-cinema-copy h2 { letter-spacing: -.033em; }
+
+/* Hero — a CTA that warms as you approach */
+.cx-hero .cx-btn-primary { position: relative; isolation: isolate; }
+.cx-hero .cx-btn-primary::after {
+  content: ""; position: absolute; inset: -45%; z-index: -1; border-radius: 999px; pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--cx-lime) 45%, transparent), transparent 70%);
+  opacity: 0; transition: opacity .45s var(--cx-ease);
+}
+.cx-hero .cx-btn-primary:hover::after { opacity: .55; }
+
+/* Hero — a quiet, breathing invitation to continue */
+.cx-scrollcue { display: inline-flex; margin-top: 2.4rem; width: 2.6rem; height: 2.6rem; border-radius: 999px; align-items: center; justify-content: center; }
+.cx-scrollcue span { display: block; width: .68rem; height: .68rem; border-right: 2px solid var(--cx-green); border-bottom: 2px solid var(--cx-green); transform: rotate(45deg); animation: cx-cue 2.2s var(--cx-ease) infinite; }
+@keyframes cx-cue { 0%,100% { transform: translateY(-3px) rotate(45deg); opacity: .35; } 50% { transform: translateY(3px) rotate(45deg); opacity: .9; } }
+
+/* Ask centrepiece — the "remembering" moment */
+.cx-asksec { padding-top: clamp(3rem, 7vw, 5.5rem); }
+.cx-remember { align-self: flex-start; display: inline-flex; align-items: center; gap: .55rem; padding: .35rem .1rem; flex-wrap: wrap; }
+.cx-remlabel { font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--cx-green); opacity: .75; }
+.cx-mems { display: inline-flex; flex-wrap: wrap; gap: .35rem; }
+.cx-mem { font-size: .82rem; font-weight: 520; color: var(--cx-ink); background: var(--cx-accent-soft); border: 1px solid color-mix(in srgb, var(--cx-accent) 55%, var(--cx-line)); border-radius: 999px; padding: .26rem .68rem; opacity: 0; transform: translateY(6px) scale(.96); animation: cx-memin .5s var(--cx-ease) forwards; }
+@keyframes cx-memin { to { opacity: 1; transform: none; } }
+
+/* How it works — the guided journey (separated cards, staggered on reveal) */
+.cx-journey { list-style: none; margin: clamp(2.5rem, 5vw, 3.5rem) 0 0; padding: 0; display: grid; gap: .8rem; }
+@media (min-width: 820px) { .cx-journey { grid-template-columns: repeat(4, 1fr); } }
+.cx-jstep { display: flex; gap: 1rem; align-items: baseline; background: var(--cx-card); border: 1px solid var(--cx-line); border-radius: var(--r-md); box-shadow: var(--shadow-sm); padding: clamp(1.2rem, 2.6vw, 1.6rem); height: 100%; }
+@media (min-width: 820px) { .cx-jstep { flex-direction: column; gap: .8rem; } }
+.cx-jnum { flex: 0 0 auto; width: 2.4rem; height: 2.4rem; border-radius: 999px; background: var(--cx-ink); color: var(--cx-ivory); display: grid; place-items: center; font-weight: 680; font-size: 1rem; letter-spacing: -.02em; }
+.cx-jstep h3 { font-size: 1.2rem; letter-spacing: -.02em; }
+.cx-jstep p { margin-top: .2rem; color: var(--cx-muted); font-size: .98rem; line-height: 1.5; }
+.cx-journey-stagger .cx-jstep { opacity: 0; transform: translateY(16px); }
+.cx-reveal.cx-in .cx-journey-stagger .cx-jstep { animation: cx-riseitem .6s var(--cx-ease) forwards; }
+.cx-reveal.cx-in .cx-journey-stagger .cx-jstep:nth-child(2) { animation-delay: .12s; }
+.cx-reveal.cx-in .cx-journey-stagger .cx-jstep:nth-child(3) { animation-delay: .24s; }
+.cx-reveal.cx-in .cx-journey-stagger .cx-jstep:nth-child(4) { animation-delay: .36s; }
+@keyframes cx-riseitem { to { opacity: 1; transform: none; } }
+
+/* Trust — principles arriving one at a time */
+.cx-trust-stagger .cx-trustitem { opacity: 0; transform: translateY(16px); }
+.cx-reveal.cx-in .cx-trust-stagger .cx-trustitem { animation: cx-riseitem .6s var(--cx-ease) forwards; }
+.cx-reveal.cx-in .cx-trust-stagger .cx-trustitem:nth-child(2) { animation-delay: .14s; }
+.cx-reveal.cx-in .cx-trust-stagger .cx-trustitem:nth-child(3) { animation-delay: .28s; }
+
+/* Care — one cinematic image, settling into place */
+.cx-cinema { display: grid; gap: clamp(1.5rem, 4vw, 3rem); margin-top: clamp(1.5rem, 4vw, 2.5rem); align-items: center; }
+@media (min-width: 900px) { .cx-cinema { grid-template-columns: 1.12fr .88fr; } }
+.cx-cinema-fig { min-width: 0; }
+.cx-cinema-photo { position: relative; aspect-ratio: 5 / 4; border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-lg); }
+.cx-cinema-photo img { object-fit: cover; transform: scale(1.07); transition: transform 1.3s var(--cx-ease); }
+.cx-cinema-fig.cx-in .cx-cinema-photo img { transform: scale(1); }
+.cx-cinema-copy .cx-eyebrow { margin-bottom: 1rem; }
+.cx-cinema-copy h2 { font-size: clamp(1.9rem, 3.4vw, 2.9rem); }
+.cx-cinema-copy p { margin-top: 1.1rem; color: var(--cx-muted); font-size: 1.1rem; line-height: 1.6; max-width: 32rem; }
+
+/* Founding — the closing moment */
+.cx-founding .cx-tagline { margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+.cx-thankmark { display: block; font-size: 1.7rem; margin-bottom: .3rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cx-scrollcue span, .cx-mem,
+  .cx-trust-stagger .cx-trustitem, .cx-journey-stagger .cx-jstep { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .cx-cinema-photo img { transform: none !important; transition: none; }
+  .cx-hero .cx-btn-primary::after { transition: none; }
+}
