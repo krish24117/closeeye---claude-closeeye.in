@@ -248,6 +248,11 @@ _Full history: [Decision-Log](closeeye-next/docs/Decision-Log.md)._
 - **Never change business logic without asking first** — pricing, booking rules, auth /
   session flows, data model / RLS, membership, red-flag / crisis logic, payments.
   Config, CI, infrastructure, and copy still follow the five steps but are lower-risk.
+- **Prove correctness before optimizing.** In validation and coexistence phases (e.g. a
+  Shadow migration), prefer **clarity over cleverness** — a design that is easy to reason
+  about and verify beats a faster one until correctness is proven. Do not optimise a phase
+  whose job is to prove the model. Keep each phase **small, measurable, reversible, and
+  independently approvable**; never combine phases or merge migration steps to "save time."
 
 ---
 
