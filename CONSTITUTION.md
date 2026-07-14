@@ -174,6 +174,16 @@ This governs the whole platform's evolution — the Intelligence Stack (§2f) in
 
 ---
 
+## 2h · Identity &amp; Object Standards (frozen, v1.0)
+
+_Founder-approved refinements to Identity Architecture v1.0, 2026-07-14. Additive — they refine, they do not redesign._
+
+- **Purpose-based consent is first-class.** No consent exists without a stated **purpose**; every access decision is `can_access(grantee, object, purpose)`. The same grantee may be permitted a Person's data for one purpose (e.g. care-coordination) and denied it for another (e.g. sharing with a doctor, or AI reasoning). Access for an unstated or mismatched purpose is denied — purpose limitation by construction.
+- **Identity Confidence model** — every identity link and resolution carries one of four states: **Suggested** (system-proposed, not yet trusted), **Confirmed** (a family member accepted a suggestion), **Manual** (a family member entered it directly), **Unknown** (unresolved / ambiguous). Only **Confirmed** and **Manual** count as fact for reasoning; **Suggested** and **Unknown** mean _ask, never assert_.
+- **Universal object metadata** — every domain object, platform-wide, carries five fields: **CreatedBy**, **Source**, **Confidence**, **Provenance**, and **ConsentScope**. These make trust, explainability, and consent structural on every object — not just Identity.
+
+---
+
 ## 3 · Design Authority
 
 - **Name** — "Close Eye", two words, always.
