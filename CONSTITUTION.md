@@ -80,6 +80,19 @@ This reconciles the locked pricing (Connect ₹500 / Care ₹1,500) by defining 
 
 ---
 
+## 2b · Intelligence Architecture (frozen)
+
+_Approved &amp; frozen by the founder, 2026-07-14._ The full blueprint is the **Intelligence Architecture** document; this section enshrines its non-negotiables as law.
+
+- **The inviolable order.** Never `Family → LLM → Answer`. Always `Family → Retrieve → Reason → Answer`. The foundation model is a rented reasoning engine over the family's private knowledge — never the source of truth, never the first responder. Deterministic where safety and trust demand it; generative only where nuance helps.
+- **Eight layers.** Channel &amp; Identity → Intent &amp; Subject → Risk (deterministic Safety Engine, *before* generation, life-safety floor never model-dependent) → Context Retrieval (Family Graph + Memory) → Policy Router (rules first; decides answer / ask / escalate / future-doctor / future-Care) → Grounded Reasoning → Safety &amp; Grounding post-check → Response, Action &amp; Events (learning loop).
+- **Memory in three tiers** — the record (permanent), the model (learned), the moment (episodic). **Event-sourced:** memory, graph, personalization, and explainability derive from the event stream (risk lives in the pattern, not one message).
+- **Smarter every day without retraining.** The private context compounds; the rented model stays fixed. Learning by accumulation, not training.
+- **The moat.** The accumulated, private, structured understanding of each specific family, plus the trust that let them share it. Foundation models commoditize; a family's private intelligence does not.
+- **Non-goals.** Never a chatbot, symptom-checker, telemedicine, or medical AI. Health is one domain among many.
+
+---
+
 ## 3 · Design Authority
 
 - **Name** — "Close Eye", two words, always.
