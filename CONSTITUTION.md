@@ -264,6 +264,10 @@ _Full history: [Decision-Log](closeeye-next/docs/Decision-Log.md)._
   (`can_access`) is computed by deterministic rules — **never an LLM** — and returns a full,
   inspectable result: **Decision · Reason · Matched Rule · Consent Source · Evidence ·
   Confidence.** An access decision must always be reconstructable from these six fields.
+- **Migration decisions are evidence-based, not intuition-based.** A migration only advances
+  a phase on **measured evidence** — parity, health, and performance from the Migration
+  Control Center — never on a feeling that "it looks ready." Readiness is a function of the
+  numbers; if the evidence isn't green and stable, the phase does not advance.
 
 ---
 
