@@ -268,6 +268,12 @@ _Full history: [Decision-Log](closeeye-next/docs/Decision-Log.md)._
   a phase on **measured evidence** — parity, health, and performance from the Migration
   Control Center — never on a feeling that "it looks ready." Readiness is a function of the
   numbers; if the evidence isn't green and stable, the phase does not advance.
+- **Implementation-Complete is not Validation-Complete.** A phase whose purpose is
+  production validation is only **Implementation-Complete** when its code exists and is
+  verified in isolation. It is **Complete** only when production evidence confirms it against
+  the exit criteria over an agreed observation window, with founder review. Status must never
+  claim a validation phase "Complete" before that evidence exists — a phase like this sits at
+  **🟡 Ready (Dormant / Awaiting Validation)** until the evidence earns the ✅.
 
 ---
 
