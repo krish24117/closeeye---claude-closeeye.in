@@ -45,7 +45,7 @@ export default function ConnectPage() {
         </section>
 
         {/* 3 · WHAT CONNECT IS — one place that knows your family */}
-        <section className="cx-section cx-wrap cx-divider" id="how" aria-labelledby="cx-what-h">
+        <section className="cx-section cx-wrap cx-divider" id="what" aria-labelledby="cx-what-h">
           <Reveal>
             <div className="cx-head">
               <p className="cx-eyebrow">What it is</p>
@@ -69,6 +69,29 @@ export default function ConnectPage() {
                 <span className="cx-mk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></svg></span>
                 <h3>It&rsquo;s ready</h3>
                 <p>The moment something&rsquo;s wrong, it acts — and can bring real help to their door.</p>
+              </div>
+            </div>
+          </Reveal>
+        </section>
+
+        {/* 3b · HOW IT WORKS — the Family Intelligence arc + a real photo */}
+        <section className="cx-section cx-wrap cx-divider" id="how" aria-labelledby="cx-how-h">
+          <Reveal>
+            <div className="cx-head">
+              <p className="cx-eyebrow">How it works</p>
+              <h2 id="cx-how-h">Four quiet steps to never being in the dark.</h2>
+            </div>
+          </Reveal>
+          <Reveal>
+            <div className="cx-how">
+              <ol className="cx-steps">
+                <li className="cx-step"><span className="cx-num" aria-hidden="true">1</span><div><h3>Tell Close&nbsp;Eye about your family</h3><p>Who they are, what matters, the little things worth remembering.</p></div></li>
+                <li className="cx-step"><span className="cx-num" aria-hidden="true">2</span><div><h3>It learns what&rsquo;s normal for them</h3><p>Their routines, their moods, the rhythm of their days.</p></div></li>
+                <li className="cx-step"><span className="cx-num" aria-hidden="true">3</span><div><h3>Ask anything, anytime</h3><p>And get an answer that sounds like someone who truly knows them.</p></div></li>
+                <li className="cx-step"><span className="cx-num" aria-hidden="true">4</span><div><h3>Real help arrives when it&rsquo;s needed</h3><p>The moment something&rsquo;s wrong, Close&nbsp;Eye Care is there in person.</p></div></li>
+              </ol>
+              <div className="cx-figure">
+                <Image src="/connect/guardian-arriving.png" alt="A Close Eye Guardian arriving at an elder’s home, welcomed at the door" fill sizes="(max-width: 880px) 90vw, 44vw" />
               </div>
             </div>
           </Reveal>
@@ -218,7 +241,8 @@ export default function ConnectPage() {
               <p>A calm presence for the people you love.</p>
             </div>
             <nav className="cx-footlinks" aria-label="Footer">
-              <a href="#how">What it is</a>
+              <a href="#what">What it is</a>
+              <a href="#how">How it works</a>
               <a href="#preview">A glimpse</a>
               <a href="#founding">Reserve a place</a>
             </nav>
