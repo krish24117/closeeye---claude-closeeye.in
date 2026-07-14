@@ -277,6 +277,11 @@ _Full history: [Decision-Log](closeeye-next/docs/Decision-Log.md)._
 - **Advance only on validated evidence.** Implementation proves that software was built
   correctly; **validation proves that the system behaves correctly in production.** Close Eye
   advances only on validated evidence, never on implementation alone.
+- **A frozen implementation stays frozen; changing it resets validation.** Once a phase's
+  implementation is frozen for validation, any code change **reopens implementation** and
+  **resets validation readiness** — evidence collected before the change is void and the
+  observation window restarts. There is no "small change" during validation; a change is a
+  reopen, tracked as its own increment, re-verified, and re-frozen before validation resumes.
 
 ---
 
