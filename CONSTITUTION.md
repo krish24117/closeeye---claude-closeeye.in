@@ -260,6 +260,10 @@ _Full history: [Decision-Log](closeeye-next/docs/Decision-Log.md)._
   means to observe it exist — metrics, an access log, and a kill-switch must be in place
   first. Instrument, then access; never point code at production data blind. On failure,
   **fail closed** (disable the subsystem) — never fall back to touching production behaviour.
+- **Authorization is explainable and deterministic.** Every authorization decision
+  (`can_access`) is computed by deterministic rules — **never an LLM** — and returns a full,
+  inspectable result: **Decision · Reason · Matched Rule · Consent Source · Evidence ·
+  Confidence.** An access decision must always be reconstructable from these six fields.
 
 ---
 
