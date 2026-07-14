@@ -210,6 +210,12 @@
 .cx-trustitem h3 { font-size: 1.2rem; }
 .cx-trustitem p { color: var(--cx-muted); font-size: 1rem; line-height: 1.5; }
 
+/* brand descriptor in the nav + the standalone brand-line band */
+.cx-brandtag { font-size: .8rem; font-weight: 500; color: var(--cx-muted); letter-spacing: .01em; padding-left: .75rem; border-left: 1px solid var(--cx-line); white-space: nowrap; }
+@media (max-width: 640px) { .cx-brandtag { display: none; } }
+.cx-tagband { text-align: center; }
+.cx-tagline { font-size: clamp(1.9rem, 4vw, 3rem); font-weight: 620; letter-spacing: -.03em; color: var(--cx-ink); max-width: 18ch; margin-inline: auto; line-height: 1.12; text-wrap: balance; }
+
 /* preview-mode ribbon */
 .cx-ribbon { position: fixed; z-index: 90; left: 50%; bottom: 1rem; translate: -50% 0; display: inline-flex; align-items: center; gap: .5rem; padding: .5rem 1rem; border-radius: 999px; background: var(--cx-ink); color: var(--cx-ivory); font-size: .82rem; font-weight: 560; box-shadow: var(--shadow-lg); }
 .cx-ribbon .cx-dot { width: .5rem; height: .5rem; border-radius: 999px; background: var(--cx-lime); }

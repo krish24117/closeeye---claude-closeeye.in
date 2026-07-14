@@ -7,8 +7,7 @@
  */
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { Mark } from './mark'
-import type { ModeConfig } from './config'
+import { Mark, Logo } from './mark'
 
 /* ── Sticky header ──────────────────────────────────────────────────────── */
 export function SiteNav({ ctaLabel }: { ctaLabel: string }) {
@@ -22,9 +21,9 @@ export function SiteNav({ ctaLabel }: { ctaLabel: string }) {
   return (
     <header className={`cx-header${scrolled ? ' cx-scrolled' : ''}`}>
       <div className="cx-wrap cx-nav">
-        <a className="cx-brand" href="#top" aria-label="Close Eye Connect — top">
-          <Mark size={30} />
-          <b>Close&nbsp;Eye</b>
+        <a className="cx-brand" href="#top" aria-label="Close Eye — top of page">
+          <Logo height={24} />
+          <span className="cx-brandtag">Trusted presence</span>
         </a>
         <a className="cx-btn cx-btn-primary cx-navcta" href="#founding">{ctaLabel}</a>
       </div>

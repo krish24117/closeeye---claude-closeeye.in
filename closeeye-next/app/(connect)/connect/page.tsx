@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { getLaunchMode, MODE_CONFIG } from '@/components/connect/config'
-import { Mark } from '@/components/connect/mark'
+import { Logo } from '@/components/connect/mark'
 import { SiteNav, Reveal, AskPreview, FoundingForm } from '@/components/connect/interactive'
 
 /**
@@ -200,6 +200,13 @@ export default function ConnectPage() {
           </Reveal>
         </section>
 
+        {/* Brand line — the flagship tagline as a calm emotional beat */}
+        <section className="cx-section cx-wrap cx-tagband" aria-label="Close Eye — when you can’t be there, Close Eye can">
+          <Reveal>
+            <p className="cx-tagline">When you can&rsquo;t be there, Close&nbsp;Eye can.</p>
+          </Reveal>
+        </section>
+
         {/* 10 · FOUNDING / RESERVE */}
         <section className="cx-section cx-wrap cx-founding" id="founding" aria-labelledby="cx-found-h">
           <Reveal>
@@ -237,7 +244,7 @@ export default function ConnectPage() {
         <div className="cx-wrap">
           <div className="cx-footgrid">
             <div className="cx-footbrand">
-              <span className="cx-brand"><Mark size={28} /> <b>Close&nbsp;Eye</b></span>
+              <Logo height={26} />
               <p>A calm presence for the people you love.</p>
             </div>
             <nav className="cx-footlinks" aria-label="Footer">
