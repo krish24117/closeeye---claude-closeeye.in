@@ -52,8 +52,28 @@ export interface ShadowFamily {
 }
 
 /**
- * Read the three source tables and assemble the shadow Identity model, grouped
- * strictly by family so no family's records ever mix with another's. Pure aside
+ * Assemble the shadow Identity model from already-read rows — pure, grouped strictly
+ * by family so no family's records ever mix with another's.
+ */
+export function assembleShadowIdentity(rows: {
+  profiles: Profile[]
+  lovedOnes: LovedOne[]
+  assignments: FamilyAssignmentRow[]
+}): ShadowFamily[] {
+  // Today one account holder == one family, so the family id is the profile id.
+  return rows.profiles.map((p) => {
+    const familyId = p.id
+    return {
+      family: familyFromProfile(p),
+      owner: familyMemberFromProfile(p),
+      persons: rows.lovedOnes.filter((lo) => lo.family_user_id === familyId).map(personFromLovedOne),
+      consents: rows.assignments.filter((a) => a.family_user_id === familyId).map(consentFromAssignment),
+    }
+  })
+}
+
+/**
+ * Read the three source tables and assemble the shadow Identity model. Pure aside
  * from the injected reads.
  */
 export async function loadShadowIdentity(reader: ShadowReader): Promise<ShadowFamily[]> {
@@ -62,17 +82,7 @@ export async function loadShadowIdentity(reader: ShadowReader): Promise<ShadowFa
     reader.readLovedOnes(),
     reader.readFamilyAssignments(),
   ])
-
-  // Today one account holder == one family, so the family id is the profile id.
-  return profiles.map((p) => {
-    const familyId = p.id
-    return {
-      family: familyFromProfile(p),
-      owner: familyMemberFromProfile(p),
-      persons: lovedOnes.filter((lo) => lo.family_user_id === familyId).map(personFromLovedOne),
-      consents: assignments.filter((a) => a.family_user_id === familyId).map(consentFromAssignment),
-    }
-  })
+  return assembleShadowIdentity({ profiles, lovedOnes, assignments })
 }
 
 /**
