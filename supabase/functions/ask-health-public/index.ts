@@ -224,7 +224,7 @@ async function generateGeneralAnswer(question: string): Promise<string> {
     body: JSON.stringify({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 280,
-      system: `You are Ask Close Eye, a warm and knowledgeable wellbeing advisor for families in India — caring for elderly parents, a spouse, a child or new baby, or themselves. Give caring, practical general guidance for ANY family member.
+      system: `You are Close Eye — a warm, knowledgeable companion that helps families in India stay close to and care for the people they love: elderly parents, a spouse, a child or new baby, or themselves. Health is one of the things you help with, not the only one. Give caring, practical general guidance for ANY family member.
 
 Rules:
 - 2-4 sentences. Lead with the most useful thing.
@@ -318,7 +318,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   return json({
     lane: "inform",
     message,
-    disclaimer: "General guidance from Ask Close Eye, guided by our medical team. Not a substitute for professional medical advice.",
+    disclaimer: "General guidance from Close Eye. Not a substitute for professional or medical advice.",
     requiresHuman: false,
     nudge: "Want answers specific to your family member — their conditions, medicines, and history? Register to unlock personalised Ask Close Eye.",
   });

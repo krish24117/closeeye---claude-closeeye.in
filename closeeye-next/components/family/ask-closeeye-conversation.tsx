@@ -155,8 +155,8 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
         {empty && (
           <AssistantBubble>
             <p className="text-body-sm leading-relaxed text-ink">
-              Hi — ask me anything about your loved one&apos;s health, medication, or wellbeing. I give clear, direct
-              guidance. Pick who it&apos;s about above so I can be specific.
+              Hi — I&apos;m here for the people you love. Ask me anything about how they&apos;re doing, their day, their
+              health, or arranging care. Pick who it&apos;s about above so I can be specific.
             </p>
           </AssistantBubble>
         )}
@@ -236,7 +236,7 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
               }
             }}
             rows={1}
-            placeholder="Ask about your family's health…"
+            placeholder="Ask about the people you love…"
             aria-label="Your question"
             className="max-h-32 min-h-[2.75rem] flex-1 resize-none rounded-sm bg-ivory px-3.5 py-2.5 text-body text-ink placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-green/25"
           />
@@ -262,9 +262,9 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
           <div>
             <h2 className="text-h4 text-ink">Before you ask</h2>
             <p className="mt-2 text-body-sm leading-relaxed text-muted">
-              Ask CloseEye gives general wellbeing guidance for your family — it is <strong className="text-ink">not a diagnosis</strong> and
+              Close Eye Connect gives general guidance to help you care for your family — it is <strong className="text-ink">not a diagnosis</strong> and
               not a substitute for a doctor. In an emergency, always call <strong className="text-ink">108</strong>. To help us answer, your
-              question and your family member&apos;s relevant health details are shared securely with our care system.
+              question and your family member&apos;s relevant details are shared securely with our care system.
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row-reverse">
