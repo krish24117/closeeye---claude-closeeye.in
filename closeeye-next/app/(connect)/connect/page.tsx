@@ -49,9 +49,9 @@ export default function ConnectPage() {
           <div className="cx-preview">
             <Reveal>
               <div className="cx-previewcopy">
-                <p className="cx-eyebrow">See it remember</p>
+                <p className="cx-eyebrow">Try it</p>
                 <h2 id="cx-ask-h">Ask anything about the people you love.</h2>
-                <p>No forms. Just an answer from someone who knows your family.</p>
+                <p>Type a question. Watch Connect reason — and see why it only answers once it truly knows your family.</p>
               </div>
             </Reveal>
             <Reveal delay={90}>

@@ -303,3 +303,25 @@
   .cx-cinema-photo img { transform: none !important; transition: none; }
   .cx-hero .cx-btn-primary::after { transition: none; }
 }
+
+/* ── Ask — the live first conversation ──────────────────────────────────── */
+.cx-askform { display: flex; gap: .4rem; margin-top: 1.1rem; align-items: center; background: var(--cx-ivory); border: 1px solid var(--cx-line); border-radius: 999px; padding: .3rem .3rem .3rem 1.1rem; transition: border-color .2s var(--cx-ease), box-shadow .2s var(--cx-ease); }
+.cx-askform:focus-within { border-color: color-mix(in srgb, var(--cx-green) 45%, var(--cx-line)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--cx-green) 10%, transparent); }
+.cx-askinput { flex: 1 1 auto; min-width: 0; font: inherit; font-size: 1rem; color: var(--cx-ink); background: transparent; border: 0; outline: none; padding: .55rem 0; }
+.cx-askinput::placeholder { color: var(--cx-muted); }
+.cx-asksend { flex: 0 0 auto; width: 2.5rem; height: 2.5rem; border-radius: 999px; border: 0; background: var(--cx-green); color: var(--cx-ivory); display: grid; place-items: center; cursor: pointer; transition: background .2s var(--cx-ease), transform .2s var(--cx-ease), opacity .2s var(--cx-ease); }
+.cx-asksend:hover:not(:disabled) { background: var(--cx-green-deep); transform: translateY(-1px); }
+.cx-asksend:disabled { opacity: .38; cursor: default; }
+
+/* the simulated reasoning — calm, honest, never fabricated */
+.cx-reason { align-self: flex-start; display: inline-flex; align-items: center; gap: .55rem; padding: .15rem .1rem; }
+.cx-reason-label { font-size: .85rem; color: var(--cx-muted); font-style: italic; }
+
+/* the honest invitation that replaces a fabricated answer */
+.cx-answer-cta { align-self: flex-start; display: inline-flex; align-items: center; gap: .4rem; font: inherit; font-size: .92rem; font-weight: 600; color: var(--cx-green); text-decoration: none; padding: .55rem 1rem; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--cx-green) 35%, var(--cx-line)); background: var(--cx-card); transition: background .2s var(--cx-ease), border-color .2s var(--cx-ease), transform .2s var(--cx-ease); }
+.cx-answer-cta:hover { background: var(--cx-accent-soft); border-color: var(--cx-green); transform: translateY(-1px); }
+.cx-answer-cta.cx-enter { animation: cx-rise .5s var(--cx-ease) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cx-answer-cta.cx-enter { animation: none !important; }
+}

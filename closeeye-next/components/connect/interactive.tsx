@@ -2,7 +2,7 @@
 
 /**
  * Client-side interactive pieces of /connect: the sticky nav, a choreographed
- * scroll-reveal, the Ask demonstration (the product centrepiece), and the founding
+ * scroll-reveal, the live Ask experience (the product centrepiece), and the founding
  * sign-up. Self-contained — imports only the local Mark + config. Motion is calm,
  * purposeful, and always reduced-motion-safe.
  */
@@ -73,36 +73,25 @@ export function Reveal({
   )
 }
 
-/* ── Ask demonstration — the product centrepiece ────────────────────────────
-   Tap a question → Connect pauses, *remembers* (surfacing what it knows about the
-   family), then answers warmly. Proves Family Intelligence by demonstration. ── */
-const CHIPS = ['How is Amma today?', 'Is Dad taking his medicine?', 'I’m worried, and far away.'] as const
+/* ── Ask — a live first conversation (the product centrepiece) ───────────────
+   Type anything. Connect reads it and looks through what it knows about your
+   family — and because it has never met yours, it says so honestly (it never
+   guesses or invents), then invites you to create your family's private space.
+   This teaches the product: understanding first, then answers. ── */
+const STARTERS = ['How is Amma today?', 'Is Dad taking his medicine?', 'Did they sleep well?'] as const
 
-const MEMORY: Record<string, string[]> = {
-  'How is Amma today?': ['Amma · 72', 'morning tea with Meera', 'BP steady this week'],
-  'Is Dad taking his medicine?': ['8:30 AM dose', 'blood pressure', 'checked today'],
-  'I’m worried, and far away.': ['loving from afar', 'someone is with them today'],
-}
+const HONEST_ANSWER =
+  'I’d love to tell you — but I never guess about the people you love. I only ever speak from what your family has actually shared with me. Create your family’s private space, and I’ll come to know them the way you do.'
 
-const REPLIES: Record<string, string> = {
-  'How is Amma today?':
-    'Calm and well. 🌿 Meera sat with her over morning tea — Amma asked about you, and smiled at the photos. Nothing to worry about today.',
-  'Is Dad taking his medicine?':
-    'Yes — his morning dose at 8:30, checked and done. His blood pressure looked steady this week, and we’ll tell you the moment anything changes.',
-  'I’m worried, and far away.':
-    'That’s the hardest part of loving someone from a distance. Someone is with them today, and we’ll keep you close to everything that matters. You’re not carrying this alone.',
-}
-
-type Msg = { who: 'you' | 'them'; text: string }
-type Phase = 'idle' | 'thinking' | 'remembering' | 'answer'
+type Msg = { who: 'you' | 'them'; text: string; invite?: boolean }
+type Phase = 'idle' | 'reading' | 'searching' | 'answered'
 
 export function AskDemo() {
   const [msgs, setMsgs] = React.useState<Msg[]>([
     { who: 'them', text: 'Hello 🌿 Ask me anything about the people you love — I’m right here.' },
   ])
   const [phase, setPhase] = React.useState<Phase>('idle')
-  const [memories, setMemories] = React.useState<string[]>([])
-  const [pressed, setPressed] = React.useState<string | null>(null)
+  const [input, setInput] = React.useState('')
   const busy = React.useRef(false)
   const timers = React.useRef<number[]>([])
   const threadRef = React.useRef<HTMLDivElement>(null)
@@ -114,57 +103,74 @@ export function AskDemo() {
 
   React.useEffect(() => () => { timers.current.forEach(clearTimeout) }, [])
 
-  const ask = (q: string) => {
-    if (busy.current) return
+  const ask = (raw: string) => {
+    const q = raw.trim()
+    if (!q || busy.current) return
     busy.current = true
-    setPressed(q)
+    setInput('')
     setMsgs((m) => [...m, { who: 'you', text: q }])
-    const reply = REPLIES[q] ?? 'I’m right here.'
 
-    if (prefersReduced()) {
-      setMsgs((m) => [...m, { who: 'them', text: reply }])
+    const finish = () => {
+      setMsgs((m) => [...m, { who: 'them', text: HONEST_ANSWER, invite: true }])
+      setPhase('idle')
       busy.current = false
-      return
     }
 
+    if (prefersReduced()) { finish(); return }
     const after = (ms: number, fn: () => void) => timers.current.push(window.setTimeout(fn, ms))
-    setPhase('thinking')
-    after(680, () => { setMemories(MEMORY[q] ?? []); setPhase('remembering') })
-    after(1720, () => {
-      setMemories([])
-      setPhase('answer')
-      setMsgs((m) => [...m, { who: 'them', text: reply }])
-    })
-    after(2000, () => { setPhase('idle'); busy.current = false })
+    setPhase('reading')
+    after(760, () => setPhase('searching'))
+    after(1980, () => { setPhase('answered'); finish() })
   }
 
+  const status =
+    phase === 'reading' ? 'Reading your question' :
+    phase === 'searching' ? 'Looking for what I know about your family' : ''
+
   return (
-    <div className="cx-demo" role="group" aria-label="A sample Close Eye Connect conversation">
+    <div className="cx-demo" role="group" aria-label="Ask Close Eye — a live first conversation">
       <div className="cx-demotop">
         <Mark size={30} />
-        <span className="cx-who">Close&nbsp;Eye<span>with your family, always</span></span>
+        <span className="cx-who">Close&nbsp;Eye<span>your first conversation</span></span>
       </div>
       <div className="cx-thread" ref={threadRef} aria-live="polite">
         {msgs.map((m, i) => (
-          <div key={i} className={`cx-bubble cx-enter ${m.who === 'you' ? 'cx-you' : 'cx-them'}`}>{m.text}</div>
+          <React.Fragment key={i}>
+            <div className={`cx-bubble cx-enter ${m.who === 'you' ? 'cx-you' : 'cx-them'}`}>{m.text}</div>
+            {m.invite && (
+              <a className="cx-answer-cta cx-enter" href="#founding">
+                Create your family’s space <span aria-hidden="true">→</span>
+              </a>
+            )}
+          </React.Fragment>
         ))}
-        {phase === 'thinking' && (
-          <div className="cx-typing" aria-label="Thinking"><i></i><i></i><i></i></div>
-        )}
-        {phase === 'remembering' && (
-          <div className="cx-remember" aria-label="Remembering">
-            <span className="cx-remlabel">remembering</span>
-            <span className="cx-mems">
-              {memories.map((mem, i) => (
-                <span key={mem} className="cx-mem" style={{ animationDelay: `${i * 120}ms` }}>{mem}</span>
-              ))}
-            </span>
+        {(phase === 'reading' || phase === 'searching') && (
+          <div className="cx-reason" aria-label={status}>
+            <span className="cx-reason-label">{status}</span>
+            <span className="cx-typing" aria-hidden="true"><i></i><i></i><i></i></span>
           </div>
         )}
       </div>
-      <div className="cx-chips" role="group" aria-label="Try a question">
-        {CHIPS.map((q) => (
-          <button key={q} type="button" className="cx-chip" aria-pressed={pressed === q} onClick={() => ask(q)}>{q}</button>
+
+      <form className="cx-askform" onSubmit={(e) => { e.preventDefault(); ask(input) }}>
+        <label htmlFor="cx-ask" className="cx-sr">Ask about the people you love</label>
+        <input
+          id="cx-ask"
+          className="cx-askinput"
+          type="text"
+          value={input}
+          placeholder="Ask about the people you love…"
+          autoComplete="off"
+          onChange={(e) => setInput(e.target.value)}
+        />
+        <button className="cx-asksend" type="submit" aria-label="Ask" disabled={!input.trim() || busy.current}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </button>
+      </form>
+
+      <div className="cx-chips" role="group" aria-label="Or try one of these">
+        {STARTERS.map((q) => (
+          <button key={q} type="button" className="cx-chip" onClick={() => ask(q)}>{q}</button>
         ))}
       </div>
     </div>
