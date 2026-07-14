@@ -34,7 +34,9 @@
 .cx * { box-sizing: border-box; }
 .cx h1, .cx h2, .cx h3 { margin: 0; color: var(--cx-ink); line-height: 1.04; letter-spacing: -.03em; text-wrap: balance; font-weight: 640; }
 .cx p { margin: 0; text-wrap: pretty; }
-.cx a { color: inherit; }
+/* No `.cx a { color: inherit }` — its specificity (0,1,1) would override button
+   colours like `.cx-btn-primary` (0,1,0). Tailwind's base already makes links
+   inherit, and every link here is explicitly coloured (buttons / footer). */
 .cx ::selection { background: var(--cx-accent); color: var(--cx-ink); }
 .cx :focus-visible { outline: 2px solid var(--cx-green); outline-offset: 3px; border-radius: 6px; }
 
@@ -69,7 +71,10 @@
 
 /* hero */
 .cx-hero { position: relative; text-align: center; padding-top: clamp(3.5rem, 9vw, 7rem); padding-bottom: clamp(4rem, 10vw, 8rem); overflow: hidden; }
-.cx-glow { position: absolute; inset: -20% 0 auto 50%; translate: -50% 0; width: min(90vw, 900px); aspect-ratio: 1; pointer-events: none; z-index: 0; background: radial-gradient(closest-side, color-mix(in srgb, var(--cx-lime) 26%, transparent), color-mix(in srgb, var(--cx-deep) 12%, transparent) 55%, transparent 72%); filter: blur(14px); opacity: .55; animation: cx-breathe 9s var(--cx-ease) infinite; }
+/* NB: selector is `.cx-hero .cx-glow` (specificity 0,2,0) so it beats `.cx-hero>*`
+   (0,1,0) below — otherwise the glow gets forced to position:relative, drops into
+   flow as a ~900px block, and pushes the whole hero off-screen. */
+.cx-hero .cx-glow { position: absolute; inset: -20% 0 auto 50%; translate: -50% 0; width: min(90vw, 900px); aspect-ratio: 1; pointer-events: none; z-index: 0; background: radial-gradient(closest-side, color-mix(in srgb, var(--cx-lime) 26%, transparent), color-mix(in srgb, var(--cx-deep) 12%, transparent) 55%, transparent 72%); filter: blur(14px); opacity: .55; animation: cx-breathe 9s var(--cx-ease) infinite; }
 @keyframes cx-breathe { 0%,100% { transform: scale(1); opacity: .5; } 50% { transform: scale(1.08); opacity: .68; } }
 .cx-hero > * { position: relative; z-index: 1; }
 .cx-hero h1 { font-size: clamp(2.7rem, 6.4vw, 5.25rem); font-weight: 660; letter-spacing: -.035em; margin-top: 1.6rem; }
