@@ -18,13 +18,16 @@ import type { ShadowReader } from './shadow-source'
 
 /**
  * Build a read-only reader over a SELECT-only Postgres role. Returns the reader and
- * a `close()` to release the pool. A short statement timeout and a tiny pool keep the
- * out-of-band read from ever contending with production (zero performance regression).
+ * a `close()` to release the pool. A short CONNECTION timeout and statement timeout
+ * plus a tiny pool keep the out-of-band read from ever hanging or contending with
+ * production — it fails fast rather than occupying a function (zero performance
+ * regression, clean failure signal).
  */
 export function createPostgresReadonlyReader(connectionString: string): { reader: ShadowReader; close: () => Promise<void> } {
   const pool = new Pool({
     connectionString,
     max: 2,
+    connectionTimeoutMillis: 10000,
     statement_timeout: 5000,
     application_name: 'closeeye-shadow-ro',
   })

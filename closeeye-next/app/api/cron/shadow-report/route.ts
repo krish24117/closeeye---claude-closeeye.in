@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
+import { randomUUID } from 'node:crypto'
 import { createPostgresReadonlyReader } from '@/lib/identity/postgres-reader'
 import { runShadowReport } from '@/lib/identity/shadow-runner'
 import { isShadowEnabled } from '@/lib/identity/shadow-source'
 
 /**
- * Out-of-band Identity Shadow runner (Migration Phase A · A5).
+ * Out-of-band Identity Shadow runner (Migration Phase A · A5, hardened in A4.1).
  *
  * A scheduled job / operator-triggered endpoint that runs one shadow validation pass
  * against production READ-ONLY and logs the Founder Report. It is independent of the
@@ -16,9 +17,15 @@ import { isShadowEnabled } from '@/lib/identity/shadow-source'
  * operator with the secret can invoke it. It performs ZERO writes — the report goes
  * to the logs only, and the report is aggregate (counts, rates, status), never PII.
  *
- * Guarantees preserved: zero writes, zero behaviour change, zero downtime, instant
- * rollback (flip SHADOW_ENABLED off), zero performance regression (read replica-free,
- * tiny throttled reads with a short statement timeout).
+ * A4.1 hardening: every invocation carries a run identifier + wall-clock timestamp so
+ * each run maps directly to a row in the Founder Evidence Log.
+ *
+ * Kill switch (per the ratified rollback procedure): the PRIMARY, instant stop is
+ * database-side privilege revocation (revoke the role's grants / disable the role);
+ * SHADOW_ENABLED is a secondary administrative control that takes effect on redeploy.
+ *
+ * Guarantees preserved: zero writes, zero behaviour change, zero downtime, zero
+ * performance regression.
  */
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -32,10 +39,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
   }
 
+  // Evidence identity (A4.1): a unique run id + wall-clock time for the Evidence Log.
+  const runId = randomUUID()
+  const ranAt = new Date().toISOString()
+
   // Fail closed: dormant unless explicitly enabled AND the read-only connection exists.
   const roUrl = process.env.SHADOW_RO_DATABASE_URL
   if (!isShadowEnabled() || !roUrl) {
-    return NextResponse.json({ ok: true, enabled: false, note: 'shadow disabled or read-only connection not configured' })
+    return NextResponse.json({ ok: true, runId, ranAt, enabled: false, note: 'shadow disabled or read-only connection not configured' })
   }
 
   const { reader, close } = createPostgresReadonlyReader(roUrl)
@@ -44,11 +55,14 @@ export async function GET(request: Request) {
     // several consecutive green reports, never declared by a single run.
     const center = await runShadowReport(reader, { enabled: true, windowStable: false })
 
-    // Observability (zero DB writes): the aggregate Founder Report to the logs.
-    console.log('[shadow-report]\n' + center.founderReport)
+    // Observability (zero DB writes): the aggregate Founder Report to the logs, stamped
+    // with the run id + time so it lines up with the Evidence Log.
+    console.log(`[shadow-report] run ${runId} at ${ranAt}\n` + center.founderReport)
 
     return NextResponse.json({
       ok: true,
+      runId,
+      ranAt,
       enabled: true,
       health: center.shadowHealth.status,
       identityParity: center.identityParity.rate,
@@ -59,8 +73,8 @@ export async function GET(request: Request) {
     })
   } catch (err) {
     // Belt-and-braces: the runner already fails closed, but never let this endpoint throw.
-    console.error('[shadow-report] run failed (non-fatal):', err)
-    return NextResponse.json({ ok: false, enabled: true, error: 'shadow run failed — see logs' }, { status: 200 })
+    console.error(`[shadow-report] run ${runId} at ${ranAt} failed (non-fatal):`, err)
+    return NextResponse.json({ ok: false, runId, ranAt, enabled: true, error: 'shadow run failed — see logs' }, { status: 200 })
   } finally {
     await close()
   }
