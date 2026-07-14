@@ -28,28 +28,35 @@ is never rewritten.
 
 ## 1 · What Close Eye Is / Is Not
 
-Close Eye is a **Trusted Human Presence** company — so no family faces life's important
-moments alone. It is **not** a healthcare marketplace, a booking portal, an insurance
-site, an elder-care directory, or "an app." The product is trust; technology only
-enables it.
+Close Eye is a **family trust company** — so no family faces life's important moments
+alone. It delivers that trust as two things: **Close Eye Connect**, the intelligence that
+stays with your family, and **Close Eye Care**, the trusted human network it activates
+when someone needs to be there (see §2a). It is **not** a healthcare marketplace, a
+booking portal, an insurance site, an elder-care directory, or a chatbot. **The product
+is trust; the intelligence and the human network both serve it — never the other way
+around.**
 _Source: [Product-Bible](closeeye-next/docs/Product-Bible.md)._
 
 ---
 
 ## 2 · Product Truths
 
-- **Mission** — the most trusted human presence for the families we serve.
+- **Mission** — the most trusted intelligence and presence for the families we serve.
 - **Who we serve** — families living away from the people they love, usually an adult
   child abroad buying for a parent in India. Copy centres the **parent's dignity**,
   never the child's absence.
-- **The three services (only three)** — Home Wellbeing Visit · Hospital Companion ·
-  Custom Request.
+- **The two products** — **Close Eye Connect** (the global intelligence layer) and
+  **Close Eye Care** (the on-demand human network). Connect orchestrates; Care fulfills
+  (see §2a).
+- **Care's services** — Home Wellbeing Visit · Hospital Companion · Custom Request, plus
+  the capabilities Connect can activate (medicine pickup, festival visit, emergency
+  response).
 - **The people** — **Guardian** (the verified, trained person who visits) ·
   **Presence Manager** (one dedicated human, the family's single point of contact) ·
   **Family** (the customer — never called "customer").
-- **Universal promises** — verified Guardians, a dedicated Presence Manager, WhatsApp
-  updates, visit reports, privacy, human support. These come with **every** visit —
-  no tiers, no fine print.
+- **Universal promises** — every **Care visit** comes with verified Guardians, a
+  dedicated Presence Manager, WhatsApp updates, visit reports, privacy, and human
+  support — no fine print.
 
 ---
 
