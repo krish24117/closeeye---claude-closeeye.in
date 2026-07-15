@@ -351,7 +351,8 @@ export function ConnectExperience() {
               <p className="sig">{counselData.signature}</p>
             </div>
             <p className="trustline" style={{ marginTop: 20 }}>Sometimes care needs a real person. Close Eye knows when.</p>
-            <div className="act"><button className="btn" onClick={() => setStage('s4')}>This is what I’ve been looking for</button></div>
+            {rl && !rl.aiConfident && <a className="qlink" href={WA} target="_blank" rel="noopener" style={{ marginTop: 10 }}>Talk to a real person on WhatsApp →</a>}
+            <div className="act"><button className="btn" onClick={() => setStage('s4')}>{rl && !rl.aiConfident ? 'Keep this, and continue' : 'This is what I’ve been looking for'}</button></div>
           </section>
         )}
 
@@ -359,7 +360,7 @@ export function ConnectExperience() {
         {stage === 's4' && rl && (
           <section className="stage on">
             {nav}
-            <h1 className="h-serif" style={{ fontSize: 26 }}>Keep what I now know<br />about {rl.gender === 'he' ? 'him' : rl.gender === 'they' ? 'them' : 'her'} — <em>safely.</em></h1>
+            <h1 className="h-serif" style={{ fontSize: 26 }}>Keep what I now know<br />about {rl.gender === 'he' ? 'him' : rl.gender === 'she' ? 'her' : 'them'} — <em>safely.</em></h1>
             <p className="lede">{subjectPronounTitle(rl)} private journal: what I know, what I’m learning, every visit written down.</p>
             <p className="trustline">Close Eye never invents information about your family.</p>
             <div className="ledger">
@@ -381,7 +382,7 @@ export function ConnectExperience() {
         {stage === 's4b' && (
           <section className="stage on">
             {nav}
-            <h1 className="h-serif" style={{ fontSize: 26 }}>Keep {rl?.gender === 'he' ? 'him' : rl?.gender === 'they' ? 'them' : 'her'} close.<br /><em>Bring the others in.</em></h1>
+            <h1 className="h-serif" style={{ fontSize: 26 }}>Keep {rl?.gender === 'he' ? 'him' : rl?.gender === 'she' ? 'her' : 'them'} close.<br /><em>Bring the others in.</em></h1>
             <p className="whatis">Sign in so this page is yours alone — then add your family, one by one. The more Connect understands them, <b>the better every answer becomes.</b></p>
             <div className="act">
               <button className="btn-google" onClick={google} disabled={pending !== null} aria-label="Continue with Google">
@@ -481,5 +482,5 @@ export function ConnectExperience() {
 
 /** "Her" / "His" / "Their" — a title-case possessive for headings. */
 function subjectPronounTitle(rl: ReadLedger): string {
-  return rl.gender === 'he' ? 'His' : rl.gender === 'they' ? 'Their' : 'Her'
+  return rl.gender === 'he' ? 'His' : rl.gender === 'she' ? 'Her' : 'Their'
 }

@@ -29,6 +29,7 @@ export interface ReadLedger {
   relationshipWord: string | null
   name: string | null
   gender: Gender | null
+  forLoved: boolean                // is this about a specific person we identified?
   city: string | null
   livesAlone: boolean
   distant: boolean
@@ -59,15 +60,16 @@ function findCity(text: string): string | null {
 const ALONE = /\b(lives?\s+alone|living\s+alone|(by|on)\s+(her|his|their)\s+own|all\s+alone|stays?\s+alone)\b/i
 const DISTANT = /\b(far\s+away|far\s+from|miles\s+away|another\s+(city|country|state)|different\s+(city|country|state)|abroad|overseas|can'?t\s+be\s+there|cannot\s+be\s+there|living\s+abroad|so\s+far)\b/i
 
-/* ── need detection (order = priority; deterministic) ── */
+/* ── need detection (order = priority; specific needs win over generic help) ── */
 const NEED_PATTERNS: [NeedType, RegExp][] = [
   ['emergency', /\b(fell|fallen|falling|not\s+breathing|can'?t\s+breathe|chest\s+pain|unconscious|collapsed|bleeding|ambulance|stroke|seizure|heart\s+attack|emergency|rushed\s+to|admitted)\b/i],
-  ['errand', /\b(pick\s*up|pickup|picked\s+up|drop\s*off|dropoff|drop\s+(her|him|them)|collect|bring\s+(her|him|them)|take\s+(her|him|them)\s+to|groceries|grocery|buy|purchase|deliver|delivery|ration|airport|railway|station|errand|shopping|gas\s+cylinder|pay\s+(the|her|his)\s+bill)\b/i],
   ['medical', /\b(fever|temperature|medicine|medication|meds|tablet|pill|dose|insulin|bp|blood\s+pressure|sugar|diabet|doctor|unwell|sick|ill|not\s+eating|weak|dizzy|infection|wound|checkup|check-?up|blood\s+test|scan)\b/i],
   ['companionship', /\b(lonely|alone\s+all|feels?\s+alone|sad|bored|miss(es|ing)?\s+(us|me|company)|no\s+one|isolated|company|someone\s+to\s+talk|depress)\b/i],
-  ['documents', /\b(keep|store|save|safe|file|upload)\b.*\b(report|reports|document|documents|prescription|papers|records|policy|aadhaar)\b|\b(report|prescription|records)\b.*\b(safe|keep|store)\b/i],
+  ['documents', /\b(keep|store|save|safe|upload)\b.*\b(report|reports|document|documents|prescription|papers|records|policy|aadhaar)\b|\b(report|prescription|records)\b.*\b(safe|keep|store)\b/i],
   ['memories', /\b(photo|photos|picture|pictures|album|memories|remember|stories|keepsake)\b/i],
   ['history', /\b(family\s+history|ancestry|our\s+roots|heritage|family\s+tree)\b/i],
+  // physical errands + any request for a real person to help with a task
+  ['errand', /\b(pick\s*up|pickup|picked\s+up|drop\s*off|dropoff|drop\s+(her|him|them)|collect|bring\s+(her|him|them)|take\s+(her|him|them)\s+to|groceries|grocery|buy|purchase|deliver|delivery|ration|airport|railway|station|errand|shopping|gas\s+cylinder|pay\s+(the|her|his|a)\s+bill|help\s+me|need\s+help|someone\s+to\s+help|can\s+(someone|you)\s+help|need\s+someone|file\s+(a|my|the|tax)|taxes?|paperwork|legal|insurance|pension|passport|visa|\bform\b|apply\s+for|sort\s+out|arrange)\b/i],
   ['wellbeing', /\b(how\s+is|how'?s|how\s+are|is\s+(she|he|they)\s+(okay|ok|alright|fine)|okay|alright|doing\s+(well|okay|ok)?|worried|check\s+on|know\s+(she|he|they)'?s|every\s+day|sleeping|eating\s+(well|properly))\b/i],
 ]
 function detectNeed(text: string): NeedType {
@@ -89,10 +91,12 @@ const AI_CONFIDENT: Record<NeedType, boolean> = {
   errand: false, medical: false, emergency: false, companionship: false, unclear: false,
 }
 
-function concernFor(need: NeedType, name: string): string | null {
+function concernFor(need: NeedType, name: string, forLoved: boolean): string | null {
   switch (need) {
     case 'wellbeing': return `You want to know ${name} is okay — day to day, not only when you speak.`
-    case 'errand': return `You need a real-world hand for ${name} — someone to actually do it, not an answer.`
+    case 'errand': return forLoved
+      ? `You need a real-world hand for ${name} — someone to actually do it, not an answer.`
+      : `You need a real person to help with something real — and that's exactly when Close Eye steps in.`
     case 'medical': return `Something about ${name}'s health needs a real look — and you don't want a guess.`
     case 'emergency': return `This sounds urgent — ${name} may need help right now.`
     case 'companionship': return `${cap(name)} could use company — a familiar face, not just a phone call.`
@@ -113,14 +117,14 @@ export function blanksFor(gender: Gender | null): Blank[] {
     { key: 'nearby', text: `Who can reach ${them} in twenty minutes, if ever needed` },
   ]
 }
-function blanksForNeed(need: NeedType, name: string, gender: Gender | null): Blank[] {
+function blanksForNeed(need: NeedType, name: string, gender: Gender | null, forLoved: boolean): Blank[] {
   const they = pronoun.subject(gender), them = pronoun.object(gender), poss = pronoun.possessive(gender)
   switch (need) {
-    case 'errand': return [
+    case 'errand': return forLoved ? [
       { key: 'when_where', text: `When and where it needs to happen` },
       { key: 'reach', text: `How to reach ${name} on the day` },
       { key: 'details', text: `Anything ${they}'ll need — bags, papers, a wheelchair` },
-    ]
+    ] : [] // a general help request → a real person gathers the details, no form to fill
     case 'medical': return [
       { key: 'seeing', text: `What you're noticing about ${them}` },
       { key: 'meds', text: `${cap(poss)} medicines, and what ${they} ${conj('take', gender)} each day` },
@@ -156,12 +160,13 @@ export function readLedger(rawText: string): ReadLedger {
   const distant = DISTANT.test(text)
   const question = realQuestion(text)
   const need = detectNeed(text)
+  const forLoved = !!(name || relationshipWord)
 
   const subjectLabel = name ? name : relationshipWord ? `Your ${cap(relationshipWord)}` : 'Someone you love'
   const who = name || (relationshipWord ? `your ${relationshipWord}` : 'them')
   const they = pronoun.subject(gender)
   const poss = cap(pronoun.possessive(gender))
-  const concern = concernFor(need, who)
+  const concern = concernFor(need, who, forLoved)
 
   const ledger: LedgerLine[] = []
   if (name || relationshipWord) ledger.push({ label: 'Someone you love', body: name ? `${name}.` : `Your ${relationshipWord}.` })
@@ -175,9 +180,9 @@ export function readLedger(rawText: string): ReadLedger {
   if (question) ledger.push({ label: 'In your words', body: question, quote: true })
 
   return {
-    subjectLabel, relationship, relationshipWord, name, gender, city, livesAlone, distant,
+    subjectLabel, relationship, relationshipWord, name, gender, forLoved, city, livesAlone, distant,
     question, need, concern, aiConfident: AI_CONFIDENT[need],
-    ledger, blanks: blanksForNeed(need, who, gender), rawText: text,
+    ledger, blanks: blanksForNeed(need, who, gender, forLoved), rawText: text,
   }
 }
 
@@ -202,8 +207,13 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
         : `Every visit becomes a page you can hold: how ${they} seemed, what ${they} ate, what ${they} laughed about. Proof, not reassurance.`)
       break
     case 'errand':
-      P.push(`This is a real-world thing — it needs a person, not an app. Close Eye can send a verified Guardian to do it for ${name}, and tell you the moment it's done.`)
-      P.push(`You don't chase anyone or arrange a stranger. Your Presence Manager confirms the time with you first, and a trusted local person handles it with care.`)
+      if (rl.forLoved) {
+        P.push(`This is a real-world thing — it needs a person, not an app. Close Eye can put a trusted human on it for ${name}, and tell you the moment it's done.`)
+        P.push(`You don't chase anyone or arrange a stranger. Your Presence Manager confirms the details with you first.`)
+      } else {
+        P.push(`I understand — you need a real person to help with this, not an answer from an app.`)
+        P.push(`That's exactly what Close Eye is for: real people, when they're needed. Tell us what you need and a trusted person will help — or reach one on WhatsApp right now.`)
+      }
       break
     case 'medical':
       P.push(`I won't guess about health — ever. What ${name} needs is a real look: a verified Guardian who visits in person, notices what a call can't, and writes it down for you the same day.`)
@@ -227,9 +237,10 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
       P.push(`Close Eye keeps your family's story — the people, places and roots that made you — safe for the generations after.`)
       break
     default:
-      P.push(`Tell me a little more about what ${name} needs — a visit, a hand with something real, or simply someone to check in — and I'll bring the right kind of help. I'd rather understand than guess.`)
+      P.push(`I want to be honest — I'm not yet sure what you need, and I'd rather understand than guess.`)
+      P.push(`Tell me a little more — who this is for, and what would help — or reach a real person on WhatsApp, and we'll help you either way.`)
   }
-  return { paragraphs: P, signature: `— for ${name}, from what you told me` }
+  return { paragraphs: P, signature: rl.forLoved ? `— for ${name}, from what you told me` : `— from what you told me` }
 }
 
 /** The ledger lines to persist on space creation, with provenance (append-only). */
