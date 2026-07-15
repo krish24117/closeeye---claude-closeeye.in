@@ -242,14 +242,29 @@
 .cx .lede{font-family:var(--sans);font-size:15px;color:var(--pencil);margin:0 0 8px;max-width:34ch}
 
 .cx .ask-wrap{margin-top:34px}
-.cx .ruled{position:relative}
-.cx .ruled textarea{
-  width:100%;background:transparent;border:none;border-bottom:1px solid var(--hair2);
-  font-family:var(--serif);font-size:21px;line-height:1.55;color:var(--ink);
-  padding:6px 2px 12px;min-height:96px;resize:none;caret-color:var(--emerald);
-}
+/* ── the writing desk — the page's focal moment. A journal page on the desk:
+   paper-white card, ruled lines that draw in, a waiting pen-point that breathes. ── */
+.cx .deskcard{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px 20px;margin-top:2px}
+.cx .deskcard .exp-k{margin:0 0 5px}
+.cx .desk-lede{font-family:var(--serif);font-size:18px;line-height:1.4;color:var(--forest);margin:0 0 16px}
+.cx .ruled{position:relative;min-height:104px}
+.cx .ruled .rules{position:absolute;inset:0;pointer-events:none}
+.cx .ruled .rule{position:absolute;left:0;right:0;height:1px;background:var(--hair2);transform:scaleX(0);transform-origin:left center}
+.cx .ruled .rule:nth-child(1){top:37px}
+.cx .ruled .rule:nth-child(2){top:69px}
+.cx .ruled .rule:nth-child(3){top:101px}
+.cx .deskcard.drawn .ruled .rule{transform:scaleX(1);transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.cx .deskcard.drawn .ruled .rule:nth-child(2){transition-delay:.12s}
+.cx .deskcard.drawn .ruled .rule:nth-child(3){transition-delay:.24s}
+.cx .ruled .pen{position:absolute;left:2px;top:15px;width:8px;height:8px;border-radius:50%;background:var(--hair2);z-index:1}
+.cx .deskcard.drawn .ruled .pen{background:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}
+.cx .ruled textarea{position:relative;z-index:1;display:block;width:100%;background:transparent;border:none;
+  font-family:var(--serif);font-size:18px;line-height:32px;color:var(--ink);
+  padding:5px 2px 0 22px;min-height:104px;resize:none;caret-color:var(--emerald)}
 .cx .ruled textarea::placeholder{color:var(--faint);font-style:italic}
-.cx .ruled textarea:focus{outline:none;border-bottom-color:var(--emerald)}
+.cx .ruled textarea:focus{outline:none}
+.cx .ruled:focus-within .pen{animation:none;background:var(--emerald)}
+.cx .ruled:focus-within .rule:nth-child(1){background:var(--emerald)}
 .cx .cx-field{display:block;width:100%;background:transparent;border:none;border-bottom:1px solid var(--hair2);
   font-family:var(--serif);font-size:18px;color:var(--ink);padding:8px 2px;margin-bottom:14px;caret-color:var(--emerald)}
 .cx .cx-field::placeholder{color:var(--faint);font-style:italic}
@@ -309,11 +324,14 @@
 .cx .counsel .sig{font-family:var(--serif);font-style:italic;color:var(--pencil);font-size:15px;margin-top:6px}
 
 .cx .act{margin-top:auto;padding-top:30px}
-.cx .btn{display:block;width:100%;background:var(--forest);color:#F7F4EC;border-radius:999px;
-  padding:17px 22px;font-family:var(--sans);font-weight:600;font-size:16px;text-align:center;
-  letter-spacing:.01em;transition:transform .15s ease,opacity .2s}
+.cx .btn{display:block;width:100%;background:var(--forest);color:#F7F4EC;border:1px solid transparent;border-radius:999px;
+  padding:16px 22px;font-family:var(--sans);font-weight:600;font-size:16px;text-align:center;
+  letter-spacing:.01em;transition:background .3s ease,color .3s ease,border-color .3s ease,transform .15s ease,opacity .2s}
 .cx .btn:active{transform:scale(.985)}
 .cx .btn:disabled{opacity:.35}
+/* the writing desk's CTA: a quiet ghost while empty, inking to the full pill on type */
+.cx .btn.ghost{background:transparent;color:var(--forest);border-color:var(--hair2)}
+.cx .btn.inked{background:var(--forest);color:#F7F4EC;border-color:var(--forest)}
 .cx .ghost{display:block;width:100%;text-align:center;margin-top:14px;font-size:14px;color:var(--pencil);
   padding:10px;font-family:var(--sans)}
 .cx .ghost:hover{color:var(--forest)}
@@ -381,4 +399,6 @@
   .cx .beat.past{opacity:.46}
   .cx .hero-sig,.cx .hero-head,.cx .hero-supp,.cx .hero-feels .feel,
   .cx .storycards,.cx .breadth,.cx .s0-ask,.cx .s0-foot{opacity:1;transform:none}
+  .cx .ruled .rule{transform:none}
+  .cx .ruled .pen{background:var(--sprout)}
 }

@@ -108,6 +108,8 @@ export function ConnectExperience() {
   const [heroN, setHeroN] = React.useState(0)
   const [heroSettled, setHeroSettled] = React.useState(false)
   const [openCard, setOpenCard] = React.useState<string | null>(null) // story card expanded in place
+  const [deskDrawn, setDeskDrawn] = React.useState(false) // writing-desk rules draw in once, on scroll into view
+  const deskRef = React.useRef<HTMLDivElement | null>(null)
   // Phase 2 selection
   const [visit, setVisit] = React.useState(VISITS[0]!)
   const threadRef = React.useRef<HTMLElement | null>(null)
@@ -138,6 +140,19 @@ export function ConnectExperience() {
     try { window.localStorage.setItem('ce_connect_hero_seen', '1') } catch { /* private mode */ }
     return () => hs.forEach(clearTimeout)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The writing desk draws its rules in once, when it first enters view — the only
+  // motion on the landing, so the eye goes exactly there. Reduced-motion: instant.
+  React.useEffect(() => {
+    if (reduce || typeof IntersectionObserver === 'undefined') { setDeskDrawn(true); return }
+    const el = deskRef.current
+    if (!el) { setDeskDrawn(true); return }
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) { setDeskDrawn(true); io.disconnect() }
+    }, { threshold: 0.35 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [stage, reduce]) // re-observe if the desk (re)mounts on return to s0
 
   // Continuous thread: bring the newly-active beat into view instead of jumping to
   // the top — the conversation stays whole, the eye follows what just changed.
@@ -465,19 +480,21 @@ export function ConnectExperience() {
               })}
             </div>
             <div className="s0-ask">
-              <p className="exp-k">Experience Close Eye</p>
-              <p className="lede" style={{ marginBottom: 0 }}>Tell Connect about someone you love.</p>
-              <div className="ask-wrap" style={{ marginTop: 6 }}>
+              <div className={`deskcard${deskDrawn ? ' drawn' : ''}`} ref={deskRef}>
+                <p className="exp-k">Experience Close Eye</p>
+                <p className="desk-lede">Tell Connect about someone you love.</p>
                 <div className="ruled">
-                  <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder={SAMPLE} />
+                  <span className="pen" aria-hidden="true" />
+                  <div className="rules" aria-hidden="true"><span className="rule" /><span className="rule" /><span className="rule" /></div>
+                  <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Write as you would to a friend…" />
                 </div>
                 <div className="try">or begin with —<br />
                   <button type="button" onClick={() => setText(SAMPLE)}>“{SAMPLE}”</button>
                 </div>
-              </div>
-              <div className="act">
-                <button className="btn" onClick={ask} disabled={text.trim().length < 8}>Let Connect understand</button>
-                <p className="privacy">Nothing you write is sold or shared. Ever.</p>
+                <div className="act">
+                  <button className={`btn${text.trim().length > 0 ? ' inked' : ' ghost'}`} onClick={ask}>Let Connect understand</button>
+                  <p className="privacy">Nothing you write is sold or shared. Ever.</p>
+                </div>
               </div>
             </div>
             <div className="breadth" aria-label="More than care">
