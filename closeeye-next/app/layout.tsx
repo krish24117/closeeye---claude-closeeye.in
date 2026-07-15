@@ -4,9 +4,7 @@ import '@/styles/globals.css'
 import { RegisterSW } from '@/components/pwa/register-sw'
 import { NativeInit } from '@/components/pwa/native-init'
 import { AuthProvider } from '@/components/auth/auth-provider'
-import { AuthGate } from '@/components/auth/auth-gate'
-import { FamilyDataProvider } from '@/components/family/family-data-provider'
-import { ToastProvider } from '@/components/ui/toast'
+import { AppShell } from '@/components/app/app-shell'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 import { SITE } from '@/lib/site'
 
@@ -113,10 +111,7 @@ export default function RootLayout({
           Skip to content
         </a>
         <AuthProvider>
-          <FamilyDataProvider>
-            <AuthGate />
-            <ToastProvider>{children}</ToastProvider>
-          </FamilyDataProvider>
+          <AppShell>{children}</AppShell>
         </AuthProvider>
         <OfflineBanner />
         <RegisterSW />
