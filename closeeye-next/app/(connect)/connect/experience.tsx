@@ -51,6 +51,7 @@ export function ConnectExperience() {
   const [text, setText] = React.useState('')
   const [rl, setRl] = React.useState<ReadLedger | null>(null)
   const [subject, setSubject] = React.useState('Their')
+  const [selfSpace, setSelfSpace] = React.useState(false) // a request for the user themselves — "your space", not "their"
   const [error, setError] = React.useState('')
   const [pending, setPending] = React.useState<'google' | 'email' | null>(null)
   const [showEmail, setShowEmail] = React.useState(false)
@@ -140,7 +141,9 @@ export function ConnectExperience() {
         surfaces a calm retry with the draft intact. ── */
   async function finishAndProvision() {
     const draft = getConnectDraft()
-    setSubject(draft ? readLedger(draft.rawText).subjectLabel : rl?.subjectLabel ?? 'Their')
+    const rl2 = draft ? readLedger(draft.rawText) : rl
+    setSubject(rl2?.subjectLabel ?? 'Their')
+    setSelfSpace(rl2 ? !rl2.forLoved : false)
     if (PHASE_2_ENABLED) {
       setStage('resuming')
       const res = await provisionFamilySpace()
@@ -360,19 +363,23 @@ export function ConnectExperience() {
         {stage === 's4' && rl && (
           <section className="stage on">
             {nav}
-            <h1 className="h-serif" style={{ fontSize: 26 }}>Keep what I now know<br />about {rl.gender === 'he' ? 'him' : rl.gender === 'she' ? 'her' : 'them'} — <em>safely.</em></h1>
-            <p className="lede">{subjectPronounTitle(rl)} private journal: what I know, what I’m learning, every visit written down.</p>
+            <h1 className="h-serif" style={{ fontSize: 26 }}>{rl.forLoved
+              ? <>Keep what I now know<br />about {rl.gender === 'he' ? 'him' : rl.gender === 'she' ? 'her' : 'them'} — <em>safely.</em></>
+              : <>Keep what you’ve<br />shared — <em>safely.</em></>}</h1>
+            <p className="lede">{rl.forLoved
+              ? `${subjectPronounTitle(rl)} private journal: what I know, what I’m learning, every visit written down.`
+              : 'Your private space: what I know, what I’m learning, kept only for you.'}</p>
             <p className="trustline">Close Eye never invents information about your family.</p>
             <div className="ledger">
-              <p className="lh">{subjectPronounTitle(rl)} page, so far</p>
+              <p className="lh">{rl.forLoved ? `${subjectPronounTitle(rl)} page, so far` : 'Your space, so far'}</p>
               {rl.ledger.filter((l) => !l.quote).map((l, i) => (
                 <div key={i} className="lline in"><span className="ld" /><p>{l.body}</p></div>
               ))}
               {rl.question && <div className="lline in"><span className="ld" /><p>In your words: <q>{rl.question}</q></p></div>}
-              <div className="blank in"><span className="ld" /><p>Three lines still waiting for you<span className="dots" /></p></div>
+              {rl.blanks.length > 0 && <div className="blank in"><span className="ld" /><p>{rl.blanks.length === 1 ? 'One line' : `${rl.blanks.length} lines`} still waiting for you<span className="dots" /></p></div>}
             </div>
             <div className="act">
-              <button className="btn" onClick={() => { saveDraft(); setStage('s4b') }}>Create {rl.subjectLabel === 'Someone you love' ? 'their' : rl.subjectLabel + '’s'} Family Space</button>
+              <button className="btn" onClick={() => { saveDraft(); setStage('s4b') }}>{rl.forLoved ? `Create ${rl.subjectLabel}’s Family Space` : 'Create your space'}</button>
               <p className="privacy">Private by design. You stay in control.</p>
             </div>
           </section>
@@ -407,7 +414,7 @@ export function ConnectExperience() {
         {/* resuming (post-OAuth provisioning) */}
         {stage === 'resuming' && (
           <section className="stage on">
-            <div className="think" style={{ marginTop: 40 }}><span className="ld" /><span>Opening {subject}’s space…</span></div>
+            <div className="think" style={{ marginTop: 40 }}><span className="ld" /><span>{selfSpace ? 'Opening your space…' : `Opening ${subject}’s space…`}</span></div>
           </section>
         )}
 
@@ -468,7 +475,7 @@ export function ConnectExperience() {
           <section className="stage on">
             <div className="seal">
               <div className="ring"><span className="ld" /></div>
-              <h2>{subject}’s space is open.</h2>
+              <h2>{selfSpace ? 'Your space is open.' : `${subject}’s space is open.`}</h2>
               <p>Everything Close Eye understands is kept here, privately — opening it for you now.</p>
               <p className="promise">When you can’t be there, Close&nbsp;Eye can.</p>
             </div>
