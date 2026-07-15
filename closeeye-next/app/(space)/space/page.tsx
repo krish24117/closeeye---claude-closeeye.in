@@ -111,7 +111,8 @@ export default function SpacePage() {
   return (
     <div className="app">
       <header className="mast">
-        <span className="wm"><span className="dot" />close eye <small>CONNECT</small></span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <span className="wm"><img className="wmark" src="/brand/close-eye-icon.svg" alt="" width={22} height={22} />close eye <small>CONNECT</small></span>
         <button className="avatar" onClick={() => { setView('profile'); window.scrollTo(0, 0) }} aria-label="Your page">{initial(space.userName)}</button>
       </header>
 

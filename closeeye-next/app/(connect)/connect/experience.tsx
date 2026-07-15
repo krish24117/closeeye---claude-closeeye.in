@@ -212,7 +212,8 @@ export function ConnectExperience() {
       <div className="thread"><i ref={threadRef} /></div>
       <div className="app">
         <header className="mast" style={{ flexDirection: 'column', alignItems: 'center' }}>
-          <span className="wm"><span className="dot" />close eye</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <span className="wm"><img className="wmark" src="/brand/close-eye-icon.svg" alt="" width={24} height={24} />close eye</span>
           <div className="tag">Connect</div>
         </header>
         <main id="main">

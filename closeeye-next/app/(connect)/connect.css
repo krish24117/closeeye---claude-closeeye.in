@@ -8,11 +8,12 @@
   --emerald:#06A94E; --sprout:#83C400;
   --pencil:#6E7A6F; --faint:#98A097; --hair:#E2DECE; --hair2:#D8D3BF;
   --serif:var(--font-newsreader),Georgia,serif; --sans:var(--font-inter),system-ui,sans-serif;
+  --colw:430px; /* the reading column — widens intentionally on larger screens */
   background:linear-gradient(180deg,#F7F4EC 0%,var(--paper) 30%,#F1EDE1 100%);
   color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;min-height:100dvh;
 }
 .cx *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-.cx .app{max-width:430px;margin:0 auto;min-height:100dvh;position:relative;
+.cx .app{max-width:var(--colw);margin:0 auto;min-height:100dvh;position:relative;
   padding:0 26px calc(30px + env(safe-area-inset-bottom));}
 .cx button{font-family:var(--sans);cursor:pointer;border:none;background:none;color:inherit}
 .cx :focus-visible{outline:2px solid var(--emerald);outline-offset:3px;border-radius:6px}
@@ -21,6 +22,7 @@
 .cx .mast .wm{display:flex;align-items:center;gap:8px;font-family:var(--sans);font-weight:600;
   font-size:17px;letter-spacing:.01em;color:var(--forest)}
 .cx .wm .dot{width:7px;height:7px;border-radius:50%;background:var(--sprout);display:inline-block}
+.cx .wm .wmark{width:24px;height:24px;display:inline-block;flex:none}
 .cx .mast .tag{font-family:var(--sans);font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;
   color:var(--pencil);margin-top:6px;text-align:center}
 .cx .whatis{font-family:var(--serif);font-size:17px;line-height:1.6;color:var(--ink);margin:0 0 22px;max-width:34ch}
@@ -86,7 +88,7 @@
 .cx .privacy a{color:inherit;text-decoration:none;border-bottom:1px dotted var(--hair2)}
 .cx .privacy a:hover{color:var(--forest)}
 
-.cx .thread{position:fixed;left:calc(50% - 215px + 12px);top:0;bottom:0;width:1px;background:transparent;z-index:0}
+.cx .thread{position:fixed;left:calc(50% - (var(--colw) / 2) + 12px);top:0;bottom:0;width:1px;background:transparent;z-index:0}
 @media(max-width:470px){.cx .thread{left:12px}}
 .cx .thread i{display:block;width:1px;background:var(--hair2);height:0;transition:height 1.2s cubic-bezier(.2,.7,.2,1)}
 
@@ -169,6 +171,31 @@
 .cx .seal h2{font-family:var(--serif);font-weight:500;font-size:27px;color:var(--forest);margin:0 0 10px;letter-spacing:-.01em}
 .cx .seal p{font-family:var(--serif);font-size:16.5px;color:var(--pencil);max-width:30ch;margin:0}
 .cx .seal .promise{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--forest);margin:20px 0 0;max-width:26ch}
+
+/* ── Intentional composition on larger screens ──
+   Not a stretched phone: a wider editorial reading column, generous rhythm, and
+   a whisper-faint ambient treatment so the surrounding space reads as composed. */
+@media (min-width:700px){
+  .cx{--colw:600px}
+  .cx .app{padding:0 40px calc(40px + env(safe-area-inset-bottom))}
+  .cx .mast{padding-top:56px}
+  .cx .h-serif{font-size:38px}
+  .cx .whatis{font-size:18px;max-width:38ch}
+  .cx .lline p,.cx .blank p{font-size:18px}
+  .cx .counsel p{font-size:19.5px}
+}
+@media (min-width:1100px){
+  .cx{--colw:660px}
+  .cx .app{padding-bottom:64px;position:relative;z-index:1}
+  .cx .mast{padding-top:72px}
+  .cx .h-serif{font-size:44px}
+  .cx .ledger{padding:32px 34px 26px}
+  /* ambient supporting glow — subtle, so the wide canvas feels designed */
+  .cx::before,.cx::after{content:'';position:fixed;width:48vw;height:48vw;border-radius:50%;
+    filter:blur(80px);pointer-events:none;z-index:0}
+  .cx::before{top:-14vw;left:-12vw;background:radial-gradient(circle,rgba(131,196,0,.09),transparent 70%)}
+  .cx::after{bottom:-16vw;right:-12vw;background:radial-gradient(circle,rgba(201,162,75,.07),transparent 70%)}
+}
 
 @media (prefers-reduced-motion:reduce){
   .cx *{animation:none!important;transition:none!important}
