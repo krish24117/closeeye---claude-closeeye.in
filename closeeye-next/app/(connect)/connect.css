@@ -59,10 +59,9 @@
 .cx .hero-supp{opacity:0;transform:translateY(10px);transition:opacity .8s ease .15s,transform .8s cubic-bezier(.2,.7,.2,1) .15s}
 .cx .hero-supp.in{opacity:1;transform:none}
 /* during the unfold the page holds its breath — only the hero shows; the input wakes last */
-.cx .stage.unfolding .storycards,.cx .stage.unfolding .breadth,.cx .stage.unfolding .exp-k,
-.cx .stage.unfolding .lede,.cx .stage.unfolding .ask-wrap,.cx .stage.unfolding .act{opacity:0;pointer-events:none}
-.cx .storycards,.cx .breadth,.cx .exp-k,.cx .lede{transition:opacity .8s ease .2s}
-.cx .ask-wrap,.cx .act{transition:opacity .9s ease .5s}
+.cx .stage.unfolding .s0-aside,.cx .stage.unfolding .s0-ask,.cx .stage.unfolding .s0-foot{opacity:0;pointer-events:none}
+.cx .s0-aside,.cx .s0-foot{transition:opacity .8s ease .2s}
+.cx .s0-ask{transition:opacity .9s ease .5s}
 
 /* ── Sprint 2 · story cards — explained by touch, expand in place, page never moves ── */
 .cx .storycards{display:flex;flex-direction:column;gap:11px;margin:2px 0 26px}
@@ -360,10 +359,30 @@
   .cx .beat-k,.cx .ribbon-k{letter-spacing:.2em}
 }
 
+/* ── Sprint 5 · desktop — the landing as a balanced two-field canvas ──
+   Story (hero + ask) on the left, the living product (cards + breadth) on the
+   right, footer full-width below. Grid-areas so mobile keeps its stacked order. */
+@media (min-width:1000px){
+  .cx .app.wide{max-width:1080px}
+  .cx .app.wide .stage.s0.on{display:grid;grid-template-columns:1.05fr .95fr;
+    grid-template-areas:"hero aside" "ask aside" "foot foot";
+    column-gap:60px;align-items:start;min-height:auto}
+  .cx .s0-hero{grid-area:hero}
+  .cx .s0-ask{grid-area:ask}
+  .cx .s0-aside{grid-area:aside;align-self:start}
+  .cx .s0-foot{grid-area:foot;margin-top:30px;border-top:1px solid var(--hair);padding-top:22px}
+  .cx .app.wide .hero-head{font-size:48px}
+  .cx .app.wide .hero{margin-bottom:8px}
+  .cx .app.wide .storycards{margin:6px 0 14px}
+  .cx .app.wide .breadth{margin:0}
+  .cx .app.wide .exp-k{margin-top:8px}
+  .cx .app.wide .act{margin-top:22px}
+}
+
 @media (prefers-reduced-motion:reduce){
   .cx *{animation:none!important;transition:none!important}
   .cx .lline,.cx .blank,.cx .uline,.cx .beat{opacity:1;transform:none}
   .cx .beat.past{opacity:.46}
   .cx .hero-sig,.cx .hero-head,.cx .hero-supp,.cx .hero-feels .feel,
-  .cx .storycards,.cx .breadth,.cx .exp-k,.cx .lede,.cx .ask-wrap,.cx .act{opacity:1;transform:none}
+  .cx .s0-aside,.cx .s0-ask,.cx .s0-foot{opacity:1;transform:none}
 }

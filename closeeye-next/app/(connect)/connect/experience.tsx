@@ -390,7 +390,7 @@ export function ConnectExperience() {
   return (
     <>
       <div className="thread"><i ref={threadRef} /></div>
-      <div className="app">
+      <div className={`app${stage === 's0' ? ' wide' : ''}`}>
         <header className="mast" style={{ flexDirection: 'column', alignItems: 'center' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <span className="wm"><img className="wmark" src="/brand/close-eye-icon.svg" alt="" width={24} height={24} />close eye</span>
@@ -398,59 +398,69 @@ export function ConnectExperience() {
         </header>
         <main id="main">
 
-        {/* S0 · HERO (unfolds) · HOW · EXPERIENCE */}
+        {/* S0 · HERO (unfolds) · STORY CARDS · MORE THAN CARE · ASK
+            Desktop: a balanced two-field canvas (story left, product right) via
+            grid-areas — mobile keeps the natural stacked order. */}
         {stage === 's0' && (
-          <section className={`stage on${heroSettled ? '' : ' unfolding'}`}>
-            <div className={`hero${heroSettled ? ' settled' : ''}`}>
-              <p className={`hero-sig${heroN >= 1 ? ' in' : ''}`}><b>Trust</b><span className="sep">·</span><b>Presence</b><span className="sep">·</span><b>Understanding</b></p>
-              <div className="hero-feels" aria-hidden={heroSettled}>
-                <p className={`feel${heroN >= 2 ? ' in' : ''}`}>You love them.</p>
-                <p className={`feel${heroN >= 3 ? ' in' : ''}`}>You worry about them.</p>
-                <p className={`feel${heroN >= 4 ? ' in' : ''}`}>Distance shouldn’t mean uncertainty.</p>
-              </div>
-              <h1 className={`h-serif hero-head${heroSettled ? ' in' : ''}`}>Know the people<br /><em>you love.</em></h1>
-              <p className={`whatis hero-supp${heroSettled ? ' in' : ''}`}>Close Eye remembers what matters, never guesses, and helps your family find the right support when it’s needed.</p>
-            </div>
-            <div className="storycards" aria-label="What Close Eye does">
-              {STORY_CARDS.map((c) => {
-                const on = openCard === c.id
-                return (
-                  <div key={c.id} className={`scard${on ? ' open' : ''}`}>
-                    <button type="button" className="scard-h" aria-expanded={on} onClick={() => setOpenCard(on ? null : c.id)}>
-                      <span className="ld" />
-                      <span className="scard-t">{c.title}</span>
-                      <span className="scard-more">{on ? 'Close' : `${c.link} →`}</span>
-                    </button>
-                    <div className="scard-b"><div><p>{c.body}</p></div></div>
-                  </div>
-                )
-              })}
-            </div>
-            <div className="breadth" aria-label="More than care">
-              <p className="breadth-h">More than care.</p>
-              <p className="breadth-s">Close Eye helps families through everyday life.</p>
-              <div className="catgrid">
-                {CARE_CATS.map((c) => (
-                  <div key={c.label} className={`cat${c.live ? '' : ' soon'}`}>
-                    <span className="cd" />{c.label}{!c.live && <span className="soonlab">Soon</span>}
-                  </div>
-                ))}
-              </div>
-              <p className="breadth-f">Always beginning with understanding.</p>
-            </div>
-            <p className="exp-k">Experience Close Eye</p>
-            <p className="lede" style={{ marginBottom: 0 }}>Tell Connect about someone you love.</p>
-            <div className="ask-wrap" style={{ marginTop: 6 }}>
-              <div className="ruled">
-                <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder={SAMPLE} />
-              </div>
-              <div className="try">or begin with —<br />
-                <button type="button" onClick={() => setText(SAMPLE)}>“{SAMPLE}”</button>
+          <section className={`stage on s0${heroSettled ? '' : ' unfolding'}`}>
+            <div className="s0-hero">
+              <div className={`hero${heroSettled ? ' settled' : ''}`}>
+                <p className={`hero-sig${heroN >= 1 ? ' in' : ''}`}><b>Trust</b><span className="sep">·</span><b>Presence</b><span className="sep">·</span><b>Understanding</b></p>
+                <div className="hero-feels" aria-hidden={heroSettled}>
+                  <p className={`feel${heroN >= 2 ? ' in' : ''}`}>You love them.</p>
+                  <p className={`feel${heroN >= 3 ? ' in' : ''}`}>You worry about them.</p>
+                  <p className={`feel${heroN >= 4 ? ' in' : ''}`}>Distance shouldn’t mean uncertainty.</p>
+                </div>
+                <h1 className={`h-serif hero-head${heroSettled ? ' in' : ''}`}>Know the people<br /><em>you love.</em></h1>
+                <p className={`whatis hero-supp${heroSettled ? ' in' : ''}`}>Close Eye remembers what matters, never guesses, and helps your family find the right support when it’s needed.</p>
               </div>
             </div>
-            <div className="act">
-              <button className="btn" onClick={ask} disabled={text.trim().length < 8}>Let Connect understand</button>
-              <p className="privacy">Nothing you write is sold or shared. Ever.</p>
+            <div className="s0-aside">
+              <div className="storycards" aria-label="What Close Eye does">
+                {STORY_CARDS.map((c) => {
+                  const on = openCard === c.id
+                  return (
+                    <div key={c.id} className={`scard${on ? ' open' : ''}`}>
+                      <button type="button" className="scard-h" aria-expanded={on} onClick={() => setOpenCard(on ? null : c.id)}>
+                        <span className="ld" />
+                        <span className="scard-t">{c.title}</span>
+                        <span className="scard-more">{on ? 'Close' : `${c.link} →`}</span>
+                      </button>
+                      <div className="scard-b"><div><p>{c.body}</p></div></div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="breadth" aria-label="More than care">
+                <p className="breadth-h">More than care.</p>
+                <p className="breadth-s">Close Eye helps families through everyday life.</p>
+                <div className="catgrid">
+                  {CARE_CATS.map((c) => (
+                    <div key={c.label} className={`cat${c.live ? '' : ' soon'}`}>
+                      <span className="cd" />{c.label}{!c.live && <span className="soonlab">Soon</span>}
+                    </div>
+                  ))}
+                </div>
+                <p className="breadth-f">Always beginning with understanding.</p>
+              </div>
+            </div>
+            <div className="s0-ask">
+              <p className="exp-k">Experience Close Eye</p>
+              <p className="lede" style={{ marginBottom: 0 }}>Tell Connect about someone you love.</p>
+              <div className="ask-wrap" style={{ marginTop: 6 }}>
+                <div className="ruled">
+                  <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder={SAMPLE} />
+                </div>
+                <div className="try">or begin with —<br />
+                  <button type="button" onClick={() => setText(SAMPLE)}>“{SAMPLE}”</button>
+                </div>
+              </div>
+              <div className="act">
+                <button className="btn" onClick={ask} disabled={text.trim().length < 8}>Let Connect understand</button>
+                <p className="privacy">Nothing you write is sold or shared. Ever.</p>
+              </div>
+            </div>
+            <div className="s0-foot">
               <div className="footlinks">
                 <a href="https://www.closeeye.in/#how-it-works" target="_blank" rel="noopener">How it works</a><span className="sep">·</span>
                 <a href="https://www.closeeye.in/services" target="_blank" rel="noopener">Services &amp; pricing</a><span className="sep">·</span>
