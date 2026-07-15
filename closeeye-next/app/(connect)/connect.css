@@ -92,6 +92,10 @@
 @media(max-width:470px){.cx .thread{left:12px}}
 .cx .thread i{display:block;width:1px;background:var(--hair2);height:0;transition:height 1.2s cubic-bezier(.2,.7,.2,1)}
 
+.cx .cxnav{display:flex;justify-content:space-between;align-items:center;margin:0 0 16px}
+.cx .cxnav button{font-family:var(--sans);font-size:13px;color:var(--pencil);padding:6px 0;letter-spacing:.01em}
+.cx .cxnav button:hover{color:var(--forest)}
+.cx .cxnav .edit{border-bottom:1px dotted var(--hair2);padding-bottom:1px}
 .cx .stage{position:relative;z-index:1;display:none;flex-direction:column;min-height:calc(100dvh - 120px)}
 .cx .stage.on{display:flex;animation:cx-page .7s cubic-bezier(.2,.7,.2,1)}
 @keyframes cx-page{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -141,7 +145,28 @@
 .cx .blank p{margin:0;font-family:var(--serif);font-size:17.5px;line-height:1.5;color:var(--pencil)}
 .cx .blank .dots{display:inline-block;min-width:74px;border-bottom:2px dotted var(--hair2);
   height:1em;vertical-align:baseline;margin-left:6px}
+.cx button.blank{width:100%;text-align:left}
+.cx .blank .tellme{display:inline-block;margin-left:10px;font-family:var(--sans);font-size:12px;
+  font-weight:600;color:var(--emerald);white-space:nowrap;vertical-align:middle}
+.cx .blank .tellme::after{content:' →'}
+.cx .blank:hover .tellme{color:var(--forest)}
 .cx .later{margin:16px 0 0;font-size:13px;color:var(--pencil);font-style:italic;font-family:var(--serif)}
+
+/* inline "tell me" — the calm expanding journal (no page change, no popup) */
+.cx .fill{padding:4px 0 12px 18px}
+.cx .fill textarea{width:100%;background:transparent;border:none;border-bottom:1px solid var(--emerald);
+  font-family:var(--serif);font-size:18px;line-height:1.5;color:var(--ink);padding:6px 2px 8px;min-height:46px;resize:none;caret-color:var(--emerald)}
+.cx .fill textarea:focus{outline:none}
+.cx .fill textarea::placeholder{color:var(--faint);font-style:italic}
+.cx .fill .frow{display:flex;gap:16px;align-items:center;margin-top:10px}
+.cx .fill .save{background:var(--forest);color:#F7F4EC;border-radius:999px;padding:9px 20px;
+  font-family:var(--sans);font-size:13.5px;font-weight:600}
+.cx .fill .skip{font-size:13px;color:var(--pencil)}
+.cx .told{display:flex;gap:12px;align-items:baseline;padding:9px 0}
+.cx .told .ck{width:18px;height:18px;flex:none;color:var(--emerald);position:relative;top:2px}
+.cx .told p{margin:0;font-family:var(--serif);font-size:17.5px;line-height:1.5;color:var(--ink)}
+.cx .told .lbl{display:block;font-family:var(--sans);font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--emerald);margin-bottom:1px}
 
 .cx .counsel p{font-family:var(--serif);font-size:18.5px;line-height:1.62;color:var(--ink);margin:0 0 18px;max-width:36ch}
 .cx .counsel p b{font-weight:500;color:var(--forest)}

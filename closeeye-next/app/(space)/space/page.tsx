@@ -144,7 +144,7 @@ export default function SpacePage() {
           <p className="sh">What Connect knows</p>
           <div className="ledger">
             {known.map((l, i) => (
-              <div key={`k${i}`} className="lline"><span className="ld" /><p>{l.quote ? <><span className="lbl">Your real question</span><q>{l.body}</q></> : <>{l.label && <span className="lbl">{l.label}</span>}{l.body}</>}</p></div>
+              <div key={`k${i}`} className="lline"><span className="ld" /><p>{l.quote ? <><span className="lbl">In your words</span><q>{l.body}</q></> : <>{l.label && <span className="lbl">{l.label}</span>}{l.body}</>}</p></div>
             ))}
 
             {hiddenCount > 0 && (

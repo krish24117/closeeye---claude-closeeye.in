@@ -18,11 +18,12 @@ const WINDOW = 50
 
 /* ── the pre-sign-in draft (survives the OAuth round-trip via localStorage) ── */
 const DRAFT_KEY = 'closeeye.connect.draft'
-export interface ConnectDraft { rawText: string; at: number }
+export interface DraftExtra { label: string; body: string }
+export interface ConnectDraft { rawText: string; at: number; extras?: DraftExtra[] }
 
-export function setConnectDraft(rawText: string): void {
+export function setConnectDraft(rawText: string, extras?: DraftExtra[]): void {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rawText, at: Date.now() } satisfies ConnectDraft)) } catch {}
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rawText, at: Date.now(), extras } satisfies ConnectDraft)) } catch {}
 }
 export function getConnectDraft(): ConnectDraft | null {
   if (typeof window === 'undefined') return null
@@ -102,7 +103,13 @@ async function doProvision(): Promise<ProvisionResult> {
       .eq('loved_one_id', lovedOneId)
       .eq('source', 'connect_experience')
     if (!count) {
-      const rows = ledgerEntriesForStorage(rl).map((e) => ({ loved_one_id: lovedOneId, family_user_id: user.id, ...e }))
+      const base = ledgerEntriesForStorage(rl).map((e) => ({ loved_one_id: lovedOneId, family_user_id: user.id, ...e }))
+      // Anything the visitor told us on the "still open" lines — preserved, never lost.
+      const extras = (draft.extras ?? []).filter((e) => e.body?.trim()).map((e) => ({
+        loved_one_id: lovedOneId, family_user_id: user.id,
+        entry_type: 'family_fact' as const, label: e.label, body: e.body.trim(), source: 'connect_experience' as const,
+      }))
+      const rows = [...base, ...extras]
       if (rows.length) {
         const { error: le } = await supabase.from('family_ledger').insert(rows)
         if (le) return { lovedOneId, error: 'ledger-failed' } // space exists; keep draft to retry the ledger
@@ -161,7 +168,7 @@ export async function fetchSpace(): Promise<SpaceData | null> {
 
   const entries = (entriesRes.data ?? []).slice().reverse() // chronological
   const facts = entries.filter((e) => e.entry_type === 'family_fact')
-  const known: LedgerLine[] = facts.filter((e) => e.source === 'connect_experience').map((e) => ({ label: e.label ?? '', body: e.body, quote: e.label === 'Your real question' }))
+  const known: LedgerLine[] = facts.filter((e) => e.source === 'connect_experience').map((e) => ({ label: e.label ?? '', body: e.body, quote: e.label === 'In your words' }))
   const learned: LedgerLine[] = facts.filter((e) => e.source === 'family_space').map((e) => ({ label: e.label ?? '', body: e.body }))
 
   const filledKeys = new Set(learned.map((l) => l.label))

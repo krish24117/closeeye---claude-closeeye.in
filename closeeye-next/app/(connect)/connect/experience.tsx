@@ -22,6 +22,13 @@ import { PHASE_2_ENABLED } from '@/lib/connect/phase'
 
 const WA = 'https://wa.me/919000221261'
 const SAMPLE = 'My mother lives alone in Hyderabad. How do I know she’s okay?'
+// short, warm labels for the lines the visitor fills in
+const KEY_LABEL: Record<string, string> = {
+  health: 'Health', mornings: 'Her days', nearby: 'Nearby help', when_where: 'When & where',
+  reach: 'How to reach', details: 'What’s needed', seeing: 'What you see', meds: 'Medicines',
+  doctor: 'Doctor', where: 'Where', with: 'Who’s there', days: 'Her days', loves: 'What she loves',
+  often: 'How often', which: 'Papers', whose: 'Photos', from: 'Roots',
+}
 const prefersReduced = () =>
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
@@ -49,6 +56,10 @@ export function ConnectExperience() {
   const [showEmail, setShowEmail] = React.useState(false)
   const [email, setEmail] = React.useState('')
   const [password, setPassword] = React.useState('')
+  // what the visitor tells us on the "still open" lines — held, then preserved to the ledger
+  const [told, setTold] = React.useState<{ key: string; label: string; body: string }[]>([])
+  const [activeKey, setActiveKey] = React.useState<string | null>(null)
+  const [fill, setFill] = React.useState('')
   // ledger / blank reveal
   const [s1n, setS1n] = React.useState(0)
   const [s1live, setS1live] = React.useState(-1)
@@ -149,10 +160,19 @@ export function ConnectExperience() {
     return 'Something interrupted us — but everything you told me is safe. Let’s try again.'
   }
 
+  // preserve the words + anything told on the open lines through the sign-in round-trip
+  function saveDraft() { setConnectDraft(text, told.map((x) => ({ label: x.label, body: x.body }))) }
+  const shortLabel = (key: string) => KEY_LABEL[key] || (key.charAt(0).toUpperCase() + key.slice(1))
+  function saveTold(key: string) {
+    const v = fill.trim(); if (!v) return
+    setTold((prev) => [...prev, { key, label: shortLabel(key), body: v }])
+    setActiveKey(null); setFill('')
+  }
+
   /* ── sign-in ── */
   async function google() {
     setError(''); setPending('google')
-    setConnectDraft(text)
+    saveDraft()
     try {
       const { error: err } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -166,7 +186,7 @@ export function ConnectExperience() {
     setError('')
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError('Please enter a valid email address.')
     if (password.length < 8) return setError('Please use a password with at least 8 characters.')
-    setPending('email'); setConnectDraft(text)
+    setPending('email'); saveDraft()
     try {
       // Try sign-in; if the account doesn't exist, create it.
       const { error: err } = await signInWithPassword(email, password)
@@ -206,6 +226,17 @@ export function ConnectExperience() {
     if (p.startsWith('Because')) { const i = p.indexOf(','); if (i > 0) return <><b>{p.slice(0, i + 1)}</b>{p.slice(i + 1)}</> }
     return p
   }
+
+  // Persistent navigation — the whole flow is one continuous conversation. Back
+  // steps to the previous screen; Edit returns to the start with the words intact
+  // (nothing is committed to the ledger until you create the space).
+  const PREV: Record<string, Stage> = { s1: 's0', s2: 's1', s3: 's2', s4: 's3', s4b: 's4' }
+  const nav = (
+    <div className="cxnav">
+      <button type="button" onClick={() => setStage(PREV[stage] || 's0')}>← Back</button>
+      <button type="button" className="edit" onClick={() => { setError(''); setStage('s0') }}>Edit what I said</button>
+    </div>
+  )
 
   return (
     <>
@@ -257,6 +288,7 @@ export function ConnectExperience() {
         {/* S1 · UNDERSTANDING */}
         {stage === 's1' && rl && (
           <section className="stage on">
+            {nav}
             <div className="think"><span className="ld" /><span>Understand first. Answer second.</span></div>
             <div className="ledger">
               <p className="lh">What I understood</p>
@@ -268,31 +300,51 @@ export function ConnectExperience() {
               ))}
             </div>
             <div className="act">
-              <button className="btn" onClick={() => setStage('s2')} style={{ opacity: s1done ? 1 : 0, pointerEvents: s1done ? 'auto' : 'none' }}>That’s exactly it</button>
-              <button className="ghost" onClick={() => setStage('s0')} style={{ opacity: s1done ? 1 : 0, pointerEvents: s1done ? 'auto' : 'none' }}>Not quite — let me say it differently</button>
+              <button className="btn" onClick={() => setStage(rl.blanks.length ? 's2' : 's3')} style={{ opacity: s1done ? 1 : 0, pointerEvents: s1done ? 'auto' : 'none' }}>That’s exactly it</button>
             </div>
           </section>
         )}
 
-        {/* S2 · WHAT I STILL NEED */}
+        {/* S2 · WHAT I STILL NEED — tap a line and tell me, inline */}
         {stage === 's2' && rl && (
           <section className="stage on">
+            {nav}
             <h1 className="h-serif" style={{ fontSize: 26 }}>What I’d still like<br />to understand.</h1>
-            <p className="lede">I won’t guess these. They stay open until you tell me.</p>
+            <p className="lede">Tap a line to tell me — right here, whenever you like. I won’t guess.</p>
             <div className="ledger">
               <p className="lh">Still open</p>
-              {rl.blanks.map((b, i) => (
-                <div key={i} className={`blank${i < s2n ? ' in' : ''}`}><span className="ld" /><p>{b}<span className="dots" /></p></div>
+              {told.map((item) => (
+                <div key={item.key} className="told">
+                  <span className="ck" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6" /></svg></span>
+                  <p><span className="lbl">{item.label} · you told me</span>{item.body}</p>
+                </div>
               ))}
-              <p className="later">You can tell me now, or after — these lines will wait for you.</p>
+              {rl.blanks.filter((b) => !told.some((x) => x.key === b.key)).map((b, i) => (
+                <React.Fragment key={b.key}>
+                  <button className={`blank${i < s2n ? ' in' : ''}`} onClick={() => { setActiveKey(activeKey === b.key ? null : b.key); setFill('') }}>
+                    <span className="ld" /><p>{b.text}<span className="tellme">Tell Connect</span></p>
+                  </button>
+                  {activeKey === b.key && (
+                    <div className="fill">
+                      <textarea rows={1} value={fill} onChange={(e) => setFill(e.target.value)} placeholder="Tell me as you’d tell a friend…" autoFocus />
+                      <div className="frow">
+                        <button className="save" onClick={() => saveTold(b.key)}>Save</button>
+                        <button className="skip" onClick={() => setActiveKey(null)}>not now</button>
+                      </div>
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+              {rl.blanks.length > 0 && rl.blanks.every((b) => told.some((x) => x.key === b.key)) && <p className="later">Thank you — that’s everything I hoped to understand for now.</p>}
             </div>
-            <div className="act"><button className="btn" onClick={() => setStage('s3')}>Answer me first</button></div>
+            <div className="act"><button className="btn" onClick={() => setStage('s3')}>Continue</button></div>
           </section>
         )}
 
         {/* S3 · THE ANSWER */}
         {stage === 's3' && counselData && (
           <section className="stage on">
+            {nav}
             <div className="think" style={{ marginBottom: 14 }}><span className="ld" style={{ animation: 'none' }} /><span>Now I can answer you properly.</span></div>
             <div className="counsel">
               {counselData.paragraphs.map((p, i) => <p key={i}>{boldLead(p)}</p>)}
@@ -306,6 +358,7 @@ export function ConnectExperience() {
         {/* S4 · TRUST → FAMILY SPACE */}
         {stage === 's4' && rl && (
           <section className="stage on">
+            {nav}
             <h1 className="h-serif" style={{ fontSize: 26 }}>Keep what I now know<br />about {rl.gender === 'he' ? 'him' : rl.gender === 'they' ? 'them' : 'her'} — <em>safely.</em></h1>
             <p className="lede">{subjectPronounTitle(rl)} private journal: what I know, what I’m learning, every visit written down.</p>
             <p className="trustline">Close Eye never invents information about your family.</p>
@@ -314,11 +367,11 @@ export function ConnectExperience() {
               {rl.ledger.filter((l) => !l.quote).map((l, i) => (
                 <div key={i} className="lline in"><span className="ld" /><p>{l.body}</p></div>
               ))}
-              {rl.question && <div className="lline in"><span className="ld" /><p>Your question: <q>{rl.question}</q></p></div>}
+              {rl.question && <div className="lline in"><span className="ld" /><p>In your words: <q>{rl.question}</q></p></div>}
               <div className="blank in"><span className="ld" /><p>Three lines still waiting for you<span className="dots" /></p></div>
             </div>
             <div className="act">
-              <button className="btn" onClick={() => { setConnectDraft(text); setStage('s4b') }}>Create {rl.subjectLabel === 'Someone you love' ? 'their' : rl.subjectLabel + '’s'} Family Space</button>
+              <button className="btn" onClick={() => { saveDraft(); setStage('s4b') }}>Create {rl.subjectLabel === 'Someone you love' ? 'their' : rl.subjectLabel + '’s'} Family Space</button>
               <p className="privacy">Private by design. You stay in control.</p>
             </div>
           </section>
@@ -327,6 +380,7 @@ export function ConnectExperience() {
         {/* S4b · SIGN IN — Google primary, email secondary */}
         {stage === 's4b' && (
           <section className="stage on">
+            {nav}
             <h1 className="h-serif" style={{ fontSize: 26 }}>Keep {rl?.gender === 'he' ? 'him' : rl?.gender === 'they' ? 'them' : 'her'} close.<br /><em>Bring the others in.</em></h1>
             <p className="whatis">Sign in so this page is yours alone — then add your family, one by one. The more Connect understands them, <b>the better every answer becomes.</b></p>
             <div className="act">
