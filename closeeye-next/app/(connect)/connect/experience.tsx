@@ -33,6 +33,27 @@ const KEY_LABEL: Record<string, string> = {
   doctor: 'Doctor', where: 'Where', with: 'Who’s there', days: 'Her days', loves: 'What she loves',
   often: 'How often', which: 'Papers', whose: 'Photos', from: 'Roots',
 }
+// warm, specific prompts for the moment a line is empty — "tell me something only
+// your family would know." Pronoun-free so they never mis-gender anyone.
+const FILL_PH: Record<string, string> = {
+  health: 'The day-to-day things you’d tell a nurse',
+  mornings: 'What the mornings look like now',
+  nearby: 'A neighbour, a relative — anyone close by',
+  when_where: 'Where it needs to happen, and when',
+  reach: 'A number, or who to ask for',
+  details: 'Anything needed on the day — bags, papers',
+  seeing: 'What you’ve noticed — even something small',
+  meds: 'What’s taken each day, if you know',
+  doctor: 'A name, a clinic — whatever you have',
+  where: 'Where they are right now',
+  with: 'Anyone there right now',
+  days: 'How the days tend to go',
+  loves: 'What lights them up — a place, a memory',
+  often: 'Once a week? Every day? Whatever feels right',
+  which: 'The papers you’d hate to lose',
+  whose: 'Whose photos to keep first',
+  from: 'The town or village where it began',
+}
 const prefersReduced = () =>
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
@@ -274,9 +295,13 @@ export function ConnectExperience() {
     const revealing = stage === 's1'
     const interactive = stage === 's2'
     const openReady = !revealing || s1done // during reveal, open lines wait their turn
+    const nothingYet = known.length === 0 && openBlanks.length === 0 && told.length === 0
     return (
       <div className="uledger">
         <p className="lh">What I understand{revealing ? '' : ' so far'}</p>
+        {nothingYet && (
+          <p className="empty">I don’t want to guess. Tell me who this is for — in your own words — and I’ll begin to understand.</p>
+        )}
         {known.map((l, i) => (
           <div key={`k${i}`} className={`uline know${!revealing || i < s1n ? ' in' : ''}${revealing && i === s1live ? ' live' : ''}`}>
             <span className="mk" aria-hidden="true">{CHECK}</span>
@@ -298,7 +323,7 @@ export function ConnectExperience() {
               </button>
               {activeKey === b.key && (
                 <div className="fill">
-                  <textarea rows={1} value={fill} onChange={(e) => setFill(e.target.value)} placeholder="Tell me as you’d tell a friend…" autoFocus />
+                  <textarea rows={1} value={fill} onChange={(e) => setFill(e.target.value)} placeholder={FILL_PH[b.key] || 'Tell me as you’d tell a friend…'} autoFocus />
                   <div className="frow">
                     <button type="button" className="save" onClick={() => saveTold(b.key)}>Save</button>
                     <button type="button" className="skip" onClick={() => setActiveKey(null)}>not now</button>

@@ -153,6 +153,12 @@
 /* motion hierarchy — the working state breathes, a settled state is still */
 .cx .think.working span{color:var(--forest)}
 
+/* Sprint 3 · typographic rhythm + an emotional empty state (never a dead panel) */
+.cx .h-serif{text-wrap:balance}
+.cx .lede,.cx .whatis,.cx .counsel p,.cx .you-words,.cx .uline p,.cx .seal p{text-wrap:pretty}
+.cx .empty{margin:4px 0 2px;font-family:var(--serif);font-style:italic;font-size:16.5px;line-height:1.55;
+  color:var(--pencil);max-width:32ch}
+
 .cx .h-serif{font-family:var(--serif);font-weight:500;font-size:31px;line-height:1.22;
   letter-spacing:-.01em;margin:0 0 12px;color:var(--forest)}
 .cx .h-serif em{font-style:italic;font-weight:400}
@@ -273,6 +279,22 @@
     filter:blur(80px);pointer-events:none;z-index:0}
   .cx::before{top:-14vw;left:-12vw;background:radial-gradient(circle,rgba(131,196,0,.09),transparent 70%)}
   .cx::after{bottom:-16vw;right:-12vw;background:radial-gradient(circle,rgba(201,162,75,.07),transparent 70%)}
+}
+
+/* ── Sprint 3 · desktop composition — the continuous thread breathes at width:
+   more generous beat rhythm, editorial type sizes, a calmer measure. ── */
+@media (min-width:700px){
+  .cx .convo .beat{padding:26px 0}
+  .cx .you-words{font-size:21px}
+  .cx .uline p{font-size:18.5px}
+  .cx .rib{font-size:13px;padding:7px 13px 7px 10px}
+  .cx .empty{font-size:17.5px}
+}
+@media (min-width:1100px){
+  .cx .convo .beat{padding:30px 0}
+  .cx .you-words{font-size:23px}
+  .cx .uline p{font-size:19px}
+  .cx .beat-k,.cx .ribbon-k{letter-spacing:.2em}
 }
 
 @media (prefers-reduced-motion:reduce){
