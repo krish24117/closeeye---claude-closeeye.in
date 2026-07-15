@@ -383,7 +383,47 @@ export function ConnectExperience() {
   return (
     <>
       <div className="thread"><i ref={threadRef} /></div>
-      <div className={`app${stage === 's0' ? ' wide' : ''}`}>
+      {/* shell is display:contents below 1024 (mobile untouched) and a two-panel
+          grid at ≥1024: a persistent cover on the left, the flow on the right. */}
+      <div className="shell">
+        {/* LEFT · the cover — desktop only (display:none below 1024). Duplicates the
+            promise so it persists across every stage; the mobile column is unchanged. */}
+        <aside className="deskcover">
+          <div className="dc-top">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <span className="dc-wm"><img className="wmark" src="/brand/close-eye-icon.svg" alt="" width={24} height={24} />close eye</span>
+            <div className="dc-tag">Connect</div>
+            <p className="dc-sig"><b>Trust</b><span className="sep">·</span><b>Presence</b><span className="sep">·</span><b>Understanding</b></p>
+            <h1 className="dc-head">Know the people you love —<br /><em>even from far away.</em></h1>
+            <p className="dc-supp">Close Eye helps you stay close — it understands your family, remembers what matters, and brings trusted people when they’re needed.</p>
+            <div className="storycards dc-cards" aria-label="What Close Eye does">
+              {STORY_CARDS.map((c) => {
+                const on = openCard === c.id
+                return (
+                  <div key={c.id} className={`scard${on ? ' open' : ''}`}>
+                    <button type="button" className="scard-h" aria-expanded={on} onClick={() => setOpenCard(on ? null : c.id)}>
+                      <span className="ld" />
+                      <span className="scard-t">{c.title}</span>
+                      <span className="scard-more">{on ? 'Close' : `${c.link} →`}</span>
+                    </button>
+                    <div className="scard-b"><div><p>{c.body}</p></div></div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+          <div className="dc-foot">
+            <div className="footlinks">
+              <a href="https://www.closeeye.in/#how-it-works" target="_blank" rel="noopener">How it works</a><span className="sep">·</span>
+              <a href="https://www.closeeye.in/services" target="_blank" rel="noopener">Services &amp; pricing</a><span className="sep">·</span>
+              <a href="https://www.closeeye.in/trust-safety" target="_blank" rel="noopener">How Guardians are verified</a><span className="sep">·</span>
+              <a href="https://www.closeeye.in/membership" target="_blank" rel="noopener">Membership</a><span className="sep">·</span>
+              <a href={WA} target="_blank" rel="noopener">Ask a real person on WhatsApp</a>
+            </div>
+            <p className="footnote">Your Trusted Presence</p>
+          </div>
+        </aside>
+      <div className="app">
         <header className="mast" style={{ flexDirection: 'column', alignItems: 'center' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <span className="wm"><img className="wmark" src="/brand/close-eye-icon.svg" alt="" width={24} height={24} />close eye</span>
@@ -405,8 +445,8 @@ export function ConnectExperience() {
                   <p className={`feel${heroN >= 3 ? ' in' : ''}`}>You worry about them.</p>
                   <p className={`feel${heroN >= 4 ? ' in' : ''}`}>Distance shouldn’t mean uncertainty.</p>
                 </div>
-                <h1 className={`h-serif hero-head${heroSettled ? ' in' : ''}`}>Know the people<br /><em>you love.</em></h1>
-                <p className={`whatis hero-supp${heroSettled ? ' in' : ''}`}>Close Eye remembers what matters, never guesses, and helps your family find the right support when it’s needed.</p>
+                <h1 className={`h-serif hero-head${heroSettled ? ' in' : ''}`}>Know the people you love —<br /><em>even from far away.</em></h1>
+                <p className={`whatis hero-supp${heroSettled ? ' in' : ''}`}>Close Eye helps you stay close — it understands your family, remembers what matters, and brings trusted people when they’re needed.</p>
               </div>
             </div>
             <div className="storycards" aria-label="What Close Eye does">
@@ -638,6 +678,7 @@ export function ConnectExperience() {
           </section>
         )}
         </main>
+      </div>
       </div>
     </>
   )

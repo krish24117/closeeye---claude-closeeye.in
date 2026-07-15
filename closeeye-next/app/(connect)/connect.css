@@ -8,17 +8,21 @@
   --emerald:#06A94E; --sprout:#83C400;
   --pencil:#6E7A6F; --faint:#98A097; --hair:#E2DECE; --hair2:#D8D3BF;
   --serif:var(--font-newsreader),Georgia,serif; --sans:var(--font-inter),system-ui,sans-serif;
-  --colw:430px; /* the reading column — widens intentionally on larger screens */
+  --colw:480px; /* fixed-measure reading column — the phone is primary; desktop only breathes wider */
   background:linear-gradient(180deg,#F7F4EC 0%,var(--paper) 30%,#F1EDE1 100%);
   color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;min-height:100dvh;
 }
 .cx *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 .cx .app{max-width:var(--colw);margin:0 auto;min-height:100dvh;position:relative;
   padding:0 26px calc(30px + env(safe-area-inset-bottom));}
+/* below 1024 the shell is transparent and the desktop cover is absent — the mobile
+   column is exactly as before. The two-panel grid is defined only at ≥1024. */
+.cx .shell{display:contents}
+.cx .deskcover{display:none}
 .cx button{font-family:var(--sans);cursor:pointer;border:none;background:none;color:inherit}
 .cx :focus-visible{outline:2px solid var(--emerald);outline-offset:3px;border-radius:6px}
 
-.cx .mast{display:flex;justify-content:center;padding:calc(26px + env(safe-area-inset-top)) 0 4px}
+.cx .mast{display:flex;justify-content:center;padding:max(20px, env(safe-area-inset-top)) 0 4px}
 .cx .mast .wm{display:flex;align-items:center;gap:8px;font-family:var(--sans);font-weight:600;
   font-size:17px;letter-spacing:.01em;color:var(--forest)}
 .cx .wm .dot{width:7px;height:7px;border-radius:50%;background:var(--sprout);display:inline-block}
@@ -144,7 +148,7 @@
 .cx .privacy a:hover{color:var(--forest)}
 
 .cx .thread{position:fixed;left:calc(50% - (var(--colw) / 2) + 12px);top:0;bottom:0;width:1px;background:transparent;z-index:0}
-@media(max-width:470px){.cx .thread{left:12px}}
+@media(max-width:480px){.cx .thread{left:12px}}
 .cx .thread i{display:block;width:1px;background:var(--hair2);height:0;transition:height 1.2s cubic-bezier(.2,.7,.2,1)}
 
 .cx .cxnav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 4px;flex-wrap:wrap}
@@ -328,66 +332,46 @@
 .cx .seal p{font-family:var(--serif);font-size:16.5px;color:var(--pencil);max-width:30ch;margin:0}
 .cx .seal .promise{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--forest);margin:20px 0 0;max-width:26ch}
 
-/* ── Intentional composition on larger screens ──
-   Not a stretched phone: a wider editorial reading column, generous rhythm, and
-   a whisper-faint ambient treatment so the surrounding space reads as composed. */
-@media (min-width:700px){
-  .cx{--colw:600px}
-  .cx .app{padding:0 40px calc(40px + env(safe-area-inset-bottom))}
-  .cx .mast{padding-top:56px}
-  .cx .h-serif{font-size:38px}
-  .cx .whatis{font-size:18px;max-width:38ch}
-  .cx .lline p,.cx .blank p{font-size:18px}
-  .cx .counsel p{font-size:19.5px}
-}
-@media (min-width:1100px){
-  .cx{--colw:660px}
-  .cx .app{padding-bottom:64px;position:relative;z-index:1}
-  .cx .mast{padding-top:72px}
-  .cx .h-serif{font-size:44px}
-  .cx .ledger{padding:32px 34px 26px}
-  /* ambient supporting glow — subtle, so the wide canvas feels designed */
-  .cx::before,.cx::after{content:'';position:fixed;width:48vw;height:48vw;border-radius:50%;
-    filter:blur(80px);pointer-events:none;z-index:0}
-  .cx::before{top:-14vw;left:-12vw;background:radial-gradient(circle,rgba(131,196,0,.09),transparent 70%)}
-  .cx::after{bottom:-16vw;right:-12vw;background:radial-gradient(circle,rgba(201,162,75,.07),transparent 70%)}
-}
+/* ── Desktop (≥1024) · two-panel composition ──
+   A fixed cover on the left (the journal's cover page), the living flow on the
+   right — on ONE continuous paper surface, no seam, separation by composition
+   alone. Below 1024 the single 480px column is untouched. */
+@media (min-width:1024px){
+  .cx{font-size:17px}
+  .cx .shell{display:grid;grid-template-columns:45% 55%;max-width:1280px;margin:0 auto;min-height:100dvh;align-items:start}
 
-/* ── Sprint 3 · desktop composition — the continuous thread breathes at width:
-   more generous beat rhythm, editorial type sizes, a calmer measure. ── */
-@media (min-width:700px){
-  .cx .convo .beat{padding:26px 0}
-  .cx .you-words{font-size:21px}
-  .cx .uline p{font-size:18.5px}
-  .cx .rib{font-size:13px;padding:7px 13px 7px 10px}
-  .cx .empty{font-size:17.5px}
-}
-@media (min-width:1100px){
-  .cx .convo .beat{padding:30px 0}
-  .cx .you-words{font-size:23px}
-  .cx .uline p{font-size:19px}
-  .cx .beat-k,.cx .ribbon-k{letter-spacing:.2em}
-}
+  /* LEFT · the cover — sticky, does not scroll, vertically composed */
+  .cx .deskcover{display:flex;flex-direction:column;justify-content:space-between;
+    position:sticky;top:0;height:100dvh;overflow:hidden;
+    padding:max(44px,env(safe-area-inset-top)) 56px 44px}
+  .cx .deskcover::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 80% at 28% 22%, transparent 55%, rgba(14,42,31,.035))}
+  .cx .deskcover>*{position:relative;z-index:1}
+  .cx .dc-wm{display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);font-weight:600;font-size:17px;color:var(--forest)}
+  .cx .dc-wm .wmark{width:24px;height:24px}
+  .cx .dc-tag{font-family:var(--sans);font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--pencil);margin-top:5px}
+  .cx .dc-sig{font-family:var(--sans);font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--pencil);margin:34px 0 0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .cx .dc-sig b{color:var(--forest);font-weight:600}
+  .cx .dc-sig .sep{color:var(--hair2)}
+  .cx .dc-head{font-family:var(--serif);font-weight:500;font-size:42px;line-height:1.16;letter-spacing:-.01em;color:var(--forest);margin:16px 0 0;text-wrap:balance}
+  .cx .dc-head em{font-style:italic;font-weight:400}
+  .cx .dc-supp{font-family:var(--serif);font-size:17px;line-height:1.55;color:var(--pencil);margin:14px 0 0;max-width:34ch}
+  .cx .dc-cards{margin:26px 0 0}
+  .cx .dc-foot .footlinks{justify-content:flex-start;margin-top:0}
+  .cx .dc-foot .footnote{text-align:left;margin-top:14px}
 
-/* ── Sprint 5 · desktop — the landing as a balanced two-field canvas ──
-   Story (hero + ask) on the left, the living product (cards + breadth) on the
-   right, footer full-width below. Grid-areas so mobile keeps its stacked order. */
-@media (min-width:1000px){
-  .cx .app.wide{max-width:1080px}
-  .cx .app.wide .stage.s0.on{display:grid;grid-template-columns:1.05fr .95fr;
-    grid-template-areas:"hero cards" "ask brd" "foot foot";
-    column-gap:60px;align-items:start;min-height:auto}
-  .cx .s0-hero{grid-area:hero}
-  .cx .app.wide .storycards{grid-area:cards}
-  .cx .s0-ask{grid-area:ask}
-  .cx .app.wide .breadth{grid-area:brd;align-self:start}
-  .cx .s0-foot{grid-area:foot;margin-top:30px;border-top:1px solid var(--hair);padding-top:22px}
-  .cx .app.wide .hero-head{font-size:48px}
-  .cx .app.wide .hero{margin-bottom:8px}
-  .cx .app.wide .storycards{margin:6px 0 14px}
-  .cx .app.wide .breadth{margin:0}
-  .cx .app.wide .exp-k{margin-top:8px}
-  .cx .app.wide .act{margin-top:22px}
+  /* RIGHT · the flow — the existing column, centred at 480 inside the panel */
+  .cx .shell>.app{max-width:none;margin:0;padding:0;min-height:100dvh}
+  .cx .shell>.app>.mast{display:none}
+  .cx .shell>.app>#main{max-width:480px;margin:0 auto;padding:max(40px,env(safe-area-inset-top)) 26px 56px}
+  /* the cover lives on the left now — hide its twin inside the right flow */
+  .cx .app .s0-hero,.cx .app .storycards,.cx .app .s0-foot{display:none}
+  /* the input is present on load — never held back by the (left) unfold */
+  .cx .stage.unfolding .s0-ask,.cx .stage.unfolding .breadth{opacity:1;pointer-events:auto}
+
+  /* the vertical thread lives on the right panel's left edge */
+  .cx .thread{left:calc(max(0px, (100vw - 1280px)/2) + 0.725 * min(100vw, 1280px) - 228px)}
+  .cx .h-serif{font-size:34px}
 }
 
 @media (prefers-reduced-motion:reduce){
