@@ -240,6 +240,8 @@ export function ConnectExperience() {
     return p
   }
   const them = rl?.gender === 'he' ? 'him' : rl?.gender === 'she' ? 'her' : 'them'
+  // a natural name for the signature "Getting to know …" state (never invented)
+  const knowName = rl?.name || (rl?.relationshipWord ? `your ${rl.relationshipWord}` : 'your family')
   const CHECK = (
     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6" /></svg>
   )
@@ -282,7 +284,7 @@ export function ConnectExperience() {
           </div>
         ))}
         {told.map((item) => (
-          <div key={`t${item.key}`} className="uline know in">
+          <div key={`t${item.key}`} className="uline know mem in">
             <span className="mk" aria-hidden="true">{CHECK}</span>
             <p><span className="lbl">{item.label} · you told me</span>{item.body}</p>
           </div>
@@ -372,6 +374,19 @@ export function ConnectExperience() {
           <section className="stage on convo">
             {nav}
 
+            {/* Memory Ribbon — what YOU have told Connect today, kept in view so it's
+                clear nothing is lost. Grows as you add; this is what gets preserved. */}
+            {told.length > 0 && (
+              <div className="ribbon" aria-label="What you told Connect today">
+                <p className="ribbon-k">Today · you told me</p>
+                <div className="ribbon-items">
+                  {told.map((item) => (
+                    <span key={item.key} className="rib"><span className="rc" aria-hidden="true">{CHECK}</span>{item.label}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Beat · your words (always present, the root of the thread) */}
             <div className="beat you past">
               <p className="beat-k">You told Connect</p>
@@ -380,7 +395,11 @@ export function ConnectExperience() {
 
             {/* Beat · understanding (active through s1→s2, then a quiet record) */}
             <div className={`beat${stage === 's1' || stage === 's2' ? ' now' : ' past'}`} ref={stage === 's1' || stage === 's2' ? activeBeatRef : undefined}>
-              <div className="think"><span className="ld" /><span>{stage === 's2' ? 'Tell me what I don’t know yet. I won’t guess.' : 'Understand first. Answer second.'}</span></div>
+              <div className={`think${stage === 's1' && !s1done ? ' working' : ''}`}><span className="ld" /><span>{
+                stage === 's1' && !s1done ? `Getting to know ${knowName}…`
+                  : stage === 's2' ? 'Tell me what I don’t know yet. I won’t guess.'
+                  : 'Understand first. Answer second.'
+              }</span></div>
               {understanding()}
               {stage === 's1' && (
                 <div className="act">

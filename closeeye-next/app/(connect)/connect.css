@@ -134,6 +134,24 @@
   font-weight:600;color:var(--emerald);white-space:nowrap;vertical-align:middle}
 .cx .uline.open .tellme::after{content:' →'}
 .cx button.uline.tap:hover .tellme{color:var(--forest)}
+/* a told fact just became memory — the ✓ draws in (motion mapped to a real event) */
+.cx .uline.mem .mk{animation:cx-pop .5s cubic-bezier(.2,.7,.2,1)}
+@keyframes cx-pop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.28)}100%{transform:scale(1);opacity:1}}
+
+/* Memory Ribbon — a running, attributed record of what YOU told Connect today.
+   It grows as you add, stays in view, and is exactly what gets preserved. */
+.cx .ribbon{margin:0 0 2px;padding:13px 0;border-bottom:1px solid var(--hair)}
+.cx .ribbon-k{font-family:var(--sans);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--emerald);font-weight:600;margin:0 0 10px}
+.cx .ribbon-items{display:flex;flex-wrap:wrap;gap:7px}
+.cx .rib{display:inline-flex;align-items:center;gap:6px;background:rgba(6,169,78,.06);border:1px solid var(--hair2);
+  border-radius:999px;padding:6px 12px 6px 9px;font-family:var(--sans);font-size:12.5px;font-weight:500;
+  color:var(--forest);animation:cx-rib .45s cubic-bezier(.2,.7,.2,1)}
+.cx .rib .rc{width:14px;height:14px;display:inline-flex;flex:none;color:var(--emerald)}
+@keyframes cx-rib{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}
+
+/* motion hierarchy — the working state breathes, a settled state is still */
+.cx .think.working span{color:var(--forest)}
 
 .cx .h-serif{font-family:var(--serif);font-weight:500;font-size:31px;line-height:1.22;
   letter-spacing:-.01em;margin:0 0 12px;color:var(--forest)}
