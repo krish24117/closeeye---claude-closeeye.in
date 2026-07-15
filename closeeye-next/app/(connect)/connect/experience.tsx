@@ -76,7 +76,7 @@ const inr = (n: number) => '₹' + n.toLocaleString('en-IN')
 // place (never navigate away). Copy is fixed; the title alone tells the story.
 const STORY_CARDS = [
   { id: 'understand', title: 'Understands your family', link: 'Learn more', body: 'Close Eye learns what matters about the people you love, so every conversation begins with understanding — not assumptions.', tag: 'this is Understanding.' },
-  { id: 'support', title: 'Connects trusted support', link: 'See how', body: 'When understanding isn’t enough, Close Eye helps your family connect with trusted people and professionals.', tag: 'this is Presence.' },
+  { id: 'support', title: 'Real people, on the ground', link: 'See how', body: 'When understanding isn’t enough, Close Eye helps your family connect with trusted people and professionals.', tag: 'this is Presence.' },
   { id: 'space', title: 'One private Family Space', link: 'Explore', body: 'Memories, conversations, updates, documents and trusted support stay together in one place.', tag: 'this is Trust.' },
 ]
 // "More than care" — only the live capabilities are shown; nothing implied that
@@ -411,6 +411,7 @@ export function ConnectExperience() {
             <p className="dc-sig"><b>Trust</b><span className="sep">·</span><b>Presence</b><span className="sep">·</span><b>Understanding</b></p>
             <h1 className="dc-head">Know the people you love —<br /><em>even from far away.</em></h1>
             <p className="dc-supp">Close Eye helps you stay close — it understands your family, remembers what matters, and brings trusted people when they’re needed.</p>
+            <p className="dc-accent">Apps can answer. Close Eye can show up.</p>
             <div className="storycards dc-cards" aria-label="What Close Eye does">
               {STORY_CARDS.map((c) => {
                 const on = openCard === c.id
@@ -462,6 +463,7 @@ export function ConnectExperience() {
                 </div>
                 <h1 className={`h-serif hero-head${heroSettled ? ' in' : ''}`}>Know the people you love —<br /><em>even from far away.</em></h1>
                 <p className={`whatis hero-supp${heroSettled ? ' in' : ''}`}>Close Eye helps you stay close — it understands your family, remembers what matters, and brings trusted people when they’re needed.</p>
+                <p className={`hero-accent${heroSettled ? ' in' : ''}`}>Apps can answer. Close Eye can show up.</p>
               </div>
             </div>
             <div className="storycards" aria-label="What Close Eye does">

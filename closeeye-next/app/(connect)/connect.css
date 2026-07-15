@@ -62,6 +62,9 @@
 .cx .hero-head.in{opacity:1;transform:none}
 .cx .hero-supp{opacity:0;transform:translateY(10px);transition:opacity .8s ease .15s,transform .8s cubic-bezier(.2,.7,.2,1) .15s}
 .cx .hero-supp.in{opacity:1;transform:none}
+.cx .hero-accent{font-family:var(--serif);font-style:italic;font-size:15px;line-height:1.5;color:var(--pencil);margin:11px 0 0;max-width:34ch;
+  opacity:0;transform:translateY(10px);transition:opacity .8s ease .25s,transform .8s cubic-bezier(.2,.7,.2,1) .25s}
+.cx .hero-accent.in{opacity:1;transform:none}
 /* during the unfold the page holds its breath — only the hero shows; the input wakes last */
 .cx .stage.unfolding .storycards,.cx .stage.unfolding .s0-ask,.cx .stage.unfolding .breadth,.cx .stage.unfolding .s0-foot{opacity:0;pointer-events:none}
 .cx .storycards,.cx .breadth,.cx .s0-foot{transition:opacity .8s ease .2s}
@@ -377,6 +380,7 @@
   .cx .dc-head{font-family:var(--serif);font-weight:500;font-size:42px;line-height:1.16;letter-spacing:-.01em;color:var(--forest);margin:16px 0 0;text-wrap:balance}
   .cx .dc-head em{font-style:italic;font-weight:400}
   .cx .dc-supp{font-family:var(--serif);font-size:17px;line-height:1.55;color:var(--pencil);margin:14px 0 0;max-width:34ch}
+  .cx .dc-accent{font-family:var(--serif);font-style:italic;font-size:15px;line-height:1.5;color:var(--pencil);margin:10px 0 0;max-width:34ch}
   .cx .dc-cards{margin:26px 0 0}
   .cx .dc-foot .footlinks{justify-content:flex-start;margin-top:0}
   .cx .dc-foot .footnote{text-align:left;margin-top:14px}
@@ -399,7 +403,7 @@
   .cx *{animation:none!important;transition:none!important}
   .cx .lline,.cx .blank,.cx .uline,.cx .beat{opacity:1;transform:none}
   .cx .beat.past{opacity:.46}
-  .cx .hero-sig,.cx .hero-head,.cx .hero-supp,.cx .hero-feels .feel,
+  .cx .hero-sig,.cx .hero-head,.cx .hero-supp,.cx .hero-accent,.cx .hero-feels .feel,
   .cx .storycards,.cx .breadth,.cx .s0-ask,.cx .s0-foot{opacity:1;transform:none}
   .cx .ruled .rule{transform:none}
   .cx .ruled .pen{background:var(--sprout)}
