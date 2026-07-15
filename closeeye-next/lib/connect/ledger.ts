@@ -62,14 +62,14 @@ const DISTANT = /\b(far\s+away|far\s+from|miles\s+away|another\s+(city|country|s
 
 /* ── need detection (order = priority; specific needs win over generic help) ── */
 const NEED_PATTERNS: [NeedType, RegExp][] = [
-  ['emergency', /\b(fell|fallen|falling|not\s+breathing|can'?t\s+breathe|chest\s+pain|unconscious|collapsed|bleeding|ambulance|stroke|seizure|heart\s+attack|emergency|rushed\s+to|admitted)\b/i],
-  ['medical', /\b(fever|temperature|medicine|medication|meds|tablet|pill|dose|insulin|bp|blood\s+pressure|sugar|diabet|doctor|unwell|sick|ill|not\s+eating|weak|dizzy|infection|wound|checkup|check-?up|blood\s+test|scan)\b/i],
-  ['companionship', /\b(lonely|alone\s+all|feels?\s+alone|sad|bored|miss(es|ing)?\s+(us|me|company)|no\s+one|isolated|company|someone\s+to\s+talk|depress)\b/i],
-  ['documents', /\b(keep|store|save|safe|upload)\b.*\b(report|reports|document|documents|prescription|papers|records|policy|aadhaar)\b|\b(report|prescription|records)\b.*\b(safe|keep|store)\b/i],
-  ['memories', /\b(photo|photos|picture|pictures|album|memories|remember|stories|keepsake)\b/i],
-  ['history', /\b(family\s+history|ancestry|our\s+roots|heritage|family\s+tree)\b/i],
+  ['emergency', /\b(fell(\s+down)?|fallen|not\s+breathing|can'?t\s+breathe|cannot\s+breathe|stopped\s+breathing|difficulty\s+breathing|trouble\s+breathing|breathless|gasping|choking|choke|chest\s+pain|heart\s+attack|cardiac|stroke|seizure|convuls\w*|unconscious|unresponsive|not\s+responding|won'?t\s+wake|can'?t\s+wake|passed\s+out|faint\w*|collaps\w*|bleeding|blood\s+everywhere|accident|hospitali[sz]\w*|in\s+(the\s+)?hospital|into\s+(the\s+)?hospital|to\s+(the\s+)?hospital|taken\s+to\s+hospital|rushed\s+(to|her|him|them)|admitted\s+to\s+(the\s+)?(hospital|icu|ward)|\bicu\b|casualty|emergency\s+ward|emergency\s+room|ambulance|call\s+108|\b108\b|\b911\b|\b999\b|very\s+serious|serious\s+condition|critical\w*|\bdying\b|overdose|poison\w*|snake\s+bite|drown\w*|come\s+(quick\w*|fast|immediately|urgently)|need\s+help\s+immediately|help\s+(immediately|urgently)|emergency|something\s+(is\s+)?(very\s+|terribly\s+|badly\s+)?wrong|very\s+wrong|gone\s+wrong|wrong\s+with\s+(her|him|them|my|amma|appa|mom|dad)|very\s+(sick|ill)|badly\s+hurt|got\s+hurt|seriously\s+hurt|injured|not\s+moving|can'?t\s+move|can'?t\s+get\s+up|won'?t\s+respond|in\s+teh\s+hospital|to\s+teh\s+hospital)\b/i],
+  ['medical', /\b(fever|temperature|10[34]\b|medicine|medicin\w*|medcine|medication|meds|tablet|pill|dose|insulin|\bbp\b|blood\s+pressure|sugar\s+(level|is|has|high|low)|blood\s+sugar|(her|his|their)\s+sugar|diabet\w*|doctor|unwell|not\s+(keeping\s+)?well|not\s+feeling\s+well|sick|\bill\b|not\s+eaten|not\s+eating|hasn'?t\s+eaten|won'?t\s+eat|refusing\s+to\s+eat|weak|weakness|dizzy|giddy|giddiness|infection|wound|cough\w*|vomit\w*|loose\s+motion|diarr\w*|headache|body\s+pain|joint\s+pain|checkup|check-?up|blood\s+test|\bscan\b|nausea|swelling|\brash\b)\b/i],
+  ['companionship', /\b(lonely|alone\s+all|feels?\s+alone|sad|bored|miss(es|ing)?\s+(us|me|company)|no\s+one|isolated|company|someone\s+to\s+talk|depress\w*|seems?\s+low|sits?\s+quietly)\b/i],
+  ['documents', /\b(keep|store|save|safe|upload)\b.*\b(report\w*|document\w*|prescription\w*|paper\w*|record\w*|policy|policies|aadhaar|certificate\w*)\b|\b(report\w*|prescription\w*|record\w*)\b.*\b(safe|keep|store)\b/i],
+  ['memories', /\b(photo\w*|picture\w*|album\w*|memories|remember|stories|keepsake)\b/i],
+  ['history', /\b(family\s+history|ancestry|our\s+roots|heritage|family\s+come\w*\s+from|where\s+(we|our\s+family)\s+(are\s+)?from|family\s+tree|our\s+family\s+story)\b/i],
   // physical errands + any request for a real person to help with a task
-  ['errand', /\b(pick\s*up|pickup|picked\s+up|drop\s*off|dropoff|drop\s+(her|him|them)|collect|bring\s+(her|him|them)|take\s+(her|him|them)\s+to|groceries|grocery|buy|purchase|deliver|delivery|ration|airport|railway|station|errand|shopping|gas\s+cylinder|pay\s+(the|her|his|a)\s+bill|help\s+me|need\s+help|someone\s+to\s+help|can\s+(someone|you)\s+help|need\s+someone|file\s+(a|my|the|tax)|taxes?|paperwork|legal|insurance|pension|passport|visa|\bform\b|apply\s+for|sort\s+out|arrange)\b/i],
+  ['errand', /\b(pick\s*up|pickup|picked\s+up|drop\s*off|dropoff|drop\s+(her|him|them)|collect|bring\s+(her|him|them)|take\s+(her|him|them)\s+to|groceries|grocery|buy|purchase|deliver|delivery|ration|airport|railway|station|errand|shopping|gas\s+cylinder|pay\s+(the|her|his|a)\s+bill|help\s+me|needs?\s+help|someone\s+to\s+help|can\s+(someone|you)\s+help|needs?\s+someone|needs?\s+a\s+hand|help\s+(me\s+)?with|help\s+paying|paying\s+\w*\s*bill|want\s+help|file\s+(a|my|the|tax)|taxes?|paperwork|legal|insurance|pension|passport|visa|\bform\b|apply\s+for|sort\w*\s+out|arrange|bank\s+(work|issue|account)|\bfix\b|repair|book\s+a\s+(cab|taxi|ticket|appointment))\b/i],
   ['wellbeing', /\b(how\s+is|how'?s|how\s+are|is\s+(she|he|they)\s+(okay|ok|alright|fine)|okay|alright|doing\s+(well|okay|ok)?|worried|check\s+on|know\s+(she|he|they)'?s|every\s+day|sleeping|eating\s+(well|properly))\b/i],
 ]
 function detectNeed(text: string): NeedType {
@@ -159,8 +159,11 @@ export function readLedger(rawText: string): ReadLedger {
   const livesAlone = ALONE.test(text)
   const distant = DISTANT.test(text)
   const question = realQuestion(text)
-  const need = detectNeed(text)
   const forLoved = !!(name || relationshipWord)
+  let need = detectNeed(text)
+  // a person named with no explicit need ("Mom?", "uncle?") = "how are they" — default
+  // to wellbeing rather than leaving it unclear.
+  if (need === 'unclear' && forLoved) need = 'wellbeing'
 
   const subjectLabel = name ? name : relationshipWord ? `Your ${cap(relationshipWord)}` : 'Someone you love'
   const who = name || (relationshipWord ? `your ${relationshipWord}` : 'them')
