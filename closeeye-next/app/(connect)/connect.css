@@ -88,7 +88,8 @@
 
 /* ── Sprint 3 · "More than care" — life, not only healthcare (honest breadth) ── */
 .cx .breadth{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px;margin:0 0 26px}
-.cx .breadth-h{font-family:var(--serif);font-size:22px;color:var(--forest);margin:0 0 3px}
+.cx .breadth-h{font-family:var(--serif);font-size:22px;color:var(--forest);margin:0 0 6px}
+.cx .breadth-who{font-family:var(--serif);font-size:15.5px;line-height:1.5;color:var(--forest);margin:0 0 8px;max-width:40ch}
 .cx .breadth-s{font-family:var(--serif);font-size:15px;color:var(--pencil);margin:0 0 18px}
 .cx .catgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .cx .cat{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border:1px solid var(--hair);
@@ -192,6 +193,8 @@
 .cx .uline .lbl{display:block;font-family:var(--sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--pencil);margin-bottom:1px}
 .cx .uline.know .lbl{color:var(--emerald)}
+.cx .uline .from-words{display:block;font-family:var(--sans);font-size:10px;letter-spacing:.06em;color:var(--faint);margin-top:2px;font-style:normal}
+.cx .ledger-note{font-family:var(--serif);font-style:italic;font-size:13px;line-height:1.5;color:var(--pencil);margin:12px 0 4px}
 .cx button.uline.tap:hover p{color:var(--forest)}
 .cx .uline.open .tellme{display:inline-block;margin-left:10px;font-family:var(--sans);font-size:12px;
   font-weight:600;color:var(--emerald);white-space:nowrap;vertical-align:middle}

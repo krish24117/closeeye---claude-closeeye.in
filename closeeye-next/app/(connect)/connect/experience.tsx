@@ -339,6 +339,7 @@ export function ConnectExperience() {
     const openBlanks = rl.blanks.filter((b) => !told.some((x) => x.key === b.key))
     const revealing = stage === 's1'
     const interactive = stage === 's2'
+    const onLedger = revealing || interactive // the understanding Ledger stage (s1/s2)
     const openReady = !revealing || s1done // during reveal, open lines wait their turn
     const nothingYet = known.length === 0 && openBlanks.length === 0 && told.length === 0
     return (
@@ -353,7 +354,7 @@ export function ConnectExperience() {
         {known.map((l, i) => (
           <div key={`k${i}`} className={`uline know${!revealing || i < s1n ? ' in' : ''}${revealing && i === s1live ? ' live' : ''}`}>
             <span className="mk" aria-hidden="true">{CHECK}</span>
-            <p>{l.label && <span className="lbl">{l.label}</span>}{l.body}</p>
+            <p>{l.label && <span className="lbl">{l.label}</span>}{l.body}{onLedger && <span className="from-words">from your words</span>}</p>
           </div>
         ))}
         {told.map((item) => (
@@ -362,6 +363,9 @@ export function ConnectExperience() {
             <p><span className="lbl">{item.label} · you told me</span>{item.body}</p>
           </div>
         ))}
+        {onLedger && openReady && known.length > 0 && (
+          <p className="ledger-note">Everything above comes from what you wrote — nothing else.</p>
+        )}
         {openBlanks.map((b) => (
           interactive ? (
             <React.Fragment key={b.key}>
@@ -502,6 +506,7 @@ export function ConnectExperience() {
             </div>
             <div className="breadth" aria-label="More than care">
               <p className="breadth-h">More than care.</p>
+              <p className="breadth-who">Parents, partners, siblings, children — the people who matter most.</p>
               <p className="breadth-s">Close Eye helps families through everyday life.</p>
               <div className="catgrid">
                 {CARE_CATS.map((label) => (
