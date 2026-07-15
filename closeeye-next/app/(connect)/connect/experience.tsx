@@ -93,6 +93,9 @@ export function ConnectExperience() {
   const [s1n, setS1n] = React.useState(0)
   const [s1live, setS1live] = React.useState(-1)
   const [s1done, setS1done] = React.useState(false)
+  // hero unfold — cinematic on first visit, settled at once for returning visitors
+  const [heroN, setHeroN] = React.useState(0)
+  const [heroSettled, setHeroSettled] = React.useState(false)
   // Phase 2 selection
   const [visit, setVisit] = React.useState(VISITS[0]!)
   const threadRef = React.useRef<HTMLElement | null>(null)
@@ -108,6 +111,21 @@ export function ConnectExperience() {
 
   React.useEffect(() => { if (threadRef.current) threadRef.current.style.height = THREAD.s0 + '%' }, [])
   React.useEffect(() => () => clearTimers(), [])
+
+  // The hero unfolds once, slowly, on a first visit — logo → signature → three
+  // feelings → the settled promise → the input wakes. Returning visitors (and
+  // reduced-motion) land on the settled headline at once; their time is respected.
+  React.useEffect(() => {
+    let seen = false
+    try { seen = !!window.localStorage.getItem('ce_connect_hero_seen') } catch { /* private mode */ }
+    if (seen || reduce) { setHeroN(4); setHeroSettled(true); return }
+    const hs: number[] = []
+    const at = (ms: number, fn: () => void) => hs.push(window.setTimeout(fn, ms))
+    at(500, () => setHeroN(1)); at(1300, () => setHeroN(2)); at(2200, () => setHeroN(3)); at(3100, () => setHeroN(4))
+    at(4300, () => setHeroSettled(true))
+    try { window.localStorage.setItem('ce_connect_hero_seen', '1') } catch { /* private mode */ }
+    return () => hs.forEach(clearTimeout)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Continuous thread: bring the newly-active beat into view instead of jumping to
   // the top — the conversation stays whole, the eye follows what just changed.
@@ -358,11 +376,19 @@ export function ConnectExperience() {
         </header>
         <main id="main">
 
-        {/* S0 · WHAT · HOW · EXPERIENCE */}
+        {/* S0 · HERO (unfolds) · HOW · EXPERIENCE */}
         {stage === 's0' && (
-          <section className="stage on">
-            <h1 className="h-serif">Someone you love,<br /><em>understood.</em></h1>
-            <p className="whatis">Close Eye learns about the people you love, so answers come from understanding — not guesses. When needed, <b>trusted local people step in to help.</b></p>
+          <section className={`stage on${heroSettled ? '' : ' unfolding'}`}>
+            <div className={`hero${heroSettled ? ' settled' : ''}`}>
+              <p className={`hero-sig${heroN >= 1 ? ' in' : ''}`}><b>Trust</b><span className="sep">·</span><b>Presence</b><span className="sep">·</span><b>Understanding</b></p>
+              <div className="hero-feels" aria-hidden={heroSettled}>
+                <p className={`feel${heroN >= 2 ? ' in' : ''}`}>You love them.</p>
+                <p className={`feel${heroN >= 3 ? ' in' : ''}`}>You worry about them.</p>
+                <p className={`feel${heroN >= 4 ? ' in' : ''}`}>Distance shouldn’t mean uncertainty.</p>
+              </div>
+              <h1 className={`h-serif hero-head${heroSettled ? ' in' : ''}`}>Know the people<br /><em>you love.</em></h1>
+              <p className={`whatis hero-supp${heroSettled ? ' in' : ''}`}>Close Eye remembers what matters, never guesses, and helps your family find the right support when it’s needed.</p>
+            </div>
             <p className="principles"><b>Learns your family</b><span className="sep">·</span><b>Private by design</b><span className="sep">·</span><b>Real people when needed</b></p>
             <div className="howit" aria-label="How Close Eye works">
               <div className="hrow"><span className="hn">01</span><span className="ld" /><p>Tell Connect about someone you love.</p></div>
