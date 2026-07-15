@@ -214,6 +214,14 @@
 .cx .empty{margin:4px 0 2px;font-family:var(--serif);font-style:italic;font-size:16.5px;line-height:1.55;
   color:var(--pencil);max-width:32ch}
 
+/* Sprint 4 · a quiet legend — names what ✓ and ○ mean, so every step is legible */
+.cx .ulegend{display:flex;align-items:center;gap:6px;margin:-6px 0 12px;font-family:var(--sans);font-size:11px;
+  letter-spacing:.04em;color:var(--faint)}
+.cx .ulegend .lg{font-weight:700}
+.cx .ulegend .lg.ok{color:var(--emerald)}
+.cx .ulegend .lg.op{color:var(--pencil)}
+.cx .ulegend .dot-sep{margin:0 6px;color:var(--hair2)}
+
 .cx .h-serif{font-family:var(--serif);font-weight:500;font-size:31px;line-height:1.22;
   letter-spacing:-.01em;margin:0 0 12px;color:var(--forest)}
 .cx .h-serif em{font-style:italic;font-weight:400}

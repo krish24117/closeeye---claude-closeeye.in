@@ -339,6 +339,9 @@ export function ConnectExperience() {
         {nothingYet && (
           <p className="empty">I don’t want to guess. Tell me who this is for — in your own words — and I’ll begin to understand.</p>
         )}
+        {openReady && openBlanks.length > 0 && (
+          <p className="ulegend"><span className="lg ok">✓</span> what I know<span className="dot-sep">·</span><span className="lg op">○</span> what I don’t yet</p>
+        )}
         {known.map((l, i) => (
           <div key={`k${i}`} className={`uline know${!revealing || i < s1n ? ' in' : ''}${revealing && i === s1live ? ' live' : ''}`}>
             <span className="mk" aria-hidden="true">{CHECK}</span>
@@ -488,7 +491,7 @@ export function ConnectExperience() {
             <div className={`beat${stage === 's1' || stage === 's2' ? ' now' : ' past'}`} ref={stage === 's1' || stage === 's2' ? activeBeatRef : undefined}>
               <div className={`think${stage === 's1' && !s1done ? ' working' : ''}`}><span className="ld" /><span>{
                 stage === 's1' && !s1done ? `Getting to know ${knowName}…`
-                  : stage === 's2' ? 'Tell me what I don’t know yet. I won’t guess.'
+                  : stage === 's2' ? 'Only what helps me care for them — I won’t guess.'
                   : 'Understand first. Answer second.'
               }</span></div>
               {understanding()}
