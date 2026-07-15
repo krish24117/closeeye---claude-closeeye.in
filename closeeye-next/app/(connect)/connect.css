@@ -244,8 +244,10 @@
 .cx .ask-wrap{margin-top:34px}
 /* ── the writing desk — the page's focal moment. A journal page on the desk:
    paper-white card, ruled lines that draw in, a waiting pen-point that breathes. ── */
-.cx .deskcard{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px 20px;margin-top:2px}
+.cx .deskcard{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px 20px;
+  margin:2px 0 20px;box-shadow:0 2px 3px rgba(14,42,31,.025),0 14px 30px rgba(14,42,31,.05)}
 .cx .deskcard .exp-k{margin:0 0 5px}
+.cx .desk-hint{margin:0 0 13px;text-align:center;font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--pencil)}
 .cx .desk-lede{font-family:var(--serif);font-size:18px;line-height:1.4;color:var(--forest);margin:0 0 16px}
 .cx .ruled{position:relative;min-height:104px}
 .cx .ruled .rules{position:absolute;inset:0;pointer-events:none}

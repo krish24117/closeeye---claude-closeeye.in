@@ -492,6 +492,7 @@ export function ConnectExperience() {
                   <button type="button" onClick={() => setText(SAMPLE)}>“{SAMPLE}”</button>
                 </div>
                 <div className="act">
+                  <p className="desk-hint">One sentence is enough. Connect remembers from there.</p>
                   <button className={`btn${text.trim().length > 0 ? ' inked' : ' ghost'}`} onClick={ask}>Let Connect understand</button>
                   <p className="privacy">Nothing you write is sold or shared. Ever.</p>
                 </div>
