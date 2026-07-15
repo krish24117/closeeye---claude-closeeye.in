@@ -72,6 +72,14 @@ const VISITS = [
 ]
 const inr = (n: number) => '₹' + n.toLocaleString('en-IN')
 
+// The three story cards — they replace every explanatory paragraph and expand in
+// place (never navigate away). Copy is fixed; the title alone tells the story.
+const STORY_CARDS = [
+  { id: 'understand', title: 'Understands your family', link: 'Learn more', body: 'Close Eye learns what matters about the people you love, so every conversation begins with understanding — not assumptions.' },
+  { id: 'support', title: 'Connects trusted support', link: 'See how', body: 'When understanding isn’t enough, Close Eye helps your family connect with trusted people and professionals.' },
+  { id: 'space', title: 'One private Family Space', link: 'Explore', body: 'Memories, conversations, updates, documents and trusted support stay together in one place.' },
+]
+
 export function ConnectExperience() {
   const router = useRouter()
   const reduce = prefersReduced()
@@ -96,6 +104,7 @@ export function ConnectExperience() {
   // hero unfold — cinematic on first visit, settled at once for returning visitors
   const [heroN, setHeroN] = React.useState(0)
   const [heroSettled, setHeroSettled] = React.useState(false)
+  const [openCard, setOpenCard] = React.useState<string | null>(null) // story card expanded in place
   // Phase 2 selection
   const [visit, setVisit] = React.useState(VISITS[0]!)
   const threadRef = React.useRef<HTMLElement | null>(null)
@@ -389,11 +398,20 @@ export function ConnectExperience() {
               <h1 className={`h-serif hero-head${heroSettled ? ' in' : ''}`}>Know the people<br /><em>you love.</em></h1>
               <p className={`whatis hero-supp${heroSettled ? ' in' : ''}`}>Close Eye remembers what matters, never guesses, and helps your family find the right support when it’s needed.</p>
             </div>
-            <p className="principles"><b>Learns your family</b><span className="sep">·</span><b>Private by design</b><span className="sep">·</span><b>Real people when needed</b></p>
-            <div className="howit" aria-label="How Close Eye works">
-              <div className="hrow"><span className="hn">01</span><span className="ld" /><p>Tell Connect about someone you love.</p></div>
-              <div className="hrow"><span className="hn">02</span><span className="ld" /><p>Connect begins understanding them.</p></div>
-              <div className="hrow"><span className="hn">03</span><span className="ld" /><p>Answers come from understanding — <i>real people help when needed.</i></p></div>
+            <div className="storycards" aria-label="What Close Eye does">
+              {STORY_CARDS.map((c) => {
+                const on = openCard === c.id
+                return (
+                  <div key={c.id} className={`scard${on ? ' open' : ''}`}>
+                    <button type="button" className="scard-h" aria-expanded={on} onClick={() => setOpenCard(on ? null : c.id)}>
+                      <span className="ld" />
+                      <span className="scard-t">{c.title}</span>
+                      <span className="scard-more">{on ? 'Close' : `${c.link} →`}</span>
+                    </button>
+                    <div className="scard-b"><div><p>{c.body}</p></div></div>
+                  </div>
+                )
+              })}
             </div>
             <p className="exp-k">Experience Close Eye</p>
             <p className="lede" style={{ marginBottom: 0 }}>Tell Connect about someone you love.</p>

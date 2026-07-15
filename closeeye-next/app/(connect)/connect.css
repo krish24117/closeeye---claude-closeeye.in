@@ -59,10 +59,25 @@
 .cx .hero-supp{opacity:0;transform:translateY(10px);transition:opacity .8s ease .15s,transform .8s cubic-bezier(.2,.7,.2,1) .15s}
 .cx .hero-supp.in{opacity:1;transform:none}
 /* during the unfold the page holds its breath — only the hero shows; the input wakes last */
-.cx .stage.unfolding .principles,.cx .stage.unfolding .howit,.cx .stage.unfolding .exp-k,
+.cx .stage.unfolding .storycards,.cx .stage.unfolding .breadth,.cx .stage.unfolding .exp-k,
 .cx .stage.unfolding .lede,.cx .stage.unfolding .ask-wrap,.cx .stage.unfolding .act{opacity:0;pointer-events:none}
-.cx .principles,.cx .howit,.cx .exp-k,.cx .lede{transition:opacity .8s ease .2s}
+.cx .storycards,.cx .breadth,.cx .exp-k,.cx .lede{transition:opacity .8s ease .2s}
 .cx .ask-wrap,.cx .act{transition:opacity .9s ease .5s}
+
+/* ── Sprint 2 · story cards — explained by touch, expand in place, page never moves ── */
+.cx .storycards{display:flex;flex-direction:column;gap:11px;margin:2px 0 26px}
+.cx .scard{background:var(--page);border:1px solid var(--hair);border-radius:16px;overflow:hidden;transition:border-color .3s}
+.cx .scard.open{border-color:var(--emerald)}
+.cx .scard-h{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:18px 20px}
+.cx .scard-h .ld{width:8px;height:8px;border-radius:50%;background:var(--hair2);flex:none}
+.cx .scard.open .scard-h .ld{background:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}
+.cx .scard-t{flex:1;font-family:var(--serif);font-weight:500;font-size:18.5px;color:var(--forest);line-height:1.25}
+.cx .scard-more{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--emerald);white-space:nowrap}
+.cx .scard.open .scard-more{color:var(--pencil)}
+.cx .scard-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .34s cubic-bezier(.2,.7,.2,1)}
+.cx .scard.open .scard-b{grid-template-rows:1fr}
+.cx .scard-b>div{overflow:hidden}
+.cx .scard-b p{margin:0;padding:0 20px 20px;font-family:var(--serif);font-size:16px;line-height:1.56;color:var(--ink);max-width:44ch}
 
 .cx .btn-google{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;
   background:var(--page);border:1px solid var(--hair2);border-radius:999px;padding:15px 22px;
@@ -328,5 +343,5 @@
   .cx .lline,.cx .blank,.cx .uline,.cx .beat{opacity:1;transform:none}
   .cx .beat.past{opacity:.46}
   .cx .hero-sig,.cx .hero-head,.cx .hero-supp,.cx .hero-feels .feel,
-  .cx .principles,.cx .howit,.cx .exp-k,.cx .lede,.cx .ask-wrap,.cx .act{opacity:1;transform:none}
+  .cx .storycards,.cx .breadth,.cx .exp-k,.cx .lede,.cx .ask-wrap,.cx .act{opacity:1;transform:none}
 }
