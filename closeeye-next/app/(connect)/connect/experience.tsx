@@ -445,7 +445,9 @@ export function ConnectExperience() {
                     <button type="button" className="scard-h" aria-expanded={on} onClick={() => setOpenCard(on ? null : c.id)}>
                       <span className="ld" />
                       <span className="scard-t">{c.title}</span>
-                      <span className="scard-more">{on ? 'Close' : `${c.link} →`}</span>
+                      <span className="scard-more">{on
+                        ? <span className="scard-x" role="img" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></span>
+                        : `${c.link} →`}</span>
                     </button>
                     <div className="scard-b"><div><p>{c.body}</p><p className="scard-tag">— {c.tag}</p></div></div>
                   </div>
@@ -494,7 +496,9 @@ export function ConnectExperience() {
                     <button type="button" className="scard-h" aria-expanded={on} onClick={() => setOpenCard(on ? null : c.id)}>
                       <span className="ld" />
                       <span className="scard-t">{c.title}</span>
-                      <span className="scard-more">{on ? 'Close' : `${c.link} →`}</span>
+                      <span className="scard-more">{on
+                        ? <span className="scard-x" role="img" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></span>
+                        : `${c.link} →`}</span>
                     </button>
                     <div className="scard-b"><div><p>{c.body}</p><p className="scard-tag">— {c.tag}</p></div></div>
                   </div>
