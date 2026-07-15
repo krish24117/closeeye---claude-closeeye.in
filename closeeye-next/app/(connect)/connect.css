@@ -221,6 +221,15 @@
 .cx .ulegend .lg.op{color:var(--pencil)}
 .cx .ulegend .dot-sep{margin:0 6px;color:var(--hair2)}
 
+/* ── Sprint 6 · final polish — rhythm, measure, and a calmer card reveal ── */
+.cx .hero-head,.cx .breadth-h,.cx .scard-t{text-wrap:balance}
+.cx .hero-supp{max-width:36ch}
+.cx .exp-k{margin-top:10px}
+.cx .try{margin-top:18px}
+/* the card body fades as it opens, so the reveal reads as unfolding, not popping */
+.cx .scard-b p{opacity:0;transition:opacity .3s ease}
+.cx .scard.open .scard-b p{opacity:1;transition:opacity .45s ease .12s}
+
 .cx .h-serif{font-family:var(--serif);font-weight:500;font-size:31px;line-height:1.22;
   letter-spacing:-.01em;margin:0 0 12px;color:var(--forest)}
 .cx .h-serif em{font-style:italic;font-weight:400}
