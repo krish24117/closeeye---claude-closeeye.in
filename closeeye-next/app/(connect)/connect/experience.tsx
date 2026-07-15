@@ -26,12 +26,14 @@ import { PHASE_2_ENABLED } from '@/lib/connect/phase'
 
 const WA = 'https://wa.me/919000221261'
 const SAMPLE = 'My mother lives alone in Hyderabad. How do I know she’s okay?'
+const SAMPLE2 = 'My father gets stressed every year with his tax filing. Can someone help him through it?'
 // short, warm labels for the lines the visitor fills in
 const KEY_LABEL: Record<string, string> = {
   health: 'Health', mornings: 'Her days', nearby: 'Nearby help', when_where: 'When & where',
   reach: 'How to reach', details: 'What’s needed', seeing: 'What you see', meds: 'Medicines',
   doctor: 'Doctor', where: 'Where', with: 'Who’s there', days: 'Her days', loves: 'What she loves',
   often: 'How often', which: 'Papers', whose: 'Photos', from: 'Roots',
+  due: 'By when', papers: 'Papers', helps: 'Who helps',
 }
 // warm, specific prompts for the moment a line is empty — "tell me something only
 // your family would know." Pronoun-free so they never mis-gender anyone.
@@ -53,6 +55,9 @@ const FILL_PH: Record<string, string> = {
   which: 'The papers you’d hate to lose',
   whose: 'Whose photos to keep first',
   from: 'The town or village where it began',
+  due: 'A date, or the season it falls in',
+  papers: 'A drawer, a folder, an email inbox',
+  helps: 'A relative, an accountant, or no one yet',
 }
 const prefersReduced = () =>
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -494,8 +499,9 @@ export function ConnectExperience() {
                   <div className="rules" aria-hidden="true"><span className="rule" /><span className="rule" /><span className="rule" /></div>
                   <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Write as you would to a friend…" />
                 </div>
-                <div className="try">or begin with —<br />
+                <div className="try">or begin with —
                   <button type="button" onClick={() => setText(SAMPLE)}>“{SAMPLE}”</button>
+                  <button type="button" onClick={() => setText(SAMPLE2)}>“{SAMPLE2}”</button>
                 </div>
                 <div className="act">
                   <p className="desk-hint">One sentence is enough. Connect remembers from there.</p>

@@ -91,6 +91,10 @@ const AI_CONFIDENT: Record<NeedType, boolean> = {
   errand: false, medical: false, emergency: false, companionship: false, unclear: false,
 }
 
+/** Errands that touch money, law or admin — Connect helps ORGANIZE with a trusted
+    person and says a professional is needed; it never gives the advice itself. */
+const PROFESSIONAL = /\b(tax(es)?|itr|gst|financ\w*|legal|lawyer|insurance|pension|passport|visa|bank\w*|audit|accountant|paperwork|filing|compliance)\b/i
+
 function concernFor(need: NeedType, name: string, forLoved: boolean): string | null {
   switch (need) {
     case 'wellbeing': return `You want to know ${name} is okay — day to day, not only when you speak.`
@@ -169,7 +173,13 @@ export function readLedger(rawText: string): ReadLedger {
   const who = name || (relationshipWord ? `your ${relationshipWord}` : 'them')
   const they = pronoun.subject(gender)
   const poss = cap(pronoun.possessive(gender))
-  const concern = concernFor(need, who, forLoved)
+  let concern = concernFor(need, who, forLoved)
+  // a money/law/admin errand isn't "someone to do it" — it's a steady hand to help organize
+  if (need === 'errand' && PROFESSIONAL.test(text)) {
+    concern = forLoved
+      ? `You want ${who} to have a steady hand with this — someone to help get it organized, not carry it alone.`
+      : `You want a steady hand with this — someone to help you get it organized, not carry it alone.`
+  }
 
   const ledger: LedgerLine[] = []
   if (name || relationshipWord) ledger.push({ label: 'Someone you love', body: name ? `${name}.` : `Your ${relationshipWord}.` })
@@ -182,10 +192,20 @@ export function readLedger(rawText: string): ReadLedger {
   if (concern) ledger.push({ label: 'What you need', body: concern })
   if (question) ledger.push({ label: 'In your words', body: question, quote: true })
 
+  let blanks = blanksForNeed(need, who, gender, forLoved)
+  // a money/law/admin errand needs organising questions, not "bags, a wheelchair"
+  if (need === 'errand' && forLoved && PROFESSIONAL.test(text)) {
+    blanks = [
+      { key: 'due', text: `When it needs to be done by` },
+      { key: 'papers', text: `Where ${who}'s papers are kept` },
+      { key: 'helps', text: `Who usually helps ${who} with it` },
+    ]
+  }
+
   return {
     subjectLabel, relationship, relationshipWord, name, gender, forLoved, city, livesAlone, distant,
     question, need, concern, aiConfident: AI_CONFIDENT[need],
-    ledger, blanks: blanksForNeed(need, who, gender, forLoved), rawText: text,
+    ledger, blanks, rawText: text,
   }
 }
 
@@ -199,6 +219,7 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
   const they = pronoun.subject(g), them = pronoun.object(g)
   const name = rl.name || (rl.relationshipWord ? `your ${rl.relationshipWord}` : 'the one you love')
   const P: string[] = []
+  const professional = PROFESSIONAL.test(rl.rawText)
 
   switch (rl.need) {
     case 'wellbeing':
@@ -210,7 +231,14 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
         : `Every visit becomes a page you can hold: how ${they} seemed, what ${they} ate, what ${they} laughed about. Proof, not reassurance.`)
       break
     case 'errand':
-      if (rl.forLoved) {
+      if (professional) {
+        // money / law / admin: Connect arranges a trusted person to help ORGANIZE and
+        // says a professional is needed — it never gives the advice itself.
+        P.push(rl.forLoved
+          ? `I won't give tax or money advice — that isn't my place. What Close Eye can do today is send a trusted person to sit with ${name}, help gather the papers, and get everything organized, so it isn't a weight ${g === 'they' ? 'they carry' : `${they} carries`} alone.`
+          : `I won't give tax or money advice — that isn't my place. What Close Eye can do today is send a trusted person to sit with you, help gather the papers, and get everything organized, so it isn't a weight you carry alone.`)
+        P.push(`Close Eye knows when a professional is needed — and brings the right, trusted hands in. Your Presence Manager confirms the details with you first.`)
+      } else if (rl.forLoved) {
         P.push(`This is a real-world thing — it needs a person, not an app. Close Eye can put a trusted human on it for ${name}, and tell you the moment it's done.`)
         P.push(`You don't chase anyone or arrange a stranger. Your Presence Manager confirms the details with you first.`)
       } else {

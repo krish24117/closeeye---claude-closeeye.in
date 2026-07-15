@@ -50,7 +50,7 @@
   margin:0 0 22px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
   opacity:0;transform:translateY(6px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
 .cx .hero-sig b{color:var(--forest);font-weight:600}
-.cx .hero-sig .sep{color:var(--hair2)}
+.cx .hero-sig .sep{color:var(--sprout)}
 .cx .hero-sig.in{opacity:1;transform:none}
 .cx .hero-feels{display:flex;flex-direction:column;gap:5px;margin:0 0 6px;max-height:220px;overflow:hidden;
   transition:opacity .8s ease,max-height .8s ease,margin .8s ease}
@@ -278,8 +278,8 @@
 .cx .cx-field::placeholder{color:var(--faint);font-style:italic}
 .cx .cx-field:focus{outline:none;border-bottom-color:var(--emerald)}
 .cx .try{margin-top:22px;font-size:13.5px;color:var(--pencil)}
-.cx .try button{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--forest);
-  text-align:left;padding:2px 0;border-bottom:1px dotted var(--hair2);line-height:1.5}
+.cx .try button{display:block;margin-top:9px;font-family:var(--serif);font-style:italic;font-size:15px;color:var(--forest);
+  text-align:left;padding:2px 0;border-bottom:1px dotted var(--hair2);line-height:1.45}
 .cx .try button:hover{border-bottom-color:var(--pencil)}
 
 .cx .ledger{background:var(--page);border:1px solid var(--hair);border-radius:18px;
@@ -379,7 +379,7 @@
   .cx .dc-tag{font-family:var(--sans);font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--pencil);margin-top:5px}
   .cx .dc-sig{font-family:var(--sans);font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--pencil);margin:34px 0 0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
   .cx .dc-sig b{color:var(--forest);font-weight:600}
-  .cx .dc-sig .sep{color:var(--hair2)}
+  .cx .dc-sig .sep{color:var(--sprout)}
   .cx .dc-head{font-family:var(--serif);font-weight:500;font-size:42px;line-height:1.16;letter-spacing:-.01em;color:var(--forest);margin:16px 0 0;text-wrap:balance}
   .cx .dc-head em{font-style:italic;font-weight:400}
   .cx .dc-supp{font-family:var(--serif);font-size:17px;line-height:1.55;color:var(--pencil);margin:14px 0 0;max-width:34ch}
