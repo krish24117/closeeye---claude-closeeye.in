@@ -79,8 +79,9 @@
 .cx .scard.open .scard-more{color:var(--pencil)}
 .cx .scard-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .34s cubic-bezier(.2,.7,.2,1)}
 .cx .scard.open .scard-b{grid-template-rows:1fr}
-.cx .scard-b>div{overflow:hidden}
-.cx .scard-b p{margin:0;padding:0 20px 20px;font-family:var(--serif);font-size:16px;line-height:1.56;color:var(--ink);max-width:44ch}
+.cx .scard-b>div{overflow:hidden;padding-bottom:20px}
+.cx .scard-b p{margin:0;padding:0 20px;font-family:var(--serif);font-size:16px;line-height:1.56;color:var(--ink);max-width:44ch}
+.cx .scard-b .scard-tag{margin:9px 0 0;font-size:13.5px;font-style:italic;color:var(--emerald)}
 
 /* ── Sprint 3 · "More than care" — life, not only healthcare (honest breadth) ── */
 .cx .breadth{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px;margin:0 0 26px}

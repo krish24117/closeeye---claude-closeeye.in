@@ -75,9 +75,9 @@ const inr = (n: number) => '₹' + n.toLocaleString('en-IN')
 // The three story cards — they replace every explanatory paragraph and expand in
 // place (never navigate away). Copy is fixed; the title alone tells the story.
 const STORY_CARDS = [
-  { id: 'understand', title: 'Understands your family', link: 'Learn more', body: 'Close Eye learns what matters about the people you love, so every conversation begins with understanding — not assumptions.' },
-  { id: 'support', title: 'Connects trusted support', link: 'See how', body: 'When understanding isn’t enough, Close Eye helps your family connect with trusted people and professionals.' },
-  { id: 'space', title: 'One private Family Space', link: 'Explore', body: 'Memories, conversations, updates, documents and trusted support stay together in one place.' },
+  { id: 'understand', title: 'Understands your family', link: 'Learn more', body: 'Close Eye learns what matters about the people you love, so every conversation begins with understanding — not assumptions.', tag: 'this is Understanding.' },
+  { id: 'support', title: 'Connects trusted support', link: 'See how', body: 'When understanding isn’t enough, Close Eye helps your family connect with trusted people and professionals.', tag: 'this is Presence.' },
+  { id: 'space', title: 'One private Family Space', link: 'Explore', body: 'Memories, conversations, updates, documents and trusted support stay together in one place.', tag: 'this is Trust.' },
 ]
 // "More than care" — only the live capabilities are shown; nothing implied that
 // isn't real yet. "Close Eye will grow with your family" carries the rest.
@@ -406,7 +406,7 @@ export function ConnectExperience() {
                       <span className="scard-t">{c.title}</span>
                       <span className="scard-more">{on ? 'Close' : `${c.link} →`}</span>
                     </button>
-                    <div className="scard-b"><div><p>{c.body}</p></div></div>
+                    <div className="scard-b"><div><p>{c.body}</p><p className="scard-tag">— {c.tag}</p></div></div>
                   </div>
                 )
               })}
@@ -459,7 +459,7 @@ export function ConnectExperience() {
                       <span className="scard-t">{c.title}</span>
                       <span className="scard-more">{on ? 'Close' : `${c.link} →`}</span>
                     </button>
-                    <div className="scard-b"><div><p>{c.body}</p></div></div>
+                    <div className="scard-b"><div><p>{c.body}</p><p className="scard-tag">— {c.tag}</p></div></div>
                   </div>
                 )
               })}
