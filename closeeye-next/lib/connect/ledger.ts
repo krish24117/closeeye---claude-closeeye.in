@@ -95,6 +95,26 @@ const AI_CONFIDENT: Record<NeedType, boolean> = {
     person and says a professional is needed; it never gives the advice itself. */
 const PROFESSIONAL = /\b(tax(es)?|itr|gst|financ\w*|legal|lawyer|insurance|pension|passport|visa|bank\w*|audit|accountant|paperwork|filing|compliance)\b/i
 
+/** The visitor's own words for how often — echoed once, never invented. */
+const FREQ = /\b(every\s+year|each\s+year|yearly|annually|every\s+month|each\s+month|monthly|every\s+week|each\s+week|weekly)\b/i
+function frequencyPhrase(text: string): string | null {
+  const m = text.match(FREQ)
+  return m ? m[0].replace(/\s+/g, ' ').toLowerCase() : null
+}
+
+/** The stated matter (tax filing, pension paperwork, …) as a short possessive
+    line — from the visitor's words only, with their frequency if they gave one. */
+const MATTER = /\b(tax\s+(?:filings?|returns?)|taxes?|pension\s+paperwork|pension|insurance\s+claim\w*|insurance|passport\s+renewal|passport|visa\s+\w+|visa|gst\s+\w+|gst|bank\s+(?:work|issue|account\w*)|legal\s+\w+|paperwork|filing)\b/i
+function matterLine(text: string, gender: Gender | null): string | null {
+  const m = text.match(MATTER)
+  if (!m) return null
+  const matter = m[0].replace(/\s+/g, ' ').toLowerCase()
+  const freqAdj = /\b(every\s+year|each\s+year|yearly|annual)/i.test(text) ? 'yearly '
+    : /\b(every\s+month|each\s+month|monthly)/i.test(text) ? 'monthly '
+    : /\b(every\s+week|each\s+week|weekly)/i.test(text) ? 'weekly ' : ''
+  return `${cap(pronoun.possessive(gender))} ${freqAdj}${matter}.`
+}
+
 function concernFor(need: NeedType, name: string, forLoved: boolean): string | null {
   switch (need) {
     case 'wellbeing': return `You want to know ${name} is okay — day to day, not only when you speak.`
@@ -183,6 +203,11 @@ export function readLedger(rawText: string): ReadLedger {
 
   const ledger: LedgerLine[] = []
   if (name || relationshipWord) ledger.push({ label: 'Someone you love', body: name ? `${name}.` : `Your ${relationshipWord}.` })
+  // the stated matter, when there is one (money/law/admin) — from their words only
+  if (need === 'errand' && PROFESSIONAL.test(text)) {
+    const matter = matterLine(text, gender)
+    if (matter) ledger.push({ label: 'The matter', body: matter })
+  }
   if (livesAlone || city) {
     const body = livesAlone && city ? `${cap(they)} ${conj('live', gender)} alone, in ${city}.`
       : livesAlone ? `${cap(they)} ${conj('live', gender)} alone.` : `${cap(they)} ${conj('live', gender)} in ${city}.`
@@ -233,10 +258,14 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
     case 'errand':
       if (professional) {
         // money / law / admin: Connect arranges a trusted person to help ORGANIZE and
-        // says a professional is needed — it never gives the advice itself.
+        // says a professional is needed — it never gives the advice itself. If the
+        // visitor said how often, we echo it once.
+        const freq = frequencyPhrase(rl.rawText)
+        const echo = freq ? `${cap(freq)}, this doesn't have to land on ${rl.forLoved ? them : 'you'} alone. ` : ''
+        const tail = freq ? '' : rl.forLoved ? `, so it isn't a weight ${g === 'they' ? 'they carry' : `${they} carries`} alone` : `, so it isn't a weight you carry alone`
         P.push(rl.forLoved
-          ? `I won't give tax or money advice — that isn't my place. What Close Eye can do today is send a trusted person to sit with ${name}, help gather the papers, and get everything organized, so it isn't a weight ${g === 'they' ? 'they carry' : `${they} carries`} alone.`
-          : `I won't give tax or money advice — that isn't my place. What Close Eye can do today is send a trusted person to sit with you, help gather the papers, and get everything organized, so it isn't a weight you carry alone.`)
+          ? `${echo}I won't give tax or money advice — that isn't my place. What Close Eye can do today is send a trusted person to sit with ${name}, help gather the papers, and get everything organized${tail}.`
+          : `${echo}I won't give tax or money advice — that isn't my place. What Close Eye can do today is send a trusted person to sit with you, help gather the papers, and get everything organized${tail}.`)
         P.push(`Close Eye knows when a professional is needed — and brings the right, trusted hands in. Your Presence Manager confirms the details with you first.`)
       } else if (rl.forLoved) {
         P.push(`This is a real-world thing — it needs a person, not an app. Close Eye can put a trusted human on it for ${name}, and tell you the moment it's done.`)

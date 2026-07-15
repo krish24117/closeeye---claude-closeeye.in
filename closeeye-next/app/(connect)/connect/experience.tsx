@@ -318,6 +318,9 @@ export function ConnectExperience() {
   const them = rl?.gender === 'he' ? 'him' : rl?.gender === 'she' ? 'her' : 'them'
   // a natural name for the signature "Getting to know …" state (never invented)
   const knowName = rl?.name || (rl?.relationshipWord ? `your ${rl.relationshipWord}` : 'your family')
+  // mid-sentence possessive subject — a name stays capitalised ("Lakshmi's"), a
+  // relationship reads lowercase in a sentence ("your father's"), not "Your Father's".
+  const subjMid = rl?.name || (rl?.relationshipWord ? `your ${rl.relationshipWord}` : rl?.subjectLabel) || ''
   const CHECK = (
     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6" /></svg>
   )
@@ -612,14 +615,14 @@ export function ConnectExperience() {
             {stage === 's4' && (
               <div className="beat now" ref={activeBeatRef}>
                 <h1 className="h-serif" style={{ fontSize: 26 }}>{rl.forLoved
-                  ? <>Today is where {rl.subjectLabel}’s<br />story <em>begins.</em></>
+                  ? <>Today is where {subjMid}’s<br />story <em>begins.</em></>
                   : <>Today is where your<br />story <em>begins.</em></>}</h1>
                 <p className="lede">{rl.forLoved
                   ? `Everything above is kept here — privately, for you. What I know, what I’m still learning, every visit written down.`
                   : 'Everything above is kept here — privately, only for you. What I know, and what I’m still learning.'}</p>
                 <p className="trustline">Close Eye never invents information about your family.</p>
                 <div className="act">
-                  <button className="btn" onClick={() => { saveDraft(); setStage('s4b') }}>{rl.forLoved ? `Create ${rl.subjectLabel}’s Family Space` : 'Create your space'}</button>
+                  <button className="btn" onClick={() => { saveDraft(); setStage('s4b') }}>{rl.forLoved ? `Create ${subjMid}’s Family Space` : 'Create your space'}</button>
                   <p className="privacy">Private by design. You stay in control.</p>
                 </div>
               </div>
@@ -633,6 +636,12 @@ export function ConnectExperience() {
             {nav}
             <h1 className="h-serif" style={{ fontSize: 26 }}>Keep {them} close.<br /><em>Bring the others in.</em></h1>
             <p className="whatis">Sign in so this page is yours alone — then add your family, one by one. The more Connect understands them, <b>the better every answer becomes.</b></p>
+            <div className="ledger" style={{ marginTop: 4 }}>
+              <p className="lh">With your family added</p>
+              <div className="lline in"><span className="ld" /><p>Every answer begins with understanding — never a guess.</p></div>
+              <div className="lline in"><span className="ld" /><p>One private Family Space for everyone you love.</p></div>
+              <div className="lline in"><span className="ld" /><p>Trusted people, the moment they’re needed.</p></div>
+            </div>
             <div className="act">
               <button className="btn-google" onClick={google} disabled={pending !== null} aria-label="Continue with Google">
                 <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" /><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" /><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" /><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" /></svg>
