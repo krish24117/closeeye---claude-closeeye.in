@@ -59,8 +59,8 @@
 .cx .hero-supp{opacity:0;transform:translateY(10px);transition:opacity .8s ease .15s,transform .8s cubic-bezier(.2,.7,.2,1) .15s}
 .cx .hero-supp.in{opacity:1;transform:none}
 /* during the unfold the page holds its breath — only the hero shows; the input wakes last */
-.cx .stage.unfolding .s0-aside,.cx .stage.unfolding .s0-ask,.cx .stage.unfolding .s0-foot{opacity:0;pointer-events:none}
-.cx .s0-aside,.cx .s0-foot{transition:opacity .8s ease .2s}
+.cx .stage.unfolding .storycards,.cx .stage.unfolding .s0-ask,.cx .stage.unfolding .breadth,.cx .stage.unfolding .s0-foot{opacity:0;pointer-events:none}
+.cx .storycards,.cx .breadth,.cx .s0-foot{transition:opacity .8s ease .2s}
 .cx .s0-ask{transition:opacity .9s ease .5s}
 
 /* ── Sprint 2 · story cards — explained by touch, expand in place, page never moves ── */
@@ -89,7 +89,8 @@
 .cx .cat.soon{color:var(--faint);border-style:dashed}
 .cx .cat.soon .cd{background:var(--hair2)}
 .cx .cat .soonlab{margin-left:auto;font-family:var(--sans);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
-.cx .breadth-f{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--emerald);margin:16px 0 0;text-align:center}
+.cx .breadth-grow{font-family:var(--serif);font-style:italic;font-size:15.5px;color:var(--forest);margin:18px 0 0;text-align:center}
+.cx .breadth-f{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--emerald);margin:7px 0 0;text-align:center}
 @media(max-width:380px){.cx .catgrid{grid-template-columns:1fr}}
 
 .cx .btn-google{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;
@@ -374,11 +375,12 @@
 @media (min-width:1000px){
   .cx .app.wide{max-width:1080px}
   .cx .app.wide .stage.s0.on{display:grid;grid-template-columns:1.05fr .95fr;
-    grid-template-areas:"hero aside" "ask aside" "foot foot";
+    grid-template-areas:"hero cards" "ask brd" "foot foot";
     column-gap:60px;align-items:start;min-height:auto}
   .cx .s0-hero{grid-area:hero}
+  .cx .app.wide .storycards{grid-area:cards}
   .cx .s0-ask{grid-area:ask}
-  .cx .s0-aside{grid-area:aside;align-self:start}
+  .cx .app.wide .breadth{grid-area:brd;align-self:start}
   .cx .s0-foot{grid-area:foot;margin-top:30px;border-top:1px solid var(--hair);padding-top:22px}
   .cx .app.wide .hero-head{font-size:48px}
   .cx .app.wide .hero{margin-bottom:8px}
@@ -393,5 +395,5 @@
   .cx .lline,.cx .blank,.cx .uline,.cx .beat{opacity:1;transform:none}
   .cx .beat.past{opacity:.46}
   .cx .hero-sig,.cx .hero-head,.cx .hero-supp,.cx .hero-feels .feel,
-  .cx .s0-aside,.cx .s0-ask,.cx .s0-foot{opacity:1;transform:none}
+  .cx .storycards,.cx .breadth,.cx .s0-ask,.cx .s0-foot{opacity:1;transform:none}
 }

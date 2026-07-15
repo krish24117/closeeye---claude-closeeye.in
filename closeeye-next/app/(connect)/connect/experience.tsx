@@ -79,16 +79,9 @@ const STORY_CARDS = [
   { id: 'support', title: 'Connects trusted support', link: 'See how', body: 'When understanding isn’t enough, Close Eye helps your family connect with trusted people and professionals.' },
   { id: 'space', title: 'One private Family Space', link: 'Explore', body: 'Memories, conversations, updates, documents and trusted support stay together in one place.' },
 ]
-// "More than care" — a family's whole life. Live categories read solid; future
-// ones are honestly marked "Soon". We never imply a service exists when it doesn't.
-const CARE_CATS: { label: string; live: boolean }[] = [
-  { label: 'Health & wellbeing', live: true },
-  { label: 'Trusted local support', live: true },
-  { label: 'Travel & logistics', live: false },
-  { label: 'Documents & administration', live: false },
-  { label: 'Education & learning', live: false },
-  { label: 'Financial guidance', live: false },
-]
+// "More than care" — only the live capabilities are shown; nothing implied that
+// isn't real yet. "Close Eye will grow with your family" carries the rest.
+const CARE_CATS = ['Health & wellbeing', 'Trusted local support']
 
 export function ConnectExperience() {
   const router = useRouter()
@@ -398,9 +391,10 @@ export function ConnectExperience() {
         </header>
         <main id="main">
 
-        {/* S0 · HERO (unfolds) · STORY CARDS · MORE THAN CARE · ASK
-            Desktop: a balanced two-field canvas (story left, product right) via
-            grid-areas — mobile keeps the natural stacked order. */}
+        {/* S0 · HERO (unfolds) · STORY CARDS · ASK (input) · MORE THAN CARE · FOOTER
+            Order puts the input within one phone-scroll (hero → cards → input).
+            Desktop: a balanced two-field canvas via grid-areas — mobile keeps the
+            natural stacked order. */}
         {stage === 's0' && (
           <section className={`stage on s0${heroSettled ? '' : ' unfolding'}`}>
             <div className="s0-hero">
@@ -415,34 +409,20 @@ export function ConnectExperience() {
                 <p className={`whatis hero-supp${heroSettled ? ' in' : ''}`}>Close Eye remembers what matters, never guesses, and helps your family find the right support when it’s needed.</p>
               </div>
             </div>
-            <div className="s0-aside">
-              <div className="storycards" aria-label="What Close Eye does">
-                {STORY_CARDS.map((c) => {
-                  const on = openCard === c.id
-                  return (
-                    <div key={c.id} className={`scard${on ? ' open' : ''}`}>
-                      <button type="button" className="scard-h" aria-expanded={on} onClick={() => setOpenCard(on ? null : c.id)}>
-                        <span className="ld" />
-                        <span className="scard-t">{c.title}</span>
-                        <span className="scard-more">{on ? 'Close' : `${c.link} →`}</span>
-                      </button>
-                      <div className="scard-b"><div><p>{c.body}</p></div></div>
-                    </div>
-                  )
-                })}
-              </div>
-              <div className="breadth" aria-label="More than care">
-                <p className="breadth-h">More than care.</p>
-                <p className="breadth-s">Close Eye helps families through everyday life.</p>
-                <div className="catgrid">
-                  {CARE_CATS.map((c) => (
-                    <div key={c.label} className={`cat${c.live ? '' : ' soon'}`}>
-                      <span className="cd" />{c.label}{!c.live && <span className="soonlab">Soon</span>}
-                    </div>
-                  ))}
-                </div>
-                <p className="breadth-f">Always beginning with understanding.</p>
-              </div>
+            <div className="storycards" aria-label="What Close Eye does">
+              {STORY_CARDS.map((c) => {
+                const on = openCard === c.id
+                return (
+                  <div key={c.id} className={`scard${on ? ' open' : ''}`}>
+                    <button type="button" className="scard-h" aria-expanded={on} onClick={() => setOpenCard(on ? null : c.id)}>
+                      <span className="ld" />
+                      <span className="scard-t">{c.title}</span>
+                      <span className="scard-more">{on ? 'Close' : `${c.link} →`}</span>
+                    </button>
+                    <div className="scard-b"><div><p>{c.body}</p></div></div>
+                  </div>
+                )
+              })}
             </div>
             <div className="s0-ask">
               <p className="exp-k">Experience Close Eye</p>
@@ -459,6 +439,17 @@ export function ConnectExperience() {
                 <button className="btn" onClick={ask} disabled={text.trim().length < 8}>Let Connect understand</button>
                 <p className="privacy">Nothing you write is sold or shared. Ever.</p>
               </div>
+            </div>
+            <div className="breadth" aria-label="More than care">
+              <p className="breadth-h">More than care.</p>
+              <p className="breadth-s">Close Eye helps families through everyday life.</p>
+              <div className="catgrid">
+                {CARE_CATS.map((label) => (
+                  <div key={label} className="cat"><span className="cd" />{label}</div>
+                ))}
+              </div>
+              <p className="breadth-grow">Close Eye will grow with your family.</p>
+              <p className="breadth-f">Always beginning with understanding.</p>
             </div>
             <div className="s0-foot">
               <div className="footlinks">
