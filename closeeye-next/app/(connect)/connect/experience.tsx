@@ -79,6 +79,16 @@ const STORY_CARDS = [
   { id: 'support', title: 'Connects trusted support', link: 'See how', body: 'When understanding isn’t enough, Close Eye helps your family connect with trusted people and professionals.' },
   { id: 'space', title: 'One private Family Space', link: 'Explore', body: 'Memories, conversations, updates, documents and trusted support stay together in one place.' },
 ]
+// "More than care" — a family's whole life. Live categories read solid; future
+// ones are honestly marked "Soon". We never imply a service exists when it doesn't.
+const CARE_CATS: { label: string; live: boolean }[] = [
+  { label: 'Health & wellbeing', live: true },
+  { label: 'Trusted local support', live: true },
+  { label: 'Travel & logistics', live: false },
+  { label: 'Documents & administration', live: false },
+  { label: 'Education & learning', live: false },
+  { label: 'Financial guidance', live: false },
+]
 
 export function ConnectExperience() {
   const router = useRouter()
@@ -412,6 +422,18 @@ export function ConnectExperience() {
                   </div>
                 )
               })}
+            </div>
+            <div className="breadth" aria-label="More than care">
+              <p className="breadth-h">More than care.</p>
+              <p className="breadth-s">Close Eye helps families through everyday life.</p>
+              <div className="catgrid">
+                {CARE_CATS.map((c) => (
+                  <div key={c.label} className={`cat${c.live ? '' : ' soon'}`}>
+                    <span className="cd" />{c.label}{!c.live && <span className="soonlab">Soon</span>}
+                  </div>
+                ))}
+              </div>
+              <p className="breadth-f">Always beginning with understanding.</p>
             </div>
             <p className="exp-k">Experience Close Eye</p>
             <p className="lede" style={{ marginBottom: 0 }}>Tell Connect about someone you love.</p>

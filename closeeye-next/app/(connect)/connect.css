@@ -79,6 +79,20 @@
 .cx .scard-b>div{overflow:hidden}
 .cx .scard-b p{margin:0;padding:0 20px 20px;font-family:var(--serif);font-size:16px;line-height:1.56;color:var(--ink);max-width:44ch}
 
+/* ── Sprint 3 · "More than care" — life, not only healthcare (honest breadth) ── */
+.cx .breadth{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px;margin:0 0 26px}
+.cx .breadth-h{font-family:var(--serif);font-size:22px;color:var(--forest);margin:0 0 3px}
+.cx .breadth-s{font-family:var(--serif);font-size:15px;color:var(--pencil);margin:0 0 18px}
+.cx .catgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.cx .cat{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border:1px solid var(--hair);
+  border-radius:12px;font-family:var(--sans);font-size:13.5px;font-weight:500;color:var(--forest)}
+.cx .cat .cd{width:6px;height:6px;border-radius:50%;background:var(--sprout);flex:none}
+.cx .cat.soon{color:var(--faint);border-style:dashed}
+.cx .cat.soon .cd{background:var(--hair2)}
+.cx .cat .soonlab{margin-left:auto;font-family:var(--sans);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.cx .breadth-f{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--emerald);margin:16px 0 0;text-align:center}
+@media(max-width:380px){.cx .catgrid{grid-template-columns:1fr}}
+
 .cx .btn-google{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;
   background:var(--page);border:1px solid var(--hair2);border-radius:999px;padding:15px 22px;
   font-family:var(--sans);font-weight:600;font-size:15.5px;color:var(--ink);transition:transform .15s}
