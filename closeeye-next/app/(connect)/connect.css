@@ -92,13 +92,48 @@
 @media(max-width:470px){.cx .thread{left:12px}}
 .cx .thread i{display:block;width:1px;background:var(--hair2);height:0;transition:height 1.2s cubic-bezier(.2,.7,.2,1)}
 
-.cx .cxnav{display:flex;justify-content:space-between;align-items:center;margin:0 0 16px}
+.cx .cxnav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 4px;flex-wrap:wrap}
 .cx .cxnav button{font-family:var(--sans);font-size:13px;color:var(--pencil);padding:6px 0;letter-spacing:.01em}
 .cx .cxnav button:hover{color:var(--forest)}
+.cx .cxnav-r{display:flex;align-items:center;gap:16px}
 .cx .cxnav .edit{border-bottom:1px dotted var(--hair2);padding-bottom:1px}
 .cx .stage{position:relative;z-index:1;display:none;flex-direction:column;min-height:calc(100dvh - 120px)}
 .cx .stage.on{display:flex;animation:cx-page .7s cubic-bezier(.2,.7,.2,1)}
 @keyframes cx-page{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ── the continuous conversation — beats accumulate, nothing resets. Past beats
+   quiet down; the active one holds the light. ── */
+.cx .convo{gap:0}
+.cx .beat{padding:22px 0;scroll-margin-top:18px;transition:opacity .7s ease}
+.cx .beat.now{opacity:1;animation:cx-beat .6s cubic-bezier(.2,.7,.2,1)}
+.cx .beat.past{opacity:.46}
+.cx .beat.past .act{display:none}
+.cx .beat+.beat{border-top:1px solid var(--hair)}
+@keyframes cx-beat{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.cx .beat.you{padding-top:6px}
+.cx .beat-k{font-family:var(--sans);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--pencil);margin:0 0 9px;font-weight:500}
+.cx .you-words{margin:0;font-family:var(--serif);font-size:19px;line-height:1.5;color:var(--forest)}
+.cx .you-words q{font-style:italic;quotes:'\201C' '\201D'}
+
+/* the living understanding: ✓ known, ○ still open — grows as you tell me more */
+.cx .uledger{margin-top:4px}
+.cx .uline{display:flex;gap:12px;align-items:baseline;width:100%;text-align:left;padding:8px 0;
+  opacity:0;transform:translateY(8px);transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
+.cx .uline.in{opacity:1;transform:none}
+.cx .uline .mk{width:16px;flex:none;display:inline-flex;align-items:center;justify-content:center;position:relative;top:2px}
+.cx .uline.know .mk{color:var(--emerald)}
+.cx .uline.live .mk{color:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}
+.cx .uline .ring{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--pencil);display:inline-block}
+.cx .uline p{margin:0;font-family:var(--serif);font-size:17.5px;line-height:1.5;color:var(--ink)}
+.cx .uline.open p{color:var(--pencil)}
+.cx .uline .lbl{display:block;font-family:var(--sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--pencil);margin-bottom:1px}
+.cx .uline.know .lbl{color:var(--emerald)}
+.cx button.uline.tap:hover p{color:var(--forest)}
+.cx .uline.open .tellme{display:inline-block;margin-left:10px;font-family:var(--sans);font-size:12px;
+  font-weight:600;color:var(--emerald);white-space:nowrap;vertical-align:middle}
+.cx .uline.open .tellme::after{content:' →'}
+.cx button.uline.tap:hover .tellme{color:var(--forest)}
 
 .cx .h-serif{font-family:var(--serif);font-weight:500;font-size:31px;line-height:1.22;
   letter-spacing:-.01em;margin:0 0 12px;color:var(--forest)}
@@ -224,5 +259,6 @@
 
 @media (prefers-reduced-motion:reduce){
   .cx *{animation:none!important;transition:none!important}
-  .cx .lline,.cx .blank{opacity:1;transform:none}
+  .cx .lline,.cx .blank,.cx .uline,.cx .beat{opacity:1;transform:none}
+  .cx .beat.past{opacity:.46}
 }

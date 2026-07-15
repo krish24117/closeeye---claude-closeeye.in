@@ -1,16 +1,20 @@
 'use client'
 
 /**
- * Close Eye Connect — the staged experience. Ported exactly from the approved
- * design (docs/close_eye_connect_experience.html): what/how → ask → understanding
- * ledger → blanks → answer → sign-in → (Phase 2: visit + payment) → seal → Space.
+ * Close Eye Connect — the staged experience. Ported from the approved design
+ * (docs/close_eye_connect_experience.html) and raised to a CONTINUOUS conversation:
+ * understanding, open questions and the answer accumulate in one living thread —
+ * nothing resets, everything builds. The understanding is written LIVE by the
+ * Understanding Engine from what the visitor actually typed — never inferred.
  *
- * The ledger, blanks and counsel are written LIVE by the Understanding Engine from
- * what the visitor actually typed — never inferred. Google sign-in returns to
- * /connect, which provisions the Family Space and lands on /space.
+ * Google sign-in returns to /connect, which provisions the Family Space and lands
+ * on /space. Phase 1 (now): answer → sign-in → Family Space. No visit, no payment,
+ * no prices. Phase 2 (behind PHASE_2_ENABLED): visit selection + Razorpay.
  *
- * Phase 1 (now): answer → sign-in → Family Space. No visit, no payment, no prices.
- * Phase 2 (behind PHASE_2_ENABLED): visit selection + Razorpay, exactly as designed.
+ * SPRINT 1 (interaction only — architecture, engine and data are frozen): the
+ * conversation is one accumulating thread; understanding is shown GROWING as
+ * ✓ known / ○ still-open (never a progress bar); Back / Edit / Change-the-person
+ * on every step.
  */
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
@@ -33,7 +37,10 @@ const prefersReduced = () =>
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 type Stage = 's0' | 's1' | 's2' | 's3' | 's4' | 's4b' | 's4c' | 's4d' | 's5' | 'resuming' | 'retry'
-const THREAD: Record<Stage, number> = { s0: 8, s1: 20, s2: 34, s3: 48, s4: 60, s4b: 72, retry: 72, resuming: 80, s4c: 84, s4d: 93, s5: 100 }
+const THREAD: Record<Stage, number> = { s0: 8, s1: 30, s2: 48, s3: 66, s4: 80, s4b: 88, retry: 88, resuming: 92, s4c: 90, s4d: 95, s5: 100 }
+// the conversational thread — these stages accumulate as one continuous exchange
+const CONVO: Stage[] = ['s1', 's2', 's3', 's4']
+const order = (s: Stage) => CONVO.indexOf(s)
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 // Phase 2 visit catalogue (from closeeye.in — prices shown ONLY when Phase 2 is on).
@@ -61,14 +68,14 @@ export function ConnectExperience() {
   const [told, setTold] = React.useState<{ key: string; label: string; body: string }[]>([])
   const [activeKey, setActiveKey] = React.useState<string | null>(null)
   const [fill, setFill] = React.useState('')
-  // ledger / blank reveal
+  // understanding reveal (the known facts appearing, line by line)
   const [s1n, setS1n] = React.useState(0)
   const [s1live, setS1live] = React.useState(-1)
   const [s1done, setS1done] = React.useState(false)
-  const [s2n, setS2n] = React.useState(0)
   // Phase 2 selection
   const [visit, setVisit] = React.useState(VISITS[0]!)
   const threadRef = React.useRef<HTMLElement | null>(null)
+  const activeBeatRef = React.useRef<HTMLDivElement | null>(null)
   const timers = React.useRef<number[]>([])
   const t = (ms: number, fn: () => void) => timers.current.push(window.setTimeout(fn, ms))
   const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = [] }
@@ -76,11 +83,19 @@ export function ConnectExperience() {
   const setStage = React.useCallback((s: Stage) => {
     setStageRaw(s)
     if (threadRef.current) threadRef.current.style.height = THREAD[s] + '%'
-    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
   React.useEffect(() => { if (threadRef.current) threadRef.current.style.height = THREAD.s0 + '%' }, [])
   React.useEffect(() => () => clearTimers(), [])
+
+  // Continuous thread: bring the newly-active beat into view instead of jumping to
+  // the top — the conversation stays whole, the eye follows what just changed.
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!CONVO.includes(stage)) { window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); return }
+    const el = activeBeatRef.current
+    if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }))
+  }, [stage]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── the counsel, once ── */
   const counselData = React.useMemo(() => (rl ? counsel(rl) : null), [rl])
@@ -89,25 +104,20 @@ export function ConnectExperience() {
   function ask() {
     const q = text.trim()
     if (q.length < 8) return
+    setTold([]); setActiveKey(null); setFill('')
     setRl(readLedger(q))
     setStage('s1')
   }
 
-  /* ── S1 ledger reveal ── */
+  /* ── understanding reveal — the known facts appear one by one (✓), then the
+        still-open lines settle in (○). Never a percentage; the understanding itself. ── */
   React.useEffect(() => {
     if (stage !== 's1' || !rl) return
     clearTimers(); setS1n(0); setS1live(-1); setS1done(false)
-    if (reduce) { setS1n(rl.ledger.length); setS1done(true); return }
-    rl.ledger.forEach((_, i) => t(650 + i * 820, () => { setS1n(i + 1); setS1live(i) }))
-    t(650 + (rl.ledger.length - 1) * 820 + 900, () => { setS1live(-1); setS1done(true) })
-  }, [stage, rl]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ── S2 blanks reveal ── */
-  React.useEffect(() => {
-    if (stage !== 's2' || !rl) return
-    clearTimers(); setS2n(0)
-    if (reduce) { setS2n(rl.blanks.length); return }
-    rl.blanks.forEach((_, i) => t(450 + i * 500, () => setS2n(i + 1)))
+    const known = rl.ledger.filter((l) => !l.quote)
+    if (reduce || known.length === 0) { setS1n(known.length); setS1done(true); return }
+    known.forEach((_, i) => t(650 + i * 820, () => { setS1n(i + 1); setS1live(i) }))
+    t(650 + (known.length - 1) * 820 + 900, () => { setS1live(-1); setS1done(true) })
   }, [stage, rl]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── OAuth return: handle cancel/error, else provision the Space ── */
@@ -229,17 +239,86 @@ export function ConnectExperience() {
     if (p.startsWith('Because')) { const i = p.indexOf(','); if (i > 0) return <><b>{p.slice(0, i + 1)}</b>{p.slice(i + 1)}</> }
     return p
   }
+  const them = rl?.gender === 'he' ? 'him' : rl?.gender === 'she' ? 'her' : 'them'
+  const CHECK = (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6" /></svg>
+  )
 
-  // Persistent navigation — the whole flow is one continuous conversation. Back
-  // steps to the previous screen; Edit returns to the start with the words intact
-  // (nothing is committed to the ledger until you create the space).
+  // The whole flow is one continuous conversation. Back steps to the previous beat;
+  // Edit reopens your words; Change the person begins a fresh understanding. Nothing
+  // is committed to the immutable ledger until you create the space.
   const PREV: Record<string, Stage> = { s1: 's0', s2: 's1', s3: 's2', s4: 's3', s4b: 's4' }
+  function editWords() { setError(''); setStage('s0') }
+  function changePerson() {
+    clearTimers(); setError(''); setText(''); setRl(null); setTold([]); setActiveKey(null); setFill('')
+    setS1n(0); setS1live(-1); setS1done(false); setStage('s0')
+  }
   const nav = (
     <div className="cxnav">
       <button type="button" onClick={() => setStage(PREV[stage] || 's0')}>← Back</button>
-      <button type="button" className="edit" onClick={() => { setError(''); setStage('s0') }}>Edit what I said</button>
+      <span className="cxnav-r">
+        <button type="button" className="edit" onClick={editWords}>Edit</button>
+        <button type="button" className="edit" onClick={changePerson}>Change the person</button>
+      </span>
     </div>
   )
+
+  /* ── the living understanding — ✓ what I know, ○ what I don't yet. It GROWS as
+        you tell me more; it is never a progress bar and never a guess. ── */
+  function understanding() {
+    if (!rl) return null
+    const known = rl.ledger.filter((l) => !l.quote)
+    const openBlanks = rl.blanks.filter((b) => !told.some((x) => x.key === b.key))
+    const revealing = stage === 's1'
+    const interactive = stage === 's2'
+    const openReady = !revealing || s1done // during reveal, open lines wait their turn
+    return (
+      <div className="uledger">
+        <p className="lh">What I understand{revealing ? '' : ' so far'}</p>
+        {known.map((l, i) => (
+          <div key={`k${i}`} className={`uline know${!revealing || i < s1n ? ' in' : ''}${revealing && i === s1live ? ' live' : ''}`}>
+            <span className="mk" aria-hidden="true">{CHECK}</span>
+            <p>{l.label && <span className="lbl">{l.label}</span>}{l.body}</p>
+          </div>
+        ))}
+        {told.map((item) => (
+          <div key={`t${item.key}`} className="uline know in">
+            <span className="mk" aria-hidden="true">{CHECK}</span>
+            <p><span className="lbl">{item.label} · you told me</span>{item.body}</p>
+          </div>
+        ))}
+        {openBlanks.map((b) => (
+          interactive ? (
+            <React.Fragment key={b.key}>
+              <button type="button" className="uline open tap in" onClick={() => { setActiveKey(activeKey === b.key ? null : b.key); setFill('') }}>
+                <span className="mk" aria-hidden="true"><span className="ring" /></span>
+                <p>{b.text}<span className="tellme">Tell Connect</span></p>
+              </button>
+              {activeKey === b.key && (
+                <div className="fill">
+                  <textarea rows={1} value={fill} onChange={(e) => setFill(e.target.value)} placeholder="Tell me as you’d tell a friend…" autoFocus />
+                  <div className="frow">
+                    <button type="button" className="save" onClick={() => saveTold(b.key)}>Save</button>
+                    <button type="button" className="skip" onClick={() => setActiveKey(null)}>not now</button>
+                  </div>
+                </div>
+              )}
+            </React.Fragment>
+          ) : (
+            <div key={b.key} className={`uline open${openReady ? ' in' : ''}`}>
+              <span className="mk" aria-hidden="true"><span className="ring" /></span>
+              <p>{b.text}</p>
+            </div>
+          )
+        ))}
+        {interactive && rl.blanks.length > 0 && openBlanks.length === 0 && (
+          <p className="later">Thank you — that’s everything I hoped to understand for now.</p>
+        )}
+      </div>
+    )
+  }
+
+  const inThread = CONVO.includes(stage)
 
   return (
     <>
@@ -288,100 +367,63 @@ export function ConnectExperience() {
           </section>
         )}
 
-        {/* S1 · UNDERSTANDING */}
-        {stage === 's1' && rl && (
-          <section className="stage on">
+        {/* S1–S4 · ONE CONTINUOUS CONVERSATION — nothing resets, everything builds */}
+        {inThread && rl && (
+          <section className="stage on convo">
             {nav}
-            <div className="think"><span className="ld" /><span>Understand first. Answer second.</span></div>
-            <div className="ledger">
-              <p className="lh">What I understood</p>
-              {rl.ledger.map((l, i) => (
-                <div key={i} className={`lline${i < s1n ? ' in' : ''}${i === s1live ? ' live' : ''}`}>
-                  <span className="ld" />
-                  <p>{l.label && <span className="lbl">{l.label}</span>}{l.quote ? <q>{l.body}</q> : l.body}</p>
+
+            {/* Beat · your words (always present, the root of the thread) */}
+            <div className="beat you past">
+              <p className="beat-k">You told Connect</p>
+              <p className="you-words"><q>{rl.rawText}</q></p>
+            </div>
+
+            {/* Beat · understanding (active through s1→s2, then a quiet record) */}
+            <div className={`beat${stage === 's1' || stage === 's2' ? ' now' : ' past'}`} ref={stage === 's1' || stage === 's2' ? activeBeatRef : undefined}>
+              <div className="think"><span className="ld" /><span>{stage === 's2' ? 'Tell me what I don’t know yet. I won’t guess.' : 'Understand first. Answer second.'}</span></div>
+              {understanding()}
+              {stage === 's1' && (
+                <div className="act">
+                  <button className="btn" onClick={() => setStage(rl.blanks.length ? 's2' : 's3')} style={{ opacity: s1done ? 1 : 0, pointerEvents: s1done ? 'auto' : 'none' }}>That’s exactly it</button>
                 </div>
-              ))}
+              )}
+              {stage === 's2' && (
+                <div className="act"><button className="btn" onClick={() => setStage('s3')}>Continue</button></div>
+              )}
             </div>
-            <div className="act">
-              <button className="btn" onClick={() => setStage(rl.blanks.length ? 's2' : 's3')} style={{ opacity: s1done ? 1 : 0, pointerEvents: s1done ? 'auto' : 'none' }}>That’s exactly it</button>
-            </div>
-          </section>
-        )}
 
-        {/* S2 · WHAT I STILL NEED — tap a line and tell me, inline */}
-        {stage === 's2' && rl && (
-          <section className="stage on">
-            {nav}
-            <h1 className="h-serif" style={{ fontSize: 26 }}>What I’d still like<br />to understand.</h1>
-            <p className="lede">Tap a line to tell me — right here, whenever you like. I won’t guess.</p>
-            <div className="ledger">
-              <p className="lh">Still open</p>
-              {told.map((item) => (
-                <div key={item.key} className="told">
-                  <span className="ck" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6" /></svg></span>
-                  <p><span className="lbl">{item.label} · you told me</span>{item.body}</p>
+            {/* Beat · the answer (appears when reached; stays visible after) */}
+            {order(stage) >= order('s3') && counselData && (
+              <div className={`beat${stage === 's3' ? ' now' : ' past'}`} ref={stage === 's3' ? activeBeatRef : undefined}>
+                <div className="think" style={{ marginBottom: 14 }}><span className="ld" style={{ animation: 'none' }} /><span>Now I can answer you properly.</span></div>
+                <div className="counsel">
+                  {counselData.paragraphs.map((p, i) => <p key={i}>{boldLead(p)}</p>)}
+                  <p className="sig">{counselData.signature}</p>
                 </div>
-              ))}
-              {rl.blanks.filter((b) => !told.some((x) => x.key === b.key)).map((b, i) => (
-                <React.Fragment key={b.key}>
-                  <button className={`blank${i < s2n ? ' in' : ''}`} onClick={() => { setActiveKey(activeKey === b.key ? null : b.key); setFill('') }}>
-                    <span className="ld" /><p>{b.text}<span className="tellme">Tell Connect</span></p>
-                  </button>
-                  {activeKey === b.key && (
-                    <div className="fill">
-                      <textarea rows={1} value={fill} onChange={(e) => setFill(e.target.value)} placeholder="Tell me as you’d tell a friend…" autoFocus />
-                      <div className="frow">
-                        <button className="save" onClick={() => saveTold(b.key)}>Save</button>
-                        <button className="skip" onClick={() => setActiveKey(null)}>not now</button>
-                      </div>
-                    </div>
-                  )}
-                </React.Fragment>
-              ))}
-              {rl.blanks.length > 0 && rl.blanks.every((b) => told.some((x) => x.key === b.key)) && <p className="later">Thank you — that’s everything I hoped to understand for now.</p>}
-            </div>
-            <div className="act"><button className="btn" onClick={() => setStage('s3')}>Continue</button></div>
-          </section>
-        )}
+                <p className="trustline" style={{ marginTop: 20 }}>Sometimes care needs a real person. Close Eye knows when.</p>
+                {!rl.aiConfident && <a className="qlink" href={WA} target="_blank" rel="noopener" style={{ marginTop: 10 }}>Talk to a real person on WhatsApp →</a>}
+                {stage === 's3' && (
+                  <div className="act"><button className="btn" onClick={() => setStage('s4')}>{!rl.aiConfident ? 'Keep this, and continue' : 'This is what I’ve been looking for'}</button></div>
+                )}
+              </div>
+            )}
 
-        {/* S3 · THE ANSWER */}
-        {stage === 's3' && counselData && (
-          <section className="stage on">
-            {nav}
-            <div className="think" style={{ marginBottom: 14 }}><span className="ld" style={{ animation: 'none' }} /><span>Now I can answer you properly.</span></div>
-            <div className="counsel">
-              {counselData.paragraphs.map((p, i) => <p key={i}>{boldLead(p)}</p>)}
-              <p className="sig">{counselData.signature}</p>
-            </div>
-            <p className="trustline" style={{ marginTop: 20 }}>Sometimes care needs a real person. Close Eye knows when.</p>
-            {rl && !rl.aiConfident && <a className="qlink" href={WA} target="_blank" rel="noopener" style={{ marginTop: 10 }}>Talk to a real person on WhatsApp →</a>}
-            <div className="act"><button className="btn" onClick={() => setStage('s4')}>{rl && !rl.aiConfident ? 'Keep this, and continue' : 'This is what I’ve been looking for'}</button></div>
-          </section>
-        )}
-
-        {/* S4 · TRUST → FAMILY SPACE */}
-        {stage === 's4' && rl && (
-          <section className="stage on">
-            {nav}
-            <h1 className="h-serif" style={{ fontSize: 26 }}>{rl.forLoved
-              ? <>Keep what I now know<br />about {rl.gender === 'he' ? 'him' : rl.gender === 'she' ? 'her' : 'them'} — <em>safely.</em></>
-              : <>Keep what you’ve<br />shared — <em>safely.</em></>}</h1>
-            <p className="lede">{rl.forLoved
-              ? `${subjectPronounTitle(rl)} private journal: what I know, what I’m learning, every visit written down.`
-              : 'Your private space: what I know, what I’m learning, kept only for you.'}</p>
-            <p className="trustline">Close Eye never invents information about your family.</p>
-            <div className="ledger">
-              <p className="lh">{rl.forLoved ? `${subjectPronounTitle(rl)} page, so far` : 'Your space, so far'}</p>
-              {rl.ledger.filter((l) => !l.quote).map((l, i) => (
-                <div key={i} className="lline in"><span className="ld" /><p>{l.body}</p></div>
-              ))}
-              {rl.question && <div className="lline in"><span className="ld" /><p>In your words: <q>{rl.question}</q></p></div>}
-              {rl.blanks.length > 0 && <div className="blank in"><span className="ld" /><p>{rl.blanks.length === 1 ? 'One line' : `${rl.blanks.length} lines`} still waiting for you<span className="dots" /></p></div>}
-            </div>
-            <div className="act">
-              <button className="btn" onClick={() => { saveDraft(); setStage('s4b') }}>{rl.forLoved ? `Create ${rl.subjectLabel}’s Family Space` : 'Create your space'}</button>
-              <p className="privacy">Private by design. You stay in control.</p>
-            </div>
+            {/* Beat · keep it, safely → create the space */}
+            {stage === 's4' && (
+              <div className="beat now" ref={activeBeatRef}>
+                <h1 className="h-serif" style={{ fontSize: 26 }}>{rl.forLoved
+                  ? <>Today is where {rl.subjectLabel}’s<br />story <em>begins.</em></>
+                  : <>Today is where your<br />story <em>begins.</em></>}</h1>
+                <p className="lede">{rl.forLoved
+                  ? `Everything above is kept here — privately, for you. What I know, what I’m still learning, every visit written down.`
+                  : 'Everything above is kept here — privately, only for you. What I know, and what I’m still learning.'}</p>
+                <p className="trustline">Close Eye never invents information about your family.</p>
+                <div className="act">
+                  <button className="btn" onClick={() => { saveDraft(); setStage('s4b') }}>{rl.forLoved ? `Create ${rl.subjectLabel}’s Family Space` : 'Create your space'}</button>
+                  <p className="privacy">Private by design. You stay in control.</p>
+                </div>
+              </div>
+            )}
           </section>
         )}
 
@@ -389,7 +431,7 @@ export function ConnectExperience() {
         {stage === 's4b' && (
           <section className="stage on">
             {nav}
-            <h1 className="h-serif" style={{ fontSize: 26 }}>Keep {rl?.gender === 'he' ? 'him' : rl?.gender === 'she' ? 'her' : 'them'} close.<br /><em>Bring the others in.</em></h1>
+            <h1 className="h-serif" style={{ fontSize: 26 }}>Keep {them} close.<br /><em>Bring the others in.</em></h1>
             <p className="whatis">Sign in so this page is yours alone — then add your family, one by one. The more Connect understands them, <b>the better every answer becomes.</b></p>
             <div className="act">
               <button className="btn-google" onClick={google} disabled={pending !== null} aria-label="Continue with Google">
@@ -485,9 +527,4 @@ export function ConnectExperience() {
       </div>
     </>
   )
-}
-
-/** "Her" / "His" / "Their" — a title-case possessive for headings. */
-function subjectPronounTitle(rl: ReadLedger): string {
-  return rl.gender === 'he' ? 'His' : rl.gender === 'she' ? 'Her' : 'Their'
 }
