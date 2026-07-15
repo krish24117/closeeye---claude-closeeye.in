@@ -194,7 +194,7 @@
 .cx .uline .mk{width:16px;flex:none;display:inline-flex;align-items:center;justify-content:center;position:relative;top:2px}
 .cx .uline.know .mk{color:var(--emerald)}
 .cx .uline.live .mk{color:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}
-.cx .uline .ring{width:11px;height:11px;border-radius:50%;border:2px solid var(--pencil);display:inline-block;box-sizing:border-box}
+.cx .uline .cxring{width:11px;height:11px;border-radius:50%;border:2px solid var(--pencil);display:inline-block;box-sizing:border-box}
 /* open blanks are buttons — keep keyboard focus (emerald, via :focus-visible) but
    never show the browser's default blue click-focus ring */
 .cx button:focus:not(:focus-visible){outline:none}
@@ -361,10 +361,10 @@
 .cx .think span{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--pencil)}
 
 .cx .seal{display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center;min-height:60vh}
-.cx .seal .ring{width:74px;height:74px;border-radius:50%;border:1px solid var(--hair2);display:grid;place-items:center;margin-bottom:26px;position:relative}
-.cx .seal .ring::after{content:'';position:absolute;inset:-9px;border-radius:50%;border:1px solid var(--hair);animation:cx-settle 2.4s ease-out 1 forwards}
+.cx .seal .cxring{width:74px;height:74px;border-radius:50%;border:1px solid var(--hair2);display:grid;place-items:center;margin-bottom:26px;position:relative}
+.cx .seal .cxring::after{content:'';position:absolute;inset:-9px;border-radius:50%;border:1px solid var(--hair);animation:cx-settle 2.4s ease-out 1 forwards}
 @keyframes cx-settle{0%{transform:scale(1.25);opacity:0}40%{opacity:1}100%{transform:scale(1);opacity:.6}}
-.cx .seal .ring .ld{width:10px;height:10px;border-radius:50%;background:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}
+.cx .seal .cxring .ld{width:10px;height:10px;border-radius:50%;background:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}
 .cx .seal h2{font-family:var(--serif);font-weight:500;font-size:27px;color:var(--forest);margin:0 0 10px;letter-spacing:-.01em}
 .cx .seal p{font-family:var(--serif);font-size:16.5px;color:var(--pencil);max-width:30ch;margin:0}
 .cx .seal .promise{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--forest);margin:20px 0 0;max-width:26ch}

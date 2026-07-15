@@ -69,6 +69,17 @@ const CONVO: Stage[] = ['s1', 's2', 's3', 's4']
 const order = (s: Stage) => CONVO.indexOf(s)
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+// Provisioning must never leave the seal spinning forever — a 10s ceiling falls back
+// to the honest retry screen. An infinite spinner is worse than an honest error.
+const PROVISION_TIMEOUT_MS = 10000
+function provisionOrTimeout(): Promise<{ lovedOneId: string | null; error: string | null }> {
+  return Promise.race([
+    provisionFamilySpace(),
+    new Promise<{ lovedOneId: string | null; error: string | null }>((r) =>
+      setTimeout(() => r({ lovedOneId: null, error: 'timeout' }), PROVISION_TIMEOUT_MS)),
+  ])
+}
+
 // Phase 2 visit catalogue (from closeeye.in — prices shown ONLY when Phase 2 is on).
 const VISITS = [
   { id: 'home-wellbeing', name: 'Home Wellbeing Visit', price: 1000, blurb: 'A Guardian visits her at home, checks in with warmth, sends you a personal update.' },
@@ -76,6 +87,8 @@ const VISITS = [
   { id: 'custom', name: 'Custom Request', price: 500, blurb: 'Groceries, medicines, a festival visit — something only your family understands.' },
 ]
 const inr = (n: number) => '₹' + n.toLocaleString('en-IN')
+// capitalise only the first letter — for a lowercase subject at the start of a sentence
+const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 
 // The three story cards — they replace every explanatory paragraph and expand in
 // place (never navigate away). Copy is fixed; the title alone tells the story.
@@ -228,24 +241,27 @@ export function ConnectExperience() {
   async function finishAndProvision() {
     const draft = getConnectDraft()
     const rl2 = draft ? readLedger(draft.rawText) : rl
-    setSubject(rl2?.subjectLabel ?? 'Their')
+    // lowercase mid-sentence subject ("your mother", "Lakshmi") — capitalised only
+    // where it starts a sentence (the seal), never "Your Mother's" mid-sentence.
+    setSubject(rl2 ? (rl2.name || (rl2.relationshipWord ? `your ${rl2.relationshipWord}` : rl2.subjectLabel)) : 'their')
     setSelfSpace(rl2 ? !rl2.forLoved : false)
     if (PHASE_2_ENABLED) {
       setStage('resuming')
-      const res = await provisionFamilySpace()
+      const res = await provisionOrTimeout()
       if (res.error || !res.lovedOneId) { setError(recoveryMessage(res.error)); setStage('retry'); return }
       setStage('s4c')
       return
     }
     // Phase 1: seal (with the promise line) while provisioning; only land on success.
     setStage('s5')
-    const [res] = await Promise.all([provisionFamilySpace(), delay(reduce ? 0 : 2400)])
+    const [res] = await Promise.all([provisionOrTimeout(), delay(reduce ? 0 : 2400)])
     if (res.error || !res.lovedOneId) { setError(recoveryMessage(res.error)); setStage('retry'); return }
     router.replace('/space')
   }
   function recoveryMessage(err: string | null): string {
     if (err === 'not-signed-in') return 'Your sign-in didn’t hold. Nothing is lost — please try once more.'
     if (err === 'network') return 'The connection dropped for a moment. Nothing you told me is lost — try again.'
+    if (err === 'timeout') return 'This is taking longer than it should — nothing you told me is lost. Let’s try again.'
     return 'Something interrupted us — but everything you told me is safe. Let’s try again.'
   }
 
@@ -383,7 +399,7 @@ export function ConnectExperience() {
           interactive ? (
             <React.Fragment key={b.key}>
               <button type="button" className="uline open tap in" onClick={() => { setActiveKey(activeKey === b.key ? null : b.key); setFill('') }}>
-                <span className="mk" aria-hidden="true"><span className="ring" /></span>
+                <span className="mk" aria-hidden="true"><span className="cxring" /></span>
                 <p>{b.text}<span className="tellme">Tell Connect</span></p>
               </button>
               {activeKey === b.key && (
@@ -398,7 +414,7 @@ export function ConnectExperience() {
             </React.Fragment>
           ) : (
             <div key={b.key} className={`uline open${openReady ? ' in' : ''}`}>
-              <span className="mk" aria-hidden="true"><span className="ring" /></span>
+              <span className="mk" aria-hidden="true"><span className="cxring" /></span>
               <p>{b.text}</p>
             </div>
           )
@@ -684,7 +700,7 @@ export function ConnectExperience() {
         {/* S4c · FIRST VISIT (Phase 2 only) */}
         {stage === 's4c' && PHASE_2_ENABLED && (
           <section className="stage on">
-            <h1 className="h-serif" style={{ fontSize: 26 }}>{subject}’s space is open.<br /><em>Begin with a visit.</em></h1>
+            <h1 className="h-serif" style={{ fontSize: 26 }}>{cap1(subject)}’s space is open.<br /><em>Begin with a visit.</em></h1>
             <p className="lede">A verified Guardian goes to {rl?.gender === 'he' ? 'him' : rl?.gender === 'they' ? 'them' : 'her'}. You receive a written report on WhatsApp.</p>
             <a className="qlink" href="https://www.closeeye.in/trust-safety" target="_blank" rel="noopener">How our Guardians are verified →</a>
             <div style={{ marginTop: 18 }}>
@@ -725,8 +741,8 @@ export function ConnectExperience() {
         {stage === 's5' && (
           <section className="stage on">
             <div className="seal">
-              <div className="ring"><span className="ld" /></div>
-              <h2>{selfSpace ? 'Your space is open.' : `${subject}’s space is open.`}</h2>
+              <div className="cxring"><span className="ld" /></div>
+              <h2>{selfSpace ? 'Your space is open.' : `${cap1(subject)}’s space is open.`}</h2>
               <p>Everything Close Eye understands is kept here, privately — opening it for you now.</p>
               <p className="promise">When you can’t be there, Close&nbsp;Eye can.</p>
             </div>

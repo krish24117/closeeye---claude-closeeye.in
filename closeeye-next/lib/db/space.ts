@@ -89,7 +89,14 @@ async function doProvision(): Promise<ProvisionResult> {
     if (!lovedOneId) {
       const { data: lo, error: loErr } = await supabase
         .from('loved_ones')
-        .insert({ family_user_id: user.id, full_name: rl.subjectLabel, relationship: rl.relationship, city: rl.city })
+        .insert({
+          family_user_id: user.id, full_name: rl.subjectLabel, relationship: rl.relationship, city: rl.city,
+          // the base loved_ones table has these columns NOT NULL — default to '' exactly
+          // like the family "Add Loved One" flow (lib/db/family.ts); the Space treats
+          // '' as "not provided yet". Without these, the insert fails a NOT NULL check.
+          address: '', medical_notes: '', doctor_name: '', nearest_hospital: '',
+          emergency_contact_name: '', emergency_contact_phone: '',
+        })
         .select('id')
         .single()
       if (loErr || !lo) return { lovedOneId: null, error: 'could-not-create-space' } // draft kept
