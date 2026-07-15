@@ -22,13 +22,15 @@
 .cx button{font-family:var(--sans);cursor:pointer;border:none;background:none;color:inherit}
 .cx :focus-visible{outline:2px solid var(--emerald);outline-offset:3px;border-radius:6px}
 
-.cx .mast{display:flex;justify-content:center;padding:max(20px, env(safe-area-inset-top)) 0 4px}
-.cx .mast .wm{display:flex;align-items:center;gap:8px;font-family:var(--sans);font-weight:600;
-  font-size:17px;letter-spacing:.01em;color:var(--forest)}
-.cx .wm .dot{width:7px;height:7px;border-radius:50%;background:var(--sprout);display:inline-block}
-.cx .wm .wmark{width:24px;height:24px;display:inline-block;flex:none}
-.cx .mast .tag{font-family:var(--sans);font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;
-  color:var(--pencil);margin-top:6px;text-align:center}
+/* ── the masthead — official lockup + CONNECT + trust triad, centred as one unit ── */
+.cx .mast{display:flex;justify-content:center;padding:max(22px, env(safe-area-inset-top)) 0 28px}
+.cx .mast-unit{display:flex;flex-direction:column;align-items:center;text-align:center}
+.cx .mast-logo{height:36px;width:auto;display:block}
+.cx .mast-tag{font-family:var(--sans);font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--pencil);margin-top:6px}
+.cx .mast-triad{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:14px;
+  font-family:var(--sans);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--pencil)}
+.cx .mast-triad b{color:var(--forest);font-weight:600}
+.cx .mast-triad .sep{color:var(--sprout)}
 .cx .whatis{font-family:var(--serif);font-size:17px;line-height:1.6;color:var(--ink);margin:0 0 22px;max-width:34ch}
 .cx .whatis b{font-weight:500;color:var(--forest)}
 .cx .howit{border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);padding:6px 0;margin:0 0 26px}
@@ -365,22 +367,21 @@
    alone. Below 1024 the single 480px column is untouched. */
 @media (min-width:1024px){
   .cx{font-size:17px}
-  .cx .shell{display:grid;grid-template-columns:45% 55%;max-width:1280px;margin:0 auto;min-height:100dvh;align-items:start}
+  /* two independent panels on one paper surface, centred (max 1280px). Each panel
+     is its OWN full-height box — the right one scrolls internally from scrollTop 0,
+     so page scroll can never clip the experience card from above. */
+  .cx .shell{display:grid;grid-template-columns:45% 55%;max-width:1280px;margin:0 auto;height:100dvh;align-items:stretch}
 
-  /* LEFT · the cover — sticky, does not scroll, vertically composed */
-  .cx .deskcover{display:flex;flex-direction:column;justify-content:space-between;
-    position:sticky;top:0;height:100dvh;overflow:hidden;
-    padding:max(44px,env(safe-area-inset-top)) 56px 44px}
+  /* LEFT · the cover — masthead (centred) → hero (left) → footer (bottom). Fixed. */
+  .cx .deskcover{display:flex;flex-direction:column;height:100dvh;overflow:hidden;
+    padding:max(40px,env(safe-area-inset-top)) 56px 40px}
   .cx .deskcover::after{content:'';position:absolute;inset:0;pointer-events:none;
     background:radial-gradient(120% 80% at 28% 22%, transparent 55%, rgba(14,42,31,.035))}
   .cx .deskcover>*{position:relative;z-index:1}
-  .cx .dc-wm{display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);font-weight:600;font-size:17px;color:var(--forest)}
-  .cx .dc-wm .wmark{width:24px;height:24px}
-  .cx .dc-tag{font-family:var(--sans);font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--pencil);margin-top:5px}
-  .cx .dc-sig{font-family:var(--sans);font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--pencil);margin:34px 0 0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-  .cx .dc-sig b{color:var(--forest);font-weight:600}
-  .cx .dc-sig .sep{color:var(--sprout)}
-  .cx .dc-head{font-family:var(--serif);font-weight:500;font-size:42px;line-height:1.16;letter-spacing:-.01em;color:var(--forest);margin:16px 0 0;text-wrap:balance}
+  .cx .dc-mast{margin-bottom:28px}
+  .cx .dc-mast .mast-logo{height:40px}
+  .cx .dc-foot{margin-top:auto}
+  .cx .dc-head{font-family:var(--serif);font-weight:500;font-size:42px;line-height:1.16;letter-spacing:-.01em;color:var(--forest);margin:0;text-wrap:balance}
   .cx .dc-head em{font-style:italic;font-weight:400}
   .cx .dc-supp{font-family:var(--serif);font-size:17px;line-height:1.55;color:var(--pencil);margin:14px 0 0;max-width:34ch}
   .cx .dc-accent{font-family:var(--serif);font-style:italic;font-size:15px;line-height:1.5;color:var(--pencil);margin:10px 0 0;max-width:34ch}
@@ -388,10 +389,10 @@
   .cx .dc-foot .footlinks{justify-content:flex-start;margin-top:0}
   .cx .dc-foot .footnote{text-align:left;margin-top:14px}
 
-  /* RIGHT · the flow — the existing column, centred at 480 inside the panel */
-  .cx .shell>.app{max-width:none;margin:0;padding:0;min-height:100dvh}
+  /* RIGHT · the flow — its own scroll container; 480 column centred; same top line */
+  .cx .shell>.app{max-width:none;margin:0;padding:0;height:100dvh;overflow-y:auto;overscroll-behavior:contain}
   .cx .shell>.app>.mast{display:none}
-  .cx .shell>.app>#main{max-width:480px;margin:0 auto;padding:max(40px,env(safe-area-inset-top)) 26px 56px}
+  .cx .shell>.app>#main{max-width:480px;margin:0 auto;padding:max(40px,env(safe-area-inset-top)) 26px 64px}
   /* the cover lives on the left now — hide its twin inside the right flow */
   .cx .app .s0-hero,.cx .app .storycards,.cx .app .s0-foot{display:none}
   /* the input is present on load — never held back by the (left) unfold */

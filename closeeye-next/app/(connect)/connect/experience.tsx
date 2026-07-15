@@ -163,7 +163,12 @@ export function ConnectExperience() {
   // the top — the conversation stays whole, the eye follows what just changed.
   React.useEffect(() => {
     if (typeof window === 'undefined') return
-    if (!CONVO.includes(stage)) { window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); return }
+    if (!CONVO.includes(stage)) {
+      window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
+      const main = document.getElementById('main') // desktop: the right panel is its own scroll container
+      if (main) main.scrollTop = 0
+      return
+    }
     const el = activeBeatRef.current
     if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }))
   }, [stage]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -404,6 +409,20 @@ export function ConnectExperience() {
 
   const inThread = CONVO.includes(stage)
 
+  // The masthead — the official Close Eye lockup (one connected asset, never rebuilt
+  // in code) + CONNECT + the trust triad, centred as one unit. Shared by the mobile
+  // header and the desktop left panel.
+  function mastheadUnit() {
+    return (
+      <div className="mast-unit">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="mast-logo" src="/brand/close-eye-horizontal.svg" alt="Close Eye" width={207} height={40} />
+        <div className="mast-tag">Connect</div>
+        <p className="mast-triad"><b>Trust</b><span className="sep">·</span><b>Presence</b><span className="sep">·</span><b>Understanding</b></p>
+      </div>
+    )
+  }
+
   return (
     <>
       <div className="thread"><i ref={threadRef} /></div>
@@ -413,11 +432,8 @@ export function ConnectExperience() {
         {/* LEFT · the cover — desktop only (display:none below 1024). Duplicates the
             promise so it persists across every stage; the mobile column is unchanged. */}
         <aside className="deskcover">
-          <div className="dc-top">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <span className="dc-wm"><img className="wmark" src="/brand/close-eye-icon.svg" alt="" width={24} height={24} />close eye</span>
-            <div className="dc-tag">Connect</div>
-            <p className="dc-sig"><b>Trust</b><span className="sep">·</span><b>Presence</b><span className="sep">·</span><b>Understanding</b></p>
+          <div className="dc-mast">{mastheadUnit()}</div>
+          <div className="dc-body">
             <h1 className="dc-head">Know the people you love —<br /><em>even from far away.</em></h1>
             <p className="dc-supp">Close Eye helps you stay close — it understands your family, remembers what matters, and brings trusted people when they’re needed.</p>
             <p className="dc-accent">Apps can answer. Close Eye can show up.</p>
@@ -449,11 +465,7 @@ export function ConnectExperience() {
           </div>
         </aside>
       <div className="app">
-        <header className="mast" style={{ flexDirection: 'column', alignItems: 'center' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <span className="wm"><img className="wmark" src="/brand/close-eye-icon.svg" alt="" width={24} height={24} />close eye</span>
-          <div className="tag">Connect</div>
-        </header>
+        <header className="mast">{mastheadUnit()}</header>
         <main id="main">
 
         {/* S0 · HERO (unfolds) · STORY CARDS · ASK (input) · MORE THAN CARE · FOOTER
@@ -464,7 +476,6 @@ export function ConnectExperience() {
           <section className={`stage on s0${heroSettled ? '' : ' unfolding'}`}>
             <div className="s0-hero">
               <div className={`hero${heroSettled ? ' settled' : ''}`}>
-                <p className={`hero-sig${heroN >= 1 ? ' in' : ''}`}><b>Trust</b><span className="sep">·</span><b>Presence</b><span className="sep">·</span><b>Understanding</b></p>
                 <div className="hero-feels" aria-hidden={heroSettled}>
                   <p className={`feel${heroN >= 2 ? ' in' : ''}`}>You love them.</p>
                   <p className={`feel${heroN >= 3 ? ' in' : ''}`}>You worry about them.</p>
