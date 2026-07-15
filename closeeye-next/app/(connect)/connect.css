@@ -23,7 +23,15 @@
 .cx :focus-visible{outline:2px solid var(--emerald);outline-offset:3px;border-radius:6px}
 
 /* ── the masthead — official lockup + CONNECT + trust triad, centred as one unit ── */
-.cx .mast{display:flex;justify-content:center;padding:max(22px, env(safe-area-inset-top)) 0 28px}
+.cx .mast{position:relative;display:flex;justify-content:center;padding:max(22px, env(safe-area-inset-top)) 0 28px}
+.cx .mast-signin{position:absolute;top:max(22px, env(safe-area-inset-top));right:0;
+  font-family:var(--sans);font-size:13px;color:var(--pencil);padding:2px 0;
+  border-bottom:1px solid transparent;transition:color .2s,border-color .2s}
+.cx .mast-signin:hover{color:var(--forest);border-bottom-color:var(--hair2)}
+.cx .welcome-back{margin:-12px 0 20px;text-align:center;font-family:var(--serif);font-size:14.5px;color:var(--pencil)}
+.cx .welcome-back a{color:var(--emerald);text-decoration:none;font-weight:500;
+  border-bottom:1px solid transparent;transition:border-color .2s}
+.cx .welcome-back a:hover{border-bottom-color:var(--emerald)}
 .cx .mast-unit{display:flex;flex-direction:column;align-items:center;text-align:center}
 .cx .mast-logo{height:36px;width:auto;display:block}
 .cx .mast-tag{font-family:var(--sans);font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--pencil);margin-top:6px}
@@ -361,8 +369,10 @@
 .cx .think span{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--pencil)}
 
 .cx .seal{display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center;min-height:60vh}
-.cx .seal .cxring{width:74px;height:74px;border-radius:50%;border:1px solid var(--hair2);display:grid;place-items:center;margin-bottom:26px;position:relative}
-.cx .seal .cxring::after{content:'';position:absolute;inset:-9px;border-radius:50%;border:1px solid var(--hair);animation:cx-settle 2.4s ease-out 1 forwards}
+/* the seal ring is MINT, never blue — an unambiguous "space is open" green that
+   settles around the breathing sprout dot. */
+.cx .seal .cxring{width:74px;height:74px;border-radius:50%;border:1.5px solid var(--emerald);display:grid;place-items:center;margin-bottom:26px;position:relative}
+.cx .seal .cxring::after{content:'';position:absolute;inset:-9px;border-radius:50%;border:1px solid rgba(6,169,78,.28);animation:cx-settle 2.4s ease-out 1 forwards}
 @keyframes cx-settle{0%{transform:scale(1.25);opacity:0}40%{opacity:1}100%{transform:scale(1);opacity:.6}}
 .cx .seal .cxring .ld{width:10px;height:10px;border-radius:50%;background:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}
 .cx .seal h2{font-family:var(--serif);font-weight:500;font-size:27px;color:var(--forest);margin:0 0 10px;letter-spacing:-.01em}
@@ -386,7 +396,7 @@
   .cx .deskcover::after{content:'';position:absolute;inset:0;pointer-events:none;
     background:radial-gradient(120% 80% at 28% 22%, transparent 55%, rgba(14,42,31,.035))}
   .cx .deskcover>*{position:relative;z-index:1}
-  .cx .dc-mast{margin-bottom:28px}
+  .cx .dc-mast{position:relative;margin-bottom:28px}
   .cx .dc-mast .mast-logo{height:40px}
   .cx .dc-foot{margin-top:auto}
   .cx .dc-head{font-family:var(--serif);font-weight:500;font-size:42px;line-height:1.16;letter-spacing:-.01em;color:var(--forest);margin:0;text-wrap:balance}

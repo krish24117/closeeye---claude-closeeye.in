@@ -14,13 +14,14 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { fetchSpace, appendLearning, askConnect, type SpaceData } from '@/lib/db/space'
+import { fetchSpace, appendLearning, askConnect, personName, type SpaceData, type AskAnswer } from '@/lib/db/space'
 import type { Blank, LedgerLine } from '@/lib/connect/ledger'
 import { PHASE_2_ENABLED, VISITS_OPEN_LABEL } from '@/lib/connect/phase'
 
 const WA = 'https://wa.me/919000221261'
 const RECENT = 5 // learned lines shown before "show earlier"
 const initial = (s: string) => (s || '?').trim().charAt(0).toUpperCase()
+const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 
 export default function SpacePage() {
   const router = useRouter()
@@ -34,20 +35,40 @@ export default function SpacePage() {
   const [learned, setLearned] = React.useState<LedgerLine[]>([])
   const [showEarlier, setShowEarlier] = React.useState(false)
   const [blanks, setBlanks] = React.useState<Blank[]>([])
+  const [callName, setCallName] = React.useState<string | null>(null)
   const [activeBlank, setActiveBlank] = React.useState<Blank | null>(null)
   const [fillText, setFillText] = React.useState('')
   const [saveError, setSaveError] = React.useState('')
   const [learnedNote, setLearnedNote] = React.useState('')
   const [askText, setAskText] = React.useState('')
-  const [answer, setAnswer] = React.useState('')
+  const [answer, setAnswer] = React.useState<AskAnswer | null>(null)
   const [qnote, setQnote] = React.useState('')
 
   const load = React.useCallback(async () => {
     setLoading(true); setLoadError(false)
     try {
+      // /space is a signed-in surface. Signed out → go straight to sign-in
+      // (returns here). Coming back from Google, wait for the code exchange
+      // (detectSessionInUrl) before deciding — never bounce into a sign-in loop.
+      const url = new URL(window.location.href)
+      if (url.searchParams.has('error')) { router.replace('/connect'); return } // sign-in was declined — don't loop
+      const returning = url.searchParams.has('code')
+      let session = (await supabase.auth.getSession()).data.session
+      if (!session && returning) {
+        for (let i = 0; i < 16 && !session; i++) {
+          await new Promise((r) => setTimeout(r, 250))
+          session = (await supabase.auth.getSession()).data.session
+        }
+        window.history.replaceState({}, '', url.pathname) // drop ?code from the address bar
+      }
+      if (!session) {
+        await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${url.origin}/space` } })
+        return // browser is redirecting to Google — keep the calm spinner
+      }
+
       const s = await fetchSpace()
       if (!s) { router.replace('/connect'); return }
-      setSpace(s); setKnown(s.known); setLearned(s.learned); setBlanks(s.blanks)
+      setSpace(s); setKnown(s.known); setLearned(s.learned); setBlanks(s.blanks); setCallName(s.callName)
       setLoading(false)
     } catch {
       setLoadError(true); setLoading(false) // a real read failure — offer retry, never hang
@@ -78,6 +99,11 @@ export default function SpacePage() {
   const h = new Date().getHours()
   const greeting = (h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening') + `, ${space.userName}.`
   const them = space.gender === 'he' ? 'him' : space.gender === 'they' ? 'them' : 'her'
+  // The name we show: what the family calls this person ("Amma"), else the
+  // relationship lowercased mid-sentence ("your mother"). `person` reads inside a
+  // sentence; `Person` starts one.
+  const person = personName({ callName, lovedOne: lo })
+  const Person = cap1(person)
 
   const shownLearned = showEarlier ? learned : learned.slice(-RECENT)
   const hiddenCount = learned.length - shownLearned.length
@@ -89,17 +115,22 @@ export default function SpacePage() {
     setSaveError('')
     const { line, error } = await appendLearning(lo.id, b.key, text)
     if (error || !line) { setSaveError('Couldn’t save that just now — please try again.'); return }
-    setLearned((prev) => [...prev, line])
     setBlanks((prev) => prev.filter((x) => x.key !== b.key))
     setActiveBlank(null); setFillText('')
-    setLearnedNote(`Connect knows ${lo.name} a little better now.`)
+    if (b.key === 'callname') {
+      setCallName(text) // becomes the name everywhere, at once — not a note in the ledger
+      setLearnedNote(`I’ll call ${them} ${text} from now on.`)
+    } else {
+      setLearned((prev) => [...prev, line])
+      setLearnedNote(`Connect knows ${person} a little better now.`)
+    }
     window.setTimeout(() => setLearnedNote(''), 3500)
   }
 
   function doAsk() {
     const q = askText.trim()
     if (!q || !space) return
-    setAnswer(askConnect(q, { ...space, known, learned, blanks }))
+    setAnswer(askConnect(q, { ...space, callName, known, learned, blanks }))
     setAskText('')
   }
 
@@ -118,18 +149,18 @@ export default function SpacePage() {
 
       <main id="main">
         {/* ============ FAMILY SPACE ============ */}
-        <section className={`view${view === 'space' ? ' on' : ''}`} aria-label={`${lo.name}’s space`}>
+        <section className={`view${view === 'space' ? ' on' : ''}`} aria-label={`${person}’s space`}>
           <div className="greet">
             <h1>{greeting}</h1>
-            <div className="status"><span className="ld" /><span>All is quiet with {lo.name}. {lo.name}’s page is new — tell me more whenever you like.</span></div>
+            <div className="status"><span className="ld" /><span>All is quiet with {person}. {Person}’s page is new — tell me more whenever you like.</span></div>
           </div>
 
           <div className="fam">
-            <button className="fchip pick"><span className="fa">{initial(lo.name)}</span>{lo.name}</button>
+            <button className="fchip pick"><span className="fa">{initial(person)}</span>{Person}</button>
             <button className="fchip add" onClick={() => router.push('/connect')}><span className="fa">+</span>Add family</button>
           </div>
 
-          <p className="sh">{lo.name}’s timeline</p>
+          <p className="sh">{Person}’s timeline</p>
           <div className="tl">
             {space.timeline.map((e) => (
               <div key={e.id} className={`tle ${e.kind}`}>
@@ -183,10 +214,15 @@ export default function SpacePage() {
           <div className="askline">
             <p className="sh" style={{ margin: '0 0 6px' }}>Ask Connect</p>
             <div className="ruled">
-              <textarea rows={1} value={askText} onChange={(e) => setAskText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); doAsk() } }} placeholder={`Ask about ${lo.name}, or anything…`} />
+              <textarea rows={1} value={askText} onChange={(e) => setAskText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); doAsk() } }} placeholder={`Ask about ${person}, or anything…`} />
               <button className="go" onClick={doAsk}>Ask</button>
             </div>
-            {answer && <p className="answer">{answer}</p>}
+            {answer && (
+              <div className="answer">
+                <p>{answer.text}</p>
+                {answer.whatsapp && <a className="wa" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>}
+              </div>
+            )}
           </div>
 
           <div className="qacts">
@@ -205,7 +241,7 @@ export default function SpacePage() {
 
         {/* ============ YOUR PAGE ============ */}
         <section className={`view${view === 'profile' ? ' on' : ''}`} aria-label="Your page">
-          <button className="back" onClick={() => { setView('space'); window.scrollTo(0, 0) }}>← {lo.name}’s space</button>
+          <button className="back" onClick={() => { setView('space'); window.scrollTo(0, 0) }}>← {Person}’s space</button>
 
           <div className="pid">
             <span className="pa">{initial(space.userName)}</span>
@@ -217,7 +253,7 @@ export default function SpacePage() {
 
           <p className="sh">Your family</p>
           <div className="pcard">
-            <div className="prow"><span className="k">{lo.name}</span><span className="v">{lo.city || 'Family Space'}<small>space opened today</small></span></div>
+            <div className="prow"><span className="k">{Person}</span><span className="v">{lo.city || 'Family Space'}<small>space opened today</small></span></div>
             <div className="prow"><span className="k">Add someone</span><span className="v"><button className="plink" onClick={() => router.push('/connect')}>anyone you love →</button></span></div>
           </div>
 

@@ -126,6 +126,7 @@ export function ConnectExperience() {
   const [heroN, setHeroN] = React.useState(0)
   const [heroSettled, setHeroSettled] = React.useState(false)
   const [openCard, setOpenCard] = React.useState<string | null>(null) // story card expanded in place
+  const [signedIn, setSignedIn] = React.useState(false) // a returning, already-signed-in visitor
   const [deskDrawn, setDeskDrawn] = React.useState(false) // writing-desk rules draw in once, on scroll into view
   const deskRef = React.useRef<HTMLDivElement | null>(null)
   // Phase 2 selection
@@ -236,6 +237,16 @@ export function ConnectExperience() {
     return () => { cancelled = true }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /* ── returning visitor: if they're already signed in (and not mid-OAuth), offer
+        a quiet path back to their Family Space. ── */
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.has('code') || params.has('error')) return // the OAuth return effect owns this
+    let alive = true
+    supabase.auth.getSession().then(({ data }) => { if (alive) setSignedIn(!!data.session) }).catch(() => {})
+    return () => { alive = false }
+  }, [])
+
   /* ── provision + branch by phase. NEVER navigates to an empty Space; a failure
         surfaces a calm retry with the draft intact. ── */
   async function finishAndProvision() {
@@ -286,6 +297,18 @@ export function ConnectExperience() {
       if (err) { setPending(null); setError('Sign-in couldn’t start. Please try again.') }
       // web redirects away; the return effect above resumes on /connect
     } catch { setPending(null); setError('We couldn’t reach the sign-in service. Check your connection and try again.') }
+  }
+  /* ── returning sign-in (no draft): straight to Google, land on the Family Space.
+        No new person is created — /space shows their space (or routes on if none). ── */
+  async function signInReturning() {
+    setError('')
+    try {
+      const { error: err } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/space`, queryParams: { prompt: 'select_account' } },
+      })
+      if (err) setError('Sign-in couldn’t start. Please try again.')
+    } catch { setError('We couldn’t reach the sign-in service. Check your connection and try again.') }
   }
   async function emailContinue() {
     setError('')
@@ -451,7 +474,15 @@ export function ConnectExperience() {
         {/* LEFT · the cover — desktop only (display:none below 1024). Duplicates the
             promise so it persists across every stage; the mobile column is unchanged. */}
         <aside className="deskcover">
-          <div className="dc-mast">{mastheadUnit()}</div>
+          <div className="dc-mast">
+            {mastheadUnit()}
+            {stage === 's0' && !signedIn && (
+              <button type="button" className="mast-signin" onClick={signInReturning}>Sign in</button>
+            )}
+            {stage === 's0' && signedIn && (
+              <p className="welcome-back"><a href="/space" onClick={(e) => { e.preventDefault(); router.push('/space') }}>Welcome back — your Family Space →</a></p>
+            )}
+          </div>
           <div className="dc-body">
             <h1 className="dc-head">Know the people you love —<br /><em>even from far away.</em></h1>
             <p className="dc-supp">Close Eye helps you stay close — it understands your family, remembers what matters, and brings trusted people when they’re needed.</p>
@@ -486,7 +517,15 @@ export function ConnectExperience() {
           </div>
         </aside>
       <div className="app">
-        <header className="mast">{mastheadUnit()}</header>
+        <header className="mast">
+          {mastheadUnit()}
+          {stage === 's0' && !signedIn && (
+            <button type="button" className="mast-signin" onClick={signInReturning}>Sign in</button>
+          )}
+        </header>
+        {stage === 's0' && signedIn && (
+          <p className="welcome-back">Welcome back — <a href="/space" onClick={(e) => { e.preventDefault(); router.push('/space') }}>your Family Space →</a></p>
+        )}
         <main id="main">
 
         {/* S0 · HERO (unfolds) · STORY CARDS · ASK (input) · MORE THAN CARE · FOOTER

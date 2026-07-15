@@ -97,7 +97,11 @@
 .spc .askline textarea::placeholder{color:var(--faint);font-style:italic}
 .spc .askline textarea:focus{outline:none}
 .spc .askline .go{font-size:13px;font-weight:600;color:var(--emerald);white-space:nowrap;padding-bottom:2px}
-.spc .answer{font-family:var(--serif);font-size:16px;line-height:1.55;color:var(--ink);margin:14px 0 0;padding-left:14px;border-left:2px solid var(--sprout)}
+.spc .answer{margin:14px 0 0;padding-left:14px;border-left:2px solid var(--sprout)}
+.spc .answer p{margin:0;font-family:var(--serif);font-size:16px;line-height:1.55;color:var(--ink)}
+.spc .answer .wa{display:inline-block;margin-top:10px;font-family:var(--sans);font-size:13.5px;font-weight:600;
+  color:var(--emerald);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .2s}
+.spc .answer .wa:hover{border-bottom-color:var(--emerald)}
 
 .spc .qacts{display:flex;gap:9px;margin-top:22px;flex-wrap:wrap}
 .spc .qbtn{background:var(--page);border:1px solid var(--hair);border-radius:999px;padding:11px 17px;

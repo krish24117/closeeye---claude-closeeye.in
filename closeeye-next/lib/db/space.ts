@@ -12,6 +12,15 @@
 import { supabase } from '@/lib/supabase'
 import { classify, pronoun, type Gender } from '@/lib/connect/understand'
 import { readLedger, ledgerEntriesForStorage, blanksFor, type Blank, type LedgerLine } from '@/lib/connect/ledger'
+import { VISITS_OPEN_LABEL } from '@/lib/connect/phase'
+
+/** Mid-sentence display name: the name the family gave ("Amma"), else the
+ *  relationship lowercased ("your mother"), else a real name as typed. */
+export function personName(space: Pick<SpaceData, 'callName' | 'lovedOne'>): string {
+  if (space.callName) return space.callName
+  const n = space.lovedOne.name
+  return /^your\s/i.test(n) ? n.toLowerCase() : n
+}
 
 /** How many ledger entries a Space loads at once — keeps it calm at scale. */
 const WINDOW = 50
@@ -137,6 +146,7 @@ export interface SpaceData {
   email: string
   lovedOne: { id: string; name: string; relationship: string | null; city: string | null; createdAt: string | null }
   gender: Gender | null
+  callName: string | null  // what the family calls this person ("Amma") — set via the "What you call her" line
   known: LedgerLine[]      // stated facts (what Connect knows)
   learned: LedgerLine[]    // lines the family told us later (most recent window, chronological)
   blanks: Blank[]          // still-open (unfilled) prompts
@@ -176,20 +186,33 @@ export async function fetchSpace(): Promise<SpaceData | null> {
   const entries = (entriesRes.data ?? []).slice().reverse() // chronological
   const facts = entries.filter((e) => e.entry_type === 'family_fact')
   const known: LedgerLine[] = facts.filter((e) => e.source === 'connect_experience').map((e) => ({ label: e.label ?? '', body: e.body, quote: e.label === 'In your words' }))
-  const learned: LedgerLine[] = facts.filter((e) => e.source === 'family_space').map((e) => ({ label: e.label ?? '', body: e.body }))
+  const spaceFacts = facts.filter((e) => e.source === 'family_space')
+
+  // "What you call her" is stored as a fact but is a NAME, not a note — pull it out.
+  const callEntry = spaceFacts.filter((e) => e.label === 'callname').slice(-1)[0]
+  const callName = callEntry?.body?.trim() || null
+  const learned: LedgerLine[] = spaceFacts.filter((e) => e.label !== 'callname').map((e) => ({ label: e.label ?? '', body: e.body }))
 
   const filledKeys = new Set(learned.map((l) => l.label))
-  const blanks = blanksFor(gender).filter((b) => !filledKeys.has(b.key))
+  const them = pronoun.object(gender)
+  const blanks: Blank[] = [
+    // the first thing worth knowing: the name the family actually uses
+    ...(callName ? [] : [{ key: 'callname', text: `What you call ${them}` }]),
+    ...blanksFor(gender).filter((b) => !filledKeys.has(b.key)),
+  ]
 
+  // the name we render — the family's word ("Amma"), else the relationship lowercased
+  const disp = callName || (/^your\s/i.test(lo.full_name) ? lo.full_name.toLowerCase() : lo.full_name)
+  const Disp = disp.charAt(0).toUpperCase() + disp.slice(1)
   const timeline: TimelineEvent[] = [
-    { id: 'opened', when: fmtWhen(lo.created_at), kind: 'done', title: `${lo.full_name}’s space opened.` },
-    { id: 'understood', when: fmtWhen(lo.created_at), kind: 'done', title: `Connect began understanding ${lo.full_name}.` },
+    { id: 'opened', when: fmtWhen(lo.created_at), kind: 'done', title: `${Disp}’s space opened.` },
+    { id: 'understood', when: fmtWhen(lo.created_at), kind: 'done', title: `Connect began understanding ${disp}.` },
   ]
 
   return {
     userName, email: user.email || '',
     lovedOne: { id: lo.id, name: lo.full_name, relationship: lo.relationship, city: lo.city, createdAt: lo.created_at },
-    gender, known, learned, blanks, timeline,
+    gender, callName, known, learned, blanks, timeline,
   }
 }
 
@@ -213,25 +236,45 @@ export async function appendLearning(lovedOneId: string, key: Blank['key'], body
 }
 
 /**
- * Ask Connect — Phase 1, deterministic and honest. It answers only from what is
- * actually known; when it lacks context it says so plainly and never pretends.
+ * Ask Connect — Phase 1, deterministic and honest.
+ *
+ * The rule: when a question carries a concrete need — a health worry, a real-world
+ * task, an emergency — the answer must address THAT need with what Close Eye can
+ * actually do today (bring a trusted person; visits open 15 August; a real person
+ * reachable now for anything time-sensitive). A concrete need is never met with a
+ * generic "here's what I understand" summary. Otherwise it answers only from what
+ * is actually known, and says plainly when it lacks context.
  */
-export function askConnect(question: string, space: SpaceData): string {
-  const name = space.lovedOne.name
+export interface AskAnswer { text: string; whatsapp: boolean }
+
+export function askConnect(question: string, space: SpaceData): AskAnswer {
+  const name = personName(space)
+  const Name = name.charAt(0).toUpperCase() + name.slice(1)
   const g = space.gender
   const they = pronoun.subject(g)
-  const rl = classify(question)
+  const them = pronoun.object(g)
+  const visits = `Visits open ${VISITS_OPEN_LABEL}.`
+  const need = readLedger(question).need
+
+  switch (need) {
+    case 'emergency':
+      return { text: `If ${name} is in danger, call your local emergency number now — that has to come first. Then Close Eye can get a trusted person to ${them}, and you can reach one this minute.`, whatsapp: true }
+    case 'medical':
+      return { text: `I won’t guess about health — that isn’t something an app should do. What Close Eye can do is send a trusted person to see ${name} in person. ${visits} For anything that can’t wait, you can reach a real person right now.`, whatsapp: true }
+    case 'errand':
+      return { text: `This needs a real pair of hands, not an answer. Close Eye can put a trusted person on it for ${name} — the kind of help you’d give if you were there. ${visits} If it’s time-sensitive, reach someone now.`, whatsapp: true }
+    case 'companionship':
+      return { text: `${Name} shouldn’t sit alone with it. Close Eye can send someone to be with ${them} — a familiar face who stays a while. ${visits}`, whatsapp: false }
+  }
+
+  // No concrete need — answer only from what is actually known.
   const facts: string[] = []
   if (space.lovedOne.city) facts.push(`${they} ${g === 'they' ? 'live' : 'lives'} in ${space.lovedOne.city}`)
   if (space.known.some((k) => k.body.toLowerCase().includes('alone'))) facts.push(`${they} ${g === 'they' ? 'live' : 'lives'} alone`)
 
   if (facts.length === 0 && space.learned.length === 0) {
-    return `I’d like to understand ${name} a little better before I answer. Tell me about ${pronoun.possessive(g)} health, or the shape of ${pronoun.possessive(g)} days — then my answers will come from understanding, not guesses.`
+    return { text: `I’d like to understand ${name} a little better before I answer. Tell me about ${pronoun.possessive(g)} health, or the shape of ${pronoun.possessive(g)} days — then my answers will come from understanding, not guesses.`, whatsapp: false }
   }
-  const intentLine =
-    rl.intent === 'medicine' ? `On ${pronoun.possessive(g)} medicines, I only know what your family has recorded — I never guess a dose or a routine.`
-    : rl.intent === 'emergency' ? `If something feels urgent, reach your Presence Manager on WhatsApp right away — a real person will help.`
-    : `Here is what I understand so far, and I’ll keep learning as you tell me more.`
   const knownLine = facts.length ? `From what you’ve told me, ${facts.join(', and ')}.` : `You’ve started telling me about ${name}.`
-  return `${knownLine} ${intentLine}`
+  return { text: `${knownLine} I’ll keep learning as you tell me more, and whenever ${name} needs a real person, Close Eye can bring one.`, whatsapp: false }
 }
