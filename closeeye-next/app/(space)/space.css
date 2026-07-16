@@ -102,6 +102,12 @@
 .spc .answer .wa{display:inline-block;margin-top:10px;font-family:var(--sans);font-size:13.5px;font-weight:600;
   color:var(--emerald);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .2s}
 .spc .answer .wa:hover{border-bottom-color:var(--emerald)}
+/* emergency dial — a real, tappable 108 on the signed-in surface too, matching /connect */
+.spc .answer .dial{display:flex;width:fit-content;align-items:center;gap:8px;margin:12px 0 2px;padding:12px 22px;
+  border-radius:999px;background:#B23A2E;color:#fff;font-family:var(--sans);font-size:14.5px;font-weight:700;
+  letter-spacing:.01em;text-decoration:none;box-shadow:0 2px 12px rgba(178,58,46,.24)}
+.spc .answer .dial:hover{background:#9C3125}
+.spc .answer .dial:active{transform:scale(.98)}
 
 .spc .qacts{display:flex;gap:9px;margin-top:22px;flex-wrap:wrap}
 .spc .qbtn{background:var(--page);border:1px solid var(--hair);border-radius:999px;padding:11px 17px;

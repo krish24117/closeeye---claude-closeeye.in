@@ -245,7 +245,7 @@ export async function appendLearning(lovedOneId: string, key: Blank['key'], body
  * generic "here's what I understand" summary. Otherwise it answers only from what
  * is actually known, and says plainly when it lacks context.
  */
-export interface AskAnswer { text: string; whatsapp: boolean }
+export interface AskAnswer { text: string; whatsapp: boolean; dial?: boolean }
 
 export function askConnect(question: string, space: SpaceData): AskAnswer {
   const name = personName(space)
@@ -258,7 +258,9 @@ export function askConnect(question: string, space: SpaceData): AskAnswer {
 
   switch (need) {
     case 'emergency':
-      return { text: `If ${name} is in danger, call your local emergency number now — that has to come first. Then Close Eye can get a trusted person to ${them}, and you can reach one this minute.`, whatsapp: true }
+      // A signed-in family member may be the one facing a real crisis — give a
+      // tappable emergency dial (matching /connect), not just prose.
+      return { text: `If ${name} is in danger, call emergency services now — that has to come first. Then Close Eye can get a trusted person to ${them}, and you can reach one this minute.`, whatsapp: true, dial: true }
     case 'medical':
       return { text: `I won’t guess about health — that isn’t something an app should do. What Close Eye can do is send a trusted person to see ${name} in person. ${visits} For anything that can’t wait, you can reach a real person right now.`, whatsapp: true }
     case 'errand':

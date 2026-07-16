@@ -220,6 +220,7 @@ export default function SpacePage() {
             {answer && (
               <div className="answer">
                 <p>{answer.text}</p>
+                {answer.dial && <a className="dial" href="tel:108">Call emergency services · 108</a>}
                 {answer.whatsapp && <a className="wa" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>}
               </div>
             )}
