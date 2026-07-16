@@ -3,11 +3,11 @@
    offline fallback; stale-while-revalidate for static assets. Never caches
    API or cross-origin requests. */
 
-const VERSION = 'closeeye-v20'
+const VERSION = 'closeeye-v21'
 const SHELL = `${VERSION}-shell`
 const ASSETS = `${VERSION}-assets`
 const OFFLINE_URL = '/offline'
-const PRECACHE = ['/', OFFLINE_URL, '/manifest.webmanifest', '/logo.svg']
+const PRECACHE = ['/', OFFLINE_URL, '/manifest.webmanifest']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
