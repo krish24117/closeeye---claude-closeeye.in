@@ -815,8 +815,13 @@ export function ConnectExperience() {
                 <h1 className="h-serif" style={{ fontSize: 26 }}>{rl.forLoved
                   ? <>Today is where {subjMid}’s<br />story <em>begins.</em></>
                   : <>Today is where your<br />story <em>begins.</em></>}</h1>
+                {/* No "every visit written down": the Space timeline holds what Connect
+                    understood and what the family tells it — a visit has never landed
+                    there. Promising a record we don't keep, one line above "Close Eye
+                    never invents information about your family", is the loudest possible
+                    way to break that promise. */}
                 <p className="lede">{rl.forLoved
-                  ? `Everything above is kept here — privately, for you. What I know, what I’m still learning, every visit written down.`
+                  ? `Everything above is kept here — privately, for you. What I know about ${subjMid}, and what I’m still learning.`
                   : 'Everything above is kept here — privately, only for you. What I know, and what I’m still learning.'}</p>
                 <p className="trustline">Close Eye never invents information about your family.</p>
                 <div className="act">
