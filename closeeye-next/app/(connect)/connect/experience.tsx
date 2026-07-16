@@ -119,6 +119,7 @@ export function ConnectExperience() {
   const [activeKey, setActiveKey] = React.useState<string | null>(null)
   const [fill, setFill] = React.useState('')
   const [againText, setAgainText] = React.useState('') // "who is this for?" — closes the loop when understanding is insufficient
+  const [againCount, setAgainCount] = React.useState(0) // clarification rounds — hard-capped at 2, then hand to a human
   // understanding reveal (the known facts appearing, line by line)
   const [s1n, setS1n] = React.useState(0)
   const [s1live, setS1live] = React.useState(-1)
@@ -195,7 +196,7 @@ export function ConnectExperience() {
   function ask() {
     const q = text.trim()
     if (q.length < 8) return
-    setTold([]); setActiveKey(null); setFill(''); setAgainText('')
+    setTold([]); setActiveKey(null); setFill(''); setAgainText(''); setAgainCount(0)
     setRl(readLedger(q))
     setStage('s1')
   }
@@ -208,6 +209,7 @@ export function ConnectExperience() {
     const combined = `${(rl?.rawText || text).trim()}. ${extra}`
     setText(combined)            // Edit / the draft carry the full, combined words
     setTold([]); setActiveKey(null); setFill(''); setAgainText('')
+    setAgainCount((c) => c + 1)  // count the round — capped at 2 downstream
     setS1n(0); setS1live(-1); setS1done(false)
     setRl(readLedger(combined))  // deterministic re-understanding
     setStage('s1')               // watch it understand again, from the top
@@ -374,9 +376,10 @@ export function ConnectExperience() {
   // mid-sentence possessive subject — a name stays capitalised ("Lakshmi's"), a
   // relationship reads lowercase in a sentence ("your father's"), not "Your Father's".
   const subjMid = rl?.name || (rl?.relationshipWord ? `your ${rl.relationshipWord}` : rl?.subjectLabel) || ''
-  // A specific person must be understood before a space can be created. Without one,
-  // the answer stays open: we ask "who is this for?" instead of offering a space.
-  const personKnown = !!rl?.forLoved
+  // A subject — a person, the family, or the visitor — must be understood before a
+  // space can be created. Without one, the answer stays open (we ask "who is this
+  // for?") until the 2-round cap, then hands to a human.
+  const personKnown = !!rl?.subjectKnown
   const truncate = (s: string, n = 72) => { const t = s.trim().replace(/\s+/g, ' '); return t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t }
   const CHECK = (
     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6" /></svg>
@@ -388,7 +391,7 @@ export function ConnectExperience() {
   const PREV: Record<string, Stage> = { s1: 's0', s2: 's1', s3: 's2', s4: 's3', s4b: 's4' }
   function editWords() { setError(''); setStage('s0') }
   function changePerson() {
-    clearTimers(); setError(''); setText(''); setRl(null); setTold([]); setActiveKey(null); setFill(''); setAgainText('')
+    clearTimers(); setError(''); setText(''); setRl(null); setTold([]); setActiveKey(null); setFill(''); setAgainText(''); setAgainCount(0)
     setS1n(0); setS1live(-1); setS1done(false); setStage('s0')
   }
   const nav = (
@@ -682,10 +685,16 @@ export function ConnectExperience() {
               <div className={`beat${stage === 's3' ? ' now' : ' collapsed'}`} ref={stage === 's3' ? activeBeatRef : undefined}>
                 {stage === 's3' ? (
                   <>
-                    <div className="think" style={{ marginBottom: 14 }}><span className="ld" style={{ animation: 'none' }} /><span>{personKnown ? 'Now I can answer you properly.' : 'Let me make sure I understand.'}</span></div>
+                    <div className="think" style={{ marginBottom: 14 }}><span className="ld" style={{ animation: 'none' }} /><span>{personKnown ? 'Now I can answer you properly.' : againCount >= 2 ? 'Let’s get you to a real person.' : 'Let me make sure I understand.'}</span></div>
                     <div className="counsel">
-                      {counselData.paragraphs.map((p, i) => <p key={i}>{boldLead(p)}</p>)}
-                      <p className="sig">{counselData.signature}</p>
+                      {/* the "question" is never repeated verbatim — it varies each round */}
+                      {(personKnown || againCount === 0) ? (
+                        <>{counselData.paragraphs.map((p, i) => <p key={i}>{boldLead(p)}</p>)}<p className="sig">{counselData.signature}</p></>
+                      ) : againCount >= 2 ? (
+                        <p>I don’t want to keep asking. The fastest way to help is a real person — reach one right now, and they’ll take it from here.</p>
+                      ) : (
+                        <p>Still with you — even a few words help. Who is this for, and what’s going on?</p>
+                      )}
                     </div>
                     {rl.need === 'emergency' && (
                       <a className="dial" href="tel:108">Call emergency services · 108</a>
@@ -696,11 +705,17 @@ export function ConnectExperience() {
                         {!rl.aiConfident && <a className="qlink" href={WA} target="_blank" rel="noopener" style={{ marginTop: 10 }}>Talk to a real person on WhatsApp →</a>}
                         <div className="act"><button className="btn" onClick={() => setStage('s4')}>{!rl.aiConfident ? 'Keep this, and continue' : 'This is what I’ve been looking for'}</button></div>
                       </>
+                    ) : againCount >= 2 ? (
+                      // Two rounds is the floor — a human handoff, never a dead end.
+                      <div className="again">
+                        <a className="wa-prominent primary" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>
+                        <button type="button" className="restart-link" onClick={changePerson}>or start over</button>
+                      </div>
                     ) : (
                       // Insufficient understanding — never a dead end. Give a place to
-                      // answer right here, and a real person on WhatsApp, prominently.
+                      // answer right here (varied each round), and a real person on WhatsApp.
                       <div className="again">
-                        <textarea className="again-ta" rows={2} value={againText} onChange={(e) => setAgainText(e.target.value)} placeholder="Tell me here — who is this for?" aria-label="Who is this for?" />
+                        <textarea className="again-ta" rows={2} value={againText} onChange={(e) => setAgainText(e.target.value)} placeholder={againCount === 0 ? 'Tell me here — who is this for?' : 'In your words — who is it for, and what would help?'} aria-label="Who is this for?" autoFocus />
                         <div className="act"><button type="button" className={`btn${againText.trim() ? ' inked' : ' ghost'}`} onClick={understandAgain}>Connect, understand again</button></div>
                         <a className="wa-prominent" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>
                       </div>

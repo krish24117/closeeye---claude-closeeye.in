@@ -23,6 +23,8 @@ export type NeedType =
 export interface LedgerLine { label: string; body: string; quote?: boolean }
 export interface Blank { key: string; text: string }
 
+export type SubjectKind = 'person' | 'family' | 'self'
+
 export interface ReadLedger {
   subjectLabel: string             // display name — a real name, else "Your Sister"
   relationship: string | null      // canonical: 'sister'
@@ -30,6 +32,9 @@ export interface ReadLedger {
   name: string | null
   gender: Gender | null
   forLoved: boolean                // is this about a specific person we identified?
+  subjectKind: SubjectKind | null  // who this is for — a person, the family, or the visitor
+  subjectKnown: boolean            // ANY valid subject understood (person | family | self)
+  situation: string | null         // a life event in their words ("Moving to Hyderabad.")
   city: string | null
   livesAlone: boolean
   distant: boolean
@@ -44,7 +49,10 @@ export interface ReadLedger {
 
 const cap = (w: string) => (w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w)
 const titleWords = (s: string) => s.split(/\s+/).map(cap).join(' ')
-const conj = (base: string, g: Gender | null) => (g === 'they' ? base : `${base}s`)
+// present-tense agreement: plural "they" AND unknown gender (rendered as "They")
+// both take the bare verb — "they live", never "they lives".
+const conj = (base: string, g: Gender | null) => (g === 'they' || !g ? base : `${base}s`)
+const isPlural = (g: Gender | null) => g === 'they' || !g // "they"/unknown → are, live, need
 
 /* ── city gazetteer (only stated locations become a line — never guessed) ── */
 const CITIES = ['hyderabad','bangalore','bengaluru','mumbai','delhi','new delhi','chennai','kolkata','pune','ahmedabad','jaipur','lucknow','kochi','cochin','coimbatore','visakhapatnam','vizag','vijayawada','warangal','nagpur','indore','bhopal','patna','surat','kanpur','nashik','mysore','mysuru','madurai','trichy','guntur','tirupati','goa','chandigarh','gurgaon','gurugram','noida',
@@ -60,6 +68,14 @@ function findCity(text: string): string | null {
 const ALONE = /\b(lives?\s+alone|living\s+alone|(by|on)\s+(her|his|their)\s+own|all\s+alone|stays?\s+alone)\b/i
 const DISTANT = /\b(far\s+away|far\s+from|miles\s+away|another\s+(city|country|state)|different\s+(city|country|state)|abroad|overseas|can'?t\s+be\s+there|cannot\s+be\s+there|living\s+abroad|so\s+far)\b/i
 
+/* ── broader subjects: a collective (family) or the visitor themselves (self) are
+   valid subjects too — not only a single identified person. ── */
+const FAMILY_SUBJ = /\b(?:my|our|the|whole)\s+famil(?:y|ies)\b|\bfor\s+(?:my|our)\s+family\b|\bmy\s+folks\b|\bwe\s+(?:need|want|are|have|just)\b|\bwe'?re\b/i
+const SELF_SUBJ = /\bfor\s+me\b|\bhelp\s+me\b|\bi\s+need\b|\bi\s+want\b|\bi'?m\b|\bi\s+am\b|\bmyself\b|\bmy\s+own\b|\bfor\s+myself\b/i
+/* ── a life SITUATION (a move / settling in), and a request to get set up ── */
+const RELOCATION = /\b(?:shift(?:ing|ed)?|relocat\w*|mov(?:e|es|ing|ed)|settl(?:e|es|ing|ed)|new\s+(?:city|place|home|country|town)|just\s+moved)\b/i
+const SETUP = /\b(?:local\s+support|set(?:ting)?\s*up|\bsetup\b|settle\b|settling\b|get\s+set|sort\s+(?:out|things)|help\s+(?:us|me)\s+(?:set|settle|with)|support\s+to)\b/i
+
 /* ── need detection (order = priority; specific needs win over generic help) ── */
 const NEED_PATTERNS: [NeedType, RegExp][] = [
   ['emergency', /\b(fell(\s+down)?|fallen|not\s+breathing|can'?t\s+breathe|cannot\s+breathe|stopped\s+breathing|difficulty\s+breathing|trouble\s+breathing|breathless|gasping|choking|choke|chest\s+pain|heart\s+attack|cardiac|stroke|seizure|convuls\w*|unconscious|unresponsive|not\s+responding|won'?t\s+wake|can'?t\s+wake|passed\s+out|faint\w*|collaps\w*|bleeding|blood\s+everywhere|accident|hospitali[sz]\w*|in\s+(the\s+)?hospital|into\s+(the\s+)?hospital|to\s+(the\s+)?hospital|taken\s+to\s+hospital|rushed\s+(to|her|him|them)|admitted\s+to\s+(the\s+)?(hospital|icu|ward)|\bicu\b|casualty|emergency\s+ward|emergency\s+room|ambulance|call\s+108|\b108\b|\b911\b|\b999\b|very\s+serious|serious\s+condition|critical\w*|\bdying\b|overdose|poison\w*|snake\s+bite|drown\w*|come\s+(quick\w*|fast|immediately|urgently)|need\s+help\s+immediately|help\s+(immediately|urgently)|emergency|something\s+(is\s+)?(very\s+|terribly\s+|badly\s+)?wrong|very\s+wrong|gone\s+wrong|wrong\s+with\s+(her|him|them|my|amma|appa|mom|dad)|very\s+(sick|ill)|badly\s+hurt|got\s+hurt|seriously\s+hurt|injured|not\s+moving|can'?t\s+move|can'?t\s+get\s+up|won'?t\s+respond|in\s+teh\s+hospital|to\s+teh\s+hospital)\b/i],
@@ -69,7 +85,7 @@ const NEED_PATTERNS: [NeedType, RegExp][] = [
   ['memories', /\b(photo\w*|picture\w*|album\w*|memories|remember|stories|keepsake)\b/i],
   ['history', /\b(family\s+history|ancestry|our\s+roots|heritage|family\s+come\w*\s+from|where\s+(we|our\s+family)\s+(are\s+)?from|family\s+tree|our\s+family\s+story)\b/i],
   // physical errands + any request for a real person to help with a task
-  ['errand', /\b(pick\s*up|pickup|picked\s+up|drop\s*off|dropoff|drop\s+(her|him|them)|collect|bring\s+(her|him|them)|take\s+(her|him|them)\s+to|groceries|grocery|buy|purchase|deliver|delivery|ration|airport|railway|station|errand|shopping|gas\s+cylinder|pay\s+(the|her|his|a)\s+bill|help\s+me|needs?\s+help|someone\s+to\s+help|can\s+(someone|you)\s+help|needs?\s+someone|needs?\s+a\s+hand|help\s+(me\s+)?with|help\s+paying|paying\s+\w*\s*bill|want\s+help|file\s+(a|my|the|tax)|taxes?|paperwork|legal|insurance|pension|passport|visa|\bform\b|apply\s+for|sort\w*\s+out|arrange|bank\s+(work|issue|account)|\bfix\b|repair|book\s+a\s+(cab|taxi|ticket|appointment))\b/i],
+  ['errand', /\b(pick\s*up|pickup|picked\s+up|drop\s*off|dropoff|drop\s+(her|him|them)|collect|bring\s+(her|him|them)|take\s+(her|him|them)\s+to|groceries|grocery|buy|purchase|deliver|delivery|ration|airport|railway|station|errand|shopping|gas\s+cylinder|pay\s+(the|her|his|a)\s+bill|help\s+me|needs?\s+help|someone\s+to\s+help|can\s+(someone|you)\s+help|needs?\s+someone|needs?\s+a\s+hand|help\s+(me\s+)?with|help\s+paying|paying\s+\w*\s*bill|want\s+help|file\s+(a|my|the|tax)|taxes?|paperwork|legal|insurance|pension|passport|visa|\bform\b|apply\s+for|sort\w*\s+out|arrange|bank\s+(work|issue|account)|\bfix\b|repair|book\s+a\s+(cab|taxi|ticket|appointment)|hospital\s+compan\w*|\bcompanion\b|\baccompany\b|\bescort\b)\b/i],
   ['wellbeing', /\b(how\s+is|how'?s|how\s+are|is\s+(she|he|they)\s+(okay|ok|alright|fine)|okay|alright|doing\s+(well|okay|ok)?|worried|check\s+on|know\s+(she|he|they)'?s|every\s+day|sleeping|eating\s+(well|properly))\b/i],
 ]
 function detectNeed(text: string): NeedType {
@@ -115,9 +131,10 @@ function matterLine(text: string, gender: Gender | null): string | null {
   return `${cap(pronoun.possessive(gender))} ${freqAdj}${matter}.`
 }
 
-function concernFor(need: NeedType, name: string, forLoved: boolean): string | null {
+function concernFor(need: NeedType, name: string, forLoved: boolean, gender: Gender | null): string | null {
+  const are = isPlural(gender) ? 'are' : 'is'
   switch (need) {
-    case 'wellbeing': return `You want to know ${name} is okay — day to day, not only when you speak.`
+    case 'wellbeing': return `You want to know ${name} ${are} okay — day to day, not only when you speak.`
     case 'errand': return forLoved
       ? `You need a real-world hand for ${name} — someone to actually do it, not an answer.`
       : `You need a real person to help with something real — and that's exactly when Close Eye steps in.`
@@ -178,40 +195,71 @@ function blanksForNeed(need: NeedType, name: string, gender: Gender | null, forL
 export function readLedger(rawText: string): ReadLedger {
   const text = (rawText || '').trim()
   const u = classify(text)
-  const relationship = u.rel, relationshipWord = u.dispRel, name = u.name, gender: Gender | null = u.gender
+  const relationship = u.rel, relationshipWord = u.dispRel, name = u.name
+  const gender: Gender | null = u.gender
   const city = findCity(text)
   const livesAlone = ALONE.test(text)
   const distant = DISTANT.test(text)
   const question = realQuestion(text)
-  const forLoved = !!(name || relationshipWord)
-  let need = detectNeed(text)
-  // a person named with no explicit need ("Mom?", "uncle?") = "how are they" — default
-  // to wellbeing rather than leaving it unclear.
-  if (need === 'unclear' && forLoved) need = 'wellbeing'
 
-  const subjectLabel = name ? name : relationshipWord ? `Your ${cap(relationshipWord)}` : 'Someone you love'
-  const who = name || (relationshipWord ? `your ${relationshipWord}` : 'them')
+  const forLoved = !!(name || relationshipWord)
+  // Broader subjects: a specific person, else the whole family, else the visitor —
+  // any of these is a real subject, not an "I don't know who".
+  const isFamily = !forLoved && FAMILY_SUBJ.test(text)
+  const isSelf = !forLoved && !isFamily && SELF_SUBJ.test(text)
+  const subjectKind: SubjectKind | null = forLoved ? 'person' : isFamily ? 'family' : isSelf ? 'self' : null
+  const subjectKnown = subjectKind !== null
+  // NB: we never assign a gender we weren't given — plural agreement for a family
+  // falls out of isPlural(null) → "are"/"live", and family lines avoid pronoun verbs.
+
+  // A life SITUATION — a move / settling in — read as a gerund so there is no verb to disagree.
+  const relocating = RELOCATION.test(text)
+  const situation = relocating && city ? `Moving to ${city}.`
+    : relocating ? 'Settling into a new place.' : null
+
+  let need = detectNeed(text)
+  if (need === 'unclear' && forLoved) need = 'wellbeing'
+  // A known subject with a move / setup ask needs a real-world hand — an errand routed
+  // to a human, never a dead "unclear".
+  if (need === 'unclear' && subjectKnown && (relocating || SETUP.test(text))) need = 'errand'
+
+  const subjectLabel = name ? name : relationshipWord ? `Your ${cap(relationshipWord)}`
+    : isFamily ? 'Your family' : isSelf ? 'Your family' : 'Someone you love'
+  const who = name ? name : relationshipWord ? `your ${relationshipWord}`
+    : isFamily ? 'your family' : isSelf ? 'you' : 'them'
   const they = pronoun.subject(gender)
   const poss = cap(pronoun.possessive(gender))
-  let concern = concernFor(need, who, forLoved)
-  // a money/law/admin errand isn't "someone to do it" — it's a steady hand to help organize
+
+  let concern = concernFor(need, who, forLoved, gender)
   if (need === 'errand' && PROFESSIONAL.test(text)) {
+    // money/law/admin errand — a steady hand to help organize, never advice
     concern = forLoved
       ? `You want ${who} to have a steady hand with this — someone to help get it organized, not carry it alone.`
       : `You want a steady hand with this — someone to help you get it organized, not carry it alone.`
+  } else if (need === 'errand' && !forLoved && (relocating || SETUP.test(text))) {
+    // family / self settling in — honest, grounded, from their words
+    concern = `A trusted person on the ground to help ${isSelf ? 'you' : 'your family'} settle in and get set up.`
   }
 
   const ledger: LedgerLine[] = []
-  if (name || relationshipWord) ledger.push({ label: 'Someone you love', body: name ? `${name}.` : `Your ${relationshipWord}.` })
-  // the stated matter, when there is one (money/law/admin) — from their words only
+  // WHO — a person, the family, or the visitor
+  if (forLoved) ledger.push({ label: 'Someone you love', body: name ? `${name}.` : `Your ${relationshipWord}.` })
+  else if (isFamily) ledger.push({ label: 'Who', body: 'Your family.' })
+  else if (isSelf) ledger.push({ label: 'Who', body: 'You.' })
+  // THE MATTER (money/law/admin) — from their words only
   if (need === 'errand' && PROFESSIONAL.test(text)) {
     const matter = matterLine(text, gender)
     if (matter) ledger.push({ label: 'The matter', body: matter })
   }
-  if (livesAlone || city) {
+  // WHAT'S HAPPENING (a life situation) — else a person's living pattern — else a bare place
+  if (situation) {
+    ledger.push({ label: 'What’s happening', body: situation })
+  } else if (forLoved && (livesAlone || city)) {
     const body = livesAlone && city ? `${cap(they)} ${conj('live', gender)} alone, in ${city}.`
       : livesAlone ? `${cap(they)} ${conj('live', gender)} alone.` : `${cap(they)} ${conj('live', gender)} in ${city}.`
     ledger.push({ label: `${poss} days`, body })
+  } else if (city) {
+    ledger.push({ label: 'Where', body: `In ${city}.` })
   }
   if (distant) ledger.push({ label: 'You', body: 'You are far away.' })
   if (concern) ledger.push({ label: 'What you need', body: concern })
@@ -228,7 +276,9 @@ export function readLedger(rawText: string): ReadLedger {
   }
 
   return {
-    subjectLabel, relationship, relationshipWord, name, gender, forLoved, city, livesAlone, distant,
+    subjectLabel, relationship, relationshipWord, name, gender, forLoved,
+    subjectKind, subjectKnown, situation,
+    city, livesAlone, distant,
     question, need, concern, aiConfident: AI_CONFIDENT[need],
     ledger, blanks, rawText: text,
   }

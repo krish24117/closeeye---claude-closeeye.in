@@ -224,6 +224,12 @@
   border:1px solid var(--emerald);border-radius:999px;font-family:var(--sans);font-size:13.5px;font-weight:600;
   color:var(--emerald);text-decoration:none;transition:background .2s,color .2s}
 .cx .wa-prominent:hover{background:var(--emerald);color:#fff}
+/* the human-handoff floor after two rounds — WhatsApp becomes the primary action */
+.cx .wa-prominent.primary{background:var(--emerald);color:#fff;padding:13px 24px;font-size:14.5px}
+.cx .wa-prominent.primary:hover{background:var(--forest);border-color:var(--forest)}
+.cx .restart-link{display:block;margin-top:14px;font-family:var(--sans);font-size:13px;color:var(--pencil);
+  border-bottom:1px dotted var(--hair2);padding-bottom:1px;width:fit-content}
+.cx .restart-link:hover{color:var(--forest)}
 
 /* the living understanding: ✓ known, ○ still open — grows as you tell me more */
 .cx .uledger{margin-top:4px}
