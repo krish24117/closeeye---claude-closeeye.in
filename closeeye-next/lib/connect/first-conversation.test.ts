@@ -34,12 +34,23 @@ function slots(rl: ReadLedger): Set<string> {
 const isSuperset = (a: Set<string>, b: Set<string>) => [...b].every((x) => a.has(x))
 
 /* ── every question asked must be relevant to the current need ── */
+/**
+ * Which blanks are action-relevant per need — invariant 4 ("never ask a question that
+ * wouldn't change the next action") is checked against this table.
+ *
+ * 'city' appears on exactly the four PRESENCE needs (founder decision, 2026-07-16). For
+ * those, location decides whether Close Eye can honestly offer someone in person at all —
+ * which is the strongest form of "changes the next action" in the product. It is
+ * deliberately ABSENT from documents/memories/history/emergency/unclear: nothing there
+ * turns on where the family lives, so asking would be collecting a location for its own
+ * sake.
+ */
 const ALLOWED: Record<string, string[]> = {
-  wellbeing: ['health', 'mornings', 'nearby'],
-  errand: ['when_where', 'reach', 'details', 'due', 'papers', 'helps'],
-  medical: ['seeing', 'meds', 'doctor'],
+  wellbeing: ['city', 'health', 'mornings', 'nearby'],
+  errand: ['city', 'when_where', 'reach', 'details', 'due', 'papers', 'helps'],
+  medical: ['city', 'seeing', 'meds', 'doctor'],
   emergency: ['where', 'with'],
-  companionship: ['days', 'loves', 'often'],
+  companionship: ['city', 'days', 'loves', 'often'],
   documents: ['which', 'where'],
   memories: ['whose'],
   history: ['from'],

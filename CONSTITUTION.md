@@ -197,6 +197,35 @@ Supporting contracts, all platform-wide: a single **`TRUST_THRESHOLD`** governin
 
 ---
 
+## 2j · Law — Service Region (frozen)
+
+**Close Eye only promises services it can deliver in the user's supported service region.
+When location changes what Close Eye can honestly offer, it asks before promising. It
+never assumes coverage.**
+
+- **Region, never a city name.** Coverage is a **Service Region** — a market with all the
+  places that belong to it. Phase 1: **Hyderabad Metro** (Hyderabad, Secunderabad,
+  Cyberabad, Gachibowli, Madhapur, Kondapur, HITEC City, Financial District, Jubilee
+  Hills, Banjara Hills, and any other operationally supported area). Matching a literal
+  city name would tell a family in Secunderabad we cannot reach them. Launching a market
+  is one entry in [`lib/platform/service-region.ts`](closeeye-next/lib/platform/service-region.ts)
+  — nothing else in the product needs to know.
+- **Unknown location is never coverage.** Assuming coverage is inventing a fact about the
+  family (2c). It is the one failure mode that ends with a family expecting someone who
+  never comes.
+- **Ask only when it changes the answer.** If physical presence would materially change
+  what Close Eye can offer and we don't know where they are, ask **once**, gently. Never
+  collect a location we have no use for.
+- **Outside a region, the promise changes, not the honesty.** Close Eye still understands,
+  still remembers, and still hands that understanding to a real person — it simply does
+  not claim presence it cannot provide.
+
+Enforced by the presence gate in `counsel()` and the `city` blank in `readLedger()`;
+policed by the First Conversation Integrity gate (invariant 4: never ask a question that
+wouldn't change the next action).
+
+---
+
 ## 3 · Design Authority
 
 - **Name** — "Close Eye", two words, always.

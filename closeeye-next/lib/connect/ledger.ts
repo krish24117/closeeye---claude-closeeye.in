@@ -15,6 +15,7 @@
  * whole intent. Deterministic, on-device, framework-free — built on ./understand.
  */
 import { classify, pronoun, type Gender } from './understand'
+import { SERVED_AREAS, presenceFor, type PresenceAvailability } from '@/lib/platform/service-region'
 
 export type NeedType =
   | 'wellbeing' | 'errand' | 'medical' | 'emergency'
@@ -57,10 +58,13 @@ const isPlural = (g: Gender | null) => g === 'they' || !g // "they"/unknown → 
 /* ── city gazetteer (only stated locations become a line — never guessed) ── */
 const CITIES = ['hyderabad','bangalore','bengaluru','mumbai','delhi','new delhi','chennai','kolkata','pune','ahmedabad','jaipur','lucknow','kochi','cochin','coimbatore','visakhapatnam','vizag','vijayawada','warangal','nagpur','indore','bhopal','patna','surat','kanpur','nashik','mysore','mysuru','madurai','trichy','guntur','tirupati','goa','chandigarh','gurgaon','gurugram','noida',
   'london','manchester','birmingham','new york','boston','chicago','san francisco','seattle','austin','dallas','houston','toronto','vancouver','sydney','melbourne','dubai','abu dhabi','singapore','doha','riyadh','muscat','kuwait','manila']
+// Every place we SERVE must also be a place we can READ — otherwise "she's in Gachibowli"
+// scans as no-location-given and we'd ask a family we cover where they are.
+const GAZETTEER = [...new Set([...CITIES, ...SERVED_AREAS])]
 function findCity(text: string): string | null {
   const q = ` ${text.toLowerCase()} `
-  for (const c of [...CITIES].sort((a, b) => b.length - a.length)) {
-    if (new RegExp(`\\b${c.replace(/ /g, '\\s+')}\\b`).test(q)) return titleWords(c)
+  for (const c of [...GAZETTEER].sort((a, b) => b.length - a.length)) {
+    if (new RegExp(`\\b${c.replace(/[- ]/g, '[-\\\\s]+')}\\b`).test(q)) return titleWords(c)
   }
   return null
 }
@@ -173,6 +177,7 @@ export function blanksFor(gender: Gender | null): Blank[] {
  *  family already gave. The general-blank labels (health/mornings/nearby) are unique
  *  and never collide with a base ledger-line label — so we never re-ask what's known. */
 export const KEY_LABEL: Record<string, string> = {
+  city: 'City',
   health: 'Health', mornings: 'Age & mornings', nearby: 'Nearby help', when_where: 'When & where',
   reach: 'How to reach', details: 'What’s needed', seeing: 'What you see', meds: 'Medicines',
   doctor: 'Doctor', where: 'Where', with: 'Who’s there', days: 'Her days', loves: 'What she loves',
@@ -296,6 +301,13 @@ export function readLedger(rawText: string): ReadLedger {
       { key: 'helps', text: `Who usually helps ${who} with it` },
     ]
   }
+  // Where they are decides whether Close Eye can offer presence at all — so when the need
+  // wants presence and no location was given, this is the one blank worth opening. It is
+  // asked for that reason only; we never collect a location we have no use for.
+  // (Applied LAST: the professional branch above replaces the list wholesale.)
+  if (PRESENCE_NEEDS.has(need) && !city) {
+    blanks = [{ key: 'city', text: `Which city ${forLoved ? who : 'your family'} is in` }, ...blanks]
+  }
 
   return {
     subjectLabel, relationship, relationshipWord, name, gender, forLoved,
@@ -306,26 +318,59 @@ export function readLedger(rawText: string): ReadLedger {
   }
 }
 
+/** Needs whose honest answer depends on whether a real person can actually be there. */
+const PRESENCE_NEEDS = new Set<NeedType>(['wellbeing', 'errand', 'medical', 'companionship'])
+
+/** The gentle, single clarification — asked only when location changes the answer. */
+export const WHERE_QUESTION = 'If you ever need someone to be there in person, which city is your family in?'
+
+export interface CounselContext {
+  /** A location the family told us after the first message (e.g. answering WHERE_QUESTION). */
+  location?: string | null
+}
+
 /**
  * The answer — written strictly from what was understood, honest about whether
  * Connect can help directly or whether a real person is the right answer. It
  * NEVER restates the concern as something the visitor didn't say.
+ *
+ * Presence is gated by SERVICE REGION: Close Eye only promises someone can be there where
+ * that is genuinely true today. Where it isn't — or where we haven't been told — it says
+ * what it can actually do (understand, and hand that understanding to a real person) and
+ * asks, once, for the one fact that would change the answer.
  */
-export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: string } {
+export function counsel(rl: ReadLedger, ctx?: CounselContext): { paragraphs: string[]; signature: string; needsHuman: boolean } {
   const g = rl.gender
   const they = pronoun.subject(g), them = pronoun.object(g)
   const name = rl.name || (rl.relationshipWord ? `your ${rl.relationshipWord}` : 'the one you love')
   const P: string[] = []
   const professional = PROFESSIONAL.test(rl.rawText)
 
+  // Presence policy. `ctx.location` is a location the family gave us LATER (answering the
+  // "which city" line); it is merged here rather than mutating the ledger, so answering a
+  // question never reshuffles the understanding they're looking at.
+  const presence = presenceFor(ctx?.location ?? rl.city)
+  const canBeThere = presence === 'available'
+  const dependsOnPresence = PRESENCE_NEEDS.has(rl.need)
+  // "If you ever need someone to be there in person, which city is your family in?" —
+  // asked ONLY when the answer would genuinely change what Close Eye can offer.
+  const askWhere = dependsOnPresence && presence === 'unknown'
+
   switch (rl.need) {
     case 'wellbeing':
-      P.push(rl.livesAlone
-        ? `Because ${they} ${conj('live', g)} alone, what I'd put in place is a gentle rhythm — a trusted person who can be there in a way a phone call can't, and tell you honestly how ${they} ${conj('seem', g)}.`
-        : `What I'd put in place is a gentle rhythm — a trusted person who can be there in a way a phone call can't, and tell you honestly how ${they} ${conj('seem', g)}.`)
-      P.push(rl.distant
-        ? `Because you are far away, what comes back to you is real — how ${they} ${conj('seem', g)}, how the days are going — not reassurance you just have to trust.`
-        : `What comes back to you is real — how ${they} ${conj('seem', g)}, how the days are going — steady, honest, yours.`)
+      if (canBeThere) {
+        P.push(rl.livesAlone
+          ? `Because ${they} ${conj('live', g)} alone, what I'd put in place is a gentle rhythm — a trusted person who can be there in a way a phone call can't, and tell you honestly how ${they} ${conj('seem', g)}.`
+          : `What I'd put in place is a gentle rhythm — a trusted person who can be there in a way a phone call can't, and tell you honestly how ${they} ${conj('seem', g)}.`)
+        P.push(rl.distant
+          ? `Because you are far away, what comes back to you is real — how ${they} ${conj('seem', g)}, how the days are going — not reassurance you just have to trust.`
+          : `What comes back to you is real — how ${they} ${conj('seem', g)}, how the days are going — steady, honest, yours.`)
+      } else {
+        P.push(rl.distant
+          ? `Because you are far away, the hardest part is not knowing — and I won't hand you reassurance I can't stand behind.`
+          : `The hardest part is not knowing — and I won't hand you reassurance I can't stand behind.`)
+        P.push(`What I can do is understand ${name} properly, keep what you tell me, and put it in front of a real person at Close Eye — you won't have to explain it twice.`)
+      }
       break
     case 'errand':
       if (professional) {
@@ -335,24 +380,32 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
         const freq = frequencyPhrase(rl.rawText)
         const echo = freq ? `${cap(freq)}, this doesn't have to land on ${rl.forLoved ? them : 'you'} alone. ` : ''
         const tail = freq ? '' : rl.forLoved ? `, so it isn't a weight ${g === 'they' ? 'they carry' : `${they} carries`} alone` : `, so it isn't a weight you carry alone`
+        const who = rl.forLoved ? name : 'you'
+        if (canBeThere) {
+          P.push(`${echo}I won't give tax or money advice — that isn't my place. What Close Eye can do today is send a trusted person to sit with ${who}, help gather the papers, and get everything organized${tail}.`)
+          // "A real person", never "YOUR Presence Manager" — a visitor here has no
+          // membership and no one assigned. Naming a relationship they don't have is a
+          // small lie that the rest of the page then has to carry.
+          P.push(`Close Eye knows when a professional is needed — and brings the right, trusted hands in. A real person confirms every detail with you first.`)
+        } else {
+          P.push(`${echo}I won't give tax or money advice — that isn't my place.`)
+          P.push(`What I can do is make sure a real person at Close Eye knows exactly what's needed — I'll pass on what you've told me, so you won't have to explain it twice${tail}.`)
+        }
+      } else if (canBeThere) {
         P.push(rl.forLoved
-          ? `${echo}I won't give tax or money advice — that isn't my place. What Close Eye can do today is send a trusted person to sit with ${name}, help gather the papers, and get everything organized${tail}.`
-          : `${echo}I won't give tax or money advice — that isn't my place. What Close Eye can do today is send a trusted person to sit with you, help gather the papers, and get everything organized${tail}.`)
-        // "A real person", never "YOUR Presence Manager" — a visitor here has no
-        // membership and no one assigned. Naming a relationship they don't have is a
-        // small lie that the rest of the page then has to carry.
-        P.push(`Close Eye knows when a professional is needed — and brings the right, trusted hands in. A real person confirms every detail with you first.`)
-      } else if (rl.forLoved) {
-        P.push(`This is a real-world thing — it needs a person, not an app. Close Eye can put a trusted human on it for ${name}, and tell you the moment it's done.`)
+          ? `This is a real-world thing — it needs a person, not an app. Close Eye can put a trusted human on it for ${name}, and tell you the moment it's done.`
+          : `This is a real-world thing — it needs a person, not an app. Close Eye can put a trusted human on it, and tell you the moment it's done.`)
         P.push(`You don't chase anyone or arrange a stranger. A real person confirms every detail with you first.`)
       } else {
-        P.push(`I understand — you need a real person to help with this, not an answer from an app.`)
-        P.push(`That's exactly what Close Eye is for: real people, when they're needed. Tell us what you need and a trusted person will help — or reach one on WhatsApp right now.`)
+        P.push(`I understand — this needs a real person, not an answer from an app.`)
+        P.push(`A real person at Close Eye is one message away, and I'll pass on what you've told me${rl.forLoved ? ` about ${name}` : ''} — so you won't have to say it twice.`)
       }
       break
     case 'medical':
-      P.push(`I won't guess about health — ever. What ${name} needs is a real look in person — someone trusted who can be there, notice what a call can't, and tell you plainly what they see.`)
-      P.push(`If anything feels urgent, Close Eye reaches real help fast. Tell me what you're seeing, and Close Eye brings the right person to ${name}.`)
+      P.push(`I won't guess about health — ever. What ${name} needs is a real look in person — someone who can be there, notice what a call can't, and tell you plainly what they see.`)
+      P.push(canBeThere
+        ? `Tell me what you're seeing, and Close Eye brings the right person to ${name}.`
+        : `Tell me what you're seeing, and I'll put it in front of a real person at Close Eye — you won't have to explain it twice.`)
       break
     case 'emergency':
       // Only what is true TODAY: emergency services first, then a real person who is
@@ -363,8 +416,13 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
       P.push(`You don't have to work out the next step alone. A real person at Close Eye is one message away, right now.`)
       break
     case 'companionship':
-      P.push(`Sometimes the truest answer is simply presence. Close Eye can send someone to sit with ${name} — share tea, listen, and tell you how it went.`)
-      P.push(`Not a stranger each time — a familiar face who comes to know ${them}.`)
+      if (canBeThere) {
+        P.push(`Sometimes the truest answer is simply presence. Close Eye can send someone to sit with ${name} — share tea, listen, and tell you how it went.`)
+        P.push(`Not a stranger each time — a familiar face who comes to know ${them}.`)
+      } else {
+        P.push(`Sometimes the truest answer is simply presence — and that isn't something an app can hand you.`)
+        P.push(`What I can do is understand what ${name} would welcome, and put it in front of a real person at Close Eye — you won't have to explain it twice.`)
+      }
       break
     // documents / memories / history — Close Eye does not hold files, photos or a family
     // archive. What it genuinely keeps is what you TELL it: facts, in your Family Space.
@@ -386,7 +444,18 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
       P.push(`I want to be honest — I'm not yet sure what you need, and I'd rather understand than guess.`)
       P.push(`Tell me a little more — who this is for, and what would help — or reach a real person on WhatsApp, and we'll help you either way.`)
   }
-  return { paragraphs: P, signature: rl.forLoved ? `— for ${name}, from what you told me` : `— from what you told me` }
+  // One gentle question, and only when the answer would genuinely change what Close Eye
+  // can offer. We never collect a location we have no use for.
+  if (askWhere) P.push(WHERE_QUESTION)
+
+  return {
+    paragraphs: P,
+    signature: rl.forLoved ? `— for ${name}, from what you told me` : `— from what you told me`,
+    // A person is the honest answer when the engine can't answer alone, OR when the need
+    // wants presence we can't promise here. Without the second clause, `wellbeing`
+    // outside a served region would end confidently with no way through to a human.
+    needsHuman: !rl.aiConfident || (dependsOnPresence && !canBeThere),
+  }
 }
 
 /** A short, human summary of what Connect understood — for the WhatsApp handoff, so

@@ -33,6 +33,7 @@ const SAMPLE2 = 'My father gets stressed every year with his tax filing. Can som
 // warm, specific prompts for the moment a line is empty — "tell me something only
 // your family would know." Pronoun-free so they never mis-gender anyone.
 const FILL_PH: Record<string, string> = {
+  city: 'A city or neighbourhood is enough',
   health: 'The day-to-day things you’d tell a nurse',
   mornings: 'What the mornings look like now',
   nearby: 'A neighbour, a relative — anyone close by',
@@ -188,8 +189,16 @@ export function ConnectExperience() {
     if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }))
   }, [stage]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── the counsel, once ── */
-  const counselData = React.useMemo(() => (rl ? counsel(rl) : null), [rl])
+  /* ── the counsel, once ──
+     A city the family gives us on the "which city" line must reach the ANSWER — otherwise
+     we'd ask where they are and then ignore it. It is passed as context rather than
+     folded into the ledger, so answering a question never reshuffles the understanding
+     they are looking at. */
+  const toldCity = told.find((t) => t.key === 'city')?.body ?? null
+  const counselData = React.useMemo(
+    () => (rl ? counsel(rl, { location: rl.city ?? toldCity }) : null),
+    [rl, toldCity],
+  )
 
   /* ── ask → understand ── */
   function ask() {
@@ -771,8 +780,11 @@ export function ConnectExperience() {
                     {personKnown ? (
                       <>
                         <p className="trustline" style={{ marginTop: 20 }}>Sometimes care needs a real person. Close Eye knows when.</p>
-                        {!rl.aiConfident && <a className="qlink" href={WA} target="_blank" rel="noopener" style={{ marginTop: 10 }}>Talk to a real person on WhatsApp →</a>}
-                        <div className="act"><button className="btn" onClick={() => setStage('s4')}>{!rl.aiConfident ? 'Keep this, and continue' : 'This is what I’ve been looking for'}</button></div>
+                        {/* needsHuman, not aiConfident: a need that wants presence we can't
+                            promise here must still offer a person — otherwise the words say
+                            "a real person is one message away" with no way to reach one. */}
+                        {counselData.needsHuman && <a className="qlink" href={WA} target="_blank" rel="noopener" style={{ marginTop: 10 }}>Talk to a real person on WhatsApp →</a>}
+                        <div className="act"><button className="btn" onClick={() => setStage('s4')}>{counselData.needsHuman ? 'Keep this, and continue' : 'This is what I’ve been looking for'}</button></div>
                       </>
                     ) : againCount >= CONVERSATION_BUDGET ? (
                       // Two rounds is the floor — a designed human handoff, never a dead end.
