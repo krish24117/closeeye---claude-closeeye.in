@@ -1,6 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
+import { clientId, hashId, rateLimit, tooMany } from "../_shared/ratelimit.ts";
+import { verifyTurnstile } from "../_shared/turnstile.ts";
 
 // One-off booking REQUEST (request -> confirm -> pay). No payment taken here.
 // We persist an unpaid request; ops confirm availability, then send a payment link.
@@ -96,6 +98,7 @@ Deno.serve(async (req: Request) => {
     visit_access_instructions?: string | null;
     visit_team_notes?: string | null;
     visit_map_link?: string | null;
+    turnstile_token?: string;
   };
   try {
     body = await req.json();
@@ -137,6 +140,60 @@ Deno.serve(async (req: Request) => {
   const needsDetails    = missingAddress || (missingWhatsapp && visitContactClean === "");
 
   const sb = createClient(supabaseUrl, supabaseServiceKey);
+
+  // ── Abuse prevention (Layer 1) — LOG-ONLY until RATE_LIMIT_ENFORCE=true. ──
+  //
+  // This is the highest-stakes endpoint to throttle: a real person asking for help for
+  // their parent. A false positive here is far more costly than a little abuse, so the
+  // tiers are deliberately generous and no path is ever a dead end — every refusal hands
+  // them a human on WhatsApp.
+  //
+  // Tiers: a SIGNED-IN family is trusted (they cost us an account to create) — a roomy
+  // per-user cap only, and no bot check, since auth already proved a human. Guests get
+  // IP + per-number caps and the invisible Turnstile check.
+  //
+  // Honest double-clicks never reach these limits: the 90s idempotency window below
+  // already collapses them into the same request. Fails OPEN (Constitution §2).
+  {
+    const enforce = (Deno.env.get("RATE_LIMIT_ENFORCE") ?? "").toLowerCase() === "true";
+    const ip = clientId(req);
+    const guest = !userId;
+
+    const turnstile = guest
+      ? await verifyTurnstile(body.turnstile_token, ip)
+      : { configured: false, ok: true, reason: "signed_in" };
+
+    const checks = userId
+      ? [rateLimit(sb, `booking:user:${userId}`, { limit: 12, windowSeconds: 86400 })]
+      : [
+          rateLimit(sb, `booking:ip:burst:${ip}`, { limit: 4, windowSeconds: 600 }),
+          rateLimit(sb, `booking:ip:day:${ip}`, { limit: 12, windowSeconds: 86400 }),
+          ...(waClean ? [rateLimit(sb, `booking:wa:${await hashId(waClean)}`, { limit: 6, windowSeconds: 86400 })] : []),
+        ];
+    const results = await Promise.all(checks);
+
+    const limited = results.some((r) => !r.allowed);
+    const botBlocked = turnstile.configured && !turnstile.ok;
+    // Decisions and counts only — no IP, number, address, or family detail is logged.
+    console.log(JSON.stringify({
+      evt: "abuse_guard", endpoint: "submit-booking-request", enforce,
+      tier: guest ? "guest" : "signed_in",
+      wouldBlock: limited || botBlocked, limited, botBlocked,
+      turnstile: turnstile.reason,
+      remaining: results.map((r) => r.remaining),
+    }));
+
+    if (enforce && botBlocked) {
+      return json({
+        error: "verification_failed",
+        message: "We couldn't confirm that came from a person. Please refresh and try once more — or message us on WhatsApp at +91 90002 21261 and we'll book it for you right away.",
+      }, 403);
+    }
+    if (enforce && limited) {
+      const retry = Math.max(...results.map((r) => r.retryAfter));
+      return tooMany(cors, retry, "We've got several requests from you already and want to make sure nothing is missed. Message us on WhatsApp at +91 90002 21261 — a real person will pick this up straight away.");
+    }
+  }
 
   // H2 — only attach a loved_one_id the requester actually owns (guards against
   // a forged member id; unverified JWT means we can't fully trust `userId`).
