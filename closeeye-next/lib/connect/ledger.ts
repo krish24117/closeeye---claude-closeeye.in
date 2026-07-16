@@ -338,10 +338,13 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
         P.push(rl.forLoved
           ? `${echo}I won't give tax or money advice — that isn't my place. What Close Eye can do today is send a trusted person to sit with ${name}, help gather the papers, and get everything organized${tail}.`
           : `${echo}I won't give tax or money advice — that isn't my place. What Close Eye can do today is send a trusted person to sit with you, help gather the papers, and get everything organized${tail}.`)
-        P.push(`Close Eye knows when a professional is needed — and brings the right, trusted hands in. Your Presence Manager confirms the details with you first.`)
+        // "A real person", never "YOUR Presence Manager" — a visitor here has no
+        // membership and no one assigned. Naming a relationship they don't have is a
+        // small lie that the rest of the page then has to carry.
+        P.push(`Close Eye knows when a professional is needed — and brings the right, trusted hands in. A real person confirms every detail with you first.`)
       } else if (rl.forLoved) {
         P.push(`This is a real-world thing — it needs a person, not an app. Close Eye can put a trusted human on it for ${name}, and tell you the moment it's done.`)
-        P.push(`You don't chase anyone or arrange a stranger. Your Presence Manager confirms the details with you first.`)
+        P.push(`You don't chase anyone or arrange a stranger. A real person confirms every detail with you first.`)
       } else {
         P.push(`I understand — you need a real person to help with this, not an answer from an app.`)
         P.push(`That's exactly what Close Eye is for: real people, when they're needed. Tell us what you need and a trusted person will help — or reach one on WhatsApp right now.`)

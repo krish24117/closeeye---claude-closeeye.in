@@ -760,7 +760,7 @@ export function ConnectExperience() {
                       {(personKnown || againCount === 0) ? (
                         <>{counselData.paragraphs.map((p, i) => <p key={i}>{boldLead(p)}</p>)}<p className="sig">{counselData.signature}</p></>
                       ) : againCount >= CONVERSATION_BUDGET ? (
-                        <p>I’d rather hand this to a person than guess. Your Presence Manager is one tap away — I’ll pass along what you wrote so you won’t repeat yourself.</p>
+                        <p>I’d rather hand this to a person than guess. A real person at Close Eye is one tap away — I’ll pass along what you wrote so you won’t repeat yourself.</p>
                       ) : (
                         <p>Still with you — even a few words help. Who is this for, and what’s going on?</p>
                       )}
@@ -778,7 +778,7 @@ export function ConnectExperience() {
                       // Two rounds is the floor — a designed human handoff, never a dead end.
                       // The link pre-fills their words + what was understood, so no repeating.
                       <div className="again">
-                        <a className="wa-prominent primary" href={waHandoffLink()} target="_blank" rel="noopener">Message your Presence Manager →</a>
+                        <a className="wa-prominent primary" href={waHandoffLink()} target="_blank" rel="noopener">Message a real person →</a>
                         <button type="button" className="restart-link" onClick={changePerson}>or start over</button>
                       </div>
                     ) : (
