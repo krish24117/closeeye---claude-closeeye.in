@@ -42,6 +42,20 @@ export function clientId(req: Request): string {
   return ip;
 }
 
+/**
+ * A stable, non-reversible id for a value we must limit on but must not store — an
+ * email address or a phone number. The bucket table then holds `waitlist:email:9f2a…`
+ * instead of a real person's address, so the abuse-prevention layer never becomes a
+ * new place PII lives.
+ */
+export async function hashId(value: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value.trim().toLowerCase()));
+  return Array.from(new Uint8Array(buf))
+    .slice(0, 8)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 /** Per-identifier token-bucket check. FAILS OPEN on any error. */
 export async function rateLimit(sb: Sb, key: string, policy: RatePolicy): Promise<RateResult> {
   try {
