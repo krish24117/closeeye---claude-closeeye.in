@@ -13,7 +13,11 @@
 // Cap: frontend-enforced (localStorage). No server-side user tracking because
 //      there is no user — this is the free public hook.
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
+// Layer-1 rate limiting + Layer-2 AI cost budget (fail-OPEN). Wired here in LOG-ONLY
+// mode until RATE_LIMIT_ENFORCE=true, so limits are tuned on real traffic before they block.
+import { clientId, rateLimit, tooMany, withinAiBudget } from "../_shared/ratelimit.ts";
 // Single source of truth — the SAME Safety Engine the authed path uses, so the two can never
 // drift again (that drift is what let "not breathing" slip past this public endpoint). The
 // engine returns category/severity/action; the router maps action -> India resources.
@@ -292,6 +296,45 @@ Deno.serve(async (req: Request): Promise<Response> => {
       disclaimer: "This is not a diagnosis. In any emergency, call professional help immediately.",
       requiresHuman: true,
     });
+  }
+
+  // ── Abuse prevention (Layers 1 & 2) — applies ONLY to the paid AI paths below; the
+  //    deterministic safety floor above is never gated. LOG-ONLY until
+  //    RATE_LIMIT_ENFORCE=true. Everything here FAILS OPEN (Constitution §2). ──
+  {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (url && key) {
+      const enforce = (Deno.env.get("RATE_LIMIT_ENFORCE") ?? "").toLowerCase() === "true";
+      const sb = createClient(url, key);
+      const ip = clientId(req);
+      const burst = await rateLimit(sb, `askpublic:burst:${ip}`, { limit: 6, windowSeconds: 600 });   // anti-flood
+      const daily = await rateLimit(sb, `askpublic:day:${ip}`, { limit: 25, windowSeconds: 86400 });   // server-side free cap
+      const budget = Number(Deno.env.get("AI_DAILY_BUDGET") ?? "500");
+      const budgetOk = await withinAiBudget(sb, budget);                                                // Layer-2 cost ceiling (increments the day counter)
+      const limited = !burst.allowed || !daily.allowed;
+      // Log-only measurement (no PII — decision + counts only). Flip to enforce in M5.
+      console.log(JSON.stringify({
+        evt: "abuse_guard", endpoint: "ask-health-public", enforce,
+        wouldBlock: limited || !budgetOk, limited, budgetOk,
+        burstOk: burst.allowed, dailyOk: daily.allowed, remainingDay: daily.remaining,
+      }));
+      if (enforce && limited) {
+        const retry = Math.max(burst.retryAfter, daily.retryAfter);
+        return tooMany(cors, retry, !daily.allowed
+          ? "You've reached today's free questions — sign in for more, or reach a real person on WhatsApp at +91 90002 21261."
+          : "You're going a little fast — give it a moment and try again.");
+      }
+      if (enforce && !budgetOk) {
+        // Cost ceiling hit → DEGRADE, never break: skip Claude, hand to a person.
+        return json({
+          lane: "inform",
+          message: "I'd rather not guess right now — our team can give you a proper answer. Message us on WhatsApp at +91 90002 21261 and we'll help right away.",
+          disclaimer: "General guidance from Close Eye. Not a substitute for professional or medical advice.",
+          requiresHuman: true,
+        });
+      }
+    }
   }
 
   // Service intent — runs after red-flag so real emergencies still escalate
