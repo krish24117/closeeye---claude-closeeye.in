@@ -342,8 +342,12 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
       P.push(`If anything feels urgent, Close Eye reaches real help fast. Tell me what you're seeing, and Close Eye brings the right person to ${name}.`)
       break
     case 'emergency':
+      // Only what is true TODAY: emergency services first, then a real person who is
+      // actually reachable this minute. Close Eye does not monitor anyone and cannot
+      // promise presence it hasn't arranged — in the one moment a family is most likely
+      // to believe us, we say only what we can stand behind.
       P.push(`If ${name} is in danger, please call your local emergency number now — that comes first, always.`)
-      P.push(`The moment ${name} is in your family space, Close Eye watches for exactly these moments and reaches a verified person fast, so ${they} is never facing it alone.`)
+      P.push(`You don't have to work out the next step alone. A real person at Close Eye is one message away, right now.`)
       break
     case 'companionship':
       P.push(`Sometimes the truest answer is simply presence. Close Eye can send someone to sit with ${name} — share tea, listen, and tell you how it went.`)
