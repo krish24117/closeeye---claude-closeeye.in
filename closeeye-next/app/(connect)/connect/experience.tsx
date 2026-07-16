@@ -23,6 +23,7 @@ import { signInWithPassword, signUpWithPassword } from '@/lib/auth-actions'
 import { readLedger, counsel, understandingSummary, KEY_LABEL, type ReadLedger } from '@/lib/connect/ledger'
 import { logUnderstanding, newUnderstandingSession } from '@/lib/connect/log'
 import { CONVERSATION_BUDGET } from '@/lib/platform/trust'
+import { readRefusal } from '@/lib/platform/refusal'
 import { setConnectDraft, getConnectDraft, provisionFamilySpace, saveConnectSession, getConnectSession, clearConnectSession } from '@/lib/db/space'
 import { PHASE_2_ENABLED } from '@/lib/connect/phase'
 
@@ -404,6 +405,12 @@ export function ConnectExperience() {
     const { data: br, error: brErr } = await supabase.functions.invoke('submit-booking-request', {
       body: { service_id: visit.id, recipient_name: rl2?.subjectLabel, city: rl2?.city },
     })
+    // A guard that turns us away wrote honest words that offer a person — show those,
+    // not our generic "try again shortly".
+    if (brErr) {
+      const refusal = await readRefusal(brErr)
+      if (refusal) { setPending(null); setError(refusal.message); return }
+    }
     if (brErr || !br?.booking_request_id) { setPending(null); setError('This visit isn’t ready yet. Please try again shortly.'); return }
     const { payForBooking } = await import('@/lib/razorpay') // loaded only when paying (Phase 2)
     const out = await payForBooking({

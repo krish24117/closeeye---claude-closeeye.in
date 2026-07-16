@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
-import { clientId, hashId, rateLimit, tooMany } from "../_shared/ratelimit.ts";
+import { clientId, hashId, rateLimit, recordAbuseEvent, tooMany } from "../_shared/ratelimit.ts";
 import { verifyTurnstile } from "../_shared/turnstile.ts";
 
 // Public endpoint — saves waitlist entry, creates auth account with is_waitlisted=true,
@@ -81,6 +81,16 @@ Deno.serve(async (req: Request) => {
       ipBurstOk: ipBurst.allowed, ipDayOk: ipDay.allowed,
       emailOk: perEmail.allowed, numberOk: perNumber.allowed,
     }));
+
+    if (limited || botBlocked) {
+      await recordAbuseEvent(sb, {
+        endpoint: "waitlist-signup",
+        reason: botBlocked ? "bot" : "rate_limited",
+        enforced: enforce,
+        tier: "anon",
+        actor: await hashId(ip),
+      });
+    }
 
     if (enforce && botBlocked) {
       return json({

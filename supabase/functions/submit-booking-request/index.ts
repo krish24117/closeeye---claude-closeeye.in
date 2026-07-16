@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
-import { clientId, hashId, rateLimit, tooMany } from "../_shared/ratelimit.ts";
+import { clientId, hashId, rateLimit, recordAbuseEvent, tooMany } from "../_shared/ratelimit.ts";
 import { verifyTurnstile } from "../_shared/turnstile.ts";
 
 // One-off booking REQUEST (request -> confirm -> pay). No payment taken here.
@@ -182,6 +182,16 @@ Deno.serve(async (req: Request) => {
       turnstile: turnstile.reason,
       remaining: results.map((r) => r.remaining),
     }));
+
+    if (limited || botBlocked) {
+      await recordAbuseEvent(sb, {
+        endpoint: "submit-booking-request",
+        reason: botBlocked ? "bot" : "rate_limited",
+        enforced: enforce,
+        tier: guest ? "guest" : "signed_in",
+        actor: userId ? await hashId(userId) : await hashId(ip),
+      });
+    }
 
     if (enforce && botBlocked) {
       return json({

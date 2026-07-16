@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, Check, Headset, Loader2, Phone, MessageCircle, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useBooking } from '../state'
-import { submitBooking } from '../api'
+import { BookingRefused, submitBooking } from '../api'
 import {
   serviceById,
   PURPOSES,
@@ -33,6 +33,7 @@ const LOADING_MESSAGES = [
 
 export function ReviewStep() {
   const { data, status, setStatus, submitted, goto, back } = useBooking()
+  const [refusal, setRefusal] = useState('')
 
   const service = serviceById(data.serviceId)
   const base = service?.priceValue ?? 0
@@ -45,13 +46,16 @@ export function ReviewStep() {
     try {
       const [result] = await Promise.all([submitBooking(data), delay(2000)])
       submitted(result.ref)
-    } catch {
+    } catch (e) {
+      // A server-authored refusal has its own words for the family; anything else is a
+      // genuine breakage and keeps the generic copy.
+      setRefusal(e instanceof BookingRefused ? e.message : '')
       setStatus('error')
     }
   }
 
   if (status === 'submitting') return <SubmitLoading />
-  if (status === 'error') return <SubmitError onRetry={confirm} onBack={() => setStatus('idle')} />
+  if (status === 'error') return <SubmitError onRetry={confirm} onBack={() => setStatus('idle')} message={refusal} />
 
   return (
     <div className="flex flex-col">
@@ -165,16 +169,21 @@ function SubmitLoading() {
   )
 }
 
-function SubmitError({ onRetry, onBack }: { onRetry: () => void; onBack: () => void }) {
+/**
+ * `message` is a refusal the server authored (a rate limit, a failed human check). It is a
+ * decision, not a breakage, so it gets its own honest heading and the server's exact words
+ * — never the "something went wrong" copy, which would be a lie.
+ */
+function SubmitError({ onRetry, onBack, message }: { onRetry: () => void; onBack: () => void; message?: string }) {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-5 py-10 text-center">
       <span className="grid h-14 w-14 place-items-center rounded-full bg-error/10 text-error">
         <MessageCircle className="h-6 w-6" strokeWidth={1.5} />
       </span>
       <div>
-        <h1 className="text-h3">We couldn’t complete your booking</h1>
+        <h1 className="text-h3">{message ? 'Let’s finish this with a person' : 'We couldn’t complete your booking'}</h1>
         <p className="mt-3 text-body text-muted">
-          Please try again — or reach us directly and we’ll take care of it personally.
+          {message || 'Please try again — or reach us directly and we’ll take care of it personally.'}
         </p>
       </div>
       <div className="flex flex-col gap-3 sm:flex-row">

@@ -12,7 +12,7 @@ import { Field, Textarea } from '@/components/ui/field'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { BOOKING_SERVICES, BOOKING_PAYMENT_NOTE, HOSPITAL_DURATIONS, type HospitalDurationId } from '@/features/booking/schema'
-import { requestVisit } from '@/features/booking/api'
+import { BookingRefused, requestVisit } from '@/features/booking/api'
 import { isFounderFunnelGated } from '@/lib/founder-funnel'
 import { PRELAUNCH_BOOKING_NOTE } from '@/lib/launch'
 import { updateFamilyMember } from '@/lib/db/family'
@@ -197,7 +197,10 @@ export default function FamilyBookPage() {
       haptic('success'); setRef(res.ref)
     } catch (e) {
       console.error('[family-book] failed:', e)
-      setBusy(false); setError('We couldn’t request the visit. Please try again.')
+      // A server-authored refusal already says the honest thing (and offers a person) —
+      // show it as written. Only a real breakage gets the generic "try again".
+      setBusy(false)
+      setError(e instanceof BookingRefused ? e.message : 'We couldn’t request the visit. Please try again.')
     }
   }
 

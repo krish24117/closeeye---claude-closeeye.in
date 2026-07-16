@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase'
 import type { BookingData } from './schema'
 import { serviceById, TIME_SLOTS } from './schema'
 import { SITE, whatsappLink } from '@/lib/site'
+import { readRefusal } from '@/lib/platform/refusal'
 
 export interface BookingResult {
   ref: string
@@ -33,9 +34,26 @@ interface RequestBody {
   visit_map_link?: string | null
 }
 
+/**
+ * A refusal the SERVER authored — a rate limit or a failed human check. It is NOT a
+ * breakage: the server decided, and wrote words for the family that always offer a
+ * person. Carry `message` to the screen verbatim; never replace it with our own guess.
+ */
+export class BookingRefused extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'BookingRefused'
+  }
+}
+
 /** Persist a booking request via the deployed edge function; return a friendly ref. */
 async function invokeBookingRequest(body: RequestBody): Promise<BookingResult> {
   const { data: res, error } = await supabase.functions.invoke('submit-booking-request', { body })
+  if (error) {
+    // A guard turning us away is a decision with words, not a failure — surface those words.
+    const refusal = await readRefusal(error)
+    if (refusal) throw new BookingRefused(refusal.message)
+  }
   const json = res as { ok?: boolean; request_id?: string } | null
   if (error || !json?.ok || !json.request_id) throw new Error('booking_failed')
   return { ref: `CE-${json.request_id.replace(/-/g, '').slice(0, 8).toUpperCase()}` }

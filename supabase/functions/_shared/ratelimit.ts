@@ -88,6 +88,31 @@ export async function withinAiBudget(sb: Sb, dailyLimit: number): Promise<boolea
   }
 }
 
+/**
+ * Record that a request WOULD have been turned away, so /admin can answer "are these
+ * limits about to hurt a real family?" before we enforce anything.
+ *
+ * Only ever called on a would-block — allowed traffic writes nothing, which is what keeps
+ * this cheap. Fire-and-forget: telemetry must never break, or slow, a real request.
+ * Pass `actor` as a HASH (see hashId), never a raw IP, email, or number.
+ */
+export async function recordAbuseEvent(
+  sb: Sb,
+  ev: { endpoint: string; reason: "rate_limited" | "bot" | "ai_budget"; enforced: boolean; tier?: string; actor?: string },
+): Promise<void> {
+  try {
+    await sb.from("rate_limit_events").insert({
+      endpoint: ev.endpoint,
+      reason: ev.reason,
+      enforced: ev.enforced,
+      tier: ev.tier ?? null,
+      actor: ev.actor ?? null,
+    });
+  } catch {
+    /* never throw from telemetry */
+  }
+}
+
 /** A friendly 429 with Retry-After — never a raw error. */
 export function tooMany(cors: Record<string, string>, retryAfter: number, message: string): Response {
   return new Response(JSON.stringify({ error: "rate_limited", message }), {

@@ -17,7 +17,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
 // Layer-1 rate limiting + Layer-2 AI cost budget (fail-OPEN). Wired here in LOG-ONLY
 // mode until RATE_LIMIT_ENFORCE=true, so limits are tuned on real traffic before they block.
-import { clientId, rateLimit, tooMany, withinAiBudget } from "../_shared/ratelimit.ts";
+import { clientId, hashId, rateLimit, recordAbuseEvent, tooMany, withinAiBudget } from "../_shared/ratelimit.ts";
 // Single source of truth — the SAME Safety Engine the authed path uses, so the two can never
 // drift again (that drift is what let "not breathing" slip past this public endpoint). The
 // engine returns category/severity/action; the router maps action -> India resources.
@@ -319,6 +319,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
         wouldBlock: limited || !budgetOk, limited, budgetOk,
         burstOk: burst.allowed, dailyOk: daily.allowed, remainingDay: daily.remaining,
       }));
+      if (limited || !budgetOk) {
+        await recordAbuseEvent(sb, {
+          endpoint: "ask-health-public",
+          reason: limited ? "rate_limited" : "ai_budget",
+          enforced: enforce,
+          tier: "anon",
+          actor: await hashId(ip),
+        });
+      }
       if (enforce && limited) {
         const retry = Math.max(burst.retryAfter, daily.retryAfter);
         return tooMany(cors, retry, !daily.allowed
