@@ -5,6 +5,13 @@
  * failures (npm run sync:understanding pulls reviewed rows from understanding_log).
  * Every case pins what the deterministic engine must understand for a real input.
  * A newly-added case that fails is a real failure to fix — never delete a case.
+ *
+ * THE FIX RULE (enforced here):
+ *   Failures are fixed by GENERALIZING A SLOT — a subject (person / family / self),
+ *   a need, a situation, an agreement rule — never by adding a special case. A fix
+ *   that only handles the exact sentence that failed is rejected. So every failure
+ *   added here ships with ≥1 PARAPHRASE SIBLING (different city / verb / wording):
+ *   if the fix overfit the one sentence, a sibling breaks and the suite catches it.
  */
 import { describe, it, expect } from 'vitest'
 import { readLedger } from './ledger'

@@ -7,6 +7,11 @@
  * The suite only grows — existing cases are never removed, new ones are deduped by
  * text. A freshly-added case that fails is a real failure to fix.
  *
+ * THE FIX RULE: fix a failure by GENERALIZING A SLOT (subject / need / situation /
+ * agreement), never by special-casing the exact sentence. After a sync, add ≥1
+ * paraphrase SIBLING (different city / verb / wording) to prove the fix generalized
+ * — an overfit fix will fail the sibling.
+ *
  *   NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
  *     node scripts/sync-understanding-cases.mjs
  *   # then:  npx vitest run lib/connect/cases.test.ts

@@ -1,8 +1,14 @@
 [
   { "text": "My family is shifting to Hyderabad. We need local support to set up things.", "subjectKnown": true, "subjectKind": "family", "need": "errand", "note": "family relocation (P0)" },
+  { "text": "Our family is relocating to Pune and needs help getting settled.", "subjectKnown": true, "subjectKind": "family", "need": "errand", "note": "slot: family+relocation — variant, proves generalization" },
+  { "text": "We are moving to Chennai, can someone help us set up?", "subjectKnown": true, "subjectKind": "family", "need": "errand", "note": "slot: family+relocation — variant" },
   { "text": "This is for me, I'm moving to Bangalore", "subjectKnown": true, "subjectKind": "self", "note": "self relocation" },
+  { "text": "I'm relocating to Delhi and need someone on the ground.", "subjectKnown": true, "subjectKind": "self", "need": "errand", "note": "slot: self+relocation — variant" },
+  { "text": "This is for myself — moving to Kochi next month.", "subjectKnown": true, "subjectKind": "self", "note": "slot: self — variant" },
   { "text": "my parents are getting old", "subjectKnown": true, "subjectKind": "person", "need": "wellbeing", "note": "collective parents" },
+  { "text": "my grandparents are getting frail", "subjectKnown": true, "subjectKind": "person", "need": "wellbeing", "note": "slot: collective kin — variant" },
   { "text": "My mother lives alone in Hyderabad. How do I know she’s okay?", "subjectKnown": true, "subjectKind": "person", "need": "wellbeing", "note": "homepage example 1" },
   { "text": "My father gets stressed every year with his tax filing. Can someone help him through it?", "subjectKnown": true, "subjectKind": "person", "need": "errand", "note": "homepage example 2 (professional)" },
-  { "text": "O need hospital companion. This is for my family", "subjectKnown": true, "subjectKind": "family", "note": "garbled + clarified" }
+  { "text": "O need hospital companion. This is for my family", "subjectKnown": true, "subjectKind": "family", "note": "garbled + clarified" },
+  { "text": "someone to accompany my uncle to the clinic", "subjectKnown": true, "subjectKind": "person", "need": "errand", "note": "slot: companion/accompany — variant (not just 'hospital companion')" }
 ]
