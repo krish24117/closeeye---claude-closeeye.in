@@ -84,8 +84,20 @@ describe('Family memory — integrity (code path)', () => {
     expect(H.store.loved_ones[0]!.full_name).toBe('Your Mother')
     expect(H.store.family_ledger.length).toBeGreaterThan(0)
     for (const e of H.store.family_ledger) {
-      expect(e.entry_type).toBe('family_fact')
+      // A stated fact is a family_fact; Connect's own reading is an ai_understanding.
+      // Nothing else may be written from this path.
+      expect(['family_fact', 'ai_understanding']).toContain(e.entry_type)
       expect(e.source).toBe('connect_experience')
+    }
+    // The line that matters: Connect's READING must never enter family memory as a FACT.
+    // /space renders family_fact rows as "what Connect knows" — a guess stored there would
+    // be repeated back to the family as truth, forever.
+    const reading = H.store.family_ledger.find((e) => e.label === 'What I think you need')
+    expect(reading, 'the concern line must be persisted').toBeDefined()
+    expect(reading!.entry_type).toBe('ai_understanding')
+    // ...and every line that IS a family_fact must be one the visitor actually stated.
+    for (const e of H.store.family_ledger.filter((x) => x.entry_type === 'family_fact')) {
+      expect(e.label).not.toBe('What I think you need')
     }
     expect(getConnectDraft()).toBeNull() // cleared only after success
   })

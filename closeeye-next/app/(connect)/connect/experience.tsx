@@ -494,7 +494,10 @@ export function ConnectExperience() {
         {known.map((l, i) => (
           <div key={`k${i}`} className={`uline know${!revealing || i < s1n ? ' in' : ''}${revealing && i === s1live ? ' live' : ''}`}>
             <span className="mk" aria-hidden="true">{CHECK}</span>
-            <p>{l.label && <span className="lbl">{l.label}</span>}{l.body}{onLedger && <span className="from-words">from your words</span>}</p>
+            {/* "from your words" belongs ONLY to lines the visitor actually wrote. An
+                inferred line is Connect's reading — chipping it "from your words" would
+                put words in their mouth on the very page that promises we don't. */}
+            <p>{l.label && <span className="lbl">{l.label}</span>}{l.body}{onLedger && <span className="from-words">{l.inferred ? 'my reading' : 'from your words'}</span>}</p>
           </div>
         ))}
         {told.map((item) => (
@@ -503,8 +506,12 @@ export function ConnectExperience() {
             <p><span className="lbl">{item.label} · you told me</span>{item.body}</p>
           </div>
         ))}
+        {/* The note has to stay true line-by-line: once a reading is on the page,
+            "everything above comes from what you wrote" is no longer accurate. */}
         {onLedger && openReady && known.length > 0 && (
-          <p className="ledger-note">Everything above comes from what you wrote — nothing else.</p>
+          <p className="ledger-note">{known.some((l) => l.inferred)
+            ? 'The facts above are your words. The last line is my reading of them — nothing is assumed.'
+            : 'Everything above comes from what you wrote — nothing else.'}</p>
         )}
         {openBlanks.map((b) => (
           interactive ? (

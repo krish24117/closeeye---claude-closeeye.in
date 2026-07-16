@@ -21,7 +21,14 @@ export type NeedType =
   | 'wellbeing' | 'errand' | 'medical' | 'emergency'
   | 'companionship' | 'documents' | 'memories' | 'history' | 'unclear'
 
-export interface LedgerLine { label: string; body: string; quote?: boolean }
+/**
+ * A line of understanding.
+ *  - `quote`    — the visitor's own words, verbatim.
+ *  - `inferred` — Connect's READING, not something it was told. It must never be labelled
+ *                 "from your words", and must never be stored as a family fact.
+ *  - neither    — a fact stated by the visitor and extracted from their text.
+ */
+export interface LedgerLine { label: string; body: string; quote?: boolean; inferred?: boolean }
 export interface Blank { key: string; text: string }
 
 export type SubjectKind = 'person' | 'family' | 'self'
@@ -289,7 +296,10 @@ export function readLedger(rawText: string): ReadLedger {
     ledger.push({ label: 'Where', body: `In ${city}.` })
   }
   if (distant) ledger.push({ label: 'You', body: 'You are far away.' })
-  if (concern) ledger.push({ label: 'What you need', body: concern })
+  // The concern is Connect's READING of what they want — written by concernFor() from the
+  // detected need, not stated by the visitor. Labelled as a reading, and marked `inferred`
+  // so it is never chipped "from your words" and never stored as a family fact.
+  if (concern) ledger.push({ label: 'What I think you need', body: concern, inferred: true })
   if (question) ledger.push({ label: 'In your words', body: question, quote: true })
 
   let blanks = blanksForNeed(need, who, gender, forLoved)
@@ -466,10 +476,18 @@ export function understandingSummary(rl: ReadLedger): string {
   return lines.length ? lines.join('\n') : '• (not yet clear)'
 }
 
-/** The ledger lines to persist on space creation, with provenance (append-only). */
-export function ledgerEntriesForStorage(rl: ReadLedger): { entry_type: 'family_fact'; label: string; body: string; source: 'connect_experience' }[] {
+/**
+ * The ledger lines to persist on space creation, with provenance (append-only).
+ *
+ * An inferred line is stored as `ai_understanding`, NEVER `family_fact`. The distinction is
+ * the whole point: a family fact is something the family told us and we may repeat back as
+ * true; an ai_understanding is our reading, which we may not. Storing a reading as a fact
+ * would quietly promote a guess into the family's permanent memory — and /space renders
+ * family_fact rows as "what Connect knows".
+ */
+export function ledgerEntriesForStorage(rl: ReadLedger): { entry_type: 'family_fact' | 'ai_understanding'; label: string; body: string; source: 'connect_experience' }[] {
   return rl.ledger.map((l) => ({
-    entry_type: 'family_fact' as const,
+    entry_type: l.inferred ? ('ai_understanding' as const) : ('family_fact' as const),
     label: l.quote ? 'In your words' : l.label,
     body: l.body,
     source: 'connect_experience' as const,
