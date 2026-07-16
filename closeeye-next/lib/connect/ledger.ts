@@ -102,8 +102,18 @@ function realQuestion(text: string): string {
 }
 
 /* ── per-need understanding: concern · confidence · blanks · answer ── */
+/**
+ * Can Connect answer this on its own, or is a person the honest answer?
+ *
+ * documents / memories / history were `true` — Connect answered confidently and stopped,
+ * with no way through to a human. But Close Eye cannot actually hold a document, a photo,
+ * or a family archive today, so confidence was the wrong posture: it ended the
+ * conversation exactly where a person was needed. They are now `false` — "humans when
+ * understanding isn't enough" (D2).
+ */
 const AI_CONFIDENT: Record<NeedType, boolean> = {
-  wellbeing: true, documents: true, memories: true, history: true,
+  wellbeing: true,
+  documents: false, memories: false, history: false,
   errand: false, medical: false, emergency: false, companionship: false, unclear: false,
 }
 
@@ -353,14 +363,21 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
       P.push(`Sometimes the truest answer is simply presence. Close Eye can send someone to sit with ${name} — share tea, listen, and tell you how it went.`)
       P.push(`Not a stranger each time — a familiar face who comes to know ${them}.`)
       break
+    // documents / memories / history — Close Eye does not hold files, photos or a family
+    // archive. What it genuinely keeps is what you TELL it: facts, in your Family Space.
+    // So these answers describe exactly that, and route to a person for the rest (D2) —
+    // rather than describing a vault that doesn't exist.
     case 'documents':
-      P.push(`Close Eye keeps ${name}'s important papers in one private place — easy to find the day you need them, shared with no one without your say.`)
+      P.push(`What Close Eye keeps is what you tell me — which of ${name}'s papers matter, and where they're kept. That lives in your Family Space, for you.`)
+      P.push(`If you'd like a hand getting them in order, a real person at Close Eye is one message away.`)
       break
     case 'memories':
-      P.push(`Close Eye holds the photos and stories that matter — the moments your family doesn't want to lose, kept privately for you.`)
+      P.push(`What Close Eye keeps is what you tell me — the people, the moments, the stories worth holding on to. They live in your Family Space, for you.`)
+      P.push(`If there's more you'd like kept for your family, a real person at Close Eye is one message away.`)
       break
     case 'history':
-      P.push(`Close Eye keeps your family's story — the people, places and roots that made you — safe for the generations after.`)
+      P.push(`What Close Eye keeps is what you tell me — where your family comes from, the names and places that made you. That lives in your Family Space, for you.`)
+      P.push(`If you'd like help gathering the rest, a real person at Close Eye is one message away.`)
       break
     default:
       P.push(`I want to be honest — I'm not yet sure what you need, and I'd rather understand than guess.`)

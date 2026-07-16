@@ -117,8 +117,19 @@ export function buildEvalCorpus(n = 12000): EvalCase[] {
   return out.slice(0, n)
 }
 
-/** The engine's escalation stance per need — human help when AI can't answer. */
+/**
+ * The engine's escalation stance per need — human help when AI can't answer.
+ *
+ * Stated INDEPENDENTLY of the engine on purpose: it is what the stance SHOULD be, so an
+ * accidental drift in ledger.ts fails this gate rather than passing silently. Change it
+ * only when the intended stance itself changes.
+ *
+ * documents/memories/history moved true -> false (founder decision D2, 2026-07-16): Close
+ * Eye holds no document, photo or family archive today, so answering confidently ended the
+ * conversation exactly where a person was needed.
+ */
 export const AI_ANSWERABLE: Record<NeedType, boolean> = {
-  wellbeing: true, documents: true, memories: true, history: true,
+  wellbeing: true,
+  documents: false, memories: false, history: false,
   errand: false, medical: false, emergency: false, companionship: false, unclear: false,
 }
