@@ -118,6 +118,7 @@ export function ConnectExperience() {
   const [told, setTold] = React.useState<{ key: string; label: string; body: string }[]>([])
   const [activeKey, setActiveKey] = React.useState<string | null>(null)
   const [fill, setFill] = React.useState('')
+  const [againText, setAgainText] = React.useState('') // "who is this for?" — closes the loop when understanding is insufficient
   // understanding reveal (the known facts appearing, line by line)
   const [s1n, setS1n] = React.useState(0)
   const [s1live, setS1live] = React.useState(-1)
@@ -194,9 +195,22 @@ export function ConnectExperience() {
   function ask() {
     const q = text.trim()
     if (q.length < 8) return
-    setTold([]); setActiveKey(null); setFill('')
+    setTold([]); setActiveKey(null); setFill(''); setAgainText('')
     setRl(readLedger(q))
     setStage('s1')
+  }
+
+  /* ── close the question loop: when the answer needs more ("who is this for?"),
+        re-run understanding on the ORIGINAL words + what they just added. ── */
+  function understandAgain() {
+    const extra = againText.trim()
+    if (!extra) return
+    const combined = `${(rl?.rawText || text).trim()}. ${extra}`
+    setText(combined)            // Edit / the draft carry the full, combined words
+    setTold([]); setActiveKey(null); setFill(''); setAgainText('')
+    setS1n(0); setS1live(-1); setS1done(false)
+    setRl(readLedger(combined))  // deterministic re-understanding
+    setStage('s1')               // watch it understand again, from the top
   }
 
   /* ── understanding reveal — the known facts appear one by one (✓), then the
@@ -360,6 +374,10 @@ export function ConnectExperience() {
   // mid-sentence possessive subject — a name stays capitalised ("Lakshmi's"), a
   // relationship reads lowercase in a sentence ("your father's"), not "Your Father's".
   const subjMid = rl?.name || (rl?.relationshipWord ? `your ${rl.relationshipWord}` : rl?.subjectLabel) || ''
+  // A specific person must be understood before a space can be created. Without one,
+  // the answer stays open: we ask "who is this for?" instead of offering a space.
+  const personKnown = !!rl?.forLoved
+  const truncate = (s: string, n = 72) => { const t = s.trim().replace(/\s+/g, ' '); return t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t }
   const CHECK = (
     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6" /></svg>
   )
@@ -370,7 +388,7 @@ export function ConnectExperience() {
   const PREV: Record<string, Stage> = { s1: 's0', s2: 's1', s3: 's2', s4: 's3', s4b: 's4' }
   function editWords() { setError(''); setStage('s0') }
   function changePerson() {
-    clearTimers(); setError(''); setText(''); setRl(null); setTold([]); setActiveKey(null); setFill('')
+    clearTimers(); setError(''); setText(''); setRl(null); setTold([]); setActiveKey(null); setFill(''); setAgainText('')
     setS1n(0); setS1live(-1); setS1done(false); setStage('s0')
   }
   const nav = (
@@ -630,51 +648,72 @@ export function ConnectExperience() {
               </div>
             )}
 
-            {/* Beat · your words (always present, the root of the thread) */}
-            <div className="beat you past">
-              <p className="beat-k">You told Connect</p>
-              <p className="you-words"><q>{rl.rawText}</q></p>
+            {/* Beat · your words — the root of the thread, kept as one calm line */}
+            <div className="beat you collapsed">
+              <p className="beat-line"><span className="bk">You told Connect</span><q className="clamp">{truncate(rl.rawText)}</q><button type="button" className="mini-edit" onClick={editWords}>Edit</button></p>
             </div>
 
-            {/* Beat · understanding (active through s1→s2, then a quiet record) */}
-            <div className={`beat${stage === 's1' || stage === 's2' ? ' now' : ' past'}`} ref={stage === 's1' || stage === 's2' ? activeBeatRef : undefined}>
-              <div className={`think${stage === 's1' && !s1done ? ' working' : ''}`}><span className="ld" /><span>{
-                stage === 's1' && !s1done ? `Getting to know ${knowName}…`
-                  : stage === 's2' ? 'Only what helps me care for them — I won’t guess.'
-                  : 'Understand first. Answer second.'
-              }</span></div>
-              {understanding()}
-              {stage === 's1' && (
-                <div className="act">
-                  <button className="btn" onClick={() => setStage(rl.blanks.length ? 's2' : 's3')} style={{ opacity: s1done ? 1 : 0, pointerEvents: s1done ? 'auto' : 'none' }}>That’s exactly it</button>
-                </div>
-              )}
-              {stage === 's2' && (
-                <div className="act"><button className="btn" onClick={() => setStage('s3')}>Continue</button></div>
+            {/* Beat · understanding — active through s1→s2, then a one-line record */}
+            <div className={`beat${(stage === 's1' || stage === 's2') ? ' now' : ' collapsed'}`} ref={(stage === 's1' || stage === 's2') ? activeBeatRef : undefined}>
+              {(stage === 's1' || stage === 's2') ? (
+                <>
+                  <div className={`think${stage === 's1' && !s1done ? ' working' : ''}`}><span className="ld" /><span>{
+                    stage === 's1' && !s1done ? `Getting to know ${knowName}…`
+                      : stage === 's2' ? 'Only what helps me care for them — I won’t guess.'
+                      : 'Understand first. Answer second.'
+                  }</span></div>
+                  {understanding()}
+                  {stage === 's1' && (
+                    <div className="act">
+                      <button className="btn" onClick={() => setStage(rl.blanks.length ? 's2' : 's3')} style={{ opacity: s1done ? 1 : 0, pointerEvents: s1done ? 'auto' : 'none' }}>That’s exactly it</button>
+                    </div>
+                  )}
+                  {stage === 's2' && (
+                    <div className="act"><button className="btn" onClick={() => setStage('s3')}>Continue</button></div>
+                  )}
+                </>
+              ) : (
+                <p className="beat-line"><span className="bk">Understood</span>{personKnown ? <b>{cap1(subjMid)}</b> : <span>what you shared</span>}<button type="button" className="mini-edit" onClick={() => setStage(rl.blanks.length ? 's2' : 's1')}>Edit</button></p>
               )}
             </div>
 
-            {/* Beat · the answer (appears when reached; stays visible after) */}
+            {/* Beat · the answer — full while active, one line once you move on */}
             {order(stage) >= order('s3') && counselData && (
-              <div className={`beat${stage === 's3' ? ' now' : ' past'}`} ref={stage === 's3' ? activeBeatRef : undefined}>
-                <div className="think" style={{ marginBottom: 14 }}><span className="ld" style={{ animation: 'none' }} /><span>Now I can answer you properly.</span></div>
-                <div className="counsel">
-                  {counselData.paragraphs.map((p, i) => <p key={i}>{boldLead(p)}</p>)}
-                  <p className="sig">{counselData.signature}</p>
-                </div>
-                {rl.need === 'emergency' && (
-                  <a className="dial" href="tel:108">Call emergency services · 108</a>
-                )}
-                <p className="trustline" style={{ marginTop: 20 }}>Sometimes care needs a real person. Close Eye knows when.</p>
-                {!rl.aiConfident && <a className="qlink" href={WA} target="_blank" rel="noopener" style={{ marginTop: 10 }}>Talk to a real person on WhatsApp →</a>}
-                {stage === 's3' && (
-                  <div className="act"><button className="btn" onClick={() => setStage('s4')}>{!rl.aiConfident ? 'Keep this, and continue' : 'This is what I’ve been looking for'}</button></div>
+              <div className={`beat${stage === 's3' ? ' now' : ' collapsed'}`} ref={stage === 's3' ? activeBeatRef : undefined}>
+                {stage === 's3' ? (
+                  <>
+                    <div className="think" style={{ marginBottom: 14 }}><span className="ld" style={{ animation: 'none' }} /><span>{personKnown ? 'Now I can answer you properly.' : 'Let me make sure I understand.'}</span></div>
+                    <div className="counsel">
+                      {counselData.paragraphs.map((p, i) => <p key={i}>{boldLead(p)}</p>)}
+                      <p className="sig">{counselData.signature}</p>
+                    </div>
+                    {rl.need === 'emergency' && (
+                      <a className="dial" href="tel:108">Call emergency services · 108</a>
+                    )}
+                    {personKnown ? (
+                      <>
+                        <p className="trustline" style={{ marginTop: 20 }}>Sometimes care needs a real person. Close Eye knows when.</p>
+                        {!rl.aiConfident && <a className="qlink" href={WA} target="_blank" rel="noopener" style={{ marginTop: 10 }}>Talk to a real person on WhatsApp →</a>}
+                        <div className="act"><button className="btn" onClick={() => setStage('s4')}>{!rl.aiConfident ? 'Keep this, and continue' : 'This is what I’ve been looking for'}</button></div>
+                      </>
+                    ) : (
+                      // Insufficient understanding — never a dead end. Give a place to
+                      // answer right here, and a real person on WhatsApp, prominently.
+                      <div className="again">
+                        <textarea className="again-ta" rows={2} value={againText} onChange={(e) => setAgainText(e.target.value)} placeholder="Tell me here — who is this for?" aria-label="Who is this for?" />
+                        <div className="act"><button type="button" className={`btn${againText.trim() ? ' inked' : ' ghost'}`} onClick={understandAgain}>Connect, understand again</button></div>
+                        <a className="wa-prominent" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="beat-line"><span className="bk">The answer</span>kept for you</p>
                 )}
               </div>
             )}
 
-            {/* Beat · keep it, safely → create the space */}
-            {stage === 's4' && (
+            {/* Beat · keep it, safely → create the space (only when a person is known) */}
+            {stage === 's4' && personKnown && (
               <div className="beat now" ref={activeBeatRef}>
                 <h1 className="h-serif" style={{ fontSize: 26 }}>{rl.forLoved
                   ? <>Today is where {subjMid}’s<br />story <em>begins.</em></>
