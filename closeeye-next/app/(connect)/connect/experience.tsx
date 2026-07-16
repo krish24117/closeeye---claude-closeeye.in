@@ -468,6 +468,13 @@ export function ConnectExperience() {
   return (
     <>
       <div className="thread"><i ref={threadRef} /></div>
+      {/* Desktop sign-in — the standard top-right of the whole viewport, where the
+          full "Already with us? Sign in" always fits without colliding with the
+          centred lockup or the flow card. Hidden below 1024, where the .mast corner
+          shows "Sign in" alone (the 480px column has no room for the prefix). */}
+      {stage === 's0' && !signedIn && (
+        <span className="shell-signin"><span className="msi-pre">Already with us?</span><button type="button" className="msi-link" onClick={signInReturning}>Sign in</button></span>
+      )}
       {/* shell is display:contents below 1024 (mobile untouched) and a two-panel
           grid at ≥1024: a persistent cover on the left, the flow on the right. */}
       <div className="shell">
@@ -476,9 +483,6 @@ export function ConnectExperience() {
         <aside className="deskcover">
           <div className="dc-mast">
             {mastheadUnit()}
-            {stage === 's0' && !signedIn && (
-              <button type="button" className="mast-signin" onClick={signInReturning}>Sign in</button>
-            )}
             {stage === 's0' && signedIn && (
               <p className="welcome-back"><a href="/space" onClick={(e) => { e.preventDefault(); router.push('/space') }}>Welcome back — your Family Space →</a></p>
             )}
@@ -520,7 +524,7 @@ export function ConnectExperience() {
         <header className="mast">
           {mastheadUnit()}
           {stage === 's0' && !signedIn && (
-            <button type="button" className="mast-signin" onClick={signInReturning}>Sign in</button>
+            <span className="mast-signin"><span className="msi-pre">Already with us?</span><button type="button" className="msi-link" onClick={signInReturning}>Sign in</button></span>
           )}
         </header>
         {stage === 's0' && signedIn && (

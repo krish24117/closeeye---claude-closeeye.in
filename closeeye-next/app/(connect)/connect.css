@@ -24,10 +24,17 @@
 
 /* ── the masthead — official lockup + CONNECT + trust triad, centred as one unit ── */
 .cx .mast{position:relative;display:flex;justify-content:center;padding:max(22px, env(safe-area-inset-top)) 0 28px}
-.cx .mast-signin{position:absolute;top:calc(max(22px, env(safe-area-inset-top)) - 9px);right:-2px;
-  font-family:var(--sans);font-size:13px;color:var(--pencil);padding:11px 8px; /* ≥40px tap target */
-  transition:color .2s}
-.cx .mast-signin:hover{color:var(--forest)}
+/* Mobile corner — the 480px column has no room for the prefix beside the centred
+   lockup, so phones/tablets show "Sign in" alone in the exact top-right corner. */
+.cx .mast-signin{position:absolute;top:max(22px, env(safe-area-inset-top));right:0}
+.cx .mast .msi-pre{display:none}
+.cx .msi-pre{font-family:var(--sans);font-size:13px;color:var(--pencil)}
+.cx .msi-link{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--forest);
+  text-decoration:underline dotted;text-decoration-color:var(--pencil);text-underline-offset:3px;
+  padding:10px 2px;transition:text-decoration-color .2s} /* padding = ≥40px tap target */
+.cx .msi-link:hover{text-decoration-color:var(--forest)}
+/* Desktop sign-in lives at the top-right of the viewport (see the ≥1024 block). */
+.cx .shell-signin{display:none}
 .cx .welcome-back{margin:-12px 0 20px;text-align:center;font-family:var(--serif);font-size:14.5px;color:var(--pencil)}
 .cx .welcome-back a{color:var(--emerald);text-decoration:none;font-weight:500;
   border-bottom:1px solid transparent;transition:border-color .2s}
@@ -395,6 +402,11 @@
      is its OWN full-height box — the right one scrolls internally from scrollTop 0,
      so page scroll can never clip the experience card from above. */
   .cx .shell{display:grid;grid-template-columns:45% 55%;max-width:1280px;margin:0 auto;height:100dvh;align-items:stretch}
+  /* the sign-in relocates to the standard top-right of the whole viewport (fixed) —
+     roomy for the full "Already with us? Sign in", above the flow card, never colliding */
+  .cx .shell-signin{display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap;
+    position:fixed;top:10px;right:34px;z-index:20;font-family:var(--sans);font-size:13px}
+  .cx .shell-signin .msi-link{padding:4px 2px} /* mouse target up top, so it clears the card */
 
   /* LEFT · the cover — masthead (centred) → hero (left) → footer (bottom). Fixed. */
   .cx .deskcover{display:flex;flex-direction:column;height:100dvh;overflow:hidden;
