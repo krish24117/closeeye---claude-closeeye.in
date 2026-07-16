@@ -75,15 +75,6 @@ function NavRow({ href, label, hint, value }: { href: string; label: string; hin
   )
 }
 
-function ComingSoonRow({ label }: { label: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 py-3.5">
-      <span className="text-body-sm font-medium text-ink">{label}</span>
-      <span className="shrink-0 rounded-full bg-ink/[0.05] px-2.5 py-1 text-caption font-medium text-muted">Coming soon</span>
-    </div>
-  )
-}
-
 /** A read-only notification-channel row — states the truth (On / Always on) rather
  *  than a switch we can't yet persist. Never misrepresent a safety or consent state. */
 function PrefRow({ label, hint, state }: { label: string; hint?: string; state: 'On' | 'Always on' }) {
@@ -216,11 +207,11 @@ export default function ProfilePage() {
         <p className="pt-3 text-caption text-muted">Want to change how we reach you? Message your Presence Manager and we&rsquo;ll set it up.</p>
       </Card>
 
-      {/* 6 · SECURITY */}
+      {/* 6 · SECURITY — honest: state what's true, offer a real recourse. We don't
+          render self-service controls (password / 2FA) we can't yet back. */}
       <Card icon={ShieldCheck} title="Security">
-        <ComingSoonRow label="Change password" />
-        <ComingSoonRow label="Manage login" />
-        <ComingSoonRow label="Two-factor authentication" />
+        <p className="py-2 text-body-sm leading-relaxed text-ink">Your account is protected by your sign-in, and your family&rsquo;s information is private to your family.</p>
+        <p className="text-caption text-muted">Need to change your password or sign-in? Message your Presence Manager and we&rsquo;ll take care of it.</p>
       </Card>
 
       {/* 7 · SUPPORT */}
