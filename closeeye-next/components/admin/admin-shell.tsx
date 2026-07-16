@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Sparkles, Activity, IndianRupee, CalendarCheck, ShieldCheck, Users, UserPlus, CreditCard,
-  MapPin, FileText, ScrollText, Menu, X, ArrowUpRight, Rocket, Sunrise,
+  MapPin, FileText, ScrollText, Menu, X, ArrowUpRight, Rocket, Sunrise, Brain,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
@@ -19,6 +19,7 @@ const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) =
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, match: (p) => p === '/admin' },
   { href: '/admin/briefing', label: 'Briefing', icon: Sunrise, match: (p) => p.startsWith('/admin/briefing') },
   { href: '/admin/insights', label: 'Insights', icon: Sparkles, match: (p) => p.startsWith('/admin/insights') },
+  { href: '/admin/understanding', label: 'Understanding', icon: Brain, match: (p) => p.startsWith('/admin/understanding') },
   { href: '/admin/operations', label: 'Operations', icon: Activity, match: (p) => p.startsWith('/admin/operations') },
   { href: '/admin/finance', label: 'Finance', icon: IndianRupee, match: (p) => p.startsWith('/admin/finance') },
   { href: '/admin/bookings', label: 'Bookings', icon: CalendarCheck, match: (p) => p.startsWith('/admin/bookings') },

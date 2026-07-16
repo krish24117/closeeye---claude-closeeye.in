@@ -230,6 +230,11 @@
 .cx .restart-link{display:block;margin-top:14px;font-family:var(--sans);font-size:13px;color:var(--pencil);
   border-bottom:1px dotted var(--hair2);padding-bottom:1px;width:fit-content}
 .cx .restart-link:hover{color:var(--forest)}
+/* quiet "Did I get this right?" affordance on the Ledger — feeds the flagged-wrong metric */
+.cx .gotit{margin:16px 0 0;font-family:var(--sans);font-size:12.5px;color:var(--faint)}
+.cx .gotit button{font-family:var(--sans);font-size:12.5px;color:var(--pencil);
+  border-bottom:1px dotted var(--hair2);padding-bottom:1px;margin-left:4px}
+.cx .gotit button:hover{color:var(--forest)}
 
 /* the living understanding: ✓ known, ○ still open — grows as you tell me more */
 .cx .uledger{margin-top:4px}

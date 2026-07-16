@@ -10,6 +10,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "sync:understanding": "node scripts/sync-understanding-cases.mjs",
     "cap:sync": "cap sync",
     "cap:copy": "cap copy",
     "android:add": "cap add android",

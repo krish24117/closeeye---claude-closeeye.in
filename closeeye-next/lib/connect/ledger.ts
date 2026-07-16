@@ -353,6 +353,14 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
   return { paragraphs: P, signature: rl.forLoved ? `— for ${name}, from what you told me` : `— from what you told me` }
 }
 
+/** A short, human summary of what Connect understood — for the WhatsApp handoff, so
+ *  the visitor never has to repeat themselves. Built from the ledger lines (their
+ *  words), excluding the verbatim quote (which we pass separately). */
+export function understandingSummary(rl: ReadLedger): string {
+  const lines = rl.ledger.filter((l) => !l.quote).map((l) => `• ${l.label}: ${l.body.replace(/\.$/, '')}`)
+  return lines.length ? lines.join('\n') : '• (not yet clear)'
+}
+
 /** The ledger lines to persist on space creation, with provenance (append-only). */
 export function ledgerEntriesForStorage(rl: ReadLedger): { entry_type: 'family_fact'; label: string; body: string; source: 'connect_experience' }[] {
   return rl.ledger.map((l) => ({

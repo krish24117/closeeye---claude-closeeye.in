@@ -20,7 +20,8 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { signInWithPassword, signUpWithPassword } from '@/lib/auth-actions'
-import { readLedger, counsel, type ReadLedger } from '@/lib/connect/ledger'
+import { readLedger, counsel, understandingSummary, type ReadLedger } from '@/lib/connect/ledger'
+import { logUnderstanding, newUnderstandingSession } from '@/lib/connect/log'
 import { setConnectDraft, getConnectDraft, provisionFamilySpace } from '@/lib/db/space'
 import { PHASE_2_ENABLED } from '@/lib/connect/phase'
 
@@ -120,6 +121,7 @@ export function ConnectExperience() {
   const [fill, setFill] = React.useState('')
   const [againText, setAgainText] = React.useState('') // "who is this for?" — closes the loop when understanding is insufficient
   const [againCount, setAgainCount] = React.useState(0) // clarification rounds — hard-capped at 2, then hand to a human
+  const [feedback, setFeedback] = React.useState<'none' | 'right' | 'wrong'>('none') // the "Did I get this right?" signal
   // understanding reveal (the known facts appearing, line by line)
   const [s1n, setS1n] = React.useState(0)
   const [s1live, setS1live] = React.useState(-1)
@@ -196,8 +198,11 @@ export function ConnectExperience() {
   function ask() {
     const q = text.trim()
     if (q.length < 8) return
-    setTold([]); setActiveKey(null); setFill(''); setAgainText(''); setAgainCount(0)
-    setRl(readLedger(q))
+    setTold([]); setActiveKey(null); setFill(''); setAgainText(''); setAgainCount(0); setFeedback('none')
+    const rl0 = readLedger(q)
+    newUnderstandingSession()             // one funnel per attempt
+    logUnderstanding('first', q, rl0, 0)  // learning loop: first-try understood?
+    setRl(rl0)
     setStage('s1')
   }
 
@@ -207,12 +212,32 @@ export function ConnectExperience() {
     const extra = againText.trim()
     if (!extra) return
     const combined = `${(rl?.rawText || text).trim()}. ${extra}`
-    setText(combined)            // Edit / the draft carry the full, combined words
-    setTold([]); setActiveKey(null); setFill(''); setAgainText('')
-    setAgainCount((c) => c + 1)  // count the round — capped at 2 downstream
+    const next = againCount + 1
+    const rl2 = readLedger(combined)      // deterministic re-understanding
+    logUnderstanding('clarify', combined, rl2, next)
+    if (!rl2.subjectKnown && next >= 2) logUnderstanding('handoff', combined, rl2, next)
+    setText(combined)                     // Edit / the draft carry the full, combined words
+    setTold([]); setActiveKey(null); setFill(''); setAgainText(''); setFeedback('none')
+    setAgainCount(next)                    // count the round — capped at 2 downstream
     setS1n(0); setS1live(-1); setS1done(false)
-    setRl(readLedger(combined))  // deterministic re-understanding
-    setStage('s1')               // watch it understand again, from the top
+    setRl(rl2)
+    setStage('s1')                        // watch it understand again, from the top
+  }
+
+  /* ── "Did I get this right?" — the quiet Ledger affordance that feeds the
+        user-flagged-wrong metric and opens an inline correction. ── */
+  function flagWrong() {
+    if (rl) logUnderstanding('flag', rl.rawText, rl, againCount)
+    setAgainText(''); setFeedback('wrong')
+  }
+
+  /* ── the human handoff: a WhatsApp link pre-filled with the visitor's own words
+        AND what Connect understood, so they never repeat themselves. ── */
+  function waHandoffLink(): string {
+    const written = (rl?.rawText || text).trim()
+    const summary = rl ? understandingSummary(rl) : ''
+    const msg = `Hi Close Eye — I was using Connect and would like a real person to help.\n\nWhat I wrote:\n"${written}"\n\nWhat Connect understood:\n${summary}`
+    return `${WA}?text=${encodeURIComponent(msg)}`
   }
 
   /* ── understanding reveal — the known facts appear one by one (✓), then the
@@ -391,7 +416,7 @@ export function ConnectExperience() {
   const PREV: Record<string, Stage> = { s1: 's0', s2: 's1', s3: 's2', s4: 's3', s4b: 's4' }
   function editWords() { setError(''); setStage('s0') }
   function changePerson() {
-    clearTimers(); setError(''); setText(''); setRl(null); setTold([]); setActiveKey(null); setFill(''); setAgainText(''); setAgainCount(0)
+    clearTimers(); setError(''); setText(''); setRl(null); setTold([]); setActiveKey(null); setFill(''); setAgainText(''); setAgainCount(0); setFeedback('none')
     setS1n(0); setS1live(-1); setS1done(false); setStage('s0')
   }
   const nav = (
@@ -666,12 +691,23 @@ export function ConnectExperience() {
                       : 'Understand first. Answer second.'
                   }</span></div>
                   {understanding()}
-                  {stage === 's1' && (
+                  {((stage === 's1' && s1done) || stage === 's2') && (
+                    feedback === 'wrong' ? (
+                      // "Not quite" → an inline correction that re-runs understanding
+                      <div className="again" style={{ marginTop: 6 }}>
+                        <textarea className="again-ta" rows={2} value={againText} onChange={(e) => setAgainText(e.target.value)} placeholder="What did I miss? Tell me in your words…" autoFocus />
+                        <div className="act"><button type="button" className={`btn${againText.trim() ? ' inked' : ' ghost'}`} onClick={understandAgain}>Connect, understand again</button></div>
+                      </div>
+                    ) : (
+                      <p className="gotit">Did I get this right? <button type="button" onClick={flagWrong}>Not quite</button></p>
+                    )
+                  )}
+                  {stage === 's1' && feedback !== 'wrong' && (
                     <div className="act">
                       <button className="btn" onClick={() => setStage(rl.blanks.length ? 's2' : 's3')} style={{ opacity: s1done ? 1 : 0, pointerEvents: s1done ? 'auto' : 'none' }}>That’s exactly it</button>
                     </div>
                   )}
-                  {stage === 's2' && (
+                  {stage === 's2' && feedback !== 'wrong' && (
                     <div className="act"><button className="btn" onClick={() => setStage('s3')}>Continue</button></div>
                   )}
                 </>
@@ -691,7 +727,7 @@ export function ConnectExperience() {
                       {(personKnown || againCount === 0) ? (
                         <>{counselData.paragraphs.map((p, i) => <p key={i}>{boldLead(p)}</p>)}<p className="sig">{counselData.signature}</p></>
                       ) : againCount >= 2 ? (
-                        <p>I don’t want to keep asking. The fastest way to help is a real person — reach one right now, and they’ll take it from here.</p>
+                        <p>I’d rather hand this to a person than guess. Your Presence Manager is one tap away — I’ll pass along what you wrote so you won’t repeat yourself.</p>
                       ) : (
                         <p>Still with you — even a few words help. Who is this for, and what’s going on?</p>
                       )}
@@ -706,9 +742,10 @@ export function ConnectExperience() {
                         <div className="act"><button className="btn" onClick={() => setStage('s4')}>{!rl.aiConfident ? 'Keep this, and continue' : 'This is what I’ve been looking for'}</button></div>
                       </>
                     ) : againCount >= 2 ? (
-                      // Two rounds is the floor — a human handoff, never a dead end.
+                      // Two rounds is the floor — a designed human handoff, never a dead end.
+                      // The link pre-fills their words + what was understood, so no repeating.
                       <div className="again">
-                        <a className="wa-prominent primary" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>
+                        <a className="wa-prominent primary" href={waHandoffLink()} target="_blank" rel="noopener">Message your Presence Manager →</a>
                         <button type="button" className="restart-link" onClick={changePerson}>or start over</button>
                       </div>
                     ) : (
@@ -717,7 +754,7 @@ export function ConnectExperience() {
                       <div className="again">
                         <textarea className="again-ta" rows={2} value={againText} onChange={(e) => setAgainText(e.target.value)} placeholder={againCount === 0 ? 'Tell me here — who is this for?' : 'In your words — who is it for, and what would help?'} aria-label="Who is this for?" autoFocus />
                         <div className="act"><button type="button" className={`btn${againText.trim() ? ' inked' : ' ghost'}`} onClick={understandAgain}>Connect, understand again</button></div>
-                        <a className="wa-prominent" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>
+                        <a className="wa-prominent" href={waHandoffLink()} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>
                       </div>
                     )}
                   </>
