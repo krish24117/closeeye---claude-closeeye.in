@@ -124,6 +124,22 @@
 .cx .breadth-f{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--forest);margin:7px 0 0;text-align:center}
 @media(max-width:380px){.cx .catgrid{grid-template-columns:1fr}}
 
+/* ── How it works — the footer's anchor target. Same paper card as .breadth so it reads
+      as one world: page ground, hairline border, serif for the human lines. Hairlines
+      between steps, never shadows; the numeral is sans and quiet — it counts, it doesn't
+      shout. Lives beside .breadth (the one s0 block ≥1024 keeps), so a single instance
+      serves 390 / 768 / 1280. ── */
+.cx .howit{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px;margin:0 0 26px;scroll-margin-top:18px}
+.cx .howit-h{font-family:var(--serif);font-size:22px;color:var(--forest);margin:0 0 14px}
+.cx .howit-steps{list-style:none;margin:0;padding:0}
+.cx .howit-steps li{display:flex;gap:12px;align-items:baseline;padding:11px 0;border-top:1px solid var(--hair)}
+.cx .howit-steps li:first-child{border-top:0;padding-top:2px}
+.cx .howit-n{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--emerald);
+  font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:12px}
+.cx .howit-steps p{font-family:var(--serif);font-size:15.5px;line-height:1.5;color:var(--forest);margin:0;max-width:42ch}
+.cx .howit-roles{font-family:var(--sans);font-size:13px;line-height:1.55;color:var(--pencil);
+  margin:14px 0 0;padding-top:13px;border-top:1px solid var(--hair2);max-width:46ch}
+
 .cx .btn-google{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;
   background:var(--page);border:1px solid var(--hair2);border-radius:999px;padding:15px 22px;
   font-family:var(--sans);font-weight:600;font-size:15.5px;color:var(--ink);transition:transform .15s}

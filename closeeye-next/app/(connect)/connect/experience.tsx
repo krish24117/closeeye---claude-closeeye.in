@@ -100,6 +100,17 @@ const STORY_CARDS = [
 // isn't real yet. "Close Eye will grow with your family" carries the rest.
 const CARE_CATS = ['Health & wellbeing', 'Trusted local support']
 
+// The human steps, in the family's order. Verbs lead; nothing over 12 words. The two
+// roles stay apart: the Presence Manager coordinates and is who the family talks to;
+// the companion is the one who goes. Never "Guardian" — the word is banned in our voice.
+// No date here: "visits open 15 August" belongs to the footer line only (founder, D1).
+const HOW_IT_WORKS = [
+  'Tell Close Eye about the person you love.',
+  'Your Presence Manager confirms the details with you.',
+  'A companion visits, and takes care of what’s needed.',
+  'You get a written update after every visit.',
+]
+
 export function ConnectExperience() {
   const router = useRouter()
   const reduce = prefersReduced()
@@ -606,7 +617,7 @@ export function ConnectExperience() {
           </div>
           <div className="dc-foot">
             <div className="footlinks">
-              <a href="https://www.closeeye.in/#how-it-works" target="_blank" rel="noopener">How it works</a><span className="sep">·</span>
+              <a href="#how-it-works">How it works</a><span className="sep">·</span>
               <a href="https://www.closeeye.in/services" target="_blank" rel="noopener">Services &amp; pricing</a><span className="sep">·</span>
               <a href="https://www.closeeye.in/trust-safety" target="_blank" rel="noopener">How Guardians are verified</a><span className="sep">·</span>
               <a href="https://www.closeeye.in/membership" target="_blank" rel="noopener">Membership</a><span className="sep">·</span>
@@ -694,9 +705,25 @@ export function ConnectExperience() {
               <p className="breadth-grow">Close Eye will grow with your family.</p>
               <p className="breadth-f">Always beginning with understanding.</p>
             </div>
+
+            {/* How it works — the target of the footer's anchor, in BOTH footers. It lives
+                here, beside .breadth, because that is the one s0 block the ≥1024 rule does
+                not hide: one instance, one id, present at 390 / 768 / 1280. Numbered
+                because this genuinely is a sequence — the family's, in order. */}
+            <section className="howit" id="how-it-works" aria-labelledby="howit-h">
+              <h2 className="howit-h" id="howit-h">How it works</h2>
+              <ol className="howit-steps">
+                {HOW_IT_WORKS.map((s, i) => (
+                  <li key={s}><span className="howit-n" aria-hidden="true">{i + 1}</span><p>{s}</p></li>
+                ))}
+              </ol>
+              {/* The two roles, never blurred: one coordinates, one goes. */}
+              <p className="howit-roles">Your Presence Manager coordinates, and is who you talk to. Your companion is who goes.</p>
+            </section>
+
             <div className="s0-foot">
               <div className="footlinks">
-                <a href="https://www.closeeye.in/#how-it-works" target="_blank" rel="noopener">How it works</a><span className="sep">·</span>
+                <a href="#how-it-works">How it works</a><span className="sep">·</span>
                 <a href="https://www.closeeye.in/services" target="_blank" rel="noopener">Services &amp; pricing</a><span className="sep">·</span>
                 <a href="https://www.closeeye.in/trust-safety" target="_blank" rel="noopener">How Guardians are verified</a><span className="sep">·</span>
                 <a href="https://www.closeeye.in/membership" target="_blank" rel="noopener">Membership</a><span className="sep">·</span>
