@@ -257,8 +257,11 @@ export function readLedger(rawText: string): ReadLedger {
   // to a human, never a dead "unclear".
   if (need === 'unclear' && subjectKnown && (relocating || SETUP.test(text))) need = 'errand'
 
+  // A visitor asking for THEMSELVES is not "your family" — that mislabels the one person
+  // we're certain about. The space they create is their own; at provisioning we know who
+  // they are and use their real name (see doProvision).
   const subjectLabel = name ? name : relationshipWord ? `Your ${cap(relationshipWord)}`
-    : isFamily ? 'Your family' : isSelf ? 'Your family' : 'Someone you love'
+    : isFamily ? 'Your family' : isSelf ? 'You' : 'Someone you love'
   const who = name ? name : relationshipWord ? `your ${relationshipWord}`
     : isFamily ? 'your family' : isSelf ? 'you' : 'them'
   const they = pronoun.subject(gender)

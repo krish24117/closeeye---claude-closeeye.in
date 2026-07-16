@@ -25,6 +25,17 @@ export function personName(space: Pick<SpaceData, 'callName' | 'lovedOne'>): str
 /** How many ledger entries a Space loads at once — keeps it calm at scale. */
 const WINDOW = 50
 
+/**
+ * How long a just-created space may be REUSED instead of creating another (F9).
+ *
+ * Idempotency here exists for one thing: a double-invoke, a second tab, or a retry after a
+ * failure — all of which happen within minutes, since the draft is cleared the moment
+ * provisioning succeeds. It must NOT stretch far enough to merge two genuinely different
+ * people who happen to share a label ("Your Sister"). An hour is generous for a retry and
+ * far too short to collide with a real second person.
+ */
+const PROVISION_IDEMPOTENCY_MS = 60 * 60 * 1000
+
 /* ── the pre-sign-in draft (survives the OAuth round-trip via localStorage) ── */
 const DRAFT_KEY = 'closeeye.connect.draft'
 export interface DraftExtra { label: string; body: string }
@@ -113,12 +124,29 @@ async function doProvision(): Promise<ProvisionResult> {
 
     const rl = readLedger(draft.rawText)
 
+    // F8 — a space created for the VISITOR is theirs, not "your family". By this point they
+    // are signed in, so we know their actual name; the engine can only ever say "You".
+    const selfName = (user.user_metadata?.full_name as string | undefined)?.trim()
+    const isSelf = rl.subjectKind === 'self'
+    const spaceName = isSelf ? (selfName || 'You') : rl.subjectLabel
+    const spaceRelationship = isSelf ? 'self' : rl.relationship
+
     // Idempotency: reuse an existing space for the same person (double-invoke / two tabs / retry).
+    //
+    // F9 — bounded by a RECENCY window, because `full_name` is not an identity. Labels like
+    // "Your Sister" are not unique: a family with two sisters would have the second one's
+    // space silently merged into the first's, mixing two people's facts in one ledger.
+    // Merging two real people is far worse than an extra space, so reuse only extends as
+    // far as the thing it exists for — a retry or a double-submit of THIS draft, which is
+    // always recent. Beyond the window we create a new space rather than guess they're the
+    // same person.
+    const sinceIso = new Date(Date.now() - PROVISION_IDEMPOTENCY_MS).toISOString()
     const { data: existing, error: exErr } = await supabase
       .from('loved_ones')
       .select('id')
       .eq('family_user_id', user.id)
-      .eq('full_name', rl.subjectLabel)
+      .eq('full_name', spaceName)
+      .gte('created_at', sinceIso)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -129,7 +157,7 @@ async function doProvision(): Promise<ProvisionResult> {
       const { data: lo, error: loErr } = await supabase
         .from('loved_ones')
         .insert({
-          family_user_id: user.id, full_name: rl.subjectLabel, relationship: rl.relationship, city: rl.city,
+          family_user_id: user.id, full_name: spaceName, relationship: spaceRelationship, city: rl.city,
           // the base loved_ones table has these columns NOT NULL — default to '' exactly
           // like the family "Add Loved One" flow (lib/db/family.ts); the Space treats
           // '' as "not provided yet". Without these, the insert fails a NOT NULL check.

@@ -22,10 +22,13 @@ const H = vi.hoisted(() => {
     seq: 0, illegal: null as string | null, failInsert: null as string | null,
   }
   function makeQB(table: string) {
-    const b: Record<string, unknown> = { op: 'select', rows: null as Record<string, unknown>[] | null, head: false, filters: [] as [string, unknown][], _single: false, _maybe: false }
+    const b: Record<string, unknown> = { op: 'select', rows: null as Record<string, unknown>[] | null, head: false, filters: [] as [string, unknown][], gtes: [] as [string, unknown][], _single: false, _maybe: false }
     b.insert = (rows: Record<string, unknown> | Record<string, unknown>[]) => { b.op = 'insert'; b.rows = Array.isArray(rows) ? rows : [rows]; return b }
     b.select = (_c?: string, opts?: { head?: boolean }) => { if (opts?.head) b.head = true; return b }
     b.eq = (c: string, v: unknown) => { (b.filters as [string, unknown][]).push([c, v]); return b }
+    // Modelled because provisioning bounds its idempotency by a recency window; without
+    // `gte` the fake would silently diverge from the database it stands in for.
+    b.gte = (c: string, v: unknown) => { (b.gtes as [string, unknown][]).push([c, v]); return b }
     b.order = () => b
     b.limit = () => b
     b.single = () => { b._single = true; return b }
@@ -35,11 +38,15 @@ const H = vi.hoisted(() => {
     b._run = () => {
       if (b.op === 'insert') {
         if (tracker.failInsert === table) { tracker.failInsert = null; return { data: null, error: { message: 'forced failure' } } }
-        const inserted = (b.rows as Record<string, unknown>[]).map((r) => ({ id: `id_${++tracker.seq}`, ...r }))
+        // created_at is a database default in production; the fake must supply it too, or
+        // every recency-bounded query here would test something the DB never does.
+        const inserted = (b.rows as Record<string, unknown>[]).map((r) => ({ id: `id_${++tracker.seq}`, created_at: new Date().toISOString(), ...r }))
         arrOf(table).push(...inserted)
         return b._single ? { data: { id: inserted[0]!.id }, error: null } : { data: null, error: null }
       }
-      const rows = arrOf(table).filter((row) => (b.filters as [string, unknown][]).every(([c, v]) => row[c] === v))
+      const rows = arrOf(table).filter((row) =>
+        (b.filters as [string, unknown][]).every(([c, v]) => row[c] === v) &&
+        (b.gtes as [string, unknown][]).every(([c, v]) => String(row[c] ?? '') >= String(v)))
       if (b.head) return { count: rows.length, error: null, data: null }
       if (b._single || b._maybe) return { data: rows[0] ?? null, error: null }
       return { data: rows, error: null }
@@ -108,6 +115,39 @@ describe('Family memory — integrity (code path)', () => {
     setConnectDraft(DRAFT); await provisionFamilySpace() // same person again
     expect(H.store.loved_ones).toHaveLength(1)
     expect(H.store.family_ledger.length).toBe(ledgerAfterFirst) // no duplicate memory
+  })
+
+  // F8 — a space created for the VISITOR is theirs. It was named "Your family", which is
+  // both wrong and the one label we never had to guess: they are signed in.
+  it('a request for yourself creates YOUR space, under your own name — never "Your family"', async () => {
+    setConnectDraft('This is for me. I am moving to Bangalore and need local support.')
+    const res = await provisionFamilySpace()
+    expect(res.error).toBeNull()
+    expect(H.store.loved_ones).toHaveLength(1)
+    expect(H.store.loved_ones[0]!.full_name).toBe('Krishna') // the signed-in user's name
+    expect(H.store.loved_ones[0]!.full_name).not.toBe('Your family')
+    expect(H.store.loved_ones[0]!.relationship).toBe('self')
+  })
+
+  it('falls back to "You" when we have no name for them — never to a name we invented', async () => {
+    H.tracker.user = { id: 'u1', email: 'k@example.com', user_metadata: {} } // no full_name
+    setConnectDraft('This is for me. I am moving to Bangalore and need local support.')
+    await provisionFamilySpace()
+    expect(H.store.loved_ones[0]!.full_name).toBe('You')
+  })
+
+  // F9 — `full_name` is a label, not an identity. Reuse must not stretch far enough to
+  // merge two real people who share one ("Your Sister"), mixing their facts in one ledger.
+  it('never merges a new person into an old space that merely shares a label', async () => {
+    H.store.loved_ones.push({
+      id: 'old_space', family_user_id: 'u1', full_name: 'Your Mother', relationship: 'mother',
+      created_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), // 8 days ago
+    })
+    setConnectDraft(DRAFT) // also resolves to "Your Mother"
+    const res = await provisionFamilySpace()
+    expect(res.error).toBeNull()
+    expect(res.lovedOneId).not.toBe('old_space') // a new space, not a silent merge
+    expect(H.store.loved_ones).toHaveLength(2)
   })
 
   it('never loses the draft on failure, and a retry completes', async () => {
