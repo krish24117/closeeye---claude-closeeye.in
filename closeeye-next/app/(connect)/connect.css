@@ -196,10 +196,32 @@
 .cx .prow .v{color:var(--ink)}
 .cx .prow.total .v{font-size:19px;color:var(--forest)}
 
+/* ── The footer, designed twice on purpose ──
+   Phone: a stacked list. Each link is its own 44px row — a real touch target, and no
+   separators to strand on a line of their own. Tablet up: one centred line, separators
+   drawn by ::after so a "·" is part of its link and can never wrap alone (which is what
+   it did at 1024 and 1728). The separator element is gone from the markup entirely. */
 .cx .footlinks{margin-top:26px;font-family:var(--sans);font-size:12px;color:var(--pencil);
-  display:flex;flex-wrap:wrap;justify-content:center;column-gap:7px;row-gap:9px;align-items:baseline}
-.cx .footlinks a{color:var(--pencil);text-decoration:none;border-bottom:1px dotted var(--hair2);
-  padding:10px 3px 2px;white-space:nowrap} /* padding grows the tap target upward; underline stays tight */
+  display:flex;flex-direction:column;align-items:flex-start;row-gap:2px}
+.cx .footlinks a,.cx .footlinks .plain{color:var(--pencil);text-decoration:none;
+  display:inline-flex;align-items:center;min-height:44px}
+.cx .footlinks a{border-bottom:0;box-shadow:inset 0 -1px 0 0 var(--hair2)}
+.cx .footlinks a:hover{color:var(--forest);box-shadow:inset 0 -1px 0 0 var(--pencil)}
+/* Above 768 the list stays a list — it only gets quieter. The inline "·"-separated row
+   this replaced NEVER fitted: it needed ~700px and its widest container (the desktop
+   cover) is ~600px, so it wrapped at 1024 AND at 1728, stranding a separator at the end
+   of a line. A wrapped row is an accident; a list is a decision. The rows go compact so
+   the cover — which is height:100dvh and clips — always has room for them.
+   The tap area is grown by an overlay rather than by height: a 44px-tall <a> would drag
+   its dotted underline 12px away from the word it underlines. Target 44, look 24. */
+@media (min-width:768px){
+  .cx .footlinks{row-gap:3px}
+  .cx .footlinks a,.cx .footlinks .plain{min-height:0;padding:2px 0;position:relative;white-space:nowrap}
+  .cx .footlinks a{box-shadow:none;border-bottom:1px dotted var(--hair2)}
+  .cx .footlinks a:hover{box-shadow:none;border-bottom-color:var(--pencil)}
+  .cx .footlinks a::before{content:'';position:absolute;left:0;right:0;top:50%;
+    transform:translateY(-50%);height:44px}
+}
 .cx .footlinks a:hover{color:var(--forest);border-bottom-color:var(--pencil)}
 .cx .footlinks .sep{margin:0 7px;color:var(--hair2)}
 .cx .footnote{margin-top:20px;text-align:center;font-family:var(--serif);font-style:italic;
@@ -508,6 +530,138 @@
   /* the vertical thread lives on the right panel's left edge */
   .cx .thread{left:calc(max(0px, (100vw - 1280px)/2) + 0.725 * min(100vw, 1280px) - 228px)}
   .cx .h-serif{font-size:34px}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE COMPOSITION — every range composed, none inherited.
+   Before this block the page had ONE real breakpoint (1024): a 480px phone column,
+   then a 1280-capped desktop. 320–1023 all got the phone; past 1280 the design simply
+   stopped. Each range below is a decision, not a fallback.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 320–374 · Mobile Small — the lockup and the corner sign-in collided here.
+      The mark scales with the viewport instead of holding 207px in a 268px column;
+      nothing is repositioned, so the design is identical, just no longer overlapping. */
+@media (max-width:400px){
+  .cx .app{padding-left:18px;padding-right:18px}
+  .cx .mast-logo{height:30px;max-width:min(190px,46vw)}
+  .cx .mast{padding-top:max(18px,env(safe-area-inset-top))}
+  .cx .mast-signin{top:max(16px,env(safe-area-inset-top))}
+}
+
+/* ── Cards, equal by construction. Below 1024 a title may take one line or two purely
+      by where the words happen to break — at 390 that gave 104/104/81px, three cards of
+      three weights. The title reserves two lines everywhere it can wrap, so the row has
+      one height and the cards carry equal weight regardless of the copy in them. */
+@media (max-width:1023.98px){
+  .cx .storycards .scard-t{min-height:2.5em} /* 2 lines at line-height 1.25 */
+}
+
+/* ── 768–1023 · Tablet — the dead zone. A 480px column left ~144px of empty paper on
+      each side: a phone in a bigger frame. The measure grows so the page is composed
+      for the device, while every TEXT block keeps its own ch-based limit below, so
+      nothing stretches. Cards go two-up: at this width a stacked list reads as a phone. */
+@media (min-width:768px) and (max-width:1023.98px){
+  .cx{--colw:660px}
+  .cx .app{padding-left:44px;padding-right:44px}
+  .cx .storycards{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:stretch}
+  .cx .storycards .scard{display:flex;flex-direction:column}
+  .cx .storycards .scard:last-child{grid-column:1 / -1}
+  .cx .hero-supp,.cx .whatis{max-width:52ch}
+}
+
+/* ── ≥1024 · the two-panel composition is the identity — it is not touched. Only the
+      cover's cards are given room: at exactly 1024 the 45% panel is ~460px, which forced
+      "Understands your family" onto two lines while "One private Family Space" stayed on
+      one — three cards, three heights. Balance is what split them, so it is dropped where
+      the panel is tight, and the cards are equalised. */
+@media (min-width:1024px){
+  .cx .dc-cards .scard-t{text-wrap:pretty}
+  .cx .dc-cards .scard-h{align-items:center}
+  .cx .dc-cards .scard-t{font-size:17.5px}
+  /* The hero was a fixed 42px from 1024 to 1728 — one size for a 460px panel and a
+     700px one. At 1280 it wrapped to three lines and pushed the cover past 100dvh
+     (which clips), and at 1728 it was small for the canvas. It now scales with the
+     panel: smooth, never stepped. */
+  .cx .dc-head{font-size:clamp(32px,2.9vw,46px)}
+  /* margin-top:auto puts the footer at the bottom — but when the content nearly fills
+     the panel, "auto" is zero and the links sit hard against the last card. A floor
+     guarantees the gap is a decision rather than whatever space happened to be left. */
+  .cx .dc-foot{padding-top:34px}
+  /* The cover clips by design (height:100dvh; overflow:hidden). On a short laptop
+     viewport that silently ate the footer. Nothing may be unreachable. */
+  .cx .deskcover{overflow-y:auto}
+}
+@media (min-width:1024px) and (max-width:1279.98px){
+  .cx .shell{grid-template-columns:48% 52%}
+  .cx .deskcover{padding-left:34px;padding-right:26px}
+}
+
+/* ── The cover is a fixed panel (100dvh), so its budget is HEIGHT, not width — and a
+      13" laptop is 1280×800, not 1280×900. At 800 the panel overflowed by 104px and had
+      to scroll, which a cover should never do. Rather than shrink the design everywhere
+      for the sake of one viewport, the tight rhythm is scoped to short screens: same
+      composition, same type, drawn closer. Tall screens keep the generous version. */
+@media (min-width:1024px) and (max-height:960px){
+  .cx .dc-mast{margin-bottom:16px}
+  .cx .dc-head{font-size:clamp(30px,2.3vw,38px)}
+  .cx .dc-cards .scard-h{padding:13px 20px}
+  .cx .dc-cards{gap:10px}
+  .cx .dc-foot{padding-top:20px}
+  .cx .dc-foot .footnote{margin-top:9px}
+  .cx .dc-foot .footlinks{row-gap:1px}
+  .cx .dc-foot .footlinks a,.cx .dc-foot .footlinks .plain{padding:1px 0}
+}
+/* iPad landscape (1024×768) is the shortest screen that still gets the two-panel: the
+   least room, and every element still present. One more notch, applied only there. */
+@media (min-width:1024px) and (max-height:800px){
+  .cx .dc-mast{margin-bottom:10px}
+  .cx .dc-mast .mast-logo{height:34px}
+  .cx .dc-supp{margin-top:8px}
+  .cx .dc-cards .scard-h{padding:11px 18px}
+  .cx .dc-cards{gap:8px}
+  .cx .dc-foot{padding-top:12px}
+  .cx .dc-foot .footnote{margin-top:6px}
+}
+
+/* ── ≥1440 · Laptop → Desktop. The shell was capped at 1280, so 1440 and 1728 were the
+      same design with more empty paper either side. The canvas now grows with the screen
+      (still bounded — a 1728-wide two-panel would stretch the reading measure past
+      comfort), and the panels breathe rather than the margins. */
+@media (min-width:1440px){
+  .cx .shell{max-width:1400px}
+  .cx .deskcover{padding-left:60px}
+}
+@media (min-width:1728px){
+  .cx .shell{max-width:1560px}
+}
+
+/* ── Touch targets — every control reachable by a thumb. The visual size is unchanged;
+      only the hit area grows, so nothing about the design moves. ── */
+.cx .cxnav button,.cx .mini-edit,.cx .gotit button,.cx .tellme{min-height:44px;display:inline-flex;align-items:center}
+.cx .uline.open.tap{min-height:48px}
+
+/* ── /how-companions-are-verified — it was a phone column in a desktop window, with
+      ~340px of dead paper below and hairlines that stopped at different x positions
+      (the closing rule inherited a 36ch max-width, so its border ran short of the step
+      rules above it). The rules now share one edge; the measure is the text's, not the
+      element's. ── */
+.cx .verify{min-height:100dvh;display:flex;flex-direction:column;justify-content:center;
+  max-width:var(--colw);padding:40px 20px}
+/* A flex column stretches its children: the back link — an inline-block whose dotted
+   underline should be as wide as its words — was stretched to the full column, drawing a
+   rule across the page. It sizes to its text and the rule belongs to it again. */
+.cx .verify-back{align-self:flex-start}
+.cx .verify-steps p{max-width:none}
+.cx .verify-close{max-width:none}
+.cx .verify-close span{display:block;max-width:36ch}
+@media (min-width:768px){
+  .cx .verify{max-width:min(var(--colw),640px);padding:56px 44px}
+  .cx .verify-steps li{padding:19px 0}
+}
+@media (min-width:1024px){
+  .cx .verify{max-width:720px;padding:64px 40px}
+  .cx .verify-steps p{font-size:21px}
 }
 
 @media (prefers-reduced-motion:reduce){

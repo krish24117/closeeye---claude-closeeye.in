@@ -50,7 +50,9 @@ export default function HowCompanionsAreVerifiedPage() {
         ))}
       </ol>
 
-      <p className="verify-close">If someone isn’t right, we’ll send someone else.</p>
+      {/* The measure lives on the text, not the element — the element carries the rule,
+          and a short element meant a short rule that missed the ones above it. */}
+      <p className="verify-close"><span>If someone isn’t right, we’ll send someone else.</span></p>
     </main>
   )
 }

@@ -560,6 +560,48 @@ export function ConnectExperience() {
   // The masthead — the official Close Eye lockup (one connected asset, never rebuilt
   // in code) + CONNECT + the trust triad, centred as one unit. Shared by the mobile
   // header and the desktop left panel.
+  /* ── ONE source per block, composed differently per breakpoint ──
+     The story cards and the footer were written out twice — once in the desktop cover,
+     once in the column — as byte-identical JSX. Two copies of a thing are two chances to
+     change one and forget the other, which had already happened to the footer. The
+     LAYOUTS stay distinct (the cover is a persistent panel; the column is a flow); only
+     the duplicated markup goes. */
+  function storyCards(extra?: string) {
+    return (
+      <div className={`storycards${extra ? ` ${extra}` : ''}`} aria-label="What Close Eye does">
+        {STORY_CARDS.map((c) => {
+          const on = openCard === c.id
+          return (
+            <div key={c.id} className={`scard${on ? ' open' : ''}`}>
+              <button type="button" className="scard-h" aria-expanded={on} onClick={() => setOpenCard(on ? null : c.id)}>
+                <span className="ld" />
+                <span className="scard-t">{c.title}</span>
+                <span className="scard-more">{on
+                  ? <span className="scard-x" role="img" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></span>
+                  : `${c.link} →`}</span>
+              </button>
+              <div className="scard-b"><div><p>{c.body}</p><p className="scard-tag">— {c.tag}</p></div></div>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  /* Separators are rendered by CSS (::after), never as elements: a separator that is its
+     own node can wrap onto the next line and sit there alone, which is exactly what it
+     did at 1024 and 1728. */
+  function footerLinks() {
+    return (
+      <div className="footlinks">
+        <a href="#how-it-works">How it works</a>
+        {!PHASE_2_ENABLED && <span className="plain">What it costs · visits open 15 August</span>}
+        <a href="/how-companions-are-verified">How companions are verified</a>
+        <a className="last" href={WA} target="_blank" rel="noopener">Ask a real person on WhatsApp</a>
+      </div>
+    )
+  }
+
   function mastheadUnit() {
     return (
       <div className="mast-unit">
@@ -597,31 +639,10 @@ export function ConnectExperience() {
             <h1 className="dc-head">Know the people you love —<br /><em>even from far away.</em></h1>
             <p className="dc-supp">Close Eye helps you stay close — it understands your family, remembers what matters, and brings trusted people when they’re needed.</p>
             <p className="dc-accent">Apps can answer. Close Eye can show up.</p>
-            <div className="storycards dc-cards" aria-label="What Close Eye does">
-              {STORY_CARDS.map((c) => {
-                const on = openCard === c.id
-                return (
-                  <div key={c.id} className={`scard${on ? ' open' : ''}`}>
-                    <button type="button" className="scard-h" aria-expanded={on} onClick={() => setOpenCard(on ? null : c.id)}>
-                      <span className="ld" />
-                      <span className="scard-t">{c.title}</span>
-                      <span className="scard-more">{on
-                        ? <span className="scard-x" role="img" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></span>
-                        : `${c.link} →`}</span>
-                    </button>
-                    <div className="scard-b"><div><p>{c.body}</p><p className="scard-tag">— {c.tag}</p></div></div>
-                  </div>
-                )
-              })}
-            </div>
+            {storyCards('dc-cards')}
           </div>
           <div className="dc-foot">
-            <div className="footlinks">
-              <a href="#how-it-works">How it works</a><span className="sep">·</span>
-              {!PHASE_2_ENABLED && <><span className="plain">What it costs · visits open 15 August</span><span className="sep">·</span></>}
-              <a href="/how-companions-are-verified">How companions are verified</a><span className="sep">·</span>
-              <a href={WA} target="_blank" rel="noopener">Ask a real person on WhatsApp</a>
-            </div>
+            {footerLinks()}
             <p className="footnote">Your Trusted Presence</p>
           </div>
         </aside>
@@ -655,23 +676,6 @@ export function ConnectExperience() {
                 <p className={`hero-accent${heroSettled ? ' in' : ''}`}>Apps can answer. Close Eye can show up.</p>
               </div>
             </div>
-            <div className="storycards" aria-label="What Close Eye does">
-              {STORY_CARDS.map((c) => {
-                const on = openCard === c.id
-                return (
-                  <div key={c.id} className={`scard${on ? ' open' : ''}`}>
-                    <button type="button" className="scard-h" aria-expanded={on} onClick={() => setOpenCard(on ? null : c.id)}>
-                      <span className="ld" />
-                      <span className="scard-t">{c.title}</span>
-                      <span className="scard-more">{on
-                        ? <span className="scard-x" role="img" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></span>
-                        : `${c.link} →`}</span>
-                    </button>
-                    <div className="scard-b"><div><p>{c.body}</p><p className="scard-tag">— {c.tag}</p></div></div>
-                  </div>
-                )
-              })}
-            </div>
             <div className="s0-ask">
               <div className={`deskcard${deskDrawn ? ' drawn' : ''}`} ref={deskRef}>
                 <p className="exp-k">Experience Close Eye</p>
@@ -692,6 +696,7 @@ export function ConnectExperience() {
                 </div>
               </div>
             </div>
+            {storyCards()}
             <div className="breadth" aria-label="More than care">
               <p className="breadth-h">More than care.</p>
               <p className="breadth-who">Parents, partners, siblings, children — the people who matter most.</p>
@@ -721,12 +726,7 @@ export function ConnectExperience() {
             </section>
 
             <div className="s0-foot">
-              <div className="footlinks">
-                <a href="#how-it-works">How it works</a><span className="sep">·</span>
-                {!PHASE_2_ENABLED && <><span className="plain">What it costs · visits open 15 August</span><span className="sep">·</span></>}
-                <a href="/how-companions-are-verified">How companions are verified</a><span className="sep">·</span>
-                <a href={WA} target="_blank" rel="noopener">Ask a real person on WhatsApp</a>
-              </div>
+              {footerLinks()}
               <p className="footnote">Your Trusted Presence</p>
             </div>
           </section>
