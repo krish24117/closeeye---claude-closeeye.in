@@ -184,6 +184,19 @@ _Founder-approved refinements to Identity Architecture v1.0, 2026-07-14. Additiv
 
 ---
 
+## 2i · Engineering Constitution (frozen)
+
+Three immutable engineering principles govern every service, review, and extension.
+Enforced in code, not just prose — canonical home [`closeeye-next/lib/platform/`](closeeye-next/lib/platform/); detail in [Engineering-Constitution](closeeye-next/docs/Engineering-Constitution.md).
+
+1. **The database remembers. The LLM reasons.** Supabase is the source of truth; a model reasons only over retrieved context and is never the memory. (Restates 2c/2d.)
+2. **Infrastructure failures fail open. Trust failures fail safe.** A mechanism we added must not take a family down; but we never grant, serve, or assert what we can't verify. (The Trust Matrix — `lib/platform/trust.ts`.)
+3. **Every request ends with one structured NextAction.** Deterministic or LLM-reasoned, a request resolves to exactly one honest, structured result — `answer | clarify | handoff | execute | escalate`.
+
+Supporting contracts, all platform-wide: a single **`TRUST_THRESHOLD`** governing answer/clarify/handoff; a **`CONVERSATION_BUDGET`** guaranteeing no family is ever trapped in a loop (exceeding it fails safe to a human); and a **Decision Policy** — the gate between a NextAction and its execution (capability, city, membership, consent, provider, operational readiness) that fails gracefully, never inventing and never silently failing.
+
+---
+
 ## 3 · Design Authority
 
 - **Name** — "Close Eye", two words, always.

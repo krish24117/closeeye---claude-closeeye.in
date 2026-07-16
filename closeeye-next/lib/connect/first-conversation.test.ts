@@ -18,6 +18,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { readLedger, type ReadLedger } from './ledger'
+import { decideStep, CONVERSATION_BUDGET } from '../platform/trust'
 
 /* ── understood slots — canonical + monotonic (a later turn never has fewer) ── */
 function slots(rl: ReadLedger): Set<string> {
@@ -45,12 +46,17 @@ const ALLOWED: Record<string, string[]> = {
   unclear: [],
 }
 
-/* ── a faithful model of the /connect flow (mirrors experience.tsx) ── */
+/* ── a faithful model of the /connect flow, governed by the PLATFORM decision
+      (decideStep + TRUST_THRESHOLD + CONVERSATION_BUDGET) — mirrors experience.tsx ── */
 type Action = { kind: 'answer' | 'ask' | 'handoff'; questions: string[] }
+// deterministic confidence: a known subject is certain; otherwise below threshold.
+const confidenceOf = (rl: ReadLedger) => (rl.subjectKnown ? 1 : rl.need !== 'unclear' ? 0.4 : 0.1)
 function flowStep(rl: ReadLedger, againCount: number): Action {
-  if (rl.subjectKnown) return { kind: 'answer', questions: rl.blanks.map((b) => b.key) } // present need-blanks
-  if (againCount >= 2) return { kind: 'handoff', questions: [] }                          // 2-round cap → human
-  return { kind: 'ask', questions: ['__subject__'] }                                       // "who is this for?"
+  switch (decideStep(confidenceOf(rl), againCount)) {
+    case 'answer': return { kind: 'answer', questions: rl.blanks.map((b) => b.key) }
+    case 'handoff': return { kind: 'handoff', questions: [] }
+    default: return { kind: 'ask', questions: ['__subject__'] } // clarify → "who is this for?"
+  }
 }
 
 interface Turn { rl: ReadLedger; step: Action; slots: Set<string> }
@@ -81,7 +87,7 @@ function checkInvariants(turns: Turn[], opts: { clarifyMeaningful?: boolean } = 
     // (1) no repeated question — never ask after we've answered; never ask the subject a 3rd time
     if (t.step.kind === 'ask') { askCount++; if (sawAnswer) errs.push(`inv1: asked again after answering (turn ${i})`) }
     if (t.step.kind === 'answer') sawAnswer = true
-    if (i >= 2 && t.step.kind === 'ask') errs.push(`inv1: asked a 3rd time (turn ${i}) — cap breached`)
+    if (i >= CONVERSATION_BUDGET && t.step.kind === 'ask') errs.push(`inv1: asked past the conversation budget (turn ${i})`)
     if (i > 0) {
       const prev = turns[i - 1]!
       // (2) never forget — slots are monotonic
@@ -94,7 +100,7 @@ function checkInvariants(turns: Turn[], opts: { clarifyMeaningful?: boolean } = 
       if (opts.clarifyMeaningful && !grew) errs.push(`inv3: meaningful clarification at turn ${i} did not increase understanding`)
     }
   }
-  if (askCount > 2) errs.push(`inv1: asked ${askCount} times (> 2)`)
+  if (askCount > CONVERSATION_BUDGET) errs.push(`inv1: asked ${askCount} times (budget ${CONVERSATION_BUDGET})`)
   return errs
 }
 

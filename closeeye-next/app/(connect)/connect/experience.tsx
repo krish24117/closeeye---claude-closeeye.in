@@ -22,6 +22,7 @@ import { supabase } from '@/lib/supabase'
 import { signInWithPassword, signUpWithPassword } from '@/lib/auth-actions'
 import { readLedger, counsel, understandingSummary, KEY_LABEL, type ReadLedger } from '@/lib/connect/ledger'
 import { logUnderstanding, newUnderstandingSession } from '@/lib/connect/log'
+import { CONVERSATION_BUDGET } from '@/lib/platform/trust'
 import { setConnectDraft, getConnectDraft, provisionFamilySpace, saveConnectSession, getConnectSession, clearConnectSession } from '@/lib/db/space'
 import { PHASE_2_ENABLED } from '@/lib/connect/phase'
 
@@ -210,7 +211,7 @@ export function ConnectExperience() {
     const next = againCount + 1
     const rl2 = readLedger(combined)      // deterministic re-understanding
     logUnderstanding('clarify', combined, rl2, next)
-    if (!rl2.subjectKnown && next >= 2) logUnderstanding('handoff', combined, rl2, next)
+    if (!rl2.subjectKnown && next >= CONVERSATION_BUDGET) logUnderstanding('handoff', combined, rl2, next)
     setText(combined)                     // Edit / the draft carry the full, combined words
     setTold([]); setActiveKey(null); setFill(''); setAgainText(''); setFeedback('none')
     setAgainCount(next)                    // count the round — capped at 2 downstream
@@ -746,12 +747,12 @@ export function ConnectExperience() {
               <div className={`beat${stage === 's3' ? ' now' : ' collapsed'}`} ref={stage === 's3' ? activeBeatRef : undefined}>
                 {stage === 's3' ? (
                   <>
-                    <div className="think" style={{ marginBottom: 14 }}><span className="ld" style={{ animation: 'none' }} /><span>{personKnown ? 'Now I can answer you properly.' : againCount >= 2 ? 'Let’s get you to a real person.' : 'Let me make sure I understand.'}</span></div>
+                    <div className="think" style={{ marginBottom: 14 }}><span className="ld" style={{ animation: 'none' }} /><span>{personKnown ? 'Now I can answer you properly.' : againCount >= CONVERSATION_BUDGET ? 'Let’s get you to a real person.' : 'Let me make sure I understand.'}</span></div>
                     <div className="counsel">
                       {/* the "question" is never repeated verbatim — it varies each round */}
                       {(personKnown || againCount === 0) ? (
                         <>{counselData.paragraphs.map((p, i) => <p key={i}>{boldLead(p)}</p>)}<p className="sig">{counselData.signature}</p></>
-                      ) : againCount >= 2 ? (
+                      ) : againCount >= CONVERSATION_BUDGET ? (
                         <p>I’d rather hand this to a person than guess. Your Presence Manager is one tap away — I’ll pass along what you wrote so you won’t repeat yourself.</p>
                       ) : (
                         <p>Still with you — even a few words help. Who is this for, and what’s going on?</p>
@@ -766,7 +767,7 @@ export function ConnectExperience() {
                         {!rl.aiConfident && <a className="qlink" href={WA} target="_blank" rel="noopener" style={{ marginTop: 10 }}>Talk to a real person on WhatsApp →</a>}
                         <div className="act"><button className="btn" onClick={() => setStage('s4')}>{!rl.aiConfident ? 'Keep this, and continue' : 'This is what I’ve been looking for'}</button></div>
                       </>
-                    ) : againCount >= 2 ? (
+                    ) : againCount >= CONVERSATION_BUDGET ? (
                       // Two rounds is the floor — a designed human handoff, never a dead end.
                       // The link pre-fills their words + what was understood, so no repeating.
                       <div className="again">
