@@ -266,7 +266,7 @@ export default function SpacePage() {
 
           <p className="sh">How Connect speaks to you</p>
           <div className="pcard">
-            <div className="prow"><span className="k">WhatsApp updates</span><span className="toggle" role="switch" aria-checked="true" /></div>
+            <div className="prow"><span className="k">WhatsApp updates</span><span className="v">On<small>we reach you on WhatsApp</small></span></div>
             <div className="prow"><span className="k">Language</span><span className="v">English<small>Telugu &amp; Hindi coming</small></span></div>
           </div>
 

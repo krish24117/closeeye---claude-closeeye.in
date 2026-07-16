@@ -386,7 +386,7 @@ export function ConnectExperience() {
       if (err) {
         const up = await signUpWithPassword(email, password)
         if (up.error) { setPending(null); return setError(up.error) }
-        if (!up.session) { setPending(null); return setError('Account created. Please confirm your email, then continue.') }
+        if (!up.session) { setPending(null); return setError('Account created — confirm the link in your email, then come back here and sign in. Everything you told me is saved.') }
       }
     } catch { setPending(null); return setError('We couldn’t reach the server. Check your connection and try again.') }
     setPending(null)

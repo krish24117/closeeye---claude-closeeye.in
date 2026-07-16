@@ -311,11 +311,11 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
   switch (rl.need) {
     case 'wellbeing':
       P.push(rl.livesAlone
-        ? `Because ${they} ${conj('live', g)} alone, the first thing I'd put in place is a gentle rhythm — a Guardian who visits, notices what a phone call can't, and writes it down for you the same day.`
-        : `The first thing I'd put in place is a gentle rhythm — a Guardian who visits, notices what a phone call can't, and writes it down for you the same day.`)
+        ? `Because ${they} ${conj('live', g)} alone, what I'd put in place is a gentle rhythm — a trusted person who can be there in a way a phone call can't, and tell you honestly how ${they} ${conj('seem', g)}.`
+        : `What I'd put in place is a gentle rhythm — a trusted person who can be there in a way a phone call can't, and tell you honestly how ${they} ${conj('seem', g)}.`)
       P.push(rl.distant
-        ? `Because you are far away, every visit becomes a page you can hold: how ${they} seemed, what ${they} ate, what ${they} laughed about. Proof, not reassurance.`
-        : `Every visit becomes a page you can hold: how ${they} seemed, what ${they} ate, what ${they} laughed about. Proof, not reassurance.`)
+        ? `Because you are far away, what comes back to you is real — how ${they} ${conj('seem', g)}, how the days are going — not reassurance you just have to trust.`
+        : `What comes back to you is real — how ${they} ${conj('seem', g)}, how the days are going — steady, honest, yours.`)
       break
     case 'errand':
       if (professional) {
@@ -338,8 +338,8 @@ export function counsel(rl: ReadLedger): { paragraphs: string[]; signature: stri
       }
       break
     case 'medical':
-      P.push(`I won't guess about health — ever. What ${name} needs is a real look: a verified Guardian who visits in person, notices what a call can't, and writes it down for you the same day.`)
-      P.push(`If anything is urgent, Close Eye reaches real help fast. Tell me what you're seeing, and I'll arrange the right visit.`)
+      P.push(`I won't guess about health — ever. What ${name} needs is a real look in person — someone trusted who can be there, notice what a call can't, and tell you plainly what they see.`)
+      P.push(`If anything feels urgent, Close Eye reaches real help fast. Tell me what you're seeing, and Close Eye brings the right person to ${name}.`)
       break
     case 'emergency':
       P.push(`If ${name} is in danger, please call your local emergency number now — that comes first, always.`)
