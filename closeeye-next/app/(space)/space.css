@@ -6,7 +6,7 @@
 .spc{
   --paper:#F5F2E9; --page:#FBF9F2; --ink:#17281F; --forest:#0E2A1F;
   --emerald:#06A94E; --sprout:#83C400;
-  --pencil:#6E7A6F; --faint:#98A097; --hair:#E2DECE; --hair2:#D8D3BF;
+  --pencil:#5F6B60; --faint:#98A097; --hair:#E2DECE; --hair2:#D8D3BF;
   --serif:var(--font-newsreader),Georgia,serif; --sans:var(--font-inter),system-ui,sans-serif;
   --colw:430px; /* the journal column — widens intentionally on larger screens */
   background:linear-gradient(180deg,#F7F4EC 0%,var(--paper) 30%,#F1EDE1 100%);

@@ -6,7 +6,7 @@
 .cx{
   --paper:#F5F2E9; --page:#FBF9F2; --ink:#17281F; --forest:#0E2A1F;
   --emerald:#06A94E; --sprout:#83C400;
-  --pencil:#6E7A6F; --faint:#98A097; --hair:#E2DECE; --hair2:#D8D3BF;
+  --pencil:#5F6B60; --faint:#98A097; --hair:#E2DECE; --hair2:#D8D3BF;
   --serif:var(--font-newsreader),Georgia,serif; --sans:var(--font-inter),system-ui,sans-serif;
   --colw:480px; /* fixed-measure reading column — the phone is primary; desktop only breathes wider */
   background:linear-gradient(180deg,#F7F4EC 0%,var(--paper) 30%,#F1EDE1 100%);
@@ -24,10 +24,10 @@
 
 /* ── the masthead — official lockup + CONNECT + trust triad, centred as one unit ── */
 .cx .mast{position:relative;display:flex;justify-content:center;padding:max(22px, env(safe-area-inset-top)) 0 28px}
-.cx .mast-signin{position:absolute;top:max(22px, env(safe-area-inset-top));right:0;
-  font-family:var(--sans);font-size:13px;color:var(--pencil);padding:2px 0;
-  border-bottom:1px solid transparent;transition:color .2s,border-color .2s}
-.cx .mast-signin:hover{color:var(--forest);border-bottom-color:var(--hair2)}
+.cx .mast-signin{position:absolute;top:calc(max(22px, env(safe-area-inset-top)) - 9px);right:-2px;
+  font-family:var(--sans);font-size:13px;color:var(--pencil);padding:11px 8px; /* ≥40px tap target */
+  transition:color .2s}
+.cx .mast-signin:hover{color:var(--forest)}
 .cx .welcome-back{margin:-12px 0 20px;text-align:center;font-family:var(--serif);font-size:14.5px;color:var(--pencil)}
 .cx .welcome-back a{color:var(--emerald);text-decoration:none;font-weight:500;
   border-bottom:1px solid transparent;transition:border-color .2s}
@@ -51,7 +51,7 @@
 .cx .hrow p i{font-style:italic;color:var(--pencil)}
 .cx .hrow .ld{width:6px;height:6px;border-radius:50%;background:var(--hair2);flex:none;position:relative;top:-2px}
 .cx .hrow:nth-child(2) .ld{background:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}
-.cx .exp-k{font-family:var(--sans);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--emerald);
+.cx .exp-k{font-family:var(--sans);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--forest);
   font-weight:500;margin:0 0 6px}
 
 /* ── Sprint 1 · the hero that unfolds ──
@@ -114,7 +114,7 @@
 .cx .cat.soon .cd{background:var(--hair2)}
 .cx .cat .soonlab{margin-left:auto;font-family:var(--sans);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
 .cx .breadth-grow{font-family:var(--serif);font-style:italic;font-size:15.5px;color:var(--forest);margin:18px 0 0;text-align:center}
-.cx .breadth-f{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--emerald);margin:7px 0 0;text-align:center}
+.cx .breadth-f{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--forest);margin:7px 0 0;text-align:center}
 @media(max-width:380px){.cx .catgrid{grid-template-columns:1fr}}
 
 .cx .btn-google{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;
@@ -156,7 +156,7 @@
 .cx .footlinks{margin-top:26px;font-family:var(--sans);font-size:12px;color:var(--pencil);
   display:flex;flex-wrap:wrap;justify-content:center;column-gap:7px;row-gap:9px;align-items:baseline}
 .cx .footlinks a{color:var(--pencil);text-decoration:none;border-bottom:1px dotted var(--hair2);
-  padding-bottom:1px;white-space:nowrap}
+  padding:10px 3px 2px;white-space:nowrap} /* padding grows the tap target upward; underline stays tight */
 .cx .footlinks a:hover{color:var(--forest);border-bottom-color:var(--pencil)}
 .cx .footlinks .sep{margin:0 7px;color:var(--hair2)}
 .cx .footnote{margin-top:20px;text-align:center;font-family:var(--serif);font-style:italic;
