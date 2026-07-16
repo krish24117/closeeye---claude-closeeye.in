@@ -273,7 +273,7 @@ export default function SpacePage() {
           <p className="sh">Your control</p>
           <div className="pcard">
             <div className="prow"><span className="k">Your data</span><span className="v"><a className="plink" href={WA} target="_blank" rel="noopener">Ask us anything →</a></span></div>
-            <div className="prow"><span className="k">Guardians</span><span className="v"><a className="plink" href="https://www.closeeye.in/trust-safety" target="_blank" rel="noopener">How they’re verified →</a></span></div>
+            <div className="prow"><span className="k">Companions</span><span className="v"><a className="plink" href="/how-companions-are-verified">How they’re verified →</a></span></div>
             <div className="prow"><span className="k">Policies</span><span className="v"><a className="plink" href="https://www.closeeye.in/cancellation-policy" target="_blank" rel="noopener">Cancellation</a> · <a className="plink" href="https://www.closeeye.in/refund-policy" target="_blank" rel="noopener">Refunds</a></span></div>
           </div>
 

@@ -81,7 +81,7 @@ function provisionOrTimeout(): Promise<{ lovedOneId: string | null; error: strin
 
 // Phase 2 visit catalogue (from closeeye.in — prices shown ONLY when Phase 2 is on).
 const VISITS = [
-  { id: 'home-wellbeing', name: 'Home Wellbeing Visit', price: 1000, blurb: 'A Guardian visits her at home, checks in with warmth, sends you a personal update.' },
+  { id: 'home-wellbeing', name: 'Home Wellbeing Visit', price: 1000, blurb: 'A companion visits her at home, checks in with warmth, sends you a personal update.' },
   { id: 'hospital-companion', name: 'Hospital Companion', price: 2000, blurb: 'Someone stays beside her through appointments and recovery — never alone.' },
   { id: 'custom', name: 'Custom Request', price: 500, blurb: 'Groceries, medicines, a festival visit — something only your family understands.' },
 ]
@@ -618,9 +618,8 @@ export function ConnectExperience() {
           <div className="dc-foot">
             <div className="footlinks">
               <a href="#how-it-works">How it works</a><span className="sep">·</span>
-              <a href="https://www.closeeye.in/services" target="_blank" rel="noopener">Services &amp; pricing</a><span className="sep">·</span>
-              <a href="https://www.closeeye.in/trust-safety" target="_blank" rel="noopener">How Guardians are verified</a><span className="sep">·</span>
-              <a href="https://www.closeeye.in/membership" target="_blank" rel="noopener">Membership</a><span className="sep">·</span>
+              {!PHASE_2_ENABLED && <><span className="plain">What it costs · visits open 15 August</span><span className="sep">·</span></>}
+              <a href="/how-companions-are-verified">How companions are verified</a><span className="sep">·</span>
               <a href={WA} target="_blank" rel="noopener">Ask a real person on WhatsApp</a>
             </div>
             <p className="footnote">Your Trusted Presence</p>
@@ -724,9 +723,8 @@ export function ConnectExperience() {
             <div className="s0-foot">
               <div className="footlinks">
                 <a href="#how-it-works">How it works</a><span className="sep">·</span>
-                <a href="https://www.closeeye.in/services" target="_blank" rel="noopener">Services &amp; pricing</a><span className="sep">·</span>
-                <a href="https://www.closeeye.in/trust-safety" target="_blank" rel="noopener">How Guardians are verified</a><span className="sep">·</span>
-                <a href="https://www.closeeye.in/membership" target="_blank" rel="noopener">Membership</a><span className="sep">·</span>
+                {!PHASE_2_ENABLED && <><span className="plain">What it costs · visits open 15 August</span><span className="sep">·</span></>}
+                <a href="/how-companions-are-verified">How companions are verified</a><span className="sep">·</span>
                 <a href={WA} target="_blank" rel="noopener">Ask a real person on WhatsApp</a>
               </div>
               <p className="footnote">Your Trusted Presence</p>
@@ -922,8 +920,8 @@ export function ConnectExperience() {
         {stage === 's4c' && PHASE_2_ENABLED && (
           <section className="stage on">
             <h1 className="h-serif" style={{ fontSize: 26 }}>{cap1(subject)}’s space is open.<br /><em>Begin with a visit.</em></h1>
-            <p className="lede">A verified Guardian goes to {rl?.gender === 'he' ? 'him' : rl?.gender === 'they' ? 'them' : 'her'}. You receive a written report on WhatsApp.</p>
-            <a className="qlink" href="https://www.closeeye.in/trust-safety" target="_blank" rel="noopener">How our Guardians are verified →</a>
+            <p className="lede">A verified companion goes to {rl?.gender === 'he' ? 'him' : rl?.gender === 'they' ? 'them' : 'her'}. You receive a written report on WhatsApp.</p>
+            <a className="qlink" href="/how-companions-are-verified">How companions are verified →</a>
             <div style={{ marginTop: 18 }}>
               {VISITS.map((v) => (
                 <button key={v.id} className={`plan${visit.id === v.id ? ' pick' : ''}`} onClick={() => setVisit(v)}>

@@ -140,6 +140,26 @@
 .cx .howit-roles{font-family:var(--sans);font-size:13px;line-height:1.55;color:var(--pencil);
   margin:14px 0 0;padding-top:13px;border-top:1px solid var(--hair2);max-width:46ch}
 
+/* ── /how-companions-are-verified — the trust page. The same paper world, given room:
+      one reading column, serif for every human line, hairlines between them. No card,
+      no shadow — this page is a page, not a widget. ── */
+.cx .verify{max-width:var(--colw);margin:0 auto;padding:26px 20px 56px}
+.cx .verify-back{display:inline-block;font-family:var(--sans);font-size:12.5px;color:var(--pencil);
+  text-decoration:none;border-bottom:1px dotted var(--hair2);padding-bottom:1px}
+.cx .verify-back:hover{color:var(--forest);border-bottom-color:var(--pencil)}
+.cx .verify-h{font-family:var(--serif);font-size:30px;line-height:1.2;color:var(--forest);
+  margin:26px 0 6px;text-wrap:balance}
+.cx .verify-steps{list-style:none;margin:22px 0 0;padding:0}
+.cx .verify-steps li{padding:16px 0;border-top:1px solid var(--hair)}
+.cx .verify-steps li:first-child{border-top:0}
+.cx .verify-steps p{font-family:var(--serif);font-size:19px;line-height:1.45;color:var(--forest);margin:0;max-width:34ch}
+.cx .verify-close{font-family:var(--serif);font-style:italic;font-size:16.5px;line-height:1.5;
+  color:var(--pencil);margin:26px 0 0;padding-top:20px;border-top:1px solid var(--hair2);max-width:36ch}
+@media (min-width:1024px){
+  .cx .verify{padding-top:44px}
+  .cx .verify-h{font-size:36px}
+}
+
 .cx .btn-google{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;
   background:var(--page);border:1px solid var(--hair2);border-radius:999px;padding:15px 22px;
   font-family:var(--sans);font-weight:600;font-size:15.5px;color:var(--ink);transition:transform .15s}
