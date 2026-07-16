@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { ArrowLeft, ArrowRight, CalendarCheck, Check, CheckCircle2, Loader2, MapPin, Pencil, UserPlus } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CalendarCheck, Check, CheckCircle2, CreditCard, Loader2, MapPin, Pencil, UserPlus } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/family/avatar'
@@ -11,7 +11,7 @@ import { OptionCard, Chip } from '@/components/ui/choice'
 import { Field, Textarea } from '@/components/ui/field'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
-import { BOOKING_SERVICES, HOSPITAL_DURATIONS, type HospitalDurationId } from '@/features/booking/schema'
+import { BOOKING_SERVICES, BOOKING_PAYMENT_NOTE, HOSPITAL_DURATIONS, type HospitalDurationId } from '@/features/booking/schema'
 import { requestVisit } from '@/features/booking/api'
 import { isFounderFunnelGated } from '@/lib/founder-funnel'
 import { PRELAUNCH_BOOKING_NOTE } from '@/lib/launch'
@@ -126,10 +126,15 @@ export default function FamilyBookPage() {
   const instructionsLabel = isCustom ? 'What you need' : 'Instructions'
 
   // Care members schedule their INCLUDED monthly visit (via ?included=1 from the
-  // membership page). Show it as included (₹0) and tell the PM not to charge —
-  // never a "₹1,000" price or a payment link on a benefit they've already paid for.
-  const isIncludedVisit =
-    params.get('included') === '1' && serviceId === 'home-wellbeing-visit' && planById(subscription?.plan_id)?.key === 'care'
+  // membership page). It is included ONLY when the Care subscription is genuinely
+  // ACTIVE (paid) — plan selection alone never earns a free visit. Show it as
+  // included (₹0) and tell the PM not to charge only then.
+  const carePlan = planById(subscription?.plan_id)?.key === 'care'
+  const careActive = carePlan && subscription?.status === 'active'
+  const wantsIncluded = params.get('included') === '1' && params.get('service') === 'home-wellbeing-visit'
+  const isIncludedVisit = wantsIncluded && serviceId === 'home-wellbeing-visit' && careActive
+  // Chose Care but hasn't completed payment → block the included path, send to payment.
+  const includedButUnpaid = wantsIncluded && carePlan && !careActive
   const effectiveTeamNotes = [
     isIncludedVisit ? 'Included monthly visit (Care plan) — nothing to charge.' : '',
     isHospital ? `Hospital Companion — ${duration.label} (${duration.priceFrom})` : '',
@@ -239,6 +244,22 @@ export default function FamilyBookPage() {
   // ── Loading loved ones ──────────────────────────────────────────────────────
   if (loading && lovedOnes.length === 0) {
     return <div className="grid place-items-center rounded-lg border border-line/70 bg-card py-20 shadow-sm"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
+  }
+
+  // ── Care chosen but not yet paid → the included visit isn't unlocked. Block the
+  //    included path and route to payment, rather than silently booking a "free" visit.
+  if (includedButUnpaid) {
+    return (
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
+        <Link href="/family/membership" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to membership</Link>
+        <section className="flex flex-col items-center rounded-lg border border-line/70 bg-card px-6 py-14 text-center shadow-sm">
+          <span className="grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-green"><CreditCard className="h-8 w-8" strokeWidth={1.5} /></span>
+          <h2 className="mt-5 text-h3 text-ink">One step from active</h2>
+          <p className="mt-2 max-w-sm text-body text-muted">Your Care plan is one step from active — complete payment to include this visit.</p>
+          <Button asChild size="lg" className="mt-6"><Link href="/family/membership">Complete payment</Link></Button>
+        </section>
+      </div>
+    )
   }
 
   // ── No family member yet ────────────────────────────────────────────────────
@@ -385,7 +406,7 @@ export default function FamilyBookPage() {
                   )
                 })}
               </div>
-              <p className="text-caption text-muted">Nothing is charged now — your Presence Manager confirms and sends a secure payment link.</p>
+              <p className="text-caption text-muted">{BOOKING_PAYMENT_NOTE}</p>
             </section>
           )}
           {isCustom && customRequirement && (
@@ -447,7 +468,7 @@ export default function FamilyBookPage() {
           </section>
 
           <div className="rounded-lg border border-accent/40 bg-accent-soft/40 px-5 py-4">
-            <p className="text-body-sm text-ink">{isIncludedVisit ? 'This visit is included with your Care plan — nothing to pay. Your Presence Manager will confirm and arrange it.' : 'Nothing is charged now. Your Presence Manager confirms availability, then sends a secure payment link.'}</p>
+            <p className="text-body-sm text-ink">{isIncludedVisit ? 'This visit is included with your Care plan — nothing to pay. Your Presence Manager will confirm and arrange it.' : BOOKING_PAYMENT_NOTE}</p>
           </div>
 
           {error && <p className="text-caption text-error">{error}</p>}

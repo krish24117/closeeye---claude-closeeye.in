@@ -658,6 +658,9 @@ export function ConnectExperience() {
                   {counselData.paragraphs.map((p, i) => <p key={i}>{boldLead(p)}</p>)}
                   <p className="sig">{counselData.signature}</p>
                 </div>
+                {rl.need === 'emergency' && (
+                  <a className="dial" href="tel:108">Call emergency services · 108</a>
+                )}
                 <p className="trustline" style={{ marginTop: 20 }}>Sometimes care needs a real person. Close Eye knows when.</p>
                 {!rl.aiConfident && <a className="qlink" href={WA} target="_blank" rel="noopener" style={{ marginTop: 10 }}>Talk to a real person on WhatsApp →</a>}
                 {stage === 's3' && (

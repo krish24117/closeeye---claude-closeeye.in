@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Check, Headset, ShieldCheck, Loader2, Phone, MessageCircle, Pencil } from 'lucide-react'
+import { ArrowLeft, Check, Headset, Loader2, Phone, MessageCircle, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useBooking } from '../state'
 import { submitBooking } from '../api'
@@ -9,7 +9,7 @@ import {
   serviceById,
   PURPOSES,
   TIME_SLOTS,
-  PAYMENT_METHODS,
+  BOOKING_PAYMENT_NOTE,
 } from '../schema'
 import { whatsappLink, SITE } from '@/lib/site'
 import { cn } from '@/lib/utils'
@@ -32,27 +32,18 @@ const LOADING_MESSAGES = [
 ]
 
 export function ReviewStep() {
-  const { data, patch, status, setStatus, submitted, goto, back } = useBooking()
-  const [payment, setPayment] = useState(data.paymentMethod)
-  const [payError, setPayError] = useState<string>()
+  const { data, status, setStatus, submitted, goto, back } = useBooking()
 
   const service = serviceById(data.serviceId)
   const base = service?.priceValue ?? 0
-  const taxes = Math.round(base * 0.18)
-  const total = base + taxes
   const purposeLabel = PURPOSES.find((p) => p.id === data.purpose)?.label
   const slotLabel = TIME_SLOTS.find((s) => s.id === data.timeSlot)?.label
 
   async function confirm() {
     if (status === 'submitting') return // guard against double-tap / retry re-entry (server also dedups)
-    if (!payment) {
-      setPayError('Choose how you’d like to pay')
-      return
-    }
-    patch({ paymentMethod: payment })
     setStatus('submitting')
     try {
-      const [result] = await Promise.all([submitBooking({ ...data, paymentMethod: payment }), delay(2000)])
+      const [result] = await Promise.all([submitBooking(data), delay(2000)])
       submitted(result.ref)
     } catch {
       setStatus('error')
@@ -67,7 +58,7 @@ export function ReviewStep() {
       <span className="text-caption font-semibold uppercase tracking-widest text-green">Step 6 of 6</span>
       <h1 className="mt-3 text-h3">Review your booking</h1>
       <p className="mt-3 max-w-xl text-body text-muted">
-        A quick look before you send this. Nothing is charged now — once we confirm a Guardian, your Presence Manager sends you a secure payment link on WhatsApp.
+        A quick look before you send this request. {BOOKING_PAYMENT_NOTE}
       </p>
 
       {/* Order summary */}
@@ -84,24 +75,14 @@ export function ReviewStep() {
         <Row label="Contact" value={[data.yourName, data.phone].filter(Boolean).join(' · ')} onEdit={() => goto(4)} />
       </dl>
 
-      {/* Price — transparent */}
+      {/* Price — a transparent starting point; the PM confirms the final amount */}
       <div className="mt-6 overflow-hidden rounded-md border border-line bg-card shadow-sm">
-        <div className="flex items-center justify-between px-6 py-3.5 text-body-sm">
-          <span className="text-muted">{service?.name} (starting)</span>
-          <span className="text-ink">{inr(base)}</span>
-        </div>
-        <div className="flex items-center justify-between border-t border-line px-6 py-3.5 text-body-sm">
-          <span className="text-muted">Taxes (18% GST)</span>
-          <span className="text-ink">{inr(taxes)}</span>
-        </div>
-        <div className="flex items-center justify-between border-t border-line bg-accent-soft/40 px-6 py-4">
-          <span className="text-body font-semibold text-ink">Estimated total</span>
-          <span className="text-h4 text-green">{inr(total)}</span>
+        <div className="flex items-center justify-between bg-accent-soft/40 px-6 py-4">
+          <span className="text-body font-semibold text-ink">{service?.name} · starting at</span>
+          <span className="text-h4 text-green">{inr(base)}</span>
         </div>
       </div>
-      <p className="mt-2 text-caption text-muted">
-        A starting estimate — no hidden charges. Your Presence Manager confirms the final amount before any work begins.
-      </p>
+      <p className="mt-2 text-caption text-muted">{BOOKING_PAYMENT_NOTE}</p>
 
       {/* Presence Manager — trust before payment */}
       <div className="mt-8 rounded-md border border-line bg-ink p-6 text-white sm:p-8">
@@ -124,46 +105,6 @@ export function ReviewStep() {
             </li>
           ))}
         </ul>
-      </div>
-
-      {/* Payment */}
-      <div className="mt-8">
-        <p className="text-body-sm font-semibold text-ink">How would you prefer to pay?</p>
-        <p className="text-caption text-muted">We&apos;ll send a secure payment link on WhatsApp once your Guardian is confirmed — no charge now.</p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {PAYMENT_METHODS.map((m) => {
-            const selected = payment === m.id
-            return (
-              <button
-                key={m.id}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => {
-                  setPayment(m.id)
-                  setPayError(undefined)
-                }}
-                className={cn(
-                  'relative flex flex-col items-start gap-0.5 rounded-md border bg-card p-4 text-left transition-all duration-200 ease-premium',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green focus-visible:ring-offset-2 focus-visible:ring-offset-ivory',
-                  selected ? 'border-green ring-1 ring-green' : 'border-line hover:border-ink/20',
-                )}
-              >
-                {selected && (
-                  <span className="absolute right-3 top-3 grid h-5 w-5 place-items-center rounded-full bg-green text-ivory">
-                    <Check className="h-3 w-3" strokeWidth={3} />
-                  </span>
-                )}
-                <span className="text-body font-semibold text-ink">{m.label}</span>
-                <span className="text-caption text-muted">{m.note}</span>
-              </button>
-            )
-          })}
-        </div>
-        <p className="mt-3 flex items-center gap-2 text-caption text-muted">
-          <ShieldCheck className="h-4 w-4 text-green" strokeWidth={1.5} />
-          International cards coming soon. Payments are encrypted and secure.
-        </p>
-        {payError && <p className="mt-2 text-caption text-error">{payError}</p>}
       </div>
 
       {/* Actions */}

@@ -66,7 +66,10 @@ export default function MembershipPage() {
   const currentId = subscription?.plan_id
   const active = subscription?.status === 'active'
   const activating = subscription?.status === 'authenticated'
-  const isCare = planById(currentId)?.key === 'care'
+  // "Included" benefits (e.g. the monthly visit) are earned by an ACTIVE Care
+  // subscription — never by merely selecting the plan. An unpaid Care selection
+  // sees the normal price + the "complete payment" nudge, not a free visit.
+  const isCare = planById(currentId)?.key === 'care' && active
   const onConnect = planById(currentId)?.key === 'connect'
   // Keep the "complete your membership" framing until the plan is actually active.
   const showActivate = joinFlow && !active

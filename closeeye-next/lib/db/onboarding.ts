@@ -10,13 +10,14 @@ import type { MembershipReceipt, Subscription } from '@/lib/db/types'
 export async function saveProfileBasics(userId: string, input: { fullName: string; phone?: string }): Promise<{ error: string | null }> {
   const full_name = input.fullName.trim()
   const phone = input.phone?.trim() || null
-  try {
-    await supabase.from('profiles').update({ full_name, phone }).eq('id', userId)
-  } catch {
-    /* best-effort; the metadata flag below is the source of truth */
-  }
-  const { error } = await supabase.auth.updateUser({ data: { full_name, onboarding_complete: true } })
-  return { error: error?.message ?? null }
+  // The mobile lives ONLY on the profiles row (not metadata) and is mirrored to
+  // whatsapp_number so the "WhatsApp contact" reads resolve to a real number
+  // instead of silently falling back. A failed write loses the mobile — so
+  // surface the error, never swallow it.
+  const { error: profileErr } = await supabase.from('profiles')
+    .update({ full_name, phone, whatsapp_number: phone }).eq('id', userId)
+  const { error: authErr } = await supabase.auth.updateUser({ data: { full_name, onboarding_complete: true } })
+  return { error: authErr?.message ?? profileErr?.message ?? null }
 }
 
 /**
@@ -57,12 +58,12 @@ export async function saveMyProfile(
 ): Promise<{ error: string | null }> {
   const full_name = input.fullName.trim()
   const phone = input.phone?.trim() || null
-  try {
-    await supabase.from('profiles').update({ full_name, phone }).eq('id', userId)
-  } catch {
-    /* best-effort; the metadata below is authoritative for name */
-  }
-  const { error } = await supabase.auth.updateUser({
+  // Mobile lives on profiles (not metadata); mirror it to whatsapp_number so the
+  // WhatsApp-contact reads resolve. Surface a failed write — never toast success
+  // while silently dropping the user's edited mobile number.
+  const { error: profileErr } = await supabase.from('profiles')
+    .update({ full_name, phone, whatsapp_number: phone }).eq('id', userId)
+  const { error: authErr } = await supabase.auth.updateUser({
     data: {
       full_name,
       language: (input.language ?? '').trim(),
@@ -70,7 +71,7 @@ export async function saveMyProfile(
       emergency_contact_phone: (input.emergencyPhone ?? '').trim(),
     },
   })
-  return { error: error?.message ?? null }
+  return { error: authErr?.message ?? profileErr?.message ?? null }
 }
 
 /** The user's current membership subscription, or null if none selected yet. */

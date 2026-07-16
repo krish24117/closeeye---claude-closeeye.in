@@ -85,6 +85,15 @@ export const PAYMENT_METHODS = [
 
 export const COMM_PREFS = ['WhatsApp', 'Phone call', 'Email'] as const
 
+/**
+ * The single source of truth for how every booking flow describes payment.
+ * No flow charges at request time — a Presence Manager confirms and sends a
+ * secure payment link. Guest wizard, in-app /family/book, and Connect all read
+ * this so the copy can never drift (and no flow ever fakes a checkout).
+ */
+export const BOOKING_PAYMENT_NOTE =
+  'Nothing is charged now. Your Presence Manager confirms availability and the final amount, then sends a secure payment link.'
+
 /* ── Validation (per step + full) ──────────────────────────────────────── */
 
 const phone = z

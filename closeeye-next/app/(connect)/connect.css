@@ -348,6 +348,12 @@
 .cx .counsel p{font-family:var(--serif);font-size:18.5px;line-height:1.62;color:var(--ink);margin:0 0 18px;max-width:36ch}
 .cx .counsel p b{font-weight:500;color:var(--forest)}
 .cx .counsel .sig{font-family:var(--serif);font-style:italic;color:var(--pencil);font-size:15px;margin-top:6px}
+/* emergency dial — a real, tappable number on the public page, matching the in-app 108 */
+.cx .dial{display:inline-flex;align-items:center;gap:8px;margin:2px 0 4px;padding:12px 22px;border-radius:999px;
+  background:#B23A2E;color:#fff;font-family:var(--sans);font-size:14.5px;font-weight:700;letter-spacing:.01em;
+  text-decoration:none;box-shadow:0 2px 12px rgba(178,58,46,.24)}
+.cx .dial:hover{background:#9C3125}
+.cx .dial:active{transform:scale(.98)}
 
 .cx .act{margin-top:auto;padding-top:30px}
 .cx .btn{display:block;width:100%;background:var(--forest);color:#F7F4EC;border:1px solid transparent;border-radius:999px;
