@@ -158,6 +158,18 @@ export function blanksFor(gender: Gender | null): Blank[] {
     { key: 'nearby', text: `Who can reach ${them} in twenty minutes, if ever needed` },
   ]
 }
+/** Short, warm display labels for the "still learning" blank keys. Used in the
+ *  Connect ribbon/ledger AND by the Family Space to dedup a blank against a fact the
+ *  family already gave. The general-blank labels (health/mornings/nearby) are unique
+ *  and never collide with a base ledger-line label — so we never re-ask what's known. */
+export const KEY_LABEL: Record<string, string> = {
+  health: 'Health', mornings: 'Age & mornings', nearby: 'Nearby help', when_where: 'When & where',
+  reach: 'How to reach', details: 'What’s needed', seeing: 'What you see', meds: 'Medicines',
+  doctor: 'Doctor', where: 'Where', with: 'Who’s there', days: 'Her days', loves: 'What she loves',
+  often: 'How often', which: 'Papers', whose: 'Photos', from: 'Roots',
+  due: 'By when', papers: 'Papers', helps: 'Who helps',
+}
+
 function blanksForNeed(need: NeedType, name: string, gender: Gender | null, forLoved: boolean): Blank[] {
   const they = pronoun.subject(gender), them = pronoun.object(gender), poss = pronoun.possessive(gender)
   switch (need) {

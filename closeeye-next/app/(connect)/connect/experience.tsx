@@ -20,22 +20,14 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { signInWithPassword, signUpWithPassword } from '@/lib/auth-actions'
-import { readLedger, counsel, understandingSummary, type ReadLedger } from '@/lib/connect/ledger'
+import { readLedger, counsel, understandingSummary, KEY_LABEL, type ReadLedger } from '@/lib/connect/ledger'
 import { logUnderstanding, newUnderstandingSession } from '@/lib/connect/log'
-import { setConnectDraft, getConnectDraft, provisionFamilySpace } from '@/lib/db/space'
+import { setConnectDraft, getConnectDraft, provisionFamilySpace, saveConnectSession, getConnectSession, clearConnectSession } from '@/lib/db/space'
 import { PHASE_2_ENABLED } from '@/lib/connect/phase'
 
 const WA = 'https://wa.me/919000221261'
 const SAMPLE = 'My mother lives alone in Hyderabad. How do I know she’s okay?'
 const SAMPLE2 = 'My father gets stressed every year with his tax filing. Can someone help him through it?'
-// short, warm labels for the lines the visitor fills in
-const KEY_LABEL: Record<string, string> = {
-  health: 'Health', mornings: 'Her days', nearby: 'Nearby help', when_where: 'When & where',
-  reach: 'How to reach', details: 'What’s needed', seeing: 'What you see', meds: 'Medicines',
-  doctor: 'Doctor', where: 'Where', with: 'Who’s there', days: 'Her days', loves: 'What she loves',
-  often: 'How often', which: 'Papers', whose: 'Photos', from: 'Roots',
-  due: 'By when', papers: 'Papers', helps: 'Who helps',
-}
 // warm, specific prompts for the moment a line is empty — "tell me something only
 // your family would know." Pronoun-free so they never mis-gender anyone.
 const FILL_PH: Record<string, string> = {
@@ -67,6 +59,9 @@ type Stage = 's0' | 's1' | 's2' | 's3' | 's4' | 's4b' | 's4c' | 's4d' | 's5' | '
 const THREAD: Record<Stage, number> = { s0: 8, s1: 30, s2: 48, s3: 66, s4: 80, s4b: 88, retry: 88, resuming: 92, s4c: 90, s4d: 95, s5: 100 }
 // the conversational thread — these stages accumulate as one continuous exchange
 const CONVO: Stage[] = ['s1', 's2', 's3', 's4']
+// the stable resting points a refresh can safely restore to (transient stages —
+// sign-in, provisioning, retry, seal — are never persisted as the resume point)
+const STABLE: Stage[] = ['s0', 's1', 's2', 's3', 's4']
 const order = (s: Stage) => CONVO.indexOf(s)
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -288,6 +283,30 @@ export function ConnectExperience() {
     return () => { alive = false }
   }, [])
 
+  /* ── restore an in-progress conversation after a refresh — so it never feels like
+        Connect forgot. Never runs over an OAuth return (the effects above own that);
+        rl is re-derived deterministically from the saved text. ── */
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.has('code') || params.has('error')) return
+    const s = getConnectSession()
+    if (!s) return
+    const rl0 = readLedger(s.text)
+    setText(s.text); setRl(rl0); setTold(s.told || []); setAgainCount(s.againCount || 0)
+    const st = STABLE.includes(s.stage as Stage) ? (s.stage as Stage) : 's0'
+    if (st !== 's0') {
+      setS1n(rl0.ledger.filter((l) => !l.quote).length); setS1live(-1); setS1done(true) // the reveal already happened
+      setStage(st)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── autosave the conversation to localStorage so a refresh recovers it. Only
+        stable resting points are persisted; transient stages keep the last one. ── */
+  React.useEffect(() => {
+    if (!STABLE.includes(stage)) return
+    if (text.trim() || told.length) saveConnectSession({ text, stage, told, againCount })
+  }, [text, stage, told, againCount])
+
   /* ── provision + branch by phase. NEVER navigates to an empty Space; a failure
         surfaces a calm retry with the draft intact. ── */
   async function finishAndProvision() {
@@ -308,6 +327,7 @@ export function ConnectExperience() {
     setStage('s5')
     const [res] = await Promise.all([provisionOrTimeout(), delay(reduce ? 0 : 2400)])
     if (res.error || !res.lovedOneId) { setError(recoveryMessage(res.error)); setStage('retry'); return }
+    clearConnectSession() // the conversation is now a real Family Space — done
     router.replace('/space')
   }
   function recoveryMessage(err: string | null): string {
@@ -416,6 +436,7 @@ export function ConnectExperience() {
   const PREV: Record<string, Stage> = { s1: 's0', s2: 's1', s3: 's2', s4: 's3', s4b: 's4' }
   function editWords() { setError(''); setStage('s0') }
   function changePerson() {
+    clearConnectSession() // a fresh start — drop the saved conversation
     clearTimers(); setError(''); setText(''); setRl(null); setTold([]); setActiveKey(null); setFill(''); setAgainText(''); setAgainCount(0); setFeedback('none')
     setS1n(0); setS1live(-1); setS1done(false); setStage('s0')
   }

@@ -152,7 +152,7 @@ export default function SpacePage() {
         <section className={`view${view === 'space' ? ' on' : ''}`} aria-label={`${person}’s space`}>
           <div className="greet">
             <h1>{greeting}</h1>
-            <div className="status"><span className="ld" /><span>All is quiet with {person}. {Person}’s page is new — tell me more whenever you like.</span></div>
+            <div className="status"><span className="ld" /><span>We’re just getting to know {person}. Everything here comes from what your family shares — never assumptions.</span></div>
           </div>
 
           <div className="fam">

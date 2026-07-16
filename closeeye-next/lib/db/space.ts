@@ -11,7 +11,7 @@
  */
 import { supabase } from '@/lib/supabase'
 import { classify, pronoun, type Gender } from '@/lib/connect/understand'
-import { readLedger, ledgerEntriesForStorage, blanksFor, type Blank, type LedgerLine } from '@/lib/connect/ledger'
+import { readLedger, ledgerEntriesForStorage, blanksFor, KEY_LABEL, type Blank, type LedgerLine } from '@/lib/connect/ledger'
 import { VISITS_OPEN_LABEL } from '@/lib/connect/phase'
 
 /** Mid-sentence display name: the name the family gave ("Amma"), else the
@@ -46,6 +46,36 @@ export function getConnectDraft(): ConnectDraft | null {
 export function clearConnectDraft(): void {
   if (typeof window === 'undefined') return
   try { localStorage.removeItem(DRAFT_KEY) } catch {}
+}
+
+/* ── in-progress conversation autosave (survives a browser refresh) ──
+   Separate from the pre-sign-in DRAFT above: this restores a visitor to exactly
+   where they were on /connect if the page reloads mid-conversation, so it never
+   feels like Connect forgot what they typed. Deterministic `rl` is re-derived from
+   the text on restore, so only the raw inputs are stored. */
+const SESSION_KEY = 'closeeye.connect.session'
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000 // 12h — recover a real session, not a stale one from days ago
+export interface ConnectTold { key: string; label: string; body: string }
+export interface ConnectSession { text: string; stage: string; told: ConnectTold[]; againCount: number; at: number }
+
+export function saveConnectSession(s: Omit<ConnectSession, 'at'>): void {
+  if (typeof window === 'undefined') return
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify({ ...s, at: Date.now() } satisfies ConnectSession)) } catch {}
+}
+export function getConnectSession(): ConnectSession | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(SESSION_KEY)
+    if (!raw) return null
+    const s = JSON.parse(raw) as ConnectSession
+    if (!s || typeof s.text !== 'string' || !s.text.trim()) return null
+    if (typeof s.at === 'number' && Date.now() - s.at > SESSION_TTL_MS) { localStorage.removeItem(SESSION_KEY); return null }
+    return s
+  } catch { return null }
+}
+export function clearConnectSession(): void {
+  if (typeof window === 'undefined') return
+  try { localStorage.removeItem(SESSION_KEY) } catch {}
 }
 
 /** relationship → gender (single source of truth: the Understanding Engine). */
@@ -193,12 +223,17 @@ export async function fetchSpace(): Promise<SpaceData | null> {
   const callName = callEntry?.body?.trim() || null
   const learned: LedgerLine[] = spaceFacts.filter((e) => e.label !== 'callname').map((e) => ({ label: e.label ?? '', body: e.body }))
 
+  // Never ask twice: a blank is "filled" if the family answered it in the Space
+  // (learned label === key) OR already gave that fact during Connect (a known fact
+  // whose label matches the blank's display label). The Space feels cumulative.
   const filledKeys = new Set(learned.map((l) => l.label))
+  const knownLabels = new Set(known.map((l) => l.label))
+  const alreadyKnown = (b: Blank) => { const lbl = KEY_LABEL[b.key]; return filledKeys.has(b.key) || (!!lbl && knownLabels.has(lbl)) }
   const them = pronoun.object(gender)
   const blanks: Blank[] = [
     // the first thing worth knowing: the name the family actually uses
     ...(callName ? [] : [{ key: 'callname', text: `What you call ${them}` }]),
-    ...blanksFor(gender).filter((b) => !filledKeys.has(b.key)),
+    ...blanksFor(gender).filter((b) => !alreadyKnown(b)),
   ]
 
   // the name we render — the family's word ("Amma"), else the relationship lowercased
