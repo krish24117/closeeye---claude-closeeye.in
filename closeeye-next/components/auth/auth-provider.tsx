@@ -68,9 +68,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     let active = true
     setOnboardingComplete(null)
-    isOnboardingComplete().then((v) => {
-      if (active) setOnboardingComplete(v)
-    })
+    isOnboardingComplete()
+      .then((v) => { if (active) setOnboardingComplete(v) })
+      .catch(() => { if (active) setOnboardingComplete(false) }) // never leave it null → never hang the splash
     return () => {
       active = false
     }

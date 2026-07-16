@@ -55,13 +55,19 @@ export default function SpacePage() {
       const returning = url.searchParams.has('code')
       let session = (await supabase.auth.getSession()).data.session
       if (!session && returning) {
+        // returning from Google — wait for the PKCE code exchange to complete
         for (let i = 0; i < 16 && !session; i++) {
           await new Promise((r) => setTimeout(r, 250))
           session = (await supabase.auth.getSession()).data.session
         }
         window.history.replaceState({}, '', url.pathname) // drop ?code from the address bar
+        // Exchange failed (expired code / opened in another browser). Offer a retry —
+        // NEVER re-redirect to Google, which would bounce in a loop. "Try again"
+        // reloads with no ?code and starts a clean sign-in.
+        if (!session) { setLoadError(true); setLoading(false); return }
       }
       if (!session) {
+        // a fresh, signed-out visit → straight to sign-in (returns to /space)
         await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${url.origin}/space` } })
         return // browser is redirecting to Google — keep the calm spinner
       }

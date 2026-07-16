@@ -316,17 +316,21 @@ export function ConnectExperience() {
     // where it starts a sentence (the seal), never "Your Mother's" mid-sentence.
     setSubject(rl2 ? (rl2.name || (rl2.relationshipWord ? `your ${rl2.relationshipWord}` : rl2.subjectLabel)) : 'their')
     setSelfSpace(rl2 ? !rl2.forLoved : false)
+    // Only a real error retries. `{error:null, lovedOneId:null}` means the draft was
+    // ALREADY provisioned — e.g. a slow first attempt finished after our 10s timeout
+    // and cleared the draft — so the space now exists; proceed instead of looping.
+    // (/space self-corrects to /connect if somehow absent.)
     if (PHASE_2_ENABLED) {
       setStage('resuming')
       const res = await provisionOrTimeout()
-      if (res.error || !res.lovedOneId) { setError(recoveryMessage(res.error)); setStage('retry'); return }
+      if (res.error) { setError(recoveryMessage(res.error)); setStage('retry'); return }
       setStage('s4c')
       return
     }
     // Phase 1: seal (with the promise line) while provisioning; only land on success.
     setStage('s5')
     const [res] = await Promise.all([provisionOrTimeout(), delay(reduce ? 0 : 2400)])
-    if (res.error || !res.lovedOneId) { setError(recoveryMessage(res.error)); setStage('retry'); return }
+    if (res.error) { setError(recoveryMessage(res.error)); setStage('retry'); return }
     clearConnectSession() // the conversation is now a real Family Space — done
     router.replace('/space')
   }

@@ -10,11 +10,13 @@ import { supabase } from '@/lib/supabase'
  * email/Google sign-up (no name yet) is sent to onboarding.
  */
 export async function isOnboardingComplete(): Promise<boolean> {
-  const { data: auth } = await supabase.auth.getUser()
-  const user = auth.user
-  if (!user) return false
-  if (user.user_metadata?.onboarding_complete === true) return true
+  // Never REJECT: a flaky/offline auth cold start must not leave the caller hanging
+  // forever (that shows an infinite native splash). getUser() is inside the guard too.
   try {
+    const { data: auth } = await supabase.auth.getUser()
+    const user = auth.user
+    if (!user) return false
+    if (user.user_metadata?.onboarding_complete === true) return true
     const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle()
     return Boolean(data?.full_name && String(data.full_name).trim())
   } catch {
