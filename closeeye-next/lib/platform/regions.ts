@@ -129,3 +129,20 @@ export function careEnabled(code: string | null | undefined, module: CareModuleI
 export const ALL_REGIONS: Region[] = (Object.keys(REGIONS) as RegionCode[])
   .filter((c) => c !== 'GENERIC')
   .map((c) => REGIONS[c])
+
+/**
+ * The emergency dial a screen should render. When the number is known → a tel: link with
+ * the number; when unknown (GENERIC) → NO link and an honest "call your local emergency
+ * number", because we must never dial a wrong one.
+ *
+ * PHASE 0 CALLERS pass DEFAULT_REGION_CODE explicitly (→ India, 108) — the NUMBER is now
+ * sourced from config in one place, while per-user region RESOLUTION waits for the
+ * region_code column (Phase 0b). Passing null here would resolve to GENERIC and drop
+ * India's 108, so callers pin the region until that column exists.
+ */
+export function emergencyDial(code: string | null | undefined): { href: string | null; text: string } {
+  const e = emergencyFor(code)
+  return e.number
+    ? { href: `tel:${e.number}`, text: `Call emergency services · ${e.number}` }
+    : { href: null, text: 'Call your local emergency number' }
+}

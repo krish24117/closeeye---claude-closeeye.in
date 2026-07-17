@@ -6,7 +6,7 @@
  *   2. An unknown region NEVER inherits India's 108 — a wrong emergency number is lethal.
  */
 import { describe, it, expect } from 'vitest'
-import { regionFor, emergencyFor, careEnabled, DEFAULT_REGION_CODE, ALL_REGIONS } from './regions'
+import { regionFor, emergencyFor, careEnabled, emergencyDial, DEFAULT_REGION_CODE, ALL_REGIONS } from './regions'
 
 describe('India is today, expressed as config', () => {
   it('the default region is India', () => expect(DEFAULT_REGION_CODE).toBe('IN'))
@@ -53,6 +53,24 @@ describe('Connect is global; Care is regional', () => {
   it('India is the ONLY region with Care enabled today', () => {
     const withCare = ALL_REGIONS.filter((r) => Object.values(r.care).some(Boolean))
     expect(withCare.map((r) => r.code)).toEqual(['IN'])
+  })
+})
+
+describe('emergencyDial · what the crisis screens render (Phase 0 wiring)', () => {
+  it('India (the Phase-0 default) → a real tel:108 link, unchanged', () => {
+    const d = emergencyDial(DEFAULT_REGION_CODE)
+    expect(d.href).toBe('tel:108')
+    expect(d.text).toBe('Call emergency services · 108')
+  })
+  it('a Connect-only market dials its own number', () => {
+    expect(emergencyDial('GB').href).toBe('tel:999')
+    expect(emergencyDial('DE').text).toMatch(/112/)
+  })
+  it('unknown region → NO tel: link and an honest label — never a wrong number', () => {
+    const d = emergencyDial('atlantis')
+    expect(d.href).toBe(null)
+    expect(d.text).toMatch(/your local emergency number/i)
+    expect(d.text).not.toMatch(/108/)
   })
 })
 

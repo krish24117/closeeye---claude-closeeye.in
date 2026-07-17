@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabase'
 import { fetchSpace, appendLearning, askConnect, personName, type SpaceData, type AskAnswer } from '@/lib/db/space'
 import type { Blank, LedgerLine } from '@/lib/connect/ledger'
 import { deriveSnapshot, deriveRecommendations, groupUnderstanding, askSuggestions, type UnderstandingInput } from '@/lib/space/understanding'
+import { emergencyDial, DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 import { PHASE_2_ENABLED, VISITS_OPEN_LABEL } from '@/lib/connect/phase'
 
 const WA = 'https://wa.me/919000221261'
@@ -266,7 +267,7 @@ export default function SpacePage() {
             {answer && (
               <div className="answer">
                 <p>{answer.text}</p>
-                {answer.dial && <a className="dial" href="tel:108">Call emergency services · 108</a>}
+                {answer.dial && (() => { const d = emergencyDial(DEFAULT_REGION_CODE); return d.href ? <a className="dial" href={d.href}>{d.text}</a> : <span className="dial">{d.text}</span> })()}
                 {answer.whatsapp && <a className="wa" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>}
               </div>
             )}

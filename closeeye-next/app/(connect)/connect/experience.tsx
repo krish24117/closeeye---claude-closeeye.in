@@ -26,6 +26,7 @@ import { CONVERSATION_BUDGET } from '@/lib/platform/trust'
 import { readRefusal } from '@/lib/platform/refusal'
 import { setConnectDraft, getConnectDraft, provisionFamilySpace, saveConnectSession, getConnectSession, clearConnectSession } from '@/lib/db/space'
 import { PHASE_2_ENABLED } from '@/lib/connect/phase'
+import { emergencyDial, DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 
 const WA = 'https://wa.me/919000221261'
 const SAMPLE = 'My mother lives alone in Hyderabad. How do I know she’s okay?'
@@ -984,9 +985,12 @@ export function ConnectExperience() {
                         <p>Still with you — even a few words help. Who is this for, and what’s going on?</p>
                       )}
                     </div>
-                    {rl.need === 'emergency' && (
-                      <a className="dial" href="tel:108">Call emergency services · 108</a>
-                    )}
+                    {/* The number now comes from the region config, not a literal. Phase 0 pins
+                        it to India (108); per-user resolution lands with region_code. */}
+                    {rl.need === 'emergency' && (() => {
+                      const d = emergencyDial(DEFAULT_REGION_CODE)
+                      return d.href ? <a className="dial" href={d.href}>{d.text}</a> : <span className="dial">{d.text}</span>
+                    })()}
                     {understood ? (
                       <>
                         <p className="trustline" style={{ marginTop: 20 }}>Sometimes care needs a real person. Close Eye knows when.</p>
