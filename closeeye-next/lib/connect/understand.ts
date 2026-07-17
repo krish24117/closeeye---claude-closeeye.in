@@ -20,6 +20,7 @@
  * own while the shipped path kept a careless one, and they drifted (audit 2026-07-17).
  */
 import { isCrisis } from './crisis'
+import { isNotPersonWord } from './lexicon'
 
 export type Intent =
   | 'wellbeing' | 'medicine' | 'documents' | 'photos' | 'memories'
@@ -106,7 +107,8 @@ const CALENDAR = new Set<string>(('today tomorrow yesterday tonight morning afte
    token belongs to one of those classes we ask who, rather than assume it is a person —
    the engine never invents a family member. */
 const notAName = (l: string): boolean =>
-  STOP.has(l) || SAFE.has(l) || isIntentWord(l) || PLACE.has(l) || FACILITY.has(l) || CALENDAR.has(l)
+  STOP.has(l) || SAFE.has(l) || isIntentWord(l) || PLACE.has(l) || FACILITY.has(l) || CALENDAR.has(l) ||
+  isNotPersonWord(l)   // a health term or a document — the vocabulary the engine already has
 
 /* ── intent keywords (first match wins). Emergency cues are deliberately strong,
    so "fell in love" / "missed you" never fabricate a crisis. ── */

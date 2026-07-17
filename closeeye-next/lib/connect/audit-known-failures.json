@@ -1,57 +1,13 @@
 [
   {
     "category": "C1",
-    "text": "my mother Sugar is high",
-    "assert": "name",
-    "want": null,
-    "observedOnAudit": "name=\"Sugar\"",
-    "kind": "slot-generalization",
-    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
-  },
-  {
-    "category": "C1",
-    "text": "my mother Fever since morning",
-    "assert": "name",
-    "want": null,
-    "observedOnAudit": "name=\"Fever\"",
-    "kind": "slot-generalization",
-    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
-  },
-  {
-    "category": "C1",
-    "text": "My father Cancer treatment",
-    "assert": "name",
-    "want": null,
-    "observedOnAudit": "name=\"Cancer\"",
-    "kind": "slot-generalization",
-    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
-  },
-  {
-    "category": "C1",
-    "text": "my mother Kidney problem",
-    "assert": "name",
-    "want": null,
-    "observedOnAudit": "name=\"Kidney\"",
-    "kind": "slot-generalization",
-    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
-  },
-  {
-    "category": "C1",
-    "text": "my father Dementia is getting worse",
-    "assert": "name",
-    "want": null,
-    "observedOnAudit": "name=\"Dementia\"",
-    "kind": "slot-generalization",
-    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
-  },
-  {
-    "category": "C1",
     "text": "my father Uber",
     "assert": "name",
     "want": null,
     "observedOnAudit": "name=\"Uber\"",
     "kind": "genuine-ambiguity",
-    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule."
+    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule.",
+    "verifiedBehaviour": "FILLS a person (subjectKnown=true, subjectLabel=the brand) — it does NOT route to the ask flow. No rule separates \"Uber\" from \"Ravi\" in this position; left unfixed per founder decision (a brand blocklist is a special case and is banned)."
   },
   {
     "category": "C1",
@@ -60,34 +16,8 @@
     "want": null,
     "observedOnAudit": "name=\"Ola\"",
     "kind": "genuine-ambiguity",
-    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule."
-  },
-  {
-    "category": "C1",
-    "text": "my mother Pension is delayed",
-    "assert": "name",
-    "want": null,
-    "observedOnAudit": "name=\"Pension\"",
-    "kind": "slot-generalization",
-    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
-  },
-  {
-    "category": "C1",
-    "text": "My father Passport is expiring",
-    "assert": "name",
-    "want": null,
-    "observedOnAudit": "name=\"Passport\"",
-    "kind": "slot-generalization",
-    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
-  },
-  {
-    "category": "C1",
-    "text": "my father Aadhaar card is lost",
-    "assert": "name",
-    "want": null,
-    "observedOnAudit": "name=\"Aadhaar\"",
-    "kind": "slot-generalization",
-    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule.",
+    "verifiedBehaviour": "FILLS a person (subjectKnown=true, subjectLabel=the brand) — it does NOT route to the ask flow. No rule separates \"Uber\" from \"Ravi\" in this position; left unfixed per founder decision (a brand blocklist is a special case and is banned)."
   },
   {
     "category": "C1",
@@ -96,7 +26,8 @@
     "want": null,
     "observedOnAudit": "name=\"Whatsapp\"",
     "kind": "genuine-ambiguity",
-    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule."
+    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule.",
+    "verifiedBehaviour": "FILLS a person (subjectKnown=true, subjectLabel=the brand) — it does NOT route to the ask flow. No rule separates \"Uber\" from \"Ravi\" in this position; left unfixed per founder decision (a brand blocklist is a special case and is banned)."
   },
   {
     "category": "C1",
@@ -105,7 +36,8 @@
     "want": null,
     "observedOnAudit": "name=\"Zomato\"",
     "kind": "genuine-ambiguity",
-    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule."
+    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule.",
+    "verifiedBehaviour": "FILLS a person (subjectKnown=true, subjectLabel=the brand) — it does NOT route to the ask flow. No rule separates \"Uber\" from \"Ravi\" in this position; left unfixed per founder decision (a brand blocklist is a special case and is banned)."
   },
   {
     "category": "C1",
@@ -114,7 +46,8 @@
     "want": null,
     "observedOnAudit": "name=\"Netflix\"",
     "kind": "genuine-ambiguity",
-    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule."
+    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule.",
+    "verifiedBehaviour": "FILLS a person (subjectKnown=true, subjectLabel=the brand) — it does NOT route to the ask flow. No rule separates \"Uber\" from \"Ravi\" in this position; left unfixed per founder decision (a brand blocklist is a special case and is banned)."
   },
   {
     "category": "C1",
@@ -123,42 +56,7 @@
     "want": null,
     "observedOnAudit": "name=\"Airtel\"",
     "kind": "genuine-ambiguity",
-    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule."
-  },
-  {
-    "category": "C1",
-    "text": "my mother Yoga class",
-    "assert": "name",
-    "want": null,
-    "observedOnAudit": "name=\"Yoga\"",
-    "kind": "slot-generalization",
-    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
-  },
-  {
-    "category": "C1",
-    "text": "my father Pension Office",
-    "assert": "name",
-    "want": null,
-    "observedOnAudit": "name=\"Pension\"",
-    "kind": "slot-generalization",
-    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
-  },
-  {
-    "category": "C1",
-    "text": "my mother Arthritis is painful",
-    "assert": "name",
-    "want": null,
-    "observedOnAudit": "name=\"Arthritis\"",
-    "kind": "slot-generalization",
-    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
-  },
-  {
-    "category": "C1",
-    "text": "my father Blood test tomorrow",
-    "assert": "name",
-    "want": null,
-    "observedOnAudit": "name=\"Blood\"",
-    "kind": "slot-generalization",
-    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule.",
+    "verifiedBehaviour": "FILLS a person (subjectKnown=true, subjectLabel=the brand) — it does NOT route to the ask flow. No rule separates \"Uber\" from \"Ravi\" in this position; left unfixed per founder decision (a brand blocklist is a special case and is banned)."
   }
 ]

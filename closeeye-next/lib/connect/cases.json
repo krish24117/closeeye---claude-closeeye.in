@@ -446,5 +446,65 @@
     "text": "we had a minor accident with the car insurance paperwork",
     "needNot": "emergency",
     "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "my mother Sugar is high",
+    "name": null,
+    "note": "AUDIT 2026-07-17 C1 wrong-who (FIXED by the shared lexicon) — resolved as a person called \"Sugar\" before"
+  },
+  {
+    "text": "my mother Fever since morning",
+    "name": null,
+    "note": "AUDIT 2026-07-17 C1 wrong-who (FIXED by the shared lexicon) — resolved as a person called \"Fever\" before"
+  },
+  {
+    "text": "My father Cancer treatment",
+    "name": null,
+    "note": "AUDIT 2026-07-17 C1 wrong-who (FIXED by the shared lexicon) — resolved as a person called \"Cancer\" before"
+  },
+  {
+    "text": "my mother Kidney problem",
+    "name": null,
+    "note": "AUDIT 2026-07-17 C1 wrong-who (FIXED by the shared lexicon) — resolved as a person called \"Kidney\" before"
+  },
+  {
+    "text": "my father Dementia is getting worse",
+    "name": null,
+    "note": "AUDIT 2026-07-17 C1 wrong-who (FIXED by the shared lexicon) — resolved as a person called \"Dementia\" before"
+  },
+  {
+    "text": "my mother Pension is delayed",
+    "name": null,
+    "note": "AUDIT 2026-07-17 C1 wrong-who (FIXED by the shared lexicon) — resolved as a person called \"Pension\" before"
+  },
+  {
+    "text": "My father Passport is expiring",
+    "name": null,
+    "note": "AUDIT 2026-07-17 C1 wrong-who (FIXED by the shared lexicon) — resolved as a person called \"Passport\" before"
+  },
+  {
+    "text": "my father Aadhaar card is lost",
+    "name": null,
+    "note": "AUDIT 2026-07-17 C1 wrong-who (FIXED by the shared lexicon) — resolved as a person called \"Aadhaar\" before"
+  },
+  {
+    "text": "my mother Yoga class",
+    "name": null,
+    "note": "AUDIT 2026-07-17 C1 wrong-who (FIXED by the shared lexicon) — resolved as a person called \"Yoga\" before"
+  },
+  {
+    "text": "my father Pension Office",
+    "name": null,
+    "note": "AUDIT 2026-07-17 C1 wrong-who (FIXED by the shared lexicon) — resolved as a person called \"Pension\" before"
+  },
+  {
+    "text": "my mother Arthritis is painful",
+    "name": null,
+    "note": "AUDIT 2026-07-17 C1 wrong-who (FIXED by the shared lexicon) — resolved as a person called \"Arthritis\" before"
+  },
+  {
+    "text": "my father Blood test tomorrow",
+    "name": null,
+    "note": "AUDIT 2026-07-17 C1 wrong-who (FIXED by the shared lexicon) — resolved as a person called \"Blood\" before"
   }
 ]
