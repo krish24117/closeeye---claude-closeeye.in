@@ -83,13 +83,29 @@ const DISTANT = /\b(far\s+away|far\s+from|miles\s+away|another\s+(city|country|s
    valid subjects too — not only a single identified person. ── */
 const FAMILY_SUBJ = /\b(?:my|our|the|whole)\s+famil(?:y|ies)\b|\bfor\s+(?:my|our)\s+family\b|\bmy\s+folks\b|\bwe\s+(?:need|want|are|have|just)\b|\bwe'?re\b/i
 const SELF_SUBJ = /\bfor\s+me\b|\bhelp\s+me\b|\bi\s+need\b|\bi\s+want\b|\bi'?m\b|\bi\s+am\b|\bmyself\b|\bmy\s+own\b|\bfor\s+myself\b/i
+/* Someone we have not been told about yet. "I want someone to take HER to the hospital"
+   is not a sentence about the visitor — it was being labelled "You" because it says "I
+   want". A singular third person means the subject is a person we cannot name, so we ask
+   who rather than answer about the wrong one. Deliberately NOT they/them: a family
+   sentence uses those of itself ("my family, they live far"). */
+const OTHER_PERSON = /\b(?:she|he|her|him|his|hers)\b/i
 /* ── a life SITUATION (a move / settling in), and a request to get set up ── */
 const RELOCATION = /\b(?:shift(?:ing|ed)?|relocat\w*|mov(?:e|es|ing|ed)|settl(?:e|es|ing|ed)|new\s+(?:city|place|home|country|town)|just\s+moved)\b/i
 const SETUP = /\b(?:local\s+support|set(?:ting)?\s*up|\bsetup\b|settle\b|settling\b|get\s+set|sort\s+(?:out|things)|help\s+(?:us|me)\s+(?:set|settle|with)|support\s+to)\b/i
 
 /* ── need detection (order = priority; specific needs win over generic help) ── */
 const NEED_PATTERNS: [NeedType, RegExp][] = [
-  ['emergency', /\b(fell(\s+down)?|fallen|not\s+breathing|can'?t\s+breathe|cannot\s+breathe|stopped\s+breathing|difficulty\s+breathing|trouble\s+breathing|breathless|gasping|choking|choke|chest\s+pain|heart\s+attack|cardiac|stroke|seizure|convuls\w*|unconscious|unresponsive|not\s+responding|won'?t\s+wake|can'?t\s+wake|passed\s+out|faint\w*|collaps\w*|bleeding|blood\s+everywhere|accident|hospitali[sz]\w*|in\s+(the\s+)?hospital|into\s+(the\s+)?hospital|to\s+(the\s+)?hospital|taken\s+to\s+hospital|rushed\s+(to|her|him|them)|admitted\s+to\s+(the\s+)?(hospital|icu|ward)|\bicu\b|casualty|emergency\s+ward|emergency\s+room|ambulance|call\s+108|\b108\b|\b911\b|\b999\b|very\s+serious|serious\s+condition|critical\w*|\bdying\b|overdose|poison\w*|snake\s+bite|drown\w*|come\s+(quick\w*|fast|immediately|urgently)|need\s+help\s+immediately|help\s+(immediately|urgently)|emergency|something\s+(is\s+)?(very\s+|terribly\s+|badly\s+)?wrong|very\s+wrong|gone\s+wrong|wrong\s+with\s+(her|him|them|my|amma|appa|mom|dad)|very\s+(sick|ill)|badly\s+hurt|got\s+hurt|seriously\s+hurt|injured|not\s+moving|can'?t\s+move|can'?t\s+get\s+up|won'?t\s+respond|in\s+teh\s+hospital|to\s+teh\s+hospital)\b/i],
+  /* An emergency is a CONDITION or an URGENCY, never a destination.
+     "to the hospital" used to live in this list, so every routine trip — "take my father
+     to the hospital for his checkup next month" — was answered with "This sounds urgent"
+     and a 108 dial. Crying wolf costs the lane the trust it exists to protect.
+     What stays: every condition cue (not breathing, chest pain, collapsed, bleeding …)
+     and every hospital phrase that CARRIES urgency of its own — rushed to, taken to
+     hospital, admitted to, hospitalised, in/into hospital (already there, not heading
+     there), ambulance, casualty, ICU. A real emergency reads the same as it always did;
+     only the bare direction of travel is gone.
+     NOTE: red-flag logic — changed on the founder's explicit approval (2026-07-17). */
+  ['emergency', /\b(fell(\s+down)?|fallen|not\s+breathing|can'?t\s+breathe|cannot\s+breathe|stopped\s+breathing|difficulty\s+breathing|trouble\s+breathing|breathless|gasping|choking|choke|chest\s+pain|heart\s+attack|cardiac|stroke|seizure|convuls\w*|unconscious|unresponsive|not\s+responding|won'?t\s+wake|can'?t\s+wake|passed\s+out|faint\w*|collaps\w*|bleeding|blood\s+everywhere|accident|hospitali[sz]\w*|in\s+(the\s+)?hospital|into\s+(the\s+)?hospital|taken\s+to\s+(the\s+)?hospital|rushed\s+(to|her|him|them)|admitted\s+to\s+(the\s+)?(hospital|icu|ward)|\bicu\b|casualty|emergency\s+ward|emergency\s+room|ambulance|call\s+108|\b108\b|\b911\b|\b999\b|very\s+serious|serious\s+condition|critical\w*|\bdying\b|overdose|poison\w*|snake\s+bite|drown\w*|come\s+(quick\w*|fast|immediately|urgently)|need\s+help\s+immediately|help\s+(immediately|urgently)|emergency|something\s+(is\s+)?(very\s+|terribly\s+|badly\s+)?wrong|very\s+wrong|gone\s+wrong|wrong\s+with\s+(her|him|them|my|amma|appa|mom|dad)|very\s+(sick|ill)|badly\s+hurt|got\s+hurt|seriously\s+hurt|injured|not\s+moving|can'?t\s+move|can'?t\s+get\s+up|won'?t\s+respond|in\s+teh\s+hospital)\b/i],
   ['medical', /\b(fever|temperature|10[34]\b|medicine|medicin\w*|medcine|medication|meds|tablet|pill|dose|insulin|\bbp\b|blood\s+pressure|sugar\s+(level|is|has|high|low)|blood\s+sugar|(her|his|their)\s+sugar|diabet\w*|doctor|unwell|not\s+(keeping\s+)?well|not\s+feeling\s+well|sick|\bill\b|not\s+eaten|not\s+eating|hasn'?t\s+eaten|won'?t\s+eat|refusing\s+to\s+eat|weak|weakness|dizzy|giddy|giddiness|infection|wound|cough\w*|vomit\w*|loose\s+motion|diarr\w*|headache|body\s+pain|joint\s+pain|checkup|check-?up|blood\s+test|\bscan\b|nausea|swelling|\brash\b)\b/i],
   ['companionship', /\b(lonely|alone\s+all|feels?\s+alone|sad|bored|miss(es|ing)?\s+(us|me|company)|no\s+one|isolated|company|someone\s+to\s+talk|depress\w*|seems?\s+low|sits?\s+quietly)\b/i],
   ['documents', /\b(keep|store|save|safe|upload)\b.*\b(report\w*|document\w*|prescription\w*|paper\w*|record\w*|policy|policies|aadhaar|certificate\w*)\b|\b(report\w*|prescription\w*|record\w*)\b.*\b(safe|keep|store)\b/i],
@@ -102,6 +118,43 @@ const NEED_PATTERNS: [NeedType, RegExp][] = [
 function detectNeed(text: string): NeedType {
   for (const [need, re] of NEED_PATTERNS) if (re.test(text)) return need
   return 'unclear'
+}
+
+/* ── urgency, the other half of the emergency slot ──
+   Dropping the bare destination from the emergency pattern removed the only signal in
+   "take her to the hospital IMMEDIATELY" — an urgent sentence with no condition word in
+   it. Urgency is a real cue; it was simply never generalized, only ever spelled out in
+   fixed phrases ("come immediately", "help urgently").
+   It is deliberately NOT urgency alone: "now" is one of the most common words a person
+   types ("I now live in Delhi"). It is urgency ABOUT a place where emergencies happen.
+   That pairing restores every case the destination used to carry, without restoring the
+   false alarm on "…for his checkup next month".
+   An explicit denial of urgency is honoured — a family who writes "nothing urgent" has
+   told us plainly, and we believe them. */
+const URGENCY = /\b(?:right\s+now|immediately|urgently|urgent|asap|at\s+once|straight\s*away|quickly|now|fast|quick)\b/i
+const NOT_URGENT = /\b(?:nothing|not|no|isn'?t)\s+(?:urgent|serious|an\s+emergency)\b|\bno\s+(?:rush|hurry)\b|\bnot\s+in\s+a\s+(?:rush|hurry)\b/i
+const MEDICAL_DEST = /\b(?:hospital|emergency|casualty|icu|ward|clinic|doctor)\b/i
+
+/* ── the escort ask: "send a real person to take someone somewhere" ──
+   The errand slot only knew pronoun objects — take (her|him|them) to — so "take MY FATHER
+   to the hospital" matched nothing and fell through to a topic. The object is generalized
+   here over every way a person can be named: a pronoun, a possessive kinship phrase, a
+   bare kinship word ("take Amma to the clinic"), or the given name the engine already
+   extracted. The destination is deliberately NOT required — "take my father hospital" is
+   the same ask with a preposition missing, and half our families type that way.
+   The object must be a PERSON, which is why it is built from the relationship vocabulary
+   rather than a wildcard: "take my medicine" is not an errand, and must not become one. */
+const ACCOMPANY = 'take|takes|taking|took|bring|brings|bringing|drop|drops|dropping|carry|carries|' +
+  'escort|escorts|accompany|accompanies|go\\s+with|goes\\s+with|come\\s+with|comes\\s+with|walk\\s+with'
+const reEscape = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+function isEscortAsk(text: string, relToken: string | null, name: string | null): boolean {
+  const obj = ['her', 'him', 'them']
+  if (relToken) obj.push(reEscape(relToken))
+  if (name) obj.push(reEscape(name.toLowerCase()))
+  const re = new RegExp(
+    `\\b(?:${ACCOMPANY})\\b\\s+(?:(?:my|our|his|her|their|the)\\s+)?(?:${obj.join('|')})\\b`, 'i')
+  return re.test(text)
 }
 
 /** The real question / statement — verbatim, so we never reword the visitor. */
@@ -239,8 +292,9 @@ export function readLedger(rawText: string): ReadLedger {
   const forLoved = !!(name || relationshipWord)
   // Broader subjects: a specific person, else the whole family, else the visitor —
   // any of these is a real subject, not an "I don't know who".
-  const isFamily = !forLoved && FAMILY_SUBJ.test(text)
-  const isSelf = !forLoved && !isFamily && SELF_SUBJ.test(text)
+  const aboutSomeoneElse = !forLoved && OTHER_PERSON.test(text)
+  const isFamily = !forLoved && !aboutSomeoneElse && FAMILY_SUBJ.test(text)
+  const isSelf = !forLoved && !aboutSomeoneElse && !isFamily && SELF_SUBJ.test(text)
   const subjectKind: SubjectKind | null = forLoved ? 'person' : isFamily ? 'family' : isSelf ? 'self' : null
   const subjectKnown = subjectKind !== null
   // NB: we never assign a gender we weren't given — plural agreement for a family
@@ -252,6 +306,15 @@ export function readLedger(rawText: string): ReadLedger {
     : relocating ? 'Settling into a new place.' : null
 
   let need = detectNeed(text)
+  // Urgency about a place where emergencies happen IS an emergency, even with no condition
+  // word: "take her to the hospital immediately". Runs before the escort rule below, so an
+  // urgent lift is never softened into an errand.
+  if (need !== 'emergency' && URGENCY.test(text) && MEDICAL_DEST.test(text) && !NOT_URGENT.test(text)) need = 'emergency'
+  // Asking for a person to take someone somewhere is an ERRAND — a real-world hand. The
+  // ASK is more specific than the TOPIC it happens to touch, so it outranks "medical"
+  // ("take him to the hospital for a checkup" is an errand, not a health question) but
+  // never outranks an emergency: if someone collapsed, that is what matters, not the lift.
+  if (need !== 'emergency' && isEscortAsk(text, u.relToken, name)) need = 'errand'
   if (need === 'unclear' && forLoved) need = 'wellbeing'
   // A known subject with a move / setup ask needs a real-world hand — an errand routed
   // to a human, never a dead "unclear".
@@ -276,6 +339,13 @@ export function readLedger(rawText: string): ReadLedger {
   } else if (need === 'errand' && !forLoved && (relocating || SETUP.test(text))) {
     // family / self settling in — honest, grounded, from their words
     concern = `A trusted person on the ground to help ${isSelf ? 'you' : 'your family'} settle in and get set up.`
+  }
+  // We were told about someone, but not WHO. Every line above reads "them" into the
+  // sentence — "them may need help right now" — which is both ungrammatical and an
+  // assumption. We ask instead. Safety is the single exception: an emergency is stated
+  // without a name rather than withheld until we know one.
+  if (!subjectKnown) {
+    concern = need === 'emergency' ? 'This sounds urgent — someone may need help right now.' : null
   }
 
   const ledger: LedgerLine[] = []

@@ -23,6 +23,7 @@ interface Case {
   subjectKind?: 'person' | 'family' | 'self' | null
   need?: string
   forLoved?: boolean
+  name?: string | null   // the person's given name — null asserts we did NOT invent one
   note?: string
 }
 
@@ -35,6 +36,7 @@ describe('understanding regression cases (grows from real flagged failures)', ()
       if (c.subjectKind !== undefined) expect(rl.subjectKind).toBe(c.subjectKind)
       if (c.need !== undefined) expect(rl.need).toBe(c.need)
       if (c.forLoved !== undefined) expect(rl.forLoved).toBe(c.forLoved)
+      if (c.name !== undefined) expect(rl.name).toBe(c.name)
     })
   }
 })

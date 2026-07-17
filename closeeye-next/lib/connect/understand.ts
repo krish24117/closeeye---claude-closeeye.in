@@ -83,6 +83,25 @@ const STOP = new Set<string>(
 )
 /* ── places: after a preposition these read as locations, not people ── */
 const PLACE = new Set<string>('india london america canada dubai australia singapore england britain usa uk delhi mumbai hyderabad bangalore chennai kolkata pune goa kerala manila lagos nairobi cairo madrid sydney toronto boston chicago texas california ohio york jersey scotland ireland wales'.split(' '))
+/* ── destinations: a place you TAKE someone to is never the someone. "Take my father
+      hospital" must not read as a person called Hospital — the slot is a class, not a
+      word, so clinic / temple / station fail for the same reason and not by luck. ── */
+const FACILITY = new Set<string>(('hospital hospitals clinic clinics dispensary pharmacy chemist ward icu casualty hospice nursinghome ' +
+  'temple church mosque gurudwara dargah shrine market bazaar shop store mall supermarket ' +
+  'station airport railway bus terminal stop depot school college university office bank atm ' +
+  'park playground gym salon court lab labs laboratory home house apartment flat society clinic centre center').split(' '))
+/* ── calendar words: WHEN something happens, never WHO. "Next week", "on Tuesday" and
+      "in June" were all being read as a person's given name. ── */
+const CALENDAR = new Set<string>(('today tomorrow yesterday tonight morning afternoon evening night noon midnight ' +
+  'monday tuesday wednesday thursday friday saturday sunday ' +
+  'january february march april may june july august september october november december ' +
+  'jan feb mar apr jun jul aug sep sept oct nov dec ' +
+  'next last week weekend month year day days weeks months years date time hour hours minute minutes tmrw tmw').split(' '))
+/* A person's name is what is left once every class we can recognise is ruled out. When a
+   token belongs to one of those classes we ask who, rather than assume it is a person —
+   the engine never invents a family member. */
+const notAName = (l: string): boolean =>
+  STOP.has(l) || SAFE.has(l) || isIntentWord(l) || PLACE.has(l) || FACILITY.has(l) || CALENDAR.has(l)
 
 /* ── intent keywords (first match wins). Emergency cues are deliberately strong,
    so "fell in love" / "missed you" never fabricate a crisis. ── */
@@ -139,7 +158,7 @@ function relationships(text: string): { token: string; group: RelGroup }[] {
 function findName(raw: string, relToken: string | null): string | null {
   for (const mt of raw.matchAll(/\b[A-Z][a-z]{1,}\b/g)) {
     const t = mt[0], l = t.toLowerCase()
-    if (STOP.has(l) || SAFE.has(l) || isIntentWord(l) || PLACE.has(l)) continue
+    if (notAName(l)) continue
     const before = wordBefore(raw, mt.index ?? 0)
     if (/^(in|at|from|near|to|around|back|over)$/.test(before)) continue   // a location, not a person
     if (AMBIG.has(l) && POSS.has(before)) continue                          // used as a relationship
@@ -149,7 +168,7 @@ function findName(raw: string, relToken: string | null): string | null {
   if (relToken) {
     const m = raw.toLowerCase().match(new RegExp('\\b' + relToken + '\\b\\s+([a-z]{2,})\\s*[?.!]?\\s*$'))
     const c = m?.[1]
-    if (c && !STOP.has(c) && !SAFE.has(c) && !AMBIG.has(c) && !isIntentWord(c) && !PLACE.has(c)) return cap(c)
+    if (c && !notAName(c) && !AMBIG.has(c)) return cap(c)
   }
   return null
 }
