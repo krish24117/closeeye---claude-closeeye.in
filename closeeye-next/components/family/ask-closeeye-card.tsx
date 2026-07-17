@@ -83,6 +83,27 @@ export function AskCloseEyeCard({
     fetchElderProfile(primaryId).then((ep) => setNeedsProfile(profileIsThin(ep))).catch(() => setNeedsProfile(false))
   }, [primaryId])
   const askHref = (q: string) => `/family/connect/ask?q=${encodeURIComponent(q)}`
+
+  /**
+   * The red door. Tapping it IS the family's statement — so these words are sent as
+   * theirs, and nothing is put in their mouth beyond the label they chose.
+   *
+   * It used to link to a Presence Manager message thread: a button styled as an
+   * emergency that opened a chat. No 108, no care team, no escalation — the escalation
+   * machinery existed but only a TYPED red flag ever reached it. A family in a crisis
+   * tapped the red button and landed in a conversation.
+   *
+   * Now it lands in Ask with the question pre-submitted, which is the proven path: the
+   * shared crisis floor fires, the family sees the 108 escalation card, notifyCareTeam
+   * alerts the coordinators, and the escalation is written to member_queries for
+   * /pm/escalations. No new backend — the door simply opens onto the road that was
+   * already there.
+   *
+   * These exact words must fire the crisis floor. That is pinned in
+   * supabase/functions/_shared/crisis.test.ts — the floor did NOT recognise them until
+   * 2026-07-17, so the label and the engine are tested together, not by hand.
+   */
+  const URGENT_HELP = 'I need urgent help'
   const go = (q: string) => {
     const t = q.trim()
     router.push(t ? askHref(t) : '/family/connect/ask')
@@ -95,7 +116,7 @@ export function AskCloseEyeCard({
         { label: 'Compare this week with last week', href: askHref(`How is ${first} doing this week compared with last week?`) },
         { label: 'Talk to my Presence Manager', href: primaryId ? `/family/connect/${primaryId}` : '/family/connect' },
         { label: 'Book another Presence', href: '/family/book' },
-        { label: 'I need urgent help', href: primaryId ? `/family/connect/${primaryId}` : '/family/connect', urgent: true },
+        { label: URGENT_HELP, href: askHref(URGENT_HELP), urgent: true },
       ]
     : [
         { label: 'How does a Presence Visit work?', href: askHref('How does a Presence Visit work?') },

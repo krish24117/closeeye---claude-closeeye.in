@@ -222,6 +222,41 @@ describe('stroke · "stroke of ___" is a figure of speech, never an emergency', 
   })
 })
 
+/**
+ * THE RED BUTTON'S OWN WORDS.
+ *
+ * closeeye-next/components/family/ask-closeeye-card.tsx renders a red "I need urgent
+ * help" button, and on 2026-07-17 this floor did not recognise that sentence as a
+ * crisis. "I need help urgently" fired; "I need urgent help" did not — the slot knew
+ * "help ADVERB" but not "ADJECTIVE help". So the button was broken twice: it pointed at
+ * a message thread AND its words were inaudible to the engine behind it.
+ *
+ * The button now submits these words to Ask, which is what makes the escalation fire.
+ * If this test goes red, the red door is silent again. Keep the literal in step with the
+ * label in ask-closeeye-card.tsx.
+ */
+describe('the red button — its label must fire the floor it depends on', () => {
+  const URGENT_HELP = 'I need urgent help'   // MUST equal the label in ask-closeeye-card.tsx
+  it(`"${URGENT_HELP}" — the exact button label — escalates`, () => {
+    expect(isCrisis(URGENT_HELP)).toBe(true)
+    const c = classifyCrisis(URGENT_HELP)
+    expect(c?.category).toBe('medical_emergency')
+    expect(c?.action).toBe('EMERGENCY_SERVICES')
+    expect(c?.escalateToHuman).toBe(true)   // notifyCareTeam + /pm/escalations
+  })
+  for (const t of [
+    'I need urgent help', 'urgent help', 'I need urgent help right now',
+    'please send immediate help', 'we need emergency help',
+    'I need help urgently', 'help immediately',   // the adverb order, which always worked
+  ]) {
+    it(`urgency + help, either word order · ${t}`, () => expect(isCrisis(t)).toBe(true))
+  }
+  it('does not fire on help without urgency — the generalization did not widen', () => {
+    expect(isCrisis('I need help with her medicines')).toBe(false)
+    expect(isCrisis('can you help me book a visit')).toBe(false)
+  })
+})
+
 describe('the VETO may never suppress a STRONG cue — the load-bearing safety property', () => {
   it('a doctor in the ICU is a job', () => {
     expect(isCrisis('my father is a doctor in the ICU')).toBe(false)

@@ -278,6 +278,10 @@ const STRONG: { category: string; patterns: RegExp[] }[] = [
       /something (is )?(very |terribly |badly )?wrong|very wrong|gone wrong/,
       /wrong with (her|him|them|my|amma|appa|mom|dad)/,
       /need help (immediately|urgently|right now)|help (immediately|urgently)/,
+      // The slot knew "help ADVERB" but not "ADJECTIVE help", so "I need URGENT help" —
+      // the exact words on our own red button — did not read as a crisis. Both word
+      // orders now, because a family in trouble does not pick one for us.
+      /\b(urgent|immediate|emergency)\s+help\b/,
       /come (quick\w*|fast|immediately|urgently)/,
       /very (sick|ill)\b(?! of\b)/,
       /badly hurt|seriously hurt|got hurt|\binjured\b/,
