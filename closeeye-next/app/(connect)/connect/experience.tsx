@@ -30,9 +30,29 @@ import { PHASE_2_ENABLED } from '@/lib/connect/phase'
 const WA = 'https://wa.me/919000221261'
 const SAMPLE = 'My mother lives alone in Hyderabad. How do I know she’s okay?'
 const SAMPLE2 = 'My father gets stressed every year with his tax filing. Can someone help him through it?'
-// The examples a first-time family can borrow. Shown one at a time (see .try): two
-// stacked cost 159px of the first screen, which is where the primary CTA needs to be.
-const EXAMPLES = [SAMPLE, SAMPLE2]
+/**
+ * THE DEMONSTRATION.
+ *
+ * Close Eye is a new category, and the one thing that makes it one cannot be explained —
+ * only witnessed. Every AI a family has used performs omniscience. This is the first that
+ * says "I don't know that yet, and I won't pretend." An explanation of honesty is just a
+ * claim; so the input performs it, then hands over the pen.
+ *
+ * It plays INSIDE the input's own space and gives the pixels back, so the transformation
+ * is the hero without the primary action paying for it. It ends on the visitor's turn.
+ *
+ * The ○ line is the point. Do not remove it to save a beat.
+ */
+const DEMO_SENTENCE = 'Amma lives alone in Hyderabad and I worry about her.'
+const DEMO_KNOWS: { mark: 'know' | 'open'; label: string; body: string }[] = [
+  { mark: 'know', label: 'Someone you love', body: 'Amma.' },
+  { mark: 'know', label: 'Her days', body: 'She lives alone, in Hyderabad.' },
+  { mark: 'open', label: 'Her health', body: 'I don’t know yet.' }, // ← the category, in one line
+]
+const DEMO_ANSWER = 'Because she lives alone, what I’d put in place is a gentle rhythm — a trusted person who can be there in a way a phone call can’t.'
+/** Beat boundaries, ms from start. Typing runs to BEAT.know. */
+const BEAT = { type: 1500, know: 1700, answer: 4300, clear: 6200 }
+const DEMO_SEEN_KEY = 'closeeye.connect.demo'
 // warm, specific prompts for the moment a line is empty — "tell me something only
 // your family would know." Pronoun-free so they never mis-gender anyone.
 const FILL_PH: Record<string, string> = {
@@ -132,7 +152,25 @@ export function ConnectExperience() {
   const [heroN, setHeroN] = React.useState(0)
   const [heroSettled, setHeroSettled] = React.useState(false)
   const [openCard, setOpenCard] = React.useState<string | null>(null)
-  const [exIdx, setExIdx] = React.useState(0) // which borrowed example is on show // story card expanded in place
+  /* ── the demonstration ──
+     phase 0 nothing · 1 writing · 2 understanding · 3 answering · 4 her turn (settled).
+     It NEVER runs for someone who has seen it, or who asked for less motion, or who has
+     already started typing — the demo exists to invite a first sentence, and once she is
+     writing it would only be in the way. */
+  const [demo, setDemo] = React.useState(0)
+  const [typed, setTyped] = React.useState('')
+  const demoDone = demo >= 4
+  /* The timers must be killable from outside the effect. Skipping is not a dependency
+     change, so the effect's own cleanup never runs — and the queued beats would resurrect
+     the demo a second after she touched the paper, taking the pen back out of her hand.
+     Once she reaches for it, the demonstration is over for good. */
+  const demoTimers = React.useRef<ReturnType<typeof setTimeout>[]>([])
+  const skipDemo = React.useCallback(() => {
+    demoTimers.current.forEach(clearTimeout)
+    demoTimers.current = []
+    setDemo(4); setTyped('')
+    try { sessionStorage.setItem(DEMO_SEEN_KEY, '1') } catch { /* private mode */ }
+  }, []) // story card expanded in place
   const [signedIn, setSignedIn] = React.useState(false) // a returning, already-signed-in visitor
   const [deskDrawn, setDeskDrawn] = React.useState(false) // writing-desk rules draw in once, on scroll into view
   const deskRef = React.useRef<HTMLDivElement | null>(null)
@@ -193,6 +231,28 @@ export function ConnectExperience() {
     const el = activeBeatRef.current
     if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }))
   }, [stage]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* The demo's timeline. One effect, one set of timers, cleared on unmount or skip. */
+  React.useEffect(() => {
+    // The card is opacity:0 while the hero unfolds (.stage.unfolding .s0-ask). Starting
+    // the demo before then plays it to an empty screen — it must begin when she can see it.
+    if (stage !== 's0' || !heroSettled) return
+    let seen = false
+    try { seen = sessionStorage.getItem(DEMO_SEEN_KEY) === '1' } catch { /* private mode */ }
+    // Reduced motion, a returning visitor, or a visitor already writing: no demo, no delay.
+    if (reduce || seen || text.trim()) { setDemo(4); return }
+    const t = demoTimers.current
+    const chars = DEMO_SENTENCE.length
+    setDemo(1)
+    for (let i = 1; i <= chars; i++) t.push(setTimeout(() => setTyped(DEMO_SENTENCE.slice(0, i)), (BEAT.type / chars) * i))
+    t.push(setTimeout(() => setDemo(2), BEAT.know))
+    t.push(setTimeout(() => setDemo(3), BEAT.answer))
+    t.push(setTimeout(() => {
+      setDemo(4); setTyped('')
+      try { sessionStorage.setItem(DEMO_SEEN_KEY, '1') } catch { /* private mode */ }
+    }, BEAT.clear))
+    return () => { t.forEach(clearTimeout); demoTimers.current = [] }
+  }, [stage, reduce, heroSettled]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── the counsel, once ──
      A city the family gives us on the "which city" line must reach the ANSWER — otherwise
@@ -610,10 +670,6 @@ export function ConnectExperience() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="mast-logo" src="/brand/close-eye-horizontal.svg" alt="Close Eye" width={207} height={40} />
         <div className="mast-tag">Connect</div>
-        {/* The "·" is pure decoration in the brand accent — it carries no meaning, so it
-            stays brand-coloured (WCAG exempts decoration) and is hidden from assistive
-            tech, which would otherwise announce "middle dot" between every word. */}
-        <p className="mast-triad"><b>Trust</b><span className="sep" aria-hidden="true">·</span><b>Presence</b><span className="sep" aria-hidden="true">·</span><b>Understanding</b></p>
       </div>
     )
   }
@@ -676,48 +732,56 @@ export function ConnectExperience() {
                   <p className={`feel${heroN >= 3 ? ' in' : ''}`}>You worry about them.</p>
                   <p className={`feel${heroN >= 4 ? ' in' : ''}`}>Distance shouldn’t mean uncertainty.</p>
                 </div>
-                <h1 className={`h-serif hero-head${heroSettled ? ' in' : ''}`}>Know the people you love —<br /><em>even from far away.</em></h1>
+                {/* HERO — one responsibility: the emotional promise. It used to say
+                    "Know the people you love — even from far away", which the card then
+                    repeated as "When someone you love is far away". One feeling, once. */}
+                <h1 className={`h-serif hero-head${heroSettled ? ' in' : ''}`}>When you can’t be there,<br /><em>Close Eye can.</em></h1>
+                {/* CATEGORY — the only sentence that teaches the mental model, and it used
+                    to sit BELOW the card where a phone never reads it. "before it answers"
+                    is what separates this from every AI she has met. */}
+                <p className={`whatis hero-cat${heroSettled ? ' in' : ''}`}>Close Eye understands your family <b>before it answers</b> — then brings real people when they’re needed.</p>
               </div>
-            </div>
-            {/* The fuller telling. It is a SIBLING of the card, not part of the hero, so a
-                short phone can put the card first (see the order rules): the headline says
-                what Close Eye is, the card says what to do — and this follows for anyone
-                who scrolls. Same words, same type; only the order answers the device. */}
-            <div className="s0-hero-more">
-              <p className={`whatis hero-supp${heroSettled ? ' in' : ''}`}>Close Eye helps you stay close — it understands your family, remembers what matters, and brings trusted people when they’re needed.</p>
-              <p className={`hero-accent${heroSettled ? ' in' : ''}`}>Apps can answer. Close Eye can show up.</p>
             </div>
             <div className="s0-ask">
               <div className={`deskcard${deskDrawn ? ' drawn' : ''}`} ref={deskRef}>
-                <p className="exp-k">Experience Close Eye</p>
-                {/* Problem-first: name the moment a family is actually in, then ask.
-                    Founder copy, verbatim — no date here (the promise is true today;
-                    only the paid visit is gated). */}
-                <p className="desk-lede">When someone you love is far away</p>
-                <p className="desk-sub">Tell us what’s happening — a worry, an ageing parent alone, or simply wanting to feel closer from far away.</p>
-                <div className="ruled">
+                {/* No "EXPERIENCE CLOSE EYE" label — a section label on a card with one
+                    section. No lede, no sub: the hero above says it once, and the demo
+                    below shows it. What remains is the thing itself. */}
+                <div className="ruled" onPointerDown={demoDone ? undefined : skipDemo}>
                   <span className="pen" aria-hidden="true" />
                   <div className="rules" aria-hidden="true"><span className="rule" /><span className="rule" /><span className="rule" /></div>
-                  <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Start with what’s worrying you." />
+                  {/* During the demo the box shows ITS sentence and cannot be typed in; the
+                      first touch anywhere on the paper hands it straight back. */}
+                  {/* While the demo writes, the box is hidden from assistive tech AND
+                      taken out of the tab order — aria-hidden on a tabbable field means a
+                      screen-reader user can land on an input that officially isn't there.
+                      Tab reaches it the moment it's hers; focus alone ends the demo. */}
+                  <textarea rows={3} value={demoDone ? text : typed} readOnly={!demoDone}
+                    onChange={(e) => setText(e.target.value)}
+                    onFocus={demoDone ? undefined : skipDemo}
+                    aria-hidden={!demoDone} tabIndex={demoDone ? 0 : -1}
+                    placeholder="Now — tell Close Eye about someone you love…" />
                 </div>
-                {/* Two examples stacked cost 159px — the largest block on the first screen,
-                    and the reason the CTA fell below the fold on a phone. They ROTATE rather
-                    than hide: an example is how a family learns what to write, so one stays
-                    visible and "try another" reaches the rest. Progressive disclosure that
-                    discloses something, instead of an accordion that hides the teaching. */}
-                <div className="try">
-                  <div className="try-head">
-                    <span>or begin with —</span>
-                    <button type="button" className="try-next" onClick={() => setExIdx((i) => (i + 1) % EXAMPLES.length)}>
-                      try another
-                    </button>
+                {/* THE DEMONSTRATION. Understanding, then the answer — in that order,
+                    because that order IS the product. It borrows this space and gives it
+                    back: the ○ line is the two seconds that define the category. */}
+                <div className={`demo${demo >= 4 ? ' settled' : ''}`} aria-hidden="true">
+                  <div className="demo-know">
+                    {DEMO_KNOWS.map((k, i) => (
+                      <p key={k.label} className={`dline ${k.mark}${demo >= 2 ? ' in' : ''}`} style={{ transitionDelay: `${i * 260}ms` }}>
+                        <span className="dm">{k.mark === 'know' ? CHECK : <span className="cxring" />}</span>
+                        <span className="dl">{k.label}</span>{k.body}
+                      </p>
+                    ))}
                   </div>
-                  <button type="button" className="try-ex" onClick={() => setText(EXAMPLES[exIdx]!)}>“{EXAMPLES[exIdx]}”</button>
+                  <p className={`demo-ans${demo >= 3 ? ' in' : ''}`}>{DEMO_ANSWER}</p>
                 </div>
                 <div className="act">
-                  <p className="desk-hint">One sentence is enough. Connect understands from there.</p>
+
                   <button className={`btn${text.trim().length > 0 ? ' inked' : ' ghost'}`} onClick={ask}>Let Connect understand</button>
-                  <p className="privacy">Nothing you write is sold or shared. Ever.</p>
+                  {/* Two lines became one, and it moved ABOVE nothing — it sits with the
+                      act it enables rather than after it. */}
+                  <p className="privacy">Private. One sentence is enough.</p>
                 </div>
               </div>
             </div>
