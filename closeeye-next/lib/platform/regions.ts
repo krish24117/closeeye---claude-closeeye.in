@@ -41,6 +41,13 @@ export interface Region {
   }
   /** Emergency GUIDANCE (Connect, global). Physical RESPONSE is a Care module (regional). */
   emergency: { number: string | null; label: string }
+  /** IANA timezone — a country's representative default. Multi-zone countries (US, AU, BR)
+   *  refine to a per-family zone later; region-level is the Phase-1 default. */
+  timezone: string
+  /** ISO 3166 country for phone validation (libphonenumber) — never a hand-rolled regex. */
+  phoneRegion: string
+  /** Which address shape a form should render. */
+  addressSchema: 'generic' | 'in' | 'us' | 'eu' | 'jp'
   dataResidency: Residency
 }
 
@@ -54,54 +61,63 @@ const REGIONS: Record<RegionCode, Region> = {
     care: { presence: true, financial: true },
     locale: { languages: ['en', 'hi', 'te'], default: 'en-IN', rtl: false, currency: 'INR', measurement: 'metric' },
     emergency: { number: '108', label: 'Ambulance (108)' },
-    dataResidency: 'in',
+    timezone: 'Asia/Kolkata', phoneRegion: 'IN', addressSchema: 'in', dataResidency: 'in',
   },
   // Connect-only launch markets — Care disabled, correct local emergency number.
   GB: {
     code: 'GB', name: 'United Kingdom', connect: true, care: {},
     locale: { languages: ['en'], default: 'en-GB', rtl: false, currency: 'GBP', measurement: 'metric' },
-    emergency: { number: '999', label: 'Emergency (999)' }, dataResidency: 'eu',
+    emergency: { number: '999', label: 'Emergency (999)' },
+    timezone: 'Europe/London', phoneRegion: 'GB', addressSchema: 'generic', dataResidency: 'eu',
   },
   CA: {
     code: 'CA', name: 'Canada', connect: true, care: {},
     locale: { languages: ['en', 'fr'], default: 'en-CA', rtl: false, currency: 'CAD', measurement: 'metric' },
-    emergency: { number: '911', label: 'Emergency (911)' }, dataResidency: 'us',
+    emergency: { number: '911', label: 'Emergency (911)' },
+    timezone: 'America/Toronto', phoneRegion: 'CA', addressSchema: 'us', dataResidency: 'us',
   },
   AU: {
     code: 'AU', name: 'Australia', connect: true, care: {},
     locale: { languages: ['en'], default: 'en-AU', rtl: false, currency: 'AUD', measurement: 'metric' },
-    emergency: { number: '000', label: 'Emergency (000)' }, dataResidency: 'apac',
+    emergency: { number: '000', label: 'Emergency (000)' },
+    timezone: 'Australia/Sydney', phoneRegion: 'AU', addressSchema: 'generic', dataResidency: 'apac',
   },
   US: {
     code: 'US', name: 'United States', connect: true, care: {},
     locale: { languages: ['en', 'es'], default: 'en-US', rtl: false, currency: 'USD', measurement: 'imperial' },
-    emergency: { number: '911', label: 'Emergency (911)' }, dataResidency: 'us',
+    emergency: { number: '911', label: 'Emergency (911)' },
+    timezone: 'America/New_York', phoneRegion: 'US', addressSchema: 'us', dataResidency: 'us',
   },
   DE: {
     code: 'DE', name: 'Germany', connect: true, care: {},
     locale: { languages: ['de', 'en'], default: 'de-DE', rtl: false, currency: 'EUR', measurement: 'metric' },
-    emergency: { number: '112', label: 'Notruf (112)' }, dataResidency: 'eu',
+    emergency: { number: '112', label: 'Notruf (112)' },
+    timezone: 'Europe/Berlin', phoneRegion: 'DE', addressSchema: 'eu', dataResidency: 'eu',
   },
   JP: {
     code: 'JP', name: 'Japan', connect: true, care: {},
     locale: { languages: ['ja', 'en'], default: 'ja-JP', rtl: false, currency: 'JPY', measurement: 'metric' },
-    emergency: { number: '119', label: '救急 (119)' }, dataResidency: 'apac',
+    emergency: { number: '119', label: '救急 (119)' },
+    timezone: 'Asia/Tokyo', phoneRegion: 'JP', addressSchema: 'jp', dataResidency: 'apac',
   },
   BR: {
     code: 'BR', name: 'Brazil', connect: true, care: {},
     locale: { languages: ['pt', 'en'], default: 'pt-BR', rtl: false, currency: 'BRL', measurement: 'metric' },
-    emergency: { number: '192', label: 'SAMU (192)' }, dataResidency: 'us',
+    emergency: { number: '192', label: 'SAMU (192)' },
+    timezone: 'America/Sao_Paulo', phoneRegion: 'BR', addressSchema: 'generic', dataResidency: 'us',
   },
   ZA: {
     code: 'ZA', name: 'South Africa', connect: true, care: {},
     locale: { languages: ['en', 'zu', 'af'], default: 'en-ZA', rtl: false, currency: 'ZAR', measurement: 'metric' },
-    emergency: { number: '10177', label: 'Ambulance (10177)' }, dataResidency: 'unknown',
+    emergency: { number: '10177', label: 'Ambulance (10177)' },
+    timezone: 'Africa/Johannesburg', phoneRegion: 'ZA', addressSchema: 'generic', dataResidency: 'unknown',
   },
   // The honest fallback for an unrecognised region — asserts NO specific emergency number.
   GENERIC: {
     code: 'GENERIC', name: 'International', connect: true, care: {},
     locale: { languages: ['en'], default: 'en', rtl: false, currency: 'USD', measurement: 'metric' },
-    emergency: { number: null, label: 'your local emergency number' }, dataResidency: 'unknown',
+    emergency: { number: null, label: 'your local emergency number' },
+    timezone: 'UTC', phoneRegion: '', addressSchema: 'generic', dataResidency: 'unknown',
   },
 }
 
@@ -124,6 +140,15 @@ export function emergencyFor(code: string | null | undefined): { number: string 
 export function careEnabled(code: string | null | undefined, module: CareModuleId): boolean {
   return regionFor(code).care[module] === true
 }
+
+/* ── RegionService accessors — the ONLY way a component reads a regional value. No UI
+      touches the config map directly; that's what keeps "one source of truth" true. ── */
+export const localeFor = (code: string | null | undefined): string => regionFor(code).locale.default
+export const currencyFor = (code: string | null | undefined): string => regionFor(code).locale.currency
+export const timezoneFor = (code: string | null | undefined): string => regionFor(code).timezone
+export const phoneRegionFor = (code: string | null | undefined): string => regionFor(code).phoneRegion
+export const languagesFor = (code: string | null | undefined): string[] => regionFor(code).locale.languages
+export const isRtl = (code: string | null | undefined): boolean => regionFor(code).locale.rtl
 
 /** Every configured region (excluding the GENERIC fallback) — for admin/region pickers. */
 export const ALL_REGIONS: Region[] = (Object.keys(REGIONS) as RegionCode[])

@@ -6,7 +6,7 @@
  *   2. An unknown region NEVER inherits India's 108 — a wrong emergency number is lethal.
  */
 import { describe, it, expect } from 'vitest'
-import { regionFor, emergencyFor, careEnabled, emergencyDial, DEFAULT_REGION_CODE, ALL_REGIONS } from './regions'
+import { regionFor, emergencyFor, careEnabled, emergencyDial, localeFor, currencyFor, timezoneFor, phoneRegionFor, DEFAULT_REGION_CODE, ALL_REGIONS } from './regions'
 
 describe('India is today, expressed as config', () => {
   it('the default region is India', () => expect(DEFAULT_REGION_CODE).toBe('IN'))
@@ -71,6 +71,28 @@ describe('emergencyDial · what the crisis screens render (Phase 0 wiring)', () 
     expect(d.href).toBe(null)
     expect(d.text).toMatch(/your local emergency number/i)
     expect(d.text).not.toMatch(/108/)
+  })
+})
+
+describe('Phase 1 · the complete Region config (every regional value, one source)', () => {
+  it('India carries the full set — timezone, phone region, address schema — all Indian', () => {
+    expect(timezoneFor('IN')).toBe('Asia/Kolkata')
+    expect(phoneRegionFor('IN')).toBe('IN')
+    expect(localeFor('IN')).toBe('en-IN')
+    expect(currencyFor('IN')).toBe('INR')
+    expect(regionFor('IN').addressSchema).toBe('in')
+  })
+  it('accessors resolve per region, never a hardcoded value', () => {
+    expect(timezoneFor('JP')).toBe('Asia/Tokyo')
+    expect(currencyFor('DE')).toBe('EUR')
+    expect(phoneRegionFor('GB')).toBe('GB')
+  })
+  it('every region has a valid IANA-shaped timezone and a phone region (or GENERIC blank)', () => {
+    for (const r of ALL_REGIONS) {
+      expect(r.timezone).toMatch(/^[A-Za-z]+\/[A-Za-z_]+$|^UTC$/)
+      expect(typeof r.phoneRegion).toBe('string')
+      expect(['generic', 'in', 'us', 'eu', 'jp']).toContain(r.addressSchema)
+    }
   })
 })
 
