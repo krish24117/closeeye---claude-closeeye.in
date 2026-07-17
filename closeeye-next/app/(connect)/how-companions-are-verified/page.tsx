@@ -35,9 +35,12 @@ const STEPS = [
   'We stay with them — and with you.',
 ]
 
+// `id="main"` is the target of the app-wide "Skip to content" link. Without it the skip
+// link points at nothing and is unfocusable — the first thing a keyboard or screen-reader
+// user meets on this page would be broken (Lighthouse caught it: 98, not 100).
 export default function HowCompanionsAreVerifiedPage() {
   return (
-    <main className="verify">
+    <main className="verify" id="main">
       {/* A quiet way back — a trust page must never be a dead end, and it stays inside
           the paper world rather than handing the reader off somewhere else. */}
       <Link className="verify-back" href="/connect">← Close Eye Connect</Link>

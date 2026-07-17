@@ -4,9 +4,40 @@
    motion, copy. Fonts wired to next/font (Newsreader serif, Inter sans). */
 
 .cx{
+  /* ── BRAND — unchanged. These are the identity: logo, dots, borders, marks. ── */
   --paper:#F5F2E9; --page:#FBF9F2; --ink:#17281F; --forest:#0E2A1F;
   --emerald:#06A94E; --sprout:#83C400;
   --pencil:#5F6B60; --faint:#98A097; --hair:#E2DECE; --hair2:#D8D3BF;
+
+  /* ── SEMANTIC TEXT — what words are allowed to be made of ──
+     The brand greens are for things you SEE. These are for things you READ. Emerald is
+     2.76:1 on paper: as a link colour it failed AA outright, and "Learn more →" is the
+     only affordance on a story card. --faint is 2.40:1 — it is, literally, light grey text.
+     --text-accent holds the brand hue (147°) and saturation (93%) exactly and moves only
+     lightness, so a link is still Close Eye green — just legible: 5.13:1 on paper.
+     RULE: --emerald and --faint may never carry text. Decoration only. */
+  --brand-emerald:var(--emerald);   /* alias — use this when you mean the MARK, not a word */
+  --text-accent:#047638;            /* links, interactive text — 5.13:1 paper / 5.46:1 page */
+  --text-secondary:#5F6B60;         /* supporting copy — 4.99:1 / 5.30:1 */
+  --text-muted:#657068;             /* the quietest text may ever be — 4.61:1 / 4.90:1 */
+
+  /* ── TYPE ROLES — ten, replacing twenty-nine sizes ──
+     The old scale had 29 steps including half-pixels (13.5 / 14.5 / 15.5 / 16.5 / 18.5)
+     and 25% of rules under 13px. Sizes now come from here, so hierarchy is a decision
+     made once rather than re-argued in every rule. Headings own tight leading; only body
+     gets loose. That gap IS the hierarchy — a 22px heading at line-height 1.6 reads as
+     body copy in a bigger font, which is why the old page felt flat when blurred. */
+  --t-hero:32px;        --lh-hero:1.2;
+  --t-title:23px;       --lh-title:1.25;
+  --t-card:19px;        --lh-card:1.3;
+  --t-lede:18px;        --lh-lede:1.4;
+  --t-body:17px;        --lh-body:1.55;
+  --t-secondary:15.5px; --lh-secondary:1.5;
+  --t-button:16.5px;
+  --t-caption:13.5px;   --lh-caption:1.5;
+  --t-label:12.5px;
+  --t-micro:11.5px;     /* the floor — nothing in this product is smaller than this */
+
   --serif:var(--font-newsreader),Georgia,serif; --sans:var(--font-inter),system-ui,sans-serif;
   --colw:480px; /* fixed-measure reading column — the phone is primary; desktop only breathes wider */
   background:linear-gradient(180deg,#F7F4EC 0%,var(--paper) 30%,#F1EDE1 100%);
@@ -36,14 +67,14 @@
 /* Desktop sign-in lives at the top-right of the viewport (see the ≥1024 block). */
 .cx .shell-signin{display:none}
 .cx .welcome-back{margin:-12px 0 20px;text-align:center;font-family:var(--serif);font-size:14.5px;color:var(--pencil)}
-.cx .welcome-back a{color:var(--emerald);text-decoration:none;font-weight:500;
+.cx .welcome-back a{color:var(--text-accent);text-decoration:none;font-weight:500;
   border-bottom:1px solid transparent;transition:border-color .2s}
 .cx .welcome-back a:hover{border-bottom-color:var(--emerald)}
 .cx .mast-unit{display:flex;flex-direction:column;align-items:center;text-align:center}
 .cx .mast-logo{height:36px;width:auto;display:block}
-.cx .mast-tag{font-family:var(--sans);font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--pencil);margin-top:6px}
+.cx .mast-tag{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.3em;text-transform:uppercase;color:var(--pencil);margin-top:6px}
 .cx .mast-triad{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:14px;
-  font-family:var(--sans);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--pencil)}
+  font-family:var(--sans);font-size:var(--t-label);letter-spacing:.14em;text-transform:uppercase;color:var(--pencil)}
 .cx .mast-triad b{color:var(--forest);font-weight:600}
 .cx .mast-triad .sep{color:var(--sprout)}
 /* on the phone the triad sits compact, clear of both edges */
@@ -53,19 +84,19 @@
 .cx .howit{border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);padding:6px 0;margin:0 0 26px}
 .cx .hrow{display:flex;gap:13px;align-items:baseline;padding:11px 0}
 .cx .hrow+.hrow{border-top:1px dotted var(--hair)}
-.cx .hrow .hn{font-family:var(--sans);font-size:10.5px;letter-spacing:.14em;color:var(--pencil);flex:none;width:16px}
+.cx .hrow .hn{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.14em;color:var(--pencil);flex:none;width:16px}
 .cx .hrow p{margin:0;font-family:var(--serif);font-size:16px;line-height:1.45;color:var(--ink)}
 .cx .hrow p i{font-style:italic;color:var(--pencil)}
 .cx .hrow .ld{width:6px;height:6px;border-radius:50%;background:var(--hair2);flex:none;position:relative;top:-2px}
 .cx .hrow:nth-child(2) .ld{background:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}
-.cx .exp-k{font-family:var(--sans);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--forest);
-  font-weight:500;margin:0 0 6px}
+.cx .exp-k{font-family:var(--sans);font-size:var(--t-label);letter-spacing:.16em;text-transform:uppercase;color:var(--forest);
+  font-weight:600;margin:0 0 6px}
 
 /* ── Sprint 1 · the hero that unfolds ──
    Logo → signature → three feelings → the settled promise → the input wakes.
    Cinematic on a first visit; returning visitors land settled at once. */
 .cx .hero{margin-bottom:2px}
-.cx .hero-sig{font-family:var(--sans);font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--pencil);
+.cx .hero-sig{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.26em;text-transform:uppercase;color:var(--pencil);
   margin:0 0 22px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
   opacity:0;transform:translateY(6px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
 .cx .hero-sig b{color:var(--forest);font-weight:600}
@@ -96,8 +127,8 @@
 .cx .scard-h{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;padding:18px 20px}
 .cx .scard-h .ld{width:8px;height:8px;border-radius:50%;background:var(--hair2);flex:none;margin-top:7px}
 .cx .scard.open .scard-h .ld{background:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}
-.cx .scard-t{flex:1;font-family:var(--serif);font-weight:500;font-size:18.5px;color:var(--forest);line-height:1.25}
-.cx .scard-more{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--emerald);white-space:nowrap;flex:none;margin-top:3px}
+.cx .scard-t{flex:1;font-family:var(--serif);font-weight:500;font-size:var(--t-card);color:var(--forest);line-height:var(--lh-card)}
+.cx .scard-more{font-family:var(--sans);font-size:var(--t-label);font-weight:600;color:var(--text-accent);white-space:nowrap;flex:none;margin-top:3px}
 .cx .scard.open .scard-more{color:var(--pencil);margin-top:0}
 /* dismiss: a 16px × in a 32px tap target, sat on the first line, without growing the header */
 .cx .scard-x{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
@@ -106,20 +137,20 @@
 .cx .scard.open .scard-b{grid-template-rows:1fr}
 .cx .scard-b>div{overflow:hidden;padding-bottom:20px}
 .cx .scard-b p{margin:0;padding:0 20px;font-family:var(--serif);font-size:16px;line-height:1.56;color:var(--ink);max-width:44ch}
-.cx .scard-b .scard-tag{margin:9px 0 0;font-size:13.5px;font-style:italic;color:var(--emerald)}
+.cx .scard-b .scard-tag{margin:9px 0 0;font-size:var(--t-caption);font-style:italic;color:var(--text-accent)}
 
 /* ── Sprint 3 · "More than care" — life, not only healthcare (honest breadth) ── */
 .cx .breadth{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px;margin:0 0 26px}
-.cx .breadth-h{font-family:var(--serif);font-size:22px;color:var(--forest);margin:0 0 6px}
-.cx .breadth-who{font-family:var(--serif);font-size:15.5px;line-height:1.5;color:var(--forest);margin:0 0 8px;max-width:40ch}
+.cx .breadth-h{font-family:var(--serif);font-size:var(--t-title);line-height:var(--lh-title);color:var(--forest);margin:0 0 6px}
+.cx .breadth-who{font-family:var(--serif);font-size:var(--t-body);line-height:var(--lh-body);color:var(--forest);margin:0 0 8px;max-width:40ch}
 .cx .breadth-s{font-family:var(--serif);font-size:15px;color:var(--pencil);margin:0 0 18px}
 .cx .catgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .cx .cat{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border:1px solid var(--hair);
   border-radius:12px;font-family:var(--sans);font-size:13.5px;font-weight:500;color:var(--forest)}
 .cx .cat .cd{width:6px;height:6px;border-radius:50%;background:var(--sprout);flex:none}
-.cx .cat.soon{color:var(--faint);border-style:dashed}
+.cx .cat.soon{color:var(--text-muted);border-style:dashed}
 .cx .cat.soon .cd{background:var(--hair2)}
-.cx .cat .soonlab{margin-left:auto;font-family:var(--sans);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.cx .cat .soonlab{margin-left:auto;font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
 .cx .breadth-grow{font-family:var(--serif);font-style:italic;font-size:15.5px;color:var(--forest);margin:18px 0 0;text-align:center}
 .cx .breadth-f{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--forest);margin:7px 0 0;text-align:center}
 @media(max-width:380px){.cx .catgrid{grid-template-columns:1fr}}
@@ -130,21 +161,21 @@
       shout. Lives beside .breadth (the one s0 block ≥1024 keeps), so a single instance
       serves 390 / 768 / 1280. ── */
 .cx .howit{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px;margin:0 0 26px;scroll-margin-top:18px}
-.cx .howit-h{font-family:var(--serif);font-size:22px;color:var(--forest);margin:0 0 14px}
+.cx .howit-h{font-family:var(--serif);font-size:var(--t-title);line-height:var(--lh-title);color:var(--forest);margin:0 0 14px}
 .cx .howit-steps{list-style:none;margin:0;padding:0}
 .cx .howit-steps li{display:flex;gap:12px;align-items:baseline;padding:11px 0;border-top:1px solid var(--hair)}
 .cx .howit-steps li:first-child{border-top:0;padding-top:2px}
-.cx .howit-n{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--emerald);
+.cx .howit-n{font-family:var(--sans);font-size:var(--t-label);font-weight:600;color:var(--text-accent);
   font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:12px}
-.cx .howit-steps p{font-family:var(--serif);font-size:15.5px;line-height:1.5;color:var(--forest);margin:0;max-width:42ch}
-.cx .howit-roles{font-family:var(--sans);font-size:13px;line-height:1.55;color:var(--pencil);
+.cx .howit-steps p{font-family:var(--serif);font-size:var(--t-body);line-height:var(--lh-body);color:var(--forest);margin:0;max-width:42ch}
+.cx .howit-roles{font-family:var(--sans);font-size:var(--t-caption);line-height:var(--lh-caption);color:var(--text-secondary);
   margin:14px 0 0;padding-top:13px;border-top:1px solid var(--hair2);max-width:46ch}
 
 /* ── /how-companions-are-verified — the trust page. The same paper world, given room:
       one reading column, serif for every human line, hairlines between them. No card,
       no shadow — this page is a page, not a widget. ── */
 .cx .verify{max-width:var(--colw);margin:0 auto;padding:26px 20px 56px}
-.cx .verify-back{display:inline-block;font-family:var(--sans);font-size:12.5px;color:var(--pencil);
+.cx .verify-back{display:inline-block;font-family:var(--sans);font-size:var(--t-label);color:var(--pencil);
   text-decoration:none;border-bottom:1px dotted var(--hair2);padding-bottom:1px}
 .cx .verify-back:hover{color:var(--forest);border-bottom-color:var(--pencil)}
 .cx .verify-h{font-family:var(--serif);font-size:30px;line-height:1.2;color:var(--forest);
@@ -167,7 +198,7 @@
 .cx .btn-google:disabled{opacity:.5}
 .cx .btn-google svg{width:19px;height:19px;flex:none}
 
-.cx .principles{font-family:var(--sans);font-size:12.5px;letter-spacing:.04em;color:var(--pencil);
+.cx .principles{font-family:var(--sans);font-size:var(--t-label);letter-spacing:.04em;color:var(--pencil);
   margin:0 0 24px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
 .cx .principles b{color:var(--forest);font-weight:500}
 .cx .principles .sep{color:var(--hair2)}
@@ -184,7 +215,7 @@
 .cx .plan h3{margin:0;font-family:var(--serif);font-weight:500;font-size:18px;color:var(--forest)}
 .cx .plan p{margin:3px 0 0;font-family:var(--sans);font-size:13px;color:var(--pencil);line-height:1.5}
 .cx .plan .pr{font-family:var(--serif);font-size:17px;color:var(--ink);white-space:nowrap}
-.cx .plan .pr small{font-family:var(--sans);font-size:11px;color:var(--pencil);display:block;text-align:right}
+.cx .plan .pr small{font-family:var(--sans);font-size:var(--t-micro);color:var(--pencil);display:block;text-align:right}
 .cx .methods{display:flex;gap:9px;margin:4px 0 18px}
 .cx .mchip{flex:1;background:var(--page);border:1px solid var(--hair2);border-radius:999px;padding:11px 8px;
   font-family:var(--sans);font-size:13.5px;font-weight:500;color:var(--pencil);text-align:center}
@@ -201,7 +232,7 @@
    separators to strand on a line of their own. Tablet up: one centred line, separators
    drawn by ::after so a "·" is part of its link and can never wrap alone (which is what
    it did at 1024 and 1728). The separator element is gone from the markup entirely. */
-.cx .footlinks{margin-top:26px;font-family:var(--sans);font-size:12px;color:var(--pencil);
+.cx .footlinks{margin-top:26px;font-family:var(--sans);font-size:var(--t-caption);color:var(--text-secondary);
   display:flex;flex-direction:column;align-items:flex-start;row-gap:2px}
 .cx .footlinks a,.cx .footlinks .plain{color:var(--pencil);text-decoration:none;
   display:inline-flex;align-items:center;min-height:44px}
@@ -225,7 +256,7 @@
 .cx .footlinks a:hover{color:var(--forest);border-bottom-color:var(--pencil)}
 .cx .footlinks .sep{margin:0 7px;color:var(--hair2)}
 .cx .footnote{margin-top:20px;text-align:center;font-family:var(--serif);font-style:italic;
-  font-size:12px;letter-spacing:.02em;color:var(--faint)}
+  font-size:var(--t-caption);letter-spacing:.02em;color:var(--text-muted)}
 .cx .qlink{display:inline-block;margin-top:10px;font-family:var(--sans);font-size:13px;color:var(--pencil);
   text-decoration:none;border-bottom:1px dotted var(--hair2);padding-bottom:1px}
 .cx .qlink:hover{color:var(--forest);border-bottom-color:var(--pencil)}
@@ -255,19 +286,19 @@
 .cx .beat+.beat{border-top:1px solid var(--hair)}
 @keyframes cx-beat{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .cx .beat.you{padding-top:6px}
-.cx .beat-k{font-family:var(--sans);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--pencil);margin:0 0 9px;font-weight:500}
+.cx .beat-k{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.16em;text-transform:uppercase;color:var(--pencil);margin:0 0 9px;font-weight:500}
 .cx .you-words{margin:0;font-family:var(--serif);font-size:19px;line-height:1.5;color:var(--forest)}
 .cx .you-words q{font-style:italic;quotes:'\201C' '\201D'}
 /* ── completed stages collapse to one calm, readable line (not heavily dimmed) ── */
 .cx .beat.collapsed{padding:13px 0;opacity:1}
 .cx .beat-line{margin:0;display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;min-width:0;
   font-family:var(--sans);font-size:13.5px;color:var(--pencil)}
-.cx .beat-line .bk{font-family:var(--sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--faint);font-weight:600;flex:none}
+.cx .beat-line .bk{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--text-muted);font-weight:600;flex:none}
 .cx .beat-line b{font-family:var(--serif);font-weight:500;font-size:15px;color:var(--forest)}
 .cx .beat-line q{font-family:var(--serif);font-style:italic;color:var(--forest);quotes:'\201C' '\201D';
   flex:1;min-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cx .beat-line .mini-edit{flex:none;font-family:var(--sans);font-size:12px;color:var(--pencil);
+.cx .beat-line .mini-edit{flex:none;font-family:var(--sans);font-size:var(--t-label);color:var(--pencil);
   border-bottom:1px dotted var(--hair2);padding-bottom:1px}
 .cx .beat-line .mini-edit:hover{color:var(--forest)}
 /* ── close the loop: an inline input + prominent WhatsApp when understanding is thin ── */
@@ -276,7 +307,7 @@
 .cx .again-ta{width:100%;background:var(--page);border:1px solid var(--hair2);border-radius:12px;
   padding:13px 15px;font-family:var(--serif);font-size:16.5px;line-height:1.5;color:var(--ink);
   resize:none;min-height:66px;caret-color:var(--emerald)}
-.cx .again-ta::placeholder{color:var(--faint);font-style:italic}
+.cx .again-ta::placeholder{color:var(--text-muted);font-style:italic}
 .cx .again-ta:focus{outline:none;border-color:var(--emerald)}
 .cx .wa-prominent{display:inline-flex;align-items:center;gap:8px;margin-top:16px;padding:11px 20px;
   border:1px solid var(--emerald);border-radius:999px;font-family:var(--sans);font-size:13.5px;font-weight:600;
@@ -289,8 +320,8 @@
   border-bottom:1px dotted var(--hair2);padding-bottom:1px;width:fit-content}
 .cx .restart-link:hover{color:var(--forest)}
 /* quiet "Did I get this right?" affordance on the Ledger — feeds the flagged-wrong metric */
-.cx .gotit{margin:16px 0 0;font-family:var(--sans);font-size:12.5px;color:var(--faint)}
-.cx .gotit button{font-family:var(--sans);font-size:12.5px;color:var(--pencil);
+.cx .gotit{margin:16px 0 0;font-family:var(--sans);font-size:var(--t-caption);color:var(--text-secondary)}
+.cx .gotit button{font-family:var(--sans);font-size:var(--t-label);color:var(--pencil);
   border-bottom:1px dotted var(--hair2);padding-bottom:1px;margin-left:4px}
 .cx .gotit button:hover{color:var(--forest)}
 
@@ -308,13 +339,13 @@
 .cx button:focus:not(:focus-visible){outline:none}
 .cx .uline p{margin:0;font-family:var(--serif);font-size:17.5px;line-height:1.5;color:var(--ink)}
 .cx .uline.open p{color:var(--pencil)}
-.cx .uline .lbl{display:block;font-family:var(--sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+.cx .uline .lbl{display:block;font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.12em;text-transform:uppercase;
   color:var(--pencil);margin-bottom:1px}
-.cx .uline.know .lbl{color:var(--emerald)}
-.cx .uline .from-words{display:block;font-family:var(--sans);font-size:10px;letter-spacing:.06em;color:var(--faint);margin-top:2px;font-style:normal}
+.cx .uline.know .lbl{color:var(--text-accent)}
+.cx .uline .from-words{display:block;font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.06em;color:var(--text-muted);margin-top:2px;font-style:normal}
 .cx .ledger-note{font-family:var(--serif);font-style:italic;font-size:13px;line-height:1.5;color:var(--pencil);margin:12px 0 4px}
 .cx button.uline.tap:hover p{color:var(--forest)}
-.cx .uline.open .tellme{display:inline-block;margin-left:10px;font-family:var(--sans);font-size:12px;
+.cx .uline.open .tellme{display:inline-block;margin-left:10px;font-family:var(--sans);font-size:var(--t-label);
   font-weight:600;color:var(--emerald);white-space:nowrap;vertical-align:middle}
 .cx .uline.open .tellme::after{content:' →'}
 .cx button.uline.tap:hover .tellme{color:var(--forest)}
@@ -325,11 +356,11 @@
 /* Memory Ribbon — a running, attributed record of what YOU told Connect today.
    It grows as you add, stays in view, and is exactly what gets preserved. */
 .cx .ribbon{margin:0 0 2px;padding:13px 0;border-bottom:1px solid var(--hair)}
-.cx .ribbon-k{font-family:var(--sans);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+.cx .ribbon-k{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.16em;text-transform:uppercase;
   color:var(--emerald);font-weight:600;margin:0 0 10px}
 .cx .ribbon-items{display:flex;flex-wrap:wrap;gap:7px}
 .cx .rib{display:inline-flex;align-items:center;gap:6px;background:rgba(6,169,78,.06);border:1px solid var(--hair2);
-  border-radius:999px;padding:6px 12px 6px 9px;font-family:var(--sans);font-size:12.5px;font-weight:500;
+  border-radius:999px;padding:6px 12px 6px 9px;font-family:var(--sans);font-size:var(--t-label);font-weight:500;
   color:var(--forest);animation:cx-rib .45s cubic-bezier(.2,.7,.2,1)}
 .cx .rib .rc{width:14px;height:14px;display:inline-flex;flex:none;color:var(--emerald)}
 @keyframes cx-rib{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}
@@ -344,10 +375,10 @@
   color:var(--pencil);max-width:32ch}
 
 /* Sprint 4 · a quiet legend — names what ✓ and ○ mean, so every step is legible */
-.cx .ulegend{display:flex;align-items:center;gap:6px;margin:-6px 0 12px;font-family:var(--sans);font-size:11px;
-  letter-spacing:.04em;color:var(--faint)}
+.cx .ulegend{display:flex;align-items:center;gap:6px;margin:-6px 0 12px;font-family:var(--sans);font-size:var(--t-micro);
+  letter-spacing:.04em;color:var(--text-muted)}
 .cx .ulegend .lg{font-weight:700}
-.cx .ulegend .lg.ok{color:var(--emerald)}
+.cx .ulegend .lg.ok{color:var(--text-accent)}
 .cx .ulegend .lg.op{color:var(--pencil)}
 .cx .ulegend .dot-sep{margin:0 6px;color:var(--hair2)}
 
@@ -387,13 +418,13 @@
 .cx .ruled textarea{position:relative;z-index:1;display:block;width:100%;background:transparent;border:none;
   font-family:var(--serif);font-size:18px;line-height:32px;color:var(--ink);
   padding:5px 2px 0 22px;min-height:104px;resize:none;caret-color:var(--emerald)}
-.cx .ruled textarea::placeholder{color:var(--faint);font-style:italic}
+.cx .ruled textarea::placeholder{color:var(--text-muted);font-style:italic}
 .cx .ruled textarea:focus{outline:none}
 .cx .ruled:focus-within .pen{animation:none;background:var(--emerald)}
 .cx .ruled:focus-within .rule:nth-child(1){background:var(--emerald)}
 .cx .cx-field{display:block;width:100%;background:transparent;border:none;border-bottom:1px solid var(--hair2);
   font-family:var(--serif);font-size:18px;color:var(--ink);padding:8px 2px;margin-bottom:14px;caret-color:var(--emerald)}
-.cx .cx-field::placeholder{color:var(--faint);font-style:italic}
+.cx .cx-field::placeholder{color:var(--text-muted);font-style:italic}
 .cx .cx-field:focus{outline:none;border-bottom-color:var(--emerald)}
 .cx .try{margin-top:22px;font-size:13.5px;color:var(--pencil)}
 .cx .try button{display:block;margin-top:9px;font-family:var(--serif);font-style:italic;font-size:15px;color:var(--forest);
@@ -402,8 +433,8 @@
 
 .cx .ledger{background:var(--page);border:1px solid var(--hair);border-radius:18px;
   padding:26px 24px 22px;margin-top:26px}
-.cx .ledger .lh{font-family:var(--sans);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--pencil);margin:0 0 18px;font-weight:500}
+.cx .ledger .lh{font-family:var(--sans);font-size:var(--t-label);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--text-secondary);margin:0 0 18px;font-weight:600}
 .cx .lline{display:flex;gap:12px;align-items:baseline;opacity:0;transform:translateY(8px);
   transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1);padding:7px 0}
 .cx .lline.in{opacity:1;transform:none}
@@ -412,7 +443,7 @@
 @keyframes cx-breathe{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.55);opacity:.55}}
 .cx .lline p{margin:0;font-family:var(--serif);font-size:17.5px;line-height:1.5;color:var(--ink)}
 .cx .lline p q{font-style:italic;quotes:'\201C' '\201D';color:var(--forest)}
-.cx .lline p .lbl{font-family:var(--sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+.cx .lline p .lbl{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.12em;text-transform:uppercase;
   color:var(--pencil);display:block;margin-bottom:1px}
 
 .cx .blank{display:flex;gap:12px;align-items:baseline;padding:9px 0;opacity:0;transform:translateY(8px);
@@ -423,7 +454,7 @@
 .cx .blank .dots{display:inline-block;min-width:74px;border-bottom:2px dotted var(--hair2);
   height:1em;vertical-align:baseline;margin-left:6px}
 .cx button.blank{width:100%;text-align:left}
-.cx .blank .tellme{display:inline-block;margin-left:10px;font-family:var(--sans);font-size:12px;
+.cx .blank .tellme{display:inline-block;margin-left:10px;font-family:var(--sans);font-size:var(--t-label);
   font-weight:600;color:var(--emerald);white-space:nowrap;vertical-align:middle}
 .cx .blank .tellme::after{content:' →'}
 .cx .blank:hover .tellme{color:var(--forest)}
@@ -434,7 +465,7 @@
 .cx .fill textarea{width:100%;background:transparent;border:none;border-bottom:1px solid var(--emerald);
   font-family:var(--serif);font-size:18px;line-height:1.5;color:var(--ink);padding:6px 2px 8px;min-height:46px;resize:none;caret-color:var(--emerald)}
 .cx .fill textarea:focus{outline:none}
-.cx .fill textarea::placeholder{color:var(--faint);font-style:italic}
+.cx .fill textarea::placeholder{color:var(--text-muted);font-style:italic}
 .cx .fill .frow{display:flex;gap:16px;align-items:center;margin-top:10px}
 .cx .fill .save{background:var(--forest);color:#F7F4EC;border-radius:999px;padding:9px 20px;
   font-family:var(--sans);font-size:13.5px;font-weight:600}
@@ -442,7 +473,7 @@
 .cx .told{display:flex;gap:12px;align-items:baseline;padding:9px 0}
 .cx .told .ck{width:18px;height:18px;flex:none;color:var(--emerald);position:relative;top:2px}
 .cx .told p{margin:0;font-family:var(--serif);font-size:17.5px;line-height:1.5;color:var(--ink)}
-.cx .told .lbl{display:block;font-family:var(--sans);font-size:11px;letter-spacing:.12em;
+.cx .told .lbl{display:block;font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.12em;
   text-transform:uppercase;color:var(--emerald);margin-bottom:1px}
 
 .cx .counsel p{font-family:var(--serif);font-size:18.5px;line-height:1.62;color:var(--ink);margin:0 0 18px;max-width:36ch}
@@ -457,18 +488,18 @@
 
 .cx .act{margin-top:auto;padding-top:30px}
 .cx .btn{display:block;width:100%;background:var(--forest);color:#F7F4EC;border:1px solid transparent;border-radius:999px;
-  padding:16px 22px;font-family:var(--sans);font-weight:600;font-size:16px;text-align:center;
+  padding:16px 22px;font-family:var(--sans);font-weight:600;font-size:var(--t-button);text-align:center;
   letter-spacing:.01em;transition:background .3s ease,color .3s ease,border-color .3s ease,transform .15s ease,opacity .2s}
 .cx .btn:active{transform:scale(.985)}
 .cx .btn:disabled{opacity:.35}
 /* the writing desk's CTA: a quiet ghost while empty, inking to the full pill on type */
 .cx .btn.ghost{background:transparent;color:var(--forest);border-color:var(--hair2)}
 .cx .btn.inked{background:var(--forest);color:#F7F4EC;border-color:var(--forest)}
-.cx .ghost{display:block;width:100%;text-align:center;margin-top:14px;font-size:14px;color:var(--pencil);
-  padding:10px;font-family:var(--sans)}
-.cx .ghost:hover{color:var(--forest)}
+.cx .ghost:not(.btn){display:block;width:100%;text-align:center;margin-top:14px;font-size:var(--t-caption);color:var(--text-secondary);
+  padding:12px;font-family:var(--sans);min-height:44px}
+.cx .ghost:not(.btn):hover{color:var(--forest)}
 .cx .privacy{margin-top:16px;text-align:center;font-family:var(--serif);font-style:italic;
-  font-size:13.5px;color:var(--pencil)}
+  font-size:var(--t-caption);color:var(--text-secondary)}
 
 .cx .think{display:flex;align-items:center;gap:11px;margin:8px 0 2px}
 .cx .think .ld{width:8px;height:8px;border-radius:50%;background:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}

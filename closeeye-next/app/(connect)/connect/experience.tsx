@@ -608,7 +608,10 @@ export function ConnectExperience() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="mast-logo" src="/brand/close-eye-horizontal.svg" alt="Close Eye" width={207} height={40} />
         <div className="mast-tag">Connect</div>
-        <p className="mast-triad"><b>Trust</b><span className="sep">·</span><b>Presence</b><span className="sep">·</span><b>Understanding</b></p>
+        {/* The "·" is pure decoration in the brand accent — it carries no meaning, so it
+            stays brand-coloured (WCAG exempts decoration) and is hidden from assistive
+            tech, which would otherwise announce "middle dot" between every word. */}
+        <p className="mast-triad"><b>Trust</b><span className="sep" aria-hidden="true">·</span><b>Presence</b><span className="sep" aria-hidden="true">·</span><b>Understanding</b></p>
       </div>
     )
   }
