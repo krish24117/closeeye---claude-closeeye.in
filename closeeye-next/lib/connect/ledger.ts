@@ -16,7 +16,7 @@
  */
 import { classify, pronoun, type Gender } from './understand'
 import { isCrisis } from '@shared/crisis'   // THE canonical floor — shared with Ask Close Eye
-import { SERVED_AREAS, INDIA_AREAS, presenceFor, coverageFor, type PresenceAvailability } from '@/lib/platform/service-region'
+import { SERVED_AREAS, INDIA_AREAS, regionFor, presenceFor, coverageFor, type PresenceAvailability } from '@/lib/platform/service-region'
 
 export type NeedType =
   | 'wellbeing' | 'errand' | 'medical' | 'emergency'
@@ -71,12 +71,51 @@ const ABROAD = ['london','manchester','birmingham','new york','boston','chicago'
 // Every place we SERVE must also be a place we can READ — otherwise "she's in Gachibowli"
 // scans as no-location-given and we'd ask a family we cover where they are.
 const GAZETTEER = [...new Set([...INDIA_AREAS, ...ABROAD, ...SERVED_AREAS])]
+/**
+ * WHICH city — the one where the person we would help is.
+ *
+ * This used to return the LONGEST place-name in the sentence, which got the NRI case
+ * right by accident and the domestic one wrong: "I'm in London, my father is in
+ * Hyderabad" resolved to Hyderabad only because "hyderabad" has more letters than
+ * "london". Reverse it — "I'm in Hyderabad, my mother is in Delhi" — and it still said
+ * Hyderabad, and would have promised a visit to a mother who lives in Delhi.
+ *
+ * Two rules now, in order:
+ *
+ *  1. AN INDIAN CITY BEATS A FOREIGN ONE. We serve India, so when a message names both,
+ *     the Indian one is the family's and the foreign one is where the caller is — an NRI
+ *     in London writing about a father in Hyderabad. (Founder, 2026-07-17: "for NRI the
+ *     serving city is Hyderabad.")
+ *
+ *  2. TWO DIFFERENT INDIAN CITIES MEANS WE DON'T KNOW. "I'm in Hyderabad, my mother is in
+ *     Delhi" names two places we serve differently, and nothing in the sentence tells us
+ *     whose is whose. So we return null and ASK — the same rule as everywhere else in this
+ *     engine. Guessing here does not cost a wrong label; it costs a family expecting
+ *     someone in the wrong city.
+ *     Suburbs of one market are NOT two cities: "Gachibowli, Hyderabad" is one answer.
+ */
+function placesIn(list: string[], q: string): string[] {
+  const found: string[] = []
+  for (const c of [...list].sort((a, b) => b.length - a.length)) {
+    if (!new RegExp(`\\b${c.replace(/[- ]/g, '[-\\s]+')}\\b`).test(q)) continue
+    // "delhi" inside "new delhi" is not a second place — the longer match already has it.
+    if (found.some((f) => f.includes(c))) continue
+    found.push(c)
+  }
+  return found
+}
+
 function findCity(text: string): string | null {
   const q = ` ${text.toLowerCase()} `
-  for (const c of [...GAZETTEER].sort((a, b) => b.length - a.length)) {
-    if (new RegExp(`\\b${c.replace(/[- ]/g, '[-\\\\s]+')}\\b`).test(q)) return titleWords(c)
+  const indian = placesIn(INDIA_AREAS, q)
+  if (indian.length > 0) {
+    // Collapse a served market's suburbs to one answer before counting.
+    const distinct = new Set(indian.map((c) => regionFor(c)?.id ?? c))
+    if (distinct.size > 1) return null   // two cities, no way to tell whose — ask
+    return titleWords(indian[0] as string)
   }
-  return null
+  const abroad = placesIn(ABROAD, q)
+  return abroad.length > 0 ? titleWords(abroad[0] as string) : null
 }
 
 const ALONE = /\b(lives?\s+alone|living\s+alone|(by|on)\s+(her|his|their)\s+own|all\s+alone|stays?\s+alone)\b/i

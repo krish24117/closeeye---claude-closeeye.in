@@ -91,6 +91,50 @@ describe('what a family is actually told', () => {
  * context cannot be allowed to decide what we promise. Both halves are pinned: the
  * excluded domains must never claim India, and money must never stop claiming it.
  */
+/**
+ * WHOSE CITY — the NRI case. Founder, 2026-07-17: "for NRI the serving city is Hyderabad."
+ *
+ * The city that matters is where the person we would HELP is, never where the caller is.
+ * findCity used to return the LONGEST place-name in the sentence, which got this right by
+ * accident and wrong the moment the foreign city had more letters:
+ *
+ *   "I'm in San Francisco, my father is in Hyderabad"  ->  San Francisco  (13 > 9)
+ *
+ * — so we would have read the CALLER's city, found no presence, and told an NRI we cannot
+ * help their father in the one city we actually serve. A lost customer in the core segment,
+ * decided by a string length.
+ */
+describe('whose city · an Indian city beats a foreign one', () => {
+  const cityOf = (t: string) => readLedger(t).city
+
+  it('London caller, father in Hyderabad → Hyderabad', () =>
+    expect(cityOf("I'm in London and my father is in Hyderabad, I worry about him")).toBe('Hyderabad'))
+  it('Dubai caller, mother in Hyderabad → Hyderabad', () =>
+    expect(cityOf('I live in Dubai, my mother is alone in Hyderabad')).toBe('Hyderabad'))
+  it('THE ONE THAT WAS BROKEN: a LONGER foreign city must not win', () =>
+    expect(cityOf("I'm in San Francisco, my father is in Hyderabad")).toBe('Hyderabad'))
+  it('the loved one is not always in Hyderabad — we read Delhi, and promise nothing', () => {
+    expect(cityOf("I'm in London, my father is in Delhi")).toBe('Delhi')
+    expect(coverageFor('presence', 'Delhi')).toBe('unavailable')
+  })
+  it('a foreign city alone is still read — it is a place, not a person', () =>
+    expect(cityOf('my father lives alone in London')).toBe('London'))
+})
+
+describe('whose city · two Indian cities means we do not know, so we ask', () => {
+  const cityOf = (t: string) => readLedger(t).city
+
+  it('"I\'m in Hyderabad, my mother is in Delhi" → null, never a guess', () => {
+    // Guessing here does not cost a wrong label. It costs a family expecting someone in
+    // the wrong city. null makes the engine ask (WHERE_QUESTION).
+    expect(cityOf("I'm in Hyderabad, my mother is in Delhi")).toBe(null)
+  })
+  it('but suburbs of ONE market are not two cities', () =>
+    expect(cityOf('my father in Gachibowli, Hyderabad needs someone')).toBe('Gachibowli'))
+  it('and "new delhi" is not "delhi" twice', () =>
+    expect(cityOf('my father lives in New Delhi')).toBe('New Delhi'))
+})
+
 describe('legal / passport / visa are OUT of the India claim', () => {
   const said = (t: string) => counsel(readLedger(t)).paragraphs.join(' ')
   const claimsIndia = (t: string) => /anywhere in India/i.test(said(t))
