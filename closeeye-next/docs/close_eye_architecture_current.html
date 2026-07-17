@@ -1,0 +1,192 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Close Eye — the architecture, as built</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F2E9; --page:#FBF9F2; --ink:#17281F; --forest:#0E2A1F;
+    --emerald:#06A94E; --sprout:#83C400; --pencil:#5F6B60; --faint:#98A097;
+    --hair:#E2DECE; --hair2:#D8D3BF; --alarm:#B4442E;
+    --serif:'Newsreader',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.6}
+  .wrap{max-width:1080px;margin:0 auto;padding:52px 20px 90px}
+  .kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--emerald);font-weight:600;margin:0 0 10px}
+  h1{font-family:var(--serif);font-weight:500;font-size:clamp(28px,5vw,42px);line-height:1.12;letter-spacing:-.01em;color:var(--forest);margin:0 0 12px;text-wrap:balance}
+  h1 em{font-style:italic;font-weight:400}
+  .lede{font-family:var(--serif);font-size:18px;line-height:1.55;color:var(--pencil);max-width:64ch;margin:0}
+  h2{font-family:var(--serif);font-weight:500;font-size:clamp(20px,3vw,26px);color:var(--forest);margin:56px 0 8px}
+  h2 .n{font-family:var(--sans);font-size:11px;letter-spacing:.16em;color:var(--faint);display:block;margin-bottom:7px;font-weight:600}
+  h3{font-family:var(--sans);font-size:13.5px;font-weight:600;color:var(--forest);margin:22px 0 6px}
+  p{max-width:70ch;margin:0 0 13px;font-size:15px;color:#33413A}
+  b,strong{font-weight:600;color:var(--forest)}
+  code{font-family:var(--mono);font-size:12px;background:rgba(226,222,206,.5);padding:1px 5px;border-radius:4px;color:var(--forest)}
+  hr{height:1px;background:var(--hair);border:0;margin:52px 0 0}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:26px 0 0}
+  @media(max-width:800px){.two{grid-template-columns:1fr}}
+  .eng{border:1px solid var(--hair);border-radius:14px;padding:18px 20px;background:var(--page)}
+  .eng.det{border-color:var(--emerald);background:rgba(6,169,78,.045)}
+  .eng.llm{border-color:var(--pencil);border-style:dashed}
+  .eng .tag{font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;color:var(--faint)}
+  .eng h3{margin:3px 0 4px;font-size:17px;font-family:var(--serif);font-weight:500;color:var(--forest)}
+  .eng .where{font-family:var(--mono);font-size:11px;color:var(--pencil);margin:0 0 9px}
+  .eng ul{margin:8px 0 0;padding-left:17px}
+  .eng li{font-size:13px;margin:0 0 5px;color:#33413A}
+
+  .bridge{display:flex;align-items:center;gap:10px;justify-content:center;margin:16px 0 0;
+    border:1.5px solid var(--emerald);border-radius:12px;padding:12px 16px;background:rgba(6,169,78,.05)}
+  .bridge .t{font-size:13px;color:var(--forest)}
+  .bridge .t b{font-weight:600}
+
+  .pipe{margin:18px 0 0;display:flex;flex-direction:column}
+  .node{border:1px solid var(--hair);border-radius:11px;padding:11px 15px;background:var(--page)}
+  .node.det{border-color:var(--emerald);background:rgba(6,169,78,.04)}
+  .node.llm{border-color:var(--pencil);border-style:dashed;background:rgba(95,107,96,.04)}
+  .node .t{font-size:14px;font-weight:600;color:var(--forest);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .node .num{font-family:var(--mono);font-size:11px;color:var(--faint);font-weight:500}
+  .node .d{font-size:12.5px;color:var(--pencil);margin:3px 0 0;line-height:1.5}
+  .tag2{font-family:var(--sans);font-size:9px;letter-spacing:.09em;text-transform:uppercase;font-weight:600;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .live{background:rgba(6,169,78,.14);color:#046b34}
+  .gap{background:rgba(180,68,46,.12);color:var(--alarm)}
+  .arrow{height:16px;display:grid;place-items:center;color:var(--hair2);font-size:14px}
+
+  .tblwrap{overflow-x:auto;border:1px solid var(--hair);border-radius:12px;margin:22px 0 0}
+  table{border-collapse:collapse;width:100%;min-width:640px;font-size:13px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--hair);vertical-align:top}
+  th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:600;background:rgba(226,222,206,.22)}
+  tr:last-child td{border-bottom:0}
+  td.f{font-family:var(--mono);font-size:11.5px;color:var(--forest);white-space:nowrap}
+  td.s{white-space:nowrap}
+  .callout{border-left:2px solid var(--sprout);padding:2px 0 2px 16px;margin:24px 0}
+  .callout p{font-family:var(--serif);font-size:17px;line-height:1.5;color:var(--forest);margin:0;max-width:56ch}
+  .dep{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0 0}
+  @media(max-width:700px){.dep{grid-template-columns:1fr}}
+  .env{border:1px solid var(--hair);border-radius:12px;padding:15px 17px}
+  .env.uat{border-color:var(--emerald)}
+  .env .h{font-size:13px;font-weight:600;color:var(--forest)}
+  .env .u{font-family:var(--mono);font-size:11px;color:var(--pencil);margin:2px 0 8px}
+  .env .v{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--forest)}
+  .env .m{font-size:11.5px;color:var(--pencil);margin:6px 0 0}
+  .foot{margin-top:56px;font-size:12px;color:var(--faint)}
+</style>
+
+<div class="wrap">
+  <p class="kicker">As built · 2026-07-17 · UAT v48 · production v46</p>
+  <h1>The architecture,<br><em>as it actually runs tonight.</em></h1>
+  <p class="lede">Two engines, one shared safety floor, one deterministic policy layer. The
+    Family Graph is the source of truth — the LLM reasons and speaks, it never decides. This
+    is the real state, gaps marked honestly, not the target.</p>
+
+  <h2><span class="n">The shape</span>Two engines, deliberately separate</h2>
+  <div class="two">
+    <div class="eng det">
+      <span class="tag">Engine A · deterministic</span>
+      <h3>Connect — the understanding engine</h3>
+      <p class="where">closeeye-next/lib/connect/ · on-device</p>
+      <ul>
+        <li><b>No LLM.</b> Pure pattern logic — it cannot fabricate a person, a need, or a fact.</li>
+        <li>Powers <code>/connect</code>: who / relationship / need / matter / coverage.</li>
+        <li><code>understand.ts</code> · <code>ledger.ts</code> · <code>lexicon.ts</code></li>
+        <li>461 regression tests. Instant, free, offline-capable.</li>
+      </ul>
+    </div>
+    <div class="eng llm">
+      <span class="tag">Engine B · LLM</span>
+      <h3>Ask Close Eye — health guidance</h3>
+      <p class="where">supabase/functions/ask-health/ · Deno edge</p>
+      <ul>
+        <li>Claude answers free-form questions for <b>signed-in</b> families.</li>
+        <li>Runs the shared crisis floor <b>before</b> any model call.</li>
+        <li><code>safety-engine.ts</code> · <code>claude.ts</code> · <code>resource-router.ts</code></li>
+        <li>Gained its first tests tonight, via the shared floor.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="bridge">
+    <span class="t"><b>One thing joins them:</b> the crisis floor — <code>supabase/functions/_shared/crisis.ts</code>. Both import it; neither keeps a copy. 25/25 emergencies, in one vocabulary.</span>
+  </div>
+
+  <h2><span class="n">What runs when a family types on /connect</span>The Connect pipeline, today</h2>
+  <div class="pipe">
+    <div class="node"><div class="t"><span class="num">·</span> A family types one sentence</div>
+      <div class="d">"My father needs help with his health insurance claim in Delhi"</div></div>
+    <div class="arrow">↓</div>
+    <div class="node det"><div class="t"><span class="num">1</span> Crisis floor <span class="tag2 live">live</span></div>
+      <div class="d">Shared, deterministic, runs first. A real emergency escalates to 108 + care team and never reaches the rest. <code>_shared/crisis.ts</code></div></div>
+    <div class="arrow">↓</div>
+    <div class="node det"><div class="t"><span class="num">2</span> Understand <span class="tag2 live">live</span></div>
+      <div class="d">WHO (father) · MATTER (health insurance claim — the kind is kept, not flattened) · NEED (errand/financial). Never invents; a health term or a date is not a person. <code>understand.ts</code> · <code>lexicon.ts</code></div></div>
+    <div class="arrow">↓</div>
+    <div class="node det"><div class="t"><span class="num">3</span> Coverage · domain × mode <span class="tag2 live">live</span></div>
+      <div class="d">financial → remote → <b>India</b>. presence → in-person → <b>Hyderabad</b>. An Indian city beats a foreign one (NRI); two Indian cities → ask. Legal/passport/visa excluded. <code>service-region.ts</code></div></div>
+    <div class="arrow">↓</div>
+    <div class="node det"><div class="t"><span class="num">4</span> The Ledger — honest reflection <span class="tag2 live">live</span></div>
+      <div class="d">✓ what I know (from your words) · ○ what I don't yet. Once it understands enough, the answer is not gated behind questions. <code>ledger.ts</code></div></div>
+    <div class="arrow">↓</div>
+    <div class="node det"><div class="t"><span class="num">5</span> Route to a human <span class="tag2 live">live</span></div>
+      <div class="d">Connect understands and hands to a Presence Manager. It never gives the tax/medical/legal answer itself.</div></div>
+  </div>
+  <p style="margin-top:14px"><b>Not yet in this pipeline:</b> a <code>scope.ts</code> capability floor (the "we don't lend money" denials — designed, not built), and the deterministic <b>Retrieve</b> step that would read the Family Graph before understanding.</p>
+
+  <h2><span class="n">The platform layer</span>The rules the engines stand on</h2>
+  <div class="tblwrap"><table>
+    <thead><tr><th>Module</th><th>What it decides</th><th>State</th></tr></thead>
+    <tbody>
+      <tr><td class="f">constitution.ts</td><td>The three immutable principles. "The database remembers, the LLM reasons."</td><td class="s"><span class="tag2 live">live</span></td></tr>
+      <tr><td class="f">crisis.ts <span style="color:var(--faint)">(_shared)</span></td><td>Is this an emergency? STRONG / WEAK / VETO / URGENCY. The one floor both engines stand on.</td><td class="s"><span class="tag2 live">live</span></td></tr>
+      <tr><td class="f">service-region.ts</td><td>Can we do THIS, HERE? Coverage as domain × mode. Whose-city (NRI) logic.</td><td class="s"><span class="tag2 live">live</span></td></tr>
+      <tr><td class="f">decision-policy.ts</td><td>The gate before execution — capability, city, membership, consent, provider availability.</td><td class="s"><span class="tag2 live">live</span></td></tr>
+      <tr><td class="f">next-action.ts</td><td>Every request resolves to ONE structured NextAction — answer, one clarify, next steps, confidence.</td><td class="s"><span class="tag2 live">live</span></td></tr>
+      <tr><td class="f">trust.ts</td><td>TRUST_THRESHOLD (answer / clarify / hand off) + the conversation budget. Mirrored in <code>_shared/trust.ts</code>.</td><td class="s"><span class="tag2 live">live</span></td></tr>
+      <tr><td class="f">refusal.ts</td><td>Reads a refusal the server authored (rate limit, bot) and carries it to the family unchanged.</td><td class="s"><span class="tag2 live">live</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2><span class="n">The frozen execution order</span>Where we are against it</h2>
+  <p>The order you froze: <b>Retrieve → Understand → Decide → Reason → Execute → Remember.</b> Honest status of each, as built:</p>
+  <div class="tblwrap"><table>
+    <thead><tr><th>Stage</th><th>Built?</th><th>Where / the gap</th></tr></thead>
+    <tbody>
+      <tr><td>Gateway (auth, rate limit, bot, injection)</td><td class="s"><span class="tag2 live">live</span></td><td><code>_shared/ratelimit · turnstile · cors</code></td></tr>
+      <tr><td>Crisis floor</td><td class="s"><span class="tag2 live">live</span></td><td>shared by both engines · 25/25</td></tr>
+      <tr><td><b>Retrieve · Family Graph</b></td><td class="s"><span class="tag2 gap">missing</span></td><td>the keystone — the family app never reads <code>family_ledger</code>; only <code>/space</code> does</td></tr>
+      <tr><td>Understand</td><td class="s"><span class="tag2 live">live</span></td><td><code>understand.ts</code> · <code>ledger.ts</code> · <code>lexicon.ts</code></td></tr>
+      <tr><td>Decide (policy + coverage)</td><td class="s"><span class="tag2 live">live</span></td><td><code>decision-policy.ts</code> · <code>service-region.ts</code> · <code>trust.ts</code></td></tr>
+      <tr><td>Capability floor (scope denials)</td><td class="s"><span class="tag2 gap">designed</span></td><td>the "we don't lend money" lane — awaiting copy sign-off</td></tr>
+      <tr><td>Reason (LLM, constrained)</td><td class="s"><span class="tag2 gap">partial</span></td><td>Ask reasons, but from its own prompt — not yet from a shared Retrieve</td></tr>
+      <tr><td>Execute → Presence Manager</td><td class="s"><span class="tag2 gap">partial</span></td><td>booking + provisioning exist; the hand-off line is not yet true (no PM alert on provision)</td></tr>
+      <tr><td>Remember → Family Graph</td><td class="s"><span class="tag2 gap">partial</span></td><td>only provisioning writes the graph; the loop doesn't close yet</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <p>The centre still to build is <em>Retrieve</em>. Understand, Decide and the crisis floor
+      are solid; the Family Graph they should reason over is not yet wired to the app that
+      needs it. That is the next real piece.</p>
+  </div>
+
+  <h2><span class="n">Where it lives</span>Deployment, right now</h2>
+  <div class="dep">
+    <div class="env uat">
+      <div class="h">UAT — the working truth</div>
+      <div class="u">connect.closeeye.in · branch feat/connect-launch</div>
+      <div class="v">v48</div>
+      <div class="m">Every change ships here first and is reviewed here. The default target.</div>
+    </div>
+    <div class="env">
+      <div class="h">Production</div>
+      <div class="u">closeeye.in · branch main</div>
+      <div class="v">v46</div>
+      <div class="m">Ships only when UAT is perfect and explicitly approved. 2 commits behind.</div>
+    </div>
+  </div>
+  <p style="margin-top:14px"><b>Edge functions</b> (Ask, the crisis floor, WhatsApp) deploy <b>manually</b> via the Supabase CLI, independent of the web deploy — so they can be ahead of, or behind, the site. Today Ask runs the shared crisis floor in production. One repo (<code>closeeye---claude-closeeye.in</code>), app in <code>closeeye-next/</code>.</p>
+
+  <p class="foot">As-built reference, verified 2026-07-17 against the repo and live deployments. Companion to
+    <code>close_eye_execution_architecture.html</code> (the target order) — this one is the current state.
+    Brand tokens and type are the live system's. No product code was changed to produce it.</p>
+</div>
