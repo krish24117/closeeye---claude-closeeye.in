@@ -461,6 +461,14 @@ export function ConnectExperience() {
   // space can be created. Without one, the answer stays open (we ask "who is this
   // for?") until the 2-round cap, then hands to a human.
   const personKnown = !!rl?.subjectKnown
+  // WHO alone is not understanding. A subject with no NEED is a "not enough" state, and it
+  // must not wear "understood" chrome: it used to print "Now I can answer you properly"
+  // directly above "I'm not yet sure what you need". Both must be filled — and a NEED is
+  // never fabricated, so if the visitor didn't say it, it stays a blank and we ask.
+  // (A person subject can't reach this — readLedger promotes unclear->wellbeing when
+  // forLoved — so this is the family/self path, e.g. "This is for my family".)
+  const needKnown = !!rl && rl.need !== 'unclear'
+  const understood = personKnown && needKnown
   const truncate = (s: string, n = 72) => { const t = s.trim().replace(/\s+/g, ' '); return t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t }
   const CHECK = (
     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6" /></svg>
@@ -692,11 +700,15 @@ export function ConnectExperience() {
             <div className="s0-ask">
               <div className={`deskcard${deskDrawn ? ' drawn' : ''}`} ref={deskRef}>
                 <p className="exp-k">Experience Close Eye</p>
-                <p className="desk-lede">Tell Connect about someone you love.</p>
+                {/* Problem-first: name the moment a family is actually in, then ask.
+                    Founder copy, verbatim — no date here (the promise is true today;
+                    only the paid visit is gated). */}
+                <p className="desk-lede">When someone you love is far away</p>
+                <p className="desk-sub">Tell us what’s happening — a worry, an ageing parent alone, or simply wanting to feel closer from far away.</p>
                 <div className="ruled">
                   <span className="pen" aria-hidden="true" />
                   <div className="rules" aria-hidden="true"><span className="rule" /><span className="rule" /><span className="rule" /></div>
-                  <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Write as you would to a friend…" />
+                  <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Start with what’s worrying you." />
                 </div>
                 {/* Two examples stacked cost 159px — the largest block on the first screen,
                     and the reason the CTA fell below the fold on a phone. They ROTATE rather
@@ -713,7 +725,7 @@ export function ConnectExperience() {
                   <button type="button" className="try-ex" onClick={() => setText(EXAMPLES[exIdx]!)}>“{EXAMPLES[exIdx]}”</button>
                 </div>
                 <div className="act">
-                  <p className="desk-hint">One sentence is enough. Connect remembers from there.</p>
+                  <p className="desk-hint">One sentence is enough. Connect understands from there.</p>
                   <button className={`btn${text.trim().length > 0 ? ' inked' : ' ghost'}`} onClick={ask}>Let Connect understand</button>
                   <p className="privacy">Nothing you write is sold or shared. Ever.</p>
                 </div>
@@ -818,10 +830,10 @@ export function ConnectExperience() {
               <div className={`beat${stage === 's3' ? ' now' : ' collapsed'}`} ref={stage === 's3' ? activeBeatRef : undefined}>
                 {stage === 's3' ? (
                   <>
-                    <div className="think" style={{ marginBottom: 14 }}><span className="ld" style={{ animation: 'none' }} /><span>{personKnown ? 'Now I can answer you properly.' : againCount >= CONVERSATION_BUDGET ? 'Let’s get you to a real person.' : 'Let me make sure I understand.'}</span></div>
+                    <div className="think" style={{ marginBottom: 14 }}><span className="ld" style={{ animation: 'none' }} /><span>{understood ? 'Now I can answer you properly.' : againCount >= CONVERSATION_BUDGET ? 'Let’s get you to a real person.' : 'Let me make sure I understand.'}</span></div>
                     <div className="counsel">
                       {/* the "question" is never repeated verbatim — it varies each round */}
-                      {(personKnown || againCount === 0) ? (
+                      {(understood || againCount === 0) ? (
                         <>{counselData.paragraphs.map((p, i) => <p key={i}>{boldLead(p)}</p>)}<p className="sig">{counselData.signature}</p></>
                       ) : againCount >= CONVERSATION_BUDGET ? (
                         <p>I’d rather hand this to a person than guess. A real person at Close Eye is one tap away — I’ll pass along what you wrote so you won’t repeat yourself.</p>
@@ -832,7 +844,7 @@ export function ConnectExperience() {
                     {rl.need === 'emergency' && (
                       <a className="dial" href="tel:108">Call emergency services · 108</a>
                     )}
-                    {personKnown ? (
+                    {understood ? (
                       <>
                         <p className="trustline" style={{ marginTop: 20 }}>Sometimes care needs a real person. Close Eye knows when.</p>
                         {/* needsHuman, not aiConfident: a need that wants presence we can't
@@ -852,8 +864,10 @@ export function ConnectExperience() {
                       // Insufficient understanding — never a dead end. Give a place to
                       // answer right here (varied each round), and a real person on WhatsApp.
                       <div className="again">
-                        <textarea className="again-ta" rows={2} value={againText} onChange={(e) => setAgainText(e.target.value)} placeholder={againCount === 0 ? 'Tell me here — who is this for?' : 'In your words — who is it for, and what would help?'} aria-label="Who is this for?" autoFocus />
-                        <div className="act"><button type="button" className={`btn${againText.trim() ? ' inked' : ' ghost'}`} onClick={understandAgain}>Connect, understand again</button></div>
+                        <textarea className="again-ta" rows={2} value={againText} onChange={(e) => setAgainText(e.target.value)}
+                          placeholder={personKnown ? 'Tell me what’s happening — even a few words' : againCount === 0 ? 'Tell me here — who is this for?' : 'In your words — who is it for, and what would help?'}
+                          aria-label={personKnown ? 'What is happening?' : 'Who is this for?'} autoFocus />
+                        <div className="act"><button type="button" className={`btn${againText.trim() ? ' inked' : ' ghost'}`} onClick={understandAgain}>Tell me more</button></div>
                         <a className="wa-prominent" href={waHandoffLink()} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>
                       </div>
                     )}

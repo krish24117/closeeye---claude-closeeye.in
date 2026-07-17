@@ -12,7 +12,6 @@
 import { supabase } from '@/lib/supabase'
 import { classify, pronoun, type Gender } from '@/lib/connect/understand'
 import { readLedger, ledgerEntriesForStorage, blanksFor, KEY_LABEL, type Blank, type LedgerLine } from '@/lib/connect/ledger'
-import { VISITS_OPEN_LABEL } from '@/lib/connect/phase'
 
 /** Mid-sentence display name: the name the family gave ("Amma"), else the
  *  relationship lowercased ("your mother"), else a real name as typed. */
@@ -303,7 +302,7 @@ export async function appendLearning(lovedOneId: string, key: Blank['key'], body
  *
  * The rule: when a question carries a concrete need — a health worry, a real-world
  * task, an emergency — the answer must address THAT need with what Close Eye can
- * actually do today (bring a trusted person; visits open 15 August; a real person
+ * actually do today (bring a trusted person; a real person
  * reachable now for anything time-sensitive). A concrete need is never met with a
  * generic "here's what I understand" summary. Otherwise it answers only from what
  * is actually known, and says plainly when it lacks context.
@@ -316,7 +315,6 @@ export function askConnect(question: string, space: SpaceData): AskAnswer {
   const g = space.gender
   const they = pronoun.subject(g)
   const them = pronoun.object(g)
-  const visits = `Visits open ${VISITS_OPEN_LABEL}.`
   const need = readLedger(question).need
 
   switch (need) {
@@ -325,11 +323,11 @@ export function askConnect(question: string, space: SpaceData): AskAnswer {
       // tappable emergency dial (matching /connect), not just prose.
       return { text: `If ${name} is in danger, call emergency services now — that has to come first. Then Close Eye can get a trusted person to ${them}, and you can reach one this minute.`, whatsapp: true, dial: true }
     case 'medical':
-      return { text: `I won’t guess about health — that isn’t something an app should do. What Close Eye can do is send a trusted person to see ${name} in person. ${visits} For anything that can’t wait, you can reach a real person right now.`, whatsapp: true }
+      return { text: `I won’t guess about health — that isn’t something an app should do. What Close Eye can do is send a trusted person to see ${name} in person. For anything that can’t wait, you can reach a real person right now.`, whatsapp: true }
     case 'errand':
-      return { text: `This needs a real pair of hands, not an answer. Close Eye can put a trusted person on it for ${name} — the kind of help you’d give if you were there. ${visits} If it’s time-sensitive, reach someone now.`, whatsapp: true }
+      return { text: `This needs a real pair of hands, not an answer. Close Eye can put a trusted person on it for ${name} — the kind of help you’d give if you were there. If it’s time-sensitive, reach someone now.`, whatsapp: true }
     case 'companionship':
-      return { text: `${Name} shouldn’t sit alone with it. Close Eye can send someone to be with ${them} — a familiar face who stays a while. ${visits}`, whatsapp: false }
+      return { text: `${Name} shouldn’t sit alone with it. Close Eye can send someone to be with ${them} — a familiar face who stays a while.`, whatsapp: false }
   }
 
   // No concrete need — answer only from what is actually known.

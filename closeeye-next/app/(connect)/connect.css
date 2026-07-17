@@ -403,7 +403,10 @@
   margin:2px 0 20px;box-shadow:0 2px 3px rgba(14,42,31,.025),0 14px 30px rgba(14,42,31,.05)}
 .cx .deskcard .exp-k{margin:0 0 5px}
 .cx .desk-hint{margin:0 0 9px;text-align:center;font-family:var(--serif);font-style:italic;font-size:var(--t-caption);color:var(--text-secondary)}
-.cx .desk-lede{font-family:var(--serif);font-size:var(--t-lede);line-height:var(--lh-lede);color:var(--forest);margin:0 0 11px}
+.cx .desk-lede{font-family:var(--serif);font-size:var(--t-lede);line-height:var(--lh-lede);color:var(--forest);margin:0 0 6px}
+/* The problem-first ask. Body role — this is the sentence a worried person reads to know
+   they are in the right place, so it is not a caption. */
+.cx .desk-sub{font-family:var(--serif);font-size:var(--t-body);line-height:var(--lh-body);color:var(--ink);margin:0 0 12px;max-width:40ch}
 .cx .ruled{position:relative;min-height:88px}
 .cx .ruled .rules{position:absolute;inset:0;pointer-events:none}
 .cx .ruled .rule{position:absolute;left:0;right:0;height:1px;background:var(--hair2);transform:scaleX(0);transform-origin:left center}
@@ -594,7 +597,7 @@
       Close Eye is, the card says what to do and where to tap, and the fuller telling
       follows immediately for anyone who scrolls. Nothing is hidden, nothing shrinks —
       the same words in the order this screen can hold. */
-@media (max-width:1023.98px) and (max-height:740px){
+@media (max-width:1023.98px) and (max-height:900px){
   .cx .s0-ask{order:2}
   .cx .s0-hero-more{order:3}
 }
@@ -617,7 +620,7 @@
      sentence is enough") and the field grows as you type, so on a short phone two lines
      is the honest size — it buys the CTA 40px and costs the writer nothing. */
   .cx .ruled{min-height:66px}
-  .cx .ruled textarea{min-height:64px}
+  .cx .ruled textarea{min-height:0;height:64px}  /* rows={3} sets an intrinsic height; only an explicit height beats it */
   .cx .try{margin-top:8px}
   /* The borrowed example stays visible and tappable, but takes one line instead of two —
      enough to show the SHAPE of a good first sentence, which is all it is there to do. */
