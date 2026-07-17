@@ -30,6 +30,9 @@ import { PHASE_2_ENABLED } from '@/lib/connect/phase'
 const WA = 'https://wa.me/919000221261'
 const SAMPLE = 'My mother lives alone in Hyderabad. How do I know she’s okay?'
 const SAMPLE2 = 'My father gets stressed every year with his tax filing. Can someone help him through it?'
+// The examples a first-time family can borrow. Shown one at a time (see .try): two
+// stacked cost 159px of the first screen, which is where the primary CTA needs to be.
+const EXAMPLES = [SAMPLE, SAMPLE2]
 // warm, specific prompts for the moment a line is empty — "tell me something only
 // your family would know." Pronoun-free so they never mis-gender anyone.
 const FILL_PH: Record<string, string> = {
@@ -138,7 +141,8 @@ export function ConnectExperience() {
   // hero unfold — cinematic on first visit, settled at once for returning visitors
   const [heroN, setHeroN] = React.useState(0)
   const [heroSettled, setHeroSettled] = React.useState(false)
-  const [openCard, setOpenCard] = React.useState<string | null>(null) // story card expanded in place
+  const [openCard, setOpenCard] = React.useState<string | null>(null)
+  const [exIdx, setExIdx] = React.useState(0) // which borrowed example is on show // story card expanded in place
   const [signedIn, setSignedIn] = React.useState(false) // a returning, already-signed-in visitor
   const [deskDrawn, setDeskDrawn] = React.useState(false) // writing-desk rules draw in once, on scroll into view
   const deskRef = React.useRef<HTMLDivElement | null>(null)
@@ -675,9 +679,15 @@ export function ConnectExperience() {
                   <p className={`feel${heroN >= 4 ? ' in' : ''}`}>Distance shouldn’t mean uncertainty.</p>
                 </div>
                 <h1 className={`h-serif hero-head${heroSettled ? ' in' : ''}`}>Know the people you love —<br /><em>even from far away.</em></h1>
-                <p className={`whatis hero-supp${heroSettled ? ' in' : ''}`}>Close Eye helps you stay close — it understands your family, remembers what matters, and brings trusted people when they’re needed.</p>
-                <p className={`hero-accent${heroSettled ? ' in' : ''}`}>Apps can answer. Close Eye can show up.</p>
               </div>
+            </div>
+            {/* The fuller telling. It is a SIBLING of the card, not part of the hero, so a
+                short phone can put the card first (see the order rules): the headline says
+                what Close Eye is, the card says what to do — and this follows for anyone
+                who scrolls. Same words, same type; only the order answers the device. */}
+            <div className="s0-hero-more">
+              <p className={`whatis hero-supp${heroSettled ? ' in' : ''}`}>Close Eye helps you stay close — it understands your family, remembers what matters, and brings trusted people when they’re needed.</p>
+              <p className={`hero-accent${heroSettled ? ' in' : ''}`}>Apps can answer. Close Eye can show up.</p>
             </div>
             <div className="s0-ask">
               <div className={`deskcard${deskDrawn ? ' drawn' : ''}`} ref={deskRef}>
@@ -688,9 +698,19 @@ export function ConnectExperience() {
                   <div className="rules" aria-hidden="true"><span className="rule" /><span className="rule" /><span className="rule" /></div>
                   <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Write as you would to a friend…" />
                 </div>
-                <div className="try">or begin with —
-                  <button type="button" onClick={() => setText(SAMPLE)}>“{SAMPLE}”</button>
-                  <button type="button" onClick={() => setText(SAMPLE2)}>“{SAMPLE2}”</button>
+                {/* Two examples stacked cost 159px — the largest block on the first screen,
+                    and the reason the CTA fell below the fold on a phone. They ROTATE rather
+                    than hide: an example is how a family learns what to write, so one stays
+                    visible and "try another" reaches the rest. Progressive disclosure that
+                    discloses something, instead of an accordion that hides the teaching. */}
+                <div className="try">
+                  <div className="try-head">
+                    <span>or begin with —</span>
+                    <button type="button" className="try-next" onClick={() => setExIdx((i) => (i + 1) % EXAMPLES.length)}>
+                      try another
+                    </button>
+                  </div>
+                  <button type="button" className="try-ex" onClick={() => setText(EXAMPLES[exIdx]!)}>“{EXAMPLES[exIdx]}”</button>
                 </div>
                 <div className="act">
                   <p className="desk-hint">One sentence is enough. Connect remembers from there.</p>

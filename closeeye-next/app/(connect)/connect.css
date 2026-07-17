@@ -54,7 +54,7 @@
 .cx :focus-visible{outline:2px solid var(--emerald);outline-offset:3px;border-radius:6px}
 
 /* ── the masthead — official lockup + CONNECT + trust triad, centred as one unit ── */
-.cx .mast{position:relative;display:flex;justify-content:center;padding:max(22px, env(safe-area-inset-top)) 0 28px}
+.cx .mast{position:relative;display:flex;justify-content:center;padding:max(16px, env(safe-area-inset-top)) 0 18px}
 /* Mobile corner — the 480px column has no room for the prefix beside the centred
    lockup, so phones/tablets show "Sign in" alone in the exact top-right corner. */
 .cx .mast-signin{position:absolute;top:max(22px, env(safe-area-inset-top));right:0}
@@ -73,13 +73,13 @@
 .cx .mast-unit{display:flex;flex-direction:column;align-items:center;text-align:center}
 .cx .mast-logo{height:36px;width:auto;display:block}
 .cx .mast-tag{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.3em;text-transform:uppercase;color:var(--pencil);margin-top:6px}
-.cx .mast-triad{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:14px;
+.cx .mast-triad{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:9px;
   font-family:var(--sans);font-size:var(--t-label);letter-spacing:.14em;text-transform:uppercase;color:var(--pencil)}
 .cx .mast-triad b{color:var(--forest);font-weight:600}
 .cx .mast-triad .sep{color:var(--sprout)}
 /* on the phone the triad sits compact, clear of both edges */
 @media(max-width:479px){.cx .mast-triad{letter-spacing:.10em}}
-.cx .whatis{font-family:var(--serif);font-size:17px;line-height:1.6;color:var(--ink);margin:0 0 22px;max-width:34ch}
+.cx .whatis{font-family:var(--serif);font-size:var(--t-body);line-height:var(--lh-body);color:var(--ink);margin:0 0 15px;max-width:34ch}
 .cx .whatis b{font-weight:500;color:var(--forest)}
 .cx .howit{border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);padding:6px 0;margin:0 0 26px}
 .cx .hrow{display:flex;gap:13px;align-items:baseline;padding:11px 0}
@@ -112,7 +112,7 @@
 .cx .hero-head.in{opacity:1;transform:none}
 .cx .hero-supp{opacity:0;transform:translateY(10px);transition:opacity .8s ease .15s,transform .8s cubic-bezier(.2,.7,.2,1) .15s}
 .cx .hero-supp.in{opacity:1;transform:none}
-.cx .hero-accent{font-family:var(--serif);font-style:italic;font-size:15px;line-height:1.5;color:var(--pencil);margin:11px 0 0;max-width:34ch;
+.cx .hero-accent{font-family:var(--serif);font-style:italic;font-size:15px;line-height:1.5;color:var(--text-secondary);margin:7px 0 0;max-width:34ch;
   opacity:0;transform:translateY(10px);transition:opacity .8s ease .25s,transform .8s cubic-bezier(.2,.7,.2,1) .25s}
 .cx .hero-accent.in{opacity:1;transform:none}
 /* during the unfold the page holds its breath — only the hero shows; the input wakes last */
@@ -402,9 +402,9 @@
 .cx .deskcard{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px 20px;
   margin:2px 0 20px;box-shadow:0 2px 3px rgba(14,42,31,.025),0 14px 30px rgba(14,42,31,.05)}
 .cx .deskcard .exp-k{margin:0 0 5px}
-.cx .desk-hint{margin:0 0 13px;text-align:center;font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--pencil)}
-.cx .desk-lede{font-family:var(--serif);font-size:18px;line-height:1.4;color:var(--forest);margin:0 0 16px}
-.cx .ruled{position:relative;min-height:104px}
+.cx .desk-hint{margin:0 0 9px;text-align:center;font-family:var(--serif);font-style:italic;font-size:var(--t-caption);color:var(--text-secondary)}
+.cx .desk-lede{font-family:var(--serif);font-size:var(--t-lede);line-height:var(--lh-lede);color:var(--forest);margin:0 0 11px}
+.cx .ruled{position:relative;min-height:88px}
 .cx .ruled .rules{position:absolute;inset:0;pointer-events:none}
 .cx .ruled .rule{position:absolute;left:0;right:0;height:1px;background:var(--hair2);transform:scaleX(0);transform-origin:left center}
 .cx .ruled .rule:nth-child(1){top:37px}
@@ -426,8 +426,13 @@
   font-family:var(--serif);font-size:18px;color:var(--ink);padding:8px 2px;margin-bottom:14px;caret-color:var(--emerald)}
 .cx .cx-field::placeholder{color:var(--text-muted);font-style:italic}
 .cx .cx-field:focus{outline:none;border-bottom-color:var(--emerald)}
-.cx .try{margin-top:22px;font-size:13.5px;color:var(--pencil)}
-.cx .try button{display:block;margin-top:9px;font-family:var(--serif);font-style:italic;font-size:15px;color:var(--forest);
+.cx .try{margin-top:14px;font-size:var(--t-caption);color:var(--text-secondary)}
+.cx .try-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.cx .try-next{font-family:var(--sans);font-size:var(--t-label);font-weight:600;color:var(--text-accent);
+  position:relative;padding:2px 0;flex:none}
+/* 44px tap area without 44px of height — the row must stay one line tall */
+.cx .try-next::before{content:'';position:absolute;left:-8px;right:-8px;top:50%;transform:translateY(-50%);height:44px}
+.cx .try-ex{display:block;margin-top:7px;font-family:var(--serif);font-style:italic;font-size:15px;color:var(--forest);
   text-align:left;padding:2px 0;border-bottom:1px dotted var(--hair2);line-height:1.45}
 .cx .try button:hover{border-bottom-color:var(--pencil)}
 
@@ -570,6 +575,57 @@
    stopped. Each range below is a decision, not a fallback.
    ═══════════════════════════════════════════════════════════════════════════════ */
 
+/* ── The first screen, composed ──
+   .stage is already a flex column, so the order of the first viewport is a decision we
+   can make per device instead of a consequence of the markup. Default (tall phones and
+   tablets): the promise, the fuller telling, then the card. */
+.cx .s0-hero{order:1}
+.cx .s0-hero-more{order:2}
+.cx .s0-ask{order:3}
+.cx .app .storycards{order:4}
+.cx .breadth{order:5}
+.cx .howit{order:6}
+.cx .s0-foot{order:7}
+
+/* ── SHORT PHONES (<=740px tall — iPhone SE is 375x667, and 360x740 is the most common
+      Android viewport in India: our actual market) ──
+      348px of masthead and hero sat above the card, so the CTA could not fit however
+      tightly the spacing was drawn. So the card comes SECOND here: the headline says what
+      Close Eye is, the card says what to do and where to tap, and the fuller telling
+      follows immediately for anyone who scrolls. Nothing is hidden, nothing shrinks —
+      the same words in the order this screen can hold. */
+@media (max-width:1023.98px) and (max-height:740px){
+  .cx .s0-ask{order:2}
+  .cx .s0-hero-more{order:3}
+}
+
+/* ── SHORT PHONES (<=740px tall — iPhone SE is 375x667, and still current) ──
+      The first screen must hold three things: what Close Eye is, where to write, and
+      where to tap. On a 667px phone that is a real budget, so the rhythm tightens rather
+      than the type — every value below was measured against the CTA's position, not
+      chosen for looks. Typography is untouched; only the air between it moves. */
+@media (max-width:1023.98px) and (max-height:740px){
+  .cx .mast{padding:max(10px,env(safe-area-inset-top)) 0 12px}
+  .cx .mast-logo{height:32px}
+  .cx .mast-triad{margin-top:6px}
+  .cx .hero-head{margin-bottom:8px}
+  .cx .whatis{margin-bottom:10px}
+  .cx .hero-accent{margin-top:5px}
+  .cx .deskcard{padding:14px 18px 12px}
+  .cx .desk-lede{margin-bottom:8px}
+  /* The writing area is sized for three ruled lines. One sentence is the ask ("One
+     sentence is enough") and the field grows as you type, so on a short phone two lines
+     is the honest size — it buys the CTA 40px and costs the writer nothing. */
+  .cx .ruled{min-height:66px}
+  .cx .ruled textarea{min-height:64px}
+  .cx .try{margin-top:8px}
+  /* The borrowed example stays visible and tappable, but takes one line instead of two —
+     enough to show the SHAPE of a good first sentence, which is all it is there to do. */
+  .cx .try-ex{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .cx .desk-hint{margin-bottom:4px}
+  .cx .privacy{margin-top:10px}
+}
+
 /* ── 320–374 · Mobile Small — the lockup and the corner sign-in collided here.
       The mark scales with the viewport instead of holding 207px in a 268px column;
       nothing is repositioned, so the design is identical, just no longer overlapping. */
@@ -649,8 +705,8 @@
   .cx .dc-mast{margin-bottom:10px}
   .cx .dc-mast .mast-logo{height:34px}
   .cx .dc-supp{margin-top:8px}
-  .cx .dc-cards .scard-h{padding:11px 18px}
-  .cx .dc-cards{gap:8px}
+  .cx .dc-cards .scard-h{padding:9px 18px}
+  .cx .dc-cards{gap:6px}
   .cx .dc-foot{padding-top:12px}
   .cx .dc-foot .footnote{margin-top:6px}
 }
