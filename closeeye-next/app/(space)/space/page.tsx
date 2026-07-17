@@ -267,7 +267,7 @@ export default function SpacePage() {
             {answer && (
               <div className="answer">
                 <p>{answer.text}</p>
-                {answer.dial && (() => { const d = emergencyDial(DEFAULT_REGION_CODE); return d.href ? <a className="dial" href={d.href}>{d.text}</a> : <span className="dial">{d.text}</span> })()}
+                {answer.dial && (() => { const d = emergencyDial(lo.regionCode); return d.href ? <a className="dial" href={d.href}>{d.text}</a> : <span className="dial">{d.text}</span> })()}
                 {answer.whatsapp && <a className="wa" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>}
               </div>
             )}

@@ -219,7 +219,7 @@ export interface SpaceData {
   userName: string
   email: string
   /** The SELECTED member. Everything below (known/learned/blanks/timeline) is theirs. */
-  lovedOne: { id: string; name: string; relationship: string | null; city: string | null; createdAt: string | null }
+  lovedOne: { id: string; name: string; relationship: string | null; city: string | null; createdAt: string | null; regionCode: string }
   /** Everyone in the family, in the order they were added. The Space used to fetch up to
    *  20 and then use only `[0]` — so a second member was provisioned, stored, and never
    *  seen again. Adding family worked; the family just never appeared. */
@@ -252,7 +252,7 @@ export async function fetchSpace(memberId?: string): Promise<SpaceData | null> {
 
   const [profRes, losRes] = await Promise.all([
     supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
-    supabase.from('loved_ones').select('id, full_name, relationship, city, created_at').eq('family_user_id', user.id).order('created_at', { ascending: true }).limit(20),
+    supabase.from('loved_ones').select('id, full_name, relationship, city, created_at, region_code').eq('family_user_id', user.id).order('created_at', { ascending: true }).limit(20),
   ])
   if (losRes.error) throw new Error(losRes.error.message)
   const all = losRes.data ?? []
@@ -310,7 +310,7 @@ export async function fetchSpace(memberId?: string): Promise<SpaceData | null> {
 
   return {
     userName, email: user.email || '',
-    lovedOne: { id: lo.id, name: lo.full_name, relationship: lo.relationship, city: lo.city, createdAt: lo.created_at },
+    lovedOne: { id: lo.id, name: lo.full_name, relationship: lo.relationship, city: lo.city, createdAt: lo.created_at, regionCode: lo.region_code ?? 'IN' },
     members, selectedId: lo.id,
     gender, callName, known, learned, blanks, timeline, observedCount,
   }
