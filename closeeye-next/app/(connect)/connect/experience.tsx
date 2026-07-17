@@ -103,16 +103,6 @@ const STORY_CARDS = [
 // isn't real yet. "Close Eye will grow with your family" carries the rest.
 const CARE_CATS = ['Health & wellbeing', 'Trusted local support']
 
-// The human steps, in the family's order. Verbs lead; nothing over 12 words. The two
-// roles stay apart: the Presence Manager coordinates and is who the family talks to;
-// the companion is the one who goes. Never "Guardian" — the word is banned in our voice.
-// No date here: "visits open 15 August" belongs to the footer line only (founder, D1).
-const HOW_IT_WORKS = [
-  'Tell Close Eye about the person you love.',
-  'Your Presence Manager confirms the details with you.',
-  'A companion visits, and takes care of what’s needed.',
-  'You get a written update after every visit.',
-]
 
 export function ConnectExperience() {
   const router = useRouter()
@@ -606,7 +596,7 @@ export function ConnectExperience() {
   function footerLinks() {
     return (
       <div className="footlinks">
-        <a href="#how-it-works">How it works</a>
+        <a href="/how-it-works">How it works</a>
         {!PHASE_2_ENABLED && <span className="plain">What it costs · visits open 15 August</span>}
         <a href="/how-companions-are-verified">How companions are verified</a>
         <a className="last" href={WA} target="_blank" rel="noopener">Ask a real person on WhatsApp</a>
@@ -744,21 +734,6 @@ export function ConnectExperience() {
               <p className="breadth-grow">Close Eye will grow with your family.</p>
               <p className="breadth-f">Always beginning with understanding.</p>
             </div>
-
-            {/* How it works — the target of the footer's anchor, in BOTH footers. It lives
-                here, beside .breadth, because that is the one s0 block the ≥1024 rule does
-                not hide: one instance, one id, present at 390 / 768 / 1280. Numbered
-                because this genuinely is a sequence — the family's, in order. */}
-            <section className="howit" id="how-it-works" aria-labelledby="howit-h">
-              <h2 className="howit-h" id="howit-h">How it works</h2>
-              <ol className="howit-steps">
-                {HOW_IT_WORKS.map((s, i) => (
-                  <li key={s}><span className="howit-n" aria-hidden="true">{i + 1}</span><p>{s}</p></li>
-                ))}
-              </ol>
-              {/* The two roles, never blurred: one coordinates, one goes. */}
-              <p className="howit-roles">Your Presence Manager coordinates, and is who you talk to. Your companion is who goes.</p>
-            </section>
 
             <div className="s0-foot">
               {footerLinks()}

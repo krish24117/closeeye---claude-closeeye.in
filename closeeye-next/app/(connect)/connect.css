@@ -160,8 +160,6 @@
       between steps, never shadows; the numeral is sans and quiet — it counts, it doesn't
       shout. Lives beside .breadth (the one s0 block ≥1024 keeps), so a single instance
       serves 390 / 768 / 1280. ── */
-.cx .howit{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px;margin:0 0 26px;scroll-margin-top:18px}
-.cx .howit-h{font-family:var(--serif);font-size:var(--t-title);line-height:var(--lh-title);color:var(--forest);margin:0 0 14px}
 .cx .howit-steps{list-style:none;margin:0;padding:0}
 .cx .howit-steps li{display:flex;gap:12px;align-items:baseline;padding:11px 0;border-top:1px solid var(--hair)}
 .cx .howit-steps li:first-child{border-top:0;padding-top:2px}
@@ -587,7 +585,6 @@
 .cx .s0-ask{order:3}
 .cx .app .storycards{order:4}
 .cx .breadth{order:5}
-.cx .howit{order:6}
 .cx .s0-foot{order:7}
 
 /* ── SHORT PHONES (<=740px tall — iPhone SE is 375x667, and 360x740 is the most common
