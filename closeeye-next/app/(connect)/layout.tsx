@@ -25,6 +25,30 @@ export function generateMetadata(): Metadata {
       'Close Eye learns about the people you love, so answers come from understanding — not guesses. When needed, trusted local people step in to help.',
     alternates: { canonical: '/connect' },
     robots: isConnectIndexable() ? { index: true, follow: true } : { index: false, follow: false },
+    /**
+     * Connect's own card. Without this, every share of this link inherited the marketing
+     * site's openGraph — "home wellbeing visits, hospital companionship" — which promises
+     * visits that don't open until 15 August. That card was the FIRST thing a family read,
+     * before the page loaded, and it contradicted the product behind it. The words below
+     * are the ones already written above: true today, no capability we can't deliver.
+     */
+    openGraph: {
+      type: 'website',
+      locale: 'en_IN',
+      url: '/connect',
+      siteName: 'Close Eye',
+      title: 'Close Eye Connect — Your Trusted Presence',
+      description:
+        'Tell Close Eye about someone you love, in one sentence. It understands from there — never guesses.',
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Close Eye' }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Close Eye Connect — Your Trusted Presence',
+      description:
+        'Tell Close Eye about someone you love, in one sentence. It understands from there — never guesses.',
+      images: ['/og-image.png'],
+    },
   }
 }
 
