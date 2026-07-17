@@ -157,8 +157,10 @@
 .cx .hero.settled .hero-feels{opacity:0;max-height:0;margin:0}
 .cx .hero-head{opacity:0;transform:translateY(10px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
 .cx .hero-head.in{opacity:1;transform:none}
-.cx .hero-supp{opacity:0;transform:translateY(10px);transition:opacity .8s ease .15s,transform .8s cubic-bezier(.2,.7,.2,1) .15s}
-.cx .hero-supp.in{opacity:1;transform:none}
+/* The supporting line arrives just behind the headline it supports — never before the hero
+   has settled, or the answer is on screen before the question. */
+.cx .hero-supp,.cx .hero-cat{opacity:0;transform:translateY(10px);transition:opacity .8s ease .15s,transform .8s cubic-bezier(.2,.7,.2,1) .15s}
+.cx .hero-supp.in,.cx .hero-cat.in{opacity:1;transform:none}
 .cx .hero-accent{font-family:var(--serif);font-style:italic;font-size:15px;line-height:1.5;color:var(--text-secondary);margin:7px 0 0;max-width:34ch;
   opacity:0;transform:translateY(10px);transition:opacity .8s ease .25s,transform .8s cubic-bezier(.2,.7,.2,1) .25s}
 .cx .hero-accent.in{opacity:1;transform:none}
@@ -453,7 +455,13 @@
    they are in the right place, so it is not a caption. */
 .cx .desk-sub{font-family:var(--serif);font-size:var(--t-body);line-height:var(--lh-body);color:var(--ink);margin:0 0 12px;max-width:40ch}
 .cx .ruled{position:relative;min-height:88px}
-.cx .ruled .rules{position:absolute;inset:0;pointer-events:none}
+/* The rules are ruled-paper lines: one under each writing line, at the 32px baselines of
+   the textarea (5px padding + 32px line-height => 37 / 69 / 101). They are absolutely
+   positioned, so they do NOT shrink when the paper does — on a short phone the sheet is
+   two lines tall and the third line would otherwise be drawn BELOW the paper, straight
+   through the button. Clipping to the sheet is the invariant: a line cannot exist off the
+   page. The paper decides how many lines there are, not this list. */
+.cx .ruled .rules{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .cx .ruled .rule{position:absolute;left:0;right:0;height:1px;background:var(--hair2);transform:scaleX(0);transform-origin:left center}
 .cx .ruled .rule:nth-child(1){top:37px}
 .cx .ruled .rule:nth-child(2){top:69px}
@@ -663,8 +671,11 @@
   /* The writing area is sized for three ruled lines. One sentence is the ask ("One
      sentence is enough") and the field grows as you type, so on a short phone two lines
      is the honest size — it buys the CTA 40px and costs the writer nothing. */
-  .cx .ruled{min-height:66px}
-  .cx .ruled textarea{min-height:0;height:64px}  /* rows={3} sets an intrinsic height; only an explicit height beats it */
+  /* Two lines = 5px padding + 2x32px baseline + the 1px rule itself. Sized so the second
+     rule (top:69px) lands exactly on the sheet's bottom edge and the third is clipped
+     away, instead of escaping onto the CTA. */
+  .cx .ruled{min-height:70px}
+  .cx .ruled textarea{min-height:0;height:69px}  /* rows={3} sets an intrinsic height; only an explicit height beats it */
   .cx .try{margin-top:8px}
   /* The borrowed example stays visible and tappable, but takes one line instead of two —
      enough to show the SHAPE of a good first sentence, which is all it is there to do. */
@@ -802,7 +813,7 @@
   .cx *{animation:none!important;transition:none!important}
   .cx .lline,.cx .blank,.cx .uline,.cx .beat{opacity:1;transform:none}
   .cx .beat.past{opacity:.46}
-  .cx .hero-sig,.cx .hero-head,.cx .hero-supp,.cx .hero-accent,.cx .hero-feels .feel,
+  .cx .hero-sig,.cx .hero-head,.cx .hero-supp,.cx .hero-cat,.cx .hero-accent,.cx .hero-feels .feel,
   .cx .storycards,.cx .breadth,.cx .s0-ask,.cx .s0-foot{opacity:1;transform:none}
   .cx .ruled .rule{transform:none}
   .cx .ruled .pen{background:var(--sprout)}
