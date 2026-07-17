@@ -13,9 +13,10 @@ verify_jwt = false
 verify_jwt = false
 
 # Public endpoints — no JWT required
-[functions.ask-health-public]
-verify_jwt = false
-
+# NB: ask-health-public was deleted 2026-07-17. It was Tier 0 — unauthenticated medical
+# guidance — built before /connect became the deterministic engine, and nothing in the
+# product had called it for some time. It stayed deployed and open, answering medical
+# questions from anyone with the URL. Superseded, so removed rather than maintained.
 [functions.waitlist-signup]
 verify_jwt = false
 
