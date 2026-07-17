@@ -29,6 +29,9 @@ export default function SpacePage() {
   const [loading, setLoading] = React.useState(true)
   const [loadError, setLoadError] = React.useState(false)
   const [view, setView] = React.useState<'space' | 'profile'>('space')
+  // Which family member the Space is showing. null = the first, i.e. exactly what it did
+  // before. Switching refetches THAT member's ledger — one query, not twenty.
+  const [memberId, setMemberId] = React.useState<string | null>(null)
 
   // live, editable copies
   const [known, setKnown] = React.useState<LedgerLine[]>([])
@@ -72,14 +75,14 @@ export default function SpacePage() {
         return // browser is redirecting to Google — keep the calm spinner
       }
 
-      const s = await fetchSpace()
+      const s = await fetchSpace(memberId ?? undefined)
       if (!s) { router.replace('/connect'); return }
       setSpace(s); setKnown(s.known); setLearned(s.learned); setBlanks(s.blanks); setCallName(s.callName)
       setLoading(false)
     } catch {
       setLoadError(true); setLoading(false) // a real read failure — offer retry, never hang
     }
-  }, [router])
+  }, [router, memberId])
 
   React.useEffect(() => { load() }, [load])
 
@@ -161,8 +164,23 @@ export default function SpacePage() {
             <div className="status"><span className="ld" /><span>We’re just getting to know {person}. Everything here comes from what your family shares — never assumptions.</span></div>
           </div>
 
+          {/* One chip per member. This row rendered a single hardcoded chip while the
+              query already fetched up to 20 — so a second person was understood,
+              provisioned, stored, and then never shown. Adding family worked; the family
+              never appeared. The selected member owns the timeline, the ledger and the
+              blanks below, so switching changes the whole Space. */}
           <div className="fam">
-            <button className="fchip pick"><span className="fa">{initial(person)}</span>{Person}</button>
+            {space.members.map((m) => {
+              const on = m.id === space.selectedId
+              const label = on ? Person : (/^your\s/i.test(m.name) ? m.name : m.name)
+              return (
+                <button key={m.id} type="button" className={`fchip${on ? ' pick' : ''}`}
+                  aria-current={on ? 'true' : undefined}
+                  onClick={() => { if (!on) { setMemberId(m.id); setActiveBlank(null); setAskText(''); setAnswer(null); setLearnedNote('') } }}>
+                  <span className="fa">{initial(label)}</span>{label}
+                </button>
+              )
+            })}
             <button className="fchip add" onClick={() => router.push('/connect')}><span className="fa">+</span>Add family</button>
           </div>
 

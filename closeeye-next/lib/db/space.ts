@@ -212,10 +212,19 @@ async function doProvision(): Promise<ProvisionResult> {
 
 /* ── reading the Space (bounded + resilient) ── */
 export interface TimelineEvent { id: string; when: string; title: string; sub?: string; kind: 'up' | 'now' | 'done' }
+/** A person in this family — enough to draw a chip and switch to them. */
+export interface SpaceMember { id: string; name: string; relationship: string | null }
+
 export interface SpaceData {
   userName: string
   email: string
+  /** The SELECTED member. Everything below (known/learned/blanks/timeline) is theirs. */
   lovedOne: { id: string; name: string; relationship: string | null; city: string | null; createdAt: string | null }
+  /** Everyone in the family, in the order they were added. The Space used to fetch up to
+   *  20 and then use only `[0]` — so a second member was provisioned, stored, and never
+   *  seen again. Adding family worked; the family just never appeared. */
+  members: SpaceMember[]
+  selectedId: string
   gender: Gender | null
   callName: string | null  // what the family calls this person ("Amma") — set via the "What you call her" line
   known: LedgerLine[]      // stated facts (what Connect knows)
@@ -234,7 +243,7 @@ function fmtWhen(iso: string | null): string {
 /** Load the Space. Returns null when there's no session/space (caller routes to
  *  /connect). THROWS on a real read failure so the caller can show a retry state
  *  instead of hanging. */
-export async function fetchSpace(): Promise<SpaceData | null> {
+export async function fetchSpace(memberId?: string): Promise<SpaceData | null> {
   const { data: auth, error: authErr } = await supabase.auth.getUser()
   if (authErr) throw new Error(authErr.message)
   const user = auth.user
@@ -245,8 +254,12 @@ export async function fetchSpace(): Promise<SpaceData | null> {
     supabase.from('loved_ones').select('id, full_name, relationship, city, created_at').eq('family_user_id', user.id).order('created_at', { ascending: true }).limit(20),
   ])
   if (losRes.error) throw new Error(losRes.error.message)
-  const lo = losRes.data?.[0]
+  const all = losRes.data ?? []
+  // The selected member — the one asked for, else the first. An unknown id (a stale link,
+  // a deleted person) falls back rather than showing an empty Space.
+  const lo = (memberId ? all.find((m) => m.id === memberId) : undefined) ?? all[0]
   if (!lo) return null
+  const members: SpaceMember[] = all.map((m) => ({ id: m.id, name: m.full_name, relationship: m.relationship }))
 
   const userName = (profRes.data?.full_name || (user.user_metadata?.full_name as string) || 'there').split(' ')[0] || 'there'
   const gender = genderForRelationship(lo.relationship)
@@ -294,6 +307,7 @@ export async function fetchSpace(): Promise<SpaceData | null> {
   return {
     userName, email: user.email || '',
     lovedOne: { id: lo.id, name: lo.full_name, relationship: lo.relationship, city: lo.city, createdAt: lo.created_at },
+    members, selectedId: lo.id,
     gender, callName, known, learned, blanks, timeline,
   }
 }
