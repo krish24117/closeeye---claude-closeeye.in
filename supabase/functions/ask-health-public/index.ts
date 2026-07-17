@@ -5,7 +5,8 @@
 //
 // Flow:
 //   1. No JWT required — anyone can call this.
-//   2. Red-flag scan (patterns identical to ask-health/redflags.ts; keep in sync).
+//   2. Red-flag scan (THE canonical floor: ../_shared/crisis.ts — shared with Connect,
+//      reached here via classifyCrisis. There is no second copy to keep in sync.)
 //   3. If red flag → ambulance number + escalation message (always, never gated).
 //   4. Otherwise → Claude haiku for general guidance (no parent context injected).
 //   5. Returns nudge to register for personalised answers.
@@ -28,7 +29,7 @@ import { INDIA_RESOURCE_PACK } from "../ask-health/resources.india.ts";
 const AMBULANCE_NUMBER = Deno.env.get("CLOSEEYE_AMBULANCE_NUMBER") ?? "108";
 
 // ── Red-flag patterns — SUPERSEDED, kept for reviewer reference only ──────────
-// The LIVE safety floor is now the shared `../ask-health/redflags.ts` (imported at
+// The LIVE safety floor is the canonical `../_shared/crisis.ts` (reached via classifyCrisis,
 // top). This array is unused; do not edit it — edit the shared module.
 const _RED_FLAGS_REFERENCE: { category: string; patterns: RegExp[] }[] = [
   {
@@ -150,7 +151,7 @@ const _RED_FLAGS_REFERENCE: { category: string; patterns: RegExp[] }[] = [
   { category: "ml_self_harm", patterns: [/(marna|mar jana) chahta/, /jeena nahi chahta|jeena nai chahta/] },
 ];
 
-// detectRedFlag is imported from the shared authed safety module (top of file).
+// The crisis floor arrives via classifyCrisis (top of file) -> ../_shared/crisis.ts.
 
 // ── Service intent detection ─────────────────────────────────────────────────
 const SERVICE_TRIGGERS: RegExp[] = [

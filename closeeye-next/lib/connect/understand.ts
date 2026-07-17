@@ -19,7 +19,7 @@
  * crisis.ts, which ledger.ts asks too — this module used to keep a careful list of its
  * own while the shipped path kept a careless one, and they drifted (audit 2026-07-17).
  */
-import { isCrisis } from './crisis'
+import { isCrisis } from '@shared/crisis'   // THE canonical floor — shared with Ask Close Eye
 import { isNotPersonWord } from './lexicon'
 
 export type Intent =

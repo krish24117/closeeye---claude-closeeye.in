@@ -15,7 +15,7 @@
  * whole intent. Deterministic, on-device, framework-free — built on ./understand.
  */
 import { classify, pronoun, type Gender } from './understand'
-import { isCrisis } from './crisis'
+import { isCrisis } from '@shared/crisis'   // THE canonical floor — shared with Ask Close Eye
 import { SERVED_AREAS, presenceFor, type PresenceAvailability } from '@/lib/platform/service-region'
 
 export type NeedType =

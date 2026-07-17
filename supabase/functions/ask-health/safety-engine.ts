@@ -1,6 +1,7 @@
 // CloseEye Connect · Safety Engine — crisis classification layer.
 //
-// Sits ABOVE the pattern floor (redflags.ts). It returns ONLY the crisis category, severity
+// Sits ABOVE the canonical pattern floor (../_shared/crisis.ts — the SAME file Connect uses;
+// there is no second copy). It returns ONLY the crisis category, severity
 // and recommended action — NEVER a phone number or a country-specific resource. The Resource
 // Router (resource-router.ts) maps the action to regional resources from a config pack.
 //
@@ -8,7 +9,7 @@
 // new resource pack, not a change here. The Safety Engine is also a PRODUCT capability — every
 // entry point (chat, voice, WhatsApp, future APIs) must call this same module.
 
-import { detectRedFlag } from './redflags.ts'
+import { detectCrisis } from '../_shared/crisis.ts'   // THE canonical floor — shared with Connect
 
 export type CrisisCategory =
   | 'medical_emergency'
@@ -85,7 +86,7 @@ export function classifyCrisis(rawText: string): CrisisClassification | null {
   const text = norm(rawText)
 
   // 1. Physical life-threat — most time-critical. Reuses the deterministic pattern floor.
-  const rf = detectRedFlag(rawText)
+  const rf = detectCrisis(rawText)
   if (rf.matched) {
     // self_harm is also detected by the pattern floor — route it to the mental-health lane,
     // NOT the 108 medical lane.

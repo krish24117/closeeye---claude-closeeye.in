@@ -28,6 +28,11 @@ const CSP = [
 ].join('; ')
 
 const nextConfig: NextConfig = {
+  // The crisis floor is ONE file shared with the Deno edge functions
+  // (supabase/functions/_shared/crisis.ts). Compiling a file outside this directory
+  // needs externalDir; tsconfig includes that ONE file, never the whole _shared dir —
+  // its neighbours reference the `Deno` global and break the build.
+  experimental: { externalDir: true },
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
