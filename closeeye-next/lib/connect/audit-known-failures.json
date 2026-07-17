@@ -1,0 +1,425 @@
+[
+  {
+    "category": "C1",
+    "text": "my mother Sugar is high",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Sugar\"",
+    "kind": "slot-generalization",
+    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+  },
+  {
+    "category": "C1",
+    "text": "my mother Fever since morning",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Fever\"",
+    "kind": "slot-generalization",
+    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+  },
+  {
+    "category": "C1",
+    "text": "My father Cancer treatment",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Cancer\"",
+    "kind": "slot-generalization",
+    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+  },
+  {
+    "category": "C1",
+    "text": "my mother Kidney problem",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Kidney\"",
+    "kind": "slot-generalization",
+    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+  },
+  {
+    "category": "C1",
+    "text": "my father Dementia is getting worse",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Dementia\"",
+    "kind": "slot-generalization",
+    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+  },
+  {
+    "category": "C1",
+    "text": "my father Uber",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Uber\"",
+    "kind": "genuine-ambiguity",
+    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule."
+  },
+  {
+    "category": "C1",
+    "text": "call Ola for my mother",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Ola\"",
+    "kind": "genuine-ambiguity",
+    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule."
+  },
+  {
+    "category": "C1",
+    "text": "my mother Pension is delayed",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Pension\"",
+    "kind": "slot-generalization",
+    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+  },
+  {
+    "category": "C1",
+    "text": "My father Passport is expiring",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Passport\"",
+    "kind": "slot-generalization",
+    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+  },
+  {
+    "category": "C1",
+    "text": "my father Aadhaar card is lost",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Aadhaar\"",
+    "kind": "slot-generalization",
+    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+  },
+  {
+    "category": "C1",
+    "text": "my mother Whatsapp is not working",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Whatsapp\"",
+    "kind": "genuine-ambiguity",
+    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule."
+  },
+  {
+    "category": "C1",
+    "text": "my father Zomato order",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Zomato\"",
+    "kind": "genuine-ambiguity",
+    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule."
+  },
+  {
+    "category": "C1",
+    "text": "my mother Netflix subscription",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Netflix\"",
+    "kind": "genuine-ambiguity",
+    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule."
+  },
+  {
+    "category": "C1",
+    "text": "my father Airtel recharge",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Airtel\"",
+    "kind": "genuine-ambiguity",
+    "note": "brand/service read as a person. Structurally identical to a real name in the same slot (\"call Ravi for my mother\"); proper nouns are unbounded, so no enumerable class separates them. Mitigable only by asking, not by a rule."
+  },
+  {
+    "category": "C1",
+    "text": "my mother Yoga class",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Yoga\"",
+    "kind": "slot-generalization",
+    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+  },
+  {
+    "category": "C1",
+    "text": "my father Pension Office",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Pension\"",
+    "kind": "slot-generalization",
+    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+  },
+  {
+    "category": "C1",
+    "text": "my mother Arthritis is painful",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Arthritis\"",
+    "kind": "slot-generalization",
+    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+  },
+  {
+    "category": "C1",
+    "text": "my father Blood test tomorrow",
+    "assert": "name",
+    "want": null,
+    "observedOnAudit": "name=\"Blood\"",
+    "kind": "slot-generalization",
+    "note": "a condition / document / activity read as a person. The vocabulary ALREADY EXISTS in ledger.ts (NEED_PATTERNS medical + PROFESSIONAL: fever|sugar|diabet|pension|passport|visa|insurance) but is not shared with the name slot in understand.ts. Wiring the two together is one generalization, not a blocklist."
+  },
+  {
+    "category": "C3",
+    "text": "not waking up",
+    "assert": "need-is",
+    "want": "emergency",
+    "observedOnAudit": "unclear",
+    "kind": "slot-generalization",
+    "note": "a real crisis cue the shipped vocabulary does not carry (inflection, noun-form, synonym or typo of a cue it already has)."
+  },
+  {
+    "category": "C3",
+    "text": "she is not waking up",
+    "assert": "need-is",
+    "want": "emergency",
+    "observedOnAudit": "unclear",
+    "kind": "slot-generalization",
+    "note": "a real crisis cue the shipped vocabulary does not carry (inflection, noun-form, synonym or typo of a cue it already has)."
+  },
+  {
+    "category": "C3",
+    "text": "breathing problem",
+    "assert": "need-is",
+    "want": "emergency",
+    "observedOnAudit": "unclear",
+    "kind": "slot-generalization",
+    "note": "a real crisis cue the shipped vocabulary does not carry (inflection, noun-form, synonym or typo of a cue it already has)."
+  },
+  {
+    "category": "C3",
+    "text": "she has breathing problem",
+    "assert": "need-is",
+    "want": "emergency",
+    "observedOnAudit": "unclear",
+    "kind": "slot-generalization",
+    "note": "a real crisis cue the shipped vocabulary does not carry (inflection, noun-form, synonym or typo of a cue it already has)."
+  },
+  {
+    "category": "C3",
+    "text": "blood coming from her head",
+    "assert": "need-is",
+    "want": "emergency",
+    "observedOnAudit": "unclear",
+    "kind": "slot-generalization",
+    "note": "a real crisis cue the shipped vocabulary does not carry (inflection, noun-form, synonym or typo of a cue it already has)."
+  },
+  {
+    "category": "C3",
+    "text": "she cannot breath",
+    "assert": "need-is",
+    "want": "emergency",
+    "observedOnAudit": "unclear",
+    "kind": "slot-generalization",
+    "note": "a real crisis cue the shipped vocabulary does not carry (inflection, noun-form, synonym or typo of a cue it already has)."
+  },
+  {
+    "category": "C3",
+    "text": "my father is having fits",
+    "assert": "need-is",
+    "want": "emergency",
+    "observedOnAudit": "wellbeing",
+    "kind": "slot-generalization",
+    "note": "a real crisis cue the shipped vocabulary does not carry (inflection, noun-form, synonym or typo of a cue it already has)."
+  },
+  {
+    "category": "C3",
+    "text": "my mother had a fall",
+    "assert": "need-is",
+    "want": "emergency",
+    "observedOnAudit": "wellbeing",
+    "kind": "slot-generalization",
+    "note": "a real crisis cue the shipped vocabulary does not carry (inflection, noun-form, synonym or typo of a cue it already has)."
+  },
+  {
+    "category": "C3",
+    "text": "she is very weak and cannot get up",
+    "assert": "need-is",
+    "want": "emergency",
+    "observedOnAudit": "medical",
+    "kind": "slot-generalization",
+    "note": "a real crisis cue the shipped vocabulary does not carry (inflection, noun-form, synonym or typo of a cue it already has)."
+  },
+  {
+    "category": "C3",
+    "text": "my father is vomiting blood",
+    "assert": "need-is",
+    "want": "emergency",
+    "observedOnAudit": "medical",
+    "kind": "slot-generalization",
+    "note": "a real crisis cue the shipped vocabulary does not carry (inflection, noun-form, synonym or typo of a cue it already has)."
+  },
+  {
+    "category": "C3",
+    "text": "amma is having a fit",
+    "assert": "need-is",
+    "want": "emergency",
+    "observedOnAudit": "wellbeing",
+    "kind": "slot-generalization",
+    "note": "a real crisis cue the shipped vocabulary does not carry (inflection, noun-form, synonym or typo of a cue it already has)."
+  },
+  {
+    "category": "C3",
+    "text": "her lips are turning blue",
+    "assert": "need-is",
+    "want": "emergency",
+    "observedOnAudit": "unclear",
+    "kind": "slot-generalization",
+    "note": "a real crisis cue the shipped vocabulary does not carry (inflection, noun-form, synonym or typo of a cue it already has)."
+  },
+  {
+    "category": "C3",
+    "text": "he cant breath properly",
+    "assert": "need-is",
+    "want": "emergency",
+    "observedOnAudit": "unclear",
+    "kind": "slot-generalization",
+    "note": "a real crisis cue the shipped vocabulary does not carry (inflection, noun-form, synonym or typo of a cue it already has)."
+  },
+  {
+    "category": "C4",
+    "text": "my parents fell in love in Delhi",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "my father fell asleep on the sofa",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "she is dying to see her grandchildren",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "my father is a doctor in the ICU",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "my father is in the hospital business",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "we have accident insurance for my father",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "my father had a stroke of luck",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "critical thinking classes for my mother",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "my mother is very serious about her yoga",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "emergency contact is my brother",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "I want to add emergency contact details",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "my mother is critical of my cooking",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "my father fell behind on his bills",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "my sister is a nurse in the emergency ward",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "my mother is dying her hair",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  },
+  {
+    "category": "C4",
+    "text": "we had a minor accident with the car insurance paperwork",
+    "assert": "need-is-not",
+    "want": "emergency",
+    "observedOnAudit": "emergency",
+    "kind": "slot-generalization",
+    "note": "a crisis word matched as a bare substring with no sense disambiguation — an occupational, idiomatic or possessive frame is not a person in danger."
+  }
+]
