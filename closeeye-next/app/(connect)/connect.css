@@ -445,6 +445,16 @@
 /* the question being answered right now — quiet, but unmistakably the live one */
 .cx .uline.open.asking p{color:var(--forest);font-weight:500}
 .cx .uline.open.asking .cxring{border-color:var(--emerald)}
+/* ── the repair · tap the line I got wrong ──
+   A ✓ line only becomes tappable once the visitor has said "not quite": a phone has no
+   hover, so a silently clickable line is a line nobody finds. The chip names the action
+   ("Not this") rather than decorating it. */
+.cx .uline.know.fixable{cursor:pointer}
+.cx .uline.know.fixable .tellme{color:var(--pencil)}
+.cx .uline.know.fixable:hover .tellme,.cx .uline.know.fixable.asking .tellme{color:var(--alarm)}
+.cx .uline.know.fixable.asking .mk{color:var(--alarm)}
+.cx .fixhint{font-family:var(--serif);font-size:13px;line-height:1.5;color:var(--pencil);margin:0 0 7px}
+.cx .fixhint b{color:var(--forest);font-weight:600;font-style:normal}
 .cx .ulegend{display:flex;align-items:center;gap:6px;margin:-6px 0 12px;font-family:var(--sans);font-size:var(--t-micro);
   letter-spacing:.04em;color:var(--text-muted)}
 .cx .ulegend .lg{font-weight:700}

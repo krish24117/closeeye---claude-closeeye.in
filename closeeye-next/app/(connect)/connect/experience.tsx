@@ -144,6 +144,11 @@ export function ConnectExperience() {
   const [againText, setAgainText] = React.useState('') // "who is this for?" — closes the loop when understanding is insufficient
   const [againCount, setAgainCount] = React.useState(0) // clarification rounds — hard-capped at 2, then hand to a human
   const [feedback, setFeedback] = React.useState<'none' | 'right' | 'wrong'>('none') // the "Did I get this right?" signal
+  /* WHICH line the visitor says is wrong. "Not quite" used to open one box for the whole
+     understanding — a retry, not a repair: the person we just failed had to re-explain
+     from scratch, and the engine was told nothing about WHICH slot it got wrong, so it
+     could make the same mistake twice. Now they tap the line itself. */
+  const [fixing, setFixing] = React.useState<{ label: string; body: string } | null>(null)
   // understanding reveal (the known facts appearing, line by line)
   const [s1n, setS1n] = React.useState(0)
   const [s1live, setS1live] = React.useState(-1)
@@ -282,13 +287,22 @@ export function ConnectExperience() {
   function understandAgain() {
     const extra = againText.trim()
     if (!extra) return
-    const combined = `${(rl?.rawText || text).trim()}. ${extra}`
+    /* A CORRECTION OUTRANKS WHAT IT CORRECTS — so it goes FIRST, not last.
+       This used to append: "Amma lives alone… . it is my father not my mother". The
+       engine resolves the EARLIEST mention (see relationships() — hits are sorted by
+       index), so "Amma" always beat the correction and the ledger confidently repeated
+       "Your mother" no matter how many times you fixed it. The repair loop re-parsed and
+       changed nothing; measured in a browser, not read.
+       Prepending puts the newer words where the engine looks first, and costs nothing:
+       "it is my father not my mother. Amma lives alone in Hyderabad" still yields
+       Hyderabad and lives-alone — only the thing they corrected moves. */
+    const combined = `${extra}. ${(rl?.rawText || text).trim()}`
     const next = againCount + 1
     const rl2 = readLedger(combined)      // deterministic re-understanding
     logUnderstanding('clarify', combined, rl2, next)
     if (!rl2.subjectKnown && next >= CONVERSATION_BUDGET) logUnderstanding('handoff', combined, rl2, next)
     setText(combined)                     // Edit / the draft carry the full, combined words
-    setTold([]); setActiveKey(null); setFill(''); setAgainText(''); setFeedback('none')
+    setTold([]); setActiveKey(null); setFill(''); setAgainText(''); setFeedback('none'); setFixing(null)
     setAgainCount(next)                    // count the round — capped at 2 downstream
     setS1n(0); setS1live(-1); setS1done(false)
     setRl(rl2)
@@ -299,7 +313,7 @@ export function ConnectExperience() {
         user-flagged-wrong metric and opens an inline correction. ── */
   function flagWrong() {
     if (rl) logUnderstanding('flag', rl.rawText, rl, againCount)
-    setAgainText(''); setFeedback('wrong')
+    setAgainText(''); setFixing(null); setFeedback('wrong')
   }
 
   /* ── the human handoff: a WhatsApp link pre-filled with the visitor's own words
@@ -554,6 +568,7 @@ export function ConnectExperience() {
     const interactive = stage === 's2'
     const onLedger = revealing || interactive // the understanding Ledger stage (s1/s2)
     const openReady = !revealing || s1done // during reveal, open lines wait their turn
+    const repairing = onLedger && feedback === 'wrong' && openReady // "not quite" → tap the wrong line
     const nothingYet = known.length === 0 && openBlanks.length === 0 && told.length === 0
     return (
       <div className="uledger">
@@ -577,15 +592,35 @@ export function ConnectExperience() {
         {interactive && openBlanks.length > 0 && (
           <p className="ulegend"><span className="lg ok">✓</span> what I know<span className="dot-sep">·</span><span className="lg op">○</span> what I don’t yet</p>
         )}
-        {known.map((l, i) => (
-          <div key={`k${i}`} className={`uline know${!revealing || i < s1n ? ' in' : ''}${revealing && i === s1live ? ' live' : ''}`}>
-            <span className="mk" aria-hidden="true">{CHECK}</span>
-            {/* "from your words" belongs ONLY to lines the visitor actually wrote. An
-                inferred line is Connect's reading — chipping it "from your words" would
-                put words in their mouth on the very page that promises we don't. */}
-            <p>{l.label && <span className="lbl">{l.label}</span>}{l.body}{onLedger && <span className="from-words">{l.inferred ? 'my reading' : 'from your words'}</span>}</p>
-          </div>
-        ))}
+        {known.map((l, i) => {
+          const shown = !revealing || i < s1n
+          /* "from your words" belongs ONLY to lines the visitor actually wrote. An
+             inferred line is Connect's reading — chipping it "from your words" would
+             put words in their mouth on the very page that promises we don't. */
+          const body = (
+            <>
+              <span className="mk" aria-hidden="true">{CHECK}</span>
+              <p>{l.label && <span className="lbl">{l.label}</span>}{l.body}
+                {onLedger && <span className="from-words">{l.inferred ? 'my reading' : 'from your words'}</span>}
+                {repairing && <span className="tellme">Not this</span>}
+              </p>
+            </>
+          )
+          /* Only tappable AFTER "Not quite" — a phone has no hover, so a line that is
+             silently clickable is a line nobody discovers. Saying "not quite" first is
+             what makes the affordance appear, and it is the one the page already offers. */
+          return repairing ? (
+            <button key={`k${i}`} type="button"
+              className={`uline know tap in fixable${fixing?.body === l.body ? ' asking' : ''}`}
+              onClick={() => { setFixing({ label: l.label ?? '', body: l.body }); setAgainText('') }}>
+              {body}
+            </button>
+          ) : (
+            <div key={`k${i}`} className={`uline know${shown ? ' in' : ''}${revealing && i === s1live ? ' live' : ''}`}>
+              {body}
+            </div>
+          )
+        })}
         {told.map((item) => (
           <div key={`t${item.key}`} className="uline know mem in">
             <span className="mk" aria-hidden="true">{CHECK}</span>
@@ -882,7 +917,15 @@ export function ConnectExperience() {
                     feedback === 'wrong' ? (
                       // "Not quite" → an inline correction that re-runs understanding
                       <div className="again" style={{ marginTop: 6 }}>
-                        <textarea className="again-ta" rows={2} value={againText} onChange={(e) => setAgainText(e.target.value)} placeholder="What did I miss? Tell me in your words…" autoFocus />
+                        {/* The repair is TARGETED. Tapping the wrong line tells us which slot
+                            failed, so the correction lands on it instead of asking the visitor
+                            to describe the whole family again. Until they pick one, we say so
+                            plainly rather than opening a box with no subject. */}
+                        <p className="fixhint">{fixing
+                          ? <>Tell me again about <b>{(fixing.label || 'this').toLowerCase()}</b> — in your words.</>
+                          : <>Tap the line I got wrong — or just tell me below.</>}</p>
+                        <textarea className="again-ta" rows={2} value={againText} onChange={(e) => setAgainText(e.target.value)}
+                          placeholder={fixing ? 'Say it again, in your words…' : 'What did I miss? Tell me in your words…'} autoFocus />
                         <div className="act"><button type="button" className={`btn${againText.trim() ? ' inked' : ' ghost'}`} onClick={understandAgain}>Connect, understand again</button></div>
                       </div>
                     ) : (
