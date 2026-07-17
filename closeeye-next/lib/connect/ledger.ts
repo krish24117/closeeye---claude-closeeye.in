@@ -166,13 +166,27 @@ const AI_CONFIDENT: Record<NeedType, boolean> = {
 /** Errands that touch money, law or admin — Connect helps ORGANIZE with a trusted
     person and says a professional is needed; it never gives the advice itself. */
 const PROFESSIONAL = /\b(tax(es)?|itr|gst|financ\w*|legal|lawyer|insurance|pension|passport|visa|bank\w*|audit|accountant|paperwork|filing|compliance)\b/i
-/* MONEY, specifically — the one domain Close Eye serves across the whole of India.
+/* MONEY, specifically — the ONE domain Close Eye serves across the whole of India
+   (founder, 2026-07-17: "legal, passport and visa — out of the India claim").
    Deliberately NARROWER than PROFESSIONAL, which also bundles legal, passport and visa.
-   We were told financial assistance is nationwide; we were NOT told that about a lawyer,
-   so claiming it would be inventing a capability — the exact thing this engine exists to
-   refuse. Legal keeps PROFESSIONAL's careful, presence-bound answer until someone says
-   otherwise. */
-const FINANCIAL = /\b(tax(es)?|itr|gst|financ\w*|insurance|pension|bank\w*|audit|accountant|paperwork|filing|compliance|money|salary|mutual\s+fund|premium)\b/i
+   Those keep PROFESSIONAL's careful, presence-bound answer.
+
+   EVERY WORD HERE IS MONEY ON ITS OWN. The first cut of this list included the generic
+   admin words — paperwork, filing, compliance, premium — and they smuggled the excluded
+   domains straight back in: "his PASSPORT PAPERWORK in Delhi" and "FILING a court case in
+   Pune" both claimed India. A word that is only financial in context does not belong in a
+   list that decides what we promise. */
+/* FINANCIAL is a strict SUBSET of PROFESSIONAL — every word here must also be there, or
+   it is dead: the money branch lives inside `need === 'errand' && professional`, so a
+   term PROFESSIONAL cannot see never reaches it. The first cut added provident fund, NPS
+   and salary and they simply never fired; a test caught it. Widening the India claim
+   means widening PROFESSIONAL first, deliberately — not smuggling words in here. */
+const FINANCIAL = /\b(tax(es)?|itr|gst|financ\w*|insurance|pension|bank\w*|audit|accountant)\b/i
+/* …and an explicit veto, because one money word is not permission. "His passport and his
+   pension" mentions a pension, but the passport is the part we cannot promise nationwide,
+   so the safe reading wins: no India claim. Never 'claim' as a word — an INSURANCE claim
+   is money. */
+const NOT_FINANCIAL = /\b(legal|lawyer|advocate|court|litigation|passport|visa|immigration|notice\s+from)\b/i
 
 /** The visitor's own words for how often — echoed once, never invented. */
 const FREQ = /\b(every\s+year|each\s+year|yearly|annually|every\s+month|each\s+month|monthly|every\s+week|each\s+week|weekly)\b/i
@@ -457,7 +471,7 @@ export function counsel(rl: ReadLedger, ctx?: CounselContext): { paragraphs: str
         const echo = freq ? `${cap(freq)}, this doesn't have to land on ${rl.forLoved ? them : 'you'} alone. ` : ''
         const tail = freq ? '' : rl.forLoved ? `, so it isn't a weight ${g === 'they' ? 'they carry' : `${they} carries`} alone` : `, so it isn't a weight you carry alone`
         const who = rl.forLoved ? name : 'you'
-        const money = FINANCIAL.test(rl.rawText)
+        const money = FINANCIAL.test(rl.rawText) && !NOT_FINANCIAL.test(rl.rawText)
         if (canBeThere) {
           P.push(`${echo}I won't give tax or money advice — that isn't my place. What Close Eye can do today is send a trusted person to sit with ${who}, help gather the papers, and get everything organized${tail}.`)
           // "A real person", never "YOUR Presence Manager" — a visitor here has no

@@ -80,6 +80,59 @@ describe('what a family is actually told', () => {
     expect(said('someone to help my father with a legal notice in Chennai'))
       .not.toMatch(/anywhere in India/i)
   })
+})
+
+/**
+ * LEGAL · PASSPORT · VISA — OUT of the India claim. Founder, 2026-07-17.
+ *
+ * The first cut of FINANCIAL leaked all three through generic admin words: "his PASSPORT
+ * PAPERWORK in Delhi" and "FILING a court case in Pune" both claimed India, because
+ * "paperwork" and "filing" were on the money list. A word that is only financial in
+ * context cannot be allowed to decide what we promise. Both halves are pinned: the
+ * excluded domains must never claim India, and money must never stop claiming it.
+ */
+describe('legal / passport / visa are OUT of the India claim', () => {
+  const said = (t: string) => counsel(readLedger(t)).paragraphs.join(' ')
+  const claimsIndia = (t: string) => /anywhere in India/i.test(said(t))
+
+  for (const t of [
+    'my father needs help with his passport paperwork in Delhi',
+    'my father needs help renewing his visa in Mumbai',
+    'someone to help my father with a legal notice in Chennai',
+    'my father needs help filing a court case in Pune',
+    'my father needs a lawyer in Bangalore',
+    'my father has an immigration problem in Kochi',
+    'my father needs help with visa paperwork in Delhi',
+  ]) {
+    it(`no India claim · ${t.slice(0, 46)}`, () => expect(claimsIndia(t)).toBe(false))
+  }
+
+  it('a money word does NOT unlock the claim when an excluded domain is also named', () => {
+    // "his passport AND his pension" — the passport is the part we cannot promise
+    // nationwide, so the safe reading wins.
+    expect(claimsIndia('my father needs help with his passport and his pension in Delhi')).toBe(false)
+  })
+
+  it('but an INSURANCE CLAIM is money — "claim" must never be read as a court claim', () => {
+    expect(claimsIndia('my mother needs help with her insurance claim in Mumbai')).toBe(true)
+  })
+
+  for (const t of [
+    'my father needs help with his pension paperwork in Delhi',
+    'my father needs help with his tax filing in Delhi',
+    'my mother needs help with her bank account in Kolkata',
+    'my father needs help with his insurance premium in Chennai',
+    'my father needs help with his GST audit in Surat',
+  ]) {
+    it(`money still claims India · ${t.slice(0, 46)}`, () => expect(claimsIndia(t)).toBe(true))
+  }
+
+  it('KNOWN GAP, not a silent one: "provident fund" is money a family will actually say, ' +
+     'but PROFESSIONAL does not know the phrase — so it never reaches the money branch and ' +
+     'gets the generic errand answer. Widening the claim means widening PROFESSIONAL first, ' +
+     'deliberately. Pinned so the gap is visible rather than discovered by a family.', () => {
+    expect(claimsIndia('my father needs help with his provident fund in Chennai')).toBe(false)
+  })
   it('money with no city: asks, never assumes', () => {
     expect(said('My father gets stressed every year with his tax filing. Can someone help him?'))
       .not.toMatch(/anywhere in India/i)
