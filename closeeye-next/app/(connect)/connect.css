@@ -142,7 +142,13 @@
 /* ── Sprint 1 · the hero that unfolds ──
    Logo → signature → three feelings → the settled promise → the input wakes.
    Cinematic on a first visit; returning visitors land settled at once. */
-.cx .hero{margin-bottom:2px}
+/* The masthead is who we are; the hero is what we are saying. Two different things, so
+   the boundary between them must be the widest on the first screen — it was 0px, which
+   left the "CONNECT" kicker reading as the headline's first line. The gap sits on .hero
+   rather than on .hero-head so it is still correct during the unfold, when the three
+   feelings occupy that slot. Stepped down by viewport HEIGHT below: 44px is right on a
+   780px phone and would cost a 568px one its CTA. */
+.cx .hero{margin-top:44px;margin-bottom:2px}
 .cx .hero-sig{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.26em;text-transform:uppercase;color:var(--pencil);
   margin:0 0 22px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
   opacity:0;transform:translateY(6px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
@@ -663,6 +669,7 @@
   .cx .mast{padding:max(10px,env(safe-area-inset-top)) 0 12px}
   .cx .mast-logo{height:32px}
   .cx .mast-triad{margin-top:6px}
+  .cx .hero{margin-top:28px}   /* still the widest gap up here, at a short phone's price */
   .cx .hero-head{margin-bottom:8px}
   .cx .whatis{margin-bottom:10px}
   .cx .hero-accent{margin-top:5px}
@@ -682,6 +689,15 @@
   .cx .try-ex{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
   .cx .desk-hint{margin-bottom:4px}
   .cx .privacy{margin-top:10px}
+}
+
+/* ── VERY SHORT (<=600px tall — 320x568, and a half-height desktop window) ──
+      The last 20px the masthead can be given before the CTA leaves the first screen.
+      Must stay AFTER the <=740px block: both match a 320x568 phone and the specificity
+      is identical, so source order is what decides. Measured, not chosen: at 320x568
+      this leaves the CTA 13.8px above the fold. */
+@media (max-height:600px){
+  .cx .hero{margin-top:20px}
 }
 
 /* ── 320–374 · Mobile Small — the lockup and the corner sign-in collided here.
