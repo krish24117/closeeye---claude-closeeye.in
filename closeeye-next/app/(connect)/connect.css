@@ -398,8 +398,12 @@
 .cx .uline .from-words{display:block;font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.06em;color:var(--text-muted);margin-top:2px;font-style:normal}
 .cx .ledger-note{font-family:var(--serif);font-style:italic;font-size:13px;line-height:1.5;color:var(--pencil);margin:12px 0 4px}
 .cx button.uline.tap:hover p{color:var(--forest)}
+/* The invitation trails the question — it must never look like part of it.
+   vertical-align:middle floated the chip off the text's baseline, so on a question that
+   wrapped it read as an interruption: "Her age, and the shape of her  Tell Connect →
+   mornings". On the baseline it trails the last word, which is what it is. */
 .cx .uline.open .tellme{display:inline-block;margin-left:10px;font-family:var(--sans);font-size:var(--t-label);
-  font-weight:600;color:var(--emerald);white-space:nowrap;vertical-align:middle}
+  font-weight:600;color:var(--emerald);white-space:nowrap;vertical-align:baseline}
 .cx .uline.open .tellme::after{content:' →'}
 .cx button.uline.tap:hover .tellme{color:var(--forest)}
 /* a told fact just became memory — the ✓ draws in (motion mapped to a real event) */
@@ -428,6 +432,19 @@
   color:var(--pencil);max-width:32ch}
 
 /* Sprint 4 · a quiet legend — names what ✓ and ○ mean, so every step is legible */
+/* ── how much is left ──
+   One mark per thing Connect still doesn't know; it fills in as you tell it. Deliberately
+   NOT a progress bar toward a purchase — it counts the engine's own gaps, and the point is
+   that it SHRINKS. Hidden from screen readers: the ✓/○ lines below already say this in
+   words, and saying it twice is noise. */
+.cx .uprog{display:flex;align-items:center;gap:5px;margin:-4px 0 13px}
+.cx .uprog .ub{height:3px;width:22px;border-radius:2px;background:var(--hair);transition:background .5s ease}
+.cx .uprog .ub.on{background:var(--emerald)}
+.cx .uprog .ut{font-family:var(--sans);font-size:var(--t-micro);color:var(--faint);margin-left:3px;
+  font-variant-numeric:tabular-nums}
+/* the question being answered right now — quiet, but unmistakably the live one */
+.cx .uline.open.asking p{color:var(--forest);font-weight:500}
+.cx .uline.open.asking .cxring{border-color:var(--emerald)}
 .cx .ulegend{display:flex;align-items:center;gap:6px;margin:-6px 0 12px;font-family:var(--sans);font-size:var(--t-micro);
   letter-spacing:.04em;color:var(--text-muted)}
 .cx .ulegend .lg{font-weight:700}

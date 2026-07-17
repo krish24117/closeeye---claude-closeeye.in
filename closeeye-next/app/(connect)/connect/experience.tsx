@@ -558,10 +558,23 @@ export function ConnectExperience() {
     return (
       <div className="uledger">
         <p className="lh">What I understand{revealing ? '' : ' so far'}</p>
+        {/* How much is left, always. Not a progress bar toward a sale — a count of what
+            Connect still doesn't know, which shrinks as you tell it. The list getting
+            SHORTER is the product; a chatbot's box never does. */}
+        {interactive && rl.blanks.length > 0 && (
+          <div className="uprog" aria-hidden="true">
+            {rl.blanks.map((b) => (
+              <span key={b.key} className={`ub${told.some((x) => x.key === b.key) ? ' on' : ''}`} />
+            ))}
+            <span className="ut">{openBlanks.length === 0 ? 'done' : `${told.length} of ${rl.blanks.length}`}</span>
+          </div>
+        )}
         {nothingYet && (
           <p className="empty">I don’t want to guess. Tell me who this is for — in your own words — and I’ll begin to understand.</p>
         )}
-        {openReady && openBlanks.length > 0 && (
+        {/* The legend explains ✓ vs ○ — so it belongs only where a ○ is actually on the
+            page, which is now s2 alone. */}
+        {interactive && openBlanks.length > 0 && (
           <p className="ulegend"><span className="lg ok">✓</span> what I know<span className="dot-sep">·</span><span className="lg op">○</span> what I don’t yet</p>
         )}
         {known.map((l, i) => (
@@ -586,29 +599,35 @@ export function ConnectExperience() {
             ? 'The facts above are your words. The last line is my reading of them — nothing is assumed.'
             : 'Everything above comes from what you wrote — nothing else.'}</p>
         )}
-        {openBlanks.map((b) => (
-          interactive ? (
-            <React.Fragment key={b.key}>
-              <button type="button" className="uline open tap in" onClick={() => { setActiveKey(activeKey === b.key ? null : b.key); setFill('') }}>
-                <span className="mk" aria-hidden="true"><span className="cxring" /></span>
-                <p>{b.text}<span className="tellme">Tell Connect</span></p>
-              </button>
-              {activeKey === b.key && (
-                <div className="fill">
-                  <textarea rows={1} value={fill} onChange={(e) => setFill(e.target.value)} placeholder={FILL_PH[b.key] || 'Tell me as you’d tell a friend…'} autoFocus />
-                  <div className="frow">
-                    <button type="button" className="save" onClick={() => saveTold(b.key)}>Save</button>
-                    <button type="button" className="skip" onClick={() => setActiveKey(null)}>not now</button>
-                  </div>
-                </div>
-              )}
-            </React.Fragment>
-          ) : (
-            <div key={b.key} className={`uline open${openReady ? ' in' : ''}`}>
+        {/* NEVER show a question that cannot be answered.
+            s1 used to list every open blank as dead text — "Which city she is in", "Her
+            health…" — with no way to answer any of it. The only way forward was "That's
+            exactly it", a button confirming the READING, which silently unlocked s2: the
+            same list, same place, same words, now tappable. Two identical screens and a
+            mode switch the visitor had to guess at.
+            Now the blanks exist only on s2, where every one of them is answerable. A
+            question you can't answer is worse than no question — it teaches people the
+            page is decorative. */}
+        {interactive && openBlanks.map((b) => (
+          <React.Fragment key={b.key}>
+            <button type="button" className={`uline open tap in${activeKey === b.key ? ' asking' : ''}`} onClick={() => { setActiveKey(activeKey === b.key ? null : b.key); setFill('') }}>
               <span className="mk" aria-hidden="true"><span className="cxring" /></span>
-              <p>{b.text}</p>
-            </div>
-          )
+              {/* The chip is the invitation — so it goes away once the box is open beneath
+                  it. Rendering an empty span is not the same as rendering nothing: the
+                  arrow comes from .tellme::after, and an empty chip leaves it orphaned
+                  after the question. */}
+              <p>{b.text}{activeKey !== b.key && <span className="tellme">Tell Connect</span>}</p>
+            </button>
+            {activeKey === b.key && (
+              <div className="fill">
+                <textarea rows={1} value={fill} onChange={(e) => setFill(e.target.value)} placeholder={FILL_PH[b.key] || 'Tell me as you’d tell a friend…'} autoFocus />
+                <div className="frow">
+                  <button type="button" className="save" onClick={() => saveTold(b.key)}>Save</button>
+                  <button type="button" className="skip" onClick={() => setActiveKey(null)}>not now</button>
+                </div>
+              </div>
+            )}
+          </React.Fragment>
         ))}
         {interactive && rl.blanks.length > 0 && openBlanks.length === 0 && (
           <p className="later">Thank you — that’s everything I hoped to understand for now.</p>
@@ -616,6 +635,19 @@ export function ConnectExperience() {
       </div>
     )
   }
+
+  /* The first question opens itself.
+     s2 used to render every blank as a closed circle: you had to TAP one to discover it
+     was a button at all, on a screen whose whole job is to ask you something. The first
+     unanswered question is now already open with the cursor in it — the rest queue
+     behind. Only ever the first, and only if nothing is open: this must never steal focus
+     from a question the visitor chose. */
+  React.useEffect(() => {
+    if (stage !== 's2' || !rl || activeKey) return
+    const first = rl.blanks.find((b) => !told.some((x) => x.key === b.key))
+    if (first) { setActiveKey(first.key); setFill('') }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, rl?.rawText])
 
   const inThread = CONVO.includes(stage)
 
@@ -859,11 +891,15 @@ export function ConnectExperience() {
                   )}
                   {stage === 's1' && feedback !== 'wrong' && (
                     <div className="act">
-                      <button className="btn" onClick={() => setStage(rl.blanks.length ? 's2' : 's3')} style={{ opacity: s1done ? 1 : 0, pointerEvents: s1done ? 'auto' : 'none' }}>That’s exactly it</button>
+                      <button className="btn" onClick={() => setStage(rl.blanks.length ? 's2' : 's3')} style={{ opacity: s1done ? 1 : 0, pointerEvents: s1done ? 'auto' : 'none' }}>Yes — that’s right</button>
                     </div>
                   )}
                   {stage === 's2' && feedback !== 'wrong' && (
-                    <div className="act"><button className="btn" onClick={() => setStage('s3')}>Continue</button></div>
+                    // Never trapped: leaving is always one tap, and skipping costs nothing —
+                    // an unanswered blank simply stays a ○, honestly.
+                    <div className="act"><button className="btn" onClick={() => setStage('s3')}>
+                      {rl.blanks.every((b) => told.some((x) => x.key === b.key)) ? 'Continue' : 'That’s enough for now'}
+                    </button></div>
                   )}
                 </>
               ) : (
