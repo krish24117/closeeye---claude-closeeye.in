@@ -182,7 +182,21 @@ async function doProvision(): Promise<ProvisionResult> {
         loved_one_id: lovedOneId, family_user_id: user.id,
         entry_type: 'family_fact' as const, label: e.label, body: e.body.trim(), source: 'connect_experience' as const,
       }))
-      const rows = [...base, ...extras]
+      /**
+       * The engine's ORDER is part of the understanding, not decoration: subject first,
+       * then what's happening, then the family's own words last. Inserted as one batch
+       * they all took the same default now(), so `order by created_at` returned them
+       * arbitrarily — /space rendered the quote first and the subject third, in an order
+       * that could change between reads. A ledger that shows understanding in a random
+       * order is not showing understanding.
+       *
+       * `id` cannot fix it (gen_random_uuid) and there is no sequence column, so the
+       * order goes into the data where it belongs: one millisecond per entry, in engine
+       * order. Stamped from the same clock that wrote them, and only ever compared to its
+       * own siblings.
+       */
+      const t0 = Date.now()
+      const rows = [...base, ...extras].map((r, i) => ({ ...r, created_at: new Date(t0 + i).toISOString() }))
       if (rows.length) {
         const { error: le } = await supabase.from('family_ledger').insert(rows)
         if (le) return { lovedOneId, error: 'ledger-failed' } // space exists; keep draft to retry the ledger
@@ -237,7 +251,13 @@ export async function fetchSpace(): Promise<SpaceData | null> {
   const userName = (profRes.data?.full_name || (user.user_metadata?.full_name as string) || 'there').split(' ')[0] || 'there'
   const gender = genderForRelationship(lo.relationship)
 
-  const entriesRes = await supabase.from('family_ledger').select('label, body, source, entry_type, created_at').eq('loved_one_id', lo.id).order('created_at', { ascending: false }).limit(WINDOW)
+  // `id` is a secondary key ONLY to break ties deterministically — rows written before the
+  // ordering fix share a timestamp, and a stable order beats one that changes per read.
+  const entriesRes = await supabase.from('family_ledger').select('label, body, source, entry_type, created_at')
+    .eq('loved_one_id', lo.id)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(WINDOW)
   if (entriesRes.error) throw new Error(entriesRes.error.message)
 
   const entries = (entriesRes.data ?? []).slice().reverse() // chronological
