@@ -79,7 +79,24 @@
 .spc .fchip .fa{width:26px;height:26px;border-radius:50%;background:#F3E3D2;color:#8A5A24;
   display:grid;place-items:center;font-family:var(--serif);font-size:var(--t-label);font-weight:500}
 .spc .fchip.pick{border-color:var(--emerald);color:var(--forest)}
-.spc .fchip.add .fa{background:var(--paper);color:var(--text-accent);border:1px dashed var(--hair2)}
+/* ── "Add someone" — a calm sibling of the family chips, not a disabled ghost ──
+   The old chip stacked three disabled-signals: grey text, a faint border, and a DASHED
+   "+" that read as a placeholder. Fixed without shouting: forest text (not grey), a solid
+   border that warms to emerald on intent, and a FILLED "+" avatar — the one point of life
+   that makes it unmistakably tappable while staying quieter than the page's real primary
+   action (Book a visit). Filled forest (not emerald) keeps the "+" AA-bulletproof and
+   reads as "an action slot", distinct from a person's peach initial. */
+.spc .fchip.add{border-color:var(--hair2);color:var(--forest)}
+.spc .fchip.add .fa{background:var(--forest);color:#F7F4EC;border:none;font-size:16px;font-weight:600;line-height:1}
+.spc .fchip.add:hover{border-color:var(--emerald)}
+.spc .fchip.add:hover .fa{background:var(--emerald)}
+.spc .fchip{transition:border-color .22s ease,transform .12s cubic-bezier(.2,.7,.2,1)}
+.spc .fchip.add .fa{transition:background .22s ease,transform .18s cubic-bezier(.2,.7,.2,1)}
+.spc .fchip:active{transform:scale(.97)}
+.spc .fchip.add:active .fa{transform:scale(1.12)}
+@media(prefers-reduced-motion:reduce){.spc .fchip,.spc .fchip.add .fa{transition:none} .spc .fchip:active{transform:none}}
+/* The circle needs a name — a soft invitation, shown only while it's still small. */
+.spc .fam-hint{font-family:var(--serif);font-style:italic;font-size:13px;line-height:1.4;color:var(--text-muted);margin:6px 2px 0}
 
 .spc .sh{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.18em;text-transform:uppercase;
   color:var(--pencil);font-weight:500;margin:30px 0 4px}

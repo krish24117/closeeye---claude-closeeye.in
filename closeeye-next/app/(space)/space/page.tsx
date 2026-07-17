@@ -189,8 +189,11 @@ export default function SpacePage() {
                 </button>
               )
             })}
-            <button className="fchip add" onClick={() => router.push('/connect')}><span className="fa">+</span>Add family</button>
+            <button className="fchip add" onClick={() => router.push('/connect')}><span className="fa">+</span>Add someone</button>
           </div>
+          {space.members.length === 1 && (
+            <p className="fam-hint">Everyone you love, in one place — add another whenever you’re ready.</p>
+          )}
 
           {/* ── 1 · SNAPSHOT — how your father is (derived, never asserted) ── */}
           <p className="sh">How {person} is</p>
