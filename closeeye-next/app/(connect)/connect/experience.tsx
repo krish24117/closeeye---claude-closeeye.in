@@ -933,8 +933,26 @@ export function ConnectExperience() {
                     )
                   )}
                   {stage === 's1' && feedback !== 'wrong' && (
-                    <div className="act">
-                      <button className="btn" onClick={() => setStage(rl.blanks.length ? 's2' : 's3')} style={{ opacity: s1done ? 1 : 0, pointerEvents: s1done ? 'auto' : 'none' }}>Yes — that’s right</button>
+                    <div className="act" style={{ opacity: s1done ? 1 : 0, pointerEvents: s1done ? 'auto' : 'none' }}>
+                      {understood ? (
+                        // We already understand enough to help — so the payoff is NOT gated
+                        // behind a wall of questions. The summary and the human hand-off come
+                        // now; the blanks become OPTIONAL enrichment, offered as a quiet second
+                        // path ("a few things would help"), never a form to clear first.
+                        // (understood = a person AND a need; see personKnown/needKnown.)
+                        <>
+                          <button className="btn" onClick={() => setStage('s3')}>Yes — that’s right</button>
+                          {rl.blanks.length > 0 && (
+                            <button type="button" className="second" onClick={() => setStage('s2')}>
+                              A few things would help Close Eye prepare →
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        // We do NOT have enough yet — here the questions are the way forward,
+                        // not a detour, so the one button leads into them.
+                        <button className="btn" onClick={() => setStage(rl.blanks.length ? 's2' : 's3')}>Yes — that’s right</button>
+                      )}
                     </div>
                   )}
                   {stage === 's2' && feedback !== 'wrong' && (

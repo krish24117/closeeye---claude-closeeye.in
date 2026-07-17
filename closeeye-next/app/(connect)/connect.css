@@ -581,6 +581,13 @@
 .cx .dial:active{transform:scale(.98)}
 
 .cx .act{margin-top:auto;padding-top:30px}
+/* The quiet second path under the primary button — offered when Close Eye already
+   understands enough. It must read as OPTIONAL: a text link, never a second button
+   competing with the first. Enrichment is a choice, not a step. */
+.cx .second{display:block;width:100%;margin-top:14px;background:none;border:0;cursor:pointer;
+  font-family:var(--sans);font-size:var(--t-label);color:var(--pencil);text-align:center;
+  padding:4px;transition:color .3s ease}
+.cx .second:hover{color:var(--forest)}
 .cx .btn{display:block;width:100%;background:var(--forest);color:#F7F4EC;border:1px solid transparent;border-radius:999px;
   padding:16px 22px;font-family:var(--sans);font-weight:600;font-size:var(--t-button);text-align:center;
   letter-spacing:.01em;transition:background .3s ease,color .3s ease,border-color .3s ease,transform .15s ease,opacity .2s}
