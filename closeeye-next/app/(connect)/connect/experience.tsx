@@ -743,6 +743,13 @@ export function ConnectExperience() {
               </div>
             </div>
             <div className="s0-ask">
+              {/* THE TRANSITION. Not the label I removed — that one sat INSIDE the card,
+                  naming a section on a one-section card. This one has a job: it turns
+                  "here is what Close Eye is" into "now experience it", and it introduces
+                  Connect one beat before the button uses the word. It also does
+                  permanently what the demo's "Now —" did for six seconds, so the handoff
+                  no longer depends on an animation a visitor may never see. */}
+              <p className={`exp-k s0-lead${heroSettled ? ' in' : ''}`}>Experience Close Eye Connect</p>
               <div className={`deskcard${deskDrawn ? ' drawn' : ''}`} ref={deskRef}>
                 {/* No "EXPERIENCE CLOSE EYE" label — a section label on a card with one
                     section. No lede, no sub: the hero above says it once, and the demo
@@ -760,7 +767,7 @@ export function ConnectExperience() {
                     onChange={(e) => setText(e.target.value)}
                     onFocus={demoDone ? undefined : skipDemo}
                     aria-hidden={!demoDone} tabIndex={demoDone ? 0 : -1}
-                    placeholder="Now — tell Close Eye about someone you love…" />
+                    placeholder="Tell Close Eye about someone you love…" />
                 </div>
                 {/* THE DEMONSTRATION. Understanding, then the answer — in that order,
                     because that order IS the product. It borrows this space and gives it
