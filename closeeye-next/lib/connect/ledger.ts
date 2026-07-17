@@ -16,7 +16,7 @@
  */
 import { classify, pronoun, type Gender } from './understand'
 import { isCrisis } from '@shared/crisis'   // THE canonical floor — shared with Ask Close Eye
-import { SERVED_AREAS, presenceFor, type PresenceAvailability } from '@/lib/platform/service-region'
+import { SERVED_AREAS, INDIA_AREAS, presenceFor, coverageFor, type PresenceAvailability } from '@/lib/platform/service-region'
 
 export type NeedType =
   | 'wellbeing' | 'errand' | 'medical' | 'emergency'
@@ -64,11 +64,13 @@ const conj = (base: string, g: Gender | null) => (g === 'they' || !g ? base : `$
 const isPlural = (g: Gender | null) => g === 'they' || !g // "they"/unknown → are, live, need
 
 /* ── city gazetteer (only stated locations become a line — never guessed) ── */
-const CITIES = ['hyderabad','bangalore','bengaluru','mumbai','delhi','new delhi','chennai','kolkata','pune','ahmedabad','jaipur','lucknow','kochi','cochin','coimbatore','visakhapatnam','vizag','vijayawada','warangal','nagpur','indore','bhopal','patna','surat','kanpur','nashik','mysore','mysuru','madurai','trichy','guntur','tirupati','goa','chandigarh','gurgaon','gurugram','noida',
-  'london','manchester','birmingham','new york','boston','chicago','san francisco','seattle','austin','dallas','houston','toronto','vancouver','sydney','melbourne','dubai','abu dhabi','singapore','doha','riyadh','muscat','kuwait','manila']
+/* Places ABROAD we recognise — so "she's in London" reads as a location, not a person.
+   India is deliberately NOT listed here: it comes from the coverage policy (INDIA_AREAS),
+   because a second copy of India is a second thing to forget when a market is added. */
+const ABROAD = ['london','manchester','birmingham','new york','boston','chicago','san francisco','seattle','austin','dallas','houston','toronto','vancouver','sydney','melbourne','dubai','abu dhabi','singapore','doha','riyadh','muscat','kuwait','manila']
 // Every place we SERVE must also be a place we can READ — otherwise "she's in Gachibowli"
 // scans as no-location-given and we'd ask a family we cover where they are.
-const GAZETTEER = [...new Set([...CITIES, ...SERVED_AREAS])]
+const GAZETTEER = [...new Set([...INDIA_AREAS, ...ABROAD, ...SERVED_AREAS])]
 function findCity(text: string): string | null {
   const q = ` ${text.toLowerCase()} `
   for (const c of [...GAZETTEER].sort((a, b) => b.length - a.length)) {
@@ -164,6 +166,13 @@ const AI_CONFIDENT: Record<NeedType, boolean> = {
 /** Errands that touch money, law or admin — Connect helps ORGANIZE with a trusted
     person and says a professional is needed; it never gives the advice itself. */
 const PROFESSIONAL = /\b(tax(es)?|itr|gst|financ\w*|legal|lawyer|insurance|pension|passport|visa|bank\w*|audit|accountant|paperwork|filing|compliance)\b/i
+/* MONEY, specifically — the one domain Close Eye serves across the whole of India.
+   Deliberately NARROWER than PROFESSIONAL, which also bundles legal, passport and visa.
+   We were told financial assistance is nationwide; we were NOT told that about a lawyer,
+   so claiming it would be inventing a capability — the exact thing this engine exists to
+   refuse. Legal keeps PROFESSIONAL's careful, presence-bound answer until someone says
+   otherwise. */
+const FINANCIAL = /\b(tax(es)?|itr|gst|financ\w*|insurance|pension|bank\w*|audit|accountant|paperwork|filing|compliance|money|salary|mutual\s+fund|premium)\b/i
 
 /** The visitor's own words for how often — echoed once, never invented. */
 const FREQ = /\b(every\s+year|each\s+year|yearly|annually|every\s+month|each\s+month|monthly|every\s+week|each\s+week|weekly)\b/i
@@ -410,6 +419,14 @@ export function counsel(rl: ReadLedger, ctx?: CounselContext): { paragraphs: str
   // question never reshuffles the understanding they're looking at.
   const presence = presenceFor(ctx?.location ?? rl.city)
   const canBeThere = presence === 'available'
+  /* MONEY IS NOT A PRESENCE PROBLEM.
+     A Presence Manager organises a pension or a tax filing from anywhere in India — it
+     needs a phone and paperwork, not feet on the ground. This map used to answer one
+     question for every kind of help, so a family in Delhi asking about their father's
+     pension was told we couldn't help. That was never true; it turned away work we can
+     actually do. Coverage is domain × mode now (see service-region.ts). */
+  const financialReach = coverageFor('financial', ctx?.location ?? rl.city)
+  const canDoMoney = financialReach === 'available'
   const dependsOnPresence = PRESENCE_NEEDS.has(rl.need)
   // "If you ever need someone to be there in person, which city is your family in?" —
   // asked ONLY when the answer would genuinely change what Close Eye can offer.
@@ -440,12 +457,19 @@ export function counsel(rl: ReadLedger, ctx?: CounselContext): { paragraphs: str
         const echo = freq ? `${cap(freq)}, this doesn't have to land on ${rl.forLoved ? them : 'you'} alone. ` : ''
         const tail = freq ? '' : rl.forLoved ? `, so it isn't a weight ${g === 'they' ? 'they carry' : `${they} carries`} alone` : `, so it isn't a weight you carry alone`
         const who = rl.forLoved ? name : 'you'
+        const money = FINANCIAL.test(rl.rawText)
         if (canBeThere) {
           P.push(`${echo}I won't give tax or money advice — that isn't my place. What Close Eye can do today is send a trusted person to sit with ${who}, help gather the papers, and get everything organized${tail}.`)
           // "A real person", never "YOUR Presence Manager" — a visitor here has no
           // membership and no one assigned. Naming a relationship they don't have is a
           // small lie that the rest of the page then has to carry.
           P.push(`Close Eye knows when a professional is needed — and brings the right, trusted hands in. A real person confirms every detail with you first.`)
+        } else if (money && canDoMoney) {
+          /* In India, outside Hyderabad, and it's money: we CAN do this. Say so — and say
+             plainly what we can't, in the same breath, so the yes is believable. Never
+             "we'll pass it on" for something we actually serve. */
+          P.push(`${echo}I won't give tax or money advice — that isn't my place. But this part Close Eye can do: a Presence Manager organises it with ${who} — anywhere in India — gathers what's needed and brings the right professional in${tail}.`)
+          P.push(`What Close Eye can't do outside Hyderabad, today, is be there in person. For this, it doesn't have to be.`)
         } else {
           P.push(`${echo}I won't give tax or money advice — that isn't my place.`)
           P.push(`What I can do is make sure a real person at Close Eye knows exactly what's needed — I'll pass on what you've told me, so you won't have to explain it twice${tail}.`)
