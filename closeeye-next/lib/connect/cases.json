@@ -1,51 +1,450 @@
 [
-  { "text": "My family is shifting to Hyderabad. We need local support to set up things.", "subjectKnown": true, "subjectKind": "family", "need": "errand", "note": "family relocation (P0)" },
-  { "text": "Our family is relocating to Pune and needs help getting settled.", "subjectKnown": true, "subjectKind": "family", "need": "errand", "note": "slot: family+relocation — variant, proves generalization" },
-  { "text": "We are moving to Chennai, can someone help us set up?", "subjectKnown": true, "subjectKind": "family", "need": "errand", "note": "slot: family+relocation — variant" },
-  { "text": "This is for me, I'm moving to Bangalore", "subjectKnown": true, "subjectKind": "self", "note": "self relocation" },
-  { "text": "I'm relocating to Delhi and need someone on the ground.", "subjectKnown": true, "subjectKind": "self", "need": "errand", "note": "slot: self+relocation — variant" },
-  { "text": "This is for myself — moving to Kochi next month.", "subjectKnown": true, "subjectKind": "self", "note": "slot: self — variant" },
-  { "text": "my parents are getting old", "subjectKnown": true, "subjectKind": "person", "need": "wellbeing", "note": "collective parents" },
-  { "text": "my grandparents are getting frail", "subjectKnown": true, "subjectKind": "person", "need": "wellbeing", "note": "slot: collective kin — variant" },
-  { "text": "My mother lives alone in Hyderabad. How do I know she’s okay?", "subjectKnown": true, "subjectKind": "person", "need": "wellbeing", "note": "homepage example 1" },
-  { "text": "My father gets stressed every year with his tax filing. Can someone help him through it?", "subjectKnown": true, "subjectKind": "person", "need": "errand", "note": "homepage example 2 (professional)" },
-  { "text": "O need hospital companion. This is for my family", "subjectKnown": true, "subjectKind": "family", "note": "garbled + clarified" },
-  { "text": "someone to accompany my uncle to the clinic", "subjectKnown": true, "subjectKind": "person", "need": "errand", "note": "slot: companion/accompany — variant (not just 'hospital companion')" },
-
-  { "text": "I want some body to take my father hospital", "subjectKnown": true, "subjectKind": "person", "need": "errand", "name": null, "note": "REPORTED 2026-07-17: read the destination as the person ('Hospital') and the ask as a wellbeing question" },
-  { "text": "I want somebody to take my father to the hospital", "subjectKnown": true, "subjectKind": "person", "need": "errand", "name": null, "note": "slot: escort — variant, correct grammar" },
-  { "text": "I need someone to take my mother to the hospital", "subjectKnown": true, "subjectKind": "person", "need": "errand", "name": null, "note": "slot: escort — variant, different relation" },
-  { "text": "Can someone take Amma to the clinic", "subjectKnown": true, "subjectKind": "person", "need": "errand", "name": null, "note": "slot: escort — variant, bare kinship object + different destination" },
-  { "text": "Please drop my father at the clinic", "subjectKnown": true, "subjectKind": "person", "need": "errand", "name": null, "note": "slot: escort — variant, different verb" },
-  { "text": "I want someone to accompany my grandmother to the doctor", "subjectKnown": true, "subjectKind": "person", "need": "errand", "name": null, "note": "slot: escort — variant, different verb + relation" },
-  { "text": "please take my father Ramesh to the clinic", "subjectKnown": true, "subjectKind": "person", "need": "errand", "name": "Ramesh", "note": "slot: escort — a NAMED object still resolves; the object generalizes over pronoun|kinship|name" },
-  { "text": "take Ramesh to the clinic", "subjectKnown": true, "subjectKind": "person", "need": "errand", "name": "Ramesh", "note": "slot: escort — variant, a bare NAME as the object (no kinship word at all)" },
-  { "text": "please take my father ramesh to the clinic", "subjectKnown": true, "subjectKind": "person", "need": "errand", "name": null, "note": "slot: name — a lowercase name MID-sentence is deliberately NOT extracted (the path is end-of-string only, which is what stops 'my father lives alone' becoming a person called Lives). We ask instead of guessing; the escort still resolves" },
-
-  { "text": "Next week I have to take Amma to the hospital for a routine scan", "subjectKnown": true, "subjectKind": "person", "need": "errand", "name": null, "note": "REPORTED 2026-07-17: read the calendar word as the person ('Next')" },
-  { "text": "Can someone take my father to the hospital on Tuesday, nothing urgent", "subjectKnown": true, "subjectKind": "person", "need": "errand", "name": null, "note": "slot: name — variant, weekday must never be a person ('Tuesday')" },
-  { "text": "take my mother to the station tomorrow", "subjectKnown": true, "subjectKind": "person", "need": "errand", "name": null, "note": "slot: name — variant, destination+calendar, neither is a person" },
-  { "text": "I worry about my father ramesh", "subjectKnown": true, "subjectKind": "person", "name": "Ramesh", "note": "slot: name — the POSITIVE control. Identical shape to 'my father hospital'; a real name must still resolve, or the class exclusion has overfit into deleting the feature" },
-  { "text": "please check on my mother sita", "subjectKnown": true, "subjectKind": "person", "name": "Sita", "note": "slot: name — positive control variant" },
-
-  { "text": "I want to take my father to the hospital for his checkup next month", "subjectKnown": true, "subjectKind": "person", "need": "errand", "note": "REPORTED 2026-07-17: a hospital as DESTINATION fired the emergency lane — 'This sounds urgent' + a 108 dial for a routine checkup" },
-  { "text": "Can someone take my mother to the hospital on Monday, nothing urgent", "subjectKnown": true, "subjectKind": "person", "need": "errand", "note": "slot: emergency — variant, a destination is never urgency" },
-  { "text": "My father collapsed, take him to the hospital now", "subjectKnown": true, "subjectKind": "person", "need": "emergency", "note": "slot: emergency — CONTROL. A real condition cue still fires, and outranks the escort reading" },
-  { "text": "appa not breathing", "subjectKnown": true, "subjectKind": "person", "need": "emergency", "note": "slot: emergency — CONTROL (launch-audit B4, life-safety). Must never regress" },
-  { "text": "He was rushed to the hospital", "need": "emergency", "note": "slot: emergency — CONTROL, urgency-bearing hospital phrase" },
-  { "text": "My mother was admitted to the ICU", "subjectKnown": true, "subjectKind": "person", "need": "emergency", "note": "slot: emergency — CONTROL, admitted/ICU" },
-  { "text": "Amma is in the hospital", "subjectKnown": true, "subjectKind": "person", "need": "emergency", "note": "slot: emergency — CONTROL, already there (state), not heading there (direction)" },
-
-  { "text": "Take her to the hospital immediately", "need": "emergency", "note": "slot: urgency — CAUGHT IN REVIEW 2026-07-17. Removing the destination from the emergency pattern lost this: urgent, but not one condition word in it. Urgency about a medical place IS an emergency" },
-  { "text": "I need to take my mother to the hospital right now", "subjectKnown": true, "subjectKind": "person", "need": "emergency", "note": "slot: urgency — variant, 'right now'" },
-  { "text": "take my father to the hospital urgently", "subjectKnown": true, "subjectKind": "person", "need": "emergency", "note": "slot: urgency — variant, 'urgently'" },
-  { "text": "need to get amma to the hospital quickly", "subjectKnown": true, "subjectKind": "person", "need": "emergency", "note": "slot: urgency — variant, 'quickly'" },
-  { "text": "I want to take my mother to the clinic next week, no rush", "subjectKnown": true, "subjectKind": "person", "need": "errand", "note": "slot: urgency — CONTROL. A family who says 'no rush' has told us plainly; urgency must not fire on the word 'rush' itself" },
-
-  { "text": "I want someone to take her to the hospital", "subjectKnown": false, "subjectKind": null, "note": "REPORTED 2026-07-17: answered about 'You' because the sentence says 'I want'. A third person we cannot name means we ask who" },
-  { "text": "I need somebody to bring him to the clinic", "subjectKnown": false, "subjectKind": null, "note": "slot: subject — variant, different pronoun/verb/destination" },
-  { "text": "This is for myself — I need a hand in Bangalore", "subjectKnown": true, "subjectKind": "self", "note": "slot: subject — CONTROL, a real self request still resolves to self" },
-
-  { "text": "Did my father take his medicine today", "subjectKnown": true, "subjectKind": "person", "need": "medical", "note": "slot: escort — CONTROL. 'take' + a non-person object is not an errand; the object must be a PERSON" },
-  { "text": "I want to take care of my mother", "subjectKnown": true, "subjectKind": "person", "need": "wellbeing", "note": "slot: escort — CONTROL, 'take care' must not read as transport" }
+  {
+    "text": "My family is shifting to Hyderabad. We need local support to set up things.",
+    "subjectKnown": true,
+    "subjectKind": "family",
+    "need": "errand",
+    "note": "family relocation (P0)"
+  },
+  {
+    "text": "Our family is relocating to Pune and needs help getting settled.",
+    "subjectKnown": true,
+    "subjectKind": "family",
+    "need": "errand",
+    "note": "slot: family+relocation — variant, proves generalization"
+  },
+  {
+    "text": "We are moving to Chennai, can someone help us set up?",
+    "subjectKnown": true,
+    "subjectKind": "family",
+    "need": "errand",
+    "note": "slot: family+relocation — variant"
+  },
+  {
+    "text": "This is for me, I'm moving to Bangalore",
+    "subjectKnown": true,
+    "subjectKind": "self",
+    "note": "self relocation"
+  },
+  {
+    "text": "I'm relocating to Delhi and need someone on the ground.",
+    "subjectKnown": true,
+    "subjectKind": "self",
+    "need": "errand",
+    "note": "slot: self+relocation — variant"
+  },
+  {
+    "text": "This is for myself — moving to Kochi next month.",
+    "subjectKnown": true,
+    "subjectKind": "self",
+    "note": "slot: self — variant"
+  },
+  {
+    "text": "my parents are getting old",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "wellbeing",
+    "note": "collective parents"
+  },
+  {
+    "text": "my grandparents are getting frail",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "wellbeing",
+    "note": "slot: collective kin — variant"
+  },
+  {
+    "text": "My mother lives alone in Hyderabad. How do I know she’s okay?",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "wellbeing",
+    "note": "homepage example 1"
+  },
+  {
+    "text": "My father gets stressed every year with his tax filing. Can someone help him through it?",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "note": "homepage example 2 (professional)"
+  },
+  {
+    "text": "O need hospital companion. This is for my family",
+    "subjectKnown": true,
+    "subjectKind": "family",
+    "note": "garbled + clarified"
+  },
+  {
+    "text": "someone to accompany my uncle to the clinic",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "note": "slot: companion/accompany — variant (not just 'hospital companion')"
+  },
+  {
+    "text": "I want some body to take my father hospital",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "name": null,
+    "note": "REPORTED 2026-07-17: read the destination as the person ('Hospital') and the ask as a wellbeing question"
+  },
+  {
+    "text": "I want somebody to take my father to the hospital",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "name": null,
+    "note": "slot: escort — variant, correct grammar"
+  },
+  {
+    "text": "I need someone to take my mother to the hospital",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "name": null,
+    "note": "slot: escort — variant, different relation"
+  },
+  {
+    "text": "Can someone take Amma to the clinic",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "name": null,
+    "note": "slot: escort — variant, bare kinship object + different destination"
+  },
+  {
+    "text": "Please drop my father at the clinic",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "name": null,
+    "note": "slot: escort — variant, different verb"
+  },
+  {
+    "text": "I want someone to accompany my grandmother to the doctor",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "name": null,
+    "note": "slot: escort — variant, different verb + relation"
+  },
+  {
+    "text": "please take my father Ramesh to the clinic",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "name": "Ramesh",
+    "note": "slot: escort — a NAMED object still resolves; the object generalizes over pronoun|kinship|name"
+  },
+  {
+    "text": "take Ramesh to the clinic",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "name": "Ramesh",
+    "note": "slot: escort — variant, a bare NAME as the object (no kinship word at all)"
+  },
+  {
+    "text": "please take my father ramesh to the clinic",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "name": null,
+    "note": "slot: name — a lowercase name MID-sentence is deliberately NOT extracted (the path is end-of-string only, which is what stops 'my father lives alone' becoming a person called Lives). We ask instead of guessing; the escort still resolves"
+  },
+  {
+    "text": "Next week I have to take Amma to the hospital for a routine scan",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "name": null,
+    "note": "REPORTED 2026-07-17: read the calendar word as the person ('Next')"
+  },
+  {
+    "text": "Can someone take my father to the hospital on Tuesday, nothing urgent",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "name": null,
+    "note": "slot: name — variant, weekday must never be a person ('Tuesday')"
+  },
+  {
+    "text": "take my mother to the station tomorrow",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "name": null,
+    "note": "slot: name — variant, destination+calendar, neither is a person"
+  },
+  {
+    "text": "I worry about my father ramesh",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "name": "Ramesh",
+    "note": "slot: name — the POSITIVE control. Identical shape to 'my father hospital'; a real name must still resolve, or the class exclusion has overfit into deleting the feature"
+  },
+  {
+    "text": "please check on my mother sita",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "name": "Sita",
+    "note": "slot: name — positive control variant"
+  },
+  {
+    "text": "I want to take my father to the hospital for his checkup next month",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "note": "REPORTED 2026-07-17: a hospital as DESTINATION fired the emergency lane — 'This sounds urgent' + a 108 dial for a routine checkup"
+  },
+  {
+    "text": "Can someone take my mother to the hospital on Monday, nothing urgent",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "note": "slot: emergency — variant, a destination is never urgency"
+  },
+  {
+    "text": "My father collapsed, take him to the hospital now",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "emergency",
+    "note": "slot: emergency — CONTROL. A real condition cue still fires, and outranks the escort reading"
+  },
+  {
+    "text": "appa not breathing",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "emergency",
+    "note": "slot: emergency — CONTROL (launch-audit B4, life-safety). Must never regress"
+  },
+  {
+    "text": "He was rushed to the hospital",
+    "need": "emergency",
+    "note": "slot: emergency — CONTROL, urgency-bearing hospital phrase"
+  },
+  {
+    "text": "My mother was admitted to the ICU",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "emergency",
+    "note": "slot: emergency — CONTROL, admitted/ICU"
+  },
+  {
+    "text": "Amma is in the hospital",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "emergency",
+    "note": "slot: emergency — CONTROL, already there (state), not heading there (direction)"
+  },
+  {
+    "text": "Take her to the hospital immediately",
+    "need": "emergency",
+    "note": "slot: urgency — CAUGHT IN REVIEW 2026-07-17. Removing the destination from the emergency pattern lost this: urgent, but not one condition word in it. Urgency about a medical place IS an emergency"
+  },
+  {
+    "text": "I need to take my mother to the hospital right now",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "emergency",
+    "note": "slot: urgency — variant, 'right now'"
+  },
+  {
+    "text": "take my father to the hospital urgently",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "emergency",
+    "note": "slot: urgency — variant, 'urgently'"
+  },
+  {
+    "text": "need to get amma to the hospital quickly",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "emergency",
+    "note": "slot: urgency — variant, 'quickly'"
+  },
+  {
+    "text": "I want to take my mother to the clinic next week, no rush",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "errand",
+    "note": "slot: urgency — CONTROL. A family who says 'no rush' has told us plainly; urgency must not fire on the word 'rush' itself"
+  },
+  {
+    "text": "I want someone to take her to the hospital",
+    "subjectKnown": false,
+    "subjectKind": null,
+    "note": "REPORTED 2026-07-17: answered about 'You' because the sentence says 'I want'. A third person we cannot name means we ask who"
+  },
+  {
+    "text": "I need somebody to bring him to the clinic",
+    "subjectKnown": false,
+    "subjectKind": null,
+    "note": "slot: subject — variant, different pronoun/verb/destination"
+  },
+  {
+    "text": "This is for myself — I need a hand in Bangalore",
+    "subjectKnown": true,
+    "subjectKind": "self",
+    "note": "slot: subject — CONTROL, a real self request still resolves to self"
+  },
+  {
+    "text": "Did my father take his medicine today",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "medical",
+    "note": "slot: escort — CONTROL. 'take' + a non-person object is not an errand; the object must be a PERSON"
+  },
+  {
+    "text": "I want to take care of my mother",
+    "subjectKnown": true,
+    "subjectKind": "person",
+    "need": "wellbeing",
+    "note": "slot: escort — CONTROL, 'take care' must not read as transport"
+  },
+  {
+    "text": "not waking up",
+    "need": "emergency",
+    "note": "AUDIT 2026-07-17 C3 missed-emergency (FIXED by the shared crisis vocabulary) — unclear before"
+  },
+  {
+    "text": "she is not waking up",
+    "need": "emergency",
+    "note": "AUDIT 2026-07-17 C3 missed-emergency (FIXED by the shared crisis vocabulary) — unclear before"
+  },
+  {
+    "text": "breathing problem",
+    "need": "emergency",
+    "note": "AUDIT 2026-07-17 C3 missed-emergency (FIXED by the shared crisis vocabulary) — unclear before"
+  },
+  {
+    "text": "she has breathing problem",
+    "need": "emergency",
+    "note": "AUDIT 2026-07-17 C3 missed-emergency (FIXED by the shared crisis vocabulary) — unclear before"
+  },
+  {
+    "text": "blood coming from her head",
+    "need": "emergency",
+    "note": "AUDIT 2026-07-17 C3 missed-emergency (FIXED by the shared crisis vocabulary) — unclear before"
+  },
+  {
+    "text": "she cannot breath",
+    "need": "emergency",
+    "note": "AUDIT 2026-07-17 C3 missed-emergency (FIXED by the shared crisis vocabulary) — unclear before"
+  },
+  {
+    "text": "my father is having fits",
+    "need": "emergency",
+    "note": "AUDIT 2026-07-17 C3 missed-emergency (FIXED by the shared crisis vocabulary) — wellbeing before"
+  },
+  {
+    "text": "my mother had a fall",
+    "need": "emergency",
+    "note": "AUDIT 2026-07-17 C3 missed-emergency (FIXED by the shared crisis vocabulary) — wellbeing before"
+  },
+  {
+    "text": "she is very weak and cannot get up",
+    "need": "emergency",
+    "note": "AUDIT 2026-07-17 C3 missed-emergency (FIXED by the shared crisis vocabulary) — medical before"
+  },
+  {
+    "text": "my father is vomiting blood",
+    "need": "emergency",
+    "note": "AUDIT 2026-07-17 C3 missed-emergency (FIXED by the shared crisis vocabulary) — medical before"
+  },
+  {
+    "text": "amma is having a fit",
+    "need": "emergency",
+    "note": "AUDIT 2026-07-17 C3 missed-emergency (FIXED by the shared crisis vocabulary) — wellbeing before"
+  },
+  {
+    "text": "her lips are turning blue",
+    "need": "emergency",
+    "note": "AUDIT 2026-07-17 C3 missed-emergency (FIXED by the shared crisis vocabulary) — unclear before"
+  },
+  {
+    "text": "he cant breath properly",
+    "need": "emergency",
+    "note": "AUDIT 2026-07-17 C3 missed-emergency (FIXED by the shared crisis vocabulary) — unclear before"
+  },
+  {
+    "text": "my parents fell in love in Delhi",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "my father fell asleep on the sofa",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "she is dying to see her grandchildren",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "my father is a doctor in the ICU",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "my father is in the hospital business",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "we have accident insurance for my father",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "my father had a stroke of luck",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "critical thinking classes for my mother",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "my mother is very serious about her yoga",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "emergency contact is my brother",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "I want to add emergency contact details",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "my mother is critical of my cooking",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "my father fell behind on his bills",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "my sister is a nurse in the emergency ward",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "my mother is dying her hair",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  },
+  {
+    "text": "we had a minor accident with the car insurance paperwork",
+    "needNot": "emergency",
+    "note": "AUDIT 2026-07-17 C4 false-emergency (FIXED by the shared crisis vocabulary) — fired urgent+108 before"
+  }
 ]

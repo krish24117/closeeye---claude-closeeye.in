@@ -14,7 +14,12 @@
  * qualified ("my nana"); otherwise they are a person's name — never invented.
  *
  * Constitution: Family → Retrieve → Reason → Answer. Understanding before answers.
+ *
+ * Emergencies are NOT decided here. They are decided by the one shared vocabulary in
+ * crisis.ts, which ledger.ts asks too — this module used to keep a careful list of its
+ * own while the shipped path kept a careless one, and they drifted (audit 2026-07-17).
  */
+import { isCrisis } from './crisis'
 
 export type Intent =
   | 'wellbeing' | 'medicine' | 'documents' | 'photos' | 'memories'
@@ -174,7 +179,12 @@ function findName(raw: string, relToken: string | null): string | null {
 }
 
 function detectIntent(q: string): Intent {
-  for (const [k, kw] of INTENTS) if (kw.some((w) => q.includes(w))) return k
+  // The crisis question is asked once, from the shared vocabulary, before any topic — so
+  // this module and ledger.ts can never again disagree about what an emergency is. The
+  // 'emergency' row in INTENTS is kept only as name-slot vocabulary (see isIntentWord):
+  // it must never decide the intent, or the drift is back.
+  if (isCrisis(q)) return 'emergency'
+  for (const [k, kw] of INTENTS) if (k !== 'emergency' && kw.some((w) => q.includes(w))) return k
   return 'wellbeing'
 }
 

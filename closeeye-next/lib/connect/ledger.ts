@@ -15,6 +15,7 @@
  * whole intent. Deterministic, on-device, framework-free — built on ./understand.
  */
 import { classify, pronoun, type Gender } from './understand'
+import { isCrisis } from './crisis'
 import { SERVED_AREAS, presenceFor, type PresenceAvailability } from '@/lib/platform/service-region'
 
 export type NeedType =
@@ -94,18 +95,11 @@ const RELOCATION = /\b(?:shift(?:ing|ed)?|relocat\w*|mov(?:e|es|ing|ed)|settl(?:
 const SETUP = /\b(?:local\s+support|set(?:ting)?\s*up|\bsetup\b|settle\b|settling\b|get\s+set|sort\s+(?:out|things)|help\s+(?:us|me)\s+(?:set|settle|with)|support\s+to)\b/i
 
 /* ── need detection (order = priority; specific needs win over generic help) ── */
+/* NB: 'emergency' is deliberately NOT in this table. It is the one need that must read
+   identically everywhere, so it lives in crisis.ts and is asked first, below — see
+   detectNeed. Adding an emergency row here would recreate the exact drift the audit of
+   2026-07-17 found. */
 const NEED_PATTERNS: [NeedType, RegExp][] = [
-  /* An emergency is a CONDITION or an URGENCY, never a destination.
-     "to the hospital" used to live in this list, so every routine trip — "take my father
-     to the hospital for his checkup next month" — was answered with "This sounds urgent"
-     and a 108 dial. Crying wolf costs the lane the trust it exists to protect.
-     What stays: every condition cue (not breathing, chest pain, collapsed, bleeding …)
-     and every hospital phrase that CARRIES urgency of its own — rushed to, taken to
-     hospital, admitted to, hospitalised, in/into hospital (already there, not heading
-     there), ambulance, casualty, ICU. A real emergency reads the same as it always did;
-     only the bare direction of travel is gone.
-     NOTE: red-flag logic — changed on the founder's explicit approval (2026-07-17). */
-  ['emergency', /\b(fell(\s+down)?|fallen|not\s+breathing|can'?t\s+breathe|cannot\s+breathe|stopped\s+breathing|difficulty\s+breathing|trouble\s+breathing|breathless|gasping|choking|choke|chest\s+pain|heart\s+attack|cardiac|stroke|seizure|convuls\w*|unconscious|unresponsive|not\s+responding|won'?t\s+wake|can'?t\s+wake|passed\s+out|faint\w*|collaps\w*|bleeding|blood\s+everywhere|accident|hospitali[sz]\w*|in\s+(the\s+)?hospital|into\s+(the\s+)?hospital|taken\s+to\s+(the\s+)?hospital|rushed\s+(to|her|him|them)|admitted\s+to\s+(the\s+)?(hospital|icu|ward)|\bicu\b|casualty|emergency\s+ward|emergency\s+room|ambulance|call\s+108|\b108\b|\b911\b|\b999\b|very\s+serious|serious\s+condition|critical\w*|\bdying\b|overdose|poison\w*|snake\s+bite|drown\w*|come\s+(quick\w*|fast|immediately|urgently)|need\s+help\s+immediately|help\s+(immediately|urgently)|emergency|something\s+(is\s+)?(very\s+|terribly\s+|badly\s+)?wrong|very\s+wrong|gone\s+wrong|wrong\s+with\s+(her|him|them|my|amma|appa|mom|dad)|very\s+(sick|ill)|badly\s+hurt|got\s+hurt|seriously\s+hurt|injured|not\s+moving|can'?t\s+move|can'?t\s+get\s+up|won'?t\s+respond|in\s+teh\s+hospital)\b/i],
   ['medical', /\b(fever|temperature|10[34]\b|medicine|medicin\w*|medcine|medication|meds|tablet|pill|dose|insulin|\bbp\b|blood\s+pressure|sugar\s+(level|is|has|high|low)|blood\s+sugar|(her|his|their)\s+sugar|diabet\w*|doctor|unwell|not\s+(keeping\s+)?well|not\s+feeling\s+well|sick|\bill\b|not\s+eaten|not\s+eating|hasn'?t\s+eaten|won'?t\s+eat|refusing\s+to\s+eat|weak|weakness|dizzy|giddy|giddiness|infection|wound|cough\w*|vomit\w*|loose\s+motion|diarr\w*|headache|body\s+pain|joint\s+pain|checkup|check-?up|blood\s+test|\bscan\b|nausea|swelling|\brash\b)\b/i],
   ['companionship', /\b(lonely|alone\s+all|feels?\s+alone|sad|bored|miss(es|ing)?\s+(us|me|company)|no\s+one|isolated|company|someone\s+to\s+talk|depress\w*|seems?\s+low|sits?\s+quietly)\b/i],
   ['documents', /\b(keep|store|save|safe|upload)\b.*\b(report\w*|document\w*|prescription\w*|paper\w*|record\w*|policy|policies|aadhaar|certificate\w*)\b|\b(report\w*|prescription\w*|record\w*)\b.*\b(safe|keep|store)\b/i],
@@ -116,24 +110,10 @@ const NEED_PATTERNS: [NeedType, RegExp][] = [
   ['wellbeing', /\b(how\s+is|how'?s|how\s+are|is\s+(she|he|they)\s+(okay|ok|alright|fine)|okay|alright|doing\s+(well|okay|ok)?|worried|check\s+on|know\s+(she|he|they)'?s|every\s+day|sleeping|eating\s+(well|properly))\b/i],
 ]
 function detectNeed(text: string): NeedType {
+  if (isCrisis(text)) return 'emergency'   // the shared vocabulary, asked before any topic
   for (const [need, re] of NEED_PATTERNS) if (re.test(text)) return need
   return 'unclear'
 }
-
-/* ── urgency, the other half of the emergency slot ──
-   Dropping the bare destination from the emergency pattern removed the only signal in
-   "take her to the hospital IMMEDIATELY" — an urgent sentence with no condition word in
-   it. Urgency is a real cue; it was simply never generalized, only ever spelled out in
-   fixed phrases ("come immediately", "help urgently").
-   It is deliberately NOT urgency alone: "now" is one of the most common words a person
-   types ("I now live in Delhi"). It is urgency ABOUT a place where emergencies happen.
-   That pairing restores every case the destination used to carry, without restoring the
-   false alarm on "…for his checkup next month".
-   An explicit denial of urgency is honoured — a family who writes "nothing urgent" has
-   told us plainly, and we believe them. */
-const URGENCY = /\b(?:right\s+now|immediately|urgently|urgent|asap|at\s+once|straight\s*away|quickly|now|fast|quick)\b/i
-const NOT_URGENT = /\b(?:nothing|not|no|isn'?t)\s+(?:urgent|serious|an\s+emergency)\b|\bno\s+(?:rush|hurry)\b|\bnot\s+in\s+a\s+(?:rush|hurry)\b/i
-const MEDICAL_DEST = /\b(?:hospital|emergency|casualty|icu|ward|clinic|doctor)\b/i
 
 /* ── the escort ask: "send a real person to take someone somewhere" ──
    The errand slot only knew pronoun objects — take (her|him|them) to — so "take MY FATHER
@@ -306,10 +286,6 @@ export function readLedger(rawText: string): ReadLedger {
     : relocating ? 'Settling into a new place.' : null
 
   let need = detectNeed(text)
-  // Urgency about a place where emergencies happen IS an emergency, even with no condition
-  // word: "take her to the hospital immediately". Runs before the escort rule below, so an
-  // urgent lift is never softened into an errand.
-  if (need !== 'emergency' && URGENCY.test(text) && MEDICAL_DEST.test(text) && !NOT_URGENT.test(text)) need = 'emergency'
   // Asking for a person to take someone somewhere is an ERRAND — a real-world hand. The
   // ASK is more specific than the TOPIC it happens to touch, so it outranks "medical"
   // ("take him to the hospital for a checkup" is an errand, not a health question) but
