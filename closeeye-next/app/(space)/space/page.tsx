@@ -16,10 +16,10 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { fetchSpace, appendLearning, askConnect, personName, type SpaceData, type AskAnswer } from '@/lib/db/space'
 import type { Blank, LedgerLine } from '@/lib/connect/ledger'
+import { deriveSnapshot, deriveRecommendations, groupUnderstanding, askSuggestions, type UnderstandingInput } from '@/lib/space/understanding'
 import { PHASE_2_ENABLED, VISITS_OPEN_LABEL } from '@/lib/connect/phase'
 
 const WA = 'https://wa.me/919000221261'
-const RECENT = 5 // learned lines shown before "show earlier"
 const initial = (s: string) => (s || '?').trim().charAt(0).toUpperCase()
 const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 
@@ -36,7 +36,6 @@ export default function SpacePage() {
   // live, editable copies
   const [known, setKnown] = React.useState<LedgerLine[]>([])
   const [learned, setLearned] = React.useState<LedgerLine[]>([])
-  const [showEarlier, setShowEarlier] = React.useState(false)
   const [blanks, setBlanks] = React.useState<Blank[]>([])
   const [callName, setCallName] = React.useState<string | null>(null)
   const [activeBlank, setActiveBlank] = React.useState<Blank | null>(null)
@@ -114,8 +113,17 @@ export default function SpacePage() {
   const person = personName({ callName, lovedOne: lo })
   const Person = cap1(person)
 
-  const shownLearned = showEarlier ? learned : learned.slice(-RECENT)
-  const hiddenCount = learned.length - shownLearned.length
+  // ── Family Page v2 · the deterministic derivations (lib/space/understanding.ts).
+  //    Snapshot (how he is), Recommendations (what's next), Understanding (organised).
+  //    Everything derived from the graph — nothing asserted; the Snapshot never fakes calm.
+  const uInput: UnderstandingInput = {
+    subject: { name: lo.name, relationship: lo.relationship, city: lo.city },
+    gender: space.gender, known, learned, blanks, observedCount: space.observedCount,
+  }
+  const recommendations = deriveRecommendations(uInput)
+  const snapshot = deriveSnapshot(uInput, recommendations)
+  const sections = groupUnderstanding(uInput)
+  const suggestions = askSuggestions(uInput)
 
   async function saveFill() {
     const b = activeBlank
@@ -184,63 +192,74 @@ export default function SpacePage() {
             <button className="fchip add" onClick={() => router.push('/connect')}><span className="fa">+</span>Add family</button>
           </div>
 
-          <p className="sh">{Person}’s timeline</p>
-          <div className="tl">
-            {space.timeline.map((e) => (
-              <div key={e.id} className={`tle ${e.kind}`}>
-                <span className="nd" />
-                <div className="when">{e.when}</div>
-                <p>{e.title}</p>
-                {e.sub && <div className="sub">{e.sub}</div>}
-              </div>
-            ))}
-          </div>
-
-          <p className="sh">What Connect knows</p>
-          <div className="ledger">
-            {known.map((l, i) => (
-              <div key={`k${i}`} className="lline"><span className="ld" /><p>{l.quote ? <><span className="lbl">In your words</span><q>{l.body}</q></> : <>{l.label && <span className="lbl">{l.label}</span>}{l.body}</>}</p></div>
-            ))}
-
-            {hiddenCount > 0 && (
-              <button className="blank" onClick={() => setShowEarlier(true)} style={{ paddingBottom: 2 }}>
-                <span className="ld" style={{ border: 'none', background: 'var(--hair2)' }} /><p style={{ fontStyle: 'italic', fontSize: 15 }}>Show {hiddenCount} earlier {hiddenCount === 1 ? 'note' : 'notes'}…</p>
-              </button>
-            )}
-            {shownLearned.map((l, i) => (
-              <div key={`l${i}`} className="lline new"><span className="ld" /><p><span className="lbl">{l.label} · you told me</span>{l.body}</p></div>
-            ))}
-
-            {blanks.length > 0 && <p className="sh" style={{ marginTop: 18 }}>Still learning · tap a line to tell me</p>}
-            <div>
-              {blanks.map((b) => (
-                <React.Fragment key={b.key}>
-                  <button className="blank" onClick={() => { setActiveBlank(b); setFillText(''); setSaveError('') }}>
-                    <span className="ld" /><p>{b.text}<span className="dots" /><span className="tellme">tell me</span></p>
-                  </button>
-                  {activeBlank?.key === b.key && (
-                    <div className="fill">
-                      <textarea rows={1} value={fillText} onChange={(e) => setFillText(e.target.value)} placeholder="Write it as you’d tell a friend…" autoFocus />
-                      {saveError && <p className="learned show" style={{ color: '#B23A2E' }}>{saveError}</p>}
-                      <div className="frow">
-                        <button className="save" onClick={saveFill}>Connect, remember this</button>
-                        <button className="cancel" onClick={() => setActiveBlank(null)}>not now</button>
-                      </div>
-                    </div>
-                  )}
-                </React.Fragment>
+          {/* ── 1 · SNAPSHOT — how your father is (derived, never asserted) ── */}
+          <p className="sh">How {person} is</p>
+          <div className={`snap ${snapshot.state}`}>
+            <div className="snap-state"><span className="snap-dot" /> {snapshot.headline}</div>
+            <p className="snap-sub">{snapshot.sub}</p>
+            <div className="snap-grid">
+              {snapshot.cells.map((c) => (
+                <div key={c.k} className="snap-cell"><div className="sc-k">{c.k}</div><div className={`sc-v${c.dim ? ' dim' : ''}`}>{c.v}</div></div>
               ))}
             </div>
-            {learnedNote && <p className="learned show">{learnedNote}</p>}
-            {blanks.length === 0 && <p className="learned show" style={{ marginTop: 4 }}>Every line is filled. Connect will keep listening.</p>}
           </div>
 
+          {/* ── 2 · WHAT SHOULD HAPPEN NEXT — recommendations from the graph ── */}
+          {recommendations.length > 0 && (<>
+            <p className="sh">What should happen next</p>
+            <div className="recs">
+              {recommendations.map((r) => (
+                <button key={r.id} type="button" className={`rec ${r.tone}`}
+                  onClick={() => {
+                    if (r.action === 'book') { PHASE_2_ENABLED ? router.push('/connect') : setQnote(`Visits open ${VISITS_OPEN_LABEL}.`); return }
+                    const b = blanks.find((x) => new RegExp(r.id === 'reach' ? 'reach' : r.id === 'health' ? 'health|manages' : r.id).test(x.text.toLowerCase()))
+                    if (b) { setActiveBlank(b); setFillText(''); setSaveError('') }
+                  }}>
+                  <span className="rec-t"><span className="rec-why">{r.why} · </span>{r.text}</span>
+                  <span className="rec-go">{r.action === 'book' ? 'Book →' : 'Add →'}</span>
+                </button>
+              ))}
+            </div>
+          </>)}
+
+          {/* ── 3 · CONNECT'S UNDERSTANDING — a mental model, organised ── */}
+          <p className="sh">What Close Eye understands</p>
+          <div className="usections">
+            {sections.map((sec) => (
+              <div key={sec.category} className="usec">
+                <div className="usec-h">{sec.category}<span className="usec-c">{sec.knownCount > 0 && `${sec.knownCount} known`}{sec.knownCount > 0 && sec.learningCount > 0 && ' · '}{sec.learningCount > 0 && `${sec.learningCount} learning`}</span></div>
+                {sec.items.map((it, idx) => (it.kind === 'blank' ? (
+                  <React.Fragment key={it.key}>
+                    <button className="ufact open" onClick={() => { setActiveBlank({ key: it.key, text: it.text }); setFillText(''); setSaveError('') }}>
+                      <span className="umk o">○</span><span className="ubd o">{it.text}</span><span className="uedit">tell me</span>
+                    </button>
+                    {activeBlank?.key === it.key && (
+                      <div className="fill">
+                        <textarea rows={1} value={fillText} onChange={(e) => setFillText(e.target.value)} placeholder="Write it as you’d tell a friend…" autoFocus />
+                        {saveError && <p className="learned show" style={{ color: '#B23A2E' }}>{saveError}</p>}
+                        <div className="frow"><button className="save" onClick={saveFill}>Connect, remember this</button><button className="cancel" onClick={() => setActiveBlank(null)}>not now</button></div>
+                      </div>
+                    )}
+                  </React.Fragment>
+                ) : (
+                  <div key={idx} className="ufact"><span className="umk k">✓</span><span className="ubd">{it.body}</span><span className={`usrc${it.provenance === 'inferred' ? ' inf' : ''}`}>{it.provenance === 'inferred' ? 'my reading' : 'from your words'}</span></div>
+                )))}
+              </div>
+            ))}
+            {learnedNote && <p className="learned show">{learnedNote}</p>}
+            {blanks.length === 0 && <p className="learned show" style={{ marginTop: 4 }}>Close Eye understands {person}. It will keep listening.</p>}
+          </div>
+
+          {/* ── 4 · ASK — conversational, with suggestions that evolve from context ── */}
           <div className="askline">
-            <p className="sh" style={{ margin: '0 0 6px' }}>Ask Connect</p>
+            <p className="sh" style={{ margin: '0 0 6px' }}>Ask Close Eye</p>
             <div className="ruled">
               <textarea rows={1} value={askText} onChange={(e) => setAskText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); doAsk() } }} placeholder={`Ask about ${person}, or anything…`} />
               <button className="go" onClick={doAsk}>Ask</button>
             </div>
+            {!answer && suggestions.length > 0 && (
+              <div className="asksugg">{suggestions.map((s) => (<button key={s} type="button" onClick={() => { setAskText(s) }}>{s}</button>))}</div>
+            )}
             {answer && (
               <div className="answer">
                 <p>{answer.text}</p>
@@ -248,6 +267,16 @@ export default function SpacePage() {
                 {answer.whatsapp && <a className="wa" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>}
               </div>
             )}
+          </div>
+
+          {/* ── 5 · TIMELINE — his living memory, kept below the present ── */}
+          <p className="sh">{Person}’s story with Close Eye</p>
+          <div className="tl">
+            {space.timeline.map((e) => (
+              <div key={e.id} className={`tle ${e.kind}`}>
+                <span className="nd" /><div className="when">{e.when}</div><p>{e.title}</p>{e.sub && <div className="sub">{e.sub}</div>}
+              </div>
+            ))}
           </div>
 
           <div className="qacts">

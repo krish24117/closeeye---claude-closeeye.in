@@ -231,6 +231,7 @@ export interface SpaceData {
   learned: LedgerLine[]    // lines the family told us later (most recent window, chronological)
   blanks: Blank[]          // still-open (unfilled) prompts
   timeline: TimelineEvent[]
+  observedCount: number    // guardian/visit observations — the only basis for "calm"
 }
 
 function fmtWhen(iso: string | null): string {
@@ -275,6 +276,9 @@ export async function fetchSpace(memberId?: string): Promise<SpaceData | null> {
 
   const entries = (entriesRes.data ?? []).slice().reverse() // chronological
   const facts = entries.filter((e) => e.entry_type === 'family_fact')
+  // The ONLY basis for the Snapshot to ever say "calm": a real person has observed him.
+  // Zero today for most families, and that is correct — we never fake wellbeing.
+  const observedCount = entries.filter((e) => e.entry_type === 'guardian_observation' || e.entry_type === 'visit_observation').length
   const known: LedgerLine[] = facts.filter((e) => e.source === 'connect_experience').map((e) => ({ label: e.label ?? '', body: e.body, quote: e.label === 'In your words' }))
   const spaceFacts = facts.filter((e) => e.source === 'family_space')
 
@@ -308,7 +312,7 @@ export async function fetchSpace(memberId?: string): Promise<SpaceData | null> {
     userName, email: user.email || '',
     lovedOne: { id: lo.id, name: lo.full_name, relationship: lo.relationship, city: lo.city, createdAt: lo.created_at },
     members, selectedId: lo.id,
-    gender, callName, known, learned, blanks, timeline,
+    gender, callName, known, learned, blanks, timeline, observedCount,
   }
 }
 

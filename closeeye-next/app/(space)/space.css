@@ -192,3 +192,55 @@
 }
 
 @media (prefers-reduced-motion:reduce){.spc *{animation:none!important;transition:none!important}}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FAMILY PAGE v2 — the mind of Close Eye. Snapshot · Recommendations ·
+   organised Understanding · Ask suggestions. Same visual language, re-derived.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1 · SNAPSHOT — how he is. State colour is honest: amber while learning,
+      emerald ONLY when a real signal earns calm, alarm when something needs you. */
+.spc .snap{background:var(--page);border:1px solid var(--hair);border-radius:16px;padding:16px 18px;margin-top:10px}
+.spc .snap-state{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-size:16px;font-weight:600;color:var(--forest)}
+.spc .snap-dot{width:10px;height:10px;border-radius:50%;background:#9A6A2E;flex:none}
+.spc .snap.action .snap-dot{background:#B4442E} .spc .snap.attention .snap-dot{background:#B4442E}
+.spc .snap.calm .snap-dot{background:var(--emerald)} .spc .snap.settled .snap-dot{background:#83C400}
+.spc .snap-sub{font-family:var(--serif);font-size:13.5px;line-height:1.45;color:var(--text-secondary);margin:5px 0 13px}
+.spc .snap-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.spc .snap-cell{background:#fff;border:1px solid var(--hair);border-radius:10px;padding:9px 11px}
+.spc .sc-k{font-family:var(--sans);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);font-weight:600}
+.spc .sc-v{font-family:var(--serif);font-size:14px;color:var(--ink);margin-top:2px}
+.spc .sc-v.dim{color:var(--faint);font-style:italic}
+
+/* 2 · RECOMMENDATIONS — each carries its WHY; primary = emerald, soft = amber */
+.spc .recs{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.spc .rec{width:100%;text-align:left;display:flex;align-items:center;gap:10px;border:1px solid var(--hair);
+  border-left:2px solid var(--emerald);border-radius:11px;padding:11px 13px;background:rgba(6,169,78,.035);min-height:44px}
+.spc .rec.soft{border-left-color:#9A6A2E;background:rgba(154,106,46,.035)}
+.spc .rec-t{flex:1;font-family:var(--sans);font-size:14px;font-weight:500;color:var(--forest)}
+.spc .rec-why{font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--emerald)}
+.spc .rec.soft .rec-why{color:#9A6A2E}
+.spc .rec-go{font-size:12px;font-weight:600;color:var(--emerald);white-space:nowrap}
+.spc .rec.soft .rec-go{color:#9A6A2E}
+
+/* 3 · UNDERSTANDING — sections that read as a mental model, not a table */
+.spc .usections{background:var(--page);border:1px solid var(--hair);border-radius:16px;overflow:hidden;margin-top:10px}
+.spc .usec{border-bottom:1px solid var(--hair);padding:13px 16px}
+.spc .usec:last-child{border-bottom:0}
+.spc .usec-h{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--sans);font-size:11px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--forest);font-weight:600;margin:0 0 8px}
+.spc .usec-c{font-size:10px;letter-spacing:0;text-transform:none;color:var(--faint);font-weight:500}
+.spc .ufact{width:100%;text-align:left;display:flex;align-items:flex-start;gap:9px;padding:6px 0;border:none;background:none;min-height:40px}
+.spc .ufact .umk{font-size:12px;line-height:1.4;flex:none;width:12px}
+.spc .ufact .umk.k{color:var(--emerald)} .spc .ufact .umk.o{color:var(--faint)}
+.spc .ufact .ubd{flex:1;font-family:var(--serif);font-size:15px;line-height:1.35;color:var(--ink)}
+.spc .ufact .ubd.o{color:var(--text-muted)}
+.spc .ufact .usrc{font-family:var(--sans);font-size:9.5px;letter-spacing:.03em;color:var(--faint);white-space:nowrap;margin-top:3px}
+.spc .ufact .usrc.inf{color:#9A6A2E}
+.spc .ufact .uedit{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--emerald);white-space:nowrap;margin-top:2px}
+
+/* 4 · ASK suggestions — context chips under the ask line */
+.spc .asksugg{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+.spc .asksugg button{border:1px solid var(--hair2);background:none;border-radius:999px;padding:7px 12px;
+  font-family:var(--sans);font-size:12.5px;color:var(--forest);min-height:36px}
+.spc .asksugg button:hover{border-color:var(--emerald);color:var(--emerald)}
