@@ -14,13 +14,24 @@ import { existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { WORKSPACE_REDIRECTS } from './redirects'
+import { PRIMARY_NAV, OVERFLOW_NAV } from '@/lib/workspace/nav'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..') // → closeeye-next/
 
-// The FROZEN contract: every legacy path that must always resolve through the migration.
-// Do not delete entries when a route moves — add its redirect instead. That is the point.
+// The FROZEN contract: every path that must always resolve. Legacy /family paths keep working
+// through the migration (render or redirect); the canonical Workspace /space paths must resolve
+// too. Do not delete entries when a route moves — add its redirect instead. That is the point.
 const CONTRACT = [
+  // Canonical Workspace (the five Owners + overflow + the Person Space).
   '/space',
+  '/space/ask',
+  '/space/people',
+  '/space/people/[id]',
+  '/space/activity',
+  '/space/care',
+  '/space/billing',
+  '/space/settings',
+  // Legacy family app — must never 404 through the migration.
   '/family',
   '/family/add',
   '/family/billing',
@@ -42,9 +53,13 @@ const CONTRACT = [
   '/family/visits/[id]',
 ]
 
-/** Does a page render at this route? ('/space' lives in the (workspace) route group.) */
+/** Does a page render at this route? Workspace /space* lives in the (workspace) route group;
+ *  /family paths are ungrouped. */
 function pageExists(route: string): boolean {
-  const rel = route === '/space' ? join('app', '(workspace)', 'space') : join('app', ...route.slice(1).split('/'))
+  const inWorkspace = route === '/space' || route.startsWith('/space/')
+  const rel = inWorkspace
+    ? join('app', '(workspace)', ...route.slice(1).split('/'))
+    : join('app', ...route.slice(1).split('/'))
   return existsSync(join(ROOT, rel, 'page.tsx'))
 }
 
@@ -69,6 +84,22 @@ function familyRoutesOnDisk(): string[] {
   return out
 }
 
+/** Every /space route that exists on disk under the (workspace) group. */
+function workspaceRoutesOnDisk(): string[] {
+  const out = ['/space']
+  const base = join(ROOT, 'app', '(workspace)', 'space')
+  const walk = (dir: string, prefix: string) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (!e.isDirectory()) continue
+      const route = `${prefix}/${e.name}`
+      if (existsSync(join(dir, e.name, 'page.tsx'))) out.push(route)
+      walk(join(dir, e.name), route)
+    }
+  }
+  walk(base, '/space')
+  return out
+}
+
 describe('deep-link contract — nothing 404s through the migration (Nav Law 5)', () => {
   for (const route of CONTRACT) {
     it(`${route} resolves (renders or redirects)`, () => {
@@ -77,11 +108,23 @@ describe('deep-link contract — nothing 404s through the migration (Nav Law 5)'
   }
 })
 
-describe('the contract covers every /family route that exists on disk', () => {
+describe('the contract covers every route that exists on disk', () => {
   it('no /family route is outside the safety net', () => {
     const missing = familyRoutesOnDisk().filter((r) => !CONTRACT.includes(r))
     expect(missing, `these routes are not in the frozen contract: ${missing.join(', ')}`).toEqual([])
   })
+  it('no /space Workspace route is outside the safety net', () => {
+    const missing = workspaceRoutesOnDisk().filter((r) => !CONTRACT.includes(r))
+    expect(missing, `these routes are not in the frozen contract: ${missing.join(', ')}`).toEqual([])
+  })
+})
+
+describe('every Workspace nav destination resolves to a real page (Nav Laws 2 & 5)', () => {
+  for (const item of [...PRIMARY_NAV, ...OVERFLOW_NAV]) {
+    it(`${item.label} → ${item.href} has a page`, () => {
+      expect(pageExists(item.href) || redirectCovers(item.href), `${item.href} has no page and no redirect`).toBe(true)
+    })
+  }
 })
 
 describe('the redirect map stays well-formed', () => {

@@ -55,6 +55,14 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
     if (!loading && !session) router.replace('/welcome')
   }, [loading, session, router])
 
+  // Close the Account menu on Escape (a11y — a menu must be dismissible from the keyboard).
+  React.useEffect(() => {
+    if (!menuOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [menuOpen])
+
   if (loading || !session) {
     return (
       <div className="grid min-h-dvh place-items-center bg-ivory">
@@ -84,8 +92,9 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
             onClick={onNavigate}
             aria-current={active ? 'page' : undefined}
             className={cn(
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40',
               iconsOnly
-                ? 'flex flex-1 flex-col items-center justify-center gap-1 py-2 text-caption font-medium'
+                ? 'flex flex-1 flex-col items-center justify-center gap-1 rounded-sm py-2 text-caption font-medium'
                 : 'flex items-center gap-3 rounded-sm px-3 py-2.5 text-body-sm font-medium transition-colors',
               active ? (iconsOnly ? 'text-green' : 'bg-accent-soft text-green') : (iconsOnly ? 'text-muted' : 'text-muted hover:bg-accent-soft/50 hover:text-ink'),
             )}
@@ -148,7 +157,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
           <Link href="/family/add" aria-label="Add someone" className="grid h-11 w-11 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft/60 hover:text-green">
             <UserPlus className="h-6 w-6" strokeWidth={1.5} />
           </Link>
-          <button onClick={() => setMenuOpen((v) => !v)} aria-label="Account" aria-expanded={menuOpen} className="grid h-9 w-9 place-items-center rounded-full bg-green text-body-sm font-semibold text-ivory">
+          <button onClick={() => setMenuOpen((v) => !v)} aria-label="Account" aria-expanded={menuOpen} className="grid h-9 w-9 place-items-center rounded-full bg-green text-body-sm font-semibold text-ivory focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 focus-visible:ring-offset-2">
             {initials}
           </button>
           {menuOpen && <AccountMenu />}
@@ -158,7 +167,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
       {/* Desktop account button (top-right, over content) */}
       <div className="fixed right-6 top-5 z-30 hidden lg:block">
         <div className="relative">
-          <button onClick={() => setMenuOpen((v) => !v)} aria-label="Account" aria-expanded={menuOpen} className="grid h-9 w-9 place-items-center rounded-full bg-green text-body-sm font-semibold text-ivory shadow-sm">
+          <button onClick={() => setMenuOpen((v) => !v)} aria-label="Account" aria-expanded={menuOpen} className="grid h-9 w-9 place-items-center rounded-full bg-green text-body-sm font-semibold text-ivory focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 focus-visible:ring-offset-2 shadow-sm">
             {initials}
           </button>
           {menuOpen && <AccountMenu />}

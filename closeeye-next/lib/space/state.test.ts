@@ -46,6 +46,17 @@ describe('rollUp — the Workspace shows the most urgent person', () => {
   })
 })
 
+describe('state transitions — a person moves as their signals change', () => {
+  it('getting to know → healthy → needs attention → active care → emergency', () => {
+    const s = { hasPositiveSignal: false, openEssentialBlanks: 0, hasActiveVisit: false, hasEmergency: false }
+    expect(derivePersonState(s)).toBe('getting_to_know')
+    expect(derivePersonState({ ...s, hasPositiveSignal: true })).toBe('healthy')
+    expect(derivePersonState({ ...s, hasPositiveSignal: true, openEssentialBlanks: 1 })).toBe('needs_attention')
+    expect(derivePersonState({ ...s, hasPositiveSignal: true, openEssentialBlanks: 1, hasActiveVisit: true })).toBe('active_care')
+    expect(derivePersonState({ ...s, hasPositiveSignal: true, openEssentialBlanks: 1, hasActiveVisit: true, hasEmergency: true })).toBe('emergency')
+  })
+})
+
 describe('stateMeta covers every state with a tone + label', () => {
   const all: WorkspaceState[] = ['getting_to_know', 'healthy', 'needs_attention', 'active_care', 'emergency', 'resolved']
   for (const s of all) {
