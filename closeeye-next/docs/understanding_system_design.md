@@ -121,10 +121,11 @@ A permanent regression suite runs on every change and blocks the merge if any ca
 
 ---
 
-## Open decisions for you
+## Decisions (locked 2026-07-18)
 
-1. **Signed-out comprehension** — OK to add a public `understand-public` endpoint (an LLM call for
-   anonymous first-conversation visitors, rate-limited), or keep signed-out fully on-device and
-   only comprehend after sign-in? (Trade: instant magic for visitors vs. cost/abuse surface.)
-2. **Model tier** — the fastest capable model for comprehension (latency matters in a conversation)
-   vs. a stronger one. Recommendation: fast tier for comprehend, it's a structured task.
+1. **Signed-out comprehension → YES, a public `understand-public` endpoint.** The first sentence
+   understanding itself is the pitch, so anonymous visitors get it live — rate-limited, no PII
+   stored until they choose to (mirrors `ask-health-public`'s guardrails).
+2. **Model tier → the first capable tier.** Use the fastest model that passes the regression suite
+   (start Haiku-class for low conversation latency); escalate a tier ONLY if a pinned case fails.
+   The regression gate — not a guess — decides whether the fast tier is "capable" enough.
