@@ -51,7 +51,7 @@ Laws 1–3 are enforced by the **[Ownership Registry](./ownership_registry.md)**
 truth for every capability's one Owner and one canonical route. Every new feature must answer
 **"Which Owner does this belong to?"** — **if it has no Owner, it does not ship.**
 
-**Primary navigation (v1):** Home · Ask · People · Activity · Care. Billing and Settings are
+**Primary navigation (v1):** Home · Connect · People · Activity · Care. Billing and Settings are
 overflow.
 
 ## Separation of concerns — navigation vs state (frozen 2026-07-18)

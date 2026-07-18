@@ -47,7 +47,7 @@ Everything else is either (a) something Connect *knows/observes* about a person,
 WORKSPACE (Space)
 │  ── primary navigation (5 owners) ──
 ├── Home       ► /space           how is everyone, at a glance
-├── Ask        ► /space/ask       Connect: AI Ask + human messages
+├── Connect    ► /space/connect   Connect: the family intelligence + messages
 ├── People     ► /space/people    the people you love
 │     └── Person Space ► /space/people/[id]   Overview · Story · Health · Documents
 ├── Activity   ► /space/activity  what changed · presence stories · the family's story
@@ -82,7 +82,7 @@ taste.
 
 **Primary navigation — 5 owners** (see [Ownership Registry](./ownership_registry.md)):
 1. **Home** — how is everyone, at a glance. *(the landing)*
-2. **Ask** — CloseEye Connect, the family intelligence. *(Answer)*
+2. **Connect** — CloseEye Connect, the family intelligence. *(Answer)*
 3. **People** — the people you love; drill into a Person Space. *(Understand — who)*
 4. **Activity** — the timeline: what changed, presence stories. *(Understand — what happened)*
 5. **Care** — request and review real-world presence. *(Act — a paid-for launch job)*
@@ -106,9 +106,9 @@ away declutters and signals "this is not what CloseEye is about."
 - **Emergency** — always one tap away (safety-first).
 - **Account (avatar → menu)** — the overflow entry.
 
-**Floating action — none.** A FAB would duplicate primary nav. The primary "create" is **Ask**,
+**Floating action — none.** A FAB would duplicate primary nav. The primary "create" is **Connect**,
 which is already primary nav *and* a persistent compose line on Home. If a single reach-anywhere
-action is ever wanted on deep pages, it is **Ask** — never "Book," because we answer before we act.
+action is ever wanted on deep pages, it is **Connect** — never "Book," because we answer before we act.
 
 ---
 
@@ -125,8 +125,8 @@ Every `/family/*` capability re-homed by **capability**, not by route. Canonical
 | Person health | `/family/members/[id]/health` | `/space/people/[id]/health` | Person-scoped facet | `308` |
 | Timeline / what changed | (embedded today) | `/space/activity` (Owner: **Activity**) | Family feed; a Person's "Story" is this filtered to them | n/a (new Owner) |
 | Add someone | `/family/add` | `/space/people/new` (global action) | Global "+"; lands on the new person's Space (already shipped) | `308 → /space/people/new` |
-| Connect / Ask | `/family/connect`, `/connect/ask`, `/connect/[id]` | `/space/ask` | Consolidate into one Connect surface | `308 → /space/ask` |
-| Messages | `/family/messages`, `/messages/[id]` | `/space/ask` (threads) | Human messages join AI Ask under one Connect roof — no second inbox | `308 → /space/ask` |
+| Connect / Ask | `/family/connect`, `/connect/ask`, `/connect/[id]` | `/space/connect` | Consolidate into one Connect surface | `308 → /space/connect` |
+| Messages | `/family/messages`, `/messages/[id]` | `/space/connect` (threads) | Human messages join AI Ask under one Connect roof — no second inbox | `308 → /space/connect` |
 | Book a visit | `/family/book` | `/space/care` (book flow) | Care = act tier | `308 → /space/care` |
 | Visits | `/family/visits`, `/visits/[id]` | `/space/care` + `/space/care/[id]` | One canonical visit detail; Person Timeline *references* it | `308` |
 | Services | `/family/services` | `/space/care` (catalogue) | "What Care can do," inside Care | `308 → /space/care` |
@@ -171,7 +171,7 @@ capability) to hold Law 2/3; (b) fold `/space` auth into the single flow in Phas
    + what changed. Reassurance in seconds; region-correct throughout (Phase 7). Asks if worried.
 4. **Booking a Guardian** — from Home or a person → **Care** → book → confirmation. The visit then
    *appears* in the person's Timeline and the Care list; its canonical detail is one page. ≤3 taps.
-5. **Asking Connect** — the persistent Ask line (Home) or **Ask** nav → compose → Connect retrieves
+5. **Asking Connect** — the persistent Ask line (Home) or **Connect** nav → compose → Connect retrieves
    the Family Graph → answers from what it knows → offers to **act** (book) if needed. Understand →
    Answer → Act in one motion.
 6. **Reviewing visit history** — a person → **Timeline** (their story) *or* **Care** → past visits;
@@ -181,7 +181,7 @@ capability) to hold Law 2/3; (b) fold `/space` auth into the single flow in Phas
    matches the target IA.)*
 8. **Receiving a notification** — bell → tap → opens **inside the Workspace** at the canonical
    location (Phase 1 live; Phase 4 makes it the specific `/space/*`). Never dumped into `/family`.
-9. **Emergency escalation** — **Emergency** is one tap from anywhere; a crisis phrase in **Ask**
+9. **Emergency escalation** — **Emergency** is one tap from anywhere; a crisis phrase in **Connect**
    trips the deterministic safety floor → escalation card with the region-correct number + care-team
    alert. Reachable everywhere; safety never depends on where you are.
 

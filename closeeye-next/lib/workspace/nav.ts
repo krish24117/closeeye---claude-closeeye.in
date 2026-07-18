@@ -1,8 +1,9 @@
 /**
  * Workspace navigation — the single source, derived from the Ownership Registry
  * (docs/ownership_registry.md). Primary nav is the five Owners in the constitutional order
- * Home · Ask · People · Activity · Care; Billing and Settings are overflow. Pure data so it is
- * testable against the registry (nav-regression guardrail).
+ * Home · Connect · People · Activity · Care; Billing and Settings are overflow. "Connect" is the
+ * product's conversational intelligence — NOT a generic "Ask"; talking to Close Eye IS Connect.
+ * Pure data so it is testable against the registry (nav-regression guardrail).
  */
 export interface NavItem {
   href: string
@@ -13,7 +14,7 @@ export interface NavItem {
 
 export const PRIMARY_NAV: readonly NavItem[] = [
   { href: '/space', label: 'Home', exact: true },
-  { href: '/space/ask', label: 'Ask' },
+  { href: '/space/connect', label: 'Connect' },
   { href: '/space/people', label: 'People' },
   { href: '/space/activity', label: 'Activity' },
   { href: '/space/care', label: 'Care' },

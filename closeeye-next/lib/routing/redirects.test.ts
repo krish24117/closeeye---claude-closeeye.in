@@ -24,7 +24,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..') // → cl
 const CONTRACT = [
   // Canonical Workspace (the five Owners + overflow + the Person Space).
   '/space',
-  '/space/ask',
+  '/space/connect',
   '/space/people',
   '/space/people/[id]',
   '/space/activity',

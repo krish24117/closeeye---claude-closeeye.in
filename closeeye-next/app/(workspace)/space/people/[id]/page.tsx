@@ -168,8 +168,8 @@ export default function PersonSpacePage() {
         </div>
       </section>
 
-      <Link href="/space/ask" className="inline-flex items-center gap-2 self-start rounded-full border border-line bg-card px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
-        <Sparkles className="h-4 w-4 text-green" strokeWidth={1.75} /> Ask Close Eye about {person}
+      <Link href="/space/connect" className="inline-flex items-center gap-2 self-start rounded-full border border-line bg-card px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
+        <Sparkles className="h-4 w-4 text-green" strokeWidth={1.75} /> Ask Connect about {person}
       </Link>
     </div>
   )

@@ -133,7 +133,7 @@ export default function WorkspaceHome() {
       <section className="flex flex-col gap-4">
         <p className="text-caption font-semibold uppercase tracking-widest text-muted">Quick actions</p>
         <div className="grid gap-3 sm:grid-cols-3">
-          <QuickAction href="/space/ask" icon={MessageCircle} title="Ask Close Eye" sub="About anyone you love" />
+          <QuickAction href="/space/connect" icon={MessageCircle} title="Connect" sub="Ask about anyone you love" />
           <QuickAction href="/family/add" icon={UserPlus} title="Add someone" sub="Grow your family" />
           <QuickAction href="/space/care" icon={HeartHandshake} title="Request a visit" sub="Trusted presence" />
         </div>

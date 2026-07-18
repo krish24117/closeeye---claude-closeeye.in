@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Close Eye Connect — someone you love, understood</title>
+<meta name="theme-color" content="#F5F2E9"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F5F2E9; --page:#FBF9F2; --ink:#17281F; --forest:#0E2A1F;
+  --emerald:#06A94E; --sprout:#83C400;
+  --pencil:#6E7A6F; --faint:#98A097; --hair:#E2DECE; --hair2:#D8D3BF;
+  --serif:'Newsreader',Georgia,serif; --sans:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{
+  background:linear-gradient(180deg,#F7F4EC 0%,var(--paper) 30%,#F1EDE1 100%);
+  color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;min-height:100dvh;
+}
+.app{max-width:430px;margin:0 auto;min-height:100dvh;position:relative;
+  padding:0 26px calc(30px + env(safe-area-inset-bottom));}
+button{font-family:var(--sans);cursor:pointer;border:none;background:none;color:inherit}
+:focus-visible{outline:2px solid var(--emerald);outline-offset:3px;border-radius:6px}
+
+/* wordmark */
+.mast{display:flex;justify-content:center;padding:calc(26px + env(safe-area-inset-top)) 0 4px}
+.mast .wm{display:flex;align-items:center;gap:8px;font-family:var(--sans);font-weight:600;
+  font-size:17px;letter-spacing:.01em;color:var(--forest)}
+.wm .dot{width:7px;height:7px;border-radius:50%;background:var(--sprout);display:inline-block}
+
+.mast .tag{font-family:var(--sans);font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--pencil);margin-top:6px;text-align:center}
+.whatis{font-family:var(--serif);font-size:17px;line-height:1.6;color:var(--ink);margin:0 0 22px;max-width:34ch}
+.whatis b{font-weight:500;color:var(--forest)}
+.howit{border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);padding:6px 0;margin:0 0 26px}
+.hrow{display:flex;gap:13px;align-items:baseline;padding:11px 0}
+.hrow+.hrow{border-top:1px dotted var(--hair)}
+.hrow .hn{font-family:var(--sans);font-size:10.5px;letter-spacing:.14em;color:var(--pencil);flex:none;width:16px}
+.hrow p{margin:0;font-family:var(--serif);font-size:16px;line-height:1.45;color:var(--ink)}
+.hrow p i{font-style:italic;color:var(--pencil)}
+.hrow .ld{width:6px;height:6px;border-radius:50%;background:var(--hair2);flex:none;position:relative;top:-2px}
+.hrow:nth-child(2) .ld{background:var(--sprout);animation:breathe 3s ease-in-out infinite}
+.exp-k{font-family:var(--sans);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--emerald);
+  font-weight:500;margin:0 0 6px}
+
+.btn-google{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;
+  background:var(--page);border:1px solid var(--hair2);border-radius:999px;padding:15px 22px;
+  font-family:var(--sans);font-weight:600;font-size:15.5px;color:var(--ink);transition:transform .15s}
+.btn-google:active{transform:scale(.985)}
+.btn-google svg{width:19px;height:19px;flex:none}
+
+.principles{font-family:var(--sans);font-size:12.5px;letter-spacing:.04em;color:var(--pencil);
+  margin:0 0 24px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.principles b{color:var(--forest);font-weight:500}
+.principles .sep{color:var(--hair2)}
+.trustline{font-family:var(--serif);font-style:italic;font-size:15.5px;color:var(--forest);
+  margin:0 0 18px;padding-left:14px;border-left:2px solid var(--sprout)}
+.found{margin-top:26px;font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--pencil)}
+
+.plan{display:flex;align-items:baseline;gap:13px;width:100%;text-align:left;background:var(--page);
+  border:1px solid var(--hair);border-radius:16px;padding:17px 18px;margin-bottom:11px;transition:border-color .2s}
+.plan.pick{border-color:var(--emerald)}
+.plan .ld{width:6px;height:6px;border-radius:50%;background:var(--hair2);flex:none;position:relative;top:-2px}
+.plan.pick .ld{background:var(--sprout);animation:breathe 3s ease-in-out infinite}
+.plan .pt{flex:1}
+.plan h3{margin:0;font-family:var(--serif);font-weight:500;font-size:18px;color:var(--forest)}
+.plan p{margin:3px 0 0;font-family:var(--sans);font-size:13px;color:var(--pencil);line-height:1.5}
+.plan .pr{font-family:var(--serif);font-size:17px;color:var(--ink);white-space:nowrap}
+.plan .pr small{font-family:var(--sans);font-size:11px;color:var(--pencil);display:block;text-align:right}
+.methods{display:flex;gap:9px;margin:4px 0 18px}
+.mchip{flex:1;background:var(--page);border:1px solid var(--hair2);border-radius:999px;padding:11px 8px;
+  font-family:var(--sans);font-size:13.5px;font-weight:500;color:var(--pencil);text-align:center}
+.mchip.pick{border-color:var(--emerald);color:var(--forest)}
+.paysum{border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);padding:4px 0;margin:0 0 20px}
+.prow{display:flex;justify-content:space-between;gap:12px;padding:10px 0;font-family:var(--serif);font-size:16px}
+.prow+.prow{border-top:1px dotted var(--hair)}
+.prow .k{color:var(--pencil);font-family:var(--sans);font-size:13px;letter-spacing:.02em;align-self:center}
+.prow .v{color:var(--ink)}
+.prow.total .v{font-size:19px;color:var(--forest)}
+
+.footlinks{margin-top:26px;font-family:var(--sans);font-size:12px;color:var(--pencil);
+  display:flex;flex-wrap:wrap;justify-content:center;column-gap:7px;row-gap:9px;align-items:baseline}
+.footlinks a{color:var(--pencil);text-decoration:none;border-bottom:1px dotted var(--hair2);
+  padding-bottom:1px;white-space:nowrap}
+.footlinks a:hover{color:var(--forest);border-bottom-color:var(--pencil)}
+.footlinks .sep{margin:0 7px;color:var(--hair2)}
+.qlink{display:inline-block;margin-top:10px;font-family:var(--sans);font-size:13px;color:var(--pencil);
+  text-decoration:none;border-bottom:1px dotted var(--hair2);padding-bottom:1px}
+.qlink:hover{color:var(--forest);border-bottom-color:var(--pencil)}
+.privacy a{color:inherit;text-decoration:none;border-bottom:1px dotted var(--hair2)}
+.privacy a:hover{color:var(--forest)}
+
+/* the thread of understanding */
+.thread{position:fixed;left:calc(50% - 215px + 12px);top:0;bottom:0;width:1px;background:transparent;z-index:0}
+@media(max-width:470px){.thread{left:12px}}
+.thread i{display:block;width:1px;background:var(--hair2);height:0;transition:height 1.2s cubic-bezier(.2,.7,.2,1)}
+
+/* stages */
+.stage{position:relative;z-index:1;display:none;flex-direction:column;min-height:calc(100dvh - 120px)}
+.stage.on{display:flex;animation:page .7s cubic-bezier(.2,.7,.2,1)}
+@keyframes page{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* voice */
+.h-serif{font-family:var(--serif);font-weight:500;font-size:31px;line-height:1.22;
+  letter-spacing:-.01em;margin:0 0 12px;color:var(--forest)}
+.h-serif em{font-style:italic;font-weight:400}
+.lede{font-family:var(--sans);font-size:15px;color:var(--pencil);margin:0 0 8px;max-width:34ch}
+
+/* ruled input */
+.ask-wrap{margin-top:34px}
+.ruled{position:relative}
+.ruled textarea{
+  width:100%;background:transparent;border:none;border-bottom:1px solid var(--hair2);
+  font-family:var(--serif);font-size:21px;line-height:1.55;color:var(--ink);
+  padding:6px 2px 12px;min-height:96px;resize:none;caret-color:var(--emerald);
+}
+.ruled textarea::placeholder{color:var(--faint);font-style:italic}
+.ruled textarea:focus{outline:none;border-bottom-color:var(--emerald)}
+.try{margin-top:22px;font-size:13.5px;color:var(--pencil)}
+.try button{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--forest);
+  text-align:left;padding:2px 0;border-bottom:1px dotted var(--hair2);line-height:1.5}
+.try button:hover{border-bottom-color:var(--pencil)}
+
+/* ledger */
+.ledger{background:var(--page);border:1px solid var(--hair);border-radius:18px;
+  padding:26px 24px 22px;margin-top:26px}
+.ledger .lh{font-family:var(--sans);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--pencil);margin:0 0 18px;font-weight:500}
+.lline{display:flex;gap:12px;align-items:baseline;opacity:0;transform:translateY(8px);
+  transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1);padding:7px 0}
+.lline.in{opacity:1;transform:none}
+.lline .ld{width:6px;height:6px;border-radius:50%;background:var(--hair2);flex:none;position:relative;top:-2px}
+.lline.live .ld{background:var(--sprout);animation:breathe 3s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.55);opacity:.55}}
+.lline p{margin:0;font-family:var(--serif);font-size:17.5px;line-height:1.5;color:var(--ink)}
+.lline p q{font-style:italic;quotes:'\u201C' '\u201D';color:var(--forest)}
+.lline p .lbl{font-family:var(--sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--pencil);display:block;margin-bottom:1px}
+
+/* blanks */
+.blank{display:flex;gap:12px;align-items:baseline;padding:9px 0;opacity:0;transform:translateY(8px);
+  transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
+.blank.in{opacity:1;transform:none}
+.blank .ld{width:6px;height:6px;border-radius:50%;border:1px solid var(--pencil);flex:none;top:-2px;position:relative}
+.blank p{margin:0;font-family:var(--serif);font-size:17.5px;line-height:1.5;color:var(--pencil)}
+.blank .dots{display:inline-block;min-width:74px;border-bottom:2px dotted var(--hair2);
+  height:1em;vertical-align:baseline;margin-left:6px}
+.later{margin:16px 0 0;font-size:13px;color:var(--pencil);font-style:italic;font-family:var(--serif)}
+
+/* counsel / answer */
+.counsel p{font-family:var(--serif);font-size:18.5px;line-height:1.62;color:var(--ink);margin:0 0 18px;max-width:36ch}
+.counsel p b{font-weight:500;color:var(--forest)}
+.counsel .sig{font-family:var(--serif);font-style:italic;color:var(--pencil);font-size:15px;margin-top:6px}
+
+/* actions */
+.act{margin-top:auto;padding-top:30px}
+.btn{display:block;width:100%;background:var(--forest);color:#F7F4EC;border-radius:999px;
+  padding:17px 22px;font-family:var(--sans);font-weight:600;font-size:16px;text-align:center;
+  letter-spacing:.01em;transition:transform .15s ease,opacity .2s}
+.btn:active{transform:scale(.985)}
+.btn:disabled{opacity:.35}
+.ghost{display:block;width:100%;text-align:center;margin-top:14px;font-size:14px;color:var(--pencil);
+  padding:10px;font-family:var(--sans)}
+.ghost:hover{color:var(--forest)}
+.privacy{margin-top:16px;text-align:center;font-family:var(--serif);font-style:italic;
+  font-size:13.5px;color:var(--pencil)}
+
+/* understanding header moment */
+.think{display:flex;align-items:center;gap:11px;margin:8px 0 2px}
+.think .ld{width:8px;height:8px;border-radius:50%;background:var(--sprout);animation:breathe 3s ease-in-out infinite}
+.think span{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--pencil)}
+
+/* seal */
+.seal{display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center;min-height:60vh}
+.seal .ring{width:74px;height:74px;border-radius:50%;border:1px solid var(--hair2);display:grid;place-items:center;margin-bottom:26px;position:relative}
+.seal .ring::after{content:'';position:absolute;inset:-9px;border-radius:50%;border:1px solid var(--hair);animation:settle 2.4s ease-out 1 forwards}
+@keyframes settle{0%{transform:scale(1.25);opacity:0}40%{opacity:1}100%{transform:scale(1);opacity:.6}}
+.seal .ring .ld{width:10px;height:10px;border-radius:50%;background:var(--sprout);animation:breathe 3s ease-in-out infinite}
+.seal h2{font-family:var(--serif);font-weight:500;font-size:27px;color:var(--forest);margin:0 0 10px;letter-spacing:-.01em}
+.seal p{font-family:var(--serif);font-size:16.5px;color:var(--pencil);max-width:30ch;margin:0}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  .lline,.blank{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<div class="thread"><i id="threadFill"></i></div>
+<div class="app">
+
+  <div class="mast" style="flex-direction:column;align-items:center">
+    <span class="wm"><span class="dot"></span>close eye</span>
+    <div class="tag">Connect</div>
+  </div>
+
+  <!-- S0 · WHAT · HOW · EXPERIENCE -->
+  <section class="stage on" id="s0">
+    <h1 class="h-serif">Someone you love,<br><em>understood.</em></h1>
+    <p class="whatis">Close Eye learns about the people you love, so answers come from understanding — not guesses. When needed, <b>trusted local people step in to help.</b></p>
+
+    <p class="principles"><b>Learns your family</b><span class="sep">·</span><b>Private by design</b><span class="sep">·</span><b>Real people when needed</b></p>
+
+    <div class="howit" aria-label="How Close Eye works">
+      <div class="hrow"><span class="hn">01</span><span class="ld"></span><p>Tell Connect about someone you love.</p></div>
+      <div class="hrow"><span class="hn">02</span><span class="ld"></span><p>Connect begins understanding them.</p></div>
+      <div class="hrow"><span class="hn">03</span><span class="ld"></span><p>Answers come from understanding — <i>real people help when needed.</i></p></div>
+    </div>
+
+    <p class="exp-k">Experience Close Eye</p>
+    <p class="lede" style="margin-bottom:0">Tell Connect about someone you love.</p>
+    <div class="ask-wrap" style="margin-top:6px">
+      <div class="ruled">
+        <textarea id="q" rows="3" placeholder="My mother lives alone in Hyderabad. How do I know she’s okay?"></textarea>
+      </div>
+      <div class="try">or begin with —<br>
+        <button id="tryBtn">“My mother lives alone in Hyderabad. How do I know she’s okay?”</button>
+      </div>
+    </div>
+    <div class="act">
+      <button class="btn" id="askBtn" disabled>Let Connect understand</button>
+      <p class="privacy">Nothing you write is sold or shared. Ever.</p>
+      <div class="footlinks">
+        <a href="https://www.closeeye.in/#how-it-works" target="_blank" rel="noopener">How it works</a><span class="sep">·</span><a href="https://www.closeeye.in/services" target="_blank" rel="noopener">Services &amp; pricing</a><span class="sep">·</span><a href="https://www.closeeye.in/trust-safety" target="_blank" rel="noopener">How Guardians are verified</a><span class="sep">·</span><a href="https://www.closeeye.in/membership" target="_blank" rel="noopener">Membership</a><span class="sep">·</span><a href="https://wa.me/919000221261" target="_blank" rel="noopener">Ask a real person on WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- S1 · UNDERSTANDING -->
+  <section class="stage" id="s1">
+    <div class="think"><span class="ld"></span><span>Understand first. Answer second.</span></div>
+    <div class="ledger">
+      <p class="lh">What I understood</p>
+      <div class="lline"><span class="ld"></span><p><span class="lbl">Someone you love</span>Your mother.</p></div>
+      <div class="lline"><span class="ld"></span><p><span class="lbl">Her days</span>She lives alone, in Hyderabad.</p></div>
+      <div class="lline"><span class="ld"></span><p><span class="lbl">You</span>You are far away, and you carry this quietly.</p></div>
+      <div class="lline"><span class="ld"></span><p><span class="lbl">Your real question</span><q>Is she okay — every day, not just when we speak?</q></p></div>
+    </div>
+    <div class="act">
+      <button class="btn" id="toS2" style="opacity:0;pointer-events:none">That’s exactly it</button>
+      <button class="ghost" id="editQ" style="opacity:0;pointer-events:none">Not quite — let me say it differently</button>
+    </div>
+  </section>
+
+  <!-- S2 · WHAT I STILL NEED -->
+  <section class="stage" id="s2">
+    <h1 class="h-serif" style="font-size:26px">What I’d still like<br>to understand.</h1>
+    <p class="lede">I won’t guess these. They stay open until you tell me.</p>
+    <div class="ledger">
+      <p class="lh">Still open</p>
+      <div class="blank"><span class="ld"></span><p>Her health, and what she manages day to day<span class="dots"></span></p></div>
+      <div class="blank"><span class="ld"></span><p>Her age, and the shape of her mornings<span class="dots"></span></p></div>
+      <div class="blank"><span class="ld"></span><p>Who can reach her in twenty minutes, if ever needed<span class="dots"></span></p></div>
+      <p class="later">You can tell me now, or after — these lines will wait for you.</p>
+    </div>
+    <div class="act">
+      <button class="btn" id="toS3">Answer me first</button>
+    </div>
+  </section>
+
+  <!-- S3 · THE ANSWER -->
+  <section class="stage" id="s3">
+    <div class="think" style="margin-bottom:14px"><span class="ld" style="animation:none"></span><span>Now I can answer you properly.</span></div>
+    <div class="counsel">
+      <p><b>Because she lives alone,</b> the first thing I’d put in place is a gentle rhythm — a Guardian who visits, notices what a phone call can’t, and writes it down for you the same day.</p>
+      <p><b>Because you are far away,</b> every visit becomes a page you can hold: how she seemed, what she ate, what she laughed about. Proof, not reassurance.</p>
+      <p><b>And because your real question is “every day” —</b> the answer isn’t one visit. It’s someone nearby who already knows her, before anything is ever urgent.</p>
+      <p class="sig">— written for your mother, from what you told me</p>
+    </div>
+    <p class="trustline" style="margin-top:20px">Sometimes care needs a real person. Close Eye knows when.</p>
+    <div class="act">
+      <button class="btn" id="toS4">This is what I’ve been looking for</button>
+    </div>
+  </section>
+
+  <!-- S4 · TRUST → FAMILY SPACE -->
+  <section class="stage" id="s4">
+    <h1 class="h-serif" style="font-size:26px">Keep what I now know<br>about her — <em>safely.</em></h1>
+    <p class="lede">Her private journal: what I know, what I’m learning, every visit written down.</p>
+    <p class="trustline">Close Eye never invents information about your family.</p>
+    <div class="ledger">
+      <p class="lh">Her page, so far</p>
+      <div class="lline in"><span class="ld"></span><p>Your mother · Hyderabad · living alone</p></div>
+      <div class="lline in"><span class="ld"></span><p>Your question: <q>Is she okay — every day?</q></p></div>
+      <div class="blank in"><span class="ld"></span><p>Three lines still waiting for you<span class="dots"></span></p></div>
+    </div>
+    <div class="act">
+      <button class="btn" id="createBtn">Create her Family Space</button>
+      <button class="ghost">I’ll come back to this</button>
+      <p class="privacy">Private by design. You stay in control.</p>
+    </div>
+  </section>
+
+  <!-- S4b · SIGN IN -->
+  <section class="stage" id="s4b">
+    <h1 class="h-serif" style="font-size:26px">Keep her close.<br><em>Bring the others in.</em></h1>
+    <p class="whatis">Sign in so her page is yours alone — then add your family, one by one. The more Connect understands them, <b>the better every answer becomes.</b></p>
+    <div class="ledger">
+      <p class="lh">With your family added</p>
+      <div class="lline in"><span class="ld"></span><p>Answers shaped to <em>her</em> routine, health and days.</p></div>
+      <div class="lline in"><span class="ld"></span><p>Every visit and report kept on one private page.</p></div>
+      <div class="lline in"><span class="ld" style="background:var(--sprout)"></span><p>Connect keeps learning them — quietly, only for you.</p></div>
+    </div>
+    <div class="act">
+      <button class="btn-google" id="gBtn" aria-label="Continue with Google">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+      <button class="ghost" id="emailBtn">Continue with email instead</button>
+      <p class="privacy">Your family’s information belongs only to your family.</p>
+    </div>
+  </section>
+
+  <!-- S4c · FIRST VISIT -->
+  <section class="stage" id="s4c">
+    <h1 class="h-serif" style="font-size:26px">Her space is open.<br><em>Begin with a visit.</em></h1>
+    <p class="lede">A verified Guardian goes to her. You receive a written report on WhatsApp.</p>
+    <a class="qlink" href="https://www.closeeye.in/trust-safety" target="_blank" rel="noopener">How our Guardians are verified →</a>
+    <div style="margin-top:18px">
+      <button class="plan pick" data-plan="well" data-price="1000" data-name="Home Wellbeing Visit">
+        <span class="ld"></span>
+        <span class="pt"><h3>Home Wellbeing Visit</h3><p>A Guardian visits her at home, checks in with warmth, sends you a personal update.</p></span>
+        <span class="pr">₹1,000<small>starting at</small></span>
+      </button>
+      <button class="plan" data-plan="hosp" data-price="2000" data-name="Hospital Companion">
+        <span class="ld"></span>
+        <span class="pt"><h3>Hospital Companion</h3><p>Someone stays beside her through appointments and recovery — never alone.</p></span>
+        <span class="pr">₹2,000<small>starting at</small></span>
+      </button>
+      <button class="plan" data-plan="cust" data-price="500" data-name="Custom Request">
+        <span class="ld"></span>
+        <span class="pt"><h3>Custom Request</h3><p>Groceries, medicines, a festival visit — something only your family understands.</p></span>
+        <span class="pr">₹500<small>starting at</small></span>
+      </button>
+    </div>
+    <div class="act">
+      <button class="btn" id="toPay">Continue — ₹1,000</button>
+      <p class="privacy">Your Presence Manager confirms the time with you first.</p>
+    </div>
+  </section>
+
+  <!-- S4d · PAYMENT -->
+  <section class="stage" id="s4d">
+    <h1 class="h-serif" style="font-size:26px">One last thing,<br><em>quietly.</em></h1>
+    <p class="lede"><a href="https://www.closeeye.in/cancellation-policy" target="_blank" rel="noopener" style="color:inherit;border-bottom:1px dotted var(--hair2);text-decoration:none">Cancel or reschedule</a> any time before the visit. <a href="https://www.closeeye.in/refund-policy" target="_blank" rel="noopener" style="color:inherit;border-bottom:1px dotted var(--hair2);text-decoration:none">Full refund</a>.</p>
+    <div class="paysum">
+      <div class="prow"><span class="k">For</span><span class="v">Your mother · Hyderabad</span></div>
+      <div class="prow"><span class="k">Visit</span><span class="v" id="payName">Home Wellbeing Visit</span></div>
+      <div class="prow total"><span class="k">Today</span><span class="v" id="payAmt">₹1,000</span></div>
+    </div>
+    <div class="methods">
+      <button class="mchip pick" data-m="upi">UPI</button>
+      <button class="mchip" data-m="card">Card</button>
+      <button class="mchip" data-m="net">Netbanking</button>
+    </div>
+    <div class="ruled" id="upiWrap">
+      <textarea rows="1" placeholder="yourname@upi" style="min-height:44px;font-size:18px"></textarea>
+    </div>
+    <div class="act">
+      <button class="btn" id="payBtn">Pay ₹1,000</button>
+      <p class="privacy">Secured by Razorpay. Your payment details never touch Close Eye’s servers.</p>
+    </div>
+  </section>
+
+  <!-- S5 · SEAL -->
+  <section class="stage" id="s5">
+    <div class="seal">
+      <div class="ring"><span class="ld"></span></div>
+      <h2>It’s begun.</h2>
+      <p>Her visit is booked. Your Presence Manager will message you on WhatsApp today — and a written report follows the visit.</p>
+      <p class="found">Join the first families helping shape Close Eye.</p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const stages=$$('.stage'); let cur=0;
+const THREAD=[8,20,34,48,60,72,84,93,100];
+function go(n){
+  stages[cur].classList.remove('on');
+  stages[n].classList.add('on');
+  cur=n; window.scrollTo({top:0,behavior:'smooth'});
+  $('#threadFill').style.height=THREAD[n]+'%';
+  if(n===1) writeLedger();
+  if(n===2) writeBlanks();
+}
+/* S0 */
+const q=$('#q'), askBtn=$('#askBtn');
+q.addEventListener('input',()=>{askBtn.disabled=q.value.trim().length<8;});
+$('#tryBtn').addEventListener('click',()=>{
+  q.value="My mother lives alone in Hyderabad. How do I know she’s okay?";
+  q.focus(); askBtn.disabled=false;
+});
+askBtn.addEventListener('click',()=>go(1));
+/* S1 — ink the ledger */
+function writeLedger(){
+  const lines=$$('#s1 .lline');
+  lines.forEach(l=>{l.classList.remove('in','live');});
+  lines.forEach((l,i)=>{
+    setTimeout(()=>{
+      lines.forEach(x=>x.classList.remove('live'));
+      l.classList.add('in','live');
+      if(i===lines.length-1){
+        setTimeout(()=>{
+          l.classList.remove('live');
+          const b=$('#toS2'), g=$('#editQ');
+          b.style.opacity=1;b.style.pointerEvents='auto';
+          g.style.opacity=1;g.style.pointerEvents='auto';
+        },900);
+      }
+    }, 650 + i*820);
+  });
+}
+$('#toS2').addEventListener('click',()=>go(2));
+$('#editQ').addEventListener('click',()=>go(0));
+/* S2 — blanks */
+function writeBlanks(){
+  $$('#s2 .blank').forEach((b,i)=>{b.classList.remove('in');
+    setTimeout(()=>b.classList.add('in'), 450 + i*500);});
+}
+$('#toS3').addEventListener('click',()=>go(3));
+$('#toS4').addEventListener('click',()=>go(4));
+$('#createBtn').addEventListener('click',()=>go(5));
+$('#gBtn').addEventListener('click',()=>go(6));
+$('#emailBtn').addEventListener('click',()=>go(6));
+/* first visit choice */
+let plan={name:'Home Wellbeing Visit',price:1000};
+const inr=n=>'₹'+n.toLocaleString('en-IN');
+$$('#s4c .plan').forEach(b=>b.addEventListener('click',()=>{
+  $$('#s4c .plan').forEach(x=>x.classList.remove('pick'));
+  b.classList.add('pick');
+  plan={name:b.dataset.name,price:+b.dataset.price};
+  $('#toPay').textContent='Continue — '+inr(plan.price);
+}));
+$('#toPay').addEventListener('click',()=>{
+  $('#payName').textContent=plan.name;
+  $('#payAmt').textContent=inr(plan.price);
+  $('#payBtn').textContent='Pay '+inr(plan.price);
+  go(7);
+});
+$$('#s4d .mchip').forEach(m=>m.addEventListener('click',()=>{
+  $$('#s4d .mchip').forEach(x=>x.classList.remove('pick'));
+  m.classList.add('pick');
+  $('#upiWrap').style.display = m.dataset.m==='upi' ? '' : 'none';
+}));
+$('#payBtn').addEventListener('click',()=>go(8));
+$('#threadFill').style.height=THREAD[0]+'%';
+})();
+</script>
+</body>
+</html>

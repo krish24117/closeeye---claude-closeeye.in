@@ -6,11 +6,11 @@ import { describe, it, expect } from 'vitest'
 import { PRIMARY_NAV, OVERFLOW_NAV, isActive } from './nav'
 
 describe('primary nav = the five Owners, in constitutional order', () => {
-  it('is exactly Home · Ask · People · Activity · Care', () => {
-    expect(PRIMARY_NAV.map((n) => n.label)).toEqual(['Home', 'Ask', 'People', 'Activity', 'Care'])
+  it('is exactly Home · Connect · People · Activity · Care', () => {
+    expect(PRIMARY_NAV.map((n) => n.label)).toEqual(['Home', 'Connect', 'People', 'Activity', 'Care'])
   })
   it('routes are the registry canonical routes', () => {
-    expect(PRIMARY_NAV.map((n) => n.href)).toEqual(['/space', '/space/ask', '/space/people', '/space/activity', '/space/care'])
+    expect(PRIMARY_NAV.map((n) => n.href)).toEqual(['/space', '/space/connect', '/space/people', '/space/activity', '/space/care'])
   })
   it('every primary route is Workspace-rooted (/space)', () => {
     for (const n of PRIMARY_NAV) expect(n.href.startsWith('/space')).toBe(true)
@@ -38,7 +38,7 @@ describe('no capability appears in two nav trees (Law 3)', () => {
 describe('isActive', () => {
   it('Home is active only on exactly /space', () => {
     expect(isActive('/space', '/space', true)).toBe(true)
-    expect(isActive('/space/ask', '/space', true)).toBe(false)
+    expect(isActive('/space/connect', '/space', true)).toBe(false)
   })
   it('a section is active on itself and its children', () => {
     expect(isActive('/space/people', '/space/people')).toBe(true)

@@ -26,14 +26,14 @@ capability that breaks the information architecture.
 | Owner | Canonical root | In primary nav? | What it owns |
 |---|---|---|---|
 | **Home** | `/space` | ✅ | The Workspace landing — how is everyone, at a glance |
-| **Ask** | `/space/ask` | ✅ | CloseEye Connect — the family intelligence and conversation |
+| **Connect** | `/space/connect` | ✅ | CloseEye Connect — the family intelligence and conversation |
 | **People** | `/space/people` | ✅ | The people you love and everything scoped to a person |
 | **Activity** | `/space/activity` | ✅ | The timeline — what changed, presence stories, the family's story |
 | **Care** | `/space/care` | ✅ | Real-world presence — visits, booking, services |
 | **Billing** | `/space/billing` | overflow | Membership and payments |
 | **Settings** | `/space/settings` | overflow | Profile, preferences, Trust & Safety |
 
-**Primary navigation (v1):** Home · Ask · People · Activity · Care.
+**Primary navigation (v1):** Home · Connect · People · Activity · Care.
 Billing and Settings are overflow (Account menu). Notifications and Emergency are global actions,
 not owned routes — they *resolve into* the Workspace at the relevant Owner's canonical route.
 
@@ -44,8 +44,8 @@ not owned routes — they *resolve into* the Workspace at the relevant Owner's c
 | Capability | Owner | Canonical route |
 |---|---|---|
 | Workspace home / overview | **Home** | `/space` |
-| Ask CloseEye (AI) | **Ask** | `/space/ask` |
-| Messages (care team / human) | **Ask** | `/space/ask` |
+| Ask CloseEye (AI) | **Connect** | `/space/connect` |
+| Messages (care team / human) | **Connect** | `/space/connect` |
 | Family roster | **People** | `/space/people` |
 | A person (Person Space) | **People** | `/space/people/[id]` |
 | Person health (conditions, meds, allergies) | **People** | `/space/people/[id]/health` |

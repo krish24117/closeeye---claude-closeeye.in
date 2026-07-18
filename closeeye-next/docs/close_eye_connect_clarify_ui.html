@@ -1,0 +1,267 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connect — the understanding loop, made obvious</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F2E9; --page:#FBF9F2; --ink:#17281F; --forest:#0E2A1F;
+    --emerald:#06A94E; --sprout:#83C400;
+    --pencil:#5F6B60; --faint:#98A097; --hair:#E2DECE; --hair2:#D8D3BF; --alarm:#B4442E;
+    --serif:'Newsreader',Georgia,serif; --sans:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;line-height:1.6}
+  .wrap{max-width:1120px;margin:0 auto;padding:52px 20px 96px}
+  .kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--emerald);font-weight:600;margin:0 0 10px}
+  h1{font-family:var(--serif);font-weight:500;font-size:clamp(28px,5vw,42px);line-height:1.12;
+    letter-spacing:-.01em;color:var(--forest);margin:0 0 12px;text-wrap:balance}
+  h1 em{font-style:italic;font-weight:400}
+  .lede{font-family:var(--serif);font-size:18px;line-height:1.55;color:var(--pencil);max-width:64ch;margin:0}
+  h2{font-family:var(--serif);font-weight:500;font-size:clamp(21px,3vw,27px);color:var(--forest);margin:60px 0 8px}
+  h2 .n{font-family:var(--sans);font-size:11px;letter-spacing:.16em;color:var(--faint);
+    display:block;margin-bottom:7px;font-weight:600}
+  p{max-width:66ch;margin:0 0 13px;font-size:15px;color:#33413A}
+  b,strong{font-weight:600;color:var(--forest)}
+  hr{height:1px;background:var(--hair);border:0;margin:56px 0 0}
+
+  .bad{border:1px solid var(--hair);border-left:2px solid var(--alarm);border-radius:10px;
+    padding:16px 18px;margin:22px 0 0;background:rgba(180,68,46,.03)}
+  .bad h3{margin:0 0 6px;font-size:14px;color:var(--alarm);font-weight:600}
+  .bad p{margin:0;font-size:13.5px;color:var(--pencil);max-width:none}
+
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:24px;margin:30px 0 0;align-items:start}
+  .col > .cap{font-size:12px;color:var(--faint);margin:12px 3px 0;line-height:1.55}
+  .col > .st{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--forest);
+    font-weight:600;margin:0 3px 9px}
+  .col > .st i{color:var(--faint);font-style:normal;font-weight:500}
+  .phone{border:1px solid var(--hair2);border-radius:22px;background:var(--page);overflow:hidden;
+    box-shadow:0 1px 2px rgba(14,42,31,.05),0 14px 34px -14px rgba(14,42,31,.16)}
+  .scr{padding:15px}
+  .mast{text-align:center;padding:10px 0 8px;border-bottom:1px solid var(--hair)}
+  .mast .lg{font-size:14px;font-weight:600;color:var(--forest)}
+  .mast .lg i{color:var(--sprout);font-style:normal}
+  .mast .tri{font-size:7px;letter-spacing:.24em;color:var(--faint);margin-top:2px}
+
+  .quote{margin:12px 0 0;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);font-weight:600}
+  .quote .q{display:block;font-family:var(--serif);font-style:italic;font-size:12px;color:var(--pencil);
+    letter-spacing:0;text-transform:none;margin-top:3px;font-weight:400;line-height:1.4}
+  .hd{font-size:14px;font-weight:600;color:var(--forest);margin:13px 0 9px}
+  .desk{background:var(--paper);border:1px solid var(--hair);border-radius:14px;padding:13px}
+
+  .ul{display:flex;gap:8px;align-items:flex-start;margin:0 0 9px}
+  .ul .mk{flex:none;width:11px;text-align:center;font-size:11px;line-height:1.5}
+  .ul .mk.k{color:var(--emerald)}
+  .ul .lbl{display:block;font-size:8px;letter-spacing:.11em;text-transform:uppercase;color:var(--emerald);font-weight:600}
+  .ul .lbl.g{color:var(--faint)}
+  .ul .bd{font-family:var(--serif);font-size:12.5px;color:var(--ink);line-height:1.35}
+  .ul .bd.q{color:var(--faint)}
+  .ul .src{font-size:8px;color:var(--faint);margin-left:5px;letter-spacing:.06em}
+  .note{font-family:var(--serif);font-style:italic;font-size:10px;color:var(--faint);margin:2px 0 0;line-height:1.45}
+
+  .ask{border:1px solid var(--hair2);border-radius:10px;padding:9px 11px;margin:0 0 7px;
+    background:rgba(255,255,255,.6);display:flex;align-items:center;gap:8px}
+  .ask .ring{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--hair2);flex:none}
+  .ask .tx{font-family:var(--serif);font-size:12px;color:var(--ink);line-height:1.35;flex:1}
+  .ask .go{font-size:9px;color:var(--emerald);font-weight:600;white-space:nowrap}
+  .ask.on{border-color:var(--emerald);background:#fff}
+  .ask.done{border-style:none;background:none;padding:0 0 0 0;margin:0 0 9px}
+
+  .fill{border:1px solid var(--emerald);border-radius:10px;background:#fff;padding:9px 10px;margin:0 0 8px}
+  .fill .ph{font-family:var(--serif);font-style:italic;font-size:11.5px;color:var(--faint)}
+  .fill .fr{display:flex;gap:8px;align-items:center;margin:8px 0 0}
+  .fill .save{background:var(--forest);color:#F3F6F1;border-radius:999px;padding:5px 13px;font-size:10.5px;font-weight:600}
+  .fill .skip{font-size:10px;color:var(--faint)}
+
+  .prog{display:flex;align-items:center;gap:6px;margin:2px 0 10px}
+  .prog .b{height:3px;border-radius:2px;flex:1;background:var(--hair)}
+  .prog .b.on{background:var(--emerald)}
+  .prog .t{font-size:9px;color:var(--faint);white-space:nowrap}
+
+  .btn{border-radius:999px;padding:10px;text-align:center;font-size:12.5px;font-weight:600;margin-top:10px}
+  .btn.solid{background:var(--forest);color:#F3F6F1}
+  .btn.ghost{border:1px solid var(--hair2);color:var(--forest)}
+  .conf{display:flex;align-items:center;justify-content:center;gap:8px;margin:9px 0 0;font-size:10px;color:var(--pencil)}
+  .conf b{color:var(--forest);font-weight:600;border-bottom:1px dotted var(--hair2)}
+  .urgent{display:flex;align-items:center;justify-content:center;gap:5px;border-top:1px solid var(--hair);
+    margin-top:11px;padding-top:9px;font-size:10px;color:var(--alarm);font-weight:500}
+  .hand{border:1px solid var(--hair);background:#fff;border-radius:10px;padding:10px 11px;margin:9px 0 0}
+  .hand .t{font-size:11.5px;font-weight:600;color:var(--forest)}
+  .hand .d{font-size:10.5px;color:var(--pencil);margin:2px 0 0;line-height:1.45}
+
+  .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:14px;margin:24px 0 0}
+  .rule{border:1px solid var(--hair);border-radius:11px;padding:15px 17px}
+  .rule h3{margin:0 0 5px;font-size:13px;font-weight:600;color:var(--forest)}
+  .rule p{margin:0;font-size:12.5px;color:var(--pencil);max-width:none}
+  .rule .no{font-size:10px;color:var(--emerald);font-weight:600;display:block;margin-bottom:5px;letter-spacing:.1em}
+  .callout{border-left:2px solid var(--sprout);padding:2px 0 2px 16px;margin:26px 0}
+  .callout p{font-family:var(--serif);font-size:17.5px;line-height:1.5;color:var(--forest);margin:0;max-width:54ch}
+  .foot{margin-top:58px;font-size:12px;color:var(--faint)}
+</style>
+
+<div class="wrap">
+
+  <p class="kicker">Design iteration · nothing shipped · the understanding loop</p>
+  <h1>Never show someone a question<br><em>they aren’t allowed to answer.</em></h1>
+  <p class="lede">The loop is right: you type, Connect understands, it asks for what it’s missing. The screens
+    are what break it — today it lists four questions you cannot touch, and hides the key behind a button
+    about something else.</p>
+
+  <div class="bad">
+    <h3>What happens now</h3>
+    <p><b>s1</b> reveals the understanding <i>and</i> lists the open questions — as dead text.
+      “Which city Hospital is in”, “His health, and what he manages day to day”. You cannot answer any of them.
+      The only way forward is <b>“That’s exactly it”</b> — a button that confirms the <i>reading</i>, not the
+      questions. Pressing it lands you on <b>s2</b>: the same list, same place, same wording — except now the
+      circles are tappable. Two near-identical screens, one silent mode switch. The user is asked to guess
+      that a confirmation is also a key.</p>
+  </div>
+
+  <h2><span class="n">The design</span>One question at a time, always answerable</h2>
+
+  <div class="row">
+
+    <!-- A -->
+    <div class="col">
+      <p class="st">A · Did I understand you? <i>— nothing else on screen</i></p>
+      <div class="phone"><div class="scr">
+        <div class="mast"><div class="lg"><i>✛</i> close eye</div><div class="tri">C O N N E C T</div></div>
+        <p class="quote">You told Connect<span class="q">“Amma lives alone in Hyderabad and I worry about her.”</span></p>
+        <p class="hd">Here’s what I understood</p>
+        <div class="desk">
+          <div class="ul"><span class="mk k">✓</span><span><span class="lbl">Someone you love</span>
+            <span class="bd">Your mother.<span class="src">your words</span></span></span></div>
+          <div class="ul"><span class="mk k">✓</span><span><span class="lbl">Her days</span>
+            <span class="bd">She lives alone, in Hyderabad.<span class="src">your words</span></span></span></div>
+          <div class="ul"><span class="mk k">✓</span><span><span class="lbl g">What I think you need</span>
+            <span class="bd">To know she’s okay day to day — not only when you speak.<span class="src">my reading</span></span></span></div>
+          <p class="note">The first two are your words. The last is my reading of them — nothing is assumed.</p>
+          <div class="btn solid">Yes — that’s right</div>
+          <div class="conf">Not quite? <b>Let me fix it</b></div>
+          <div class="urgent">⚠ Something’s wrong right now</div>
+        </div>
+      </div></div>
+      <p class="cap"><b>The open questions are gone from this screen.</b> That single deletion removes the
+        confusion — you can’t be frustrated by a question you were never shown. This screen asks exactly one
+        thing, and both answers are live.</p>
+    </div>
+
+    <!-- B -->
+    <div class="col">
+      <p class="st">B · Then it asks — <i>one thing, answerable</i></p>
+      <div class="phone"><div class="scr">
+        <div class="mast"><div class="lg"><i>✛</i> close eye</div><div class="tri">C O N N E C T</div></div>
+        <p class="hd" style="margin-top:13px">Two things would help me</p>
+        <div class="prog"><span class="b on"></span><span class="b"></span><span class="t">1 of 2</span></div>
+        <div class="desk">
+          <div class="ul"><span class="mk k">✓</span><span><span class="lbl">Your mother</span>
+            <span class="bd">Lives alone, in Hyderabad.</span></span></div>
+          <div class="fill">
+            <p style="font-size:12px;color:var(--forest);font-weight:600;margin:0 0 6px">Her health, and what she manages day to day</p>
+            <p class="ph">Tell me as you’d tell a friend…</p>
+            <div class="fr"><span class="save">Save</span><span class="skip">not now</span></div>
+          </div>
+          <div class="ask"><span class="ring"></span><span class="tx">Who can reach her in twenty minutes</span><span class="go">next</span></div>
+          <div class="conf" style="margin-top:11px">That’s enough for now <b>→</b></div>
+          <div class="urgent">⚠ Something’s wrong right now</div>
+        </div>
+      </div></div>
+      <p class="cap"><b>The box is already open on the first question.</b> No hunting for the affordance, no
+        tapping a circle to discover it’s a button. “2 things”, a progress bar, and <b>“that’s enough for
+        now”</b> always visible — the user is never trapped, and always knows how much is left.</p>
+    </div>
+
+    <!-- C -->
+    <div class="col">
+      <p class="st">C · It learns in front of you</p>
+      <div class="phone"><div class="scr">
+        <div class="mast"><div class="lg"><i>✛</i> close eye</div><div class="tri">C O N N E C T</div></div>
+        <p class="hd" style="margin-top:13px">Two things would help me</p>
+        <div class="prog"><span class="b on"></span><span class="b on"></span><span class="t">done</span></div>
+        <div class="desk">
+          <div class="ul"><span class="mk k">✓</span><span><span class="lbl">Your mother</span>
+            <span class="bd">Lives alone, in Hyderabad.</span></span></div>
+          <div class="ul"><span class="mk k">✓</span><span><span class="lbl">Her health · you told me</span>
+            <span class="bd">BP tablets each morning. Knees hurt on the stairs.</span></span></div>
+          <div class="ul"><span class="mk k">✓</span><span><span class="lbl">Nearby · you told me</span>
+            <span class="bd">Her neighbour Sarita, two doors down.</span></span></div>
+          <p class="note">That’s everything I hoped to understand for now.</p>
+          <div class="hand">
+            <div class="t">A Presence Manager takes it from here</div>
+            <div class="d">A real person reads this and arranges what your mother actually
+              needs. Not a bot, and not you having to explain it twice.</div>
+          </div>
+          <div class="btn solid">Create Amma’s family space</div>
+          <div class="urgent">⚠ Something’s wrong right now</div>
+        </div>
+      </div></div>
+      <p class="cap"><b>Every ○ you answer becomes a ✓ that stays.</b> That’s the whole product in one
+        animation: you watch it learn, and the list gets shorter — the opposite of a chatbot’s infinite
+        prompt. Then it names the human, which is what we actually sell.</p>
+    </div>
+
+    <!-- D -->
+    <div class="col">
+      <p class="st">D · “Not quite” — the repair</p>
+      <div class="phone"><div class="scr">
+        <div class="mast"><div class="lg"><i>✛</i> close eye</div><div class="tri">C O N N E C T</div></div>
+        <p class="hd" style="margin-top:13px">What did I get wrong?</p>
+        <div class="desk">
+          <div class="ask on"><span class="ring" style="border-color:var(--emerald)"></span><span class="tx">It’s not my mother</span><span class="go">fix</span></div>
+          <div class="ask"><span class="ring"></span><span class="tx">She doesn’t live alone</span><span class="go">fix</span></div>
+          <div class="ask"><span class="ring"></span><span class="tx">That’s not what I need</span><span class="go">fix</span></div>
+          <div class="fill" style="margin-top:9px">
+            <p class="ph">Say it again in your own words…</p>
+            <div class="fr"><span class="save">Try again</span><span class="skip">cancel</span></div>
+          </div>
+          <div class="urgent">⚠ Something’s wrong right now</div>
+        </div>
+      </div></div>
+      <p class="cap"><b>“Not quite” must land somewhere.</b> Today it’s a flag with no repair. Naming the three
+        things that can be wrong turns a complaint into a correction — and each one is a slot the engine
+        already has, so the fix is real, not sympathy.</p>
+    </div>
+
+  </div>
+
+  <hr>
+
+  <h2><span class="n">Why this can’t confuse</span>Four moves, one deletion</h2>
+  <div class="rules">
+    <div class="rule"><span class="no">01</span><h3>Delete the dead questions from s1</h3>
+      <p>The single highest-value change here is a <i>removal</i>. A question you can’t answer is worse than
+        no question: it teaches people the screen is decorative.</p></div>
+    <div class="rule"><span class="no">02</span><h3>Merge the mode switch away</h3>
+      <p>s1 and s2 look identical and behave differently. Ask one thing per screen and the switch stops
+        existing — nobody has to notice a transition that no longer happens.</p></div>
+    <div class="rule"><span class="no">03</span><h3>Open the first box for them</h3>
+      <p>Don’t make someone tap a circle to discover it’s a button. The first question is already open,
+        with the cursor in it. The rest queue behind it.</p></div>
+    <div class="rule"><span class="no">04</span><h3>“That’s enough for now” is always there</h3>
+      <p>Plus a count and a bar. Never trapped, always knows how much is left, and skipping costs nothing —
+        the ○ simply stays a ○, honestly.</p></div>
+  </div>
+
+  <div class="callout">
+    <p>The circles aren’t a checklist. They’re the product: <em>a menu that gets shorter the better it knows
+      you</em> — which is the opposite promise to a chatbot’s empty box.</p>
+  </div>
+
+  <h2><span class="n">Honest notes</span>Before any of this is built</h2>
+  <p><b>“A Presence Manager takes it from here” is a promise, not a description.</b> It is the one line in this
+    design that isn’t already true on the screen — it needs to be staffed on day one or it becomes exactly the
+    false-capability class we spent a day deleting. Your call, not mine.</p>
+  <p><b>The repair screen (D) invents nothing.</b> “It’s not my mother” / “she doesn’t live alone” / “that’s not
+    what I need” map to the subject, situation and need slots the engine already fills — so a correction can
+    actually re-run understanding rather than just log a complaint.</p>
+  <p><b>What I did not touch:</b> the paper, the serif, ✓/○, “from your words” vs “my reading”. That vocabulary
+    is the trust, and it’s already right. Everything above is a rearrangement of screens, not a redesign of the
+    idea.</p>
+
+  <p class="foot">Design iteration only — no product code touched. /connect, the ledger rendering and Family
+    Space are unchanged. Brand tokens and type are the live system’s (Newsreader · Inter · paper #F5F2E9 ·
+    forest #0E2A1F · sprout #83C400). The urgent door shown throughout depends on 324f892, which reaches
+    families when main is pushed.</p>
+</div>

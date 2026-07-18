@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils'
 // Icons are presentation, keyed by canonical route; the nav data itself lives in lib/workspace/nav.
 const ICONS: Record<string, LucideIcon> = {
   '/space': Home,
-  '/space/ask': MessageCircle,
+  '/space/connect': MessageCircle,
   '/space/people': Users,
   '/space/activity': Activity,
   '/space/care': HeartHandshake,

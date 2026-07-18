@@ -1,10 +1,10 @@
 'use client'
 
 /**
- * Sprint 3 — Ask (Owner: Ask, /space/ask). The Connect experience inside the Workspace shell:
- * the family intelligence, ask about anyone you love. Reuses the rich conversation
+ * Connect (Owner: Connect, /space/connect). The product's conversational intelligence inside the
+ * Workspace — NOT a generic "Ask": talking to Close Eye IS Connect. Reuses the rich conversation
  * (AskCloseEyeConversation — LLM via ask-health, region-aware emergency escalation, history via
- * member_queries). Works here because AppShell now mounts FamilyDataProvider for /space/*.
+ * member_queries). Works here because AppShell mounts FamilyDataProvider for /space/*.
  *
  * Suggested questions seed a fresh conversation (remount with initialQuestion → auto-sends).
  */
@@ -29,8 +29,8 @@ export default function AskPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-h2 text-ink">Ask Close Eye</h1>
-        <p className="mt-1 text-body-sm text-muted">The family intelligence — ask about anyone you love.</p>
+        <h1 className="text-h2 text-ink">Connect</h1>
+        <p className="mt-1 text-body-sm text-muted">Your family’s intelligence — ask about anyone you love.</p>
       </div>
 
       {!seed && (
