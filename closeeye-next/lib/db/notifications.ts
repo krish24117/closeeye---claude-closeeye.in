@@ -14,9 +14,25 @@ export interface AppNotification {
   message: string | null
   read: boolean
   created_at: string
+  /** Where this notification opens — always inside the Workspace (Navigation Law 4). */
+  target: string
 }
 
 const NOTIF_COLS = 'id, type, title, message, read, created_at'
+
+/** A row as it comes from the DB (no target column — target is derived, not stored). */
+type NotificationRow = Omit<AppNotification, 'target'>
+
+/**
+ * Navigation Law 4 — every notification opens INSIDE the Workspace. The destination is derived
+ * from the notification type and is ALWAYS a `/space`-rooted URL; a notification is never sent
+ * back into the retiring `/family` tree. Today the Workspace is a single home (`/space`); as
+ * capabilities re-home under `/space/*` (Phase 4), refine the per-type mapping here — e.g. a
+ * visit update → `/space/visits`. Deriving (not storing) keeps Phase 1 schema-free.
+ */
+export function notificationTarget(_type: string): string {
+  return '/space'
+}
 
 /** The user's notifications, newest first. */
 export async function fetchNotifications(userId: string, limit = 30): Promise<AppNotification[]> {
@@ -27,7 +43,7 @@ export async function fetchNotifications(userId: string, limit = 30): Promise<Ap
     .order('created_at', { ascending: false })
     .limit(limit)
   if (error) throw new Error(error.message)
-  return (data as AppNotification[] | null) ?? []
+  return ((data as NotificationRow[] | null) ?? []).map((n) => ({ ...n, target: notificationTarget(n.type) }))
 }
 
 /** Mark every unread notification for the user as read. Best-effort. */

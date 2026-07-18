@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   Home,
   Users,
@@ -246,6 +246,9 @@ function notifTime(iso: string): string {
 }
 
 function NotifPanel({ open, onClose, notifs }: { open: boolean; onClose: () => void; notifs: AppNotification[] }) {
+  const router = useRouter()
+  // Navigation Law 4 — a notification opens inside the Workspace. Close the panel, then go.
+  const openNotification = (n: AppNotification) => { onClose(); router.push(n.target) }
   return (
     <Overlay open={open} onClose={onClose}>
       <div className="flex items-center justify-between border-b border-line px-6 py-4">
@@ -264,13 +267,15 @@ function NotifPanel({ open, onClose, notifs }: { open: boolean; onClose: () => v
       ) : (
         <ul className="max-h-[70vh] overflow-y-auto">
           {notifs.map((n) => (
-            <li key={n.id} className="flex gap-3 border-b border-line px-6 py-3.5 last:border-b-0">
-              <span className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', n.read ? 'bg-transparent' : 'bg-green')} aria-hidden />
-              <div className="min-w-0 flex-1">
-                <p className="text-body-sm font-semibold text-ink">{n.title}</p>
-                {n.message && <p className="mt-0.5 text-caption leading-relaxed text-muted">{n.message}</p>}
-                <p className="mt-0.5 text-caption text-muted/70">{notifTime(n.created_at)}</p>
-              </div>
+            <li key={n.id} className="border-b border-line last:border-b-0">
+              <button type="button" onClick={() => openNotification(n)} className="flex w-full gap-3 px-6 py-3.5 text-left transition-colors hover:bg-accent-soft/40">
+                <span className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', n.read ? 'bg-transparent' : 'bg-green')} aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="text-body-sm font-semibold text-ink">{n.title}</p>
+                  {n.message && <p className="mt-0.5 text-caption leading-relaxed text-muted">{n.message}</p>}
+                  <p className="mt-0.5 text-caption text-muted/70">{notifTime(n.created_at)}</p>
+                </div>
+              </button>
             </li>
           ))}
         </ul>
