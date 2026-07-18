@@ -18,6 +18,7 @@ import { fetchSpace, appendLearning, askConnect, personName, type SpaceData, typ
 import type { Blank, LedgerLine } from '@/lib/connect/ledger'
 import { deriveSnapshot, deriveRecommendations, groupUnderstanding, askSuggestions, type UnderstandingInput } from '@/lib/space/understanding'
 import { emergencyDial, DEFAULT_REGION_CODE } from '@/lib/platform/regions'
+import { can } from '@/lib/platform/capability'
 import { PHASE_2_ENABLED, VISITS_OPEN_LABEL } from '@/lib/connect/phase'
 
 const WA = 'https://wa.me/919000221261'
@@ -126,6 +127,14 @@ export default function SpacePage() {
   const sections = groupUnderstanding(uInput)
   const suggestions = askSuggestions(uInput)
 
+  // ── Phase 5 · CapabilityRouter. The Family Graph, the Snapshot, the Ask line are Connect
+  //    — global, always shown. Physical presence (booking a visit, a Presence Manager, a
+  //    bookable errand like a move) is Care, and Care is regional. `careHere` gates exactly
+  //    those surfaces to this family's region. India → true → everything shows, byte-identical
+  //    to today; a Connect-only region simply never renders a promise it cannot keep.
+  const careHere = can(lo.regionCode, 'presence')
+  const shownRecs = recommendations.filter((r) => r.action !== 'book' || careHere)
+
   async function saveFill() {
     const b = activeBlank
     const text = fillText.trim()
@@ -209,10 +218,10 @@ export default function SpacePage() {
           </div>
 
           {/* ── 2 · WHAT SHOULD HAPPEN NEXT — recommendations from the graph ── */}
-          {recommendations.length > 0 && (<>
+          {shownRecs.length > 0 && (<>
             <p className="sh">What should happen next</p>
             <div className="recs">
-              {recommendations.map((r) => (
+              {shownRecs.map((r) => (
                 <button key={r.id} type="button" className={`rec ${r.tone}`}
                   onClick={() => {
                     if (r.action === 'book') { PHASE_2_ENABLED ? router.push('/connect') : setQnote(`Visits open ${VISITS_OPEN_LABEL}.`); return }
@@ -283,15 +292,19 @@ export default function SpacePage() {
             ))}
           </div>
 
-          <div className="qacts">
-            {PHASE_2_ENABLED ? (
-              <button className="qbtn primary" onClick={() => router.push('/connect')}>Book {them === 'her' ? 'her' : them === 'him' ? 'his' : 'their'} next visit</button>
-            ) : (
-              <button className="qbtn primary" onClick={() => setQnote(`Visits open ${VISITS_OPEN_LABEL}.`)}>Book a visit</button>
-            )}
-            <a className="qbtn" href={WA} target="_blank" rel="noopener">Message your Presence Manager</a>
-            <button className="qbtn" onClick={() => setQnote('Reports will appear here after the first visit.')}>Reports</button>
-          </div>
+          {/* Phase 5 · the Care action bar — shown only where Care is live (India today). A
+              Connect-only region ends on the timeline; no unbookable visit, no absent PM. */}
+          {careHere && (
+            <div className="qacts">
+              {PHASE_2_ENABLED ? (
+                <button className="qbtn primary" onClick={() => router.push('/connect')}>Book {them === 'her' ? 'her' : them === 'him' ? 'his' : 'their'} next visit</button>
+              ) : (
+                <button className="qbtn primary" onClick={() => setQnote(`Visits open ${VISITS_OPEN_LABEL}.`)}>Book a visit</button>
+              )}
+              <a className="qbtn" href={WA} target="_blank" rel="noopener">Message your Presence Manager</a>
+              <button className="qbtn" onClick={() => setQnote('Reports will appear here after the first visit.')}>Reports</button>
+            </div>
+          )}
           {qnote && <p className="qnote">{qnote}</p>}
 
           <p className="footnote">Your Trusted Presence</p>
