@@ -70,6 +70,31 @@ not owned routes — they *resolve into* the Workspace at the relevant Owner's c
 
 ---
 
+## Ownership is system-wide, not just navigation (ratified 2026-07-18)
+
+Ownership is a **system-wide contract**. The question *"Who owns this capability?"* — not *"Where
+is it shown?"* — governs far more than where a link lives. As CloseEye grows, the same Owner is
+the authority for a capability across every subsystem:
+
+- **Navigation** — the canonical route
+- **Permissions** — who may see/act on it
+- **Notifications** — what surfaces and where it opens
+- **Search indexing** — how it is found
+- **AI retrieval** — what Connect reads and reasons over
+- **APIs** — the canonical contract for the capability
+
+**Worked example — a Visit.**
+
+| | |
+|---|---|
+| **Owner** | Care |
+| **Canonical location** | `/space/care/[id]` |
+| **Visible from** | Home · Activity · Person · Search · Ask |
+| **Permissions / notifications / search / AI retrieval / API** | all defer to **Care** |
+
+This prevents the most common failure of a growing product: the same feature slowly existing in
+multiple places with different behaviours. There is one owner; everything else references it.
+
 ## Amendment procedure
 
 A new Owner is added only when a capability genuinely belongs to none of the above — a deliberate

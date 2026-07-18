@@ -54,6 +54,17 @@ truth for every capability's one Owner and one canonical route. Every new featur
 **Primary navigation (v1):** Home · Ask · People · Activity · Care. Billing and Settings are
 overflow.
 
+## Separation of concerns — navigation vs state (frozen 2026-07-18)
+
+> **Navigation organizes capabilities. Workspace state organizes attention.**
+
+Navigation answers *"Where do I go?"* and is **stable** (the five Owners). State answers *"What
+matters right now?"* and is **dynamic** (it reshapes what Home leads with, never the map). They are
+different problems and must stay separate — see the [Workspace State Model](./workspace_state_model.md).
+Ownership is also system-wide, not just navigation: permissions, notifications, search, AI
+retrieval and APIs all defer to a capability's one Owner (see the
+[Ownership Registry](./ownership_registry.md)).
+
 ## Governing directive — optimize for launch, not Year 5 (ratified 2026-07-18)
 
 **Do not optimize the navigation for the company CloseEye wants to become in five years. Optimize

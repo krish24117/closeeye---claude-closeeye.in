@@ -72,6 +72,22 @@ one canonical home.
 - **The pivot:** once the Workspace can reach every capability, the home can flip without stranding anyone.
 - Can ship *behind* the current routing (shell before the flip).
 
+**Build sequence (ratified 2026-07-18) — infrastructure first, then capabilities, not screen-by-screen.**
+Every sprint is a coherent, testable increment; the Workspace is *complete before* Phase 3 makes
+it the default entry, which keeps the flip low-risk.
+
+| Sprint | Deliverable |
+|---|---|
+| **1 · Unified Shell** | Shared Workspace shell · primary navigation (Home·Ask·People·Activity·Care) · overflow navigation · unified header · unified authentication entry · responsive layout |
+| **2 · Home** | Family summary · **Workspace state** (state model) · recent activity · alerts · quick actions |
+| **3 · Ask** | Connect experience · conversation history · context panel · suggested questions |
+| **4 · People & Activity** | People · Person Space · Timeline · Documents (surfaced through People) · cross-linking |
+| **5 · Care** | Care dashboard · booking flow · active visits · Guardian status · care history |
+| **6 · Hardening** | Accessibility · performance · redirect validation · deep-link validation · state transitions · navigation regression tests |
+
+Each sprint ships behind current routing; `/family` keeps working throughout. Owners and the
+State Model are honoured from Sprint 1.
+
 ### Phase 3 — Flip the home · routing only · reversible
 - `auth-gate`: family home target `/family` → `/space`; add `/space` to the managed `APP` list; fold `/space`'s ad-hoc OAuth into the one auth model (keep its sign-in working for back-compat).
 - Direct sign-in now lands on `/space`. Deep links unaffected.
