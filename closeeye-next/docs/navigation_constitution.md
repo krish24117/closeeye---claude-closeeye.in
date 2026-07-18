@@ -45,5 +45,26 @@ Space (Workspace)
 
 ---
 
+## Enforcement — the Ownership Registry (ratified 2026-07-18)
+
+Laws 1–3 are enforced by the **[Ownership Registry](./ownership_registry.md)** — the source of
+truth for every capability's one Owner and one canonical route. Every new feature must answer
+**"Which Owner does this belong to?"** — **if it has no Owner, it does not ship.**
+
+**Primary navigation (v1):** Home · Ask · People · Activity · Care. Billing and Settings are
+overflow.
+
+## Governing directive — optimize for launch, not Year 5 (ratified 2026-07-18)
+
+**Do not optimize the navigation for the company CloseEye wants to become in five years. Optimize
+it for the product customers are paying for at launch.** At launch (Hyderabad), families pay for
+trusted human presence — **Care is a top-of-funnel job**, so it stays in primary navigation for
+v1. Care leaves primary navigation only when usage data proves it is no longer a primary
+destination (e.g. Ask becomes the dominant session type). The architecture leaves room to evolve;
+v1 stays grounded in today's customer value.
+
+---
+
 *These laws precede Phase 2 (Workspace Consolidation) and govern it. See
-[space_home_consolidation_plan.md](./space_home_consolidation_plan.md).*
+[space_home_consolidation_plan.md](./space_home_consolidation_plan.md) and the
+[Ownership Registry](./ownership_registry.md).*

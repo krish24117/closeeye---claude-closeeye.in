@@ -82,13 +82,19 @@ Do **not** ask "where should `/family/settings` go?" Ask "**what capability does
 represent?**" This phase designs the future information architecture, it does not preserve the
 old one.
 
-| Existing | Capability | Canonical location |
+The canonical owner + route for every capability is fixed by the ratified
+[Ownership Registry](./ownership_registry.md) — the source of truth this phase executes:
+
+| Existing | Owner | Canonical location |
 |---|---|---|
-| Family Overview | **Family** | `/space/family` |
+| Family Overview | **Home** | `/space` |
 | Members | **People** | `/space/people` |
-| Visits | **Services** | `/space/visits` |
-| Payments | **Billing** | `/space/billing` |
-| Documents | **Memory** | `/space/documents` |
+| Visits · Book · Services | **Care** | `/space/care` |
+| Timeline / what changed | **Activity** | `/space/activity` |
+| Ask · Messages | **Ask** | `/space/ask` |
+| Payments · Membership | **Billing** | `/space/billing` |
+| Documents | **People** | `/space/people/[id]/documents` |
+| Profile · Settings | **Settings** | `/space/settings` |
 
 - `/family` (bare overview) → `308` → `/space`.
 - Each capability re-homes under `/space/*`; **every** legacy `/family/<x>` gets a `308` → its canonical location (deep links preserved). The guardrail enforces no-`404`.

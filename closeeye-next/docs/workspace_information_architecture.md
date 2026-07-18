@@ -45,23 +45,23 @@ Everything else is either (a) something Connect *knows/observes* about a person,
 
 ```
 WORKSPACE (Space)
+│  ── primary navigation (5 owners) ──
+├── Home       ► /space           how is everyone, at a glance
+├── Ask        ► /space/ask       Connect: AI Ask + human messages
+├── People     ► /space/people    the people you love
+│     └── Person Space ► /space/people/[id]   Overview · Story · Health · Documents
+├── Activity   ► /space/activity  what changed · presence stories · the family's story
+├── Care       ► /space/care      request a visit · upcoming & past · services
 │
-├── Home — "Everyone you love"          ► Understand   (roster + what-changed feed + Ask line)
-│
-├── Person Space  (one per person)      ► Understand   (the canonical home for a person)
-│     ├── Overview   — what Connect understands (snapshot / ledger)
-│     ├── Timeline   — their story (visits, updates, Presence Stories)
-│     ├── Health     — conditions, medications, allergies
-│     └── Memory     — their documents, reports, prescriptions
-│
-├── Ask (Connect)                       ► Answer        (AI Ask + human messages, one surface)
-│
-├── Care (Presence)                     ► Act           (request a visit · upcoming/past · services)
-│
-└── Account                             ► Administer    (Membership & Billing · Settings · Trust & Safety)
+│  ── overflow (Account menu) ──
+├── Billing    ► /space/billing   membership & payments
+└── Settings   ► /space/settings  profile · Trust & Safety
 
-Global actions (omnipresent, not sections): Add someone (+) · Notifications · Emergency · Account menu
+Global actions (omnipresent, not sections): Add someone (+, People) · Notifications · Emergency · Account menu
 ```
+
+Ownership is fixed by the [Ownership Registry](./ownership_registry.md). "Story" on a Person is
+**Activity filtered to that person** — Activity owns the feed; the Person page references its slice.
 
 **The one-owner rule (Law 2), stated precisely: _surfacing ≠ owning._** A capability has exactly
 one canonical home; every other appearance is a *reference* (a link), never a second editable
@@ -74,19 +74,27 @@ taste.
 
 ## Part 3 — Canonical Workspace navigation
 
-**Primary navigation — 3 items = the three intent tiers.**
-1. **Home** — everyone you love; what changed. *(Understand — the default)*
-2. **Ask** — CloseEye Connect, the family intelligence. *(Answer)*
-3. **Care** — request and review real-world presence. *(Act)*
+> **Ratified 2026-07-18.** Primary nav is **five** owners, not the three intent-tiers I first
+> proposed. Rationale (founder): *optimize for launch, not Year 5.* At launch, families pay for
+> trusted human presence, and People + Activity are how they check on the people they love — so
+> these are top-of-funnel jobs and earn primary placement now. The 3-tier minimalism is the Year-5
+> shape, not the launch shape.
 
-*Why 3:* it mirrors the constitutional order Understand → Answer → Act; three is learnable and
-keeps everything ≤3 taps; the order front-loads intelligence and demotes services — the
-positioning made structural. Ask sits *above* Care because CloseEye answers before it acts.
+**Primary navigation — 5 owners** (see [Ownership Registry](./ownership_registry.md)):
+1. **Home** — how is everyone, at a glance. *(the landing)*
+2. **Ask** — CloseEye Connect, the family intelligence. *(Answer)*
+3. **People** — the people you love; drill into a Person Space. *(Understand — who)*
+4. **Activity** — the timeline: what changed, presence stories. *(Understand — what happened)*
+5. **Care** — request and review real-world presence. *(Act — a paid-for launch job)*
+
+*Why these five:* they are the highest-frequency, highest-value **launch** jobs, each a distinct
+Owner. Ask still sits before Care (answer before act). Care stays primary until usage data shows
+it is no longer a primary destination — then it demotes under Services without breaking the IA.
 
 **Secondary navigation — contextual, inside a Person Space.**
-Overview · Timeline · Health · Memory. *Why:* the person is the object; these are its facets, so
-they are sub-navigation, not global tabs. This keeps global nav minimal and the model
-person-centric — the moat is per-person intelligence, so per-person is where depth lives.
+Overview · Story · Health · Documents. *Why:* the person is the object; these are its facets, so
+they are sub-navigation, not global tabs. "Story" is **Activity filtered to this person** (Activity
+owns the feed; the Person page references its slice — surfacing ≠ owning).
 
 **Overflow navigation — behind the Account menu.**
 Membership & Billing · Settings · Trust & Safety. *Why:* low-frequency administration; tucking it
@@ -113,18 +121,19 @@ Every `/family/*` capability re-homed by **capability**, not by route. Canonical
 |---|---|---|---|---|
 | Home / overview | `/family` | `/space` (Home) | Replaces the 4-state dashboard with "everyone you love + what changed" | `308 → /space` |
 | People index | `/family/members` | `/space/people` | The roster; Home is the curated overview, this is the full index | `308 → /space/people` |
-| Person | `/family/members/[id]` | `/space/people/[id]` | Becomes the **Person Space** (Overview/Timeline/Health/Memory) | `308` |
+| Person | `/family/members/[id]` | `/space/people/[id]` | Becomes the **Person Space** (Overview/Story/Health/Documents) | `308` |
 | Person health | `/family/members/[id]/health` | `/space/people/[id]/health` | Person-scoped facet | `308` |
+| Timeline / what changed | (embedded today) | `/space/activity` (Owner: **Activity**) | Family feed; a Person's "Story" is this filtered to them | n/a (new Owner) |
 | Add someone | `/family/add` | `/space/people/new` (global action) | Global "+"; lands on the new person's Space (already shipped) | `308 → /space/people/new` |
 | Connect / Ask | `/family/connect`, `/connect/ask`, `/connect/[id]` | `/space/ask` | Consolidate into one Connect surface | `308 → /space/ask` |
 | Messages | `/family/messages`, `/messages/[id]` | `/space/ask` (threads) | Human messages join AI Ask under one Connect roof — no second inbox | `308 → /space/ask` |
 | Book a visit | `/family/book` | `/space/care` (book flow) | Care = act tier | `308 → /space/care` |
 | Visits | `/family/visits`, `/visits/[id]` | `/space/care` + `/space/care/[id]` | One canonical visit detail; Person Timeline *references* it | `308` |
 | Services | `/family/services` | `/space/care` (catalogue) | "What Care can do," inside Care | `308 → /space/care` |
-| Documents | `/family/documents` | `/space/people/[id]` → Memory | **Owner = the person**; a family-level Memory is a read-only aggregate view | `308 → /space` (Memory) |
-| Membership | `/family/membership` | `/space/account/membership` | Account overflow | `308` |
-| Billing | `/family/billing` | `/space/account/billing` | Account overflow | `308` |
-| Profile / settings | `/family/profile`, `/profile/edit` | `/space/account` | Account overflow | `308` |
+| Documents | `/family/documents` | `/space/people/[id]/documents` (Owner: **People**) | Person-scoped; a family-level view is a read-only aggregate | `308 → /space` |
+| Membership | `/family/membership` | `/space/billing` (Owner: **Billing**) | — | `308` |
+| Billing | `/family/billing` | `/space/billing` (Owner: **Billing**) | — | `308` |
+| Profile / settings | `/family/profile`, `/profile/edit` | `/space/settings` (Owner: **Settings**) | — | `308` |
 
 *Redirect strategy:* all entries land in `WORKSPACE_REDIRECTS` (single source of truth,
 `lib/routing/redirects.ts`), spread into `next.config`; the guardrail fails the build if any
