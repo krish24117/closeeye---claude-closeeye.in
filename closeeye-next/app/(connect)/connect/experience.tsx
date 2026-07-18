@@ -27,6 +27,7 @@ import { readRefusal } from '@/lib/platform/refusal'
 import { setConnectDraft, getConnectDraft, provisionFamilySpace, saveConnectSession, getConnectSession, clearConnectSession } from '@/lib/db/space'
 import { PHASE_2_ENABLED } from '@/lib/connect/phase'
 import { emergencyDial, DEFAULT_REGION_CODE } from '@/lib/platform/regions'
+import { formatMoney } from '@/lib/platform/currency'
 
 const WA = 'https://wa.me/919000221261'
 const SAMPLE = 'My mother lives alone in Hyderabad. How do I know she’s okay?'
@@ -109,7 +110,7 @@ const VISITS = [
   { id: 'hospital-companion', name: 'Hospital Companion', price: 2000, blurb: 'Someone stays beside her through appointments and recovery — never alone.' },
   { id: 'custom', name: 'Custom Request', price: 500, blurb: 'Groceries, medicines, a festival visit — something only your family understands.' },
 ]
-const inr = (n: number) => '₹' + n.toLocaleString('en-IN')
+const inr = (n: number) => formatMoney(n, DEFAULT_REGION_CODE)
 // capitalise only the first letter — for a lowercase subject at the start of a sentence
 const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 

@@ -11,6 +11,8 @@ import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchMyBookingRequests } from '@/lib/db/family'
 import { fetchMyMemberships } from '@/lib/db/onboarding'
 import { planById } from '@/lib/plans'
+import { formatMoney } from '@/lib/platform/currency'
+import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 import { brandedDocument } from '@/lib/download'
 import { SITE } from '@/lib/site'
 import { cn } from '@/lib/utils'
@@ -23,7 +25,7 @@ interface Row {
   ref: string | null
 }
 
-const inr = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN')}`
+const inr = (paise: number) => formatMoney(paise / 100, DEFAULT_REGION_CODE)
 function fmt(iso: string | null): string {
   if (!iso) return '—'
   try {

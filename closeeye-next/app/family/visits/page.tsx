@@ -1,6 +1,8 @@
 'use client'
 
 import * as React from 'react'
+import { formatMoney } from '@/lib/platform/currency'
+import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 import Link from 'next/link'
 import { CalendarClock, CalendarPlus, Loader2 } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
@@ -50,7 +52,7 @@ function fmtDate(iso: string | null): string {
   }
 }
 
-const rupees = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN')}`
+const rupees = (paise: number) => formatMoney(paise / 100, DEFAULT_REGION_CODE)
 
 export default function VisitsPage() {
   const { user } = useAuth()

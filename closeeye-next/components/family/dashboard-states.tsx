@@ -31,7 +31,7 @@ import { Button } from '@/components/ui/button'
 import { ImageFrame } from '@/components/ui/image-frame'
 import { SITE, whatsappLink } from '@/lib/site'
 import { SERVICE_DETAILS } from '@/lib/services'
-import { planById } from '@/lib/plans'
+import { planById, PLANS } from '@/lib/plans'
 import { getLocalPhoto } from '@/lib/local-photos'
 import type { DashboardData } from '@/lib/db/dashboard'
 import type { LovedOne } from '@/lib/db/types'
@@ -132,10 +132,10 @@ function MonthlyPresence({ name }: { name?: string }) {
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
         <Button asChild>
           <Link href="/family/membership">
-            {upgrading ? 'Upgrade to Care · ₹1,500' : 'See membership'} <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
+            {upgrading ? `Upgrade to Care · ${PLANS.find((p) => p.key === 'care')?.price}` : 'See membership'} <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
           </Link>
         </Button>
-        {!upgrading && <span className="text-body-sm text-muted">Connect ₹500 · Care ₹1,500 / month</span>}
+        {!upgrading && <span className="text-body-sm text-muted">Connect {PLANS.find((p) => p.key === 'connect')?.price} · Care {PLANS.find((p) => p.key === 'care')?.price} / month</span>}
       </div>
     </section>
   )

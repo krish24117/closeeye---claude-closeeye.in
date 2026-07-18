@@ -5,10 +5,14 @@
  * via Intl.NumberFormat — the ₹ / £ / $ symbol, the grouping (India's lakh vs Western
  * thousands), and the position all come from the locale, never a hand-built string.
  *
- * PRICING IS LOCKED and India renders BYTE-IDENTICALLY: formatMoney(500,'IN') === '₹500',
- * 1500 → '₹1,500', 1000 → '₹1,000'. Verified before wiring. The rounded-pricing brand
- * ("clean rounded prices only") is honoured with maximumFractionDigits:0 — so no currency
- * shows psychological decimals, and India's '₹500' (not '₹500.00') is preserved.
+ * NATURAL DECIMALS (min 0, max 2) — one formatter for both PRICING and RECEIPTS:
+ *   · Round brand prices show NO decimals: formatMoney(500,'IN') === '₹500' (never
+ *     '₹500.00') — the rounded-pricing brand is preserved.
+ *   · Receipts (a refund or proration in paise) keep their real value: 500.5 → '₹500.5'.
+ * A single fixed maximumFractionDigits:0 would have rounded a ₹500.50 receipt to ₹501 —
+ * so the formatter shows up to 2 decimals only when they actually exist.
+ *
+ * PRICING IS LOCKED and India renders BYTE-IDENTICALLY, verified before wiring.
  */
 import { regionFor } from './regions'
 
@@ -18,7 +22,8 @@ export function formatMoney(amount: number, code?: string | null): string {
   return new Intl.NumberFormat(r.locale.default, {
     style: 'currency',
     currency: r.locale.currency,
-    maximumFractionDigits: 0, // rounded-pricing brand; also what preserves India's '₹500'
+    minimumFractionDigits: 0, // round prices → no '.00'
+    maximumFractionDigits: 2, // receipts → keep real paise (₹500.50), never rounded away
   }).format(amount)
 }
 
