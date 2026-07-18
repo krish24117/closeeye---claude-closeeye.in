@@ -11,8 +11,10 @@ import { LogoMark } from '@/components/ui/logo'
 
 // The unauthenticated / setup flow (allowed before the dashboard).
 const FLOW = ['/welcome', '/auth', '/permissions', '/onboarding', '/guardian/login']
-// The signed-in app surfaces (require auth + completed onboarding).
-const APP = ['/family', '/guardian', '/pm', '/admin', '/settings', '/notifications', '/search']
+// The signed-in app surfaces (require auth + completed onboarding). /space is the Workspace —
+// the canonical family home (Phase 3). It self-guards in its own shell (AppShell mounts it
+// without AuthGate), so this entry documents intent and covers the native-launch path.
+const APP = ['/space', '/family', '/guardian', '/pm', '/admin', '/settings', '/notifications', '/search']
 const inList = (p: string, l: string[]) => l.some((f) => p === f || p.startsWith(`${f}/`))
 
 /**
@@ -82,13 +84,15 @@ export function AuthGate() {
       // Admin console, Presence Managers → Presence Console, else → Family.
       // (Previously every non-guardian landed in Family, so an admin who signed
       // in was dropped into the family dashboard instead of /admin.)
+      // Phase 3 — flip the home. A family lands in the Workspace (/space), not the legacy
+      // /family dashboard. Reversible: change this one target back. Staff homes unchanged.
       const home = isGuardian(profile)
         ? '/guardian'
         : isSuperAdmin(profile)
         ? '/admin'
         : isPresenceManager(profile)
         ? '/pm'
-        : '/family'
+        : '/space'
       if (onFlow) target = home // skip the auth flow once fully set up
       else if (firstNative && !onApp) target = home // native launch on marketing
     }
