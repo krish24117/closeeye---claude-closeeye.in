@@ -12,6 +12,8 @@
 import { supabase } from '@/lib/supabase'
 import { classify, pronoun, type Gender } from '@/lib/connect/understand'
 import { readLedger, ledgerEntriesForStorage, blanksFor, KEY_LABEL, type Blank, type LedgerLine } from '@/lib/connect/ledger'
+import { formatTime, formatDate } from '@/lib/platform/locale'
+import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 
 /** Mid-sentence display name: the name the family gave ("Amma"), else the
  *  relationship lowercased ("your mother"), else a real name as typed. */
@@ -237,8 +239,10 @@ export interface SpaceData {
 function fmtWhen(iso: string | null): string {
   if (!iso) return ''
   const d = new Date(iso), now = new Date()
-  const time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase()
-  return d.toDateString() === now.toDateString() ? `Today · ${time}` : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+  // Through the LocaleService — India ('en-IN') renders exactly as before. Pinned to
+  // DEFAULT_REGION_CODE for now; per-family locale threads through with region_code later.
+  const time = formatTime(d, DEFAULT_REGION_CODE, { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase()
+  return d.toDateString() === now.toDateString() ? `Today · ${time}` : formatDate(d, DEFAULT_REGION_CODE, { day: 'numeric', month: 'short' })
 }
 
 /** Load the Space. Returns null when there's no session/space (caller routes to
