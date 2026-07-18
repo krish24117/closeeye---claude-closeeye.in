@@ -91,7 +91,7 @@ export async function fetchHome(): Promise<HomeData | null> {
 
   const alerts: HomeAlert[] = people
     .filter((p) => p.state === 'getting_to_know')
-    .map((p) => ({ id: `alert-${p.id}`, text: `Still getting to know ${firstName(p.name)}.`, actionLabel: 'Tell CloseEye more', href: '/space/ask' }))
+    .map((p) => ({ id: `alert-${p.id}`, text: `Still getting to know ${firstName(p.name)}.`, actionLabel: 'Tell Close Eye more', href: '/space/ask' }))
 
   return { userName, state, people, activity, alerts }
 }

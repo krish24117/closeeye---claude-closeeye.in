@@ -40,7 +40,7 @@ export default function CarePage() {
         <div className="rounded-lg border border-line/70 bg-card p-8 text-center shadow-sm">
           <HeartHandshake className="mx-auto h-8 w-8 text-muted" strokeWidth={1.5} />
           <p className="mt-3 text-body-sm font-semibold text-ink">Trusted presence isn’t live in your region yet</p>
-          <p className="mx-auto mt-1 max-w-sm text-caption text-muted">CloseEye Connect stays with your family everywhere. Real-world visits arrive region by region — we’ll tell you the moment Care reaches yours.</p>
+          <p className="mx-auto mt-1 max-w-sm text-caption text-muted">Close Eye Connect stays with your family everywhere. Real-world visits arrive region by region — we’ll tell you the moment Care reaches yours.</p>
         </div>
       </div>
     )

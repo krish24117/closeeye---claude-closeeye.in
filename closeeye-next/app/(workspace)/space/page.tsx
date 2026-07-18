@@ -53,7 +53,8 @@ export default function WorkspaceHome() {
   if (!home) return null
 
   const h = new Date().getHours()
-  const greeting = (h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening') + `, ${home.userName}.`
+  const name = home.userName ? home.userName.charAt(0).toUpperCase() + home.userName.slice(1) : home.userName
+  const greeting = (h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening') + `, ${name}.`
   const meta = stateMeta(home.state)
   const bannerClass =
     meta.tone === 'critical' ? 'border-error/40 bg-error/5 text-error'
@@ -72,9 +73,9 @@ export default function WorkspaceHome() {
         <p className="text-caption font-semibold uppercase tracking-widest opacity-80">{meta.label}</p>
         <p className="mt-1 text-body-sm">
           {home.people.length === 0
-            ? 'Add someone you love, and CloseEye begins to understand your family.'
+            ? 'Add someone you love, and Close Eye begins to understand your family.'
             : home.state === 'healthy' ? 'From the last time a trusted person was with your family.'
-            : home.state === 'getting_to_know' ? 'CloseEye is learning about your family — the more it knows, the more it can help.'
+            : home.state === 'getting_to_know' ? 'Close Eye is learning about your family — the more it knows, the more it can help.'
             : 'The most pressing thing across everyone you love.'}
         </p>
       </section>
@@ -132,7 +133,7 @@ export default function WorkspaceHome() {
       <section className="flex flex-col gap-4">
         <p className="text-caption font-semibold uppercase tracking-widest text-muted">Quick actions</p>
         <div className="grid gap-3 sm:grid-cols-3">
-          <QuickAction href="/space/ask" icon={MessageCircle} title="Ask CloseEye" sub="About anyone you love" />
+          <QuickAction href="/space/ask" icon={MessageCircle} title="Ask Close Eye" sub="About anyone you love" />
           <QuickAction href="/family/add" icon={UserPlus} title="Add someone" sub="Grow your family" />
           <QuickAction href="/space/care" icon={HeartHandshake} title="Request a visit" sub="Trusted presence" />
         </div>

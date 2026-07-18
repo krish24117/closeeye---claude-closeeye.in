@@ -140,7 +140,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   )
 
   return (
-    <div className="min-h-dvh bg-ivory">
+    <div className="min-h-dvh">
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-card px-4 py-6 lg:flex">
         <Link href="/space" aria-label="Workspace home" className="px-2"><Logo variant="sidebar" /></Link>

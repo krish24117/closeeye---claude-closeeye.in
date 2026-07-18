@@ -29,7 +29,7 @@ export default function AskPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-h2 text-ink">Ask CloseEye</h1>
+        <h1 className="text-h2 text-ink">Ask Close Eye</h1>
         <p className="mt-1 text-body-sm text-muted">The family intelligence — ask about anyone you love.</p>
       </div>
 

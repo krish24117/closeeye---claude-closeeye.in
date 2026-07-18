@@ -30,7 +30,7 @@ export default function PeoplePage() {
       {!loading && !error && lovedOnes.length === 0 && (
         <div className="rounded-lg border border-line/70 bg-card p-8 text-center shadow-sm">
           <p className="text-body-sm font-semibold text-ink">No one here yet</p>
-          <p className="mx-auto mt-1 max-w-xs text-caption text-muted">Add someone you love, and CloseEye starts holding everything that matters about them.</p>
+          <p className="mx-auto mt-1 max-w-xs text-caption text-muted">Add someone you love, and Close Eye starts holding everything that matters about them.</p>
           <Link href="/family/add" className="mt-4 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-body-sm font-semibold text-ivory"><UserPlus className="h-4 w-4" strokeWidth={2} /> Add someone</Link>
         </div>
       )}

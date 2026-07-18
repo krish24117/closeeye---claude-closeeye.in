@@ -1,0 +1,51 @@
+/* The Workspace — Close Eye Connect's design language, scoped to .wsp so nothing else on the
+   site is touched. The signed-in home must feel like the product the family met at /connect
+   (the .cx experience): warm paper, a serif "human voice", Inter for interface chrome — not
+   the old family-dashboard look. Palette + fonts only; structure and components are unchanged.
+
+   ONE global identity. Region-specific VALUES (currency, emergency number, dates, Care
+   availability) adapt via the platform layer; the LOOK is the same in every country. */
+
+.wsp {
+  /* Warm-paper palette (Connect .cx), applied by overriding the app's HSL tokens — so every
+     existing Tailwind class (bg-ivory / bg-card / text-ink / border-line …) re-skins at once. */
+  --ivory: 45 40% 95%;         /* warm paper page  (#F5F2E9-ish) */
+  --card: 46 42% 98%;          /* warm surface, not clinical pure white */
+  --line: 46 26% 85%;          /* warm hairline    (#E2DECE-ish) */
+  --ink: 147 28% 13%;          /* forest ink       (#17281F) — what you READ */
+  --muted: 140 6% 43%;         /* secondary text   (#657068) */
+  --green: 147 80% 24%;        /* legible link/accent green (#047638, AA on paper) */
+  --green-hover: 147 84% 20%;
+  --accent-soft: 140 34% 92%;  /* soft green tint for chips/marks */
+
+  background: linear-gradient(180deg, #F7F4EC 0%, #F5F2E9 32%, #F1EDE1 100%);
+  min-height: 100dvh;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The human voice — serif for headings, a greeting, a person's name. Serif display wants
+   lighter weight and gentler tracking than the Manrope headings this replaces. */
+.wsp h1,
+.wsp h2,
+.wsp h3 {
+  font-family: var(--font-newsreader), Georgia, 'Times New Roman', serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Eyebrows / section labels / captions stay Inter — interface, not voice (as in Connect). */
+.wsp .uppercase {
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+/* Editorial calm: hairline borders do the work; shadows stay whisper-soft, never a drop. */
+.wsp .shadow-sm {
+  box-shadow: 0 1px 2px hsl(147 28% 13% / 0.04);
+}
+
+.wsp :focus-visible {
+  outline: 2px solid hsl(var(--green));
+  outline-offset: 3px;
+  border-radius: 6px;
+}

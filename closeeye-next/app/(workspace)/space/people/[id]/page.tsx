@@ -3,7 +3,7 @@
 /**
  * Sprint 4 — the Person Space (Owner: People, /space/people/[id]). The per-person depth that
  * Sprint 2's Home deferred, restored on the PRESERVED logic: fetchSpace + the understanding
- * derivations (lib/space/understanding) + appendLearning. Snapshot (how they are) · what CloseEye
+ * derivations (lib/space/understanding) + appendLearning. Snapshot (how they are) · what Close Eye
  * understands (with "tell me" that feeds the Family Graph) · their story. Rebuilt in the Workspace
  * design; the moat — private per-person understanding — lives here.
  */
@@ -74,7 +74,7 @@ export default function PersonSpacePage() {
     if (e || !line) { setSaveError('Couldn’t save that just now — please try again.'); return }
     setBlanks((prev) => prev.filter((x) => x.key !== b.key))
     if (b.key === 'callname') { setCallName(text); setNote(`I’ll call ${person} ${text} now.`) }
-    else { setLearned((prev) => [...prev, line]); setNote(`CloseEye knows ${person} a little better now.`) }
+    else { setLearned((prev) => [...prev, line]); setNote(`Close Eye knows ${person} a little better now.`) }
     setActiveBlank(null); setFill('')
     window.setTimeout(() => setNote(''), 3500)
   }
@@ -117,9 +117,9 @@ export default function PersonSpacePage() {
         </section>
       )}
 
-      {/* What CloseEye understands — with "tell me" */}
+      {/* What Close Eye understands — with "tell me" */}
       <section className="flex flex-col gap-4">
-        <p className="text-caption font-semibold uppercase tracking-widest text-muted">What CloseEye understands</p>
+        <p className="text-caption font-semibold uppercase tracking-widest text-muted">What Close Eye understands</p>
         <div className="flex flex-col gap-4">
           {sections.map((sec) => (
             <div key={sec.category} className="rounded-lg border border-line/70 bg-card p-4 shadow-sm">
@@ -169,7 +169,7 @@ export default function PersonSpacePage() {
       </section>
 
       <Link href="/space/ask" className="inline-flex items-center gap-2 self-start rounded-full border border-line bg-card px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
-        <Sparkles className="h-4 w-4 text-green" strokeWidth={1.75} /> Ask CloseEye about {person}
+        <Sparkles className="h-4 w-4 text-green" strokeWidth={1.75} /> Ask Close Eye about {person}
       </Link>
     </div>
   )
