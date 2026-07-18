@@ -1,52 +1,19 @@
-'use client'
-
 /**
- * Connect (Owner: Connect, /space/connect). The product's conversational intelligence inside the
- * Workspace — NOT a generic "Ask": talking to Close Eye IS Connect. Reuses the rich conversation
- * (AskCloseEyeConversation — LLM via ask-health, region-aware emergency escalation, history via
- * member_queries). Works here because AppShell mounts FamilyDataProvider for /space/*.
- *
- * Suggested questions seed a fresh conversation (remount with initialQuestion → auto-sends).
+ * Connect (Owner: Connect, /space/connect). The product's conversational intelligence — it
+ * understands before it answers, and never fabricates. Renders the Track-2 understanding-first
+ * experience (components/connect/understanding-conversation) via /api/understand. The older
+ * ask-health chat is superseded; grounded-answer composition + history is the next increment.
  */
-import * as React from 'react'
-import { AskCloseEyeConversation } from '@/components/family/ask-closeeye-conversation'
+import { UnderstandingConversation } from '@/components/connect/understanding-conversation'
 
-const SUGGESTIONS = [
-  'How is my family doing?',
-  'What should I be keeping an eye on?',
-  'Help me arrange a visit',
-]
-
-export default function AskPage() {
-  const [seed, setSeed] = React.useState<string | undefined>(undefined)
-  const [runKey, setRunKey] = React.useState(0)
-
-  function ask(q: string) {
-    setSeed(q)
-    setRunKey((k) => k + 1) // remount the conversation so initialQuestion fires
-  }
-
+export default function ConnectPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-h2 text-ink">Connect</h1>
-        <p className="mt-1 text-body-sm text-muted">Your family’s intelligence — ask about anyone you love.</p>
+        <p className="mt-1 text-body-sm text-muted">Your family’s intelligence — it understands before it answers.</p>
       </div>
-
-      {!seed && (
-        <div className="flex flex-col gap-2">
-          <p className="text-caption font-semibold uppercase tracking-widest text-muted">Try asking</p>
-          <div className="flex flex-wrap gap-2">
-            {SUGGESTIONS.map((s) => (
-              <button key={s} type="button" onClick={() => ask(s)} className="rounded-full border border-line bg-card px-3.5 py-2 text-caption font-medium text-ink transition-colors hover:border-green/40 hover:text-green">
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <AskCloseEyeConversation key={runKey} initialQuestion={seed} />
+      <UnderstandingConversation />
     </div>
   )
 }
