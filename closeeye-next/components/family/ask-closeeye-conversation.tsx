@@ -16,6 +16,14 @@ import { cn } from '@/lib/utils'
 
 const ACK_KEY = 'ce_ask_privacy_ack_v1'
 
+/** A short, distinct chip label. Loved ones named "Your Mother"/"Your Father" would otherwise
+ *  all collapse to "Your"; strip that prefix so the relationship shows ("Mother", "Father"). */
+function subjectChipLabel(fullName: string): string {
+  const cleaned = (fullName || '').replace(/^your\s+/i, '').trim() || fullName
+  const first = cleaned.split(/\s+/)[0] || cleaned
+  return first.charAt(0).toUpperCase() + first.slice(1)
+}
+
 interface ChatMsg {
   id: string
   role: 'user' | 'assistant'
@@ -152,7 +160,7 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
           </Chip>
           {lovedOnes.map((lo) => (
             <Chip key={lo.id} selected={subjectId === lo.id} onClick={() => setSubjectId(lo.id)} className="px-3.5 py-2 text-caption">
-              {lo.full_name.split(/\s+/)[0]}
+              {subjectChipLabel(lo.full_name)}
             </Chip>
           ))}
         </div>

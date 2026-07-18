@@ -26,6 +26,8 @@
 const ALLOWED_ORIGINS = new Set([
   "https://closeeye.in",
   "https://www.closeeye.in",
+  // CloseEye Connect — the product surface (Workspace + /connect experience)
+  "https://connect.closeeye.in",
   // Vite dev server — uses ports 5173‑5177 when lower ports are busy
   "http://localhost:5173",
   "http://localhost:5174",
