@@ -7,6 +7,9 @@
  * ('companion' | 'trust' | 'family_os'); the user-facing names are Connect /
  * Care. Connect → companion, Care → trust (app-layer mapping, no schema change).
  */
+import { formatMoney } from '@/lib/platform/currency'
+import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
+
 export type PlanId = 'companion' | 'trust' | 'family_os'
 export type PlanKey = 'connect' | 'care'
 
@@ -15,6 +18,10 @@ export interface Plan {
   key: PlanKey
   name: string
   short: string
+  /** The numeric price (major units) — the currency-agnostic truth. */
+  amount: number
+  /** India-default display, formatted via the CurrencyService. For a family in another
+   *  region, format at render time: formatMoney(plan.amount, family.region). */
   price: string
   period: string
   description: string
@@ -23,13 +30,19 @@ export interface Plan {
   popular?: boolean
 }
 
+// India-default formatting (Phase 3: prices are still India-only). No currency symbol is
+// hardcoded here now — it comes from Intl via the CurrencyService. Per-region prices
+// format(amount, region) at render time.
+const inr = (amount: number) => formatMoney(amount, DEFAULT_REGION_CODE)
+
 export const PLANS: Plan[] = [
   {
     id: 'companion',
     key: 'connect',
     name: 'CloseEye Connect',
     short: 'Connect',
-    price: '₹500',
+    amount: 500,
+    price: inr(500),
     period: '/month',
     description: "Stay connected even when you're away.",
     benefits: [
@@ -46,7 +59,8 @@ export const PLANS: Plan[] = [
     key: 'care',
     name: 'CloseEye Care',
     short: 'Care',
-    price: '₹1,500',
+    amount: 1500,
+    price: inr(1500),
     period: '/month',
     popular: true,
     description: 'A verified CloseEye Guardian visits your loved one every month and keeps your family connected.',
@@ -68,9 +82,9 @@ export function planById(id?: string | null): Plan | null {
 
 /** Other à-la-carte services (not memberships). "Starting at" wording, locked. */
 export const SERVICES = [
-  { name: 'Home Wellbeing Visit', price: 'Starting at ₹1,000', note: 'Book an additional wellbeing visit whenever needed.', serviceId: 'home-wellbeing-visit', cta: 'Book Visit' },
-  { name: 'Hospital Companion', price: 'Starting at ₹2,000', note: 'Accompaniment, admission support and family coordination.', serviceId: 'hospital-companion', cta: 'Book Visit' },
-  { name: 'Custom Request', price: 'Starting at ₹500', note: 'Groceries, medicines, document pickup, temple visits and other family requests.', serviceId: 'custom-request', cta: 'Request Service' },
+  { name: 'Home Wellbeing Visit', amount: 1000, price: `Starting at ${inr(1000)}`, note: 'Book an additional wellbeing visit whenever needed.', serviceId: 'home-wellbeing-visit', cta: 'Book Visit' },
+  { name: 'Hospital Companion', amount: 2000, price: `Starting at ${inr(2000)}`, note: 'Accompaniment, admission support and family coordination.', serviceId: 'hospital-companion', cta: 'Book Visit' },
+  { name: 'Custom Request', amount: 500, price: `Starting at ${inr(500)}`, note: 'Groceries, medicines, document pickup, temple visits and other family requests.', serviceId: 'custom-request', cta: 'Request Service' },
 ] as const
 
 /** "Who are you protecting?" → the loved one's relationship stored on the row. */
