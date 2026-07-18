@@ -33,6 +33,9 @@ export interface LovedOne {
   emergency_contact_name: string | null
   emergency_contact_phone: string | null
   created_at: string | null
+  /** Region code (lib/platform/regions) — where this loved one is. Drives their emergency
+   *  number and Care availability. Absent/null = India ('IN'), the column default. */
+  region_code?: string | null
 }
 
 /** Input for creating a loved one (the Add Loved One flow). */

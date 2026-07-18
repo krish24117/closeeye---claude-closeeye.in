@@ -6,7 +6,7 @@ import { processVisit, type VisitObservations } from '@/lib/cloza'
 const PROFILE_COLS_BASE = 'id, full_name, role, admin_role, phone, whatsapp_number, address'
 const PROFILE_COLS = `${PROFILE_COLS_BASE}, founder_prelaunch`
 const LOVED_ONE_COLS =
-  'id, family_user_id, full_name, relationship, age, city, address, phone_number, medical_notes, doctor_name, nearest_hospital, emergency_contact_name, emergency_contact_phone, created_at'
+  'id, family_user_id, full_name, relationship, age, city, address, phone_number, medical_notes, doctor_name, nearest_hospital, emergency_contact_name, emergency_contact_phone, created_at, region_code'
 
 const clean = (v?: string | null): string | null => {
   const t = (v ?? '').trim()
