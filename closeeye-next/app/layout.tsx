@@ -7,6 +7,7 @@ import { AuthProvider } from '@/components/auth/auth-provider'
 import { AppShell } from '@/components/app/app-shell'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 import { SITE } from '@/lib/site'
+import { localeFor, DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 
 // Design Authority: Manrope primary, Inter fallback.
 const manrope = Manrope({
@@ -102,7 +103,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-IN" className={`scroll-smooth ${manrope.variable} ${inter.variable}`}>
+    <html lang={localeFor(DEFAULT_REGION_CODE)} className={`scroll-smooth ${manrope.variable} ${inter.variable}`}>
       <body className="min-h-dvh bg-ivory text-body">
         <a
           href="#main"

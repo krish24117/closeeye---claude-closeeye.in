@@ -5,7 +5,7 @@
  * replaces. Other locales format the SAME instant their own way — that's the point.
  */
 import { describe, it, expect } from 'vitest'
-import { formatTime, formatDate, formatNumber } from './locale'
+import { formatTime, formatDate, formatNumber, phonePlaceholder } from './locale'
 
 const D = new Date('2026-07-18T13:56:00+05:30')
 
@@ -32,6 +32,19 @@ describe('locale-aware: the same instant, formatted per region', () => {
   })
   it('an unknown region falls back coherently, never a crash', () => {
     expect(typeof formatDate(D, 'atlantis', dateOpts)).toBe('string')
+  })
+})
+
+describe('phonePlaceholder — India byte-identical, region-aware elsewhere', () => {
+  it('India returns the exact hint it replaced', () => {
+    expect(phonePlaceholder('IN')).toBe('+91 90000 00000')
+  })
+  it('another launch market shows its own dialing code', () => {
+    expect(phonePlaceholder('GB')).toMatch(/^\+44/)
+    expect(phonePlaceholder('JP')).toMatch(/^\+81/)
+  })
+  it('an unknown region falls back to a neutral, never-wrong hint', () => {
+    expect(phonePlaceholder('atlantis')).toBe('Phone number')
   })
 })
 

@@ -14,7 +14,29 @@
  * time — is a real behaviour change and belongs in its own commit (pass opts.timeZone =
  * timezoneFor(region) when we make that call), never slipped in under "architecture only".
  */
-import { localeFor } from './regions'
+import { localeFor, regionFor } from './regions'
+
+/**
+ * An example phone number for a region — the placeholder hint in a phone input. India is
+ * '+91 90000 00000', byte-identical to the hardcoded hint it replaces; other launch markets
+ * show their own dialing code; an unknown region falls back to a neutral 'Phone number'.
+ * Illustrative only — validation is libphonenumber's job (phoneRegionFor), never this string.
+ */
+const PHONE_EXAMPLE: Record<string, string> = {
+  IN: '+91 90000 00000',
+  GB: '+44 7400 000000',
+  US: '+1 555 000 0000',
+  CA: '+1 204 000 0000',
+  AU: '+61 400 000 000',
+  DE: '+49 1512 0000000',
+  JP: '+81 90 0000 0000',
+  BR: '+55 11 90000 0000',
+  ZA: '+27 71 000 0000',
+}
+
+export function phonePlaceholder(code: string | null | undefined): string {
+  return PHONE_EXAMPLE[regionFor(code).code] ?? 'Phone number'
+}
 
 /** Format a time for a region's locale. India ('en-IN') is byte-identical to before. */
 export function formatTime(date: Date | string | number, code: string | null | undefined, opts?: Intl.DateTimeFormatOptions): string {

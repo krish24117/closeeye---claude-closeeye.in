@@ -12,6 +12,8 @@ import { PLANS, PROTECT_OPTIONS, type PlanId } from '@/lib/plans'
 import { getPendingPlan, setPendingPlan } from '@/lib/membership-intent'
 import { cn } from '@/lib/utils'
 import { haptic } from '@/lib/haptics'
+import { phonePlaceholder } from '@/lib/platform/locale'
+import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 
 type StepId = 'name' | 'phone' | 'city' | 'who' | 'plan'
 const STEPS: StepId[] = ['name', 'phone', 'city', 'who', 'plan']
@@ -148,7 +150,7 @@ export default function OnboardingPage() {
             <>
               <h1 className="text-h2 text-ink">Add your mobile number</h1>
               <p className="mt-2 text-body text-muted">So we can reach you quickly about your family’s care.</p>
-              <input autoFocus value={phone} onChange={(e) => setPhone(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="+91 90000 00000" type="tel" inputMode="tel" autoComplete="tel" className={cn(inputCls, 'mt-6')} />
+              <input autoFocus value={phone} onChange={(e) => setPhone(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder={phonePlaceholder(DEFAULT_REGION_CODE)} type="tel" inputMode="tel" autoComplete="tel" className={cn(inputCls, 'mt-6')} />
             </>
           )}
 

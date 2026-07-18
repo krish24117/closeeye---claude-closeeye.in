@@ -24,6 +24,7 @@ import { Overlay } from '@/components/family/overlay'
 import { AvatarLink } from '@/components/ui/avatar-link'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { emergencyFor, DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 import { fetchNotifications, markAllNotificationsRead, type AppNotification } from '@/lib/db/notifications'
 import { SITE } from '@/lib/site'
 import type { LovedOne } from '@/lib/db/types'
@@ -281,6 +282,8 @@ function EmergencySheet({ open, onClose, lovedOnes }: { open: boolean; onClose: 
       key: lo.id,
     }))
   const careCards = lovedOnes.filter((lo) => lo.nearest_hospital?.trim() || lo.medical_notes?.trim())
+  // Emergency number of where the family member is — India → 108, unchanged.
+  const emergency = emergencyFor(lovedOnes[0]?.region_code || DEFAULT_REGION_CODE)
 
   return (
     <Overlay open={open} onClose={onClose}>
@@ -343,7 +346,7 @@ function EmergencySheet({ open, onClose, lovedOnes }: { open: boolean; onClose: 
           </div>
         ))}
 
-        <p className="text-caption text-muted">In a life-threatening emergency, always call 108 (ambulance) first.</p>
+        <p className="text-caption text-muted">In a life-threatening emergency, always call {emergency.number ? `${emergency.number} (ambulance)` : 'your local emergency number'} first.</p>
       </div>
     </Overlay>
   )

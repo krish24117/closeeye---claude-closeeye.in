@@ -14,6 +14,7 @@ import { MembershipCard } from '@/components/family/membership-card'
 import { SignOutButton } from '@/components/auth/sign-out-button'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { regionFor, timezoneFor, localeFor } from '@/lib/platform/regions'
 import { useToast } from '@/components/ui/toast'
 import { supabase } from '@/lib/supabase'
 import { SITE } from '@/lib/site'
@@ -96,7 +97,7 @@ function PrefRow({ label, hint, state }: { label: string; hint?: string; state: 
 export default function ProfilePage() {
   const router = useRouter()
   const { user, signOut } = useAuth()
-  const { identity, profile, subscription, lovedOnes } = useFamilyData()
+  const { identity, profile, subscription, lovedOnes, region } = useFamilyData()
   const toast = useToast()
   const [confirmDelete, setConfirmDelete] = React.useState(false)
   const [deleting, setDeleting] = React.useState(false)
@@ -108,7 +109,7 @@ export default function ProfilePage() {
   const hasBilling =
     subscription?.status === 'active' || (subscription?.total_paid_paise ?? 0) > 0 || (subscription?.invoice_count ?? 0) > 0
   const upcomingPayment = subscription?.next_billing_at
-    ? new Date(subscription.next_billing_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    ? new Date(subscription.next_billing_at).toLocaleDateString(localeFor(region), { day: 'numeric', month: 'short', year: 'numeric' })
     : null
 
   async function deleteAccount() {
@@ -157,8 +158,8 @@ export default function ProfilePage() {
       >
         <InfoRow label="Email" value={identity.email || '—'} />
         <InfoRow label="Mobile number" value={profile?.phone || 'Not set'} />
-        <InfoRow label="Country" value={meta.country || 'India'} />
-        <InfoRow label="Time zone" value={meta.timezone || 'IST · Asia/Kolkata'} />
+        <InfoRow label="Country" value={meta.country || regionFor(region).name} />
+        <InfoRow label="Time zone" value={meta.timezone || timezoneFor(region)} />
         <InfoRow label="Preferred language" value={meta.language || 'English'} />
       </Card>
 

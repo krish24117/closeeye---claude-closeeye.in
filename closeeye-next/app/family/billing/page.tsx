@@ -12,7 +12,7 @@ import { fetchMyBookingRequests } from '@/lib/db/family'
 import { fetchMyMemberships } from '@/lib/db/onboarding'
 import { planById } from '@/lib/plans'
 import { formatMoney } from '@/lib/platform/currency'
-import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
+import { DEFAULT_REGION_CODE, localeFor } from '@/lib/platform/regions'
 import { brandedDocument } from '@/lib/download'
 import { SITE } from '@/lib/site'
 import { cn } from '@/lib/utils'
@@ -26,10 +26,10 @@ interface Row {
 }
 
 const inr = (paise: number) => formatMoney(paise / 100, DEFAULT_REGION_CODE)
-function fmt(iso: string | null): string {
+function fmt(iso: string | null, region: string = DEFAULT_REGION_CODE): string {
   if (!iso) return '—'
   try {
-    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    return new Date(iso).toLocaleDateString(localeFor(region), { day: 'numeric', month: 'short', year: 'numeric' })
   } catch {
     return '—'
   }
@@ -52,7 +52,7 @@ function receiptHtml(r: Row, who: string): string {
 
 export default function BillingPage() {
   const { user } = useAuth()
-  const { subscription, identity } = useFamilyData()
+  const { subscription, identity, region } = useFamilyData()
   const [rows, setRows] = React.useState<Row[] | null>(null)
   const [error, setError] = React.useState(false)
   const plan = planById(subscription?.plan_id)
@@ -98,7 +98,7 @@ export default function BillingPage() {
           </div>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-5 px-6 py-5 sm:grid-cols-3">
             {[
-              { label: 'Next billing', value: fmt(subscription.next_billing_at) },
+              { label: 'Next billing', value: fmt(subscription.next_billing_at, region) },
               { label: 'Total paid', value: inr(subscription.total_paid_paise ?? 0) },
               { label: 'Invoices', value: String(subscription.invoice_count ?? 0) },
             ].map((s) => (
@@ -136,7 +136,7 @@ export default function BillingPage() {
               <div key={r.id} className={cn('flex items-center gap-4 px-5 py-4', i > 0 && 'border-t border-line')}>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-body-sm font-semibold text-ink">{r.title}</p>
-                  <p className="text-caption text-muted">{fmt(r.date)}</p>
+                  <p className="text-caption text-muted">{fmt(r.date, region)}</p>
                 </div>
                 <span className="shrink-0 text-body-sm font-semibold text-ink">{inr(r.amountPaise)}</span>
                 <DownloadButton iconOnly label="Download receipt" filename={`close-eye-receipt-${r.id.slice(0, 8)}.html`} content={receiptHtml(r, identity.fullName)} />

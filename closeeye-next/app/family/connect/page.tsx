@@ -3,6 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { Bell, Loader2, MessageCircle, UserPlus } from 'lucide-react'
+import { DEFAULT_REGION_CODE, localeFor } from '@/lib/platform/regions'
 import { Greeting } from '@/components/family/greeting'
 import { SectionTitle } from '@/components/family/section-title'
 import { Avatar } from '@/components/family/avatar'
@@ -63,7 +64,7 @@ export default function ConnectHome() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-body-sm leading-relaxed text-ink">{u.body}</p>
-                    <p className="mt-0.5 text-caption text-muted">{rowTime(u.created_at)}{u.related_booking_id ? ' · View the Presence Story →' : ''}</p>
+                    <p className="mt-0.5 text-caption text-muted">{rowTime(u.created_at, lovedOnes[0]?.region_code || DEFAULT_REGION_CODE)}{u.related_booking_id ? ' · View the Presence Story →' : ''}</p>
                   </div>
                 </Link>
               </li>
@@ -121,13 +122,13 @@ function preview(s: ThreadSummary | undefined): string {
   return who + 'Message'
 }
 
-function rowTime(iso: string | undefined): string {
+function rowTime(iso: string | undefined, region: string = DEFAULT_REGION_CODE): string {
   if (!iso) return ''
   const d = new Date(iso)
   const now = new Date()
   return d.toDateString() === now.toDateString()
-    ? d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
-    : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+    ? d.toLocaleTimeString(localeFor(region), { hour: 'numeric', minute: '2-digit', hour12: true })
+    : d.toLocaleDateString(localeFor(region), { day: 'numeric', month: 'short' })
 }
 
 function MemberRow({ lo, summary, loading, border }: { lo: LovedOne; summary?: ThreadSummary; loading: boolean; border: boolean }) {
@@ -142,7 +143,7 @@ function MemberRow({ lo, summary, loading, border }: { lo: LovedOne; summary?: T
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">
             <p className={cn('truncate text-body-sm text-ink', unread > 0 ? 'font-bold' : 'font-semibold')}>{lo.full_name}</p>
-            <span className="shrink-0 text-caption text-muted">{rowTime(summary?.lastMessage?.created_at)}</span>
+            <span className="shrink-0 text-caption text-muted">{rowTime(summary?.lastMessage?.created_at, lo.region_code || DEFAULT_REGION_CODE)}</span>
           </div>
           <div className="mt-0.5 flex items-center justify-between gap-3">
             <p className={cn('truncate text-caption', unread > 0 ? 'font-medium text-ink' : 'text-muted')}>

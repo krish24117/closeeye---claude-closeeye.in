@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { PhotoPicker } from '@/components/family/photo-picker'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { phonePlaceholder } from '@/lib/platform/locale'
 import { useToast } from '@/components/ui/toast'
 import { saveMyProfile } from '@/lib/db/onboarding'
 import { setLocalPhoto } from '@/lib/local-photos'
@@ -24,7 +25,7 @@ export default function EditProfilePage() {
   const router = useRouter()
   const toast = useToast()
   const { user } = useAuth()
-  const { identity, profile } = useFamilyData()
+  const { identity, profile, region } = useFamilyData()
 
   const [fullName, setFullName] = React.useState('')
   const [phone, setPhone] = React.useState('')
@@ -87,7 +88,7 @@ export default function EditProfilePage() {
 
         <div>
           <label htmlFor="p-phone" className={labelCls}>Mobile</label>
-          <input id="p-phone" value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" inputMode="tel" placeholder="+91 90000 00000" className={inputCls} autoComplete="tel" />
+          <input id="p-phone" value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" inputMode="tel" placeholder={phonePlaceholder(region)} className={inputCls} autoComplete="tel" />
         </div>
 
         <div>
@@ -104,7 +105,7 @@ export default function EditProfilePage() {
           </div>
           <div>
             <label htmlFor="p-ecp" className={labelCls}>Emergency contact phone</label>
-            <input id="p-ecp" value={ecPhone} onChange={(e) => setEcPhone(e.target.value)} type="tel" inputMode="tel" placeholder="+91 90000 00000" className={inputCls} />
+            <input id="p-ecp" value={ecPhone} onChange={(e) => setEcPhone(e.target.value)} type="tel" inputMode="tel" placeholder={phonePlaceholder(region)} className={inputCls} />
           </div>
         </div>
 

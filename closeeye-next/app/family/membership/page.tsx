@@ -8,6 +8,7 @@ import { FunnelSteps } from '@/components/funnel/funnel-steps'
 import { Overlay } from '@/components/family/overlay'
 import { Button } from '@/components/ui/button'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { DEFAULT_REGION_CODE, localeFor } from '@/lib/platform/regions'
 import { useToast } from '@/components/ui/toast'
 import { PLANS, SERVICES, planById, type PlanId } from '@/lib/plans'
 import { getPendingPlan, clearPendingPlan } from '@/lib/membership-intent'
@@ -25,9 +26,9 @@ const STEPS = [
   'Start requesting support anytime',
 ]
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, region: string = DEFAULT_REGION_CODE): string {
   try {
-    return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    return new Date(iso).toLocaleDateString(localeFor(region), { day: '2-digit', month: 'short', year: 'numeric' })
   } catch {
     return '—'
   }
@@ -42,7 +43,7 @@ function isWellbeingThin(ep: ElderProfileForm): boolean {
 }
 
 export default function MembershipPage() {
-  const { subscription, profile, identity, refresh, lovedOnes } = useFamilyData()
+  const { subscription, profile, identity, refresh, lovedOnes, region } = useFamilyData()
   const toast = useToast()
   const [busy, setBusy] = useState<PlanId | null>(null)
   // Pre-payment collection gate — set to the plan being purchased while we gather the
@@ -281,7 +282,7 @@ export default function MembershipPage() {
                     )}
                   </div>
                   {active && subscription?.current_end && (
-                    <p className="mt-2 text-caption text-muted">Renews on {formatDate(subscription.current_end)}</p>
+                    <p className="mt-2 text-caption text-muted">Renews on {formatDate(subscription.current_end, region)}</p>
                   )}
                   {!active && !activating && (
                     <Button size="sm" className="mt-3 w-full" disabled={busy !== null} onClick={() => choose(plan.id)}>

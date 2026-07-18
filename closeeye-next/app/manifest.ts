@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { localeFor, DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -11,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: '#F6F3EC',
     theme_color: '#0E2A1F',
     orientation: 'portrait',
-    lang: 'en-IN',
+    lang: localeFor(DEFAULT_REGION_CODE),
     categories: ['health', 'lifestyle', 'medical'],
     icons: [
       { src: '/favicon-32.png', sizes: '32x32', type: 'image/png', purpose: 'any' },
