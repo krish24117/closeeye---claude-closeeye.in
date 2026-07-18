@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { NextConfig } from 'next'
+import { WORKSPACE_REDIRECTS } from './lib/routing/redirects'
 
 const appDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -60,6 +61,9 @@ const nextConfig: NextConfig = {
       { source: '/founder/welcome', destination: '/join/welcome', permanent: true },
       { source: '/founder/membership', destination: '/join/membership', permanent: true },
       { source: '/founder/done', destination: '/join/done', permanent: true },
+      // Workspace home consolidation — the single source of truth (lib/routing/redirects).
+      // Empty in Phase 0; Phase 4 fills it as capabilities re-home under /space.
+      ...WORKSPACE_REDIRECTS,
     ]
   },
   async headers() {
