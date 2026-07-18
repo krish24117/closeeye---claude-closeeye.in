@@ -97,7 +97,7 @@ export default function WorkspaceHome() {
           <p className="text-caption font-semibold uppercase tracking-widest text-muted">Everyone you love</p>
           <div className="grid gap-3 sm:grid-cols-2">
             {home.people.map((p) => (
-              <Link key={p.id} href="/space/people" className={cn('flex items-center gap-3 rounded-lg border bg-card p-4 shadow-sm transition-colors hover:border-green/40', justAdded === p.id ? 'border-green/50' : 'border-line/70')}>
+              <Link key={p.id} href={`/space/people/${p.id}`} className={cn('flex items-center gap-3 rounded-lg border bg-card p-4 shadow-sm transition-colors hover:border-green/40', justAdded === p.id ? 'border-green/50' : 'border-line/70')}>
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-body-sm font-semibold text-green">{initial(p.name)}</span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-body-sm font-semibold text-ink">{p.name}</p>

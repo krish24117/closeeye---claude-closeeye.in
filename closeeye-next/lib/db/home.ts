@@ -21,7 +21,7 @@ export interface HomePerson {
   regionCode: string
   state: WorkspaceState
 }
-export interface HomeActivity { id: string; when: string; text: string; person: string }
+export interface HomeActivity { id: string; when: string; text: string; person: string; personId: string }
 export interface HomeAlert { id: string; text: string; actionLabel: string; href: string }
 
 export interface HomeData {
@@ -87,7 +87,7 @@ export async function fetchHome(): Promise<HomeData | null> {
   const activity: HomeActivity[] = entries
     .filter((e) => e.entry_type === 'family_fact' || isObservation(e.entry_type))
     .slice(0, 8)
-    .map((e, i) => ({ id: `act-${i}`, when: whenLabel(e.created_at), text: e.body, person: firstName(nameOf.get(e.loved_one_id) ?? '') }))
+    .map((e, i) => ({ id: `act-${i}`, when: whenLabel(e.created_at), text: e.body, person: firstName(nameOf.get(e.loved_one_id) ?? ''), personId: e.loved_one_id }))
 
   const alerts: HomeAlert[] = people
     .filter((p) => p.state === 'getting_to_know')
