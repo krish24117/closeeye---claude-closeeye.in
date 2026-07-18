@@ -42,9 +42,9 @@ const CONTRACT = [
   '/family/visits/[id]',
 ]
 
-/** Does a page render at this route? ('/space' lives in the (space) route group.) */
+/** Does a page render at this route? ('/space' lives in the (workspace) route group.) */
 function pageExists(route: string): boolean {
-  const rel = route === '/space' ? join('app', '(space)', 'space') : join('app', ...route.slice(1).split('/'))
+  const rel = route === '/space' ? join('app', '(workspace)', 'space') : join('app', ...route.slice(1).split('/'))
   return existsSync(join(ROOT, rel, 'page.tsx'))
 }
 
