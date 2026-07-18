@@ -40,7 +40,9 @@ export default function AddFamilyMemberPage() {
       if (photo) setLocalPhoto(created.id, photo)
       haptic('success')
       toast(`${fullName.trim().split(/\s+/)[0]} was added to your family.`)
-      router.replace('/family/members')
+      // Uniform add flow: land on the new person's Space, where Connect begins understanding
+      // them — the same destination whether the add started on /space or the family dashboard.
+      router.replace(`/space?member=${created.id}`)
     } catch (e) {
       // Never surface a raw Postgres/Supabase error to the user; log it for us.
       console.error('[add-family-member] save failed:', e)

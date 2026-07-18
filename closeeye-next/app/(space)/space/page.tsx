@@ -32,8 +32,11 @@ export default function SpacePage() {
   const [loadError, setLoadError] = React.useState(false)
   const [view, setView] = React.useState<'space' | 'profile'>('space')
   // Which family member the Space is showing. null = the first, i.e. exactly what it did
-  // before. Switching refetches THAT member's ledger — one query, not twenty.
-  const [memberId, setMemberId] = React.useState<string | null>(null)
+  // before. Switching refetches THAT member's ledger — one query, not twenty. A ?member=<id>
+  // (e.g. straight after Add family) opens ON the person just added, not the oldest.
+  const [memberId, setMemberId] = React.useState<string | null>(() =>
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('member') : null,
+  )
 
   // live, editable copies
   const [known, setKnown] = React.useState<LedgerLine[]>([])
@@ -199,7 +202,7 @@ export default function SpacePage() {
                 </button>
               )
             })}
-            <button className="fchip add" onClick={() => router.push('/connect')}><span className="fa">+</span>Add someone</button>
+            <button className="fchip add" onClick={() => router.push('/family/add')}><span className="fa">+</span>Add someone</button>
           </div>
           {space.members.length === 1 && (
             <p className="fam-hint">Everyone you love, in one place — add another whenever you’re ready.</p>
@@ -325,7 +328,7 @@ export default function SpacePage() {
           <p className="sh">Your family</p>
           <div className="pcard">
             <div className="prow"><span className="k">{Person}</span><span className="v">{lo.city || 'Family Space'}<small>space opened today</small></span></div>
-            <div className="prow"><span className="k">Add someone</span><span className="v"><button className="plink" onClick={() => router.push('/connect')}>anyone you love →</button></span></div>
+            <div className="prow"><span className="k">Add someone</span><span className="v"><button className="plink" onClick={() => router.push('/family/add')}>anyone you love →</button></span></div>
           </div>
 
           <p className="sh">How Connect speaks to you</p>

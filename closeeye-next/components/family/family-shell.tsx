@@ -16,6 +16,7 @@ import {
   Phone,
   MapPin,
   Stethoscope,
+  UserPlus,
   X,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
@@ -87,6 +88,9 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
             <Logo variant="sidebar" />
           </Link>
           <div className="flex items-center gap-1">
+            <Link href="/family/add" aria-label="Add a family member" title="Add a family member" className="grid h-9 w-9 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft/60 hover:text-green">
+              <UserPlus className="h-5 w-5" strokeWidth={1.75} />
+            </Link>
             <BellButton count={unread} onClick={openNotif} />
             <AvatarLink href="/family/profile" initials={identity.initials} avatarUrl={identity.avatarUrl} name={identity.fullName} />
           </div>
@@ -130,6 +134,9 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
           <Logo variant="sidebar" />
         </Link>
         <div className="flex items-center gap-1">
+          <Link href="/family/add" aria-label="Add a family member" title="Add a family member" className="grid h-11 w-11 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft/60 hover:text-green">
+            <UserPlus className="h-6 w-6" strokeWidth={1.5} />
+          </Link>
           <BellButton count={unread} onClick={openNotif} />
           <button
             type="button"
