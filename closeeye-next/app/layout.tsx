@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { headers } from 'next/headers'
 import { Manrope, Inter } from 'next/font/google'
 import '@/styles/globals.css'
 import { RegisterSW } from '@/components/pwa/register-sw'
@@ -32,8 +33,19 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 }
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE.url),
+/**
+ * Host-aware metadata. One deployment serves multiple front doors (closeeye.app = global,
+ * closeeye.in = India, connect.closeeye.in = UAT), so a STATIC metadataBase would stamp every
+ * page's canonical / og:url / og:image with a single domain — which is why closeeye.app pages
+ * were referencing closeeye.in. Reading the request host makes each page reference the domain it
+ * is actually served on. (This opts the tree into dynamic rendering — an intentional trade for
+ * multi-domain correctness.)
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const host = (await headers()).get('host')?.split(':')[0]
+  const base = host ? `https://${host}` : SITE.url
+  return {
+  metadataBase: new URL(base),
   title: {
     default: `${SITE.name} — When you can’t be there, ${SITE.name} can`,
     template: `%s · ${SITE.name}`,
@@ -68,7 +80,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_IN',
-    url: SITE.url,
+    url: base,
     siteName: SITE.name,
     title: `${SITE.name} — When you can’t be there, ${SITE.name} can`,
     description: SITE.description,
@@ -97,6 +109,7 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: SITE.name,
   },
+  }
 }
 
 export default function RootLayout({
