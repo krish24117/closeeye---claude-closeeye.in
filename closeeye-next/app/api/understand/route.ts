@@ -10,6 +10,14 @@ import { understandOnce } from '@/lib/connect/understand-service'
 
 export const runtime = 'nodejs'
 
+// TEMP diagnostic — reports whether the key reached this deployment's runtime. Leaks NO value
+// (only presence, length, and a 7-char prefix to confirm it looks like an Anthropic key). Remove
+// once comprehension is confirmed live.
+export async function GET(): Promise<Response> {
+  const k = process.env.ANTHROPIC_API_KEY
+  return Response.json({ keyPresent: !!k, keyLength: k?.length ?? 0, prefix: k ? k.slice(0, 7) : null })
+}
+
 export async function POST(req: Request): Promise<Response> {
   let body: unknown
   try {
