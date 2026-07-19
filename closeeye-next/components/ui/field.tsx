@@ -59,7 +59,7 @@ export function Field({
     <div className={cn('flex flex-col gap-2', className)}>
       <Label htmlFor={htmlFor}>
         {label}
-        {optional && <span className="ml-1.5 font-normal text-content-muted">(optional)</span>}
+        {optional && <span className="ms-1.5 font-normal text-content-muted">(optional)</span>}
       </Label>
       {children}
       {error ? (

@@ -6,5 +6,6 @@
   "color-raw-hex-tsx": 23,
   "type-arbitrary-size": 60,
   "type-inline-fontsize": 6,
-  "radius-arbitrary": 19
+  "radius-arbitrary": 19,
+  "spacing-physical-direction": 110
 }

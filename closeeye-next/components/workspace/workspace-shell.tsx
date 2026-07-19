@@ -160,7 +160,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
             <Siren className="h-4 w-4" strokeWidth={1.75} /> {dial.text}
           </span>
         )}
-        <button onClick={signOut} className="flex w-full items-center gap-3 border-t border-edge px-4 py-2.5 text-left text-body-sm text-content hover:bg-surface-accent/50">
+        <button onClick={signOut} className="flex w-full items-center gap-3 border-t border-edge px-4 py-2.5 text-start text-body-sm text-content hover:bg-surface-accent/50">
           <LogOut className="h-4 w-4 text-content-muted" strokeWidth={1.75} /> Sign out
         </button>
       </div>
@@ -197,7 +197,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Main */}
-      <div className="lg:pl-64">
+      <div className="lg:ps-64">
         <main id="main" className="mx-auto max-w-4xl px-5 pb-32 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-10">{children}</main>
       </div>
 

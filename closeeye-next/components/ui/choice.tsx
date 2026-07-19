@@ -56,7 +56,7 @@ export function OptionCard({
       type="button"
       aria-pressed={selected}
       className={cn(
-        'group relative flex w-full flex-col items-start gap-4 rounded-md border bg-surface-raised p-6 text-left ' +
+        'group relative flex w-full flex-col items-start gap-4 rounded-md border bg-surface-raised p-6 text-start ' +
           'transition duration-feedback ease-standard focus-visible:outline-none focus-visible:ring-2 ' +
           'focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
         selected
@@ -77,7 +77,7 @@ export function OptionCard({
       </span>
 
       {icon && <FeatureIcon icon={icon} size="md" tone={selected ? 'solid' : 'soft'} />}
-      <span className="pr-8">
+      <span className="pe-8">
         <span className="block text-h4 text-content">{title}</span>
         {description && <span className="mt-1.5 block text-body-sm text-content-muted">{description}</span>}
       </span>

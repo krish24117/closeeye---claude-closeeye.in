@@ -86,7 +86,7 @@ function SheetAction({ icon: Icon, title, hint, wide, onClick }: {
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-start gap-3 rounded-2xl border border-edge bg-surface p-3.5 text-left transition-colors hover:border-brand/40 ${wide ? 'col-span-2' : ''}`}
+      className={`flex items-start gap-3 rounded-2xl border border-edge bg-surface p-3.5 text-start transition-colors hover:border-brand/40 ${wide ? 'col-span-2' : ''}`}
     >
       <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-accent text-brand">
         <Icon className="h-4 w-4" strokeWidth={1.75} />

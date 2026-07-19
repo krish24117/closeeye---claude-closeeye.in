@@ -40,6 +40,7 @@ export const CATEGORIES: Category[] = [
   { key: 'type-arbitrary-size', chapter: 'Ch.1 Typography', label: 'text-[…] arbitrary size', exts: ['.tsx'], re: /\btext-\[/g },
   { key: 'type-inline-fontsize', chapter: 'Ch.1 Typography', label: 'inline fontSize', exts: ['.tsx'], re: /fontSize\s*:/g },
   { key: 'radius-arbitrary', chapter: 'Ch.3 Spacing & Layout', label: 'rounded-[…] arbitrary radius', exts: ['.tsx'], re: /\brounded(?:-[a-z]+)?-\[/g },
+  { key: 'spacing-physical-direction', chapter: 'Ch.3 Spacing & Layout', label: 'physical direction utilities (ml/mr/pl/pr, text-left/right) — use logical ms/me/ps/pe', exts: ['.tsx'], re: /\b-?(?:ml|mr|pl|pr)-(?:\d|\[|auto)|\btext-(?:left|right)\b/g },
 ]
 
 function walk(dir: string, out: string[]): void {
