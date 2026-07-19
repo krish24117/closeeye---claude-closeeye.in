@@ -164,9 +164,6 @@ async function doProvision(): Promise<ProvisionResult> {
     const user = auth.user
     if (!user) return { lovedOneId: null, error: 'not-signed-in' }
 
-    // Completing the Connect experience IS this user's onboarding.
-    await supabase.auth.updateUser({ data: { onboarding_complete: true } }).catch(() => {})
-
     // F8 — a space created for the VISITOR is theirs, not "your family". By this point they are
     // signed in, so we know their actual name. The Space is named from the VERIFIED understanding
     // (carried in the draft), never a re-parse — so a place can never become a person.
@@ -217,6 +214,11 @@ async function doProvision(): Promise<ProvisionResult> {
       if (loErr || !lo) return { lovedOneId: null, error: 'could-not-create-space' } // draft kept
       lovedOneId = lo.id
     }
+
+    // Onboarding is complete ONLY once a real person exists. Marking it before the insert
+    // (as we used to) orphaned any account whose provision failed or timed out: "onboarded"
+    // with no one to show, and no route back. Set it here, after the space is guaranteed.
+    await supabase.auth.updateUser({ data: { onboarding_complete: true } }).catch(() => {})
 
     // Ensure the Connect ledger exists (completes a partial provision without duplicating).
     const { count } = await supabase

@@ -2,27 +2,32 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
 import { LogoMark } from '@/components/ui/logo'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { saveProfileBasics, selectPlan } from '@/lib/db/onboarding'
-import { PLANS, PROTECT_OPTIONS, type PlanId } from '@/lib/plans'
+import { PROTECT_OPTIONS, type PlanId } from '@/lib/plans'
 import { getPendingPlan, setPendingPlan } from '@/lib/membership-intent'
 import { cn } from '@/lib/utils'
 import { haptic } from '@/lib/haptics'
-import { phonePlaceholder } from '@/lib/platform/locale'
-import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 
-type StepId = 'name' | 'phone' | 'city' | 'who' | 'plan'
-const STEPS: StepId[] = ['name', 'phone', 'city', 'who', 'plan']
+type StepId = 'name' | 'who'
+const STEPS: StepId[] = ['name', 'who']
 
 /**
- * Production onboarding — the guided setup a signed-in user completes once.
- * Collects name + mobile (profiles), city + who they're protecting (creates the
- * first loved_ones row), and a membership plan (subscriptions). On finish it
- * provisions the family space and opens the populated dashboard.
+ * Production onboarding — optimised for FIRST SUCCESS, not data collection.
+ *
+ * Two mandatory steps only: the user's name and their first loved one. That is the
+ * minimum needed to deliver a first grounded Connect answer, so we land the user in
+ * their new person's Space within a minute. Everything else is PROGRESSIVE — phone +
+ * emergency contact + city are collected at the Care/booking gate (when a human service
+ * makes them necessary); membership is chosen at Membership (when they choose to pay).
+ *
+ * The one exception: a visitor who chose a plan on /membership BEFORE signing up carries
+ * that intent through — we confirm it silently and route to Activate, so the purchase
+ * funnel is never broken.
  */
 export default function OnboardingPage() {
   const router = useRouter()
@@ -32,10 +37,9 @@ export default function OnboardingPage() {
   const metaName = ((user?.user_metadata?.full_name as string) || (user?.user_metadata?.name as string) || '').trim()
   const [step, setStep] = React.useState(0)
   const [name, setName] = React.useState(metaName)
-  const [phone, setPhone] = React.useState('')
-  const [city, setCity] = React.useState('')
   const [protect, setProtect] = React.useState<string | null>(null)
   const [lovedName, setLovedName] = React.useState('')
+  // Carried membership intent only — no plan STEP; the visitor picked it on /membership.
   const [plan, setPlan] = React.useState<PlanId | null>(null)
   const [hasIntent, setHasIntent] = React.useState(false)
   const [busy, setBusy] = React.useState(false)
@@ -45,9 +49,9 @@ export default function OnboardingPage() {
     if (metaName && !name) setName(metaName)
   }, [metaName]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Carried membership intent — the visitor chose a plan on /membership before
-  // signing up. Pre-select it so onboarding CONFIRMS the choice rather than
-  // re-asking, and route to Activate (not the dashboard) at the end.
+  // Carried membership intent — the visitor chose a plan on /membership before signing
+  // up. We hold it (no plan step) and route to Activate at the end so the purchase
+  // funnel completes; a direct sign-up has no intent and simply lands in the Workspace.
   React.useEffect(() => {
     const pending = getPendingPlan()
     if (pending) { setPlan(pending); setHasIntent(true) }
@@ -60,10 +64,7 @@ export default function OnboardingPage() {
   const canAdvance = (() => {
     switch (id) {
       case 'name': return name.trim().length >= 2
-      case 'phone': return phone.replace(/\D/g, '').length >= 8
-      case 'city': return city.trim().length >= 2
       case 'who': return Boolean(protect) && (isSelf || lovedName.trim().length >= 2)
-      case 'plan': return Boolean(plan)
     }
   })()
 
@@ -84,26 +85,29 @@ export default function OnboardingPage() {
     setError('')
     try {
       const nameOfLovedOne = isSelf ? name.trim() : lovedName.trim()
-      // 1. Profile basics (name + mobile) and mark onboarding complete.
-      const p = await saveProfileBasics(user.id, { fullName: name, phone })
+      // 1. Profile name only, and mark onboarding complete. Phone is DEFERRED to the
+      //    Care/booking gate (progressive disclosure) — not needed for a first answer.
+      const p = await saveProfileBasics(user.id, { fullName: name })
       if (p.error) throw new Error(p.error)
-      // 2. Create the first loved one (provisions the family space).
-      await addLovedOne({ full_name: nameOfLovedOne, relationship: protect ?? 'Family', city })
-      // 3. Store the chosen plan (no charge; pay later via Razorpay).
-      if (plan) {
+      // 2. Create the first loved one (provisions the family space). City is DEFERRED
+      //    too — addLovedOne defaults it to '' and the Space prompts for it later.
+      const created = await addLovedOne({ full_name: nameOfLovedOne, relationship: protect ?? 'Family' })
+      // 3. Membership funnel ONLY: honour a plan chosen before sign-up. A direct sign-up
+      //    has no plan here — membership is chosen later, when the user chooses to pay.
+      if (hasIntent && plan) {
         const s = await selectPlan(user.id, plan)
         if (s.error) throw new Error(s.error)
       }
       await refreshOnboarding()
       await refresh()
       haptic('success')
-      // Arrived via the membership funnel → continue to Activate (payment), keeping
-      // the pending plan in sync with the final choice. Otherwise, open the dashboard.
       if (hasIntent && plan) {
+        // Purchase intent → continue to Activate (payment).
         setPendingPlan(plan)
         router.replace('/family/membership?activate=1')
       } else {
-        router.replace('/family')
+        // First success: land ON the new person, where the guided first task begins.
+        router.replace(`/space/people/${created.id}`)
       }
     } catch (e) {
       // Keep raw Postgres/Supabase errors out of the UI; log for debugging.
@@ -146,25 +150,9 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {id === 'phone' && (
-            <>
-              <h1 className="text-h2 text-ink">Add your mobile number</h1>
-              <p className="mt-2 text-body text-muted">So we can reach you quickly about your family’s care.</p>
-              <input autoFocus value={phone} onChange={(e) => setPhone(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder={phonePlaceholder(DEFAULT_REGION_CODE)} type="tel" inputMode="tel" autoComplete="tel" className={cn(inputCls, 'mt-6')} />
-            </>
-          )}
-
-          {id === 'city' && (
-            <>
-              <h1 className="text-h2 text-ink">Which city is your family in?</h1>
-              <p className="mt-2 text-body text-muted">Where care is needed — so we can match a trusted Guardian nearby.</p>
-              <input autoFocus value={city} onChange={(e) => setCity(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="e.g. Hyderabad" autoComplete="address-level2" className={cn(inputCls, 'mt-6')} />
-            </>
-          )}
-
           {id === 'who' && (
             <>
-              <h1 className="text-h2 text-ink">Who are you protecting?</h1>
+              <h1 className="text-h2 text-ink">Who would you like Close Eye to know first?</h1>
               <p className="mt-2 text-body text-muted">We’ll set up their space first — you can add more later.</p>
               <div className="mt-6 grid grid-cols-2 gap-3">
                 {PROTECT_OPTIONS.map((o) => (
@@ -180,34 +168,6 @@ export default function OnboardingPage() {
                   <input autoFocus value={lovedName} onChange={(e) => setLovedName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="e.g. Ramesh Rao" className={inputCls} />
                 </label>
               )}
-            </>
-          )}
-
-          {id === 'plan' && (
-            <>
-              <h1 className="text-h2 text-ink">{hasIntent ? 'Confirm your membership' : 'Choose your membership'}</h1>
-              <p className="mt-2 text-body text-muted">
-                {hasIntent
-                  ? 'You chose this on the last step — confirm it or change your mind. You won’t be charged yet; you’ll activate payment next.'
-                  : 'Pick what fits — you won’t be charged now. You can activate and pay anytime from Membership.'}
-              </p>
-              <div className="mt-6 flex flex-col gap-3">
-                {PLANS.map((pl) => (
-                  <button key={pl.id} type="button" onClick={() => { setPlan(pl.id); if (hasIntent) setPendingPlan(pl.id); setError('') }} className={cn('rounded-lg border-2 bg-card p-4 text-left transition-colors', plan === pl.id ? 'border-green bg-accent-soft/30' : 'border-line hover:border-ink/20')}>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-2">
-                        <span className="text-body font-bold text-ink">{pl.name}</span>
-                        {pl.popular && <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-green">Popular</span>}
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <span className="text-body font-semibold text-ink">{pl.price}<span className="text-caption font-medium text-muted">{pl.period}</span></span>
-                        <span className={cn('grid h-5 w-5 place-items-center rounded-full border', plan === pl.id ? 'border-green bg-green text-white' : 'border-line')}>{plan === pl.id && <Check className="h-3.5 w-3.5" strokeWidth={3} />}</span>
-                      </span>
-                    </div>
-                    <p className="mt-1 text-caption text-muted">{pl.description}</p>
-                  </button>
-                ))}
-              </div>
             </>
           )}
 

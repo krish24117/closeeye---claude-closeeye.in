@@ -46,8 +46,9 @@ export default function AddPersonPage() {
       if (photo) setLocalPhoto(created.id, photo)
       haptic('success')
       toast(`${fullName.trim().split(/\s+/)[0]} was added to your family.`)
-      // Uniform add flow: land on the new person's Space, where Connect begins understanding them.
-      router.replace(`/space?member=${created.id}`)
+      // Land ON the new person's Space (not the generic home, which ignores ?member) — where the
+      // guided first task begins understanding them. Fixes the dropped deep-link.
+      router.replace(`/space/people/${created.id}`)
     } catch (e) {
       // Never surface a raw Postgres/Supabase error to the user; log it for us.
       console.error('[space-add-person] save failed:', e)

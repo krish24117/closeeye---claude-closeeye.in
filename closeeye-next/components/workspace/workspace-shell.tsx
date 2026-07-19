@@ -51,16 +51,21 @@ function initialsFrom(name?: string | null, email?: string | null) {
 }
 
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
-  const { session, user, loading } = useAuth()
+  const { session, user, loading, onboardingComplete } = useAuth()
   const pathname = usePathname() || ''
   const router = useRouter()
   const [menuOpen, setMenuOpen] = React.useState(false)
   const [sheetOpen, setSheetOpen] = React.useState(false)
 
   // Unified authentication entry — one guard, the app's auth provider, the canonical sign-in.
+  // Also closes the deep-link hole: a signed-in user who never onboarded (direct /space link or
+  // back-nav) is sent to guided setup instead of a stranded empty Workspace. `=== false` only —
+  // never redirect while onboarding status is still resolving (null), so there's no flash/loop.
   React.useEffect(() => {
-    if (!loading && !session) router.replace('/connect')
-  }, [loading, session, router])
+    if (loading) return
+    if (!session) { router.replace('/connect'); return }
+    if (onboardingComplete === false) router.replace('/onboarding')
+  }, [loading, session, onboardingComplete, router])
 
   // Close the Account menu on Escape (a11y — a menu must be dismissible from the keyboard).
   React.useEffect(() => {

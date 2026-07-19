@@ -10,7 +10,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, Sparkles, Pencil, HeartPulse, Camera, Plus } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Sparkles, Pencil, HeartPulse, Camera, Plus, FileText } from 'lucide-react'
 import { fetchSpace, appendLearning, personName, type SpaceData } from '@/lib/db/space'
 import type { Blank, LedgerLine } from '@/lib/connect/ledger'
 import { deriveSnapshot, deriveRecommendations, groupUnderstanding, type UnderstandingInput } from '@/lib/space/understanding'
@@ -66,6 +66,17 @@ export default function PersonSpacePage() {
   const snapshot = deriveSnapshot(uInput, recommendations)
   const sections = groupUnderstanding(uInput)
 
+  // First-run guidance: a person who's just been added has no captured facts yet. Instead of a
+  // sparse Space, offer one guided first task — asking a first question (the moment of first
+  // success), or enriching what Close Eye knows. Each links to an existing flow; nothing new is
+  // built. It fades the moment the family tells Close Eye anything.
+  const firstRun = known.length === 0 && learned.length === 0
+  const firstTasks = [
+    { href: `/space/people/${lo.id}/health`, icon: HeartPulse, label: 'Add a health detail' },
+    { href: `/space/people/${lo.id}/memories/add`, icon: Camera, label: 'Add a memory' },
+    { href: `/space/people/${lo.id}/memories/add`, icon: FileText, label: 'Upload a report' },
+  ]
+
   async function saveFill() {
     const b = activeBlank, text = fill.trim()
     if (!b || !text) return
@@ -95,6 +106,32 @@ export default function PersonSpacePage() {
           <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} /> Edit
         </Link>
       </div>
+
+      {/* First task — the guided moment right after adding someone (fades once a fact exists) */}
+      {firstRun && (
+        <section className="rounded-lg border border-line/70 bg-card p-5 shadow-sm">
+          <p className="text-caption font-semibold uppercase tracking-widest text-green">Let’s begin</p>
+          <h2 className="mt-2 text-h4 text-ink">Let’s get to know {person}.</h2>
+          <p className="mt-1.5 text-body-sm text-muted">The more Close Eye knows, the better it can look out for {person}. Start with one — it takes a minute.</p>
+          <div className="mt-4 flex flex-col gap-2.5">
+            <Link href="/space/connect" className="flex items-center gap-3 rounded-lg bg-ink p-3.5 text-ivory transition-opacity hover:opacity-90">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ivory/15"><Sparkles className="h-4 w-4" strokeWidth={1.75} /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-body-sm font-semibold">Ask your first question</span>
+                <span className="block truncate text-caption text-ivory/70">“How has {person} been recently?”</span>
+              </span>
+              <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} />
+            </Link>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+              {firstTasks.map((t) => (
+                <Link key={t.label} href={t.href} className="flex items-center gap-2.5 rounded-lg border border-line/70 bg-ivory p-3 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
+                  <t.icon className="h-4 w-4 shrink-0 text-green" strokeWidth={1.75} /> {t.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Snapshot — how they are */}
       <section className="rounded-lg border border-line/70 bg-card p-5 shadow-sm">
