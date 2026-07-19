@@ -99,18 +99,34 @@ const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 
 // The three story cards — they replace every explanatory paragraph and expand in
 // place (never navigate away). Copy is fixed; the title alone tells the story.
-// The four pillars of the family-intelligence system (design-approved). Presence (Care) is
-// appended only when CARE_ENABLED — it's a phase-2 capability, never promised on the global door.
-const STORY_CARDS = [
-  { id: 'understand', title: 'Understands your family', link: 'Learn more', body: 'Close Eye learns what matters about the people you love, so every conversation begins with understanding — not assumptions.', tag: 'this is Understanding.' },
-  { id: 'remember', title: 'Remembers what matters', link: 'Learn more', body: 'Every fact, photo and moment your family shares is kept — privately, for years — and brought back the moment it matters.', tag: 'this is Memory.' },
-  { id: 'notice', title: 'Notices what’s changed', link: 'Learn more', body: 'Close Eye surfaces what’s gone quiet or shifted across everyone you love — gently, before you have to ask.', tag: 'this is Attention.' },
-  { id: 'protect', title: 'Private by design', link: 'Learn more', body: 'Close Eye never invents information about your family. What it holds is yours alone — only ever seen by you.', tag: 'this is Trust.' },
-  ...(CARE_ENABLED ? [{ id: 'support', title: 'Real people, on the ground', link: 'See how', body: 'When understanding isn’t enough, Close Eye brings trusted people and professionals to your family.', tag: 'this is Presence.' }] : []),
+// The four pillars of the family-intelligence system (design-approved artifact). Static
+// icon-badge cards — each states the capability + one real demonstration. Presence (Care) is
+// appended only when CARE_ENABLED — a phase-2 capability, never promised on the global door.
+const CAP_ICON: Record<string, React.ReactElement> = {
+  understand: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 4v5c0 4-3 7-7 9-4-2-7-5-7-9V7z" /><path d="M9 12l2 2 4-4" /></svg>,
+  remember: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg>,
+  notice: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinejoin="round"><circle cx="12" cy="12" r="3.2" /><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z" /></svg>,
+  protect: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinejoin="round"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" /></svg>,
+  support: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M11 13l2 2 4-4" /><path d="M20.5 12a8.5 8.5 0 10-8.5 8.5" /></svg>,
+}
+const STORY_CARDS: { id: string; icon: string; title: string; body: string; demo: React.ReactNode }[] = [
+  { id: 'understand', icon: 'understand', title: 'Understands your family', body: 'Reads what you mean, not just what you type — so a person is never mistaken for a place.', demo: <>“my mother” → <b>a person</b>, not a city.</> },
+  { id: 'remember', icon: 'remember', title: 'Remembers what matters', body: 'Holds every fact, photo and moment your family shares — for years, in one place.', demo: <>Recalls <b>Siyah’s birthday</b> next March.</> },
+  { id: 'notice', icon: 'notice', title: 'Notices what’s changed', body: 'Surfaces what’s gone quiet or shifted across everyone you love — before you have to ask.', demo: <>“It’s been 3 weeks since <b>your father’s</b> update.”</> },
+  { id: 'protect', icon: 'protect', title: 'Private by design', body: 'Never invents. Your family’s life stays yours alone — only ever seen by you.', demo: <><b>Deterministic</b> safety on every message.</> },
+  ...(CARE_ENABLED ? [{ id: 'support', icon: 'support', title: 'Real people, on the ground', body: 'When understanding isn’t enough, Close Eye brings trusted people and professionals to your family.', demo: <>A verified person, <b>when you need one</b>.</> }] : []),
 ]
 // Breadth — the parts of family life Close Eye holds intelligence for. Honest, Connect-native
 // (no Care/presence claim on the global door). "Close Eye will grow with your family" carries the rest.
 const CARE_CATS = ['Health & wellbeing', 'Everyday life', 'Memories & milestones']
+
+// The family-graph illustration (design-approved artifact) — a sample of what Close Eye holds:
+// everyone you love, known facts (●) and what it's still learning (○). Illustrative, pre-sign-in.
+const FGRAPH: { id: string; av: string; name: string; facts: { t: string; open?: boolean }[] }[] = [
+  { id: 'm', av: 'M', name: 'Mother', facts: [{ t: 'Lives alone' }, { t: 'Loves her morning coffee' }, { t: 'Her health — learning', open: true }] },
+  { id: 'f', av: 'F', name: 'Father', facts: [{ t: 'Retired · gardening' }, { t: 'Blood-pressure tablet — mornings' }, { t: 'His routine — learning', open: true }] },
+  { id: 's', av: 'S', name: 'Siyah', facts: [{ t: 'Turns 6 · March 12' }, { t: 'Photos & memories kept' }, { t: 'School year — learning', open: true }] },
+]
 
 
 export function ConnectExperience() {
@@ -131,7 +147,6 @@ export function ConnectExperience() {
   // hero unfold — cinematic on first visit, settled at once for returning visitors
   const [heroN, setHeroN] = React.useState(0)
   const [heroSettled, setHeroSettled] = React.useState(false)
-  const [openCard, setOpenCard] = React.useState<string | null>(null)
   /* ── the demonstration ──
      phase 0 nothing · 1 writing · 2 understanding · 3 answering · 4 her turn (settled).
      It NEVER runs for someone who has seen it, or who asked for less motion, or who has
@@ -596,21 +611,14 @@ export function ConnectExperience() {
   function storyCards(extra?: string) {
     return (
       <div className={`storycards${extra ? ` ${extra}` : ''}`} aria-label="What Close Eye does">
-        {STORY_CARDS.map((c) => {
-          const on = openCard === c.id
-          return (
-            <div key={c.id} className={`scard${on ? ' open' : ''}`}>
-              <button type="button" className="scard-h" aria-expanded={on} onClick={() => setOpenCard(on ? null : c.id)}>
-                <span className="ld" />
-                <span className="scard-t">{c.title}</span>
-                <span className="scard-more">{on
-                  ? <span className="scard-x" role="img" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></span>
-                  : `${c.link} →`}</span>
-              </button>
-              <div className="scard-b"><div><p>{c.body}</p><p className="scard-tag">— {c.tag}</p></div></div>
-            </div>
-          )
-        })}
+        {STORY_CARDS.map((c) => (
+          <div key={c.id} className="scard">
+            <span className="scard-ic" aria-hidden="true">{CAP_ICON[c.icon]}</span>
+            <h3 className="scard-t">{c.title}</h3>
+            <p className="scard-body">{c.body}</p>
+            <p className="scard-demo">{c.demo}</p>
+          </div>
+        ))}
       </div>
     )
   }
@@ -761,6 +769,23 @@ export function ConnectExperience() {
               </div>
             </div>
             {storyCards()}
+            <section className="fgraph" aria-label="Your family graph">
+              <p className="fg-k">Your family graph</p>
+              <h2 className="fg-h">The private intelligence only your family has.</h2>
+              <p className="fg-sub">Everyone you love, everything Close Eye has learned, and what it’s still getting to know — growing every time you tell it something.</p>
+              <div className="fg-nodes">
+                {FGRAPH.map((n) => (
+                  <div key={n.id} className="fg-node">
+                    <div className="fg-nm"><span className="fg-av" aria-hidden="true">{n.av}</span>{n.name}</div>
+                    <div className="fg-facts">
+                      {n.facts.map((f, i) => (
+                        <span key={i} className={`fg-fct${f.open ? ' open' : ''}`}><span className="fg-d" aria-hidden="true" />{f.t}</span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
             <div className="breadth" aria-label="For the whole family">
               <p className="breadth-h">For the whole family.</p>
               <p className="breadth-who">Parents, partners, siblings, children — the people who matter most.</p>
