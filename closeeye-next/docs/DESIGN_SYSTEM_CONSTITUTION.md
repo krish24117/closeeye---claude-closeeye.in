@@ -24,6 +24,44 @@ rigor already applied to product architecture.
 
 ---
 
+# Governance Model
+
+## Incremental governance
+
+A chapter is implemented the moment it is ratified: its token **foundation** — declarative custom
+properties in `styles/design-tokens.css`, **consumed by nothing** — lands immediately and changes
+zero pixels. **No consumer component migrates onto a chapter until that chapter's foundation
+exists.**
+
+## The six migration phases (per chapter)
+
+1. **Design Tokens** — 2. **Lint Rules** — 3. **Component Migration** — 4. **Legacy Cleanup** —
+5. **Visual QA** — 6. **Accessibility QA**. No visual redesign during migration; the objective is
+**architectural convergence, not aesthetic change**. Every phase is founder-gated.
+
+## The Migration Authorization Gate (ratified 2026-07-19)
+
+**Component migration (Phase 3 of any chapter) MAY NOT BEGIN until a Design System Readiness Report
+is produced and approved by the founder.** The founder's approval of that report *is* the formal
+authorization to migrate. Until then, only foundations (Phase 1) and lint (Phase 2) proceed.
+
+The report is produced once **Chapters 1–4 are ratified and their token foundations exist**, as a
+single evidence-backed checkpoint. It covers:
+
+- **Constitution chapters completed** — which are ratified, with foundations in place.
+- **Token coverage** — the roles defined vs. the surfaces they must serve; gaps.
+- **Remaining raw values** — the arbitrary typography / colour / spacing still in the code, counted.
+- **Lint rule coverage** — which defects are CI-enforced vs. not yet.
+- **Migration risk** — by surface / subsystem (marketing, workspace, connect, consoles, family).
+- **Estimated effort by component** — sized, so migration can be sequenced.
+- **Expected visual impact** — per surface; convergence should be near-invisible, and where it
+  isn't, it is named in advance.
+- **Rollback strategy** — how any phase reverts cleanly.
+
+This gate exists so migration is a deliberate, evidence-backed decision — never drift.
+
+---
+
 # Chapter 1 — Typography
 
 ## Objective
