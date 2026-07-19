@@ -36,7 +36,7 @@ export function ConnectSheet({ open, onClose }: { open: boolean; onClose: () => 
   return (
     <Overlay open={open} onClose={onClose}>
       <div className="p-5 pb-7">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line" aria-hidden />
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-edge" aria-hidden />
 
         <h2 className="sr-only">Connect</h2>
 
@@ -57,7 +57,7 @@ export function ConnectSheet({ open, onClose }: { open: boolean; onClose: () => 
             type="button"
             onClick={ask}
             aria-label="Ask"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-ivory transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-inverse text-content-inverse transition-opacity hover:opacity-90 disabled:opacity-40"
             disabled={!q.trim()}
           >
             <ArrowUp className="h-4 w-4" strokeWidth={2.2} />
@@ -86,14 +86,14 @@ function SheetAction({ icon: Icon, title, hint, wide, onClick }: {
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-start gap-3 rounded-2xl border border-line bg-ivory p-3.5 text-left transition-colors hover:border-green/40 ${wide ? 'col-span-2' : ''}`}
+      className={`flex items-start gap-3 rounded-2xl border border-edge bg-surface p-3.5 text-left transition-colors hover:border-brand/40 ${wide ? 'col-span-2' : ''}`}
     >
-      <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-green">
+      <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-accent text-brand">
         <Icon className="h-4 w-4" strokeWidth={1.75} />
       </span>
       <span className="min-w-0">
-        <span className="block text-body-sm font-semibold text-ink">{title}</span>
-        <span className="block text-caption text-muted">{hint}</span>
+        <span className="block text-body-sm font-semibold text-content">{title}</span>
+        <span className="block text-caption text-content-muted">{hint}</span>
       </span>
     </button>
   )

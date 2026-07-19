@@ -13,7 +13,7 @@ export const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      'rounded-lg border border-line bg-card p-7 shadow-sm',
+      'rounded-lg border border-edge bg-surface-raised p-7 shadow-sm',
       interactive && 'transition duration-transition ease-standard hover:-translate-y-1 hover:shadow-md',
       className,
     )}

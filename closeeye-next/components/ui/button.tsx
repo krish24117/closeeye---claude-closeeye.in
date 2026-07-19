@@ -15,15 +15,15 @@ import { cn } from '@/lib/utils'
 const button = cva(
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm font-semibold ' +
     'transition duration-feedback ease-standard select-none disabled:pointer-events-none disabled:opacity-50 ' +
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green ' +
-    'focus-visible:ring-offset-ivory [&_svg]:shrink-0',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand ' +
+    'focus-visible:ring-offset-surface [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        primary: 'bg-ink text-ivory shadow-sm hover:bg-green-hover hover:-translate-y-0.5 hover:shadow-md',
-        secondary: 'border border-ink/15 bg-transparent text-ink hover:border-ink/35 hover:bg-ink/[0.03]',
-        ghost: 'bg-transparent text-ink hover:bg-accent-soft',
-        text: 'h-auto rounded-none px-0 text-green underline-offset-4 hover:underline',
+        primary: 'bg-surface-inverse text-content-inverse shadow-sm hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-md',
+        secondary: 'border border-content/15 bg-transparent text-content hover:border-content/35 hover:bg-surface-inverse/[0.03]',
+        ghost: 'bg-transparent text-content hover:bg-surface-accent',
+        text: 'h-auto rounded-none px-0 text-brand underline-offset-4 hover:underline',
       },
       size: {
         sm: 'h-11 px-5 text-body-sm',
@@ -33,9 +33,9 @@ const button = cva(
       onDark: { true: '', false: '' },
     },
     compoundVariants: [
-      { variant: 'primary', onDark: true, class: 'bg-ivory text-ink hover:bg-white hover:shadow-lg' },
-      { variant: 'secondary', onDark: true, class: 'border-white/25 text-white hover:border-white/50 hover:bg-white/10' },
-      { variant: 'ghost', onDark: true, class: 'text-white hover:bg-white/10' },
+      { variant: 'primary', onDark: true, class: 'bg-surface text-content hover:bg-surface-raised hover:shadow-lg' },
+      { variant: 'secondary', onDark: true, class: 'border-content-inverse/25 text-content-inverse hover:border-content-inverse/50 hover:bg-surface-raised/10' },
+      { variant: 'ghost', onDark: true, class: 'text-content-inverse hover:bg-surface-raised/10' },
       { variant: 'text', onDark: true, class: 'text-accent' },
       { variant: 'text', size: 'sm', class: 'h-auto' },
       { variant: 'text', size: 'md', class: 'h-auto' },

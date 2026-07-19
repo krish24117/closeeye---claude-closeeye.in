@@ -72,8 +72,8 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
 
   if (loading || !session) {
     return (
-      <div className="grid min-h-dvh place-items-center bg-ivory">
-        <span className="text-caption text-muted">Opening your Workspace…</span>
+      <div className="grid min-h-dvh place-items-center bg-surface">
+        <span className="text-caption text-content-muted">Opening your Workspace…</span>
       </div>
     )
   }
@@ -108,10 +108,10 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
     <>
       {VISIBLE_PRIMARY_NAV.map((item) => {
         const Icon = ICONS[item.href] ?? Home
-        const base = 'flex items-center gap-3 rounded-sm px-3 py-2.5 text-body-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40'
+        const base = 'flex items-center gap-3 rounded-sm px-3 py-2.5 text-body-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40'
         if (item.href === CONNECT_HREF) {
           return (
-            <button key={item.href} onClick={() => setSheetOpen(true)} aria-haspopup="dialog" aria-expanded={sheetOpen} className={cn(base, 'text-ink hover:bg-accent-soft/60')}>
+            <button key={item.href} onClick={() => setSheetOpen(true)} aria-haspopup="dialog" aria-expanded={sheetOpen} className={cn(base, 'text-content hover:bg-surface-accent/60')}>
               <span className="wsp-orb-mini grid h-5 w-5 place-items-center rounded-full">
                 <span className="wsp-orb-mini-core h-1.5 w-1.5 rounded-full" />
               </span>
@@ -121,7 +121,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         }
         const active = isActive(pathname, item.href, item.exact)
         return (
-          <Link key={item.href} href={item.href} aria-current={active ? 'page' : undefined} className={cn(base, active ? 'bg-accent-soft text-green' : 'text-muted hover:bg-accent-soft/50 hover:text-ink')}>
+          <Link key={item.href} href={item.href} aria-current={active ? 'page' : undefined} className={cn(base, active ? 'bg-surface-accent text-brand' : 'text-content-muted hover:bg-surface-accent/50 hover:text-content')}>
             <Icon className="h-5 w-5" strokeWidth={1.5} />
             {item.label}
           </Link>
@@ -135,33 +135,33 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const AccountMenu = () => (
     <>
       <button aria-hidden className="fixed inset-0 z-40 cursor-default" onClick={() => setMenuOpen(false)} />
-      <div role="menu" className="absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-lg border border-line bg-card shadow-lg">
-        <div className="border-b border-line px-4 py-3">
-          <p className="truncate text-body-sm font-semibold text-ink">{name || 'Your account'}</p>
-          <p className="truncate text-caption text-muted">{user?.email}</p>
+      <div role="menu" className="absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-lg border border-edge bg-surface-raised shadow-lg">
+        <div className="border-b border-edge px-4 py-3">
+          <p className="truncate text-body-sm font-semibold text-content">{name || 'Your account'}</p>
+          <p className="truncate text-caption text-content-muted">{user?.email}</p>
         </div>
-        <Link href="/space/settings" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-ink hover:bg-accent-soft/50">
-          <UserRound className="h-4 w-4 text-muted" strokeWidth={1.75} /> Profile
+        <Link href="/space/settings" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-content hover:bg-surface-accent/50">
+          <UserRound className="h-4 w-4 text-content-muted" strokeWidth={1.75} /> Profile
         </Link>
         {OVERFLOW_NAV.map((item) => {
           const Icon = ICONS[item.href] ?? Home
           return (
-            <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-ink hover:bg-accent-soft/50">
-              <Icon className="h-4 w-4 text-muted" strokeWidth={1.75} /> {item.label}
+            <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-content hover:bg-surface-accent/50">
+              <Icon className="h-4 w-4 text-content-muted" strokeWidth={1.75} /> {item.label}
             </Link>
           )
         })}
         {dial.href ? (
-          <a href={dial.href} className="flex items-center gap-3 border-t border-line px-4 py-2.5 text-body-sm text-error hover:bg-error/5">
+          <a href={dial.href} className="flex items-center gap-3 border-t border-edge px-4 py-2.5 text-body-sm text-error hover:bg-error/5">
             <Siren className="h-4 w-4" strokeWidth={1.75} /> Emergency · {dial.text.replace(/^.*·\s*/, '')}
           </a>
         ) : (
-          <span className="flex items-center gap-3 border-t border-line px-4 py-2.5 text-body-sm text-error">
+          <span className="flex items-center gap-3 border-t border-edge px-4 py-2.5 text-body-sm text-error">
             <Siren className="h-4 w-4" strokeWidth={1.75} /> {dial.text}
           </span>
         )}
-        <button onClick={signOut} className="flex w-full items-center gap-3 border-t border-line px-4 py-2.5 text-left text-body-sm text-ink hover:bg-accent-soft/50">
-          <LogOut className="h-4 w-4 text-muted" strokeWidth={1.75} /> Sign out
+        <button onClick={signOut} className="flex w-full items-center gap-3 border-t border-edge px-4 py-2.5 text-left text-body-sm text-content hover:bg-surface-accent/50">
+          <LogOut className="h-4 w-4 text-content-muted" strokeWidth={1.75} /> Sign out
         </button>
       </div>
     </>
@@ -170,18 +170,18 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-card px-4 py-6 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-edge bg-surface-raised px-4 py-6 lg:flex">
         <Link href="/space" aria-label="Workspace home" className="px-2"><Logo variant="sidebar" /></Link>
         <nav className="mt-8 flex flex-1 flex-col gap-1" aria-label="Workspace"><SidebarNav /></nav>
-        <Link href="/family/add" className="mt-4 flex items-center justify-center gap-2 rounded-sm border border-line py-2.5 text-body-sm font-semibold text-ink transition-colors hover:bg-accent-soft/50">
+        <Link href="/family/add" className="mt-4 flex items-center justify-center gap-2 rounded-sm border border-edge py-2.5 text-body-sm font-semibold text-content transition-colors hover:bg-surface-accent/50">
           <UserPlus className="h-4 w-4" strokeWidth={1.75} /> Add someone
         </Link>
       </aside>
 
       {/* Mobile top bar — brand + add someone. The account avatar menu is gone; Profile owns it. */}
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-ivory/90 px-5 backdrop-blur-xl lg:hidden">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-edge bg-surface/90 px-5 backdrop-blur-xl lg:hidden">
         <Link href="/space" aria-label="Workspace home"><Logo variant="sidebar" /></Link>
-        <Link href="/family/add" aria-label="Add someone" className="grid h-11 w-11 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft/60 hover:text-green">
+        <Link href="/family/add" aria-label="Add someone" className="grid h-11 w-11 place-items-center rounded-full text-content-muted transition-colors hover:bg-surface-accent/60 hover:text-brand">
           <UserPlus className="h-6 w-6" strokeWidth={1.5} />
         </Link>
       </header>
@@ -189,7 +189,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
       {/* Desktop account button (top-right, over content) */}
       <div className="fixed right-6 top-5 z-30 hidden lg:block">
         <div className="relative">
-          <button onClick={() => setMenuOpen((v) => !v)} aria-label="Account" aria-expanded={menuOpen} className="grid h-9 w-9 place-items-center rounded-full bg-green text-body-sm font-semibold text-ivory focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 focus-visible:ring-offset-2 shadow-sm">
+          <button onClick={() => setMenuOpen((v) => !v)} aria-label="Account" aria-expanded={menuOpen} className="grid h-9 w-9 place-items-center rounded-full bg-brand text-body-sm font-semibold text-content-inverse focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 shadow-sm">
             {initials}
           </button>
           {menuOpen && <AccountMenu />}

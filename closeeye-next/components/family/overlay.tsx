@@ -55,7 +55,7 @@ export function Overlay({
       {open && (
         <motion.div
           className={cn(
-            'fixed inset-0 z-50 flex bg-ink/40 backdrop-blur-sm',
+            'fixed inset-0 z-50 flex bg-surface-inverse/40 backdrop-blur-sm',
             align === 'center' ? 'items-center justify-center p-4' : 'items-end justify-center p-0 sm:items-center sm:p-6',
           )}
           initial={{ opacity: 0 }}
@@ -64,7 +64,7 @@ export function Overlay({
           onClick={onClose}
         >
           <motion.div
-            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-lg bg-card shadow-lg sm:rounded-lg"
+            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-lg bg-surface-raised shadow-lg sm:rounded-lg"
             initial={{ y: slide, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: slide, opacity: 0 }}
