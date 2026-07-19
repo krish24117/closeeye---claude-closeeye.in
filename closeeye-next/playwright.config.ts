@@ -1,4 +1,18 @@
 import { defineConfig, devices } from '@playwright/test'
+import { readFileSync, existsSync } from 'node:fs'
+
+// Load local-only validation creds from .env.local (gitignored) if present, so `npm run e2e`
+// picks up the authenticated journeys locally. CI provides these via GitHub secrets instead.
+try {
+  if (existsSync('.env.local')) {
+    for (const line of readFileSync('.env.local', 'utf8').split('\n')) {
+      const m = line.match(/^\s*(PLAYWRIGHT_USER|PLAYWRIGHT_PASS|VALIDATE_BASE_URL)\s*=\s*(.*?)\s*$/)
+      if (m && m[1] && !process.env[m[1]]) process.env[m[1]] = (m[2] ?? '').replace(/^["']|["']$/g, '')
+    }
+  }
+} catch {
+  /* no local env — CI or public-only run */
+}
 
 /**
  * Launch Validation Harness v1 — the release gate. Deliberately SMALL: critical journeys, axe,

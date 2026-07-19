@@ -18,10 +18,10 @@ test.describe('authenticated journeys', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/auth', { waitUntil: 'domcontentloaded' })
-    await page.getByLabel(/email/i).first().fill(user!)
-    await page.getByLabel(/password/i).first().fill(pass!)
-    await page.getByRole('button', { name: /sign in|log in|continue/i }).first().click()
-    await page.waitForURL(/\/(space|family|pm|admin|guardian)/, { timeout: 20_000 })
+    await page.getByPlaceholder('you@email.com').fill(user!)
+    await page.getByPlaceholder('Your password').fill(pass!)
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+    await page.waitForURL(/\/(space|family|pm|admin|guardian)/, { timeout: 25_000 })
   })
 
   test('@auth Workspace opens', async ({ page }) => {
@@ -34,7 +34,8 @@ test.describe('authenticated journeys', () => {
 
   test('@auth Profile (Settings) opens', async ({ page }) => {
     await page.goto('/space/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText(/you and your access|profile/i).first()).toBeVisible()
+    // Target the page heading specifically — not the nav "Profile" link (hidden on mobile).
+    await expect(page.getByRole('heading', { name: /you and your access/i })).toBeVisible()
   })
 
   test('@auth Add-family form is reachable (not submitted)', async ({ page }) => {
