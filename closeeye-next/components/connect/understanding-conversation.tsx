@@ -28,6 +28,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
   const [turns, setTurns] = React.useState<Turn[]>([])
   const [conversationId, setConversationId] = React.useState<string | null>(null) // durable UI thread
   const [askThreadId, setAskThreadId] = React.useState<string | null>(null) // ask-health's own thread
+  const [subjectId, setSubjectId] = React.useState<string | null>(null) // the resolved loved one, for follow-up grounding
   const [lovedOnes, setLovedOnes] = React.useState<LovedOneRef[]>([])
   const [history, setHistory] = React.useState<ConversationSummary[]>([])
   const [showHistory, setShowHistory] = React.useState(false)
@@ -63,8 +64,9 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
     if (convId) void appendMessage(convId, { role: 'user', content: q })
 
     try {
-      const res = await answerFamilyQuestion({ question: q, lovedOnes, askThreadId, priorTurns })
+      const res = await answerFamilyQuestion({ question: q, lovedOnes, askThreadId, subjectId, priorTurns })
       if (res.queryId && !askThreadId) setAskThreadId(res.queryId)
+      if (res.lovedOneId && !subjectId) setSubjectId(res.lovedOneId)
       setTurns((prev) => [...prev, { role: 'assistant', kind: res.kind, text: res.text, understanding: res.understanding, ambulanceNumber: res.ambulanceNumber, notice: res.notice }])
       if (convId) void appendMessage(convId, { role: 'assistant', content: res.text ?? '', kind: res.kind === 'clarify' || res.kind === 'decline' || res.kind === 'medical' ? 'answer' : (res.kind === 'error' ? 'pending' : res.kind), understanding: res.understanding, ambulanceNumber: res.ambulanceNumber })
       void refreshHistory()
@@ -78,13 +80,14 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
     if (!thread) return
     setConversationId(thread.id)
     setAskThreadId(null) // fresh ask-health thread; the reopened turns carry context via priorTurns
+    setSubjectId(thread.lovedOneId ?? null)
     setTurns(thread.messages.map((m) => m.role === 'user'
       ? { role: 'user', content: m.content }
       : { role: 'assistant', kind: m.kind as ConnectKind, text: m.content, understanding: m.understanding, ambulanceNumber: m.ambulanceNumber }))
     setShowHistory(false)
   }
 
-  function newConversation() { setTurns([]); setConversationId(null); setAskThreadId(null); setShowHistory(false); setInput('') }
+  function newConversation() { setTurns([]); setConversationId(null); setAskThreadId(null); setSubjectId(null); setShowHistory(false); setInput('') }
 
   const seededRef = React.useRef(false)
   React.useEffect(() => {

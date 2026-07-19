@@ -73,17 +73,28 @@ export async function answerFamilyQuestion(input: {
   question: string
   lovedOnes: LovedOneRef[]
   askThreadId?: string | null
+  subjectId?: string | null
   priorTurns?: AskTurn[]
 }): Promise<ConnectResult> {
   const { question } = input
-  // 1 · UNDERSTAND (+ deterministic safety floor)
+
+  // FOLLOW-UP — the subject + context are already established (the first turn showed the
+  // understanding). Continue via ask-health, which owns multi-turn context AND its own crisis
+  // detection, so safety is preserved without a fresh understanding beat.
+  if (input.askThreadId) {
+    const ask = await askCloseEye({ question, lovedOneId: input.subjectId ?? null, conversationId: input.askThreadId, priorTurns: input.priorTurns })
+    return finalize(ask, null, input.subjectId ?? null)
+  }
+
+  // FIRST TURN · UNDERSTAND — for the visible trust beat, the deterministic safety floor, and the
+  // subject (who the question is about, for grounding).
   const decision = await requestUnderstanding(question)
   const understanding = 'understanding' in decision ? decision.understanding : null
 
-  // 4 · CRISIS — interrupt immediately. Route through ask-health too, so the care team is alerted
-  //     and we use the authoritative escalation (ambulance number) — the tested flow, not a copy.
+  // CRISIS — interrupt immediately; route through ask-health so the care team is alerted and we use
+  // the authoritative escalation. The tested flow, never a copy.
   if (decision.lane === 'escalate') {
-    const ask = await askCloseEye({ question, conversationId: input.askThreadId, priorTurns: input.priorTurns })
+    const ask = await askCloseEye({ question, priorTurns: input.priorTurns })
     return {
       understanding: null,
       kind: 'escalate',
@@ -92,41 +103,28 @@ export async function answerFamilyQuestion(input: {
       queryId: ask.queryId,
     }
   }
-  if (decision.lane === 'ask') return { understanding, kind: 'clarify', text: decision.question }
-  if (decision.lane === 'decline') return { understanding, kind: 'decline', text: null }
-  if (decision.lane === 'medical') return { understanding, kind: 'medical', text: null }
 
-  // answer / care — understanding is shown by the caller; now GROUND then ANSWER.
+  // Otherwise ALWAYS produce a grounded answer. ask-health composes it and runs its own
+  // out-of-scope / medical / prompt-injection / crisis-backstop guards, so a general wellbeing
+  // question ("how is my father?") is answered — not left on a clarify dead-end. The understanding
+  // beat is shown by the caller (Decision 1). GROUND on the Family Graph first (Decision 3).
   const subject = resolveSubject(understanding, input.lovedOnes)
   let ground: RetrievedContext | null = null
-  try {
-    ground = await retrieve(supabase, subject?.id ?? null)
-  } catch {
-    ground = null // grounding is best-effort; never block the answer
-  }
+  try { ground = await retrieve(supabase, subject?.id ?? null) } catch { ground = null }
   const groundingTurn = buildGroundingTurn(ground)
-  const priorTurns: AskTurn[] = [...(groundingTurn ? [groundingTurn] : []), ...(input.priorTurns ?? [])]
-
   const ask = await askCloseEye({
     question,
     subjectLabel: understanding?.subject?.who ?? subject?.full_name ?? null,
     lovedOneId: subject?.id ?? null,
-    conversationId: input.askThreadId,
-    priorTurns,
+    priorTurns: [...(groundingTurn ? [groundingTurn] : []), ...(input.priorTurns ?? [])],
   })
+  return finalize(ask, understanding, subject?.id ?? null)
+}
 
-  // ask-health runs its OWN crisis backstop on the composed answer — honour an escalation it raises.
+function finalize(ask: Awaited<ReturnType<typeof askCloseEye>>, understanding: Understanding | null, subjectId: string | null): ConnectResult {
   if (ask.kind === 'escalate') {
     return { understanding, kind: 'escalate', text: ask.text, ambulanceNumber: ask.ambulanceNumber, queryId: ask.queryId }
   }
   const kind: ConnectKind = ask.kind === 'answer' ? 'answer' : ask.kind === 'capped' ? 'error' : ask.kind
-  return {
-    understanding,
-    kind,
-    text: ask.text,
-    lovedOneId: subject?.id ?? null,
-    subjectLabel: understanding?.subject?.who ?? subject?.full_name ?? null,
-    queryId: ask.queryId,
-    notice: ask.notice ?? null,
-  }
+  return { understanding, kind, text: ask.text, lovedOneId: subjectId, queryId: ask.queryId, notice: ask.notice ?? null }
 }
