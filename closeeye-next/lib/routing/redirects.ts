@@ -29,6 +29,9 @@ export const WORKSPACE_REDIRECTS: RouteRedirect[] = [
   // ── Per-Owner capability redirects — ADDED only when the /space Owner reaches parity ──
   // Billing: /space/billing owns the real membership summary + payment history now.
   { source: '/family/billing', destination: '/space/billing', permanent: true },
+  // Settings: /space/settings is the real profile/account page (moved intact). /family/profile/edit
+  // (the edit form) stays until it re-homes; membership payment stays too.
+  { source: '/family/profile', destination: '/space/settings', permanent: true },
   //
   // Still held (Owner not yet at parity): /family/membership (payment flow), /family/book +
   // /family/visits + /family/services (Care doesn't own booking), /family/members/[id] (no
