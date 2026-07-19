@@ -72,31 +72,32 @@
    transformation is the hero without the primary action paying for it in pixels.
    The visual language is the real Ledger's — ✓ / ○, the same labels, the same type —
    because this is not an illustration OF the product, it is the product, running. ══ */
-.cx .demo{max-height:230px;overflow:hidden;margin-top:14px;
+.cx .demo{max-height:320px;overflow:hidden;margin-top:16px;
   transition:max-height .7s cubic-bezier(.2,.7,.2,1),opacity .5s ease,margin .7s ease}
 .cx .demo.settled{max-height:0;opacity:0;margin-top:0}
-.cx .demo .dline{display:flex;gap:9px;align-items:baseline;margin:0 0 7px;
-  font-family:var(--serif);font-size:var(--t-secondary);line-height:1.45;color:var(--forest);
+.cx .demo-h{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;
+  font-weight:600;color:var(--text-secondary);margin:0 0 13px}
+.cx .demo .dline{display:flex;gap:11px;align-items:flex-start;margin:0 0 13px;
   opacity:0;transform:translateY(5px);transition:opacity .5s ease,transform .5s cubic-bezier(.2,.7,.2,1)}
 .cx .demo .dline.in{opacity:1;transform:none}
-.cx .demo .dm{flex:none;width:15px;display:inline-flex;justify-content:center;color:var(--text-accent)}
-/* The open circle. This mark is the category: every other product would have invented
-   her age here. It is deliberately the SAME ring the real Ledger uses. */
-.cx .demo .dline.open{color:var(--text-secondary)}
+.cx .demo .dm{flex:none;width:16px;display:inline-flex;justify-content:center;color:var(--text-accent);margin-top:1px}
 .cx .demo .dline.open .dm{color:var(--pencil)}
-/* THE OPEN RING. `.cxring` is only sized under `.uline`, so inside the demo it rendered as
-   an empty span — the one mark that defines the category was invisible. It is drawn here
-   with the Ledger's exact geometry (11px, 2px, --pencil) because it must be the SAME ring
-   she meets thirty seconds later, not a lookalike. */
-.cx .demo .cxring{width:11px;height:11px;border-radius:50%;border:2px solid var(--pencil);
+/* THE OPEN RING — the mark that IS the category ("I don't know yet"); the same ring geometry
+   as the real Ledger she meets thirty seconds later, not a lookalike. */
+.cx .demo .cxring{width:12px;height:12px;border-radius:50%;border:2px solid var(--pencil);
   display:inline-block;box-sizing:border-box;position:relative;top:1px}
-.cx .demo .dl{display:block;font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.1em;
-  text-transform:uppercase;color:var(--text-secondary);margin-bottom:1px}
-.cx .demo .dline .dl{display:inline-block;margin-right:7px}
-.cx .demo-ans{margin:10px 0 0;padding-left:24px;font-family:var(--serif);font-style:italic;
-  font-size:var(--t-caption);line-height:1.5;color:var(--text-secondary);max-width:44ch;
-  opacity:0;transition:opacity .6s ease}
-.cx .demo-ans.in{opacity:1}
+.cx .demo .dbody{flex:1;min-width:0}
+/* label row — LABEL left, provenance chip right (the artifact's "from your words" / "tell me") */
+.cx .demo .drow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0}
+.cx .demo .dl{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.1em;
+  text-transform:uppercase;font-weight:600;color:var(--text-secondary)}
+/* provenance — --text-muted (4.6:1), the quietest text is allowed. NEVER --faint (fails AA). */
+.cx .demo .dprov{font-family:var(--sans);font-size:var(--t-micro);color:var(--text-muted);white-space:nowrap;flex:none}
+.cx .demo .dval{font-family:var(--serif);font-size:var(--t-secondary);line-height:1.4;color:var(--ink);margin:2px 0 0}
+.cx .demo .dline.open .dval{color:var(--text-secondary);font-style:italic}
+.cx .demo-note{font-family:var(--serif);font-style:italic;font-size:var(--t-caption);line-height:1.5;
+  color:var(--text-secondary);margin:15px 0 0;opacity:0;transition:opacity .6s ease}
+.cx .demo-note.in{opacity:1}
 /* the category line — the hero's second responsibility, not a second hero */
 .cx .hero-cat b{font-weight:600;color:var(--forest)}
 

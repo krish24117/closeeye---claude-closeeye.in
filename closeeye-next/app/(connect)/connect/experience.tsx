@@ -52,11 +52,8 @@ const DEMO_KNOWS: { mark: 'know' | 'open'; label: string; body: string }[] = [
   { mark: 'know', label: 'Her days', body: 'She lives alone.' },
   { mark: 'open', label: 'Her health', body: 'I don’t know yet.' }, // ← the category, in one line
 ]
-// Care-aware: with real-world presence live it points to a trusted person; while Care is a
-// phase-2 launch (CARE_ENABLED off) it never promises presence — it stays on understanding.
-const DEMO_ANSWER = CARE_ENABLED
-  ? 'Because she lives alone, what I’d put in place is a gentle rhythm — a trusted person who can be there in a way a phone call can’t.'
-  : 'Because she lives alone, what matters most is a gentle rhythm — really knowing how her days are, so you’re never left guessing from far away.'
+// The demo closes on the trust line ("nothing is assumed"), matching the approved artifact —
+// understanding, then the promise it's all the family's own words. No presence claim.
 /** Beat boundaries, ms from start. Typing runs to BEAT.know. */
 const BEAT = { type: 1500, know: 1700, answer: 4300, clear: 6200 }
 const DEMO_SEEN_KEY = 'closeeye.connect.demo'
@@ -740,15 +737,19 @@ export function ConnectExperience() {
                     because that order IS the product. It borrows this space and gives it
                     back: the ○ line is the two seconds that define the category. */}
                 <div className={`demo${demo >= 4 ? ' settled' : ''}`} aria-hidden="true">
+                  <p className="demo-h">What I understand</p>
                   <div className="demo-know">
                     {DEMO_KNOWS.map((k, i) => (
-                      <p key={k.label} className={`dline ${k.mark}${demo >= 2 ? ' in' : ''}`} style={{ transitionDelay: `${i * 260}ms` }}>
+                      <div key={k.label} className={`dline ${k.mark}${demo >= 2 ? ' in' : ''}`} style={{ transitionDelay: `${i * 260}ms` }}>
                         <span className="dm">{k.mark === 'know' ? CHECK : <span className="cxring" />}</span>
-                        <span className="dl">{k.label}</span>{k.body}
-                      </p>
+                        <div className="dbody">
+                          <p className="drow"><span className="dl">{k.label}</span><span className="dprov">{k.mark === 'know' ? 'from your words' : 'tell me'}</span></p>
+                          <p className="dval">{k.body}</p>
+                        </div>
+                      </div>
                     ))}
                   </div>
-                  <p className={`demo-ans${demo >= 3 ? ' in' : ''}`}>{DEMO_ANSWER}</p>
+                  <p className={`demo-note${demo >= 3 ? ' in' : ''}`}>Everything above is your words. Nothing is assumed.</p>
                 </div>
                 <div className="act">
 
