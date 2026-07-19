@@ -864,7 +864,7 @@ export function ConnectExperience() {
         {stage === 's4d' && PHASE_2_ENABLED && (
           <section className="stage on">
             <h1 className="h-serif" style={{ fontSize: 26 }}>One last thing,<br /><em>quietly.</em></h1>
-            <p className="lede"><a href="https://www.closeeye.in/cancellation-policy" target="_blank" rel="noopener" style={{ color: 'inherit', borderBottom: '1px dotted var(--hair2)', textDecoration: 'none' }}>Cancel or reschedule</a> any time before the visit. <a href="https://www.closeeye.in/refund-policy" target="_blank" rel="noopener" style={{ color: 'inherit', borderBottom: '1px dotted var(--hair2)', textDecoration: 'none' }}>Full refund</a>.</p>
+            <p className="lede"><a href="/cancellation-policy" target="_blank" rel="noopener" style={{ color: 'inherit', borderBottom: '1px dotted var(--hair2)', textDecoration: 'none' }}>Cancel or reschedule</a> any time before the visit. <a href="/refund-policy" target="_blank" rel="noopener" style={{ color: 'inherit', borderBottom: '1px dotted var(--hair2)', textDecoration: 'none' }}>Full refund</a>.</p>
             <div className="paysum">
               <div className="prow"><span className="k">For</span><span className="v">{subject}{cdu?.city ? ` · ${cdu.city}` : ''}</span></div>
               <div className="prow"><span className="k">Visit</span><span className="v">{visit.name}</span></div>
