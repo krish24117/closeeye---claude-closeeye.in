@@ -44,39 +44,66 @@ export interface ConnectResult {
  * General by construction: groups of synonyms, never a one-off per phrase. (Understanding law: the
  * graph is the truth; this only bridges how a family SAYS a relationship to how it's STORED.)
  */
-const REL_GROUPS: string[][] = [
-  ['mother', 'mom', 'mum', 'mummy', 'amma', 'ma', 'mama', 'mataji', 'parent'],
-  ['father', 'dad', 'daddy', 'papa', 'appa', 'baba', 'pitaji', 'parent'],
-  ['parent', 'parents'],
-  ['wife', 'husband', 'spouse', 'partner'],
-  ['son', 'child', 'children', 'kid', 'baby'],
-  ['daughter', 'child', 'children', 'kid', 'baby'],
-  ['grandmother', 'grandma', 'granny', 'nani', 'dadi', 'grandparent'],
-  ['grandfather', 'grandpa', 'grandad', 'nana', 'dada', 'grandparent'],
-  ['brother', 'sibling'],
-  ['sister', 'sibling'],
+// Everyday words for each SPECIFIC relationship. Expansion is DIRECTIONAL: a specific term also
+// carries its generic BRIDGE (mother → parent, son → child), but a bridge word ("parent") never
+// expands back DOWN to specifics — so "my mother" can never be mistaken for a stored "Father".
+const SYNONYMS: string[][] = [
+  ['mother', 'mom', 'mum', 'mummy', 'amma', 'ma', 'mama', 'mataji'],
+  ['father', 'dad', 'daddy', 'papa', 'appa', 'baba', 'pitaji'],
+  ['spouse', 'wife', 'husband', 'partner'],
+  ['son', 'boy'],
+  ['daughter', 'girl'],
+  ['child', 'children', 'kid', 'baby'],
+  ['grandmother', 'grandma', 'granny', 'nani', 'dadi'],
+  ['grandfather', 'grandpa', 'grandad', 'nana', 'dada'],
+  ['brother'],
+  ['sister'],
 ]
+const BRIDGE_OF: Record<string, string> = {
+  mother: 'parent', father: 'parent', son: 'child', daughter: 'child',
+  grandmother: 'grandparent', grandfather: 'grandparent', brother: 'sibling', sister: 'sibling',
+}
 
 function relTokens(term: string): Set<string> {
   const t = (term || '').trim().toLowerCase().replace(/^(my|our|the|your)\s+/i, '').trim()
   const out = new Set<string>()
   if (!t) return out
   out.add(t)
-  for (const g of REL_GROUPS) if (g.includes(t)) g.forEach((x) => out.add(x))
+  for (const g of SYNONYMS) {
+    if (!g.includes(t)) continue
+    g.forEach((x) => out.add(x))
+    const bridge = BRIDGE_OF[g[0]!]
+    if (bridge) out.add(bridge) // specific → its generic bridge only (never the reverse)
+  }
+  if (t === 'parents') out.add('parent')
+  if (t === 'children') out.add('child')
+  return out
+}
+
+/** Tokens two relationship words share (e.g. "father" & "Dad" → {father,dad,…}). */
+function sharedRelTokens(spoken: string, graphRel: string): Set<string> {
+  const a = relTokens(spoken)
+  const b = relTokens(graphRel)
+  const out = new Set<string>()
+  for (const x of a) if (b.has(x)) out.add(x)
   return out
 }
 
 /** True when a spoken relationship and a stored relationship refer to the same kind of person. */
 function relatesTo(spoken: string, graphRel: string): boolean {
-  const a = relTokens(spoken)
-  const b = relTokens(graphRel)
-  for (const x of a) if (b.has(x)) return true
-  return false
+  return sharedRelTokens(spoken, graphRel).size > 0
 }
 
+/** Generic bridge tokens — they connect a broad word to a specific one ("parent" ↔ "father"), but a
+ *  match on ONLY a bridge is weak: "my father" sharing just `parent` with a stored "Parent" should
+ *  lose to a stored "Father". A match on any non-bridge token is a strong, specific match. */
+const BRIDGE_TOKENS = new Set(['parent', 'parents', 'child', 'children', 'kid', 'baby', 'sibling', 'grandparent'])
+
 /** Resolve the understood subject to one of the family's loved ones. Reliable resolution is what
- *  keeps Connect from feeling like a chatbot that forgot who your family is (Memory Integrity P2). */
-function resolveSubject(u: Understanding | null, lovedOnes: LovedOneRef[]): LovedOneRef | null {
+ *  keeps Connect from feeling like a chatbot that forgot who your family is (Memory Integrity P2).
+ *  Exported for regression tests — the resolution matrix (mother/father/spouse/child) is validated
+ *  deterministically, without a live model call. */
+export function resolveSubject(u: Understanding | null, lovedOnes: LovedOneRef[]): LovedOneRef | null {
   if (lovedOnes.length === 0) return null
   const who = (u?.subject?.who ?? '').trim().toLowerCase()
   const rel = (u?.subject?.relationship ?? '').trim().toLowerCase()
@@ -87,12 +114,21 @@ function resolveSubject(u: Understanding | null, lovedOnes: LovedOneRef[]): Love
     const full = (lo.full_name ?? '').toLowerCase()
     if (full.length > 2 && who && (who.includes(full) || (whoRel.length > 3 && full.includes(whoRel)))) return lo
   }
-  // 2) Relationship — "my mother" → the person stored as Parent / Mother / Mom.
+  // 2) SPECIFIC relationship — share a token that isn't a generic bridge, so "my father" resolves to
+  //    the stored "Father", not a generic "Parent", when both are in the family.
   for (const lo of lovedOnes) {
     const r = lo.relationship ?? ''
-    if (r && (relatesTo(rel, r) || relatesTo(whoRel, r))) return lo
+    if (!r) continue
+    const shared = new Set<string>([...sharedRelTokens(rel, r), ...sharedRelTokens(whoRel, r)])
+    for (const t of shared) if (!BRIDGE_TOKENS.has(t)) return lo
   }
-  // 3) One-person family + a question about a person → it's them. Removes "who do you mean?"
+  // 3) BROAD relationship — bridge only to a GENERIC stored relationship ("Parent", "Child"), so
+  //    "my mother" resolves to a stored "Parent" but NEVER to a specific opposite like "Father".
+  for (const lo of lovedOnes) {
+    const r = (lo.relationship ?? '').trim().toLowerCase().replace(/^(my|our|the|your)\s+/i, '').trim()
+    if (r && BRIDGE_TOKENS.has(r) && (relTokens(rel).has(r) || relTokens(whoRel).has(r))) return lo
+  }
+  // 4) One-person family + a question about a person → it's them. Removes "who do you mean?"
   //    friction for the overwhelmingly common single-loved-one case.
   if (lovedOnes.length === 1 && (who || rel)) return lovedOnes[0]!
   return null
