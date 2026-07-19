@@ -20,10 +20,27 @@ export interface HomePerson {
   relationship: string | null
   regionCode: string
   state: WorkspaceState
+  /** Card title — a relationship subject reads as "Mother" (not "Your Mother"), a named one as "Amma". */
+  label: string
+  /** Sentence form — "your mother" (relationship) or "Amma" (named); reads right in possessives. */
+  natural: string
   /** Up to two stated facts Close Eye holds — the family's own words (never inferred). */
   known: string[]
   /** A short, honest "still learning" line, derived from which essentials are missing. */
   learning: string | null
+}
+
+/** Split a stored name into its display forms. A relationship subject is stored as "your mother";
+ *  `firstName` on it wrongly yields "Your". This keeps "your mother" whole for sentences and
+ *  offers a clean "Mother" for the card. A real name ("Amma") stays itself. */
+function nameParts(fullName: string, relationship: string | null): { label: string; natural: string } {
+  const f = (fullName || '').trim()
+  if (/^your\s/i.test(f)) {
+    const rel = f.replace(/^your\s/i, '').trim() || (relationship ?? 'family')
+    return { label: rel.charAt(0).toUpperCase() + rel.slice(1), natural: `your ${rel}` }
+  }
+  if (f.toLowerCase() === 'you') return { label: 'You', natural: 'you' }
+  return { label: f, natural: f.split(/\s+/)[0] || f }
 }
 export interface HomeActivity { id: string; when: string; text: string; person: string; personId: string }
 export interface HomeAlert { id: string; text: string; actionLabel: string; href: string }
@@ -105,10 +122,14 @@ export async function fetchHome(): Promise<HomeData | null> {
       hasActiveVisit: false, // wires with Care in Sprint 5
       hasEmergency: false, // transient; handled real-time in the crisis flow
     }
-    const known = factsOf(m.id).map((e) => e.body).filter(Boolean).slice(0, 2)
+    const { label, natural } = nameParts(m.full_name, m.relationship)
+    // Don't surface the SUBJECT itself as a "known fact" ("Your mother.") — it's redundant with
+    // the card title (older spaces stored the subject as a ledger row).
+    const subjectLike = new Set([natural, label, m.relationship ?? '', `your ${m.relationship ?? ''}`].map((s) => s.trim().toLowerCase()))
+    const known = factsOf(m.id).map((e) => e.body.trim()).filter((b) => b && !subjectLike.has(b.replace(/[.\s]+$/, '').toLowerCase())).slice(0, 2)
     const miss = missingEssentials(m.id)
     const learning = miss.length ? `Learning: ${miss.slice(0, 2).map((es) => es.label).join(' & ')}` : null
-    return { id: m.id, name: m.full_name, relationship: m.relationship, regionCode: m.region_code ?? 'IN', state: derivePersonState(signals), known, learning }
+    return { id: m.id, name: m.full_name, relationship: m.relationship, regionCode: m.region_code ?? 'IN', state: derivePersonState(signals), label, natural, known, learning }
   })
 
   const state = rollUp(people.map((p) => p.state))
@@ -120,9 +141,9 @@ export async function fetchHome(): Promise<HomeData | null> {
   for (const m of members) {
     const miss = missingEssentials(m.id)[0]
     if (!miss) continue
-    const n = firstName(m.full_name)
-    notice = { title: `Close Eye doesn’t know ${miss.notice(n)} yet.`, why: `The more you tell it, the more it can be there for ${n} — the one thing it’s missing.`, personId: m.id, personName: n }
-    prompt = { text: miss.q(n), personId: m.id }
+    const { natural } = nameParts(m.full_name, m.relationship)
+    notice = { title: `Close Eye doesn’t know ${miss.notice(natural)} yet.`, why: `The more you tell it, the more it can be there for ${natural} — the one thing it’s missing.`, personId: m.id, personName: natural }
+    prompt = { text: miss.q(natural), personId: m.id }
     break
   }
 

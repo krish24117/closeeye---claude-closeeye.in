@@ -78,10 +78,12 @@ export default function WorkspaceHome() {
             {home.people.map((p) => (
               <Link key={p.id} href={`/space/people/${p.id}`} className="rounded-lg border border-line/70 bg-card p-4 shadow-sm transition-colors hover:border-green/40">
                 <div className="flex items-center gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-body-sm font-semibold text-green">{initial(p.name)}</span>
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-body-sm font-semibold text-green">{initial(p.label)}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-body-sm font-semibold text-ink">{p.name}</p>
-                    <p className="truncate text-caption text-muted">{p.relationship || 'Family'}</p>
+                    <p className="truncate text-body-sm font-semibold text-ink">{p.label}</p>
+                    {p.relationship && p.relationship.toLowerCase() !== p.label.toLowerCase() && (
+                      <p className="truncate text-caption text-muted">{p.relationship}</p>
+                    )}
                   </div>
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted" strokeWidth={1.75} />
                 </div>
