@@ -1,275 +1,122 @@
 'use client'
 
+/**
+ * Profile — the Dock's "Profile" tab (canonical Settings Owner route, /space/settings). Grounded
+ * to the approved dock2 mockup's Profile screen: "You and your access." — who can see your family,
+ * your plan, what Connect notifies you about — plus the account actions every app must have
+ * (sign out, close account). GLOBAL Connect only: NO India Care membership, NO "Explore
+ * Membership", NO closeeye.in eldercare content. Self-contained on useAuth so it carries none of
+ * the India family-app components. Honest: it states only what's true (no fabricated people/dates).
+ */
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Bell, ChevronRight, CreditCard, Heart, LifeBuoy, Loader2, ShieldCheck, Trash2, UserRound, Users } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-import { FeatureIcon } from '@/components/ui/feature-icon'
-import { Button } from '@/components/ui/button'
-import { Overlay } from '@/components/family/overlay'
-import { ProfileIdentity } from '@/components/family/profile-identity'
-import { MembershipCard } from '@/components/family/membership-card'
-import { SignOutButton } from '@/components/auth/sign-out-button'
+import { Loader2, LogOut, Trash2 } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
-import { useFamilyData } from '@/components/family/family-data-provider'
-import { regionFor, timezoneFor, localeFor } from '@/lib/platform/regions'
-import { useToast } from '@/components/ui/toast'
 import { supabase } from '@/lib/supabase'
-import { SITE } from '@/lib/site'
-import { Chip } from '@/components/ui/choice'
-import { Textarea } from '@/components/ui/field'
-import { submitFeedback } from '@/lib/db/feedback'
+import { Overlay } from '@/components/family/overlay'
 
-// Exit-feedback reasons shown when a family member closes their account.
-const DELETE_REASONS = ['Too expensive', 'Not using it enough', 'Found another option', 'Not what I expected', 'A privacy concern', 'Just taking a break', 'Other']
+const initialsFrom = (name?: string | null, email?: string | null) => {
+  const raw = (name || email?.split('@')[0] || '').trim()
+  const parts = raw ? raw.split(/\s+/) : []
+  return (parts.slice(0, 2).map((s) => s[0]).join('') || '?').toUpperCase()
+}
 
-// ── Reusable section primitives (existing design language) ───────────────────
-
-/** A titled profile section card. Adding a future module (Insurance, Property
- *  Care, …) is just another <Card> in the list below — no layout redesign. */
-function Card({ icon, title, action, children }: { icon: LucideIcon; title: string; action?: React.ReactNode; children: React.ReactNode }) {
+function Tile({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-line/70 bg-card p-6 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <FeatureIcon icon={icon} size="sm" />
-          <h2 className="text-h4">{title}</h2>
-        </div>
-        {action}
-      </div>
-      <div className="mt-3 divide-y divide-line">{children}</div>
+    <section className="rounded-lg border border-line/70 bg-card p-5 shadow-sm">
+      <h2 className="text-h4 text-ink">{title}</h2>
+      <p className="mt-1.5 text-body-sm leading-relaxed text-muted">{children}</p>
     </section>
   )
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 py-3.5">
-      <span className="shrink-0 text-body-sm text-muted">{label}</span>
-      <span className="min-w-0 truncate text-body-sm font-medium text-ink">{value}</span>
-    </div>
-  )
-}
-
-/** Row that navigates — internal routes via Link, tel/mailto/external via <a>. */
-function NavRow({ href, label, hint, value }: { href: string; label: string; hint?: string; value?: string }) {
-  const external = !href.startsWith('/')
-  const body = (
-    <>
-      <span className="min-w-0 flex-1">
-        <span className="block text-body-sm font-medium text-ink">{label}</span>
-        {hint && <span className="block text-caption text-muted">{hint}</span>}
-      </span>
-      {value && <span className="shrink-0 text-body-sm text-muted">{value}</span>}
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted" strokeWidth={1.5} />
-    </>
-  )
-  const cls = 'flex items-center gap-3 py-3.5 transition-colors hover:opacity-80'
-  return external ? (
-    <a href={href} className={cls} target={href.startsWith('tel:') || href.startsWith('mailto:') ? undefined : '_blank'} rel="noreferrer">
-      {body}
-    </a>
-  ) : (
-    <Link href={href} className={cls}>{body}</Link>
-  )
-}
-
-/** A read-only notification-channel row — states the truth (On / Always on) rather
- *  than a switch we can't yet persist. Never misrepresent a safety or consent state. */
-function PrefRow({ label, hint, state }: { label: string; hint?: string; state: 'On' | 'Always on' }) {
-  return (
-    <div className="flex items-center justify-between gap-4 py-3.5">
-      <div className="min-w-0">
-        <p className="text-body-sm font-medium text-ink">{label}</p>
-        {hint && <p className="text-caption text-muted">{hint}</p>}
-      </div>
-      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-success/12 px-2.5 py-1 text-caption font-semibold text-success">
-        <span className="h-1.5 w-1.5 rounded-full bg-success" /> {state}
-      </span>
-    </div>
-  )
-}
-
-// ── Page ─────────────────────────────────────────────────────────────────────
-
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, signOut } = useAuth()
-  const { identity, profile, subscription, lovedOnes, region } = useFamilyData()
-  const toast = useToast()
+  const { user } = useAuth()
   const [confirmDelete, setConfirmDelete] = React.useState(false)
   const [deleting, setDeleting] = React.useState(false)
-  const [reason, setReason] = React.useState('')
-  const [exitNote, setExitNote] = React.useState('')
+  const [err, setErr] = React.useState('')
 
-  const meta = (user?.user_metadata ?? {}) as { language?: string; country?: string; timezone?: string }
-  const memberCount = lovedOnes.length
-  const hasBilling =
-    subscription?.status === 'active' || (subscription?.total_paid_paise ?? 0) > 0 || (subscription?.invoice_count ?? 0) > 0
-  const upcomingPayment = subscription?.next_billing_at
-    ? new Date(subscription.next_billing_at).toLocaleDateString(localeFor(region), { day: 'numeric', month: 'short', year: 'numeric' })
-    : null
+  const name = (user?.user_metadata?.full_name as string | undefined) || (user?.user_metadata?.name as string | undefined) || null
+  const email = user?.email || ''
+  const initials = initialsFrom(name, email)
 
-  async function deleteAccount() {
+  async function signOut() {
+    try { await supabase.auth.signOut() } catch {}
+    router.replace('/connect')
+  }
+
+  async function closeAccount() {
     if (deleting) return
-    setDeleting(true)
-    // Capture why they're leaving BEFORE the account closes — the feedback row's
-    // user_id is SET NULL on delete, so it survives (de-identified). Best-effort:
-    // a feedback hiccup must never block the deletion they asked for.
-    const exit = [reason, exitNote.trim()].filter(Boolean).join(' — ')
-    if (exit) {
-      try { await submitFeedback({ rating: 0, nps: null, category: 'Account deletion', kind: 'idea', message: exit }) }
-      catch { /* best-effort — proceed with deletion regardless */ }
-    }
+    setDeleting(true); setErr('')
     try {
-      // Real deletion is server-side: cancels billing, removes the family's data,
-      // and closes the account. We only sign out + leave once it actually succeeds
-      // — never a fake confirmation.
       const { data, error } = await supabase.functions.invoke('delete-account')
-      if (error || !data?.ok) {
-        toast((data?.error as string) || 'We couldn’t close your account just now. Please try again, or contact your Presence Manager.', 'info')
-        setDeleting(false)
-        return
-      }
-      try { await signOut() } catch { /* account already closed server-side */ }
+      if (error || !data?.ok) { setErr((data?.error as string) || 'We couldn’t close your account just now. Please try again.'); setDeleting(false); return }
+      try { await supabase.auth.signOut() } catch {}
       router.replace('/connect')
     } catch {
-      toast('We couldn’t close your account just now. Please try again, or contact your Presence Manager.', 'info')
-      setDeleting(false)
+      setErr('We couldn’t close your account just now. Please try again.'); setDeleting(false)
     }
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-h2 text-ink">Settings</h1>
-        <p className="mt-1 text-body-sm text-muted">Your account, membership and preferences.</p>
+        <p className="text-caption font-semibold uppercase tracking-widest text-muted">Profile</p>
+        <h1 className="mt-1 text-h2 text-ink">You and your access.</h1>
       </div>
 
-      <ProfileIdentity />
+      {/* Identity */}
+      <section className="flex items-center gap-4 rounded-lg border border-line/70 bg-card p-5 shadow-sm">
+        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-accent-soft text-h4 font-semibold text-green">{initials}</span>
+        <div className="min-w-0">
+          <p className="truncate text-body font-semibold text-ink">{name || 'Your account'}</p>
+          {email && <p className="truncate text-body-sm text-muted">{email}</p>}
+        </div>
+      </section>
 
-      {/* 1 · MEMBERSHIP — first: the primary action (protect the people you love) */}
-      <MembershipCard />
+      <Tile title="Who can see your family">
+        Only you. Close Eye keeps your family private to you — a Guardian sees a person only during a visit, never before and never after.
+      </Tile>
 
-      {/* 2 · PERSONAL INFORMATION */}
-      <Card
-        icon={UserRound}
-        title="Personal information"
-        action={<Link href="/family/profile/edit" className="text-caption font-semibold text-green hover:underline">Edit profile</Link>}
-      >
-        <InfoRow label="Email" value={identity.email || '—'} />
-        <InfoRow label="Mobile number" value={profile?.phone || 'Not set'} />
-        <InfoRow label="Country" value={meta.country || regionFor(region).name} />
-        <InfoRow label="Time zone" value={meta.timezone || timezoneFor(region)} />
-        <InfoRow label="Preferred language" value={meta.language || 'English'} />
-      </Card>
+      <Tile title="Plan">
+        Close Eye Connect — the intelligence that stays with your family.
+      </Tile>
 
-      {/* 3 · FAMILY SUMMARY — summary only, never the family cards */}
-      <Card icon={Users} title="Family">
-        {memberCount > 0 ? (
-          <NavRow
-            href="/space/people"
-            label="Family members"
-            hint={`${memberCount} ${memberCount === 1 ? 'member' : 'members'} added`}
-            value="View family"
-          />
-        ) : (
-          <div className="flex flex-col items-start gap-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-body-sm text-muted">No family members added yet.</p>
-            <Button asChild size="sm" className="shrink-0"><Link href="/family/add">Add family member</Link></Button>
-          </div>
-        )}
-      </Card>
+      <Tile title="What Connect may notify you about">
+        Health changes, missed visits, and Guardian reports.
+      </Tile>
 
-      {/* 4 · PAYMENT & BILLING */}
-      <Card icon={CreditCard} title="Payment & billing">
-        {hasBilling ? (
-          <>
-            <NavRow href="/space/billing" label="Payment history" hint="Invoices, receipts and renewals" />
-            {upcomingPayment && <InfoRow label="Upcoming payment" value={upcomingPayment} />}
-          </>
-        ) : (
-          <div className="flex flex-col items-start gap-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-body-sm text-ink">No payment history yet.</p>
-              <p className="text-caption text-muted">Activate a membership to begin.</p>
-            </div>
-            <Button asChild size="sm" className="shrink-0"><Link href="/family/membership">Activate membership</Link></Button>
-          </div>
-        )}
-      </Card>
-
-      {/* 5 · NOTIFICATIONS — honest read-only state. Preferences aren't self-service
-          yet, so we never render a switch that silently resets (safety + consent). */}
-      <Card icon={Bell} title="How we keep you updated">
-        <PrefRow label="WhatsApp updates" hint="Photos and notes after every visit" state="On" />
-        <PrefRow label="Email updates" state="On" />
-        <PrefRow label="In-app notifications" state="On" />
-        <PrefRow label="Emergency alerts" hint="Always on for your family's safety" state="Always on" />
-        <p className="pt-3 text-caption text-muted">Want to change how we reach you? Message your Presence Manager and we&rsquo;ll set it up.</p>
-      </Card>
-
-      {/* 6 · SECURITY — honest: state what's true, offer a real recourse. We don't
-          render self-service controls (password / 2FA) we can't yet back. */}
-      <Card icon={ShieldCheck} title="Security">
-        <p className="py-2 text-body-sm leading-relaxed text-ink">Your account is protected by your sign-in, and your family&rsquo;s information is private to your family.</p>
-        <p className="text-caption text-muted">Need to change your password or sign-in? Message your Presence Manager and we&rsquo;ll take care of it.</p>
-      </Card>
-
-      {/* 7 · SUPPORT */}
-      <Card icon={LifeBuoy} title="Support">
-        <NavRow href="/space/connect" label="Contact Presence Manager" />
-        <NavRow href="/help" label="Help Centre" />
-        <NavRow href={SITE.phoneHref} label="Emergency support" value={SITE.phoneDisplay} />
-        <NavRow href="/privacy" label="Privacy Policy" />
-        <NavRow href="/terms" label="Terms & Conditions" />
-        <NavRow href="/about" label={`About ${SITE.name}`} />
-      </Card>
-
-      {/* 8 · ACCOUNT — sign out + delete account, always last */}
-      <section className="flex flex-col gap-3">
-        <SignOutButton />
-        <button
-          type="button"
-          onClick={() => setConfirmDelete(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-sm py-2.5 text-body-sm font-semibold text-error transition-colors hover:bg-error/[0.06]"
-        >
-          <Trash2 className="h-4 w-4" strokeWidth={1.75} /> Delete account
+      {/* Account */}
+      <section className="mt-2 flex flex-col gap-3">
+        <button onClick={signOut} className="inline-flex items-center justify-center gap-2 rounded-full border border-line bg-card py-3 text-body-sm font-semibold text-ink transition-colors hover:bg-accent-soft/50">
+          <LogOut className="h-4 w-4" strokeWidth={1.75} /> Sign out
+        </button>
+        <button onClick={() => setConfirmDelete(true)} className="inline-flex items-center justify-center gap-2 rounded-full py-2.5 text-body-sm font-semibold text-error transition-colors hover:bg-error/[0.06]">
+          <Trash2 className="h-4 w-4" strokeWidth={1.75} /> Close account
         </button>
       </section>
 
-      <p className="pb-2 text-center text-caption text-muted">{SITE.name}</p>
+      <p className="text-center text-caption text-muted">
+        <Link href="/privacy" className="hover:text-ink">Privacy</Link>
+        <span className="px-2 text-line">·</span>
+        <Link href="/terms" className="hover:text-ink">Terms</Link>
+      </p>
 
       <Overlay open={confirmDelete} onClose={() => { if (!deleting) setConfirmDelete(false) }}>
         <div className="p-6">
-          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line sm:hidden" />
-          <div className="flex items-center gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><Heart className="h-5 w-5" strokeWidth={1.75} /></span>
-            <h3 className="text-h4 text-ink">We’re sorry to see you go</h3>
-          </div>
-          <p className="mt-3 text-body-sm leading-relaxed text-muted">
-            Before you close your account, would you tell us why? It genuinely helps us care for other families — no pressure, and you can skip it.
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line" aria-hidden />
+          <h3 className="text-h4 text-ink">Close your account?</h3>
+          <p className="mt-2 text-body-sm leading-relaxed text-muted">
+            This permanently closes your Close Eye account and removes your family’s data. You’ll be signed out. This can’t be undone.
           </p>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {DELETE_REASONS.map((r) => (
-              <Chip key={r} selected={reason === r} onClick={() => setReason((cur) => (cur === r ? '' : r))}>{r}</Chip>
-            ))}
-          </div>
-          <div className="mt-3">
-            <Textarea value={exitNote} onChange={(e) => setExitNote(e.target.value)} rows={2} placeholder="Anything else you’d like us to know? (optional)" />
-          </div>
-
-          <p className="mt-4 rounded-sm border border-error/20 bg-error/[0.04] px-3.5 py-3 text-caption leading-relaxed text-muted">
-            Deleting permanently closes your Close Eye account. Billing stops immediately, your family’s data is removed, and you’ll be signed out. This can’t be undone.
-          </p>
-
-          <div className="mt-4 flex flex-col gap-2.5">
-            <Button variant="secondary" size="lg" onClick={() => setConfirmDelete(false)} disabled={deleting} className="w-full">Keep my account</Button>
-            <Button size="lg" onClick={deleteAccount} disabled={deleting} className="w-full bg-error text-white hover:bg-error/90">
-              {deleting ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Deleting…</> : <><Trash2 className="h-5 w-5" strokeWidth={1.75} /> Delete account</>}
-            </Button>
+          {err && <p className="mt-3 rounded-sm border border-error/20 bg-error/[0.04] px-3.5 py-2.5 text-caption text-error">{err}</p>}
+          <div className="mt-5 flex flex-col gap-2.5">
+            <button onClick={() => setConfirmDelete(false)} disabled={deleting} className="w-full rounded-full border border-line bg-card py-3 text-body-sm font-semibold text-ink transition-colors hover:bg-accent-soft/50 disabled:opacity-50">Keep my account</button>
+            <button onClick={closeAccount} disabled={deleting} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-error py-3 text-body-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60">
+              {deleting ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Closing…</> : <><Trash2 className="h-4 w-4" strokeWidth={1.75} /> Close account</>}
+            </button>
           </div>
         </div>
       </Overlay>
