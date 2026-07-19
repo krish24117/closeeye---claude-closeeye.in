@@ -682,7 +682,8 @@
 .cx .s0-hero-more{order:2}
 .cx .s0-ask{order:3}
 .cx .app .storycards{order:4}
-.cx .breadth{order:5}
+.cx .fgraph{order:5}      /* the family graph sits AFTER the capability cards — was defaulting to 0 (top) */
+.cx .breadth{order:6}
 .cx .s0-foot{order:7}
 
 /* ── SHORT PHONES (<=740px tall — iPhone SE is 375x667, and 360x740 is the most common
@@ -746,13 +747,9 @@
   .cx .mast-signin{top:max(16px,env(safe-area-inset-top))}
 }
 
-/* ── Cards, equal by construction. Below 1024 a title may take one line or two purely
-      by where the words happen to break — at 390 that gave 104/104/81px, three cards of
-      three weights. The title reserves two lines everywhere it can wrap, so the row has
-      one height and the cards carry equal weight regardless of the copy in them. */
-@media (max-width:1023.98px){
-  .cx .storycards .scard-t{min-height:2.5em} /* 2 lines at line-height 1.25 */
-}
+/* (The old expandable cards reserved a 2-line title height to align a "Learn more →"
+   affordance; the new static icon-badge cards have no such affordance, so a single-line
+   title no longer needs to reserve a second line — that reservation was the airy gap.) */
 
 /* ── 768–1023 · Tablet — the dead zone. A 480px column left ~144px of empty paper on
       each side: a phone in a bigger frame. The measure grows so the page is composed
