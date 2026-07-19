@@ -19,5 +19,13 @@ export interface RouteRedirect {
 }
 
 export const WORKSPACE_REDIRECTS: RouteRedirect[] = [
-  // Phase 4 fills this. Kept empty in Phase 0 — the guardrail and next.config wiring exist first.
+  // ── Phase 4 · retire the competing home ──────────────────────────────────────────────────
+  // The bare /family dashboard → the Workspace home. EXACT match only (`source: '/family'`), so
+  // /family/* functional sub-routes are untouched — they keep working until their /space Owner
+  // reaches parity (Care owns booking, Billing/Settings are real, Person Space has health/docs).
+  // Phase 3 already made /space the default landing; this closes the door on the old home page.
+  { source: '/family', destination: '/space', permanent: true },
+  //
+  // Capability redirects (/family/members → /space/people, etc.) are ADDED per Owner as each
+  // reaches parity — never blanket, or a working page would redirect to a lighter one.
 ]
