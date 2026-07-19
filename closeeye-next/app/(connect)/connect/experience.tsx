@@ -499,11 +499,19 @@ export function ConnectExperience() {
     if (!decision) return null
 
     if (decision.lane === 'escalate') {
-      const d = emergencyDial(DEFAULT_REGION_CODE)
+      // A signed-out visitor has no known region. On the India front door (closeeye.in) we can
+      // safely offer 108; on the GLOBAL front door (closeeye.app) we NEVER show a country's number
+      // we aren't sure of — the honest, universally-safe instruction is "your local emergency
+      // number". Showing the wrong country's number in a real emergency is a life-safety failure.
+      const host = typeof window !== 'undefined' ? window.location.hostname : ''
+      const india = /(^|\.)closeeye\.in$/i.test(host)
+      const d = india ? emergencyDial('IN') : null
       return (
         <div className="counsel">
           <p><b>This sounds urgent.</b> {decision.safety.message || 'Please get help now.'}</p>
-          {d.href ? <a className="dial" href={d.href}>{d.text}</a> : <span className="dial">{d.text}</span>}
+          {d?.href
+            ? <a className="dial" href={d.href}>{d.text}</a>
+            : <span className="dial">Call your local emergency number now.</span>}
           <a className="wa-prominent" href={WA} target="_blank" rel="noopener">Reach a real person now →</a>
         </div>
       )
