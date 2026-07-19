@@ -10,7 +10,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, Sparkles, Pencil, HeartPulse } from 'lucide-react'
+import { ArrowLeft, Sparkles, Pencil, HeartPulse, Images } from 'lucide-react'
 import { fetchSpace, appendLearning, personName, type SpaceData } from '@/lib/db/space'
 import type { Blank, LedgerLine } from '@/lib/connect/ledger'
 import { deriveSnapshot, deriveRecommendations, groupUnderstanding, type UnderstandingInput } from '@/lib/space/understanding'
@@ -179,6 +179,9 @@ export default function PersonSpacePage() {
         </Link>
         <Link href={`/space/people/${lo.id}/health`} className="inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
           <HeartPulse className="h-4 w-4 text-green" strokeWidth={1.75} /> Care &amp; health profile
+        </Link>
+        <Link href={`/space/people/${lo.id}/memories`} className="inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
+          <Images className="h-4 w-4 text-green" strokeWidth={1.75} /> Memories
         </Link>
       </div>
     </div>

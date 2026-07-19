@@ -30,6 +30,8 @@ const CONTRACT = [
   '/space/people/[id]',
   '/space/people/[id]/edit',
   '/space/people/[id]/health',
+  '/space/people/[id]/memories',
+  '/space/people/[id]/memories/add',
   '/space/activity',
   '/space/care',
   '/space/billing',

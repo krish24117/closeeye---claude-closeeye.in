@@ -10,19 +10,26 @@
  */
 import * as React from 'react'
 import Link from 'next/link'
-import { Check, Circle, ScanEye, Sparkles, ChevronRight, ArrowRight, UserPlus } from 'lucide-react'
+import { Check, Circle, ScanEye, Sparkles, ChevronRight, ArrowRight, UserPlus, Images } from 'lucide-react'
 import { fetchHome, type HomeData } from '@/lib/db/home'
+import { fetchRecentMemories, type MemoryView } from '@/lib/db/memories'
 
 const initial = (s: string) => (s || '?').trim().charAt(0).toUpperCase()
 
 export default function WorkspaceHome() {
   const [home, setHome] = React.useState<HomeData | null>(null)
+  const [recent, setRecent] = React.useState<(MemoryView & { lovedOneId: string })[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState(false)
 
   const load = React.useCallback(async () => {
     setLoading(true); setError(false)
-    try { setHome(await fetchHome()) } catch { setError(true) }
+    try {
+      // Recent memories are best-effort — if the table isn't there yet (migration pending), the
+      // strip simply stays hidden; the home never fails because of it.
+      const [h, r] = await Promise.all([fetchHome(), fetchRecentMemories(8).catch(() => [])])
+      setHome(h); setRecent(r)
+    } catch { setError(true) }
     finally { setLoading(false) }
   }, [])
   React.useEffect(() => { void load() }, [load])
@@ -100,8 +107,28 @@ export default function WorkspaceHome() {
         </div>
       )}
 
-      {/* Recently remembered — wired to Memories (rendered once memories exist) */}
-      {/* Act III adds the memory strip here. */}
+      {/* Recently remembered — the memory strip (shows once the family has captured moments) */}
+      {recent.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <p className="text-caption font-semibold uppercase tracking-widest text-muted">Recently remembered</p>
+          <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+            {recent.map((m) => (
+              <Link key={m.id} href={`/space/people/${m.lovedOneId}/memories`} className="w-28 shrink-0">
+                <div className="relative aspect-square overflow-hidden rounded-lg border border-line bg-card shadow-sm">
+                  {m.cover?.url && m.cover.kind !== 'document' ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={m.cover.url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="grid h-full w-full place-items-center text-green"><Images className="h-6 w-6" strokeWidth={1.5} /></span>
+                  )}
+                </div>
+                <p className="mt-1.5 truncate text-caption font-semibold text-ink">{m.title}</p>
+                <p className="truncate text-caption text-muted">{m.count} {m.count === 1 ? 'item' : 'items'}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Proactive prompt — the one thing that would deepen understanding (a real open essential) */}
       {home.prompt && (
