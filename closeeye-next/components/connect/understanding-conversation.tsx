@@ -116,7 +116,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
         <section className="flex flex-col gap-2 rounded-lg border border-line/70 bg-card p-3 shadow-sm">
           <p className="px-1 text-caption font-semibold uppercase tracking-widest text-muted">Reopen a conversation</p>
           {history.map((c) => (
-            <button key={c.id} onClick={() => reopen(c.id)} className="flex flex-col items-start gap-0.5 rounded-md px-3 py-2 text-left transition-colors hover:bg-accent-soft/50">
+            <button key={c.id} onClick={() => reopen(c.id)} className="flex flex-col items-start gap-0.5 rounded-md px-3 py-2 text-start transition-colors hover:bg-accent-soft/50">
               <span className="line-clamp-1 text-body-sm font-medium text-ink">{c.title}</span>
               <span className="text-caption text-muted">{new Date(c.updatedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}{c.subjectLabel ? ` · ${c.subjectLabel}` : ''}</span>
             </button>
@@ -131,7 +131,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
       <div className="flex flex-col gap-4">
         {turns.map((t, i) => t.role === 'user' ? (
           <div key={i} className="flex items-start justify-end gap-2.5">
-            <div className="max-w-[85%] rounded-[16px_16px_4px_16px] bg-ink px-4 py-2.5 text-body-sm text-ivory">{t.content}</div>
+            <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-ink px-4 py-2.5 text-body-sm text-ivory">{t.content}</div>
             <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><User className="h-4 w-4" strokeWidth={1.75} /></span>
           </div>
         ) : (
@@ -182,7 +182,7 @@ function AssistantTurn({ turn }: { turn: Extract<Turn, { role: 'assistant' }> })
       <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-green text-ivory"><Sparkles className="h-4 w-4" strokeWidth={1.75} /></span>
       <div className="min-w-0 flex-1 flex flex-col gap-2.5">
         {understanding && <UnderstoodLine u={understanding} />}
-        <div className="rounded-[4px_16px_16px_16px] border border-line/70 bg-card px-4 py-3 shadow-sm">
+        <div className="rounded-2xl rounded-tl-sm border border-line/70 bg-card px-4 py-3 shadow-sm">
           {kind === 'answer' && text && <MarkdownAnswer text={text} />}
           {kind === 'clarify' && <p className="text-body-sm text-ink">{text || 'Tell me a little more about them, and I’ll understand.'}</p>}
           {kind === 'decline' && <p className="text-body-sm text-ink">Hello — I’m here for the people you love. Tell me about one of them, or ask me anything.</p>}
