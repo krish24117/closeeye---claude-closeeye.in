@@ -43,6 +43,13 @@ export interface Understanding {
   confidence: Confidence
   /** When unsure, the one question to ask. Required when confidence is low / intent unclear. */
   clarifying_question: string | null
+  /**
+   * One sentence of warm, GENERAL guidance ("what tends to help"), or null. It is Close Eye's
+   * counsel — NOT a claim about the family: it may never assert a fact the family didn't state,
+   * and it exists only when the subject is understood (see the validator). Payoff on the public
+   * first screen, per the founder's ratified decision.
+   */
+  reflection: string | null
   /** A soft model hint only. The deterministic crisis floor is authoritative (Law 4). */
   safety_signal: boolean
 }
@@ -71,6 +78,12 @@ export function validateUnderstanding(u: Understanding, rawInput: string): Viola
   const unsure = u.confidence === 'low' || u.intent === 'unclear' || (u.subject.who === UNKNOWN && (u.intent === 'share' || u.intent === 'ask'))
   if (unsure && !u.clarifying_question) {
     v.push({ law: 'L2', detail: 'unsure, but no clarifying_question — Close Eye must ask, never assert' })
+  }
+
+  // Law 2 — don't reflect on what you don't understand. A reflection (Close Eye's guidance) is only
+  // permitted when the subject is a known person AND confidence is high — never over an unclear turn.
+  if (u.reflection && (u.confidence !== 'high' || u.subject.who === UNKNOWN || u.subject.who === '')) {
+    v.push({ law: 'L2', detail: 'reflection present without a confident, known subject — understand first' })
   }
 
   // Law 2 / 6 — a "stated" fact must trace to the family's actual words (no value invented from nothing).

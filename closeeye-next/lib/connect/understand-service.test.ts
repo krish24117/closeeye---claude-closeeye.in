@@ -37,6 +37,7 @@ describe('understandOnce', () => {
       facts: [],
       confidence: 'high',
       clarifying_question: null,
+      reflection: null,
       safety_signal: false,
     })
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ content: [{ type: 'text', text: good }] }), { status: 200 })))

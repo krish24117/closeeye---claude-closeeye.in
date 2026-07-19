@@ -16,6 +16,7 @@ const mk = (p: Partial<Understanding>): Understanding => ({
   facts: [],
   confidence: 'high',
   clarifying_question: null,
+  reflection: null,
   safety_signal: false,
   ...p,
 })

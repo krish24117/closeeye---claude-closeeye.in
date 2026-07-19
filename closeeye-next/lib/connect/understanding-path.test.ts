@@ -24,6 +24,9 @@ const PATH_FILES = [
   'components/connect/understanding-conversation.tsx',
   'app/(workspace)/space/connect/page.tsx',
   'app/api/understand/route.ts',
+  // the public /connect first-conversation — migrated off the fabricating ledger (the screenshot
+  // surface where "Hyderabad is someone you love" was born). It must stay LLM-only forever.
+  'app/(connect)/connect/experience.tsx',
 ]
 
 // The deterministic parser modules — the slot-filling that fabricated (Law 1).

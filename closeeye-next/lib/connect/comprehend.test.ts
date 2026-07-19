@@ -18,6 +18,7 @@ const goodJSON = JSON.stringify({
   facts: [{ label: 'situation', value: 'travelling from Hyderabad to Bangalore', provenance: 'stated' }],
   confidence: 'high',
   clarifying_question: null,
+  reflection: null,
   safety_signal: false,
 })
 
@@ -30,6 +31,7 @@ const buggyJSON = JSON.stringify({
   facts: [{ label: 'lives_in', value: 'She lives in Bangalore', provenance: 'stated' }],
   confidence: 'high',
   clarifying_question: null,
+  reflection: null,
   safety_signal: false,
 })
 

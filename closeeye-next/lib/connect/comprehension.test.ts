@@ -21,6 +21,7 @@ const correct: Understanding = {
   facts: [{ label: 'situation', value: 'travelling from Hyderabad to Bangalore', provenance: 'stated' }],
   confidence: 'high',
   clarifying_question: null,
+  reflection: null,
   safety_signal: false,
 }
 
@@ -34,6 +35,7 @@ const buggy: Understanding = {
   facts: [{ label: 'lives_in', value: 'She lives in Bangalore', provenance: 'stated' }], // fabricated claim
   confidence: 'high',
   clarifying_question: null,
+  reflection: null,
   safety_signal: false,
 }
 

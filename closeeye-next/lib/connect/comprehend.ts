@@ -35,6 +35,7 @@ export function buildSystemPrompt(ctx?: ComprehendContext): string {
   "facts": [ { "label": "…", "value": "<their exact words>", "provenance": "stated" } ],
   "confidence": "high" | "low",
   "clarifying_question": "<one short question>" | null,
+  "reflection": "<one short sentence of general guidance about what tends to help>" | null,
   "safety_signal": true | false
 }
 
@@ -44,7 +45,8 @@ Rules, in order of importance:
 3. Keep travel and residence separate: "travelling from X to Y" fills locations.from / locations.to — never lives_in.
 4. facts contain ONLY the family's actual words. Do not add readings or conclusions as facts.
 5. If you are unsure of who or what they mean, set confidence "low" and ask ONE clarifying_question. Ask; never assume.
-6. safety_signal is a soft hint only.${people}`
+6. reflection: fill it ONLY when you clearly understand (confidence "high" AND a known person). One warm sentence of GENERAL guidance about what tends to help someone in a situation like theirs — never a new fact about their family, never a diagnosis or medical advice. Otherwise null.
+7. safety_signal is a soft hint only.${people}`
 }
 
 /** Extract and parse the JSON object from the model's reply. Returns null on anything unparseable. */
@@ -79,6 +81,7 @@ export function parseUnderstanding(raw: string): Understanding | null {
       .filter((f) => f.value),
     confidence: obj.confidence === 'high' ? 'high' : 'low',
     clarifying_question: typeof obj.clarifying_question === 'string' && obj.clarifying_question.trim() ? obj.clarifying_question : null,
+    reflection: typeof obj.reflection === 'string' && obj.reflection.trim() ? obj.reflection : null,
     safety_signal: obj.safety_signal === true,
   }
 }
@@ -94,6 +97,7 @@ export function askFallback(question = "I didn't quite follow — could you tell
     facts: [],
     confidence: 'low',
     clarifying_question: question,
+    reflection: null,
     safety_signal: false,
   }
 }
