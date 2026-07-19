@@ -16,13 +16,7 @@
  * closeeye.in is never a Connect front door, so India keeps every page exactly as-is.
  */
 import { NextResponse, type NextRequest } from 'next/server'
-
-/** Hosts whose experience is Connect (global), not the India marketing site. */
-const CONNECT_FRONT_DOORS = new Set([
-  'closeeye.app',
-  'www.closeeye.app',
-  'connect.closeeye.in',
-])
+import { isConnectHost } from '@/lib/platform/front-door'
 
 /**
  * First path segment of India-commercial marketing pages that must NOT appear on the global
@@ -44,8 +38,7 @@ const INDIA_ONLY = new Set([
 ])
 
 export function middleware(req: NextRequest): NextResponse {
-  const host = (req.headers.get('host') ?? '').toLowerCase().split(':')[0] ?? ''
-  if (!CONNECT_FRONT_DOORS.has(host)) return NextResponse.next()
+  if (!isConnectHost(req.headers.get('host'))) return NextResponse.next()
 
   const { pathname } = req.nextUrl
 
