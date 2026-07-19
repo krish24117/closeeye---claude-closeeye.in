@@ -10,7 +10,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, Sparkles } from 'lucide-react'
+import { ArrowLeft, Sparkles, Pencil, HeartPulse } from 'lucide-react'
 import { fetchSpace, appendLearning, personName, type SpaceData } from '@/lib/db/space'
 import type { Blank, LedgerLine } from '@/lib/connect/ledger'
 import { deriveSnapshot, deriveRecommendations, groupUnderstanding, type UnderstandingInput } from '@/lib/space/understanding'
@@ -86,9 +86,14 @@ export default function PersonSpacePage() {
       </Link>
 
       {/* Header */}
-      <div>
-        <h1 className="text-h2 text-ink">{Person}</h1>
-        <p className="mt-1 text-body-sm text-muted">{[lo.relationship, lo.city].filter(Boolean).join(' · ') || 'Family'}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-h2 text-ink">{Person}</h1>
+          <p className="mt-1 text-body-sm text-muted">{[lo.relationship, lo.city].filter(Boolean).join(' · ') || 'Family'}</p>
+        </div>
+        <Link href={`/space/people/${lo.id}/edit`} className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
+          <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} /> Edit
+        </Link>
       </div>
 
       {/* Snapshot — how they are */}
@@ -168,9 +173,14 @@ export default function PersonSpacePage() {
         </div>
       </section>
 
-      <Link href="/space/connect" className="inline-flex items-center gap-2 self-start rounded-full border border-line bg-card px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
-        <Sparkles className="h-4 w-4 text-green" strokeWidth={1.75} /> Ask Connect about {person}
-      </Link>
+      <div className="flex flex-wrap gap-3">
+        <Link href="/space/connect" className="inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
+          <Sparkles className="h-4 w-4 text-green" strokeWidth={1.75} /> Ask Connect about {person}
+        </Link>
+        <Link href={`/space/people/${lo.id}/health`} className="inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
+          <HeartPulse className="h-4 w-4 text-green" strokeWidth={1.75} /> Care &amp; health profile
+        </Link>
+      </div>
     </div>
   )
 }

@@ -19,7 +19,7 @@ export default function PeoplePage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-h2 text-ink">People</h1>
-        <Link href="/family/add" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
+        <Link href="/space/people/add" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
           <UserPlus className="h-4 w-4" strokeWidth={1.75} /> Add someone
         </Link>
       </div>
@@ -31,7 +31,7 @@ export default function PeoplePage() {
         <div className="rounded-lg border border-line/70 bg-card p-8 text-center shadow-sm">
           <p className="text-body-sm font-semibold text-ink">No one here yet</p>
           <p className="mx-auto mt-1 max-w-xs text-caption text-muted">Add someone you love, and Close Eye starts holding everything that matters about them.</p>
-          <Link href="/family/add" className="mt-4 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-body-sm font-semibold text-ivory"><UserPlus className="h-4 w-4" strokeWidth={2} /> Add someone</Link>
+          <Link href="/space/people/add" className="mt-4 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-body-sm font-semibold text-ivory"><UserPlus className="h-4 w-4" strokeWidth={2} /> Add someone</Link>
         </div>
       )}
 
