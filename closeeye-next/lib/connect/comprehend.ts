@@ -46,7 +46,7 @@ Rules, in order of importance:
 4. facts contain ONLY the family's actual words. Do not add readings or conclusions as facts.
 5. If you are unsure of who or what they mean, set confidence "low" and ask ONE clarifying_question. Ask; never assume.
 6. "greeting" is ONLY a pure social greeting ("hi", "hello", "good morning") with no person and no request. A message that is just a NAME or a RELATIONSHIP — "Amma", "my father", "Lakshmi" — is NOT a greeting: it names a person and nothing else yet. Put them in subject.who, set intent "share", confidence "low", and ask ONE clarifying_question about what is happening with them.
-7. reflection: fill it ONLY when you clearly understand (confidence "high" AND a known person). One warm sentence of GENERAL guidance about what tends to help someone in a situation like theirs — never a new fact about their family, never a diagnosis or medical advice. Otherwise null.
+7. reflection: fill it ONLY when you clearly understand (confidence "high" AND a known person). One warm sentence of GENERAL, EMOTIONAL guidance about staying connected, being present, or supporting the family — never a new fact about their family, and NEVER health/medical/clinical/care instructions (no symptoms, doses, treatments, or "rest / hydrate / see a doctor" advice). If the situation is medical, keep the reflection about connection and support, not care actions. Otherwise null.
 8. safety_signal is a soft hint only.${people}`
 }
 
