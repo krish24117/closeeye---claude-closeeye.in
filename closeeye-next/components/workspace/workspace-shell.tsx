@@ -25,6 +25,11 @@ import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/ui/logo'
 import { emergencyDial, DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 import { PRIMARY_NAV, OVERFLOW_NAV, isActive } from '@/lib/workspace/nav'
+import { CARE_ENABLED } from '@/lib/platform/capability'
+
+// Care is a phase-2 launch — hidden from the tab bar until NEXT_PUBLIC_CARE_ENABLED=true. The
+// nav DATA (nav.ts / Ownership Registry) stays complete; only the render drops the Care tab.
+const VISIBLE_PRIMARY_NAV = PRIMARY_NAV.filter((i) => CARE_ENABLED || i.href !== '/space/care')
 import { cn } from '@/lib/utils'
 
 // Icons are presentation, keyed by canonical route; the nav data itself lives in lib/workspace/nav.
@@ -82,7 +87,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
 
   const PrimaryNav = ({ onNavigate, iconsOnly }: { onNavigate?: () => void; iconsOnly?: boolean }) => (
     <>
-      {PRIMARY_NAV.map((item) => {
+      {VISIBLE_PRIMARY_NAV.map((item) => {
         const active = isActive(pathname, item.href, item.exact)
         const Icon = ICONS[item.href] ?? Home
         return (

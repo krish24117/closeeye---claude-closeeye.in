@@ -34,7 +34,7 @@ export function generateMetadata(): Metadata {
      */
     openGraph: {
       type: 'website',
-      locale: 'en_IN',
+      locale: 'en_US', // Connect is the global product — a neutral default, not India-specific
       url: '/connect',
       siteName: 'Close Eye',
       title: 'Close Eye Connect — Your Trusted Presence',

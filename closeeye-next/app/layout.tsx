@@ -44,6 +44,8 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const host = (await headers()).get('host')?.split(':')[0]
   const base = host ? `https://${host}` : SITE.url
+  // og:locale reflects the front door: India on closeeye.in, a neutral global default elsewhere.
+  const ogLocale = /(^|\.)closeeye\.in$/i.test(host ?? '') ? 'en_IN' : 'en_US'
   return {
   metadataBase: new URL(base),
   title: {
@@ -79,7 +81,7 @@ export async function generateMetadata(): Promise<Metadata> {
   },
   openGraph: {
     type: 'website',
-    locale: 'en_IN',
+    locale: ogLocale,
     url: base,
     siteName: SITE.name,
     title: `${SITE.name} — When you can’t be there, ${SITE.name} can`,

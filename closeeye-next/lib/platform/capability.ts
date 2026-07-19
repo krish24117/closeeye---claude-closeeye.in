@@ -38,3 +38,19 @@ export function capabilitiesFor(code: string | null | undefined): Capability[] {
   if (can(code, 'guardian')) out.push('guardian')
   return out
 }
+
+/**
+ * GLOBAL launch master switch for Care (real-world presence). Care is a phase-2 launch —
+ * closeeye.app launches as Connect (the global Family Intelligence Platform) first. Default OFF:
+ * when off, Care is hidden EVERYWHERE (nav tab, /space/care, and Connect's presence promises),
+ * regardless of region. Flip NEXT_PUBLIC_CARE_ENABLED=true and redeploy when the founder says go —
+ * no code change. When on, region capability (`can(code,'care')`) still decides where Care actually
+ * appears. NEXT_PUBLIC_ so the same value is read on server and client.
+ */
+export const CARE_ENABLED: boolean =
+  (process.env.NEXT_PUBLIC_CARE_ENABLED || '').toLowerCase() === 'true'
+
+/** Show a Care surface at all? The master switch AND the region capability. */
+export function careVisible(code: string | null | undefined): boolean {
+  return CARE_ENABLED && can(code, 'care')
+}

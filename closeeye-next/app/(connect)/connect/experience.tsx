@@ -28,6 +28,7 @@ import { setConnectDraft, getConnectDraft, provisionFamilySpace, buildDraftUnder
 import { PHASE_2_ENABLED } from '@/lib/connect/phase'
 import { emergencyDial, DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 import { formatMoney } from '@/lib/platform/currency'
+import { CARE_ENABLED } from '@/lib/platform/capability'
 
 const WA = 'https://wa.me/919000221261'
 const SAMPLE = 'My mother lives alone in Hyderabad. How do I know she’s okay?'
@@ -51,7 +52,11 @@ const DEMO_KNOWS: { mark: 'know' | 'open'; label: string; body: string }[] = [
   { mark: 'know', label: 'Her days', body: 'She lives alone, in Hyderabad.' },
   { mark: 'open', label: 'Her health', body: 'I don’t know yet.' }, // ← the category, in one line
 ]
-const DEMO_ANSWER = 'Because she lives alone, what I’d put in place is a gentle rhythm — a trusted person who can be there in a way a phone call can’t.'
+// Care-aware: with real-world presence live it points to a trusted person; while Care is a
+// phase-2 launch (CARE_ENABLED off) it never promises presence — it stays on understanding.
+const DEMO_ANSWER = CARE_ENABLED
+  ? 'Because she lives alone, what I’d put in place is a gentle rhythm — a trusted person who can be there in a way a phone call can’t.'
+  : 'Because she lives alone, what matters most is a gentle rhythm — really knowing how her days are, so you’re never left guessing from far away.'
 /** Beat boundaries, ms from start. Typing runs to BEAT.know. */
 const BEAT = { type: 1500, know: 1700, answer: 4300, clear: 6200 }
 const DEMO_SEEN_KEY = 'closeeye.connect.demo'
@@ -99,7 +104,15 @@ const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 // place (never navigate away). Copy is fixed; the title alone tells the story.
 const STORY_CARDS = [
   { id: 'understand', title: 'Understands your family', link: 'Learn more', body: 'Close Eye learns what matters about the people you love, so every conversation begins with understanding — not assumptions.', tag: 'this is Understanding.' },
-  { id: 'support', title: 'Real people, on the ground', link: 'See how', body: 'When understanding isn’t enough, Close Eye helps your family connect with trusted people and professionals.', tag: 'this is Presence.' },
+  // Care-aware: presence is stated as LIVE only when Care is on; otherwise it is an honest,
+  // future-tense capability ("arriving region by region") — never a promise of a not-yet-live service.
+  { id: 'support',
+    title: CARE_ENABLED ? 'Real people, on the ground' : 'Real people, when you need them',
+    link: 'See how',
+    body: CARE_ENABLED
+      ? 'When understanding isn’t enough, Close Eye helps your family connect with trusted people and professionals.'
+      : 'When understanding isn’t enough, Close Eye will bring trusted people and professionals to your family — arriving region by region.',
+    tag: CARE_ENABLED ? 'this is Presence.' : 'this is Presence — coming.' },
   { id: 'space', title: 'One private Family Space', link: 'Explore', body: 'Memories, conversations, updates, documents and trusted support stay together in one place.', tag: 'this is Trust.' },
 ]
 // "More than care" — only the live capabilities are shown; nothing implied that
@@ -560,10 +573,16 @@ export function ConnectExperience() {
       <>
         {understandingLedger(cu)}
         {cu.reflection && <div className="counsel" style={{ marginTop: 14 }}><p>{boldLead(cu.reflection)}</p></div>}
-        {decision.lane === 'care' && <p className="trustline" style={{ marginTop: 16 }}>It sounds like you’d like someone there. Close Eye can arrange it.</p>}
+        {decision.lane === 'care' && (
+          CARE_ENABLED
+            ? <p className="trustline" style={{ marginTop: 16 }}>It sounds like you’d like someone there. Close Eye can arrange it.</p>
+            // Care is a phase-2 launch — acknowledge the wish for presence WITHOUT promising a
+            // service that isn't live yet, and without the India-only WhatsApp CTA below.
+            : <p className="trustline" style={{ marginTop: 16 }}>It sounds like you’d like someone there. Real-world presence is arriving region by region — I’ll tell you the moment Close Eye can be there for your family.</p>
+        )}
         <div className="act">
           <button className="btn" onClick={() => setStage('s4')}>This is what I’ve been looking for</button>
-          {decision.lane === 'care' && <a className="qlink" href={WA} target="_blank" rel="noopener" style={{ marginTop: 10 }}>Talk to a real person on WhatsApp →</a>}
+          {decision.lane === 'care' && CARE_ENABLED && <a className="qlink" href={WA} target="_blank" rel="noopener" style={{ marginTop: 10 }}>Talk to a real person on WhatsApp →</a>}
         </div>
       </>
     )

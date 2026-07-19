@@ -8,12 +8,13 @@
  */
 import * as React from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { HeartHandshake, CalendarPlus, Clock } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchMyBookingRequests } from '@/lib/db/family'
 import type { BookingRequest } from '@/lib/db/types'
-import { can } from '@/lib/platform/capability'
+import { can, CARE_ENABLED } from '@/lib/platform/capability'
 import { PHASE_2_ENABLED, VISITS_OPEN_LABEL } from '@/lib/connect/phase'
 import { SERVICE_MENU } from '@/lib/services'
 import { formatDate } from '@/lib/platform/locale'
@@ -21,17 +22,26 @@ import { formatDate } from '@/lib/platform/locale'
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ') : s)
 
 export default function CarePage() {
+  const router = useRouter()
   const { user } = useAuth()
   const { region } = useFamilyData()
   const [visits, setVisits] = React.useState<BookingRequest[]>([])
   const [loading, setLoading] = React.useState(true)
 
+  // Care is a phase-2 launch — until NEXT_PUBLIC_CARE_ENABLED=true, this surface is off entirely,
+  // so a typed URL or stale link lands back on Home rather than a page with no tab.
+  React.useEffect(() => { if (!CARE_ENABLED) router.replace('/space') }, [router])
+
   const careHere = can(region, 'presence')
 
   React.useEffect(() => {
-    if (!user?.id || !careHere) { setLoading(false); return }
+    if (!CARE_ENABLED || !user?.id || !careHere) { setLoading(false); return }
     fetchMyBookingRequests(user.id).then(setVisits).catch(() => {}).finally(() => setLoading(false))
   }, [user?.id, careHere])
+
+  // All hooks above run every render (CARE_ENABLED is a build constant); the guard renders nothing
+  // while the effect redirects Home.
+  if (!CARE_ENABLED) return null
 
   if (!careHere) {
     return (
