@@ -286,7 +286,7 @@ export function blanksFor(gender: Gender | null): Blank[] {
   return [
     { key: 'health', text: `${poss} health, and what ${they} ${conj('manage', gender)} day to day` },
     { key: 'mornings', text: `${poss} age, and the shape of ${pronoun.possessive(gender)} mornings` },
-    { key: 'nearby', text: `Who can reach ${them} in twenty minutes, if ever needed` },
+    { key: 'nearby', text: `Who’s nearby for ${them}, if ever needed` },
   ]
 }
 /** Short, warm display labels for the "still learning" blank keys. Used in the

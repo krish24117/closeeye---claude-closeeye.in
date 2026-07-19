@@ -77,7 +77,7 @@ export default function ProfilePage() {
       </section>
 
       <Tile title="Who can see your family">
-        Only you. Close Eye keeps your family private to you — a Guardian sees a person only during a visit, never before and never after.
+        Only you. Everything you tell Close Eye stays private to your family — never sold, never shared.
       </Tile>
 
       <Tile title="Plan">
@@ -85,7 +85,7 @@ export default function ProfilePage() {
       </Tile>
 
       <Tile title="What Connect may notify you about">
-        Health changes, missed visits, and Guardian reports.
+        Changes worth knowing about the people you love.
       </Tile>
 
       {/* Account */}

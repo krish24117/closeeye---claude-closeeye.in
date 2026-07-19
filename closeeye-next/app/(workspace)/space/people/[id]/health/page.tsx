@@ -17,6 +17,7 @@ import { phonePlaceholder } from '@/lib/platform/locale'
 import { useToast } from '@/components/ui/toast'
 import { fetchElderProfile, upsertElderProfile, type ElderProfileForm } from '@/lib/db/family'
 import { healthFormPhase } from '@/lib/db/elder-profile-form'
+import { CARE_ENABLED } from '@/lib/platform/capability'
 import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
 
@@ -156,10 +157,10 @@ export default function HealthProfilePage() {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
       {back}
-      <PageHeader title={`${firstName}’s health profile`} subtitle="What you share here helps your Guardian give warm, personal care on every visit." />
+      <PageHeader title={`${firstName}’s health profile`} subtitle={`What you share here helps Close Eye understand and look out for ${firstName}.`} />
 
       <div className="flex flex-col gap-5">
-        <Section title="What they love" hint="Helps the Guardian connect from the first minute.">
+        <Section title="What they love" hint="The little things that make them feel known.">
           <div>
             <label htmlFor="h-food" className={labelCls}>Food &amp; drink preferences</label>
             <textarea id="h-food" value={form.food_preferences} onChange={(e) => set('food_preferences', e.target.value)} placeholder="e.g. Prefers Telugu meals, filter coffee in the morning" className={areaCls} />
@@ -182,7 +183,7 @@ export default function HealthProfilePage() {
           </div>
         </Section>
 
-        <Section title="Health & care" hint="Only your care team sees this.">
+        <Section title="Health & care" hint="Private to your family.">
           <div>
             <label htmlFor="h-cond" className={labelCls}>Medical conditions</label>
             <textarea id="h-cond" value={form.medical_conditions} onChange={(e) => set('medical_conditions', e.target.value)} placeholder="e.g. Type-2 diabetes, mild knee stiffness — uses a walking stick" className={areaCls} />
@@ -213,25 +214,29 @@ export default function HealthProfilePage() {
           </div>
         </Section>
 
-        <Section title="A note for every visit">
+        <Section title="A note to keep in mind">
           <div>
-            <label htmlFor="h-note" className={labelCls}>Anything you’d like the Guardian to keep in mind</label>
-            <textarea id="h-note" value={form.pinned_note} onChange={(e) => set('pinned_note', e.target.value)} placeholder="e.g. Please send a quick photo from each visit." className={areaCls} />
+            <label htmlFor="h-note" className={labelCls}>Anything you’d like Close Eye to keep in mind</label>
+            <textarea id="h-note" value={form.pinned_note} onChange={(e) => set('pinned_note', e.target.value)} placeholder="e.g. She worries about being a burden — reassure her gently." className={areaCls} />
           </div>
-          <button
-            type="button"
-            onClick={() => set('photo_consent', !form.photo_consent)}
-            aria-pressed={form.photo_consent}
-            className="flex items-start gap-3 rounded-2xl border border-line bg-ivory p-4 text-left transition-colors hover:border-green/40"
-          >
-            <span className={cn('mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md border transition-colors', form.photo_consent ? 'border-green bg-green text-ivory' : 'border-line bg-card')}>
-              {form.photo_consent && <Check className="h-4 w-4" strokeWidth={3} />}
-            </span>
-            <span>
-              <span className="block text-body-sm font-semibold text-ink">Share visit photos with me on WhatsApp</span>
-              <span className="block text-caption text-muted">Your Guardian can include a photo from each visit in your Presence Story.</span>
-            </span>
-          </button>
+          {/* Visit-photo consent is a Care feature — hidden until Care is live, so the Connect
+              launch never implies in-person visits that aren't available yet (Memory Integrity P4). */}
+          {CARE_ENABLED && (
+            <button
+              type="button"
+              onClick={() => set('photo_consent', !form.photo_consent)}
+              aria-pressed={form.photo_consent}
+              className="flex items-start gap-3 rounded-2xl border border-line bg-ivory p-4 text-left transition-colors hover:border-green/40"
+            >
+              <span className={cn('mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md border transition-colors', form.photo_consent ? 'border-green bg-green text-ivory' : 'border-line bg-card')}>
+                {form.photo_consent && <Check className="h-4 w-4" strokeWidth={3} />}
+              </span>
+              <span>
+                <span className="block text-body-sm font-semibold text-ink">Share visit photos with me on WhatsApp</span>
+                <span className="block text-caption text-muted">Your Guardian can include a photo from each visit in your Presence Story.</span>
+              </span>
+            </button>
+          )}
         </Section>
       </div>
 

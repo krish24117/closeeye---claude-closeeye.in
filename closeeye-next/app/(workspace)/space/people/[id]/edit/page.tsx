@@ -185,7 +185,7 @@ export default function EditPersonPage() {
             href={`/space/people/${id}/health`}
             className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-green/40 bg-accent-soft/30 px-4 py-3.5 text-body-sm font-semibold text-green transition-colors hover:bg-accent-soft/60"
           >
-            <span>Care details for your Guardian — preferences, routine, medications &amp; photo consent</span>
+            <span>Health &amp; preferences — routine, medications &amp; what makes them feel known</span>
             <span aria-hidden>→</span>
           </Link>
         </Section>

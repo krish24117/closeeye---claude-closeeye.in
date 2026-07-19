@@ -149,7 +149,7 @@ export default function OnboardingPage() {
           {id === 'name' && (
             <>
               <h1 className="text-h2 text-ink">What should we call you?</h1>
-              <p className="mt-2 text-body text-muted">This is how your Presence Manager and Guardians will greet you.</p>
+              <p className="mt-2 text-body text-muted">So Close Eye can greet you personally.</p>
               <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="Your full name" autoComplete="name" className={cn(inputCls, 'mt-6')} />
             </>
           )}

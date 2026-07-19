@@ -133,6 +133,11 @@ export default function PersonSpacePage() {
         </section>
       )}
 
+      {/* Everything below the first task is DEFERRED until the family has told Close Eye something.
+          A brand-new person gets ONE clear next step (the guided task above), not four competing
+          asks (Memory Integrity P5). The depth returns the moment there's a fact to build on. */}
+      {!firstRun && (
+      <>
       {/* Snapshot — how they are */}
       <section className="rounded-lg border border-line/70 bg-card p-5 shadow-sm">
         <p className="text-caption font-semibold uppercase tracking-widest text-muted">{snapshot.headline}</p>
@@ -195,6 +200,8 @@ export default function PersonSpacePage() {
           {note && <p className="text-caption text-green">{note}</p>}
         </div>
       </section>
+      </>
+      )}
 
       {/* Story */}
       <section className="flex flex-col gap-4">
@@ -215,7 +222,7 @@ export default function PersonSpacePage() {
           <Sparkles className="h-4 w-4 text-green" strokeWidth={1.75} /> Ask Connect about {person}
         </Link>
         <Link href={`/space/people/${lo.id}/health`} className="inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
-          <HeartPulse className="h-4 w-4 text-green" strokeWidth={1.75} /> Care &amp; health profile
+          <HeartPulse className="h-4 w-4 text-green" strokeWidth={1.75} /> Health profile
         </Link>
       </div>
 

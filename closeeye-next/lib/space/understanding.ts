@@ -50,7 +50,7 @@ export function deriveSnapshot(i: UnderstandingInput, recs: Recommendation[]): S
   if (criticalCount > 0) {
     state = 'action'
     headline = criticalCount === 1 ? 'One thing needs you' : `${criticalCount} things need you`
-    sub = `Before Close Eye can be there for ${him}.`
+    sub = `Before Close Eye can look out for ${him}.`
   } else if (i.blanks.length > 0) {
     state = 'learning'
     headline = `Still getting to know your ${i.subject.relationship ?? 'family'}`
@@ -70,8 +70,8 @@ export function deriveSnapshot(i: UnderstandingInput, recs: Recommendation[]): S
   const situation = relocating ? 'Relocating' : (findFact(i, /what.?s happening/i)?.body ?? null)
   const cells: SnapCell[] = [
     { k: 'Where', v: i.subject.city ?? 'not yet known', dim: !i.subject.city },
-    { k: 'Situation', v: situation ?? 'settled', dim: !situation },
-    { k: 'Trusted nearby', v: hasBlank(i, NEEDS_REACH) ? 'not yet known' : (findFact(i, /reach/i)?.body ?? 'noted'), dim: hasBlank(i, NEEDS_REACH) },
+    { k: 'Situation', v: situation ?? 'not yet known', dim: !situation },
+    { k: 'Someone nearby', v: hasBlank(i, NEEDS_REACH) ? 'not yet known' : (findFact(i, /reach/i)?.body ?? 'noted'), dim: hasBlank(i, NEEDS_REACH) },
   ]
   return { state, headline, sub, cells }
 }
@@ -91,7 +91,7 @@ export function deriveRecommendations(i: UnderstandingInput): Recommendation[] {
   }
   // CRITICAL — safety-relevant gaps. These are what drive the Snapshot to "action".
   if (hasBlank(i, NEEDS_REACH)) {
-    out.push({ id: 'reach', why: `SO WE CAN REACH ${him.toUpperCase()}`, text: `Add someone who can be there in 20 minutes`, action: 'add', tone: 'soft', critical: true })
+    out.push({ id: 'reach', why: `SO SOMEONE’S NEARBY`, text: `Add someone who’s close by in an emergency`, action: 'add', tone: 'soft', critical: true })
   }
   if (hasBlank(i, NEEDS_HEALTH)) {
     out.push({ id: 'health', why: 'FOR SAFETY', text: `Add ${him === 'them' ? 'their' : him === 'her' ? 'her' : 'his'} health conditions`, action: 'add', tone: 'soft', critical: true })

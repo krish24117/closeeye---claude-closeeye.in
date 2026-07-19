@@ -64,7 +64,7 @@ describe('Recommendations · derived from gaps + situation, each with a why', ()
   it('no reachable person → a CRITICAL recommendation (drives the snapshot)', () => {
     const reach = deriveRecommendations(RELOCATING).find((x) => x.id === 'reach')
     expect(reach?.critical).toBe(true)
-    expect(reach?.why).toMatch(/REACH HIM/)
+    expect(reach?.why).toMatch(/NEARBY/)
   })
   it('no health info → a CRITICAL safety recommendation', () => {
     const health = deriveRecommendations(RELOCATING).find((x) => x.id === 'health')
