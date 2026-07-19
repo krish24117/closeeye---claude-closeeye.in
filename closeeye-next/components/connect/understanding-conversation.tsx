@@ -1,169 +1,213 @@
 'use client'
 
 /**
- * Track 2, Step 5 — the Connect UI. "Show the understanding before the answer." The user says one
- * thing; Close Eye shows what it understood — as the family's own words, with what it still
- * doesn't know left open — and never a guess dressed as a fact. Renders the Decision from
- * /api/understand (lib/connect/understand-client) across its lanes: escalate · ask · care · answer.
- *
- * Lives in the Workspace (.wsp scope), so it inherits the Connect design language automatically.
+ * Connect — the signed-in conversation. CloseEye's promise, made real and VISIBLE:
+ * Understand → Reason → Answer. Every turn briefly shows what CloseEye understood from the family's
+ * own information (Decision 1 — the trust step stays visible, never a dead end), then the grounded
+ * answer. Crisis interrupts with the existing safety flow. Conversations are durable: reopen a past
+ * thread and continue it across days (Decision 2). The answer is grounded in the Family Graph
+ * (Decision 3) — all composed from proven modules (lib/connect/answer).
  */
 import * as React from 'react'
 import Link from 'next/link'
-import { Sparkles, ShieldAlert, HeartHandshake, ArrowRight } from 'lucide-react'
-import { requestUnderstanding } from '@/lib/connect/understand-client'
-import type { Decision } from '@/lib/connect/pipeline'
+import { Sparkles, ShieldAlert, HeartHandshake, MessageSquarePlus, History, ArrowUp, User } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { answerFamilyQuestion, type ConnectKind, type LovedOneRef } from '@/lib/connect/answer'
+import { createConversation, appendMessage, fetchConversations, fetchConversation, type ConversationSummary } from '@/lib/db/conversations'
+import { MarkdownAnswer } from '@/components/family/markdown-answer'
 import type { Understanding } from '@/lib/connect/comprehension'
+import type { AskTurn } from '@/lib/db/ask'
 
-const KNOWN = (s: string | undefined) => !!s && s !== 'unknown' && s !== 'none_stated'
+type Turn =
+  | { role: 'user'; content: string }
+  | { role: 'assistant'; kind: ConnectKind; text: string | null; understanding: Understanding | null; ambulanceNumber?: string | null; notice?: string | null }
 
 export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
   const [input, setInput] = React.useState('')
   const [thinking, setThinking] = React.useState(false)
-  const [decision, setDecision] = React.useState<Decision | null>(null)
+  const [turns, setTurns] = React.useState<Turn[]>([])
+  const [conversationId, setConversationId] = React.useState<string | null>(null) // durable UI thread
+  const [askThreadId, setAskThreadId] = React.useState<string | null>(null) // ask-health's own thread
+  const [lovedOnes, setLovedOnes] = React.useState<LovedOneRef[]>([])
+  const [history, setHistory] = React.useState<ConversationSummary[]>([])
+  const [showHistory, setShowHistory] = React.useState(false)
+  const endRef = React.useRef<HTMLDivElement>(null)
+
+  const refreshHistory = React.useCallback(async () => setHistory(await fetchConversations()), [])
+
+  React.useEffect(() => {
+    void (async () => {
+      const { data } = await supabase.from('loved_ones').select('id, full_name, relationship')
+      setLovedOnes((data as LovedOneRef[]) ?? [])
+    })()
+    void refreshHistory()
+  }, [refreshHistory])
+
+  React.useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }) }, [turns, thinking])
 
   async function ask(text: string) {
     const q = text.trim()
     if (!q || thinking) return
+    setInput('')
+    setShowHistory(false)
+    const priorTurns: AskTurn[] = turns
+      .filter((t) => (t.role === 'user') || (t.role === 'assistant' && !!t.text))
+      .map((t) => (t.role === 'user' ? { role: 'user' as const, content: t.content } : { role: 'assistant' as const, content: t.text ?? '' }))
+
+    setTurns((prev) => [...prev, { role: 'user', content: q }])
     setThinking(true)
-    setDecision(null)
+
+    // Persist the thread (best-effort; no-ops until the conversations migration is applied).
+    let convId = conversationId
+    if (!convId) { convId = await createConversation({ title: q }); if (convId) setConversationId(convId) }
+    if (convId) void appendMessage(convId, { role: 'user', content: q })
+
     try {
-      setDecision(await requestUnderstanding(q))
+      const res = await answerFamilyQuestion({ question: q, lovedOnes, askThreadId, priorTurns })
+      if (res.queryId && !askThreadId) setAskThreadId(res.queryId)
+      setTurns((prev) => [...prev, { role: 'assistant', kind: res.kind, text: res.text, understanding: res.understanding, ambulanceNumber: res.ambulanceNumber, notice: res.notice }])
+      if (convId) void appendMessage(convId, { role: 'assistant', content: res.text ?? '', kind: res.kind === 'clarify' || res.kind === 'decline' || res.kind === 'medical' ? 'answer' : (res.kind === 'error' ? 'pending' : res.kind), understanding: res.understanding, ambulanceNumber: res.ambulanceNumber })
+      void refreshHistory()
     } finally {
       setThinking(false)
     }
   }
 
-  // Seeded from the orb's Connect sheet (?q=…): show the question in the field and ask it once, so
-  // the fast lane escalates into the real engine without the person retyping. Guarded against
-  // React's double-invoke so we never ask twice.
+  async function reopen(id: string) {
+    const thread = await fetchConversation(id)
+    if (!thread) return
+    setConversationId(thread.id)
+    setAskThreadId(null) // fresh ask-health thread; the reopened turns carry context via priorTurns
+    setTurns(thread.messages.map((m) => m.role === 'user'
+      ? { role: 'user', content: m.content }
+      : { role: 'assistant', kind: m.kind as ConnectKind, text: m.content, understanding: m.understanding, ambulanceNumber: m.ambulanceNumber }))
+    setShowHistory(false)
+  }
+
+  function newConversation() { setTurns([]); setConversationId(null); setAskThreadId(null); setShowHistory(false); setInput('') }
+
   const seededRef = React.useRef(false)
   React.useEffect(() => {
     const q = (seed ?? '').trim()
-    if (!q || seededRef.current) return
+    if (!q || seededRef.current || !lovedOnes) return
     seededRef.current = true
-    setInput(q)
     void ask(q)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seed])
+  }, [seed, lovedOnes])
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* The input — always present, so a person can refine or start again. */}
-      <div className="rounded-lg border border-line/70 bg-card p-4 shadow-sm">
-        <textarea
-          rows={2}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input) } }}
-          placeholder="Tell me about someone you love — or ask about them…"
-          className="w-full resize-none bg-transparent text-body text-ink placeholder:text-muted focus:outline-none"
-        />
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-caption italic text-muted">Private. One sentence is enough.</span>
-          <button
-            type="button"
-            onClick={() => void ask(input)}
-            disabled={!input.trim() || thinking}
-            className="rounded-full bg-ink px-4 py-2 text-body-sm font-semibold text-ivory disabled:opacity-40"
-          >
-            {thinking ? 'Reading you…' : 'Let Connect understand'}
+    <div className="flex flex-col gap-5">
+      {/* Controls — new conversation + reopen a past one */}
+      <div className="flex items-center gap-2">
+        <button onClick={newConversation} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3 py-1.5 text-caption font-semibold text-ink transition-colors hover:border-green/40">
+          <MessageSquarePlus className="h-3.5 w-3.5" strokeWidth={2} /> New
+        </button>
+        {history.length > 0 && (
+          <button onClick={() => setShowHistory((v) => !v)} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3 py-1.5 text-caption font-semibold text-ink transition-colors hover:border-green/40">
+            <History className="h-3.5 w-3.5" strokeWidth={2} /> Past conversations
           </button>
-        </div>
+        )}
       </div>
 
-      {decision && <Outcome decision={decision} onAnswer={ask} />}
+      {showHistory && (
+        <section className="flex flex-col gap-2 rounded-lg border border-line/70 bg-card p-3 shadow-sm">
+          <p className="px-1 text-caption font-semibold uppercase tracking-widest text-muted">Reopen a conversation</p>
+          {history.map((c) => (
+            <button key={c.id} onClick={() => reopen(c.id)} className="flex flex-col items-start gap-0.5 rounded-md px-3 py-2 text-left transition-colors hover:bg-accent-soft/50">
+              <span className="line-clamp-1 text-body-sm font-medium text-ink">{c.title}</span>
+              <span className="text-caption text-muted">{new Date(c.updatedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}{c.subjectLabel ? ` · ${c.subjectLabel}` : ''}</span>
+            </button>
+          ))}
+        </section>
+      )}
+
+      {/* The thread */}
+      {turns.length === 0 && !thinking && (
+        <p className="px-1 text-body-sm text-muted">Ask about someone you love — CloseEye answers using what your family has shared.</p>
+      )}
+      <div className="flex flex-col gap-4">
+        {turns.map((t, i) => t.role === 'user' ? (
+          <div key={i} className="flex items-start justify-end gap-2.5">
+            <div className="max-w-[85%] rounded-[16px_16px_4px_16px] bg-ink px-4 py-2.5 text-body-sm text-ivory">{t.content}</div>
+            <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><User className="h-4 w-4" strokeWidth={1.75} /></span>
+          </div>
+        ) : (
+          <AssistantTurn key={i} turn={t} />
+        ))}
+        {thinking && <p className="flex items-center gap-2 px-1 text-body-sm text-muted"><Sparkles className="h-4 w-4 animate-pulse text-green" strokeWidth={1.75} /> Understanding, then finding your answer…</p>}
+        <div ref={endRef} />
+      </div>
+
+      {/* Input — always present, to continue the conversation naturally */}
+      <div className="sticky bottom-0 rounded-lg border border-line/70 bg-card p-3 shadow-sm">
+        <div className="flex items-end gap-2">
+          <textarea
+            rows={1}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input) } }}
+            placeholder={turns.length ? 'Continue the conversation…' : 'Ask about someone you love…'}
+            className="max-h-40 flex-1 resize-none bg-transparent py-1.5 text-body-sm text-ink placeholder:text-muted focus:outline-none"
+          />
+          <button onClick={() => void ask(input)} disabled={!input.trim() || thinking} aria-label="Ask" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-ivory transition-opacity hover:opacity-90 disabled:opacity-40">
+            <ArrowUp className="h-4 w-4" strokeWidth={2.2} />
+          </button>
+        </div>
+        <p className="mt-1.5 px-1 text-caption italic text-muted">Private to your family. Not medical advice.</p>
+      </div>
     </div>
   )
 }
 
-function Outcome({ decision, onAnswer }: { decision: Decision; onAnswer: (q: string) => void }) {
-  if (decision.lane === 'escalate') {
-    const n = decision.safety.ambulanceNumber
+function AssistantTurn({ turn }: { turn: Extract<Turn, { role: 'assistant' }> }) {
+  const { kind, text, understanding, ambulanceNumber } = turn
+
+  if (kind === 'escalate') {
     return (
       <section className="rounded-lg border border-error/40 bg-error/5 p-5">
         <p className="flex items-center gap-2 text-body-sm font-bold text-error"><ShieldAlert className="h-5 w-5" strokeWidth={1.75} /> This sounds urgent</p>
-        <p className="mt-2 text-body-sm text-ink">{decision.safety.message}</p>
-        {n
-          ? <a href={`tel:${n}`} className="mt-4 block rounded-sm bg-error py-3 text-center text-body font-semibold text-ivory">Call {n} now</a>
+        {text && <div className="mt-2"><MarkdownAnswer text={text} /></div>}
+        {ambulanceNumber
+          ? <a href={`tel:${ambulanceNumber}`} className="mt-4 block rounded-sm bg-error py-3 text-center text-body font-semibold text-ivory">Call {ambulanceNumber} now</a>
           : <p className="mt-4 rounded-sm bg-error py-3 text-center text-body font-semibold text-ivory">Call your local emergency number now</p>}
       </section>
     )
   }
 
-  if (decision.lane === 'ask') {
-    return (
-      <AssistantCard>
-        <p className="text-body text-ink">{decision.question}</p>
-        <p className="mt-2 text-caption text-muted">Tell me a little more above, and I’ll understand.</p>
-      </AssistantCard>
-    )
-  }
-
-  if (decision.lane === 'decline') {
-    return <AssistantCard><p className="text-body text-ink">Hello — I’m here for the people you love. Tell me about one of them, or ask me anything.</p></AssistantCard>
-  }
-
-  if (decision.lane === 'medical') {
-    return (
-      <AssistantCard>
-        <p className="text-body text-ink"><strong>Close Eye doesn’t give medical advice.</strong> For anything clinical — a symptom, a dose, a reading, a medication — a doctor is the right person. What Close Eye can do is bring a trusted person to check in, and reach someone now for anything urgent.</p>
-      </AssistantCard>
-    )
-  }
-
-  // care / answer — both carry the understanding; show it, then the next move.
-  const u = decision.understanding
-  return (
-    <div className="flex flex-col gap-4">
-      {u && <Ledger u={u} />}
-      {decision.lane === 'care' && (
-        <Link href="/space/care" className="flex items-center justify-between gap-3 rounded-lg border border-green/30 bg-accent-soft p-4 transition-colors hover:border-green/50">
-          <span className="flex items-center gap-2 text-body-sm font-semibold text-ink"><HeartHandshake className="h-5 w-5 text-green" strokeWidth={1.75} /> It sounds like you’d like someone there. Let’s arrange it.</span>
-          <ArrowRight className="h-4 w-4 shrink-0 text-green" strokeWidth={2} />
-        </Link>
-      )}
-    </div>
-  )
-}
-
-/** The Understanding Ledger — provenance always visible. ✓ = their words · ○ = still to know. */
-function Ledger({ u }: { u: Understanding }) {
-  const rows: { mark: '✓' | '○'; label: string; value: string; open?: boolean }[] = []
-  if (KNOWN(u.subject.who)) rows.push({ mark: '✓', label: 'Someone you love', value: u.subject.who })
-  else rows.push({ mark: '○', label: 'Who this is', value: 'still to know', open: true })
-  if (KNOWN(u.situation)) rows.push({ mark: '✓', label: 'What’s happening', value: u.situation })
-  const loc = [u.locations.from && `from ${u.locations.from}`, u.locations.to && `to ${u.locations.to}`, u.locations.lives_in && `lives in ${u.locations.lives_in}`].filter(Boolean).join(' · ')
-  if (loc) rows.push({ mark: '✓', label: 'Where', value: loc })
-  for (const f of u.facts) rows.push({ mark: '✓', label: f.label, value: f.value })
-
-  const allStated = rows.every((r) => r.mark === '✓')
-
-  return (
-    <section className="rounded-lg border border-line/70 bg-card p-5 shadow-sm">
-      <p className="flex items-center gap-2 text-caption font-semibold uppercase tracking-widest text-muted"><Sparkles className="h-3.5 w-3.5 text-green" strokeWidth={2} /> What I understand</p>
-      <div className="mt-3 flex flex-col gap-3">
-        {rows.map((r, i) => (
-          <div key={i} className="flex items-start gap-2.5">
-            <span className={r.mark === '✓' ? 'text-green' : 'text-muted/60'}>{r.mark}</span>
-            <div className="min-w-0 flex-1">
-              <p className="text-caption font-semibold uppercase tracking-wide text-muted">{r.label}</p>
-              <p className={r.open ? 'text-body-sm italic text-muted' : 'text-body-sm text-ink'}>{r.value}</p>
-            </div>
-            <span className="shrink-0 text-caption text-muted/70">{r.mark === '✓' ? 'from your words' : 'tell me'}</span>
-          </div>
-        ))}
-      </div>
-      {allStated && <p className="mt-4 text-caption italic text-muted">Everything above is your words. Nothing is assumed.</p>}
-    </section>
-  )
-}
-
-function AssistantCard({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2.5">
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-green text-ivory"><Sparkles className="h-4 w-4" strokeWidth={1.75} /></span>
-      <div className="flex-1 rounded-[4px_16px_16px_16px] border border-line/70 bg-card px-4 py-3 shadow-sm">{children}</div>
+      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-green text-ivory"><Sparkles className="h-4 w-4" strokeWidth={1.75} /></span>
+      <div className="min-w-0 flex-1 flex flex-col gap-2.5">
+        {understanding && <UnderstoodLine u={understanding} />}
+        <div className="rounded-[4px_16px_16px_16px] border border-line/70 bg-card px-4 py-3 shadow-sm">
+          {kind === 'answer' && text && <MarkdownAnswer text={text} />}
+          {kind === 'clarify' && <p className="text-body-sm text-ink">{text || 'Tell me a little more about them, and I’ll understand.'}</p>}
+          {kind === 'decline' && <p className="text-body-sm text-ink">Hello — I’m here for the people you love. Tell me about one of them, or ask me anything.</p>}
+          {kind === 'medical' && <p className="text-body-sm text-ink"><strong>CloseEye doesn’t give medical advice.</strong> For anything clinical — a symptom, a dose, a reading — a doctor is the right person. What CloseEye can do is bring a trusted person to check in, and reach someone now for anything urgent.</p>}
+          {kind === 'pending' && <p className="text-body-sm text-ink">I couldn’t compose an answer just now — your care team will follow up. Please try again in a moment.</p>}
+          {kind === 'error' && <p className="text-body-sm text-muted">{turn.notice || 'Something went wrong. Please try again in a moment.'}</p>}
+        </div>
+        {kind === 'answer' && (
+          <Link href="/space/people" className="inline-flex w-fit items-center gap-1.5 text-caption font-semibold text-green hover:text-green/80">
+            <HeartHandshake className="h-3.5 w-3.5" strokeWidth={2} /> See everyone you love
+          </Link>
+        )}
+      </div>
     </div>
+  )
+}
+
+/** The brief, visible "what I understood" — the trust step. Never dominates; never a dead end. */
+function UnderstoodLine({ u }: { u: Understanding }) {
+  const known = (s: string | undefined) => !!s && s !== 'unknown' && s !== 'none_stated'
+  const bits: string[] = []
+  if (known(u.subject?.who)) bits.push(`about ${u.subject.who}`)
+  if (known(u.situation)) bits.push(u.situation)
+  const line = bits.length ? bits.join(' · ') : 'your family'
+  return (
+    <p className="inline-flex items-center gap-1.5 self-start rounded-full bg-accent-soft/60 px-3 py-1 text-caption text-muted">
+      <Sparkles className="h-3 w-3 text-green" strokeWidth={2} />
+      <span>Understood: <span className="font-medium text-ink">{line}</span> — grounded in your family’s information</span>
+    </p>
   )
 }
