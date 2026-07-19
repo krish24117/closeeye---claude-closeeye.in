@@ -9,7 +9,7 @@
  * edge (Step 4). Law 4: the safety floor runs first and unconditionally; nothing the model says
  * can suppress it, and a crisis never spends an LLM call.
  */
-import type { Understanding } from './comprehension'
+import { UNKNOWN, type Understanding } from './comprehension'
 
 /** The deterministic safety floor's verdict. Shape kept minimal; the edge maps the real floor to it. */
 export interface SafetyResult {
@@ -55,13 +55,17 @@ export async function understand(input: string, deps: PipelineDeps): Promise<Dec
   const context = deps.retrieve ? await deps.retrieve(u).catch(() => null) : null
 
   // 4 · DISPOSE — deterministic, over the structured understanding.
+  const subjectKnown = u.subject.who !== UNKNOWN && u.subject.who.trim() !== ''
   let decision: Decision
   if (u.intent === 'greeting') {
     decision = { lane: 'decline', understanding: u, reason: 'greeting' }
+  } else if (subjectKnown && needsPresence(u)) {
+    // A clear presence request for a KNOWN person is actionable — route to Care, not another
+    // question, even if the model hedged confidence. Connect orchestrates; Care fulfils. (Ambiguous
+    // requests with no subject still fall through to "ask" below — we never arrange for no-one.)
+    decision = { lane: 'care', understanding: u }
   } else if (u.intent === 'unclear' || u.confidence === 'low' || u.clarifying_question) {
     decision = { lane: 'ask', understanding: u, question: u.clarifying_question ?? DEFAULT_QUESTION } // ask, never assume (Law 2)
-  } else if (needsPresence(u)) {
-    decision = { lane: 'care', understanding: u } // Connect orchestrates; Care fulfils
   } else {
     decision = { lane: 'answer', understanding: u, context } // grounded in what we retrieved (Law 3)
   }
