@@ -26,6 +26,11 @@ export const WORKSPACE_REDIRECTS: RouteRedirect[] = [
   // Phase 3 already made /space the default landing; this closes the door on the old home page.
   { source: '/family', destination: '/space', permanent: true },
   //
-  // Capability redirects (/family/members → /space/people, etc.) are ADDED per Owner as each
-  // reaches parity — never blanket, or a working page would redirect to a lighter one.
+  // ── Per-Owner capability redirects — ADDED only when the /space Owner reaches parity ──
+  // Billing: /space/billing owns the real membership summary + payment history now.
+  { source: '/family/billing', destination: '/space/billing', permanent: true },
+  //
+  // Still held (Owner not yet at parity): /family/membership (payment flow), /family/book +
+  // /family/visits + /family/services (Care doesn't own booking), /family/members/[id] (no
+  // health/docs facets), /family/connect (no Q&A history), /family/profile (Settings is a stub).
 ]
