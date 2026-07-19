@@ -57,7 +57,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
 
   // Unified authentication entry — one guard, the app's auth provider, the canonical sign-in.
   React.useEffect(() => {
-    if (!loading && !session) router.replace('/welcome')
+    if (!loading && !session) router.replace('/connect')
   }, [loading, session, router])
 
   // Close the Account menu on Escape (a11y — a menu must be dismissible from the keyboard).
@@ -82,7 +82,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     try { await supabase.auth.signOut() } catch {}
-    router.replace('/welcome')
+    router.replace('/connect')
   }
 
   const PrimaryNav = ({ onNavigate, iconsOnly }: { onNavigate?: () => void; iconsOnly?: boolean }) => (

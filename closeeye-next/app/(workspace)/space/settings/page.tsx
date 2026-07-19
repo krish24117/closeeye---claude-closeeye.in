@@ -133,7 +133,7 @@ export default function ProfilePage() {
         return
       }
       try { await signOut() } catch { /* account already closed server-side */ }
-      router.replace('/welcome')
+      router.replace('/connect')
     } catch {
       toast('We couldn’t close your account just now. Please try again, or contact your Presence Manager.', 'info')
       setDeleting(false)
