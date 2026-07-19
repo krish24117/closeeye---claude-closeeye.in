@@ -479,38 +479,29 @@
 .cx .ask-wrap{margin-top:34px}
 /* ── the writing desk — the page's focal moment. A journal page on the desk:
    paper-white card, ruled lines that draw in, a waiting pen-point that breathes. ── */
-.cx .deskcard{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px 20px;
-  margin:2px 0 20px;box-shadow:0 2px 3px rgba(14,42,31,.025),0 14px 30px rgba(14,42,31,.05)}
+.cx .deskcard{background:var(--page);border:1px solid var(--hair);border-radius:20px;padding:20px;
+  margin:2px 0 20px;box-shadow:0 1px 2px rgba(14,42,31,.03),0 18px 44px -22px rgba(14,42,31,.16)}
 .cx .deskcard .exp-k{margin:0 0 5px}
 .cx .desk-hint{margin:0 0 9px;text-align:center;font-family:var(--serif);font-style:italic;font-size:var(--t-caption);color:var(--text-secondary)}
 .cx .desk-lede{font-family:var(--serif);font-size:var(--t-lede);line-height:var(--lh-lede);color:var(--forest);margin:0 0 6px}
 /* The problem-first ask. Body role — this is the sentence a worried person reads to know
    they are in the right place, so it is not a caption. */
 .cx .desk-sub{font-family:var(--serif);font-size:var(--t-body);line-height:var(--lh-body);color:var(--ink);margin:0 0 12px;max-width:40ch}
-.cx .ruled{position:relative;min-height:88px}
-/* The rules are ruled-paper lines: one under each writing line, at the 32px baselines of
-   the textarea (5px padding + 32px line-height => 37 / 69 / 101). They are absolutely
-   positioned, so they do NOT shrink when the paper does — on a short phone the sheet is
-   two lines tall and the third line would otherwise be drawn BELOW the paper, straight
-   through the button. Clipping to the sheet is the invariant: a line cannot exist off the
-   page. The paper decides how many lines there are, not this list. */
-.cx .ruled .rules{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.cx .ruled .rule{position:absolute;left:0;right:0;height:1px;background:var(--hair2);transform:scaleX(0);transform-origin:left center}
-.cx .ruled .rule:nth-child(1){top:37px}
-.cx .ruled .rule:nth-child(2){top:69px}
-.cx .ruled .rule:nth-child(3){top:101px}
-.cx .deskcard.drawn .ruled .rule{transform:scaleX(1);transition:transform .5s cubic-bezier(.2,.7,.2,1)}
-.cx .deskcard.drawn .ruled .rule:nth-child(2){transition-delay:.12s}
-.cx .deskcard.drawn .ruled .rule:nth-child(3){transition-delay:.24s}
-.cx .ruled .pen{position:absolute;left:2px;top:15px;width:8px;height:8px;border-radius:50%;background:var(--hair2);z-index:1}
-.cx .deskcard.drawn .ruled .pen{background:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}
-.cx .ruled textarea{position:relative;z-index:1;display:block;width:100%;background:transparent;border:none;
-  font-family:var(--serif);font-size:18px;line-height:32px;color:var(--ink);
-  padding:5px 2px 0 22px;min-height:104px;resize:none;caret-color:var(--emerald)}
+/* ── the write moment — a clean input: a pen badge + the sentence, over a hairline the
+   live understanding sits beneath. Replaces the ruled-paper skeuomorph: modern and premium,
+   and it reads correctly at ANY height (the old absolute rules could fall through the button
+   on a short phone). ── */
+.cx .ruled{position:relative;display:flex;gap:12px;align-items:flex-start;
+  padding-bottom:16px;border-bottom:1px dashed var(--hair2)}
+.cx .ruled .pen{flex:none;width:36px;height:36px;border-radius:11px;background:var(--paper);
+  border:1px solid var(--hair);display:grid;place-items:center;color:var(--text-accent);
+  margin-top:3px;transition:border-color .25s ease,color .25s ease,background .25s ease}
+.cx .ruled:focus-within .pen{border-color:var(--emerald);color:var(--emerald);background:var(--page)}
+.cx .ruled textarea{flex:1;min-width:0;background:transparent;border:none;
+  font-family:var(--serif);font-size:18px;line-height:1.5;color:var(--ink);
+  padding:5px 0 0;min-height:66px;resize:none;caret-color:var(--emerald)}
 .cx .ruled textarea::placeholder{color:var(--text-muted);font-style:italic}
 .cx .ruled textarea:focus{outline:none}
-.cx .ruled:focus-within .pen{animation:none;background:var(--emerald)}
-.cx .ruled:focus-within .rule:nth-child(1){background:var(--emerald)}
 .cx .cx-field{display:block;width:100%;background:transparent;border:none;border-bottom:1px solid var(--hair2);
   font-family:var(--serif);font-size:18px;color:var(--ink);padding:8px 2px;margin-bottom:14px;caret-color:var(--emerald)}
 .cx .cx-field::placeholder{color:var(--text-muted);font-style:italic}
@@ -715,8 +706,7 @@
   /* Two lines = 5px padding + 2x32px baseline + the 1px rule itself. Sized so the second
      rule (top:69px) lands exactly on the sheet's bottom edge and the third is clipped
      away, instead of escaping onto the CTA. */
-  .cx .ruled{min-height:70px}
-  .cx .ruled textarea{min-height:0;height:69px}  /* rows={3} sets an intrinsic height; only an explicit height beats it */
+  .cx .ruled textarea{min-height:58px}
   .cx .try{margin-top:8px}
   /* The borrowed example stays visible and tappable, but takes one line instead of two —
      enough to show the SHAPE of a good first sentence, which is all it is there to do. */
@@ -865,6 +855,5 @@
   .cx .beat.past{opacity:.46}
   .cx .hero-sig,.cx .hero-head,.cx .hero-supp,.cx .hero-cat,.cx .hero-accent,.cx .hero-feels .feel,
   .cx .storycards,.cx .breadth,.cx .s0-ask,.cx .s0-foot{opacity:1;transform:none}
-  .cx .ruled .rule{transform:none}
-  .cx .ruled .pen{background:var(--sprout)}
+  .cx .ruled .pen{transition:none}
 }

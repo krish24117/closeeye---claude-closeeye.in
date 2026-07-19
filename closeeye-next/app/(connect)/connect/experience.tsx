@@ -723,8 +723,7 @@ export function ConnectExperience() {
                     section. No lede, no sub: the hero above says it once, and the demo
                     below shows it. What remains is the thing itself. */}
                 <div className="ruled" onPointerDown={demoDone ? undefined : skipDemo}>
-                  <span className="pen" aria-hidden="true" />
-                  <div className="rules" aria-hidden="true"><span className="rule" /><span className="rule" /><span className="rule" /></div>
+                  <span className="pen" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M4 20l4.5-1L20 7.5 16.5 4 5 15.5z" /><path d="M14.5 6L18 9.5" /></svg></span>
                   {/* During the demo the box shows ITS sentence and cannot be typed in; the
                       first touch anywhere on the paper hands it straight back. */}
                   {/* While the demo writes, the box is hidden from assistive tech AND
