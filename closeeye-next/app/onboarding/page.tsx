@@ -10,6 +10,7 @@ import { useFamilyData } from '@/components/family/family-data-provider'
 import { saveProfileBasics, selectPlan } from '@/lib/db/onboarding'
 import { PROTECT_OPTIONS, type PlanId } from '@/lib/plans'
 import { getPendingPlan, setPendingPlan } from '@/lib/membership-intent'
+import { markFirstPerson } from '@/lib/first-run'
 import { cn } from '@/lib/utils'
 import { haptic } from '@/lib/haptics'
 
@@ -106,8 +107,11 @@ export default function OnboardingPage() {
         setPendingPlan(plan)
         router.replace('/family/membership?activate=1')
       } else {
-        // First success: land ON the new person, where the guided first task begins.
-        router.replace(`/space/people/${created.id}`)
+        // First success: hand off to the new person's Space (the guided first task). AuthGate
+        // sends a freshly-onboarded family user to /space; the marker lets the Workspace home
+        // open the person page from inside its own context — no redirect race.
+        markFirstPerson(created.id)
+        router.replace('/space')
       }
     } catch (e) {
       // Keep raw Postgres/Supabase errors out of the UI; log for debugging.

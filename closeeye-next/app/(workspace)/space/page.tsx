@@ -10,13 +10,20 @@
  */
 import * as React from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Check, Circle, ScanEye, Sparkles, ChevronRight, ArrowRight, UserPlus, Images } from 'lucide-react'
 import { fetchHome, type HomeData } from '@/lib/db/home'
 import { fetchRecentMemories, type MemoryView } from '@/lib/db/memories'
+import { takeFirstPerson } from '@/lib/first-run'
 
 const initial = (s: string) => (s || '?').trim().charAt(0).toUpperCase()
 
 export default function WorkspaceHome() {
+  const router = useRouter()
+  // First-run hand-off: a user who just finished onboarding is opened ON their new person's Space
+  // (the guided first task) rather than this home. Read once (synchronously, pre-paint) so there's
+  // no flash of the home first.
+  const [firstPerson] = React.useState<string | null>(() => takeFirstPerson())
   const [home, setHome] = React.useState<HomeData | null>(null)
   const [recent, setRecent] = React.useState<(MemoryView & { lovedOneId: string })[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -34,6 +41,13 @@ export default function WorkspaceHome() {
   }, [])
   React.useEffect(() => { void load() }, [load])
 
+  // Hand off to the just-created person's Space. Runs before load matters — we render a calm
+  // placeholder (below) while the redirect happens, so the home never flashes.
+  React.useEffect(() => {
+    if (firstPerson) router.replace(`/space/people/${firstPerson}`)
+  }, [firstPerson, router])
+
+  if (firstPerson) return <p className="py-20 text-center text-caption text-content-muted">Opening their space…</p>
   if (loading) return <p className="py-20 text-center text-caption text-content-muted">Opening your family…</p>
   if (error) return (
     <div className="py-20 text-center">
