@@ -11,8 +11,8 @@ is ratified only by the founder; amendments are deliberate constitutional acts, 
 | Chapter | System | Status |
 |---|---|---|
 | **1** | **Typography** | **Ratified 2026-07-19** |
-| 2 | Color | Reserved |
-| 3 | Spacing & Rhythm | Reserved |
+| **2** | **Color** | **Ratified 2026-07-19** |
+| 3 | Spacing & Layout | Drafting |
 | 4 | Motion | Reserved |
 | 5 | Icons | Reserved |
 | 6 | Components | Reserved |
@@ -215,3 +215,113 @@ never a size.
 
 *Chapter 1 ratified 2026-07-19. Companion review (evidence-backed audit, the six-token reduction,
 ownership matrix, the "what would Apple delete" analysis): the Typography Constitution artifact.*
+
+---
+
+# Chapter 2 — Color
+
+## Objective
+
+Color is not a palette; it is a set of **meanings**. The objective is not to standardize three
+parallel palettes into one large one, but to **reduce** them to the fewest roles that carry meaning,
+and to make **contrast a law rather than a hope**. Governing principle: **color tokens represent
+meaning, not hue.** A token is *danger*, not *red*; *surface-inverse*, not *white*; *text-secondary*,
+not *grey-500*. A new hex is never a new token — only a new meaning earns one.
+
+## The Laws
+
+1. **Meaning, not hue.** Tokens name a role, never a colour.
+2. **One token per role.** No raw hex, no default palette (`white`/`black`/`gray-*`), no numbered
+   palette, no references to undefined tokens.
+3. **Contrast is law.** Every colour used for text or an interactive affordance meets WCAG AA
+   (≥ 4.5:1 body, ≥ 3:1 large). A colour that fails is **decoration** and may never carry text.
+4. **State is never colour alone.** Success / warning / danger always carry an icon and words too —
+   for colour-blind users and because hue meaning differs across cultures.
+5. **Prefer fewer.** If two tokens communicate the same meaning, one is removed.
+6. **Theme-ready by role.** A theme remaps role→value and adds zero tokens.
+
+## Ratification 1 — The Semantic Role Set (RATIFIED)
+
+Color consists of semantic **roles**, not colours. The `.cx` private palette and the `.wsp` re-skin
+collapse into this one set. **No role may be added without a distinct meaning** (constitutional
+amendment). Values below are the current light-mode resolutions (HSL channels); a theme may remap
+them.
+
+| Group | Tokens | Meaning |
+|---|---|---|
+| **Surface** | `surface` · `surface-raised` · `surface-inverse` · `surface-accent` | Where content sits (page · card · dark panel · soft wash) |
+| **Content** | `text` · `text-secondary` · `text-inverse` · `text-disabled` | Reading content by emphasis; all AA except `disabled` |
+| **Brand** | `brand` · `brand-hover` · `accent` | Identity & action (`brand` AA as text; `accent` is decoration, never text) |
+| **Border** | `border` | Separation — hairlines & dividers |
+| **State** | `success` · `warning` · `danger` (each + `-surface`) | System feedback; AA-safe; always with icon + words |
+| **Decoration** | `decor-*` (enumerated) | Dots, charts, marks — **may never carry text** |
+
+**Collapsed by this ratification:** six greys → one `text-secondary`; three unlinked reds → one
+`danger`; four borders → one `border`; the many greens → `brand` + `accent` + `success` by meaning;
+the 88 raw `#fff` → the `surface-inverse` / `text-inverse` pair. **Zero new colours added.**
+
+## Ratification 2 — Theme Governance (RATIFIED, as amended)
+
+The system is **architected for multiple themes through the semantic role tokens** — a theme is a
+remap of role→value that adds no tokens. **At launch, Light Mode is the only supported theme.** A
+dark or high-contrast theme is a **reserved future amendment**; it lands as an override block that
+redefines only the role tokens, under `:root[data-theme="…"]` / `prefers-color-scheme`. Components
+therefore consume **only role tokens, never a raw value** — that is what makes theming a remap.
+
+## Contrast — Constitutional, not advisory
+
+Every content, text, brand and state token meets **WCAG AA** on its intended surface. A colour that
+fails AA is **decoration**, enumerated as `decor-*`, and **forbidden as text at the lint layer**.
+This removes, by rule, the two known violations (emerald 2.76:1 and faint 2.40:1 used as links /
+quiet text) and any future one. State colours are AA-safe shades (the old warning `#BB8A2E` and the
+raw dial reds are darkened to pass).
+
+## Typography-parallel: Ownership, Enforcement, Governance
+
+**Ownership Matrix** — every colour token justifies a distinct meaning, an owner and a usage rule
+(surfaces are shared; brand is Brand-owned; decoration and state are shared but rule-bound). A token
+that cannot name a meaning is removed.
+
+**Enforcement (typography-parallel — violations are architectural defects, CI-linted):**
+- **Raw hex** anywhere outside the token definitions.
+- **Default-palette utilities** — `text-white` / `bg-white` / `text-black` / `bg-gray-*` (all bypass the tokens).
+- **Numbered Tailwind palette** — `green-600`, `slate-*`, etc.
+- **Undefined-token references** — e.g. the `var(--alarm)` bug that renders an invisible error state.
+- **Text on a decoration or fail-AA colour.**
+- **Duplicate roles**, or a **new token without a constitutional amendment.**
+
+**Global:** colour is never the only signal (state = colour + icon + words); contrast holds in every
+theme; brand green is one meaning expressed as three roles, not eight hues.
+
+**Governance — migration phases** (identical model; founder-gated; architectural convergence, not
+aesthetic change; no consumer migrates until the foundation is in place):
+1. **Design Tokens** — the semantic colour roles as custom properties (`styles/design-tokens.css`),
+   consumed by nothing. *(Phase 1 — shipped 2026-07-19.)*
+2. **Lint Rules** — the CI guardrail reporting the defects above.
+3. **Component Migration** — surfaces move onto the roles; delete the whites, the `.cx` palette, the
+   duplicate greys / reds / borders.
+4. **Legacy Cleanup** — remove the parallel palettes and the `--body`/`--ink` and dial-red duplicates.
+5. **Visual QA** — confirm convergence introduced no unintended recolour.
+6. **Accessibility QA** — AA per theme, colour-blind safety (never colour alone).
+
+## Deprecation
+
+- The **`.cx` private palette** (`--paper`, `--forest`, `--emerald`, `--sprout`, `--pencil`,
+  `--faint`, `--hair`/`--hair2`, `--text-accent/secondary/muted`) → the semantic roles.
+- **88 `text-white` / `bg-white`** → `surface-inverse` / `text-inverse`.
+- **33 component hex + ~30 scoped-CSS literals** → tokens.
+- **Six greys, three reds, four borders, the many greens** → collapsed by meaning.
+- **`#0E2A1F` under two names** (`--ink` / `.cx --forest`) and **`--body` vs `--ink`** → one `text`.
+- **`var(--alarm)`** (undefined) → `danger`.
+- **`emerald` / `faint` used as text** → demoted to decoration; lint forbids text on them.
+
+## Amendment Procedure
+
+A new colour role, or the addition of a second theme (dark / high-contrast), is a **constitutional
+amendment** requiring the founder's approval, versioned with the code. The burden for any new role
+is a distinct **meaning**, never a hue.
+
+---
+
+*Chapter 2 ratified 2026-07-19 (theme governance amended: multi-theme architecture, Light Mode only
+at launch). Companion review: the Color Constitution artifact.*

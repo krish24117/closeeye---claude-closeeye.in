@@ -88,3 +88,70 @@
   --type-overline-weight:    700;
   --type-overline-transform: uppercase;
 }
+
+/* ============================================================================
+   Chapter 2 · Color — Phase 1 (Semantic Design Tokens)
+   ----------------------------------------------------------------------------
+   Ratified 2026-07-19. Consumed by NOTHING yet — Phase 1 is tokens only, so
+   importing this changes zero pixels. Component migration is Phase 3.
+
+   LAW: color represents MEANING, not hue. Tokens name a role ("danger",
+   "surface-inverse"), never a colour ("red", "white").
+
+   THEME GOVERNANCE (founder, 2026-07-19): the architecture is multi-theme via
+   these semantic roles — a theme remaps role→value and adds ZERO tokens. At
+   launch, **Light Mode is the only supported theme.** A future dark (or
+   high-contrast) theme is a reserved amendment that redefines these same role
+   tokens under a `:root[data-theme="…"]` / `prefers-color-scheme` block; the
+   scaffold below marks exactly where that lands. Components consume ONLY these
+   role tokens, never a raw value — that is what makes theming a remap.
+
+   Values are HSL channels (consumed as `hsl(var(--token))`), matching the
+   existing convention so alpha works: `hsl(var(--color-border) / 0.5)`.
+   CONTRAST is constitutional: every *-text / content / brand token here meets
+   WCAG AA on its intended surface; `decor-*` colours FAIL AA and may never
+   carry text — that is by design, enforced at the lint layer (Phase 2).
+   ========================================================================== */
+
+:root {
+  /* ── Surface — where content sits ─────────────────────────────────────── */
+  --color-surface:         42 33% 95%;   /* the page ground (warm ivory)      */
+  --color-surface-raised:   0 0% 100%;   /* cards, sheets, inputs             */
+  --color-surface-inverse: 154 48% 11%;  /* dark panels — pairs w/ text-inverse; the role behind the 88 raw whites */
+  --color-surface-accent:  138 30% 91%;  /* soft brand wash — chips, marks    */
+
+  /* ── Content — text & icon (AA on their intended surface) ─────────────── */
+  --color-text:            154 48% 11%;  /* primary — headings & body (one ink; collapses ink+body) */
+  --color-text-secondary:  150 9% 40%;   /* quiet / meta — the one grey (was six)  */
+  --color-text-inverse:    42 33% 95%;   /* on surface-inverse                */
+  --color-text-disabled:   150 8% 70%;   /* inert controls only, never real content */
+
+  /* ── Brand — identity & action ────────────────────────────────────────── */
+  --color-brand:           153 44% 22%;  /* primary action, links — AA as text */
+  --color-brand-hover:     154 48% 15%;  /* pressed / hover                   */
+  --color-accent:          137 34% 74%;  /* DECORATIVE brand fill / mark — never text */
+
+  /* ── Border ───────────────────────────────────────────────────────────── */
+  --color-border:           41 24% 87%;  /* hairlines & dividers — the one border (was four) */
+
+  /* ── State — feedback. AA-safe so it may carry text; always paired with an
+        icon + words (never colour alone). Each has a soft surface. ───────── */
+  --color-success:         152 90% 22%;  /* AA-safe confirmation green        */
+  --color-success-surface: 145 38% 90%;
+  --color-warning:          35 74% 30%;  /* AA-safe caution amber (darkened from the old #BB8A2E which failed AA as text) */
+  --color-warning-surface:  40 55% 89%;
+  --color-danger:            6 54% 42%;  /* AA-safe error / destructive red — the one red (was three) */
+  --color-danger-surface:    8 52% 92%;
+
+  /* ── Decoration — enumerated, MAY NEVER CARRY TEXT (fails AA by design) ── */
+  --color-decor-emerald:   148 92% 34%;  /* bright mark / dot                 */
+  --color-decor-lime:       78 100% 39%; /* sprout accent / live dot          */
+
+  /* ── RESERVED · future themes ─────────────────────────────────────────────
+     Dark / high-contrast modes are a future constitutional amendment. They
+     land as an override block that redefines ONLY the role tokens above —
+     adding none — e.g.:
+       @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { … } }
+       :root[data-theme="dark"] { … }
+     Not shipped at launch (Light Mode only). Left here to fix the architecture. */
+}
