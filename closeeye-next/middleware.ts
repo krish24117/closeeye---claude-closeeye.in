@@ -9,7 +9,10 @@
  *   • the India-COMMERCIAL marketing pages (services, book, membership, guardian/companion
  *     recruitment, the India about/trust/contact/help/feedback) REDIRECT to `/connect` — they are
  *     India eldercare content and have no place on the global Connect door yet.
- *   • everything else passes through: the Connect pages, the app (/space, /welcome, auth), and the
+ *   • the India APP ONBOARDING carousel (/welcome — "Everything starts with care", Presence
+ *     Manager) REDIRECTS to `/connect`: it is India eldercare onboarding and must never surface on
+ *     the global door (the Connect entry is /connect, then /join or /auth).
+ *   • everything else passes through: the Connect pages, the app (/space, /auth), and the
  *     LEGAL/technical pages (privacy, terms, refund/cancellation-policy, consent, cookies,
  *     medical-disclaimer, offline) — which Connect and the law both depend on.
  *
@@ -35,6 +38,9 @@ const INDIA_ONLY = new Set([
   'contact',
   'help',
   'feedback',
+  // India app onboarding carousel — "Everything starts with care" / Presence Manager. Not a
+  // Connect surface; the global door onboards through /connect → /join or /auth.
+  'welcome',
 ])
 
 export function middleware(req: NextRequest): NextResponse {

@@ -7,6 +7,7 @@ import { useFamilyData } from '@/components/family/family-data-provider'
 import { hasFounderSessionHint } from '@/lib/founder-funnel'
 import { isGuardian, isSuperAdmin, isPresenceManager } from '@/lib/roles'
 import { isNative } from '@/lib/native'
+import { isConnectHost } from '@/lib/platform/front-door'
 import { LogoMark } from '@/components/ui/logo'
 
 // The unauthenticated / setup flow (allowed before the dashboard).
@@ -52,15 +53,20 @@ export function AuthGate() {
     let target: string | null = null
 
     if (!session) {
-      // Protect app routes. Staff (PM / Admin) go straight to the sign-in screen —
-      // no marketing carousel; families keep the /welcome onboarding intro; a
-      // signed-out guardian route sends to the Guardian login.
+      // The signed-out family entry is host-aware: on the GLOBAL Connect front doors
+      // (closeeye.app / connect.closeeye.in) it is the Connect experience (/connect) — NEVER the
+      // India /welcome carousel; on the India door it stays /welcome. This is the root fix for
+      // "closeeye.app keeps showing closeeye.in": a signed-out landing on an app route no longer
+      // routes to India onboarding on the global door.
+      const familyEntry = (typeof window !== 'undefined' && isConnectHost(window.location.host)) ? '/connect' : '/welcome'
+      // Protect app routes. Staff (PM / Admin) go straight to the sign-in screen; a signed-out
+      // guardian route sends to the Guardian login.
       if (onApp && !onFlow)
         target = pathname.startsWith('/guardian')
           ? '/guardian/login'
           : pathname.startsWith('/pm') || pathname.startsWith('/admin')
           ? '/auth'
-          : '/welcome'
+          : familyEntry
       // Native "Check on My Family" → authenticate: the guest booking flow (/book)
       // is web-only, so an unauthenticated tap in the app resolves to sign-in.
       else if (native && (pathname === '/book' || pathname.startsWith('/book/')))
