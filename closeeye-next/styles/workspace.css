@@ -49,3 +49,148 @@
   outline-offset: 3px;
   border-radius: 6px;
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   THE DOCK (mobile) — Dock redesign, 2026-07-19. Four tabs around a central
+   Connect orb. Connect leaves the tab row and becomes the primary action; the
+   orb is the one place we spend colour and elevation, tabs stay quiet.
+
+   Increment A ships the STRUCTURE with a still "resting" orb. The breathing
+   core, the listening/thinking/attention states, the whisper, and the
+   background/Low-Power pause-guards land in Increment B — that is why there is
+   no keyframe animation here yet.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.wsp-dock {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 40;
+  padding: 0 16px calc(18px + env(safe-area-inset-bottom));
+  pointer-events: none;               /* only the bar/orb are interactive */
+}
+/* A soft fade so content scrolls away under the glass instead of colliding with it. */
+.wsp-dock::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 150px;
+  background: linear-gradient(to top, #F1EDE1 12%, rgba(241, 237, 225, 0));
+  pointer-events: none;
+}
+@media (min-width: 1024px) { .wsp-dock { display: none; } }   /* desktop keeps the sidebar */
+
+.wsp-dock-bar {
+  position: relative;
+  pointer-events: auto;
+  width: 100%;
+  max-width: 398px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 76px 1fr 1fr;
+  align-items: center;
+  background: hsl(var(--card) / 0.72);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  border-radius: 28px;
+  padding: 9px 8px;
+  box-shadow: 0 8px 30px hsl(147 28% 13% / 0.13), 0 1px 0 hsl(0 0% 100% / 0.7) inset;
+}
+@supports not ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
+  .wsp-dock-bar { background: hsl(var(--card) / 0.97); }
+}
+
+.wsp-tab {
+  appearance: none;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 0 5px;
+  border-radius: 14px;
+  color: hsl(var(--muted));
+  text-decoration: none;
+  transition: color 0.2s ease;
+  position: relative;
+}
+.wsp-tab svg { width: 22px; height: 22px; }
+.wsp-tab span { font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
+.wsp-tab:hover { color: hsl(var(--ink)); }
+.wsp-tab[aria-current='page'] { color: hsl(var(--ink)); }         /* active tab is quiet ink… */
+.wsp-tab[aria-current='page'] svg { stroke-width: 2.1; }          /* …distinguished by weight, not colour */
+/* A small dot for a tab that has something new (Activity). Colour = green accent. */
+.wsp-tab-badge {
+  position: absolute;
+  top: 4px;
+  margin-left: 15px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: hsl(var(--green));
+  box-shadow: 0 0 0 2.5px hsl(var(--card) / 0.95);
+}
+
+/* ── The orb — Connect ─────────────────────────────────────────────────────── */
+.wsp-orb-wrap { display: grid; place-items: center; position: relative; }
+.wsp-orb {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  margin-top: -9px;                    /* elevation, not size */
+  background:
+    radial-gradient(75% 70% at 32% 24%, hsl(0 0% 100% / 0.14) 0%, hsl(0 0% 100% / 0) 46%),
+    radial-gradient(120% 120% at 50% 40%, #1C4130 0%, #0C2419 78%);
+  display: grid;
+  place-items: center;
+  box-shadow:
+    0 10px 22px hsl(147 28% 13% / 0.30),
+    0 2px 5px hsl(147 28% 13% / 0.20),
+    0 0 0 5px hsl(var(--ivory) / 0.55),           /* cream cushion separates orb from the glass */
+    inset 0 1px 1px hsl(0 0% 100% / 0.13);
+  transition: box-shadow 0.45s ease, transform 0.12s ease;
+}
+.wsp-orb:active { transform: scale(0.95); }
+.wsp-orb-core {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #7FBF94;                 /* sage — resting, calm, never bright */
+  opacity: 0.42;
+}
+.wsp-orb-label {
+  position: absolute;
+  bottom: -16px;
+  font-size: 10px;
+  font-weight: 700;
+  color: hsl(var(--ink));
+}
+
+/* ── The Connect sheet content (rendered inside the shared Overlay) ─────────── */
+.wsp-askfield {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid hsl(var(--line));
+  border-radius: 100px;
+  padding: 12px 14px 12px 18px;
+  background: hsl(var(--ivory));
+}
+.wsp-askfield input {
+  border: 0;
+  background: none;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: 17px;
+  color: hsl(var(--ink));
+}
+/* Empty-and-inviting must not read as an already-typed question (device-render note): the
+   placeholder is lighter and upright, prior answers are the italic serif. */
+.wsp-askfield input::placeholder { color: hsl(var(--muted) / 0.7); font-style: normal; }

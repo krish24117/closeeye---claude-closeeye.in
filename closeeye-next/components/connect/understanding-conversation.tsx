@@ -17,7 +17,7 @@ import type { Understanding } from '@/lib/connect/comprehension'
 
 const KNOWN = (s: string | undefined) => !!s && s !== 'unknown' && s !== 'none_stated'
 
-export function UnderstandingConversation() {
+export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
   const [input, setInput] = React.useState('')
   const [thinking, setThinking] = React.useState(false)
   const [decision, setDecision] = React.useState<Decision | null>(null)
@@ -33,6 +33,19 @@ export function UnderstandingConversation() {
       setThinking(false)
     }
   }
+
+  // Seeded from the orb's Connect sheet (?q=…): show the question in the field and ask it once, so
+  // the fast lane escalates into the real engine without the person retyping. Guarded against
+  // React's double-invoke so we never ask twice.
+  const seededRef = React.useRef(false)
+  React.useEffect(() => {
+    const q = (seed ?? '').trim()
+    if (!q || seededRef.current) return
+    seededRef.current = true
+    setInput(q)
+    void ask(q)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seed])
 
   return (
     <div className="flex flex-col gap-6">

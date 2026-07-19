@@ -25,17 +25,22 @@ capability that breaks the information architecture.
 
 | Owner | Canonical root | In primary nav? | What it owns |
 |---|---|---|---|
-| **Home** | `/space` | ✅ | The Workspace landing — how is everyone, at a glance |
-| **Connect** | `/space/connect` | ✅ | CloseEye Connect — the family intelligence and conversation |
-| **People** | `/space/people` | ✅ | The people you love and everything scoped to a person |
-| **Activity** | `/space/activity` | ✅ | The timeline — what changed, presence stories, the family's story |
-| **Care** | `/space/care` | ✅ | Real-world presence — visits, booking, services |
+| **Home** | `/space` | ✅ tab | The Workspace landing — how is everyone, at a glance |
+| **Connect** | `/space/connect` | ✅ **orb** | CloseEye Connect — the family intelligence and conversation |
+| **People** | `/space/people` | ✅ tab | The people you love and everything scoped to a person |
+| **Activity** | `/space/activity` | ✅ tab | The timeline — what changed, presence stories, the family's story |
+| **Care** | `/space/care` | ⏸ hidden | Real-world presence — visits, booking, services (phase 2) |
+| **Settings** | `/space/settings` | ✅ tab (as **Profile**) | Profile, preferences, Trust & Safety, account |
 | **Billing** | `/space/billing` | overflow | Membership and payments |
-| **Settings** | `/space/settings` | overflow | Profile, preferences, Trust & Safety |
 
-**Primary navigation (v1):** Home · Connect · People · Activity · Care.
-Billing and Settings are overflow (Account menu). Notifications and Emergency are global actions,
-not owned routes — they *resolve into* the Workspace at the relevant Owner's canonical route.
+**Primary navigation (v2 — the Dock, 2026-07-19):** a bottom dock of four tabs around a central
+Connect **orb** — **Home · People · ⬢ Connect · Activity · Profile**. Connect is the primary
+action (the orb, not a tab); tapping it opens the Connect sheet, deep threads continue at
+`/space/connect`. **Profile** is the presentation of the **Settings** Owner (canonical
+`/space/settings`) — so Settings is now a primary destination, not overflow. **Care** stays in the
+nav data but is hidden from the dock until phase 2 (`NEXT_PUBLIC_CARE_ENABLED`). **Billing** is the
+only overflow item (also surfaced from within Profile). Notifications and Emergency are global
+actions, not owned routes — they *resolve into* the Workspace at the relevant Owner's canonical route.
 
 ---
 
