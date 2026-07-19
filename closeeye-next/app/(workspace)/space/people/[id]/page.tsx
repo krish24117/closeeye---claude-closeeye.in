@@ -10,7 +10,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, Sparkles, Pencil, HeartPulse, Images } from 'lucide-react'
+import { ArrowLeft, Sparkles, Pencil, HeartPulse, Camera, Plus } from 'lucide-react'
 import { fetchSpace, appendLearning, personName, type SpaceData } from '@/lib/db/space'
 import type { Blank, LedgerLine } from '@/lib/connect/ledger'
 import { deriveSnapshot, deriveRecommendations, groupUnderstanding, type UnderstandingInput } from '@/lib/space/understanding'
@@ -180,10 +180,25 @@ export default function PersonSpacePage() {
         <Link href={`/space/people/${lo.id}/health`} className="inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
           <HeartPulse className="h-4 w-4 text-green" strokeWidth={1.75} /> Care &amp; health profile
         </Link>
-        <Link href={`/space/people/${lo.id}/memories`} className="inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
-          <Images className="h-4 w-4 text-green" strokeWidth={1.75} /> Memories
-        </Link>
       </div>
+
+      {/* Memories — capture & recollect, made a prominent one-tap action (was a buried pill) */}
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-caption font-semibold uppercase tracking-widest text-muted">Memories</p>
+          <Link href={`/space/people/${lo.id}/memories`} className="text-caption font-semibold text-green hover:text-green/80">View all</Link>
+        </div>
+        <Link href={`/space/people/${lo.id}/memories/add`} className="flex items-center justify-between gap-3 rounded-lg border border-line/70 bg-card p-4 shadow-sm transition-colors hover:border-green/40">
+          <span className="flex min-w-0 items-center gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><Camera className="h-5 w-5" strokeWidth={1.6} /></span>
+            <span className="min-w-0">
+              <span className="block text-body-sm font-semibold text-ink">Keep a memory of {person}</span>
+              <span className="block text-caption text-muted">A photo, video or document — captured or uploaded</span>
+            </span>
+          </span>
+          <Plus className="h-5 w-5 shrink-0 text-green" strokeWidth={2.2} />
+        </Link>
+      </section>
     </div>
   )
 }
