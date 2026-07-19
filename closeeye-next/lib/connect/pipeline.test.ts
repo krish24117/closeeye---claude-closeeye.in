@@ -81,6 +81,18 @@ describe('disposal routes correctly', () => {
     const d = await understand('hi there', deps({ comprehend: async () => mk({ intent: 'greeting' }) }))
     expect(d.lane).toBe('decline')
   })
+
+  it('a request for medical advice → medical (honest decline, never an answer)', async () => {
+    const d = await understand('what dose of paracetamol should my father take', deps({
+      comprehend: async () => mk({ intent: 'ask', need: 'medical guidance' }),
+    }))
+    expect(d.lane).toBe('medical')
+  })
+
+  it('a non-medical share is NOT misrouted to medical', async () => {
+    const d = await understand('my mother is travelling to Delhi', deps({ comprehend: async () => mk({}) }))
+    expect(d.lane).toBe('answer')
+  })
 })
 
 describe('retrieve is best-effort — a failure degrades, never blocks', () => {

@@ -22,6 +22,7 @@ export type Decision =
   | { lane: 'escalate'; safety: SafetyResult }
   | { lane: 'ask'; understanding: Understanding; question: string }
   | { lane: 'decline'; understanding: Understanding; reason: 'greeting' }
+  | { lane: 'medical'; understanding: Understanding } // asked for medical advice — honestly decline, offer a person + a doctor
   | { lane: 'care'; understanding: Understanding }
   | { lane: 'answer'; understanding: Understanding; context: unknown }
 
@@ -43,6 +44,28 @@ function needsPresence(u: Understanding): boolean {
   return u.intent === 'request_help' || (u.need !== 'none_stated' && u.need !== 'unknown' && PRESENCE.test(u.need))
 }
 
+/**
+ * Deterministic detection of a request for MEDICAL ADVICE — a dose, a symptom interpretation, a
+ * clinical reading, whether to take/stop a medication. Close Eye is not a medical AI (a founding
+ * non-goal), so these get an honest "we don't give medical advice → a doctor, and a trusted person"
+ * response rather than a guess. Deterministic on purpose (safety decides deterministically): it is
+ * tuned to UNDER-detect — a miss is safe (the answer lane never composes advice anyway); a false
+ * positive (declining a non-medical message) is the thing to avoid, so every pattern is specific.
+ * Urgent medical ("chest pain") is already caught earlier by the crisis floor and never reaches here.
+ */
+const MEDICAL_ADVICE: RegExp[] = [
+  /\b(what|which|how much|how many)\b[^.?!]*\b(medicine|medication|dose|doses|dosage|tablet|tablets|pill|pills|drug|drugs|mg|ml|insulin|antibiotic|antibiotics)\b/i,
+  /\b(dose|dosage)\s+(of|for)\b/i,
+  /\bshould\s+(he|she|they|we|i|him|her|my\s+\w+)\b[^.?!]*\b(take|taking|stop|stops|stopping|start|starting|continue|switch)\b[^.?!]*\b(medicine|medication|tablet|tablets|pill|pills|dose|drug|drugs|treatment|insulin|dosage)\b/i,
+  /\bwhat\s+(could\s+it\s+be|is\s+causing|might\s+(it|this|that)\s+be)\b/i,
+  /\bis\s+[^.?!]*\b(blood\s*sugar|blood\s*pressure|bp|sugar\s+level|pulse|heart\s*rate|temperature|fever|reading|readings|level|levels|count|cholesterol)\b[^.?!]*\b(dangerous|normal|serious|high|low|too\s+high|too\s+low|bad|okay|ok|concerning)\b/i,
+  /\b(what\s+does|what's|what\s+do)\b[^.?!]*\b(test|report|reports|result|results|reading|scan|x-?ray|mri|blood\s*work|lab)\b[^.?!]*\bmean\b/i,
+  /\b(diagnos|prescrib|prescription|symptoms\s+of|treatment\s+for|cure\s+for|remedy\s+for)\b/i,
+]
+function medicalAdviceSought(input: string): boolean {
+  return MEDICAL_ADVICE.some((re) => re.test(input))
+}
+
 export async function understand(input: string, deps: PipelineDeps): Promise<Decision> {
   // 1 · SAFETY FLOOR — deterministic, always, first. A crisis returns before any model call.
   const safety = deps.safetyCheck(input)
@@ -59,6 +82,10 @@ export async function understand(input: string, deps: PipelineDeps): Promise<Dec
   let decision: Decision
   if (u.intent === 'greeting') {
     decision = { lane: 'decline', understanding: u, reason: 'greeting' }
+  } else if (medicalAdviceSought(input)) {
+    // Asked for medical advice — honestly decline (a doctor is right), offer a trusted person. Not
+    // a crisis (that returned above); not an answer we should compose. Close Eye is not a medical AI.
+    decision = { lane: 'medical', understanding: u }
   } else if (subjectKnown && needsPresence(u)) {
     // A clear presence request for a KNOWN person is actionable — route to Care, not another
     // question, even if the model hedged confidence. Connect orchestrates; Care fulfils. (Ambiguous

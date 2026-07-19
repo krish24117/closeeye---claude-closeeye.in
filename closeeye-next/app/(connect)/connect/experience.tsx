@@ -526,6 +526,19 @@ export function ConnectExperience() {
     }
 
     const cu = decision.understanding
+    if (decision.lane === 'medical') {
+      // Close Eye is not a medical AI. Honest decline → a doctor for anything clinical, and a
+      // trusted person Close Eye CAN bring. Never a symptom read, a dose, or a diagnosis.
+      const obj = personKnown ? subjMid : 'them'
+      const poss = obj === 'you' ? 'your' : obj === 'them' ? 'their' : `${obj}’s`
+      return (
+        <div className="counsel">
+          <p><b>Close Eye doesn’t give medical advice.</b> For anything clinical — a symptom, a dose, a reading, a medication — a doctor is the right person; they know {poss} full health picture.</p>
+          <p>What Close Eye can do is bring a trusted person to see {obj} in person — and for anything that can’t wait, reach a real person now.</p>
+          <a className="wa-prominent" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>
+        </div>
+      )
+    }
     if (decision.lane === 'ask') {
       // Unsure → show what we DO understand, then ONE honest question. No fabricated list of blanks.
       return (

@@ -91,6 +91,14 @@ function Outcome({ decision, onAnswer }: { decision: Decision; onAnswer: (q: str
     return <AssistantCard><p className="text-body text-ink">Hello — I’m here for the people you love. Tell me about one of them, or ask me anything.</p></AssistantCard>
   }
 
+  if (decision.lane === 'medical') {
+    return (
+      <AssistantCard>
+        <p className="text-body text-ink"><strong>Close Eye doesn’t give medical advice.</strong> For anything clinical — a symptom, a dose, a reading, a medication — a doctor is the right person. What Close Eye can do is bring a trusted person to check in, and reach someone now for anything urgent.</p>
+      </AssistantCard>
+    )
+  }
+
   // care / answer — both carry the understanding; show it, then the next move.
   const u = decision.understanding
   return (
