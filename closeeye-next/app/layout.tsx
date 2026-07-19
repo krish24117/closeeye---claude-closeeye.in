@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
 import { Manrope, Inter } from 'next/font/google'
 import '@/styles/globals.css'
+// Design System Constitution · Ch.1 Typography — Phase 1 token layer. Declarative
+// custom properties only; consumed by nothing yet, so it changes zero pixels.
+import '@/styles/design-tokens.css'
 import { RegisterSW } from '@/components/pwa/register-sw'
 import { NativeInit } from '@/components/pwa/native-init'
 import { AuthProvider } from '@/components/auth/auth-provider'

@@ -1,0 +1,90 @@
+/* ============================================================================
+   CloseEye Design System Constitution — TOKEN LAYER
+   Chapter 1 · Typography — Phase 1 (Design Tokens)
+   ----------------------------------------------------------------------------
+   The single source of truth for typography, as declarative CSS custom
+   properties. This file DEFINES the six semantic roles and the two family
+   role-tokens. It is deliberately CONSUMED BY NOTHING yet — Phase 1 is tokens
+   only. No component reads these; importing this file changes zero pixels.
+
+   Consumption (Tailwind utilities, component migration) is Phase 3, gated by
+   the founder. Lint enforcement is Phase 2. See docs/DESIGN_SYSTEM_CONSTITUTION.md.
+
+   LAW: tokens represent MEANING, not size. Six roles only:
+     Display · Title · Heading · Body · Caption · Overline
+   ========================================================================== */
+
+:root {
+  /* ── FAMILY ROLE TOKENS (Ratification 2) ────────────────────────────────
+     Two families, referenced only through these roles — never by name in a
+     component. Interface sans = Inter (RATIFIED). Display serif = PROVISIONAL:
+     the current candidate is Newsreader, but the system is NOT hard-coded to
+     it — the final serif is set here, in one place, after the brand review. */
+  --font-display: var(--font-newsreader), Georgia, 'Times New Roman', serif;
+  --font-text: var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+
+  /* ── PER-SCRIPT FALLBACK STACKS (Law 9 — no rule assumes English) ────────
+     Scaffolding for global readiness. The editorial serif is Latin-only; for
+     non-Latin locales the Display roles fall back to the script's Noto serif
+     where it exists, else its Noto sans. Actual per-locale font LOADING (subset
+     Noto faces) and the dir / :lang() activation land in later phases; these
+     variables name the contract now. */
+  --font-fallback-latin:      Georgia, 'Times New Roman', serif;
+  --font-fallback-arabic:     'Noto Naskh Arabic', 'Noto Sans Arabic', serif;
+  --font-fallback-cjk-jp:     'Noto Sans JP', 'Hiragino Sans', sans-serif;
+  --font-fallback-cjk-kr:     'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  --font-fallback-devanagari: 'Noto Serif Devanagari', 'Noto Sans Devanagari', serif;
+  --font-fallback-telugu:     'Noto Serif Telugu', 'Noto Sans Telugu', serif;
+
+  /* ── THE SIX SEMANTIC ROLES ──────────────────────────────────────────────
+     Each role owns: font · size · line-height · letter-spacing · weight
+     (· transform for Overline). Sizes are rem — they honour Dynamic Type and
+     browser zoom. The legible floor is Caption (0.8125rem); nothing smaller.
+     Letter-spacing / line-height below are the LATIN baseline; the per-script
+     adjustments (Indic ≥1.5 line-height, letter-spacing reset for
+     ar/ja/ko/zh/hi/te) are mandated by the Constitution and applied where the
+     tokens are consumed. */
+
+  /* Display — a singular emotional statement. ≤1 per page; hero & first-run. */
+  --type-display-font:     var(--font-display);
+  --type-display-size:     clamp(2.5rem, 5.6vw, 4rem);
+  --type-display-leading:  1.05;
+  --type-display-tracking: -0.02em;
+  --type-display-weight:   500;
+
+  /* Title — "where you are". Exactly one per screen. */
+  --type-title-font:       var(--font-display);
+  --type-title-size:       clamp(1.75rem, 3.4vw, 2.25rem);
+  --type-title-leading:    1.1;
+  --type-title-tracking:   -0.02em;
+  --type-title-weight:     500;
+
+  /* Heading — a section, or the name of a thing. */
+  --type-heading-font:     var(--font-display);
+  --type-heading-size:     1.25rem;
+  --type-heading-leading:  1.3;
+  --type-heading-tracking: -0.01em;
+  --type-heading-weight:   500;
+
+  /* Body — all reading text. Secondary = Body in a muted colour, never smaller. */
+  --type-body-font:        var(--font-text);
+  --type-body-size:        1.0625rem;
+  --type-body-leading:     1.6;
+  --type-body-tracking:    0;
+  --type-body-weight:      400;
+
+  /* Caption — supporting metadata. The legible floor. */
+  --type-caption-font:     var(--font-text);
+  --type-caption-size:     0.8125rem;
+  --type-caption-leading:  1.5;
+  --type-caption-tracking: 0;
+  --type-caption-weight:   500;
+
+  /* Overline — the category kicker / eyebrow. Uppercase. */
+  --type-overline-font:      var(--font-text);
+  --type-overline-size:      0.8125rem;
+  --type-overline-leading:   1.4;
+  --type-overline-tracking:  0.12em;
+  --type-overline-weight:    700;
+  --type-overline-transform: uppercase;
+}
