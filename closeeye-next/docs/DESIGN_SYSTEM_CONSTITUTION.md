@@ -12,12 +12,15 @@ is ratified only by the founder; amendments are deliberate constitutional acts, 
 |---|---|---|
 | **1** | **Typography** | **Ratified 2026-07-19** |
 | **2** | **Color** | **Ratified 2026-07-19** |
-| 3 | Spacing & Layout | Drafting |
-| 4 | Motion | Reserved |
+| **3** | **Spacing & Layout** | **Ratified 2026-07-19** |
+| **4** | **Motion** | **Ratified 2026-07-19** |
 | 5 | Icons | Reserved |
 | 6 | Components | Reserved |
 | 7 | Accessibility | Reserved |
 | 8 | Navigation | Reserved (see [ownership_registry.md](./ownership_registry.md) + navigation_constitution.md) |
+
+**Chapters 1–4 are ratified with token foundations in place** — the trigger for the Design System
+Readiness Report (see Governance Model), the formal authorization before any component migrates.
 
 Reserved chapters carry no law yet; they mark where future systems will be governed with the same
 rigor already applied to product architecture.
@@ -363,3 +366,115 @@ is a distinct **meaning**, never a hue.
 
 *Chapter 2 ratified 2026-07-19 (theme governance amended: multi-theme architecture, Light Mode only
 at launch). Companion review: the Color Constitution artifact.*
+
+---
+
+# Chapter 3 — Spacing & Layout
+
+## Objective
+
+**Spacing is rhythm, not distance.** A gap expresses a *relationship* — how close two things are in
+meaning — chosen from one scale; it is never a pixel guessed to make a screen look right. A page has
+a *containment role* (a form, prose, the app), not a bespoke max-width. The system gets smaller.
+
+## The Laws
+
+1. **Rhythm, not distance.** Every space is a step on the one scale; nothing between the steps exists.
+2. **A relationship owns a step.** The same relationship always uses the same step (the rhythm map).
+3. **Pages have roles, not numbers.** Four containment widths; one app-shell width.
+4. **One radius set.** The concrete radii + pill. No raw `rounded-[…]`, no off-set values.
+5. **Standard breakpoints only.** `sm/md/lg/xl/2xl` — no fractional or height-based stops.
+6. **Directional spacing is logical.** `ps/pe/ms/me`, never `pl/pr/ml/mr` — the system is RTL-ready.
+
+## Ratification (RATIFIED)
+
+- **The space scale — 9 steps:** `space-1..space-24` = 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 · 96px.
+  The in-between steps (20/28/40/56) and every arbitrary value are deleted — they are what create
+  the `gap-6`/`gap-8` ambiguity.
+- **The rhythm map** (a relationship → one step): inline (icon↔label) `space-2` · within a group
+  `space-3` · component padding `space-4`/`space-6` · peers in a grid/list `space-4` · groups on a
+  page `space-8` · between page sections the section rhythm.
+- **Four containment widths:** `width-form` 28rem · `width-prose` 44rem · `width-app` **64rem (the
+  one app-shell width)** · `width-wide` 80rem. Ten `max-w-*` variants collapse here; the two 1400px
+  consoles converge to `width-wide`.
+- **Section rhythm:** one system (`--section-y` / `--section-y-sm`), used on every surface — the 7
+  ad-hoc `py-*` section paddings are deleted.
+- **Radius:** `radius-sm` 12 · `radius-md` 20 · `radius-lg` 28 · `radius-pill`. The 16/18px chat
+  bubbles snap in; legacy `--r-xl` 32 folds to `radius-lg`.
+
+## Ownership · Enforcement · Governance (typography-parallel)
+
+**Ownership:** each token names a distinct meaning (a rhythm step, a containment role, a corner
+softness) — a value that cannot name a meaning is removed.
+
+**Enforcement (CI defects):** arbitrary `p-/m-/gap-[…]` off-scale · raw px spacing in CSS ·
+`rounded-[…]` off the set · non-standard / fractional / height breakpoints · physical
+`pl/pr/ml/mr` · a relationship using the wrong step.
+
+**Governance — migration phases** (founder-gated; convergence, not aesthetic change; no consumer
+migrates until the foundation is in place): 1 Design Tokens *(shipped 2026-07-19)* · 2 Lint · 3
+Component Migration · 4 Legacy Cleanup · 5 Visual QA · 6 A11y QA.
+
+## Deprecation
+
+The `.cx`/`.wsp` parallel px systems (~350 raw off-grid px) · 215 arbitrary spacing utilities · the
+10 competing max-widths and 3 app-shell widths · the 7 ad-hoc section paddings · `rounded-[20px]`
+(raw dup of `radius-md`) and the 16/18px bubbles · the `.cx` fractional/height breakpoints.
+
+*Chapter 3 ratified 2026-07-19. Companion review: the Spacing & Layout Constitution artifact.*
+
+---
+
+# Chapter 4 — Motion
+
+## Objective
+
+**Motion has intent, not decoration.** Every animation answers a role — *feedback* (you acted),
+*transition* (this became that), or *arrival* (something meaningful appeared). If motion
+communicates nothing, it does not ship; and motion that never rests must pause when unseen. The
+system already claims one curve and three durations — this ratifies that claim and enforces it.
+
+## The Laws
+
+1. **Intent, not decoration.** Every motion is feedback, transition or arrival.
+2. **Three durations, one curve.** 200 / 300 / 600ms on the signature ease-out (+ linear for loops only).
+3. **Transform & opacity only.** Never animate layout (`width/height/top/left/margin`) — compositor-safe.
+4. **Reduced-motion is complete.** Every animation — CSS *and* JS — has a still fallback; framer must check `useReducedMotion`.
+5. **Ambient motion pauses.** Infinite loops stop on background, Low-Power and reduced-motion — honestly still.
+6. **Travel is a nudge.** ≤ 24px. Motion orients; it does not journey.
+7. **Prefer fewer.** One motion per purpose; calm before beautiful.
+
+## Ratification (RATIFIED)
+
+- **Three durations, by meaning:** `motion-feedback` 200ms (hover/press/toggle) · `motion-transition`
+  300ms (sheets/menus/tabs) · `motion-arrival` 600ms (first-view reveals, sparingly).
+- **One signature easing:** `--ease-standard: cubic-bezier(0.22, 1, 0.36, 1)` for all transitions and
+  arrivals; `--ease-linear` for continuous loops only. The second, undocumented `(.2,.7,.2,1)` curve
+  (16× in `connect.css`) is deleted.
+- **The ambient-pause law (Law 5):** ratifying this makes the **Dock orb guard constitutional** — the
+  breath, and every future ambient animation, stills on background / Low-Power / reduced-motion.
+
+## Ownership · Enforcement · Governance (typography-parallel)
+
+**Ownership:** each token names an intent (feedback/transition/arrival), a feel (standard/linear) or
+the ambient exception — never a bare millisecond.
+
+**Enforcement (CI defects):** arbitrary duration/easing off the set · `transition-all` · animating
+layout properties · framer without a `useReducedMotion` check · an ambient loop without pause-guards
+· translate travel > 24px · the second easing curve.
+
+**Global:** vestibular safety (reduced-motion complete, JS included) · battery / Low-Power (ambient
+pauses; no perpetual above-the-fold compositor layer on the low-end Android the global launch meets)
+· direction-aware enter/exit (RTL).
+
+**Governance — migration phases:** 1 Design Tokens *(shipped 2026-07-19)* · 2 Lint · 3 Component
+Migration · 4 Legacy Cleanup · 5 Visual QA · 6 A11y QA. Founder-gated; convergence, not aesthetic
+change.
+
+## Deprecation
+
+The 16 off-spec durations (220/240/250/450/…/1200ms) · the second easing curve · `transition-all`
+(×25) · the height/width/left/margin animations · the reduced-motion gaps in 5 framer components and
+`workspace.css` · the unguarded ambient loops · the 32px hero travel.
+
+*Chapter 4 ratified 2026-07-19. Companion review: the Motion Constitution artifact.*

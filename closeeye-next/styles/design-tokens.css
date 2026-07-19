@@ -155,3 +155,73 @@
        :root[data-theme="dark"] { … }
      Not shipped at launch (Light Mode only). Left here to fix the architecture. */
 }
+
+/* ============================================================================
+   Chapter 3 · Spacing & Layout — Phase 1 (Design Tokens)
+   ----------------------------------------------------------------------------
+   Ratified 2026-07-19. Consumed by NOTHING yet — zero visual change.
+   LAW: spacing is RHYTHM, not distance. Every margin/padding/gap is a step on
+   ONE scale; a page has a containment ROLE, not a bespoke width.
+   ========================================================================== */
+
+:root {
+  /* ── The space scale — 9 steps (4px base, 8pt rhythm w/ 4/12 half-steps).
+        Named by 4px units (space-N = N×4px), matching the Tailwind mental model.
+        Nothing between the steps exists; 5/7/10/14 are deliberately absent. ── */
+  --space-1:  0.25rem; /* 4px  */
+  --space-2:  0.5rem;  /* 8px  */
+  --space-3:  0.75rem; /* 12px */
+  --space-4:  1rem;    /* 16px */
+  --space-6:  1.5rem;  /* 24px */
+  --space-8:  2rem;    /* 32px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+  --space-24: 6rem;    /* 96px */
+
+  /* ── Containment roles — four widths; the app shell is ALWAYS width-app.
+        Ten ad-hoc max-widths collapse here; the two 1400px consoles → width-wide. */
+  --width-form:  28rem; /* dialogs, centred auth/forms */
+  --width-prose: 44rem; /* long-form reading, legal   */
+  --width-app:   64rem; /* THE app shell width        */
+  --width-wide:  80rem; /* dashboards / dense tables  */
+
+  /* ── Section vertical rhythm — the ONE section padding (every surface, not
+        just marketing). Fluid, 8pt-aligned. */
+  --section-y:    clamp(4rem, 8vw, 7.5rem);
+  --section-y-sm: clamp(3rem, 5vw, 4.5rem);
+
+  /* ── Radius — the concrete set + pill. (Legacy --r-xl 32 folds to radius-lg.) */
+  --radius-sm:   0.75rem; /* 12px — buttons, chips        */
+  --radius-md:   1.25rem; /* 20px — cards, inputs         */
+  --radius-lg:   1.75rem; /* 28px — panels, sheets        */
+  --radius-pill: 9999px;  /* pills, avatars, round buttons */
+
+  /* Breakpoints are NOT runtime tokens — they are the standard Tailwind stops
+     (sm 640 · md 768 · lg 1024 · xl 1280 · 2xl 1536) ONLY. Off-standard /
+     fractional / height-based media queries (the .cx set) are lint defects. */
+}
+
+/* ============================================================================
+   Chapter 4 · Motion — Phase 1 (Design Tokens)
+   ----------------------------------------------------------------------------
+   Ratified 2026-07-19. Consumed by NOTHING yet — zero visual change.
+   LAW: motion has INTENT (feedback · transition · arrival), never decoration.
+   Three durations, one signature ease (+ linear for continuous loops only).
+   ========================================================================== */
+
+:root {
+  /* ── Duration — by MEANING, not number. Three roles; nothing between. ──── */
+  --duration-feedback:   200ms; /* response to a direct act — hover, press, toggle, colour */
+  --duration-transition: 300ms; /* one thing becoming another — sheets, menus, tabs        */
+  --duration-arrival:    600ms; /* a deliberate entrance — first-view reveals; sparingly    */
+
+  /* ── Easing — one signature ease-out; linear for continuous loops ONLY. ── */
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1); /* the whole system's feel */
+  --ease-linear:   linear;                          /* spinners / loops only   */
+
+  /* AMBIENT motion (breath, pulse, live dot) is exceptional and MUST PAUSE on
+     background (visibilitychange), Low-Power / battery-saver, and reduced-motion
+     — going honestly still (Ch.4 Law 5). This makes the Dock orb guard system
+     law. Travel ceiling: ≤ 24px. Animate transform/opacity only — never layout.
+     These are behavioural rules enforced at the lint/component layer, not values. */
+}
