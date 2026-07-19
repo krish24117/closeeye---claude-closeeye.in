@@ -79,7 +79,16 @@ const config: Config = {
         lg: 'var(--shadow-lg)',
       },
       transitionTimingFunction: {
-        premium: 'var(--ease)',
+        premium: 'var(--ease)', // legacy alias — kept during migration; == ease-standard
+        // Ch.4 Motion tokens (design-tokens.css). One signature ease + linear for loops only.
+        standard: 'var(--ease-standard)',
+      },
+      transitionDuration: {
+        // Ch.4 Motion — durations by meaning (design-tokens.css). Identical values to the
+        // legacy 200/300/600 utilities, so consuming these changes nothing visually.
+        feedback: 'var(--duration-feedback)',
+        transition: 'var(--duration-transition)',
+        arrival: 'var(--duration-arrival)',
       },
       keyframes: {
         'accordion-down': { from: { height: '0' }, to: { height: 'var(--radix-accordion-content-height)' } },

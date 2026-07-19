@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 /**
@@ -30,6 +30,12 @@ export function Overlay({
   // this is SSR-safe. The overlay is closed at mount, so no animation is lost.
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
+
+  // Ch.4 Motion · Law 4 — reduced-motion is complete, JS included. Framer is WAAPI-driven, so the
+  // global CSS reduced-motion rule does NOT stop it; honour it here so the sheet fades without
+  // sliding (opacity only, no travel) for users who ask for less motion.
+  const reduce = useReducedMotion()
+  const slide = reduce ? 0 : 24
 
   useEffect(() => {
     if (!open) return
@@ -59,10 +65,10 @@ export function Overlay({
         >
           <motion.div
             className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-lg bg-card shadow-lg sm:rounded-lg"
-            initial={{ y: 24, opacity: 0 }}
+            initial={{ y: slide, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 24, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ y: slide, opacity: 0 }}
+            transition={{ duration: reduce ? 0 : 0.25, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"

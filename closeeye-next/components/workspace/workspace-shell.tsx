@@ -112,8 +112,8 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         if (item.href === CONNECT_HREF) {
           return (
             <button key={item.href} onClick={() => setSheetOpen(true)} aria-haspopup="dialog" aria-expanded={sheetOpen} className={cn(base, 'text-ink hover:bg-accent-soft/60')}>
-              <span className="grid h-5 w-5 place-items-center rounded-full" style={{ background: 'radial-gradient(120% 120% at 50% 40%, #1C4130 0%, #0C2419 78%)' }}>
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#7FBF94', opacity: 0.6 }} />
+              <span className="wsp-orb-mini grid h-5 w-5 place-items-center rounded-full">
+                <span className="wsp-orb-mini-core h-1.5 w-1.5 rounded-full" />
               </span>
               {item.label}
             </button>

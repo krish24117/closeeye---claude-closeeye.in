@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
  */
 const button = cva(
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm font-semibold ' +
-    'transition-all duration-200 ease-premium select-none disabled:pointer-events-none disabled:opacity-50 ' +
+    'transition duration-feedback ease-standard select-none disabled:pointer-events-none disabled:opacity-50 ' +
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green ' +
     'focus-visible:ring-offset-ivory [&_svg]:shrink-0',
   {

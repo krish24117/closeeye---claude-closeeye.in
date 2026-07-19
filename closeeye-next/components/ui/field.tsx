@@ -18,7 +18,7 @@ export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLab
 
 const fieldBase =
   'w-full rounded-sm border border-line bg-card px-4 text-body text-ink placeholder:text-muted/70 ' +
-  'transition-colors duration-200 ease-premium focus:border-green focus:outline-none ' +
+  'transition-colors duration-feedback ease-standard focus:border-green focus:outline-none ' +
   'focus:ring-2 focus:ring-green/25 disabled:cursor-not-allowed disabled:bg-muted/10 ' +
   'aria-[invalid=true]:border-error aria-[invalid=true]:ring-error/25'
 

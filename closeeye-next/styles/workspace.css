@@ -171,6 +171,11 @@
   color: hsl(var(--ink));
 }
 
+/* Desktop sidebar Connect entry — the orb scaled to a nav glyph. One source for the gradient
+   (was duplicated as an inline style in workspace-shell.tsx). Sizing stays in the markup. */
+.wsp-orb-mini { background: radial-gradient(120% 120% at 50% 40%, #1C4130 0%, #0C2419 78%); }
+.wsp-orb-mini-core { background: #7FBF94; opacity: 0.6; }
+
 /* ── The Connect sheet content (rendered inside the shared Overlay) ─────────── */
 .wsp-askfield {
   display: flex;

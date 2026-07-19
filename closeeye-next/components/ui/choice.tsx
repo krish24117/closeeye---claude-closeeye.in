@@ -21,7 +21,7 @@ export function Chip({
       aria-pressed={selected}
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full border px-4 py-2.5 text-body-sm font-medium ' +
-          'transition-all duration-200 ease-premium focus-visible:outline-none focus-visible:ring-2 ' +
+          'transition duration-feedback ease-standard focus-visible:outline-none focus-visible:ring-2 ' +
           'focus-visible:ring-green focus-visible:ring-offset-2 focus-visible:ring-offset-ivory',
         selected
           ? 'border-green bg-accent-soft text-green'
@@ -57,7 +57,7 @@ export function OptionCard({
       aria-pressed={selected}
       className={cn(
         'group relative flex w-full flex-col items-start gap-4 rounded-md border bg-card p-6 text-left ' +
-          'transition-all duration-200 ease-premium focus-visible:outline-none focus-visible:ring-2 ' +
+          'transition duration-feedback ease-standard focus-visible:outline-none focus-visible:ring-2 ' +
           'focus-visible:ring-green focus-visible:ring-offset-2 focus-visible:ring-offset-ivory',
         selected
           ? 'border-green shadow-md ring-1 ring-green'
