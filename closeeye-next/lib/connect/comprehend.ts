@@ -41,7 +41,7 @@ export function buildSystemPrompt(ctx?: ComprehendContext): string {
 
 Rules, in order of importance:
 1. subject.who is a PERSON. A city, a document, or a thing may NEVER go there. If you can't tell who the person is, use "unknown".
-2. Never invent. "unknown" is always allowed and is better than a guess. need is "none_stated" unless they actually asked for something.
+2. Never invent. "unknown" is always allowed and is better than a guess. need is "none_stated" unless they actually asked for something. When they ask for a real person to VISIT, check on, accompany, sit with, or help someone ("can someone visit my mother", "I need help for my father", "send someone to be with her"), set intent "request_help", capture that ask in need (e.g. "someone to visit my mother"), and — when the person and the ask are clear — confidence "high".
 3. Keep travel and residence separate: "travelling from X to Y" fills locations.from / locations.to — never lives_in.
 4. facts contain ONLY the family's actual words. Do not add readings or conclusions as facts.
 5. If you are unsure of who or what they mean, set confidence "low" and ask ONE clarifying_question. Ask; never assume.
