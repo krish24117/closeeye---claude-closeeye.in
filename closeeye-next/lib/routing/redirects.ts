@@ -33,7 +33,15 @@ export const WORKSPACE_REDIRECTS: RouteRedirect[] = [
   // (the edit form) stays until it re-homes; membership payment stays too.
   { source: '/family/profile', destination: '/space/settings', permanent: true },
   //
+  // ── People (Phase 4) — parity reached: /space/people has the roster, the Person Space (view +
+  // Edit), the edit form, the health/care profile, and the add flow. The whole family People
+  // surface re-homes. `:id/health` is listed BEFORE `:id` (most-specific first).
+  { source: '/family/members', destination: '/space/people', permanent: true },
+  { source: '/family/members/:id/health', destination: '/space/people/:id/health', permanent: true },
+  { source: '/family/members/:id', destination: '/space/people/:id', permanent: true },
+  { source: '/family/add', destination: '/space/people/add', permanent: true },
+  //
   // Still held (Owner not yet at parity): /family/membership (payment flow), /family/book +
-  // /family/visits + /family/services (Care doesn't own booking), /family/members/[id] (no
-  // health/docs facets), /family/connect (no Q&A history), /family/profile (Settings is a stub).
+  // /family/visits + /family/services (Care doesn't own booking), /family/connect (no Q&A history),
+  // /family/profile/edit (edit form). These re-home as their /space Owner reaches parity.
 ]
