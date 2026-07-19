@@ -46,10 +46,10 @@ const SAMPLE2 = 'My father gets stressed every year with his tax filing. Can som
  *
  * The ○ line is the point. Do not remove it to save a beat.
  */
-const DEMO_SENTENCE = 'Amma lives alone in Hyderabad and I worry about her.'
+const DEMO_SENTENCE = 'My mother lives alone and I worry about her.'
 const DEMO_KNOWS: { mark: 'know' | 'open'; label: string; body: string }[] = [
-  { mark: 'know', label: 'Someone you love', body: 'Amma.' },
-  { mark: 'know', label: 'Her days', body: 'She lives alone, in Hyderabad.' },
+  { mark: 'know', label: 'Someone you love', body: 'Your mother.' },
+  { mark: 'know', label: 'Her days', body: 'She lives alone.' },
   { mark: 'open', label: 'Her health', body: 'I don’t know yet.' }, // ← the category, in one line
 ]
 // Care-aware: with real-world presence live it points to a trusted person; while Care is a
@@ -102,22 +102,18 @@ const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 
 // The three story cards — they replace every explanatory paragraph and expand in
 // place (never navigate away). Copy is fixed; the title alone tells the story.
+// The four pillars of the family-intelligence system (design-approved). Presence (Care) is
+// appended only when CARE_ENABLED — it's a phase-2 capability, never promised on the global door.
 const STORY_CARDS = [
   { id: 'understand', title: 'Understands your family', link: 'Learn more', body: 'Close Eye learns what matters about the people you love, so every conversation begins with understanding — not assumptions.', tag: 'this is Understanding.' },
-  // Care-aware: presence is stated as LIVE only when Care is on; otherwise it is an honest,
-  // future-tense capability ("arriving region by region") — never a promise of a not-yet-live service.
-  { id: 'support',
-    title: CARE_ENABLED ? 'Real people, on the ground' : 'Real people, when you need them',
-    link: 'See how',
-    body: CARE_ENABLED
-      ? 'When understanding isn’t enough, Close Eye helps your family connect with trusted people and professionals.'
-      : 'When understanding isn’t enough, Close Eye will bring trusted people and professionals to your family — arriving region by region.',
-    tag: CARE_ENABLED ? 'this is Presence.' : 'this is Presence — coming.' },
-  { id: 'space', title: 'One private Family Space', link: 'Explore', body: 'Memories, conversations, updates, documents and trusted support stay together in one place.', tag: 'this is Trust.' },
+  { id: 'remember', title: 'Remembers what matters', link: 'Learn more', body: 'Every fact, photo and moment your family shares is kept — privately, for years — and brought back the moment it matters.', tag: 'this is Memory.' },
+  { id: 'notice', title: 'Notices what’s changed', link: 'Learn more', body: 'Close Eye surfaces what’s gone quiet or shifted across everyone you love — gently, before you have to ask.', tag: 'this is Attention.' },
+  { id: 'protect', title: 'Private by design', link: 'Learn more', body: 'Close Eye never invents information about your family. What it holds is yours alone — only ever seen by you.', tag: 'this is Trust.' },
+  ...(CARE_ENABLED ? [{ id: 'support', title: 'Real people, on the ground', link: 'See how', body: 'When understanding isn’t enough, Close Eye brings trusted people and professionals to your family.', tag: 'this is Presence.' }] : []),
 ]
-// "More than care" — only the live capabilities are shown; nothing implied that
-// isn't real yet. "Close Eye will grow with your family" carries the rest.
-const CARE_CATS = ['Health & wellbeing', 'Trusted local support']
+// Breadth — the parts of family life Close Eye holds intelligence for. Honest, Connect-native
+// (no Care/presence claim on the global door). "Close Eye will grow with your family" carries the rest.
+const CARE_CATS = ['Health & wellbeing', 'Everyday life', 'Memories & milestones']
 
 
 export function ConnectExperience() {
@@ -669,9 +665,9 @@ export function ConnectExperience() {
             )}
           </div>
           <div className="dc-body">
-            <h1 className="dc-head">Know the people you love —<br /><em>even from far away.</em></h1>
-            <p className="dc-supp">Close Eye helps you stay close — it understands your family, remembers what matters, and brings trusted people when they’re needed.</p>
-            <p className="dc-accent">Apps can answer. Close Eye can show up.</p>
+            <h1 className="dc-head">The intelligence that knows<br />the people you <em>love.</em></h1>
+            <p className="dc-supp">Close Eye understands your family, remembers what matters, and notices what’s changed — so you’re never left guessing from far away.</p>
+            <p className="dc-accent">Apps answer. Close Eye understands — and remembers.</p>
             {storyCards('dc-cards')}
           </div>
           <div className="dc-foot">
@@ -707,11 +703,11 @@ export function ConnectExperience() {
                 {/* HERO — one responsibility: the emotional promise. It used to say
                     "Know the people you love — even from far away", which the card then
                     repeated as "When someone you love is far away". One feeling, once. */}
-                <h1 className={`h-serif hero-head${heroSettled ? ' in' : ''}`}>When you can’t be there,<br /><em>Close Eye can.</em></h1>
-                {/* CATEGORY — the only sentence that teaches the mental model, and it used
-                    to sit BELOW the card where a phone never reads it. "before it answers"
-                    is what separates this from every AI she has met. */}
-                <p className={`whatis hero-cat${heroSettled ? ' in' : ''}`}>Close Eye understands your family <b>before it answers</b> — then brings real people when they’re needed.</p>
+                <h1 className={`h-serif hero-head${heroSettled ? ' in' : ''}`}>The intelligence that knows<br />the people you <em>love.</em></h1>
+                {/* CATEGORY — the sentence that teaches the mental model. "before it answers"
+                    is what separates this from every AI she has met; the family-intelligence
+                    framing (understands · remembers) replaces the old presence promise. */}
+                <p className={`whatis hero-cat${heroSettled ? ' in' : ''}`}>Close Eye understands your family <b>before it answers</b> — and remembers what matters, privately, for years.</p>
               </div>
             </div>
             <div className="s0-ask">
@@ -765,8 +761,8 @@ export function ConnectExperience() {
               </div>
             </div>
             {storyCards()}
-            <div className="breadth" aria-label="More than care">
-              <p className="breadth-h">More than care.</p>
+            <div className="breadth" aria-label="For the whole family">
+              <p className="breadth-h">For the whole family.</p>
               <p className="breadth-who">Parents, partners, siblings, children — the people who matter most.</p>
               <p className="breadth-s">Close Eye helps families through everyday life.</p>
               <div className="catgrid">
