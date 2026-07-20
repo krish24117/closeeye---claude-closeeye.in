@@ -67,7 +67,7 @@ export async function generateMetadata(): Promise<Metadata> {
         keywords: ['wellbeing visits', 'elder care India', 'hospital companion', 'check on parents', 'trusted presence', 'care for parents abroad', 'NRI parent care'],
       }
     : {
-        title: 'Close Eye Connect — The intelligence that knows the people you love',
+        title: 'Close Eye — The intelligence that knows the people you love',
         appName: 'Close Eye',
         appleTitle: 'Close Eye',
         description:
