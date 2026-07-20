@@ -1,5 +1,13 @@
 # Phase C — Finance & Insurance Intelligence: Implementation Proposal
 
+> **STATUS (2026-07-20): APPROVED IN PRINCIPLE · IMPLEMENTATION DEFERRED.** The founder accepted the
+> architectural direction and decided D1–D5, but **deferred building Phase C** to first prove product-market
+> fit for CloseEye Connect. Decisions on record: **D1** one `finance` domain plugin (split later if needed);
+> **D2** start with insurance policy + pension + one structured financial record; **D3** structured + graph +
+> domain routing, pgvector deferred; **D4** professional advice = stub (know when to stop, recommend a pro);
+> **D5** actionables = renewal reminders + nominee review. **No production code until Connect launch is proven.**
+> Next focus: the Launch Readiness Plan (`LAUNCH_READINESS_PLAN.md`).
+
 **Status:** PROPOSAL for founder approval · **Date:** 2026-07-20 · **Author:** Phase C planning
 **Governs under:** Architecture Constitution **v1.1** (Articles XI Domain-as-Plugin, XII Trust Contract,
 XIII Actionable Knowledge, XIV Life-Stage Awareness) + all prior principles.
