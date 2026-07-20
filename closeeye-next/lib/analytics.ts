@@ -33,7 +33,7 @@ type Props = Record<string, string | number | boolean>
 // Keys that must NEVER reach analytics, even if a caller passes them by mistake.
 const PII_KEY = /name|email|phone|mobile|address|question|text|body|content|note|city|dob|token/i
 
-function sanitize(props: Props): Props {
+export function sanitize(props: Props): Props {
   const out: Props = {}
   for (const [k, v] of Object.entries(props)) {
     if (PII_KEY.test(k)) continue
@@ -62,6 +62,22 @@ export function initAnalytics(): void {
         disable_session_recording: true,
         person_profiles: 'identified_only',
         persistence: 'localStorage+cookie',
+        // Even PostHog's own default properties must not carry family-identifying data: redact any
+        // id in the URL/path (e.g. /space/people/<uuid> → /space/people/:id), drop query strings and
+        // referrers. Belt-and-braces with the per-event sanitizer above.
+        sanitize_properties: (props) => {
+          const redact = (u: unknown) =>
+            typeof u === 'string'
+              ? u.split('?')[0]!.replace(/\/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '/:id')
+              : u
+          if (props.$current_url) props.$current_url = redact(props.$current_url)
+          if (props.$pathname) props.$pathname = redact(props.$pathname)
+          delete props.$referrer
+          delete props.$referring_domain
+          delete props.$initial_referrer
+          delete props.$initial_referring_domain
+          return props
+        },
       })
       ph = posthog
     })
