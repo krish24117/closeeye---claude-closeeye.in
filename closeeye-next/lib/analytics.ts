@@ -47,6 +47,9 @@ export function sanitize(props: Props): Props {
 // parsed, or added to the first-load bundle — a complete no-op with zero client impact.
 let ph: PostHog | null = null
 let initStarted = false
+// Events fired before the async SDK import resolves are buffered here and replayed on load, so an
+// early event (e.g. signed_up, moments after page load) is never dropped.
+const queue: Array<[AnalyticsEvent, Props]> = []
 
 /** Initialise PostHog once, client-side, only if a key is present. Called by <AnalyticsProvider>. */
 export function initAnalytics(): void {
@@ -80,17 +83,26 @@ export function initAnalytics(): void {
         },
       })
       ph = posthog
+      // Replay anything captured before the SDK finished loading.
+      for (const [e, prProps] of queue.splice(0)) {
+        try { posthog.capture(e, prProps) } catch { /* ignore */ }
+      }
     })
     .catch(() => {
       initStarted = false
     })
 }
 
-/** Send a PMF event. No-op until PostHog has loaded. Properties are sanitized to non-PII scalars. */
+/** Send a PMF event. Buffered until PostHog loads, then flushed. Properties are sanitized to non-PII. */
 export function track(event: AnalyticsEvent, props: Props = {}): void {
-  if (!ph) return
+  if (!KEY || typeof window === 'undefined') return
+  const clean = sanitize(props)
+  if (!ph) {
+    queue.push([event, clean])
+    return
+  }
   try {
-    ph.capture(event, sanitize(props))
+    ph.capture(event, clean)
   } catch {
     /* analytics must never break a user flow */
   }
