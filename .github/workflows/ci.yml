@@ -1,0 +1,39 @@
+name: CI Quality Gate
+
+# The deployment quality gate (Launch Readiness Phase 4). A change cannot reach production without
+# passing typecheck + the full unit/integration suite (which includes the crisis-floor recall test
+# and the relationship-resolution matrix) + the production build. Vercel enforces the SAME gate at
+# deploy time via vercel.json (`npm run verify && npm run build`); this is the fast pre-merge signal.
+# Enable branch protection on `main` requiring this check so nothing merges (and so nothing deploys
+# to production) without it going green.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main, feat/connect-launch]
+  push:
+    branches: [main, feat/connect-launch]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: closeeye-next
+    env:
+      # Placeholders so `preflight` + `build` run in CI (tests mock Supabase; the REAL required-env
+      # check runs on Vercel, which holds the real values). CI validates CODE, not connectivity.
+      NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: closeeye-next/package-lock.json
+      - run: npm ci
+      - name: Verify (preflight · typecheck · unit/integration · crisis floor · resolution)
+        run: npm run verify
+      - name: Production build
+        run: npm run build

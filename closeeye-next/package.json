@@ -10,6 +10,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "preflight": "node scripts/preflight.mjs",
+    "verify": "npm run preflight && npm run typecheck && npm run test",
     "e2e": "playwright test",
     "e2e:report": "playwright show-report",
     "e2e:update": "playwright test visual --update-snapshots",
