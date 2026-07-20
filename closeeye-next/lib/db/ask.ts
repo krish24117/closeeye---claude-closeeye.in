@@ -16,7 +16,7 @@ export interface AskTurn {
   content: string
 }
 
-export type AskKind = 'answer' | 'escalate' | 'pending' | 'capped' | 'error'
+export type AskKind = 'answer' | 'escalate' | 'pending' | 'capped' | 'error' | 'consent'
 
 export interface AskResult {
   kind: AskKind
@@ -79,6 +79,11 @@ export async function askCloseEye(input: AskInput): Promise<AskResult> {
     }
   }
 
+  // Consent gate (server is the source of truth) — Close Eye won't process family information
+  // without a granted consent. The client surfaces the trust-promise consent card.
+  if (data?.consent_required) {
+    return { kind: 'consent', queryId: null, text: null }
+  }
   if (data?.lane === 'escalate') {
     return {
       kind: 'escalate',

@@ -15,6 +15,8 @@ import { Loader2, LogOut, Trash2 } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { supabase } from '@/lib/supabase'
 import { Overlay } from '@/components/family/overlay'
+import { hasActiveConsent, recordConsent } from '@/lib/db/consent'
+import { resetAnalytics } from '@/lib/analytics'
 
 const initialsFrom = (name?: string | null, email?: string | null) => {
   const raw = (name || email?.split('@')[0] || '').trim()
@@ -37,6 +39,25 @@ export default function ProfilePage() {
   const [confirmDelete, setConfirmDelete] = React.useState(false)
   const [deleting, setDeleting] = React.useState(false)
   const [err, setErr] = React.useState('')
+  // Consent (Phase 3): null = checking, true/false = current wellbeing-data consent state.
+  const [consented, setConsented] = React.useState<boolean | null>(null)
+  const [withdrawing, setWithdrawing] = React.useState(false)
+
+  React.useEffect(() => { void hasActiveConsent().then(setConsented) }, [])
+
+  async function withdrawConsent() {
+    if (withdrawing) return
+    setWithdrawing(true); setErr('')
+    try {
+      await recordConsent({ granted: false }) // append-only withdrawal; the server gate reads the latest
+      resetAnalytics() // stop associating any anonymous session going forward
+      setConsented(false)
+    } catch {
+      setErr('We couldn’t update your consent just now. Please try again.')
+    } finally {
+      setWithdrawing(false)
+    }
+  }
 
   const name = (user?.user_metadata?.full_name as string | undefined) || (user?.user_metadata?.name as string | undefined) || null
   const email = user?.email || ''
@@ -87,6 +108,30 @@ export default function ProfilePage() {
       <Tile title="What Connect may notify you about">
         Changes worth knowing about the people you love.
       </Tile>
+
+      {/* Data & consent (DPDP) */}
+      <section className="rounded-lg border border-edge/70 bg-surface-raised p-5 shadow-sm">
+        <h2 className="text-h4 text-content">Your data &amp; consent</h2>
+        <p className="mt-1.5 text-body-sm leading-relaxed text-content-muted">
+          You’ve allowed Close Eye to hold what you share about your family so it can remember and give
+          grounded answers. It’s private to you and never sold.{' '}
+          <Link href="/privacy" className="font-semibold text-brand hover:text-brand/80">Read our privacy notice</Link>.
+        </p>
+        {consented !== false ? (
+          <button
+            onClick={withdrawConsent}
+            disabled={withdrawing || consented === null}
+            className="mt-4 inline-flex items-center gap-2 rounded-full border border-edge bg-surface py-2.5 px-4 text-body-sm font-semibold text-content transition-colors hover:bg-surface-accent/50 disabled:opacity-60"
+          >
+            {withdrawing ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Updating…</> : 'Withdraw my consent'}
+          </button>
+        ) : (
+          <p className="mt-4 rounded-lg bg-surface-accent/50 px-4 py-3 text-body-sm text-content">
+            Consent withdrawn. Close Eye won’t process new questions about your family until you agree again —
+            just ask a question and you’ll be invited to. To remove your data entirely, use “Close account” below.
+          </p>
+        )}
+      </section>
 
       {/* Account */}
       <section className="mt-2 flex flex-col gap-3">

@@ -14,6 +14,8 @@ import { Sparkles, ShieldAlert, HeartHandshake, MessageSquarePlus, History, Arro
 import { supabase } from '@/lib/supabase'
 import { answerFamilyQuestion, type ConnectKind, type LovedOneRef } from '@/lib/connect/answer'
 import { track } from '@/lib/analytics'
+import { hasActiveConsent, recordConsent } from '@/lib/db/consent'
+import { ConsentPrompt } from '@/components/connect/consent-prompt'
 import { createConversation, appendMessage, fetchConversations, fetchConversation, type ConversationSummary } from '@/lib/db/conversations'
 import { MarkdownAnswer } from '@/components/family/markdown-answer'
 import type { Understanding } from '@/lib/connect/comprehension'
@@ -33,7 +35,13 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
   const [lovedOnes, setLovedOnes] = React.useState<LovedOneRef[]>([])
   const [history, setHistory] = React.useState<ConversationSummary[]>([])
   const [showHistory, setShowHistory] = React.useState(false)
+  // Consent gate (Phase 3): null = still checking, false = must consent before we process anything.
+  const [consented, setConsented] = React.useState<boolean | null>(null)
+  const [showConsent, setShowConsent] = React.useState(false)
+  const pendingQ = React.useRef<string | null>(null)
   const endRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => { void hasActiveConsent().then(setConsented) }, [])
 
   const refreshHistory = React.useCallback(async () => setHistory(await fetchConversations()), [])
 
@@ -50,6 +58,13 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
   async function ask(text: string) {
     const q = text.trim()
     if (!q || thinking) return
+    // Consent gate — Close Eye must not process family information until consent is granted (Phase 3).
+    // Server enforcement in ask-health is the source of truth; this is the respectful client moment.
+    if (consented === false) { pendingQ.current = q; setShowConsent(true); return }
+    if (consented === null) {
+      const ok = await hasActiveConsent(); setConsented(ok)
+      if (!ok) { pendingQ.current = q; setShowConsent(true); return }
+    }
     const isFollowUp = !!askThreadId // captured before the thread id is set below
     setInput('')
     setShowHistory(false)
@@ -69,6 +84,12 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
 
     try {
       const res = await answerFamilyQuestion({ question: q, lovedOnes, askThreadId, subjectId, priorTurns })
+      // Server said consent is required (e.g. it was withdrawn) — surface the consent card, don't answer.
+      if (res.kind === 'consent') {
+        setConsented(false); pendingQ.current = q; setShowConsent(true)
+        setTurns((prev) => prev.slice(0, -1)) // remove the just-added question; re-added on re-ask
+        return
+      }
       if (res.queryId && !askThreadId) setAskThreadId(res.queryId)
       if (res.lovedOneId && !subjectId) setSubjectId(res.lovedOneId)
       setTurns((prev) => [...prev, { role: 'assistant', kind: res.kind, text: res.text, understanding: res.understanding, ambulanceNumber: res.ambulanceNumber, notice: res.notice }])
@@ -94,6 +115,15 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
   }
 
   function newConversation() { setTurns([]); setConversationId(null); setAskThreadId(null); setSubjectId(null); setShowHistory(false); setInput('') }
+
+  // The family agreed to the trust promise — record it (server gate reads this), then continue.
+  async function agreeConsent() {
+    await recordConsent({ granted: true }) // throws on failure → the card stays and the user can retry
+    setConsented(true)
+    setShowConsent(false)
+    const q = pendingQ.current; pendingQ.current = null
+    if (q) void ask(q)
+  }
 
   const seededRef = React.useRef(false)
   React.useEffect(() => {
@@ -147,23 +177,28 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
         <div ref={endRef} />
       </div>
 
-      {/* Input — always present, to continue the conversation naturally */}
-      <div className="sticky bottom-0 rounded-lg border border-line/70 bg-card p-3 shadow-sm">
-        <div className="flex items-end gap-2">
-          <textarea
-            rows={1}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input) } }}
-            placeholder={turns.length ? 'Continue the conversation…' : 'Ask about someone you love…'}
-            className="max-h-40 flex-1 resize-none bg-transparent py-1.5 text-body-sm text-ink placeholder:text-muted focus:outline-none"
-          />
-          <button onClick={() => void ask(input)} disabled={!input.trim() || thinking} aria-label="Ask" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-ivory transition-opacity hover:opacity-90 disabled:opacity-40">
-            <ArrowUp className="h-4 w-4" strokeWidth={2.2} />
-          </button>
+      {/* Consent moment — shown in place of the input until the family agrees the trust promise. */}
+      {showConsent ? (
+        <ConsentPrompt onAgree={agreeConsent} />
+      ) : (
+        /* Input — always present, to continue the conversation naturally */
+        <div className="sticky bottom-0 rounded-lg border border-line/70 bg-card p-3 shadow-sm">
+          <div className="flex items-end gap-2">
+            <textarea
+              rows={1}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input) } }}
+              placeholder={turns.length ? 'Continue the conversation…' : 'Ask about someone you love…'}
+              className="max-h-40 flex-1 resize-none bg-transparent py-1.5 text-body-sm text-ink placeholder:text-muted focus:outline-none"
+            />
+            <button onClick={() => void ask(input)} disabled={!input.trim() || thinking} aria-label="Ask" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-ivory transition-opacity hover:opacity-90 disabled:opacity-40">
+              <ArrowUp className="h-4 w-4" strokeWidth={2.2} />
+            </button>
+          </div>
+          <p className="mt-1.5 px-1 text-caption italic text-muted">Private to your family. Not medical advice.</p>
         </div>
-        <p className="mt-1.5 px-1 text-caption italic text-muted">Private to your family. Not medical advice.</p>
-      </div>
+      )}
     </div>
   )
 }

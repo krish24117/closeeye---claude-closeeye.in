@@ -25,7 +25,7 @@ export interface LovedOneRef {
   relationship: string | null
 }
 
-export type ConnectKind = 'answer' | 'escalate' | 'clarify' | 'decline' | 'medical' | 'pending' | 'error'
+export type ConnectKind = 'answer' | 'escalate' | 'clarify' | 'decline' | 'medical' | 'pending' | 'error' | 'consent'
 
 export interface ConnectResult {
   understanding: Understanding | null

@@ -314,6 +314,25 @@ async function sendCareTeamAlert(
   return { delivered };
 }
 
+// Consent gate (DPDP) — Close Eye must not process family/health information without a granted
+// `wellbeing_data` consent. Fail-CLOSED: any error or missing record means "not consented", so we
+// never process on uncertainty. A withdrawal is a granted=false row (latest wins).
+async function hasWellbeingConsent(sb: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
+  try {
+    const { data } = await sb
+      .from("consents")
+      .select("granted")
+      .eq("user_id", userId)
+      .eq("consent_type", "wellbeing_data")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return !!(data as { granted?: boolean } | null)?.granted;
+  } catch (_e) {
+    return false;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   const cors = corsHeaders(req);
 
@@ -371,6 +390,17 @@ Deno.serve(async (req: Request) => {
     .eq("id", user.id)
     .maybeSingle();
   const isExempt = !!memberProf?.is_founding_member;
+
+  // ── Consent gate (DPDP) ───────────────────────────────────────────────────
+  // No processing of family/health information without a granted consent. Crisis BYPASSES this
+  // (life-safety over consent, like the rate cap); service questions carry no family data. The
+  // client shows the trust-promise consent card when it sees consent_required.
+  if (!crisis && !isServiceQuestion(question)) {
+    const consented = await hasWellbeingConsent(sb, user.id);
+    if (!consented) {
+      return json({ consent_required: true });
+    }
+  }
 
   // ── Rate limits — first turns only, non-emergency only ───────────────────
   // Ask CloseEye is free to use — no monthly question cap. A per-minute burst cap remains,
