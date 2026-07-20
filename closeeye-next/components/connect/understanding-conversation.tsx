@@ -55,15 +55,18 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
 
   React.useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }) }, [turns, thinking])
 
-  async function ask(text: string) {
+  async function ask(text: string, opts?: { consentOk?: boolean }) {
     const q = text.trim()
     if (!q || thinking) return
     // Consent gate — Close Eye must not process family information until consent is granted (Phase 3).
     // Server enforcement in ask-health is the source of truth; this is the respectful client moment.
-    if (consented === false) { pendingQ.current = q; setShowConsent(true); return }
-    if (consented === null) {
-      const ok = await hasActiveConsent(); setConsented(ok)
-      if (!ok) { pendingQ.current = q; setShowConsent(true); return }
+    // Skipped right after an explicit agree (state hasn't re-rendered yet — avoid a stale-closure loop).
+    if (!opts?.consentOk) {
+      if (consented === false) { pendingQ.current = q; setShowConsent(true); return }
+      if (consented === null) {
+        const ok = await hasActiveConsent(); setConsented(ok)
+        if (!ok) { pendingQ.current = q; setShowConsent(true); return }
+      }
     }
     const isFollowUp = !!askThreadId // captured before the thread id is set below
     setInput('')
@@ -122,7 +125,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
     setConsented(true)
     setShowConsent(false)
     const q = pendingQ.current; pendingQ.current = null
-    if (q) void ask(q)
+    if (q) void ask(q, { consentOk: true }) // bypass the just-set (not-yet-rendered) consent state
   }
 
   const seededRef = React.useRef(false)
