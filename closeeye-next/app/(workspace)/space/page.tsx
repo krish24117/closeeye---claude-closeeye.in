@@ -157,7 +157,7 @@ export default function WorkspaceHome() {
           <p className="text-caption font-semibold uppercase tracking-widest text-content-muted">Close Eye is learning</p>
           <p className="mt-2 text-body-sm text-content">{home.prompt.text}</p>
           <div className="mt-3 flex items-center gap-2">
-            <Link href={`/space/people/${home.prompt.personId}`} className="rounded-full bg-surface-inverse px-4 py-2 text-caption font-semibold text-content-inverse">Tell Close Eye</Link>
+            <Link href={`/space/people/${home.prompt.personId}/add`} className="rounded-full bg-surface-inverse px-4 py-2 text-caption font-semibold text-content-inverse">Tell Close Eye</Link>
           </div>
         </section>
       )}

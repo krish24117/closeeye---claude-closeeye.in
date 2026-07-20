@@ -110,3 +110,22 @@ export async function deleteMemory(id: string, storagePaths: string[]): Promise<
     return { error: error ? 'could-not-delete' : null }
   } catch { return { error: 'network' } }
 }
+
+/** Delete ONE item (a single photo, video or document) — its file, then its row. If it was the
+ *  moment's last item, the now-empty moment is removed too, so no blank moments linger. */
+export async function deleteMemoryItem(
+  itemId: string,
+  storagePath: string,
+  memoryId?: string,
+): Promise<{ error: string | null; momentEmptied: boolean }> {
+  try {
+    if (storagePath) await supabase.storage.from(BUCKET).remove([storagePath])
+    const { error } = await supabase.from('memory_items').delete().eq('id', itemId)
+    if (error) return { error: 'could-not-delete', momentEmptied: false }
+    if (memoryId) {
+      const { count } = await supabase.from('memory_items').select('id', { count: 'exact', head: true }).eq('memory_id', memoryId)
+      if ((count ?? 0) === 0) { await supabase.from('memories').delete().eq('id', memoryId); return { error: null, momentEmptied: true } }
+    }
+    return { error: null, momentEmptied: false }
+  } catch { return { error: 'network', momentEmptied: false } }
+}
