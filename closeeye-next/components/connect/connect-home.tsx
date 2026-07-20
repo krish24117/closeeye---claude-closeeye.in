@@ -88,8 +88,16 @@ export function ConnectHome() {
           Close Eye is your family’s private intelligence. It learns what matters over time, remembers it
           securely, and helps you understand the people you love with grounded, contextual answers.
         </p>
-        <div className="mt-9 flex flex-col items-center gap-3">
-          <GoogleButton label="Create my Family Space" />
+        <div className="mt-9 flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-3 sm:flex-row">
+            <GoogleButton label="Create my Family Space" />
+            <Link
+              href="/connect/demo"
+              className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-full border border-line bg-card px-6 text-body-sm font-semibold text-ink transition-colors hover:bg-accent-soft/40"
+            >
+              See how Connect works <ArrowRight className="h-4 w-4" strokeWidth={2} />
+            </Link>
+          </div>
           <Link href="/auth" className="text-caption font-semibold text-muted hover:text-ink">or continue with email</Link>
         </div>
       </section>
