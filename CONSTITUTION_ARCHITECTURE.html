@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Close Eye — Architecture Constitution v1.0</title>
+<title>Close Eye — Architecture Constitution v1.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -76,7 +76,7 @@
   <div class="head">
     <p class="seal">Close Eye · Product Law</p>
     <h1>Architecture Constitution</h1>
-    <p class="v">v1.0 · <span style="color:var(--forest);font-weight:600">FROZEN</span></p>
+    <p class="v">v1.1 · <span style="color:var(--forest);font-weight:600">FROZEN</span></p>
     <p class="date">Ratified &amp; frozen 2026-07-17 · build against it, not around it</p>
   </div>
 
@@ -272,9 +272,83 @@ Memory Engine        → UpdatedFamilyGraph</pre></div>
     </div>
   </div>
 
+  <div class="art-wrap">
+    <div class="article-ix">
+      <h2><span class="an" style="color:var(--emerald)">Article XI ✦</span>Domain as Plugin</h2>
+      <p>A knowledge domain is a <b>plugin, not a product</b>. Each domain contributes only <b>schemas,
+        extraction rules, retrieval policies, reasoning policies, trust boundaries, and care bindings</b> —
+        declared as data and policy, loaded by the platform.</p>
+      <p><b>Adding a new domain must never require redesigning the platform.</b> Retrieval, reasoning, trust,
+        and orchestration are domain-parameterised; they are never forked per domain. There are no per-domain
+        chatbots — one intelligence, many domains, reasoning across them.</p>
+      <p><b>Health is the first domain, not the primary domain.</b> Legal, finance, insurance, property,
+        government, education, employment, travel, routine, and emergency planning enter the same pipeline as
+        equals.</p>
+      <div class="add-note" style="margin-top:12px;border-color:var(--emerald);background:rgba(6,169,78,.05)">
+        <div class="lb" style="color:var(--emerald)">✦ Ratified v1.1 · 2026-07-20</div>
+        <p>Extends §2f layer discipline. The domain vocabulary was already latent in <code>regions.ts</code>
+          (<code>presence|hospital|financial|insurance|property|community</code>); this article makes the
+          plugin discipline constitutional.</p>
+      </div>
+    </div>
+
+    <div class="article-x">
+      <h2><span class="an" style="color:var(--amber)">Article XII ✦</span>The Trust Contract</h2>
+      <p>Every Connect response must clearly distinguish four kinds of statement:
+        <b>(1) Verified Family Facts</b>, <b>(2) Inferred Conclusions</b>, <b>(3) General Knowledge</b>,
+        <b>(4) Professional Advice</b>. <b>Trust is enforced by architecture — provenance, confidence, and
+        per-domain professional boundaries — not by prompt wording.</b></p>
+      <p>Confidence is expressed conservatively, never overstated:</p>
+      <ul>
+        <li><b>High confidence</b> → state naturally.</li>
+        <li><b>Medium confidence</b> → &ldquo;Based on what I know&hellip;&rdquo;</li>
+        <li><b>Low confidence</b> → &ldquo;This is worth confirming before relying on it.&rdquo;</li>
+      </ul>
+      <p><b>Uncertain information is never presented as established fact.</b> Professional advice is never
+        asserted as the platform's own — it is routed to a professional (<code>handoff</code>).</p>
+      <div class="add-note" style="margin-top:12px"><div class="lb" style="color:var(--amber)">✦ Ratified v1.1 · 2026-07-20</div>
+        <p>Formalises the Executive-Context Trust Test and §2h provenance into a permanent four-class contract,
+          surfaced consistently as trust chrome.</p></div>
+    </div>
+  </div>
+
+  <div class="art-wrap">
+    <div class="article-ix">
+      <h2><span class="an" style="color:var(--emerald)">Article XIII ✦</span>Every Knowledge Item Must Be Actionable</h2>
+      <p>Knowledge does not exist only to answer questions. <b>Every verified fact must be capable of enabling a
+        future action.</b> A policy implies a renewal reminder and a nominee review; a prescription implies
+        medication reminders; a property document implies an ownership timeline; a passport implies an expiry
+        reminder; a will implies legal readiness; a pension implies benefit guidance; a discharge summary
+        implies follow-up care.</p>
+      <p><b>Close Eye is not building a digital archive — it is building an active family intelligence.</b>
+        Knowledge representation shall preserve enough structure and provenance that an action can be derived
+        from it later.</p>
+      <div class="add-note" style="margin-top:12px;border-color:var(--emerald);background:rgba(6,169,78,.05)">
+        <div class="lb" style="color:var(--emerald)">✦ Ratified v1.1 · 2026-07-20</div>
+        <p>Binds the Knowledge Architecture: the <code>structured</code> payload and validity windows on a
+          knowledge entry exist so facts can trigger actions, not merely be recalled.</p>
+      </div>
+    </div>
+
+    <div class="article-x">
+      <h2><span class="an" style="color:var(--amber)">Article XIV ✦</span>Life-Stage Awareness <span style="font-weight:400;color:var(--muted)">(directional)</span></h2>
+      <p>The Family Graph is a <b>living timeline</b>, not a flat set of facts. Beyond <i>what happened</i>,
+        Close Eye shall understand <b>where a family is in its journey</b> — birth, school, college, employment,
+        marriage, parenthood, retirement, illness, loss.</p>
+      <p>Life stage shall, in time, <b>inform retrieval and reasoning</b>: the same fact means something
+        different at different stages. Ratified as a <b>principle and design direction</b>; its implementation
+        is sequenced by the roadmap, not required today.</p>
+      <div class="add-note" style="margin-top:12px"><div class="lb" style="color:var(--amber)">✦ Ratified v1.1 · 2026-07-20 · directional</div>
+        <p>Anchored to the event-sourced temporality (Article V, validity windows). A long-horizon principle
+          that future retrieval/reasoning phases must honour.</p></div>
+    </div>
+  </div>
+
   <div class="art">
-    <h2><span class="an">Article XI</span>Ratification &amp; Amendment</h2>
-    <p>This document is <b>frozen at v1.0</b> as of 2026-07-17. From this point:</p>
+    <h2><span class="an">Article XV</span>Ratification &amp; Amendment</h2>
+    <p>This document was <b>frozen at v1.0</b> on 2026-07-17 and <b>extended to v1.1</b> on 2026-07-20
+      (Articles XI–XIV ratified, additive; no prior article altered except this clause's renumbering from XI).
+      From this point:</p>
     <ul>
       <li><b>The Constitution is immutable except through explicit architectural review.</b> Implementation
         documents evolve freely; the Constitution does not move to fit them.</li>
@@ -292,9 +366,12 @@ Memory Engine        → UpdatedFamilyGraph</pre></div>
       "change deliberately, in the open, and never silently."</p>
   </div>
 
-  <p class="foot">Close Eye Architecture Constitution v1.0 · ratified &amp; frozen 2026-07-17. Founder's v1.0, with six review
-    additions marked ◆: Response Composer restored · sanctioned exits &amp; the safety re-entry named · Context
-    Builder as a trust boundary · confidence-must-be-calibrated · deterministic-is-test-gated &amp; audit≠memory ·
+  <p class="foot">Close Eye Architecture Constitution v1.1 · ratified &amp; frozen 2026-07-17, extended 2026-07-20.
+    v1.1 additions marked ✦ (founder-ratified, additive): Article XI Domain as Plugin · Article XII the Trust
+    Contract (four-class + conservative confidence bands) · Article XIII Every Knowledge Item Must Be Actionable ·
+    Article XIV Life-Stage Awareness (directional). v1.0 review additions marked ◆: Response Composer restored ·
+    sanctioned exits &amp; the safety re-entry named · Context Builder as a trust boundary ·
+    confidence-must-be-calibrated · deterministic-is-test-gated &amp; audit≠memory ·
     Article IX refined ("replaceable") · Article X added (memory ownership / DPDP). Companion to
     <code>close_eye_execution_architecture.html</code> (the flow) and <code>close_eye_architecture_current.html</code>
     (what is built today). This document is product law; it governs, it does not describe.</p>
