@@ -29,7 +29,7 @@ function GoogleButton({ label }: { label: string }) {
     <button
       onClick={go}
       disabled={busy}
-      className="inline-flex min-h-[3.25rem] items-center justify-center gap-2.5 rounded-full bg-surface-inverse px-7 text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90 disabled:opacity-60"
+      className="inline-flex min-h-[3.25rem] items-center justify-center gap-2.5 rounded-full !bg-surface-inverse px-7 text-body-sm font-semibold !text-content-inverse transition-opacity hover:opacity-90 disabled:opacity-60"
     >
       {busy ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Connecting to Google…</>
         : <><span className="grid h-6 w-6 place-items-center rounded-full bg-ivory"><GoogleGlyph className="h-[1.15rem] w-[1.15rem]" /></span> {label}</>}
