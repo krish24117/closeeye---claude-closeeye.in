@@ -230,8 +230,8 @@ function AssistantTurn({ turn }: { turn: Extract<Turn, { role: 'assistant' }> })
           {kind === 'answer' && text && <MarkdownAnswer text={text} />}
           {kind === 'clarify' && <p className="text-body-sm text-ink">{text || 'Tell me a little more about them, and I’ll understand.'}</p>}
           {kind === 'decline' && <p className="text-body-sm text-ink">Hello — I’m here for the people you love. Tell me about one of them, or ask me anything.</p>}
-          {kind === 'medical' && <p className="text-body-sm text-ink"><strong>CloseEye doesn’t give medical advice.</strong> For anything clinical — a symptom, a dose, a reading — a doctor is the right person. What CloseEye can do is bring a trusted person to check in, and reach someone now for anything urgent.</p>}
-          {kind === 'pending' && <p className="text-body-sm text-ink">I couldn’t compose an answer just now — your care team will follow up. Please try again in a moment.</p>}
+          {kind === 'medical' && <p className="text-body-sm text-ink"><strong>CloseEye doesn’t give medical advice.</strong> For anything clinical — a symptom, a dose, a reading — a doctor is the right person. What CloseEye can do is remember what matters and help you prepare for that conversation.</p>}
+          {kind === 'pending' && <p className="text-body-sm text-ink">I couldn’t compose an answer just now. Please try again in a moment.</p>}
           {kind === 'error' && <p className="text-body-sm text-muted">{turn.notice || 'Something went wrong. Please try again in a moment.'}</p>}
         </div>
         {kind === 'answer' && (

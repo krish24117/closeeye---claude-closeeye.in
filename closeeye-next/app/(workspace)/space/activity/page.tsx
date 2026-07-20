@@ -30,7 +30,7 @@ export default function ActivityPage() {
       {!loading && !error && home && home.activity.length === 0 && (
         <div className="rounded-lg border border-line/70 bg-card p-8 text-center shadow-sm">
           <p className="text-body-sm font-semibold text-ink">Nothing yet</p>
-          <p className="mx-auto mt-1 max-w-xs text-caption text-muted">As Close Eye learns about your family and visits happen, everything shows up here.</p>
+          <p className="mx-auto mt-1 max-w-xs text-caption text-muted">As Close Eye learns about your family, everything worth noticing shows up here.</p>
         </div>
       )}
 

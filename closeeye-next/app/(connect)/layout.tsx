@@ -19,10 +19,10 @@ const newsreader = Newsreader({
 
 export function generateMetadata(): Metadata {
   return {
-    // Tagline "Your Trusted Presence" rides in the title/description (once, placed well).
-    title: { absolute: 'Close Eye Connect — Your Trusted Presence' },
+    // Family-Intelligence positioning (global Connect) — understanding + memory, not Care/presence.
+    title: { absolute: 'Close Eye Connect — The intelligence that knows the people you love' },
     description:
-      'Close Eye learns about the people you love, so answers come from understanding — not guesses. When needed, trusted local people step in to help.',
+      'Close Eye learns about the people you love, so answers come from understanding — not guesses. It remembers what matters, privately, for years.',
     alternates: { canonical: '/connect' },
     robots: isConnectIndexable() ? { index: true, follow: true } : { index: false, follow: false },
     /**
@@ -37,14 +37,14 @@ export function generateMetadata(): Metadata {
       locale: 'en_US', // Connect is the global product — a neutral default, not India-specific
       url: '/connect',
       siteName: 'Close Eye',
-      title: 'Close Eye Connect — Your Trusted Presence',
+      title: 'Close Eye Connect — The intelligence that knows the people you love',
       description:
         'Tell Close Eye about someone you love, in one sentence. It understands from there — never guesses.',
       images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Close Eye' }],
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'Close Eye Connect — Your Trusted Presence',
+      title: 'Close Eye Connect — The intelligence that knows the people you love',
       description:
         'Tell Close Eye about someone you love, in one sentence. It understands from there — never guesses.',
       images: ['/og-image.png'],

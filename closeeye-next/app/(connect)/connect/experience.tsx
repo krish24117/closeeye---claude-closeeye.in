@@ -31,7 +31,7 @@ import { formatMoney } from '@/lib/platform/currency'
 import { CARE_ENABLED } from '@/lib/platform/capability'
 
 const WA = 'https://wa.me/919000221261'
-const SAMPLE = 'My mother lives alone in Hyderabad. How do I know she’s okay?'
+const SAMPLE = 'My mother lives alone and I worry about her. How do I know she’s okay?'
 const SAMPLE2 = 'My father gets stressed every year with his tax filing. Can someone help him through it?'
 /**
  * THE DEMONSTRATION.
@@ -555,8 +555,8 @@ export function ConnectExperience() {
       return (
         <div className="counsel">
           <p><b>Close Eye doesn’t give medical advice.</b> For anything clinical — a symptom, a dose, a reading, a medication — a doctor is the right person; they know {poss} full health picture.</p>
-          <p>What Close Eye can do is bring a trusted person to see {obj} in person — and for anything that can’t wait, reach a real person now.</p>
-          <a className="wa-prominent" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>
+          <p>What Close Eye can do is remember what matters about {obj} and help you think it through, so you walk into that conversation prepared.</p>
+          {CARE_ENABLED && <a className="wa-prominent" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>}
         </div>
       )
     }
@@ -570,7 +570,7 @@ export function ConnectExperience() {
             <textarea className="again-ta" rows={2} value={answer} onChange={(e) => setAnswer(e.target.value)}
               placeholder="Tell me in your words…" autoFocus />
             <div className="act"><button type="button" className={`btn${answer.trim() ? ' inked' : ' ghost'}`} onClick={clarify}>Tell Connect more</button></div>
-            <a className="wa-prominent" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>
+            {CARE_ENABLED && <a className="wa-prominent" href={WA} target="_blank" rel="noopener">Talk to a real person on WhatsApp →</a>}
           </div>
         </>
       )
@@ -627,12 +627,14 @@ export function ConnectExperience() {
      own node can wrap onto the next line and sit there alone, which is exactly what it
      did at 1024 and 1728. */
   function footerLinks() {
+    // GLOBAL Connect footer — Family-Intelligence, not Care. India-specific Care links (companion
+    // vetting, visit pricing/date, WhatsApp-a-human) are shown only when Care is live in the region.
     return (
       <div className="footlinks">
         <a href="/how-it-works">How it works</a>
-        {!PHASE_2_ENABLED && <span className="plain">What it costs · visits open 15 August</span>}
-        <a href="/how-companions-are-verified">How companions are verified</a>
-        <a className="last" href={WA} target="_blank" rel="noopener">Ask a real person on WhatsApp</a>
+        {CARE_ENABLED && <a href="/how-companions-are-verified">How companions are verified</a>}
+        <a href="/privacy">Privacy</a>
+        <a className="last" href="/terms">Terms</a>
       </div>
     )
   }
