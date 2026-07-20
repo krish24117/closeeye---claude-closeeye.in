@@ -7,6 +7,7 @@ import '@/styles/globals.css'
 import '@/styles/design-tokens.css'
 import { RegisterSW } from '@/components/pwa/register-sw'
 import { NativeInit } from '@/components/pwa/native-init'
+import { AnalyticsProvider } from '@/components/analytics/analytics-provider'
 import { AuthProvider } from '@/components/auth/auth-provider'
 import { AppShell } from '@/components/app/app-shell'
 import { OfflineBanner } from '@/components/ui/offline-banner'
@@ -135,6 +136,7 @@ export default function RootLayout({
         <OfflineBanner />
         <RegisterSW />
         <NativeInit />
+        <AnalyticsProvider />
       </body>
     </html>
   )

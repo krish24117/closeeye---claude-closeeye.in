@@ -12,6 +12,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Camera, ImageUp, FileText, X, Film, Loader2, Check } from 'lucide-react'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { createMemory, kindOf, type NewMemoryFile } from '@/lib/db/memories'
+import { track } from '@/lib/analytics'
 
 const MOMENTS = ['Birthday', 'A milestone', 'Everyday', 'A visit', 'A festival']
 
@@ -49,6 +50,7 @@ export default function AddMemoryPage() {
     setBusy(true); setError('')
     const { error: e } = await createMemory({ lovedOneId: id, title: moment.trim(), occurredAt: new Date(when).toISOString(), files })
     if (e) { setBusy(false); setError('We couldn’t save this just now — please try again.'); return }
+    track('memory_added', { items: files.length })
     router.replace(`/space/people/${id}/memories`)
   }
 

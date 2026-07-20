@@ -1,13 +1,16 @@
 'use client'
 
+import { useEffect } from 'react'
 import { RotateCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { reportError } from '@/lib/observability/report'
 
 /**
  * Connect front-door error boundary (Launch Readiness Phase 2). Warm, human, never technical.
- * Once @sentry/nextjs is wired, Next.js auto-reports errors caught here.
+ * Reports to Sentry when configured (no-op otherwise).
  */
-export default function ConnectError({ reset }: { error: Error; reset: () => void }) {
+export default function ConnectError({ error, reset }: { error: Error; reset: () => void }) {
+  useEffect(() => reportError(error), [error])
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center gap-5 px-6 text-center">
       <span className="grid h-14 w-14 place-items-center rounded-full bg-surface-accent text-brand">

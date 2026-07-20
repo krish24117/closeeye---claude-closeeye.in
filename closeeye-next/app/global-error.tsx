@@ -1,5 +1,8 @@
 'use client'
-export default function GlobalError({ reset }: { error: Error; reset: () => void }) {
+import { useEffect } from 'react'
+import { reportError } from '@/lib/observability/report'
+export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
+  useEffect(() => reportError(error), [error])
   return (
     <html lang="en">
       <body style={{ margin: 0, minHeight: '100dvh', display: 'grid', placeItems: 'center', background: '#F6F3EC', color: '#0E2A1F', fontFamily: 'system-ui, sans-serif', textAlign: 'center', padding: '2rem' }}>

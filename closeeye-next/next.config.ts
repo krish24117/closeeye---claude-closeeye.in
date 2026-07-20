@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { NextConfig } from 'next'
+import { withSentryConfig } from '@sentry/nextjs'
 import { WORKSPACE_REDIRECTS } from './lib/routing/redirects'
 
 const appDir = path.dirname(fileURLToPath(import.meta.url))
@@ -21,7 +22,9 @@ const CSP = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   "media-src 'self' blob:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.razorpay.com https://checkout.razorpay.com https://lumberjack.razorpay.com",
+  // Observability egress (Sentry + PostHog) is allow-listed here so events aren't CSP-blocked when the
+  // integrations are enabled; harmless while dormant (nothing connects without a DSN/key).
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.razorpay.com https://checkout.razorpay.com https://lumberjack.razorpay.com https://*.sentry.io https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io https://*.posthog.com https://*.i.posthog.com",
   "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
   "worker-src 'self'",
   "manifest-src 'self'",
@@ -100,4 +103,16 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+// Sentry build wrapping is applied ONLY when a DSN is present at build time, so a build with no
+// Sentry env vars is byte-for-byte the original config (zero impact). Source maps upload only when
+// SENTRY_AUTH_TOKEN + org/project are also set; otherwise it silently no-ops.
+export default process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      silent: !process.env.CI,
+      widenClientFileUpload: true,
+      disableLogger: true,
+    })
+  : nextConfig

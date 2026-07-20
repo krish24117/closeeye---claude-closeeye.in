@@ -11,6 +11,7 @@ import { saveProfileBasics, selectPlan } from '@/lib/db/onboarding'
 import { PROTECT_OPTIONS, type PlanId } from '@/lib/plans'
 import { getPendingPlan, setPendingPlan } from '@/lib/membership-intent'
 import { markFirstPerson } from '@/lib/first-run'
+import { track } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import { haptic } from '@/lib/haptics'
 
@@ -102,6 +103,7 @@ export default function OnboardingPage() {
       await refreshOnboarding()
       await refresh()
       haptic('success')
+      track('onboarding_completed')
       if (hasIntent && plan) {
         // Purchase intent → continue to Activate (payment).
         setPendingPlan(plan)

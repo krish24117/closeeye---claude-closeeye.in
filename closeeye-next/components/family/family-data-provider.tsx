@@ -6,6 +6,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { addLovedOne as addLovedOneDb, deleteLovedOne as deleteLovedOneDb, fetchMyLovedOnes, fetchMyProfile, updateFamilyMember as updateFamilyMemberDb } from '@/lib/db/family'
 import { fetchMySubscription, selectPlan as selectPlanDb } from '@/lib/db/onboarding'
 import type { LovedOne, NewLovedOne, Profile, Subscription } from '@/lib/db/types'
+import { track } from '@/lib/analytics'
 import type { PlanId } from '@/lib/plans'
 import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 
@@ -104,6 +105,7 @@ export function FamilyDataProvider({ children }: { children: React.ReactNode }) 
       if (!userId) throw new Error('You’re not signed in.')
       const created = await addLovedOneDb(userId, input)
       setLovedOnes((prev) => [...prev, created])
+      track('loved_one_added', { relationship: input.relationship || 'unknown' })
       return created
     },
     [userId],

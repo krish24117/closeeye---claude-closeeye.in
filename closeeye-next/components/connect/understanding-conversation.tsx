@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { Sparkles, ShieldAlert, HeartHandshake, MessageSquarePlus, History, ArrowUp, User } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { answerFamilyQuestion, type ConnectKind, type LovedOneRef } from '@/lib/connect/answer'
+import { track } from '@/lib/analytics'
 import { createConversation, appendMessage, fetchConversations, fetchConversation, type ConversationSummary } from '@/lib/db/conversations'
 import { MarkdownAnswer } from '@/components/family/markdown-answer'
 import type { Understanding } from '@/lib/connect/comprehension'
@@ -49,6 +50,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
   async function ask(text: string) {
     const q = text.trim()
     if (!q || thinking) return
+    const isFollowUp = !!askThreadId // captured before the thread id is set below
     setInput('')
     setShowHistory(false)
     const priorTurns: AskTurn[] = turns
@@ -57,6 +59,8 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
 
     setTurns((prev) => [...prev, { role: 'user', content: q }])
     setThinking(true)
+    // PMF funnel — event only, never the question text.
+    track(isFollowUp ? 'follow_up_asked' : 'first_question_asked')
 
     // Persist the thread (best-effort; no-ops until the conversations migration is applied).
     let convId = conversationId
@@ -68,6 +72,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
       if (res.queryId && !askThreadId) setAskThreadId(res.queryId)
       if (res.lovedOneId && !subjectId) setSubjectId(res.lovedOneId)
       setTurns((prev) => [...prev, { role: 'assistant', kind: res.kind, text: res.text, understanding: res.understanding, ambulanceNumber: res.ambulanceNumber, notice: res.notice }])
+      track('answer_received', { kind: res.kind, grounded: !!(res.lovedOneId || subjectId) })
       if (convId) void appendMessage(convId, { role: 'assistant', content: res.text ?? '', kind: res.kind === 'clarify' || res.kind === 'decline' || res.kind === 'medical' ? 'answer' : (res.kind === 'error' ? 'pending' : res.kind), understanding: res.understanding, ambulanceNumber: res.ambulanceNumber })
       void refreshHistory()
     } finally {
@@ -85,6 +90,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
       ? { role: 'user', content: m.content }
       : { role: 'assistant', kind: m.kind as ConnectKind, text: m.content, understanding: m.understanding, ambulanceNumber: m.ambulanceNumber }))
     setShowHistory(false)
+    track('conversation_reopened')
   }
 
   function newConversation() { setTurns([]); setConversationId(null); setAskThreadId(null); setSubjectId(null); setShowHistory(false); setInput('') }
