@@ -183,9 +183,10 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         </Link>
       </aside>
 
-      {/* Mobile top bar — brand + add someone. The account avatar menu is gone; Profile owns it. */}
+      {/* Mobile top bar — brand + add someone. The account avatar menu is gone; Profile owns it.
+          Logo matches the Connect front-door header (horizontal lockup, 26px) for brand continuity. */}
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-edge bg-surface/90 px-5 backdrop-blur-xl lg:hidden">
-        <Link href="/space" aria-label="Workspace home"><Logo variant="sidebar" /></Link>
+        <Link href="/space" aria-label="Workspace home"><Logo lockup="horizontal" height={26} /></Link>
         <Link href="/family/add" aria-label="Add someone" className="grid h-11 w-11 place-items-center rounded-full text-content-muted transition-colors hover:bg-surface-accent/60 hover:text-brand">
           <UserPlus className="h-6 w-6" strokeWidth={1.5} />
         </Link>

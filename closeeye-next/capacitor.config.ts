@@ -20,12 +20,13 @@ const config: CapacitorConfig = {
   webDir: 'mobile-shell',
   backgroundColor: '#F6F3EC', // Close Eye warm white (ivory)
   server: {
-    url: process.env.CAP_SERVER_URL ?? 'https://www.closeeye.in',
+    // The native app IS Close Eye Connect (the global Family-Intelligence front door).
+    url: process.env.CAP_SERVER_URL ?? 'https://www.closeeye.app',
     cleartext: false,
     androidScheme: 'https',
     iosScheme: 'https',
     // Deep links: in.closeeye.app://… and https App Links resolve to routes.
-    allowNavigation: ['closeeye-next.vercel.app', 'closeeye.in', '*.closeeye.in'],
+    allowNavigation: ['closeeye.app', 'www.closeeye.app', '*.closeeye.app', 'closeeye-next.vercel.app', 'closeeye.in', '*.closeeye.in'],
   },
   plugins: {
     SplashScreen: {
