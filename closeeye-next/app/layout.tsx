@@ -12,6 +12,7 @@ import { AuthProvider } from '@/components/auth/auth-provider'
 import { AppShell } from '@/components/app/app-shell'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 import { SITE } from '@/lib/site'
+import { APPLE_SPLASH } from '@/lib/pwa/apple-splash'
 import { localeFor, DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 
 // Design Authority: Manrope primary, Inter fallback.
@@ -27,10 +28,14 @@ const inter = Inter({
   display: 'swap',
 })
 
+// Brand ground colours — single source so the values aren't re-typed as raw hex across metadata.
+const THEME_LIGHT = '#F6F3EC'
+const THEME_DARK = '#0E2A1F'
+
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F6F3EC' },
-    { media: '(prefers-color-scheme: dark)', color: '#0E2A1F' },
+    { media: '(prefers-color-scheme: light)', color: THEME_LIGHT },
+    { media: '(prefers-color-scheme: dark)', color: THEME_DARK },
   ],
   width: 'device-width',
   initialScale: 1,
@@ -48,25 +53,38 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const host = (await headers()).get('host')?.split(':')[0]
   const base = host ? `https://${host}` : SITE.url
-  // og:locale reflects the front door: India on closeeye.in, a neutral global default elsewhere.
-  const ogLocale = /(^|\.)closeeye\.in$/i.test(host ?? '') ? 'en_IN' : 'en_US'
+  // Front door: legacy India Care on closeeye.in, global Close Eye Connect everywhere else.
+  const isIndia = /(^|\.)closeeye\.in$/i.test(host ?? '')
+  const ogLocale = isIndia ? 'en_IN' : 'en_US'
+  const identity = isIndia
+    ? {
+        title: `${SITE.name} — When you can’t be there, ${SITE.name} can`,
+        appName: SITE.name,
+        appleTitle: SITE.name,
+        description: SITE.description,
+        ogImage: SITE.ogImage,
+        ogAlt: `${SITE.name} — trusted human presence for the people you love`,
+        keywords: ['wellbeing visits', 'elder care India', 'hospital companion', 'check on parents', 'trusted presence', 'care for parents abroad', 'NRI parent care'],
+      }
+    : {
+        title: 'Close Eye Connect — The intelligence that knows the people you love',
+        appName: 'Close Eye',
+        appleTitle: 'Close Eye',
+        description:
+          "Your family’s private intelligence — it learns what matters, remembers it securely, and helps you understand the people you love with grounded, contextual answers.",
+        ogImage: '/og-connect.png',
+        ogAlt: 'Close Eye — the intelligence that knows the people you love',
+        keywords: ['family intelligence', 'remember what matters', 'private family AI', 'understand your family', 'family memory', 'ask about your family'],
+      }
   return {
   metadataBase: new URL(base),
   title: {
-    default: `${SITE.name} — When you can’t be there, ${SITE.name} can`,
-    template: `%s · ${SITE.name}`,
+    default: identity.title,
+    template: `%s · ${identity.appName}`,
   },
-  description: SITE.description,
-  applicationName: SITE.name,
-  keywords: [
-    'wellbeing visits',
-    'elder care India',
-    'hospital companion',
-    'check on parents',
-    'trusted presence',
-    'care for parents abroad',
-    'NRI parent care',
-  ],
+  description: identity.description,
+  applicationName: identity.appName,
+  keywords: identity.keywords,
   authors: [{ name: SITE.legalName }],
   creator: SITE.legalName,
   publisher: SITE.legalName,
@@ -82,28 +100,29 @@ export async function generateMetadata(): Promise<Metadata> {
       { url: '/favicon.ico', sizes: '48x48' },
     ],
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+    other: [{ rel: 'mask-icon', url: '/mask-icon.svg', color: THEME_DARK }],
   },
   openGraph: {
     type: 'website',
     locale: ogLocale,
     url: base,
-    siteName: SITE.name,
-    title: `${SITE.name} — When you can’t be there, ${SITE.name} can`,
-    description: SITE.description,
+    siteName: identity.appName,
+    title: identity.title,
+    description: identity.description,
     images: [
       {
-        url: SITE.ogImage,
+        url: identity.ogImage,
         width: 1200,
         height: 630,
-        alt: `${SITE.name} — trusted human presence for the people you love`,
+        alt: identity.ogAlt,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${SITE.name} — When you can’t be there, ${SITE.name} can`,
-    description: SITE.description,
-    images: [SITE.ogImage],
+    title: identity.title,
+    description: identity.description,
+    images: [identity.ogImage],
   },
   robots: {
     index: true,
@@ -112,8 +131,11 @@ export async function generateMetadata(): Promise<Metadata> {
   },
   appleWebApp: {
     capable: true,
+    // 'default' keeps a solid status bar over the light (ivory) UI — reviewed and kept;
+    // 'black-translucent' would push content under the notch and needs a full safe-area pass.
     statusBarStyle: 'default',
-    title: SITE.name,
+    title: identity.appleTitle,
+    startupImage: APPLE_SPLASH,
   },
   }
 }

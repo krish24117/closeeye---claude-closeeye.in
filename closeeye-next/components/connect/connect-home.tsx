@@ -2,7 +2,7 @@
 
 /**
  * The Close Eye Connect homepage — the global front door, implemented to the founder's approved
- * content baseline (2026-07-20): Hero → What is CloseEye → How it works → What it understands →
+ * content baseline (2026-07-20): Hero → What is Close Eye → How it works → What it understands →
  * Privacy → Family Graph → CTA. Family-Intelligence positioning; no Care/visit/launch-date content.
  * Wording may be lightly refined for rhythm; the story, hierarchy, and positioning are the founder's.
  */

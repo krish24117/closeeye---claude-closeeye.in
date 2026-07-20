@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { Users, HeartHandshake, MessageSquareHeart, Sparkles, ArrowRight, ChevronRight } from 'lucide-react'
+import { Users, Sparkles, MessageSquareHeart, ShieldCheck, ArrowRight, ChevronRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { Button } from '@/components/ui/button'
@@ -11,10 +11,10 @@ import { cn } from '@/lib/utils'
 
 interface Slide { icon: LucideIcon; eyebrow: string; title: string; points: string[] }
 const SLIDES: Slide[] = [
-  { icon: Users, eyebrow: 'Welcome to Close Eye', title: 'Helping families care for the people they love', points: ['A trusted human presence, wherever you are', 'For parents and elders back home', 'So no family faces the important moments alone'] },
-  { icon: HeartHandshake, eyebrow: 'Trusted people', title: 'Guardians, Companions & hospital support', points: ['Verified, trained Guardians', 'Warm Companions for conversation and walks', 'Medical escorts and hospital assistance'] },
-  { icon: MessageSquareHeart, eyebrow: 'Stay connected', title: 'Every visit, shared with you', points: ['Warm visit reports and photos', 'Mood, medication and wellbeing', 'Emergency support, always a tap away'] },
-  { icon: Sparkles, eyebrow: 'Ready when you are', title: 'Everything starts with care', points: ['Set up your family in minutes', 'A dedicated Presence Manager for you', 'Calm, human, and always close'] },
+  { icon: Sparkles, eyebrow: 'Welcome to Close Eye', title: 'The intelligence that knows the people you love', points: ["Your family's private intelligence", 'It learns what matters, over time', 'Answers grounded in your family — never guesses'] },
+  { icon: Users, eyebrow: 'How it works', title: 'Build understanding together', points: ['Add the people who matter', 'Memories, routines, health, milestones', 'Everything private to your family'] },
+  { icon: MessageSquareHeart, eyebrow: 'Ask naturally', title: 'Answers that come from understanding', points: ['Ask the way you would a family member', 'Grounded in what Close Eye remembers', "Honest when it's still learning"] },
+  { icon: ShieldCheck, eyebrow: 'Ready when you are', title: 'Everything starts with understanding', points: ['Build your private Family Space', 'Remember what matters over time', 'Ask naturally. Get grounded answers.'] },
 ]
 
 export default function WelcomePage() {
@@ -42,7 +42,7 @@ export default function WelcomePage() {
       <div className="grid min-h-dvh place-items-center bg-ivory px-6">
         <div className="ce-fade-in flex flex-col items-center text-center">
           <Logo lockup="stacked" height={176} className="ce-pulse-soft" />
-          <p className="mt-5 text-body text-muted">Care beyond presence</p>
+          <p className="mt-5 text-body text-muted">The intelligence that knows the people you love</p>
         </div>
       </div>
     )

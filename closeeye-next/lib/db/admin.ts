@@ -9,7 +9,7 @@ import { planById, PLANS } from '@/lib/plans'
  * × plan price (from lib/plans). Zones/coupons/audit have no backing tables.
  */
 
-// Monthly price (₹) by subscriptions.plan_id (CloseEye Connect ₹500 / Care ₹1,500).
+// Monthly price (₹) by subscriptions.plan_id (Close Eye Connect ₹500 / Care ₹1,500).
 const PLAN_PRICE: Record<string, number> = { companion: 500, trust: 1500, family_os: 0 }
 
 const SERVICE_LABEL: Record<string, string> = {

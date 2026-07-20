@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * The Workspace shell — the ONE chrome for CloseEye's canonical home.
+ * The Workspace shell — the ONE chrome for Close Eye's canonical home.
  *
  * Navigation is the Dock (2026-07-19): on mobile, four tabs around a central Connect **orb** —
  * Home · People · ⬢ · Activity · Profile. Connect leaves the tab row and becomes the primary

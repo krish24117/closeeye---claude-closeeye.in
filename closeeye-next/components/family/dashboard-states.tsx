@@ -460,7 +460,7 @@ export function ActiveDashboard({ data, lovedOnes }: { data: DashboardData; love
       {/* Beat 2 — monthly presence (state-aware membership invitation) */}
       <MonthlyPresence name={first} />
 
-      {/* Beat 3 — CloseEye Connect, always a message away */}
+      {/* Beat 3 — Close Eye Connect, always a message away */}
       <AskCloseEyeCard variant="compact" />
 
       {/* 5 · Loved ones — real identity only, no invented wellbeing status */}

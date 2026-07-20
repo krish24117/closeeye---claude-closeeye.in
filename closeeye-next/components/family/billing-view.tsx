@@ -56,7 +56,7 @@ export function BillingView() {
     Promise.all([fetchMyMemberships(user.id), fetchMyBookingRequests(user.id)])
       .then(([memberships, bookings]) => {
         const out: Row[] = [
-          ...memberships.filter((m) => m.status === 'active').map((m) => ({ id: m.id, title: 'CloseEye membership', date: m.activated_at || m.created_at, amountPaise: m.amount_paise ?? 0, ref: m.razorpay_payment_id })),
+          ...memberships.filter((m) => m.status === 'active').map((m) => ({ id: m.id, title: 'Close Eye membership', date: m.activated_at || m.created_at, amountPaise: m.amount_paise ?? 0, ref: m.razorpay_payment_id })),
           ...bookings.filter((b) => b.payment_status === 'paid' || b.status === 'paid').map((b) => ({ id: b.id, title: b.service_name || 'Visit', date: b.created_at, amountPaise: b.amount_paise ?? 0, ref: null })),
         ].sort((a, b) => (b.date || '').localeCompare(a.date || ''))
         setRows(out)

@@ -214,7 +214,7 @@ const pct = (rate: number): string => `${(rate * 100).toFixed(1)}%`
 /** A plain-English summary a founder can read without any context. */
 export function renderFounderReport(c: Omit<MigrationControlCenter, 'founderReport'>): string {
   const lines: string[] = []
-  lines.push('CloseEye — Identity Migration · Phase A (Shadow)')
+  lines.push('Close Eye — Identity Migration · Phase A (Shadow)')
   lines.push(
     c.readiness.ready
       ? 'Status: READY to recommend Phase B. Every check is green and stable.'

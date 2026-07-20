@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 /**
- * A minimal, safe renderer for Ask CloseEye answers — paragraphs, "- " bullets,
+ * A minimal, safe renderer for Ask Close Eye answers — paragraphs, "- " bullets,
  * and **bold**. Renders React nodes (never innerHTML), and the answer shape is
  * constrained by the ask-health system prompt (one opener line, 3–5 short
  * bullets, an optional closing question, sparse bold). No markdown dependency.

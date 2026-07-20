@@ -1,5 +1,5 @@
 /**
- * CloseEye — the Engineering Constitution.
+ * Close Eye — the Engineering Constitution.
  *
  * Three immutable principles. Every service, every review, every extension obeys
  * them. They are the engineering counterpart to the product Constitution and are

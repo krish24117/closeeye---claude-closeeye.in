@@ -40,14 +40,14 @@ export function generateMetadata(): Metadata {
       title: 'Close Eye Connect — The intelligence that knows the people you love',
       description:
         'Tell Close Eye about someone you love, in one sentence. It understands from there — never guesses.',
-      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Close Eye' }],
+      images: [{ url: '/og-connect.png', width: 1200, height: 630, alt: 'Close Eye — the intelligence that knows the people you love' }],
     },
     twitter: {
       card: 'summary_large_image',
       title: 'Close Eye Connect — The intelligence that knows the people you love',
       description:
         'Tell Close Eye about someone you love, in one sentence. It understands from there — never guesses.',
-      images: ['/og-image.png'],
+      images: ['/og-connect.png'],
     },
   }
 }

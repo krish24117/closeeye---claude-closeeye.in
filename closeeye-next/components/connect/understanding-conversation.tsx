@@ -1,8 +1,8 @@
 'use client'
 
 /**
- * Connect — the signed-in conversation. CloseEye's promise, made real and VISIBLE:
- * Understand → Reason → Answer. Every turn briefly shows what CloseEye understood from the family's
+ * Connect — the signed-in conversation. Close Eye's promise, made real and VISIBLE:
+ * Understand → Reason → Answer. Every turn briefly shows what Close Eye understood from the family's
  * own information (Decision 1 — the trust step stays visible, never a dead end), then the grounded
  * answer. Crisis interrupts with the existing safety flow. Conversations are durable: reopen a past
  * thread and continue it across days (Decision 2). The answer is grounded in the Family Graph
@@ -165,7 +165,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
 
       {/* The thread */}
       {turns.length === 0 && !thinking && (
-        <p className="px-1 text-body-sm text-muted">Ask about someone you love — CloseEye answers using what your family has shared.</p>
+        <p className="px-1 text-body-sm text-muted">Ask about someone you love — Close Eye answers using what your family has shared.</p>
       )}
       <div className="flex flex-col gap-4">
         {turns.map((t, i) => t.role === 'user' ? (
@@ -230,7 +230,7 @@ function AssistantTurn({ turn }: { turn: Extract<Turn, { role: 'assistant' }> })
           {kind === 'answer' && text && <MarkdownAnswer text={text} />}
           {kind === 'clarify' && <p className="text-body-sm text-ink">{text || 'Tell me a little more about them, and I’ll understand.'}</p>}
           {kind === 'decline' && <p className="text-body-sm text-ink">Hello — I’m here for the people you love. Tell me about one of them, or ask me anything.</p>}
-          {kind === 'medical' && <p className="text-body-sm text-ink"><strong>CloseEye doesn’t give medical advice.</strong> For anything clinical — a symptom, a dose, a reading — a doctor is the right person. What CloseEye can do is remember what matters and help you prepare for that conversation.</p>}
+          {kind === 'medical' && <p className="text-body-sm text-ink"><strong>Close Eye doesn’t give medical advice.</strong> For anything clinical — a symptom, a dose, a reading — a doctor is the right person. What Close Eye can do is remember what matters and help you prepare for that conversation.</p>}
           {kind === 'pending' && <p className="text-body-sm text-ink">I couldn’t compose an answer just now. Please try again in a moment.</p>}
           {kind === 'error' && <p className="text-body-sm text-muted">{turn.notice || 'Something went wrong. Please try again in a moment.'}</p>}
         </div>

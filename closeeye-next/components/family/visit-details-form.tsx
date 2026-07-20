@@ -144,7 +144,7 @@ export function VisitDetailsForm({ value, onChange, allowsEmergency, hideSpecial
           <Textarea id="v-special" value={value.specialInstructions} onChange={(e) => onChange({ specialInstructions: e.target.value })} rows={2} placeholder="e.g. Please check the medicine box and go for a short walk." />
         </Field>
       )}
-      <Field label="Notes for the CloseEye team" htmlFor="v-team" optional hint="Anything your Presence Manager should know.">
+      <Field label="Notes for the Close Eye team" htmlFor="v-team" optional hint="Anything your Presence Manager should know.">
         <Textarea id="v-team" value={value.teamNotes} onChange={(e) => onChange({ teamNotes: e.target.value })} rows={2} placeholder="e.g. Please call me before the visit." />
       </Field>
     </div>

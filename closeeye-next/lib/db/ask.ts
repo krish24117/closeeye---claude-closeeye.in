@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 
 /**
- * Ask CloseEye — the client seam onto the LIVE `ask-health` edge function.
+ * Ask Close Eye — the client seam onto the LIVE `ask-health` edge function.
  *
  * The function owns all the intelligence and safety: red-flag emergency
  * detection (+ WhatsApp care-team alert), service routing, out-of-scope / child
@@ -127,7 +127,7 @@ export async function fetchAskHistory(userId: string, limit = 6): Promise<AskHis
 }
 
 /**
- * Ask history for ONE family member — the Q&A the family asked CloseEye about this
+ * Ask history for ONE family member — the Q&A the family asked Close Eye about this
  * person. Scoped by `loved_one_id` so it can live inside that member's conversation
  * (unifying the AI and PM timelines). RLS still restricts to the caller's own rows.
  */

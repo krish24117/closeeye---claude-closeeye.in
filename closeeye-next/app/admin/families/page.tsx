@@ -135,7 +135,7 @@ export default function AdminFamiliesPage() {
           <h2 className="text-body-sm font-semibold text-ink">Presence Managers</h2>
           <span className="text-caption text-muted">· {managers.length}</span>
         </div>
-        <p className="mt-1 text-caption text-muted">The staff who look after families. Add someone by the email on their CloseEye account; removing them also unassigns their families.</p>
+        <p className="mt-1 text-caption text-muted">The staff who look after families. Add someone by the email on their Close Eye account; removing them also unassigns their families.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {managers.length === 0 ? (
             <span className="text-caption text-muted">None yet.</span>

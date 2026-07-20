@@ -1,5 +1,5 @@
 /**
- * CloseEye V2 membership model — LOCKED (Product Director decision).
+ * Close Eye V2 membership model — LOCKED (Product Director decision).
  * Clean rounded pricing only. Do not add plans, alter prices, or introduce
  * alternatives without a new explicit product decision.
  *
@@ -39,7 +39,7 @@ export const PLANS: Plan[] = [
   {
     id: 'companion',
     key: 'connect',
-    name: 'CloseEye Connect',
+    name: 'Close Eye Connect',
     short: 'Connect',
     amount: 500,
     price: inr(500),
@@ -57,15 +57,15 @@ export const PLANS: Plan[] = [
   {
     id: 'trust',
     key: 'care',
-    name: 'CloseEye Care',
+    name: 'Close Eye Care',
     short: 'Care',
     amount: 1500,
     price: inr(1500),
     period: '/month',
     popular: true,
-    description: 'A verified CloseEye Guardian visits your loved one every month and keeps your family connected.',
+    description: 'A verified Close Eye Guardian visits your loved one every month and keeps your family connected.',
     benefits: [
-      'Everything in CloseEye Connect',
+      'Everything in Close Eye Connect',
       'One monthly wellbeing visit',
       'Visit report with photos',
       'Medication reminders',

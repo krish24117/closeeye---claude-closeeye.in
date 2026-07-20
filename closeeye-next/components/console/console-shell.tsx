@@ -124,7 +124,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
         <div className="flex max-h-[70vh] flex-col overflow-y-auto py-3">{SidebarInner}</div>
       </Overlay>
 
-      {/* Emergency — real numbers only (108 + CloseEye support line). */}
+      {/* Emergency — real numbers only (108 + Close Eye support line). */}
       <Overlay open={sos} onClose={() => setSos(false)}>
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
           <div className="flex items-center gap-2.5">

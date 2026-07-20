@@ -43,7 +43,7 @@ function profileIsThin(ep: ElderProfileForm): boolean {
 }
 
 /**
- * CloseEye Connect — the family's ongoing, living conversation with CloseEye.
+ * Close Eye Connect — the family's ongoing, living conversation with Close Eye.
  * Deliberately NOT a search box: it opens mid-relationship (the last exchange,
  * or a warm opener — never an empty field), offers context-aware follow-ups
  * (family / Presence Manager / visit / urgent), and keeps the input quiet at the
@@ -120,7 +120,7 @@ export function AskCloseEyeCard({
       ]
     : [
         { label: 'How does a Presence Visit work?', href: askHref('How does a Presence Visit work?') },
-        { label: 'What can CloseEye help with?', href: askHref('What can CloseEye help with?') },
+        { label: 'What can Close Eye help with?', href: askHref('What can Close Eye help with?') },
         { label: 'Talk to my Presence Manager', href: '/family/connect' },
         { label: 'Book a Presence', href: '/family/book' },
       ]
@@ -217,8 +217,8 @@ export function AskCloseEyeCard({
               go(text)
             }
           }}
-          placeholder={first ? `Say something about ${first}…` : 'Say something to CloseEye…'}
-          aria-label="Message CloseEye"
+          placeholder={first ? `Say something about ${first}…` : 'Say something to Close Eye…'}
+          aria-label="Message Close Eye"
           className="min-w-0 flex-1 bg-transparent px-1.5 py-1 text-body-sm text-ink placeholder:text-muted/70 focus:outline-none"
         />
         <button

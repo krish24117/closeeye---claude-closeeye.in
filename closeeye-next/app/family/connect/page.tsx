@@ -19,8 +19,8 @@ import type { LovedOne, Message } from '@/lib/db/types'
 import { cn } from '@/lib/utils'
 
 /**
- * CloseEye Connect — the family's single place to communicate with CloseEye.
- * Ask CloseEye sits first; below it, the private per-member care conversations
+ * Close Eye Connect — the family's single place to communicate with Close Eye.
+ * Ask Close Eye sits first; below it, the private per-member care conversations
  * (each family member keeps an independent timeline — reused as-is).
  */
 export default function ConnectHome() {

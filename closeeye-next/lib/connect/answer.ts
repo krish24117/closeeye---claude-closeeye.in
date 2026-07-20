@@ -5,7 +5,7 @@ import { askCloseEye, type AskTurn } from '@/lib/db/ask'
 import type { Understanding } from '@/lib/connect/comprehension'
 
 /**
- * The Connect answer orchestrator — CloseEye's promise made real: Understand → Reason → Answer.
+ * The Connect answer orchestrator — Close Eye's promise made real: Understand → Reason → Answer.
  *
  * It COMPOSES existing, proven modules — it rewrites none of them:
  *   1. Understand  — requestUnderstanding() (the deterministic understanding engine + safety floor).
