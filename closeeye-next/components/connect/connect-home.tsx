@@ -94,14 +94,12 @@ export function ConnectHome() {
 
       {/* SECTION 1 — WHAT IS CLOSEEYE */}
       <section className="border-t border-line/70 bg-accent-soft/20">
-        <div className="mx-auto grid max-w-5xl gap-8 px-6 py-20 sm:grid-cols-2 sm:py-28">
-          <div>
-            <Eyebrow>What is Close Eye</Eyebrow>
-            <h2 style={serif} className="text-h2 text-ink">
-              More than AI.<br />Family Intelligence.
-            </h2>
-          </div>
-          <div className="flex flex-col justify-center gap-4 text-body text-muted">
+        <div className="mx-auto max-w-3xl px-6 py-20 text-center sm:py-28">
+          <Eyebrow>What is Close Eye</Eyebrow>
+          <h2 style={serif} className="text-h2 text-ink">
+            More than AI.<br />Family Intelligence.
+          </h2>
+          <div className="mx-auto mt-6 flex max-w-[56ch] flex-col gap-4 text-body text-muted">
             <p>Most AI tools only know what you tell them in a conversation.</p>
             <p>Close Eye builds a private understanding of your family over time. It remembers the people you
               care about, the moments that matter, and the context behind every question — so every answer
@@ -162,12 +160,12 @@ export function ConnectHome() {
 
       {/* SECTION 4 — PRIVACY */}
       <section className="border-t border-line/70">
-        <div className="mx-auto grid max-w-5xl gap-8 px-6 py-20 sm:grid-cols-[auto_1fr] sm:items-center sm:py-28">
-          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-accent-soft text-green"><Lock className="h-7 w-7" strokeWidth={1.6} /></span>
-          <div>
+        <div className="mx-auto max-w-3xl px-6 py-20 text-center sm:py-28">
+          <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-accent-soft text-green"><Lock className="h-7 w-7" strokeWidth={1.6} /></span>
+          <div className="mt-6">
             <Eyebrow>Privacy</Eyebrow>
             <h2 style={serif} className="text-h2 text-ink">Private by design</h2>
-            <p className="mt-4 max-w-[52ch] text-body text-muted">
+            <p className="mx-auto mt-4 max-w-[56ch] text-body text-muted">
               Everything you share belongs to your family. Your information is encrypted, never sold, and only
               used to help Close Eye understand your family better. You can review, update, or delete your
               information at any time.
