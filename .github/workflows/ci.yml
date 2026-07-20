@@ -29,7 +29,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Node 22+ — @supabase/supabase-js needs a global WebSocket (added in Node 22); Node 20 fails.
+          # Matches Vercel's build runtime, so CI and the deploy gate behave identically.
+          node-version: 22
           cache: npm
           cache-dependency-path: closeeye-next/package-lock.json
       - run: npm ci
