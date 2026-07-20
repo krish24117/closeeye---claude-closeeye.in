@@ -13,19 +13,9 @@ import {
   Lock, ArrowRight, Loader2,
 } from 'lucide-react'
 import { signInWithGoogle } from '@/lib/auth-actions'
+import { GoogleGlyph } from '@/components/ui/google-glyph'
 
 const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
-
-function GoogleMark() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-[1.15rem] w-[1.15rem]" aria-hidden="true">
-      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z" />
-      <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z" />
-      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z" />
-    </svg>
-  )
-}
 
 function GoogleButton({ label }: { label: string }) {
   const [busy, setBusy] = React.useState(false)
@@ -42,7 +32,7 @@ function GoogleButton({ label }: { label: string }) {
       className="inline-flex min-h-[3.25rem] items-center justify-center gap-2.5 rounded-full bg-ink px-7 text-body-sm font-semibold text-ivory transition-opacity hover:opacity-90 disabled:opacity-60"
     >
       {busy ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Connecting to Google…</>
-        : <><span className="grid h-6 w-6 place-items-center rounded-full bg-ivory"><GoogleMark /></span> {label}</>}
+        : <><span className="grid h-6 w-6 place-items-center rounded-full bg-ivory"><GoogleGlyph className="h-[1.15rem] w-[1.15rem]" /></span> {label}</>}
     </button>
   )
 }
@@ -81,7 +71,7 @@ export function ConnectHome() {
     <main id="main" className="bg-ivory text-ink">
       {/* HERO */}
       <section className="mx-auto max-w-5xl px-6 pt-28 pb-20 text-center sm:pt-36 sm:pb-28">
-        <h1 style={serif} className="mx-auto max-w-[16ch] text-[clamp(2.6rem,7vw,5rem)] font-semibold leading-[1.02] tracking-tight text-ink">
+        <h1 style={serif} className="mx-auto max-w-[16ch] text-h1 text-ink">
           The intelligence that knows the people you love.
         </h1>
         <p className="mx-auto mt-7 max-w-[46ch] text-lead text-muted">
@@ -107,7 +97,7 @@ export function ConnectHome() {
         <div className="mx-auto grid max-w-5xl gap-8 px-6 py-20 sm:grid-cols-2 sm:py-28">
           <div>
             <Eyebrow>What is Close Eye</Eyebrow>
-            <h2 style={serif} className="text-[clamp(1.9rem,4.4vw,3rem)] font-semibold leading-[1.06] tracking-tight text-ink">
+            <h2 style={serif} className="text-h2 text-ink">
               More than AI.<br />Family Intelligence.
             </h2>
           </div>
@@ -125,7 +115,7 @@ export function ConnectHome() {
         <div className="mx-auto max-w-5xl px-6 py-20 sm:py-28">
           <div className="text-center">
             <Eyebrow>How it works</Eyebrow>
-            <h2 style={serif} className="mx-auto max-w-[18ch] text-[clamp(1.9rem,4.4vw,3rem)] font-semibold leading-[1.06] tracking-tight text-ink">
+            <h2 style={serif} className="mx-auto max-w-[18ch] text-h2 text-ink">
               How Family Intelligence works
             </h2>
           </div>
@@ -155,7 +145,7 @@ export function ConnectHome() {
         <div className="mx-auto max-w-5xl px-6 py-20 sm:py-28">
           <div className="text-center">
             <Eyebrow>What it understands</Eyebrow>
-            <h2 style={serif} className="mx-auto max-w-[20ch] text-[clamp(1.9rem,4.4vw,3rem)] font-semibold leading-[1.06] tracking-tight text-ink">
+            <h2 style={serif} className="mx-auto max-w-[20ch] text-h2 text-ink">
               Your family’s understanding grows over time
             </h2>
           </div>
@@ -176,7 +166,7 @@ export function ConnectHome() {
           <span className="grid h-16 w-16 place-items-center rounded-2xl bg-accent-soft text-green"><Lock className="h-7 w-7" strokeWidth={1.6} /></span>
           <div>
             <Eyebrow>Privacy</Eyebrow>
-            <h2 style={serif} className="text-[clamp(1.9rem,4.4vw,3rem)] font-semibold leading-[1.06] tracking-tight text-ink">Private by design</h2>
+            <h2 style={serif} className="text-h2 text-ink">Private by design</h2>
             <p className="mt-4 max-w-[52ch] text-body text-muted">
               Everything you share belongs to your family. Your information is encrypted, never sold, and only
               used to help Close Eye understand your family better. You can review, update, or delete your
@@ -190,15 +180,15 @@ export function ConnectHome() {
       <section className="bg-ink text-ivory">
         <div className="mx-auto max-w-5xl px-6 py-24 sm:py-32">
           <div className="mx-auto max-w-[42ch] text-center">
-            <p className="mb-4 inline-flex items-center gap-2.5 text-caption font-bold uppercase tracking-[0.16em] text-[color:#7fd3a6]"><span className="h-px w-6 bg-[color:#7fd3a6]" />Your Family Graph</p>
-            <h2 style={serif} className="text-[clamp(1.9rem,4.6vw,3.2rem)] font-semibold leading-[1.06] tracking-tight text-ivory">
+            <p className="mb-4 inline-flex items-center gap-2.5 text-caption font-bold uppercase tracking-[0.16em] text-accent-soft"><span className="h-px w-6 bg-accent-soft" />Your Family Graph</p>
+            <h2 style={serif} className="text-h2 text-ivory">
               Every person has their own evolving understanding.
             </h2>
             <p className="mt-6 text-body text-ivory/75">
               Close Eye connects relationships, memories, routines, preferences, important moments, and health
               information into a private Family Graph that grows with your family over time.
             </p>
-            <p style={serif} className="mt-8 text-[clamp(1.4rem,3.4vw,2rem)] font-semibold leading-snug tracking-tight text-ivory">
+            <p style={serif} className="mt-8 text-h3 text-ivory">
               It doesn’t just answer questions.<br />It understands the context behind them.
             </p>
           </div>
@@ -208,7 +198,7 @@ export function ConnectHome() {
       {/* SECTION 6 — CTA */}
       <section className="border-t border-line/70">
         <div className="mx-auto max-w-3xl px-6 py-24 text-center sm:py-32">
-          <h2 style={serif} className="text-[clamp(2rem,5vw,3.4rem)] font-semibold leading-[1.04] tracking-tight text-ink">Start your Family Space</h2>
+          <h2 style={serif} className="text-h2 text-ink">Start your Family Space</h2>
           <p className="mx-auto mt-5 max-w-[42ch] text-lead text-muted">
             Create your private Family Space and let Close Eye begin understanding the people who matter most.
           </p>
