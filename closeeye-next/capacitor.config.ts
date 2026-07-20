@@ -16,7 +16,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
  */
 const config: CapacitorConfig = {
   appId: 'in.closeeye.app',
-  appName: 'CloseEye',
+  appName: 'Close Eye',
   webDir: 'mobile-shell',
   backgroundColor: '#F6F3EC', // Close Eye warm white (ivory)
   server: {
