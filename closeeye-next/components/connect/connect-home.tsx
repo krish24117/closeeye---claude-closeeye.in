@@ -29,7 +29,7 @@ function GoogleButton({ label }: { label: string }) {
     <button
       onClick={go}
       disabled={busy}
-      className="inline-flex min-h-[3.25rem] items-center justify-center gap-2.5 rounded-full bg-ink px-7 text-body-sm font-semibold text-ivory transition-opacity hover:opacity-90 disabled:opacity-60"
+      className="inline-flex min-h-[3.25rem] items-center justify-center gap-2.5 rounded-full bg-surface-inverse px-7 text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90 disabled:opacity-60"
     >
       {busy ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Connecting to Google…</>
         : <><span className="grid h-6 w-6 place-items-center rounded-full bg-ivory"><GoogleGlyph className="h-[1.15rem] w-[1.15rem]" /></span> {label}</>}
@@ -176,19 +176,23 @@ export function ConnectHome() {
         </div>
       </section>
 
-      {/* SECTION 5 — FAMILY GRAPH */}
-      <section className="bg-ink text-ivory">
+      {/* SECTION 5 — FAMILY GRAPH.
+          NB: use the semantic inverse tokens (surface-inverse / content-inverse), NOT bg-ink/
+          text-ivory — this page renders inside the `.cx` scope, which redefines --ink as a raw
+          hex, breaking Tailwind's hsl(var(--ink)) utilities. The inverse tokens are HSL and
+          are not overridden by .cx, so they render correctly on both surfaces. */}
+      <section className="bg-surface-inverse text-content-inverse">
         <div className="mx-auto max-w-5xl px-6 py-24 sm:py-32">
           <div className="mx-auto max-w-[42ch] text-center">
             <p className="mb-4 inline-flex items-center gap-2.5 text-caption font-bold uppercase tracking-[0.16em] text-accent-soft"><span className="h-px w-6 bg-accent-soft" />Your Family Graph</p>
-            <h2 style={serif} className="text-h2 text-ivory">
+            <h2 style={serif} className="text-h2 text-content-inverse">
               Every person has their own evolving understanding.
             </h2>
-            <p className="mt-6 text-body text-ivory/75">
+            <p className="mt-6 text-body text-content-inverse/75">
               Close Eye connects relationships, memories, routines, preferences, important moments, and health
               information into a private Family Graph that grows with your family over time.
             </p>
-            <p style={serif} className="mt-8 text-h3 text-ivory">
+            <p style={serif} className="mt-8 text-h3 text-content-inverse">
               It doesn’t just answer questions.<br />It understands the context behind them.
             </p>
           </div>
