@@ -73,7 +73,7 @@ export default function WorkspaceHome() {
           </p>
           <h2 className="mt-2.5 text-h4 leading-snug text-content-inverse">{home.notice.title}</h2>
           <p className="mt-2 text-body-sm text-content-inverse/75">{home.notice.why}</p>
-          <Link href={`/space/people/${home.notice.personId}`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-body-sm font-semibold text-content transition-opacity hover:opacity-90">
+          <Link href={`/space/people/${home.notice.personId}/add`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-body-sm font-semibold text-content transition-opacity hover:opacity-90">
             Add {home.notice.personName}’s details <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
           </Link>
         </section>

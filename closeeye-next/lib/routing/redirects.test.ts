@@ -28,6 +28,7 @@ const CONTRACT = [
   '/space/people',
   '/space/people/add',
   '/space/people/[id]',
+  '/space/people/[id]/add',
   '/space/people/[id]/edit',
   '/space/people/[id]/health',
   '/space/people/[id]/memories',

@@ -155,7 +155,7 @@ export default function PersonSpacePage() {
       {/* What should happen next */}
       {recommendations.length > 0 && (
         <section className="flex flex-col gap-3">
-          <p className="text-caption font-semibold uppercase tracking-widest text-muted">What should happen next</p>
+          <p className="text-caption font-semibold uppercase tracking-widest text-muted">A few things to add</p>
           {recommendations.map((r) => (
             <div key={r.id} className="flex items-center justify-between gap-3 rounded-lg border border-line/70 bg-card p-4 shadow-sm">
               <span className="text-body-sm text-ink"><span className="text-caption font-semibold text-muted">{r.why} · </span>{r.text}</span>
@@ -166,7 +166,7 @@ export default function PersonSpacePage() {
 
       {/* What Close Eye understands — with "tell me" */}
       <section className="flex flex-col gap-4">
-        <p className="text-caption font-semibold uppercase tracking-widest text-muted">What Close Eye understands</p>
+        <p className="text-caption font-semibold uppercase tracking-widest text-muted">What Close Eye knows</p>
         <div className="flex flex-col gap-4">
           {sections.map((sec) => (
             <div key={sec.category} className="rounded-lg border border-line/70 bg-card p-4 shadow-sm">

@@ -49,12 +49,12 @@ export function deriveSnapshot(i: UnderstandingInput, recs: Recommendation[]): S
   let state: SnapState, headline: string, sub: string
   if (criticalCount > 0) {
     state = 'action'
-    headline = criticalCount === 1 ? 'One thing needs you' : `${criticalCount} things need you`
-    sub = `Before Close Eye can look out for ${him}.`
+    headline = criticalCount === 1 ? 'One detail to add' : `${criticalCount} details to add`
+    sub = `Add ${criticalCount === 1 ? 'it' : 'them'} so Close Eye can look out for ${him}.`
   } else if (i.blanks.length > 0) {
     state = 'learning'
-    headline = `Still getting to know your ${i.subject.relationship ?? 'family'}`
-    sub = `Each thing you add makes what happens next more real.`
+    headline = `Getting to know your ${i.subject.relationship ?? 'family'}`
+    sub = `Add what you know — it all helps Close Eye look out for ${him}.`
   } else if (!positiveSignal) {
     // Everything essential is known and nothing is pending — but no ONE has been to see
     // him, so we do NOT claim he is well. Honest: nothing needs you; not "he is safe".

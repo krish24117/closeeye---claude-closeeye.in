@@ -49,7 +49,7 @@ describe('THE HONESTY GUARANTEE · the Snapshot never fakes calm', () => {
     const recs = deriveRecommendations(RELOCATING)
     const snap = deriveSnapshot(RELOCATING, recs)
     expect(snap.state).toBe('action')
-    expect(snap.headline).toMatch(/need you/)
+    expect(snap.headline).toMatch(/detail|add/i)
   })
 })
 
