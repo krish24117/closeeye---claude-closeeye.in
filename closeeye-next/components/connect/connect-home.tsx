@@ -91,12 +91,12 @@ export function ConnectHome() {
         <div className="mt-9 flex flex-col items-center gap-4">
           <div className="flex flex-col items-center gap-3 sm:flex-row">
             <GoogleButton label="Create my Family Space" />
-            <Link
-              href="/connect/demo"
+            <a
+              href="#how-it-works"
               className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-full border border-line bg-card px-6 text-body-sm font-semibold text-ink transition-colors hover:bg-accent-soft/40"
             >
-              See how Connect works <ArrowRight className="h-4 w-4" strokeWidth={2} />
-            </Link>
+              See how it works <ArrowRight className="h-4 w-4" strokeWidth={2} />
+            </a>
           </div>
           <Link href="/auth" className="text-caption font-semibold text-muted hover:text-ink">or continue with email</Link>
         </div>
@@ -119,7 +119,7 @@ export function ConnectHome() {
       </section>
 
       {/* SECTION 2 — HOW IT WORKS */}
-      <section className="border-t border-line/70">
+      <section id="how-it-works" className="scroll-mt-20 border-t border-line/70">
         <div className="mx-auto max-w-5xl px-6 py-20 sm:py-28">
           <div className="text-center">
             <Eyebrow>How it works</Eyebrow>
@@ -231,7 +231,7 @@ export function ConnectHome() {
           <Logo lockup="horizontal" height={24} />
           <p className="max-w-[34ch] text-body-sm text-muted">The intelligence that knows the people you love.</p>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-caption font-semibold text-muted">
-            <Link href="/connect/demo" className="transition-colors hover:text-ink">See how it works</Link>
+            <a href="#how-it-works" className="transition-colors hover:text-ink">See how it works</a>
             <Link href="/privacy" className="transition-colors hover:text-ink">Privacy</Link>
             <Link href="/terms" className="transition-colors hover:text-ink">Terms</Link>
           </div>
