@@ -13,6 +13,7 @@ import { ArrowLeft, Check, Loader2 } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
 import { Button } from '@/components/ui/button'
 import { RelationshipSelector } from '@/components/family/relationship-selector'
+import { CountryField } from '@/components/family/country-field'
 import { CityField } from '@/components/family/city-field'
 import { PhotoPicker } from '@/components/family/photo-picker'
 import { useFamilyData } from '@/components/family/family-data-provider'
@@ -45,6 +46,7 @@ export default function EditPersonPage() {
 
   const [fullName, setFullName] = React.useState('')
   const [relationship, setRelationship] = React.useState('')
+  const [country, setCountry] = React.useState('')
   const [city, setCity] = React.useState('')
   const [address, setAddress] = React.useState('')
   const [age, setAge] = React.useState('')
@@ -63,6 +65,7 @@ export default function EditPersonPage() {
     if (!member || ready) return
     setFullName(member.full_name ?? '')
     setRelationship(member.relationship ?? '')
+    setCountry(member.region_code ?? '')
     setCity(member.city ?? '')
     setAddress(member.address ?? '')
     setAge(member.age != null ? String(member.age) : '')
@@ -84,6 +87,7 @@ export default function EditPersonPage() {
       await editFamilyMember(id, {
         full_name: fullName,
         relationship,
+        region_code: country || null,
         city,
         address,
         age: ageNum != null && !Number.isNaN(ageNum) ? ageNum : null,
@@ -148,13 +152,17 @@ export default function EditPersonPage() {
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
+              <span className={labelCls}>Country</span>
+              <CountryField value={country} onChange={setCountry} />
+            </div>
+            <div>
               <span className={labelCls}>City</span>
               <CityField value={city} onChange={setCity} />
             </div>
-            <div>
-              <label htmlFor="e-age" className={labelCls}>Age <span className="font-normal text-muted">(optional)</span></label>
-              <input id="e-age" value={age} onChange={(e) => setAge(e.target.value.replace(/\D/g, '').slice(0, 3))} inputMode="numeric" placeholder="e.g. 72" className={inputCls} />
-            </div>
+          </div>
+          <div>
+            <label htmlFor="e-age" className={labelCls}>Age <span className="font-normal text-muted">(optional)</span></label>
+            <input id="e-age" value={age} onChange={(e) => setAge(e.target.value.replace(/\D/g, '').slice(0, 3))} inputMode="numeric" placeholder="e.g. 72" className={inputCls} />
           </div>
           <div>
             <label htmlFor="e-addr" className={labelCls}>Address <span className="font-normal text-muted">(optional)</span></label>

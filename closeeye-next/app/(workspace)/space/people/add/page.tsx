@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { RelationshipSelector } from '@/components/family/relationship-selector'
+import { CountryField } from '@/components/family/country-field'
 import { CityField } from '@/components/family/city-field'
 import { PhotoPicker } from '@/components/family/photo-picker'
 import { setLocalPhoto } from '@/lib/local-photos'
@@ -29,6 +30,7 @@ export default function AddPersonPage() {
   const { addLovedOne } = useFamilyData()
   const [fullName, setFullName] = React.useState('')
   const [relationship, setRelationship] = React.useState('')
+  const [country, setCountry] = React.useState('')
   const [city, setCity] = React.useState('')
   const [photo, setPhoto] = React.useState<string | null>(null)
   const [busy, setBusy] = React.useState(false)
@@ -42,7 +44,7 @@ export default function AddPersonPage() {
     if (!valid) return setError('Please add a name, relationship and city.')
     setBusy(true)
     try {
-      const created = await addLovedOne({ full_name: fullName, relationship, city })
+      const created = await addLovedOne({ full_name: fullName, relationship, city, region_code: country || null })
       if (photo) setLocalPhoto(created.id, photo)
       haptic('success')
       toast(`${fullName.trim().split(/\s+/)[0]} was added to your family.`)
@@ -81,9 +83,15 @@ export default function AddPersonPage() {
           <RelationshipSelector value={relationship} onChange={setRelationship} />
         </div>
 
-        <div>
-          <span className={labelCls}>City</span>
-          <CityField value={city} onChange={setCity} />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <span className={labelCls}>Country</span>
+            <CountryField value={country} onChange={setCountry} />
+          </div>
+          <div>
+            <span className={labelCls}>City</span>
+            <CityField value={city} onChange={setCity} />
+          </div>
         </div>
 
         {error && <p className="text-caption text-error">{error}</p>}

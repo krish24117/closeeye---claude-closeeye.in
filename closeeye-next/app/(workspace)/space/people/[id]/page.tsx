@@ -10,7 +10,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Sparkles, Pencil, HeartPulse, Camera, Plus, FileText } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Sparkles, Pencil, HeartPulse, Camera, Plus, FileText, Globe } from 'lucide-react'
 import { fetchSpace, appendLearning, personName, type SpaceData } from '@/lib/db/space'
 import type { Blank, LedgerLine } from '@/lib/connect/ledger'
 import { deriveSnapshot, deriveRecommendations, groupUnderstanding, type UnderstandingInput } from '@/lib/space/understanding'
@@ -106,6 +106,16 @@ export default function PersonSpacePage() {
           <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} /> Edit
         </Link>
       </div>
+
+      {/* Country backfill — a person added before we captured country has no region, so the
+          emergency number can't be localised. A quiet, one-time nudge (fades once it's set). */}
+      {!lo.regionCode && (
+        <Link href={`/space/people/${lo.id}/edit`} className="flex items-center gap-2.5 rounded-lg border border-dashed border-line bg-card/60 p-3.5 text-body-sm text-muted transition-colors hover:border-green/40 hover:text-ink">
+          <Globe className="h-4 w-4 shrink-0 text-green" strokeWidth={1.75} />
+          <span className="flex-1">Add {person}’s country, so Close Eye can show the right local emergency number.</span>
+          <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} />
+        </Link>
+      )}
 
       {/* First task — the guided moment right after adding someone (fades once a fact exists) */}
       {firstRun && (

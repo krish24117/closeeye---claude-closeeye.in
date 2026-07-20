@@ -18,7 +18,7 @@ export interface HomePerson {
   id: string
   name: string
   relationship: string | null
-  regionCode: string
+  regionCode: string | null
   state: WorkspaceState
   /** Card title — a relationship subject reads as "Mother" (not "Your Mother"), a named one as "Amma". */
   label: string
@@ -131,7 +131,7 @@ export async function fetchHome(): Promise<HomeData | null> {
     const known = factsOf(m.id).map((e) => e.body.trim()).filter((b) => b && !subjectLike.has(b.replace(/[.\s]+$/, '').toLowerCase())).slice(0, 2)
     const miss = missingEssentials(m.id)
     const learning = miss.length ? `Learning: ${miss.slice(0, 2).map((es) => es.label).join(' & ')}` : null
-    return { id: m.id, name: m.full_name, relationship: m.relationship, regionCode: m.region_code ?? 'IN', state: derivePersonState(signals), label, natural, known, learning }
+    return { id: m.id, name: m.full_name, relationship: m.relationship, regionCode: m.region_code ?? null, state: derivePersonState(signals), label, natural, known, learning }
   })
 
   const state = rollUp(people.map((p) => p.state))

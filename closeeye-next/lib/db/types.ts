@@ -104,6 +104,9 @@ export interface NewLovedOne {
   relationship: string
   age?: number | null
   city?: string
+  /** ISO region code (e.g. 'GB', 'US', 'IN'). Sets the person's LOCAL emergency number.
+   *  Omitted / '' → region stays unknown → safe "your local emergency number" fallback. */
+  region_code?: string | null
   phone_number?: string
   address?: string
   medical_notes?: string

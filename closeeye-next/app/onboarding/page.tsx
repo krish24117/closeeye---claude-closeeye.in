@@ -7,6 +7,7 @@ import { LogoMark } from '@/components/ui/logo'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { CountryField } from '@/components/family/country-field'
 import { saveProfileBasics, selectPlan } from '@/lib/db/onboarding'
 import { PROTECT_OPTIONS, type PlanId } from '@/lib/plans'
 import { getPendingPlan, setPendingPlan } from '@/lib/membership-intent'
@@ -41,6 +42,7 @@ export default function OnboardingPage() {
   const [name, setName] = React.useState(metaName)
   const [protect, setProtect] = React.useState<string | null>(null)
   const [lovedName, setLovedName] = React.useState('')
+  const [country, setCountry] = React.useState('')
   // Carried membership intent only — no plan STEP; the visitor picked it on /membership.
   const [plan, setPlan] = React.useState<PlanId | null>(null)
   const [hasIntent, setHasIntent] = React.useState(false)
@@ -93,7 +95,7 @@ export default function OnboardingPage() {
       if (p.error) throw new Error(p.error)
       // 2. Create the first loved one (provisions the family space). City is DEFERRED
       //    too — addLovedOne defaults it to '' and the Space prompts for it later.
-      const created = await addLovedOne({ full_name: nameOfLovedOne, relationship: protect ?? 'Family' })
+      const created = await addLovedOne({ full_name: nameOfLovedOne, relationship: protect ?? 'Family', region_code: country || null })
       // 3. Membership funnel ONLY: honour a plan chosen before sign-up. A direct sign-up
       //    has no plan here — membership is chosen later, when the user chooses to pay.
       if (hasIntent && plan) {
@@ -173,6 +175,13 @@ export default function OnboardingPage() {
                   <span className="mb-1.5 block text-body-sm font-medium text-ink">Their name</span>
                   <input autoFocus value={lovedName} onChange={(e) => setLovedName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="e.g. Ramesh Rao" className={inputCls} />
                 </label>
+              )}
+              {protect && (
+                <div className="ce-fade-in mt-4">
+                  <span className="mb-1.5 block text-body-sm font-medium text-ink">Country <span className="font-normal text-muted">(optional)</span></span>
+                  <CountryField value={country} onChange={setCountry} />
+                  <p className="mt-1.5 text-caption text-muted">Sets the right local emergency number if it’s ever needed.</p>
+                </div>
               )}
             </>
           )}
