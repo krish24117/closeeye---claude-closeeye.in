@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { signInWithGoogle } from '@/lib/auth-actions'
 import { GoogleGlyph } from '@/components/ui/google-glyph'
+import { Logo } from '@/components/ui/logo'
 
 const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
 
@@ -68,9 +69,18 @@ const Eyebrow = ({ children }: { children: React.ReactNode }) => (
 
 export function ConnectHome() {
   return (
-    <main id="main" className="bg-ivory text-ink">
+    <div className="bg-ivory text-ink">
+      {/* HEADER — Apple-style: logo left, sign-in right, translucent + sticky */}
+      <header className="sticky top-0 z-50 border-b border-line/50 bg-ivory/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3.5">
+          <Link href="/connect" aria-label="Close Eye home"><Logo lockup="horizontal" height={26} /></Link>
+          <Link href="/auth" className="text-body-sm font-semibold text-muted transition-colors hover:text-ink">Sign in</Link>
+        </div>
+      </header>
+
+      <main id="main">
       {/* HERO */}
-      <section className="mx-auto max-w-5xl px-6 pt-28 pb-20 text-center sm:pt-36 sm:pb-28">
+      <section className="mx-auto max-w-5xl px-6 pt-16 pb-20 text-center sm:pt-24 sm:pb-28">
         <h1 style={serif} className="mx-auto max-w-[16ch] text-h1 text-ink">
           The intelligence that knows the people you love.
         </h1>
@@ -213,6 +223,21 @@ export function ConnectHome() {
           <p className="mt-8 text-caption text-muted/80">Private to your family · Encrypted · Never sold</p>
         </div>
       </section>
-    </main>
+      </main>
+
+      {/* FOOTER */}
+      <footer className="border-t border-line/60 bg-ivory">
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-5 px-6 py-14 text-center">
+          <Logo lockup="horizontal" height={24} />
+          <p className="max-w-[34ch] text-body-sm text-muted">The intelligence that knows the people you love.</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-caption font-semibold text-muted">
+            <Link href="/connect/demo" className="transition-colors hover:text-ink">See how it works</Link>
+            <Link href="/privacy" className="transition-colors hover:text-ink">Privacy</Link>
+            <Link href="/terms" className="transition-colors hover:text-ink">Terms</Link>
+          </div>
+          <p className="text-caption text-muted/70">© Close Eye</p>
+        </div>
+      </footer>
+    </div>
   )
 }
