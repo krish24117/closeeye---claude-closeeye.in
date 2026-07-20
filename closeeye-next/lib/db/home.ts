@@ -36,7 +36,9 @@ export interface HomePerson {
 function nameParts(fullName: string, relationship: string | null): { label: string; natural: string } {
   const f = (fullName || '').trim()
   if (/^your\s/i.test(f)) {
-    const rel = f.replace(/^your\s/i, '').trim() || (relationship ?? 'family')
+    const rel = (f.replace(/^your\s/i, '').trim() || (relationship ?? 'family')).toLowerCase()
+    // label keeps a Title-case word for the person card ("Mother"); `natural` stays lowercase so
+    // sentences read as natural, global English ("your mother"), never "your Mother".
     return { label: rel.charAt(0).toUpperCase() + rel.slice(1), natural: `your ${rel}` }
   }
   if (f.toLowerCase() === 'you') return { label: 'You', natural: 'you' }

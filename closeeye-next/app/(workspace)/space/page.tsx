@@ -11,7 +11,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Check, Circle, ScanEye, Sparkles, ChevronRight, ArrowRight, UserPlus, Images } from 'lucide-react'
+import { Check, Circle, ScanEye, Sparkles, ChevronRight, ArrowRight, UserPlus, FileText } from 'lucide-react'
 import { fetchHome, type HomeData } from '@/lib/db/home'
 import { fetchRecentMemories, type MemoryView } from '@/lib/db/memories'
 import { takeFirstPerson } from '@/lib/first-run'
@@ -123,25 +123,30 @@ export default function WorkspaceHome() {
         </div>
       )}
 
-      {/* Recently remembered — the memory strip (shows once the family has captured moments) */}
+      {/* Recently remembered — memory "moments" as album-cover cards (title on the cover) */}
       {recent.length > 0 && (
         <section className="flex flex-col gap-4">
           <p className="text-caption font-semibold uppercase tracking-widest text-content-muted">Recently remembered</p>
-          <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
-            {recent.map((m) => (
-              <Link key={m.id} href={`/space/people/${m.lovedOneId}/memories`} className="w-28 shrink-0">
-                <div className="relative aspect-square overflow-hidden rounded-lg border border-edge bg-surface-raised shadow-sm">
-                  {m.cover?.url && m.cover.kind !== 'document' ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={m.cover.url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="grid h-full w-full place-items-center text-brand"><Images className="h-6 w-6" strokeWidth={1.5} /></span>
-                  )}
-                </div>
-                <p className="mt-1.5 truncate text-caption font-semibold text-content">{m.title}</p>
-                <p className="truncate text-caption text-content-muted">{m.count} {m.count === 1 ? 'item' : 'items'}</p>
-              </Link>
-            ))}
+          <div className="flex gap-4 overflow-x-auto pb-1">
+            {recent.map((m) => {
+              const isPhoto = m.cover?.url && m.cover.kind !== 'document'
+              return (
+                <Link key={m.id} href={`/space/people/${m.lovedOneId}/memories`} className="group w-44 shrink-0">
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl shadow-sm ring-1 ring-edge/60">
+                    {isPhoto ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={m.cover?.url ?? undefined} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
+                    ) : (
+                      <span className="grid h-full w-full place-items-center bg-gradient-to-br from-accent-soft to-surface-accent text-brand"><FileText className="h-10 w-10" strokeWidth={1.4} /></span>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-surface-inverse/90 via-surface-inverse/35 to-transparent px-3.5 pb-3 pt-10">
+                      <p className="truncate text-body-sm font-semibold text-content-inverse">{m.title}</p>
+                      <p className="text-caption text-content-inverse/75">{m.count} {m.count === 1 ? 'item' : 'items'}</p>
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         </section>
       )}
