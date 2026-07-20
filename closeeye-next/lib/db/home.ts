@@ -142,7 +142,7 @@ export async function fetchHome(): Promise<HomeData | null> {
     const miss = missingEssentials(m.id)[0]
     if (!miss) continue
     const { natural } = nameParts(m.full_name, m.relationship)
-    notice = { title: `Close Eye doesn’t know ${miss.notice(natural)} yet.`, why: `The more you tell it, the more it can be there for ${natural} — the one thing it’s missing.`, personId: m.id, personName: natural }
+    notice = { title: `Add a few details about ${natural}.`, why: `Add their health, daily routine, and who’s around them — the more Close Eye knows, the more it can help.`, personId: m.id, personName: natural }
     prompt = { text: miss.q(natural), personId: m.id }
     break
   }

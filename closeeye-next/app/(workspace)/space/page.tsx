@@ -68,13 +68,13 @@ export default function WorkspaceHome() {
       {/* What I'm noticing — the synthesis (only on a real, derived gap) */}
       {home.notice && (
         <section className="rounded-lg bg-surface-inverse p-5 text-content-inverse shadow-sm">
-          <p className="flex items-center gap-2 text-caption font-semibold uppercase tracking-widest text-brand">
-            <ScanEye className="h-4 w-4" strokeWidth={1.75} /> What I’m noticing
+          <p className="flex items-center gap-2 text-caption font-semibold uppercase tracking-widest text-accent-soft">
+            <ScanEye className="h-4 w-4" strokeWidth={1.75} /> Get started
           </p>
           <h2 className="mt-2.5 text-h4 leading-snug text-content-inverse">{home.notice.title}</h2>
           <p className="mt-2 text-body-sm text-content-inverse/75">{home.notice.why}</p>
           <Link href={`/space/people/${home.notice.personId}`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-body-sm font-semibold text-content transition-opacity hover:opacity-90">
-            Ask about {home.notice.personName} <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
+            Add {home.notice.personName}’s details <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
           </Link>
         </section>
       )}
