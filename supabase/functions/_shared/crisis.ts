@@ -71,6 +71,14 @@ const STRONG: { category: string; patterns: RegExp[] }[] = [
       /(clutch\w*|holding|grabbing|gripping) (his|her|their|the) chest/,
       /pain (in|down) (his|her|their|the) (left )?arm/,
       /heart (attack|racing|pounding)/,
+      // +lifesafety 2026-07-20 · cardiac arrest / absent pulse — the most time-critical emergency,
+      // previously uncovered (only "heart attack" fired). "stopped racing/pounding" is excluded so
+      // relief ("her heart finally stopped racing") never fires. For medical review.
+      /\bcardiac arrest\b/,
+      /heart (has |just |suddenly )?stopped( beating)?\b(?!\s+(racing|pounding|hurting|aching|working out))/,
+      /\bno pulse\b|(has|have|there('| ?)s|got|found) no pulse/,
+      /(can('| ?)t|cannot|couldn('| ?)t|unable to) (find|feel|get|detect) (a |his |her |their |the )?pulse/,
+      /\bpulseless\b/,
     ],
   },
   {
@@ -85,6 +93,9 @@ const STRONG: { category: string; patterns: RegExp[] }[] = [
       /gasping|choking|suffocat/,
       /(lips|face|skin|fingers|nails|hands)\b.{0,15}\b(blue|grey|gray|purple)/,
       /\b(blue|grey|gray|purple)\b.{0,10}\b(lips|face|skin|fingers|nails)/,
+      // +lifesafety 2026-07-20 · cyanosis without naming a body part. "turning/going blue" is a
+      // colour change (an emergency); "feeling blue" (sadness) never matches — it isn't turning/going.
+      /(turning|going|gone|went|turned) (blue|purple|grey|gray)\b/,
       /breathing (very |really )?(fast|rapid|heavy|hard)/,
       // +connect · the NOUN form. "breathing problem" carries no verb for the patterns
       // above to hook, and it is how a great many families say it.
@@ -102,6 +113,8 @@ const STRONG: { category: string; patterns: RegExp[] }[] = [
       /\bstroke\b(?!\s+of\b)/,
       /face (is |looks |looking )?(drooping|droopy|crooked|twisted)/,
       /slurred speech|can('| ?)t speak|words? (are )?jumbled|speech (is )?slurred/,
+      // +lifesafety 2026-07-20 · the verb form families use for slurring.
+      /slurr(ing|ed) (his|her|their|my|the|its)? ?(words|speech)/,
       /one side (of (his|her|the) )?(body|face) (is )?(weak|numb|paralys|drooping)/,
       /sudden(ly)? (numb|weak)(ness)? (on|in) one side/,
       /(arm|leg) (went |is )?numb (and|on) one side/,
@@ -121,6 +134,14 @@ const STRONG: { category: string; patterns: RegExp[] }[] = [
       /can('| ?)t move|cannot move/,
       // +connect · cannot rise — standalone, not only after a reported fall.
       /(can('| ?)t|cannot|unable to) get up/,
+      // +lifesafety 2026-07-20 · the NEGATED-CONTRACTION "waking" forms — "isn't/wasn't/hasn't
+      // waking up" were missed though "not waking"/"won't wake" fired; it is exactly the phrase a
+      // panicking family types. Plus other everyday unconsciousness wording.
+      /(not|isn('| ?)t|wasn('| ?)t|aren('| ?)t|hasn('| ?)t|haven('| ?)t|won('| ?)t|can('| ?)t|cannot|couldn('| ?)t|wouldn('| ?)t|unable to)( been| being| able to| yet| get (him|her|them) to)? (wake|waking|woken)\b/,
+      /\bout cold\b/,
+      /keeled over/,
+      /(not |un|non.?)responsive\b/,
+      /foaming at (the )?(mouth|lips)/,
     ],
   },
   {
@@ -149,6 +170,8 @@ const STRONG: { category: string; patterns: RegExp[] }[] = [
       /blood in (his|her|the|its|it)\b/,
       // +connect · blood appearing at all, wherever it is coming from.
       /blood (is )?coming/,
+      // +lifesafety 2026-07-20 · exsanguination phrasing.
+      /bleeding out\b/,
     ],
   },
   {
