@@ -24,7 +24,9 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
         categories: ['health', 'lifestyle', 'medical'],
       }
     : {
-        name: 'Close Eye Connect',
+        // Installed app name is just "Close Eye" (short_name matches) so the home-screen label
+        // never truncates to "Close Eye Conn…". "Connect" stays in the SEO/OG page title only.
+        name: 'Close Eye',
         short_name: 'Close Eye',
         description:
           "Your family's private intelligence — it learns what matters, remembers it securely, and helps you understand the people you love with grounded, contextual answers.",
