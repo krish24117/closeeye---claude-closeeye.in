@@ -80,5 +80,46 @@ connect.closeeye.in; Care identity stays on .in) — the same pattern already us
 4. **Validate** — Lighthouse PWA/installability; install on Android + iPhone + desktop; offline launch; home-screen
    launch + splash; capture before/after screenshots → this doc's appendix + a validation report.
 
-**Nothing in section C is executed yet — this audit is the plan for approval.** Deliverables on completion:
-before/after screenshots, all generated assets, and a validation report appended here.
+---
+
+## D. Changes shipped (2026-07-20, commit 4114775 → connect.closeeye.in / closeeye.app)
+
+**Founder decisions applied:** app name **Close Eye Connect** (tagline "The intelligence that knows the people
+you love"); brand wordmark **"Close Eye" — two words** (an earlier one-word idea was raised then retracted;
+two words is the standing brand); new premium **sage** app icon (larger mark, no shadow — "Variant A", chosen in
+a 3-way bake-off over ivory/forest); forest kept as a secondary variant; OG card with wordmark + tagline;
+onboarding rewritten Connect-first.
+
+- **Icons** (`scripts/generate-app-icons.mjs`): sage tile + green mark across 96–512, maskable (80% safe-zone),
+  monochrome (Android 13 themed), apple-touch (opaque), favicons, `mask-icon.svg` (Safari pinned tab), forest
+  secondary. Icon carries **no text** — unaffected by the wordmark spelling.
+- **Splash + social** (`scripts/generate-splash-og.mjs`, real Newsreader type): 13-device iOS splash set (sage +
+  "Close Eye" logo), wired via `appleWebApp.startupImage` (`lib/pwa/apple-splash.ts`); new `og-connect.png`
+  (mark + "Close Eye" + tagline on forest); manifest screenshots (mobile + desktop).
+- **Manifest / metadata** host-aware: Close Eye Connect on closeeye.app / connect.*, India Care on closeeye.in.
+  Added `id`, all icon purposes, screenshots, shortcuts, sage `background_color`, Safari `mask-icon`.
+- **Onboarding** (`/welcome`): "Everything starts with understanding" + new bullets; removed Care/Presence-Manager
+  framing and "Care beyond presence".
+- **Brand consistency**: normalized display copy to "Close Eye" (two words) across app/components/lib — 62
+  occurrences in 27 files; code identifiers (`askCloseEye`, `AskCloseEyeCard`) preserved.
+
+## E. Validation report (live on closeeye.app)
+
+| Check | Result |
+|---|---|
+| Manifest identity (closeeye.app) | ✅ name "Close Eye Connect", short_name "Close Eye" |
+| Host-aware split | ✅ India Care identity retained on closeeye.in (redirects verified separately) |
+| Icons: 192 / 512 / maskable / monochrome | ✅ all present + serving 200 |
+| iOS splash set (13) · apple-touch · Safari mask-icon | ✅ serving 200 |
+| OG / social card (mark + Close Eye + tagline) | ✅ serving 200, two-word wordmark |
+| Manifest screenshots (narrow + wide) | ✅ 2 present |
+| Shortcuts | ✅ "Ask Close Eye", "My Family Space" |
+| Service worker (`/sw.js`) + manifest content-type | ✅ 200, `application/manifest+json` |
+| Installability (name+short_name, start_url, display, 192+512, id) | ✅ all satisfied → installable Android/desktop |
+| Lighthouse — Accessibility / Best-Practices / SEO | ✅ 96 / 93 / 91 |
+| Lighthouse — Performance | ⚠️ 56 (pre-existing; Deck C P2 — no perf budget yet, one unbounded query. Not an identity issue.) |
+
+**Deferred / notes:** `appleWebApp.statusBarStyle` kept `'default'` (solid bar over the light UI) rather than
+`'black-translucent'`, which would need a full safe-area pass — reviewed, intentionally not flipped for beta.
+On-device install smoke tests (real iPhone + Android home-screen add, offline launch) remain a founder/on-device
+step. Performance (56) is tracked separately in the product-audit decks.
