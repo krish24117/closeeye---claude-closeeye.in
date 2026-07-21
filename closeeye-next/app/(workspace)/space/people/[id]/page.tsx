@@ -16,7 +16,7 @@ import { ArrowLeft, ArrowRight, Phone, Sparkles, Plus, Pencil, Check, Camera, Fi
 import { fetchSpace, personName, type SpaceData } from '@/lib/db/space'
 import { fetchMemories, type MemoryView } from '@/lib/db/memories'
 import { getLocalPhoto } from '@/lib/local-photos'
-import { relationshipWord, titleCase } from '@/lib/family/relationship-words'
+import { titleCase } from '@/lib/family/relationship-words'
 
 const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 const normKey = (s: string) => s.trim().toLowerCase().replace(/[.\s]+$/, '')
@@ -63,7 +63,9 @@ export default function PersonSpacePage() {
   const lo = space.lovedOne
   const person = personName({ callName: space.callName, lovedOne: lo })
   const Person = cap1(person)
-  const relOnly = !space.callName && (relationshipWord(lo.name) !== null || /^your\s/i.test(lo.name))
+  // Only a bare "your mother" placeholder needs a name — an endearment they actually use (Amma,
+  // Nani) is already the name, so never nudge those.
+  const relOnly = !space.callName && /^your\s/i.test(lo.name)
   const poss = space.gender === 'he' ? 'him' : space.gender === 'they' ? 'them' : 'her'
 
   // Facts — plain, deduped, only what the family actually said (never the subject itself).
@@ -74,8 +76,10 @@ export default function PersonSpacePage() {
     .map((f) => f.body)
     .filter((b) => { const k = normKey(b); if (seen.has(k)) return false; seen.add(k); return true })
   const firstRun = facts.length === 0
-  const chips = space.blanks.slice(0, 3)
-  const stillLearning = space.blanks[0] ? chipLabel(space.blanks[0].text).toLowerCase() : ''
+  // Essentials to invite (drop the "what you call them" blank — the name is handled elsewhere).
+  const openEssentials = space.blanks.filter((b) => !/what you call|nickname/i.test(b.text))
+  const chips = openEssentials.slice(0, 3)
+  const stillLearning = openEssentials[0] ? chipLabel(openEssentials[0].text).toLowerCase() : ''
 
   const meta = [relOnly ? '' : titleCase(lo.relationship ?? ''), lo.city].filter(Boolean).join(' · ')
 
