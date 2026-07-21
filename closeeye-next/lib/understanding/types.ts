@@ -255,6 +255,28 @@ export interface NotificationIntent {
   at?: string
 }
 
+/* ── Actions (Action Orchestrator) ─────────────────────────────────────────── */
+/** The meaningful next moves after understanding — proposals only, never executed here. */
+export type ActionKind =
+  | 'save_memory' | 'set_reminder' | 'share' | 'invite_collaborator' | 'create_task'
+  | 'book_trusted_presence' | 'request_information' | 'compare_knowledge' | 'mark_complete'
+
+/**
+ * A structured, explainable action OPPORTUNITY for the Response Composer. The orchestrator never
+ * executes — it proposes. `autoExecutable` is true only when the family's policy explicitly pre-
+ * authorised this action kind; otherwise every action needs confirmation.
+ */
+export interface ActionProposal {
+  kind: ActionKind
+  label: string
+  rationale: string
+  domain?: Domain
+  subject?: ContextSubject
+  requiresConfirmation: boolean
+  autoExecutable: boolean
+  payload?: Record<string, string>
+}
+
 /**
  * The full result of understanding one asset. The split is the trust contract:
  *  • `verified` — high-confidence; safe to apply to memory + graph + timeline now.

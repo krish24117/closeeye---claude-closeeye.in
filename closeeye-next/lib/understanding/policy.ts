@@ -5,7 +5,7 @@
  * set retention, or restrict what a Guardian may ever see — and the pipeline obeys, regardless of
  * which AI provider is wired. Provider-independent and deterministic.
  */
-import type { Domain, Sharing } from './types'
+import type { ActionKind, Domain, Sharing } from './types'
 
 export interface DomainPolicy {
   /** May AI reason over this domain at all? */
@@ -21,6 +21,8 @@ export interface DomainPolicy {
 export interface FamilyPolicy {
   defaults: DomainPolicy
   domains: Partial<Record<Domain, DomainPolicy>>
+  /** Action kinds the family has explicitly pre-authorised to run WITHOUT confirmation. Default: none. */
+  autoActions?: ActionKind[]
 }
 
 export type PolicyAction = 'reason' | 'store' | 'share' | 'link'
