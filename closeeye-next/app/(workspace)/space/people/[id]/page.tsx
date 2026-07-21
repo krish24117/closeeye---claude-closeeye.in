@@ -1,49 +1,55 @@
 'use client'
 
 /**
- * Sprint 4 — the Person Space (Owner: People, /space/people/[id]). The per-person depth that
- * Sprint 2's Home deferred, restored on the PRESERVED logic: fetchSpace + the understanding
- * derivations (lib/space/understanding) + appendLearning. Snapshot (how they are) · what Close Eye
- * understands (with "tell me" that feeds the Family Graph) · their story. Rebuilt in the Workspace
- * design; the moat — private per-person understanding — lives here.
+ * The Person page — a PORTRAIT, not a database (founder + Apple-team redesign, 2026-07-21).
+ *
+ * It opens with HER: photo/initial, name, relationship · city, and the three things you actually
+ * do — Call · Ask · Add. Then one warm line in Close Eye's voice, a plain-language read of what it
+ * knows (or a calm "help me understand her" invitation when sparse), and her real story (memories).
+ * No schema headers ("Identity / Support network"), no app-event "story". Honest throughout: facts
+ * come only from what the family actually said; blanks become gentle invitations, never fabricated.
  */
 import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Sparkles, Pencil, HeartPulse, Camera, Plus, FileText, Globe, Phone } from 'lucide-react'
-import { fetchSpace, appendLearning, personName, type SpaceData } from '@/lib/db/space'
-import type { Blank, LedgerLine } from '@/lib/connect/ledger'
-import { deriveSnapshot, deriveRecommendations, groupUnderstanding, type UnderstandingInput } from '@/lib/space/understanding'
-import { cn } from '@/lib/utils'
+import { ArrowLeft, ArrowRight, Phone, Sparkles, Plus, Pencil, Check, Camera, FileText, Globe } from 'lucide-react'
+import { fetchSpace, personName, type SpaceData } from '@/lib/db/space'
+import { fetchMemories, type MemoryView } from '@/lib/db/memories'
+import { getLocalPhoto } from '@/lib/local-photos'
+import { relationshipWord, titleCase } from '@/lib/family/relationship-words'
 
 const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
+const normKey = (s: string) => s.trim().toLowerCase().replace(/[.\s]+$/, '')
+
+/** A short, warm chip label for an open essential. */
+function chipLabel(text: string): string {
+  const l = text.toLowerCase()
+  if (/health|medic|manage/.test(l)) return 'Health'
+  if (/morning|routine|day/.test(l)) return 'Daily routine'
+  if (/nearby|reach|who|support/.test(l)) return 'Who’s nearby'
+  if (/age/.test(l)) return 'Age'
+  return cap1(text.split(/[,—]/)[0]!.trim())
+}
 
 export default function PersonSpacePage() {
   const params = useParams<{ id: string }>()
   const id = params?.id
   const [space, setSpace] = React.useState<SpaceData | null>(null)
+  const [memories, setMemories] = React.useState<MemoryView[]>([])
+  const [photo, setPhoto] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState(false)
 
-  const [known, setKnown] = React.useState<LedgerLine[]>([])
-  const [learned, setLearned] = React.useState<LedgerLine[]>([])
-  const [blanks, setBlanks] = React.useState<Blank[]>([])
-  const [callName, setCallName] = React.useState<string | null>(null)
-  const [activeBlank, setActiveBlank] = React.useState<Blank | null>(null)
-  const [fill, setFill] = React.useState('')
-  const [saveError, setSaveError] = React.useState('')
-  const [note, setNote] = React.useState('')
-
   const load = React.useCallback(async () => {
+    if (!id) return
     setLoading(true); setError(false)
     try {
-      const s = await fetchSpace(id)
+      const [s, m] = await Promise.all([fetchSpace(id), fetchMemories(id).catch(() => [])])
       if (!s) { setError(true); return }
-      setSpace(s); setKnown(s.known); setLearned(s.learned); setBlanks(s.blanks); setCallName(s.callName)
+      setSpace(s); setMemories(m); setPhoto(getLocalPhoto(id))
     } catch { setError(true) }
     finally { setLoading(false) }
   }, [id])
-
   React.useEffect(() => { void load() }, [load])
 
   if (loading) return <p className="py-20 text-center text-caption text-muted">Opening their space…</p>
@@ -55,210 +61,155 @@ export default function PersonSpacePage() {
   )
 
   const lo = space.lovedOne
-  const person = personName({ callName, lovedOne: lo })
+  const person = personName({ callName: space.callName, lovedOne: lo })
   const Person = cap1(person)
+  const relOnly = !space.callName && (relationshipWord(lo.name) !== null || /^your\s/i.test(lo.name))
+  const poss = space.gender === 'he' ? 'him' : space.gender === 'they' ? 'them' : 'her'
 
-  const uInput: UnderstandingInput = {
-    subject: { name: lo.name, relationship: lo.relationship, city: lo.city },
-    gender: space.gender, known, learned, blanks, observedCount: space.observedCount,
-  }
-  const recommendations = deriveRecommendations(uInput)
-  const snapshot = deriveSnapshot(uInput, recommendations)
-  const sections = groupUnderstanding(uInput)
+  // Facts — plain, deduped, only what the family actually said (never the subject itself).
+  const subjectLike = new Set([person, lo.relationship ?? '', `your ${lo.relationship ?? ''}`, lo.name].filter(Boolean).map(normKey))
+  const seen = new Set<string>()
+  const facts = [...space.known, ...space.learned]
+    .filter((f) => f.body && !f.quote && !subjectLike.has(normKey(f.body)))
+    .map((f) => f.body)
+    .filter((b) => { const k = normKey(b); if (seen.has(k)) return false; seen.add(k); return true })
+  const firstRun = facts.length === 0
+  const chips = space.blanks.slice(0, 3)
+  const stillLearning = space.blanks[0] ? chipLabel(space.blanks[0].text).toLowerCase() : ''
 
-  // First-run guidance: a person who's just been added has no captured facts yet. Instead of a
-  // sparse Space, offer one guided first task — asking a first question (the moment of first
-  // success), or enriching what Close Eye knows. Each links to an existing flow; nothing new is
-  // built. It fades the moment the family tells Close Eye anything.
-  const firstRun = known.length === 0 && learned.length === 0
-  const firstTasks = [
-    { href: `/space/people/${lo.id}/health`, icon: HeartPulse, label: 'Add a health detail' },
-    { href: `/space/people/${lo.id}/memories/add`, icon: Camera, label: 'Add a memory' },
-    { href: `/space/people/${lo.id}/memories/add`, icon: FileText, label: 'Upload a report' },
-  ]
+  const meta = [relOnly ? '' : titleCase(lo.relationship ?? ''), lo.city].filter(Boolean).join(' · ')
 
-  async function saveFill() {
-    const b = activeBlank, text = fill.trim()
-    if (!b || !text) return
-    setSaveError('')
-    const { line, error: e } = await appendLearning(lo.id, b.key, text)
-    if (e || !line) { setSaveError('Couldn’t save that just now — please try again.'); return }
-    setBlanks((prev) => prev.filter((x) => x.key !== b.key))
-    if (b.key === 'callname') { setCallName(text); setNote(`I’ll call ${person} ${text} now.`) }
-    else { setLearned((prev) => [...prev, line]); setNote(`Close Eye knows ${person} a little better now.`) }
-    setActiveBlank(null); setFill('')
-    window.setTimeout(() => setNote(''), 3500)
+  const Action = ({ href, tel, icon: Icon, label, mark }: { href?: string; tel?: string; icon?: React.ComponentType<{ className?: string; strokeWidth?: number }>; label: string; mark?: boolean }) => {
+    const inner = (
+      <>
+        <span className="text-green">{mark ? <Sparkles className="h-5 w-5" strokeWidth={1.8} /> : Icon ? <Icon className="h-5 w-5" strokeWidth={1.8} /> : null}</span>
+        <span className="text-caption font-semibold text-ink">{label}</span>
+      </>
+    )
+    const cls = 'flex flex-1 flex-col items-center gap-1.5 rounded-2xl bg-accent-soft/50 py-3 transition-colors hover:bg-accent-soft'
+    return tel ? <a href={tel} className={cls}>{inner}</a> : <Link href={href!} className={cls}>{inner}</Link>
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <Link href="/space/people" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
-        <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> People
-      </Link>
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <Link href="/space/people" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
+          <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> People
+        </Link>
+        <Link href={`/space/people/${lo.id}/edit`} className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
+          <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} /> Edit
+        </Link>
+      </div>
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-h2 text-ink">{Person}</h1>
-          <p className="mt-1 text-body-sm text-muted">{[lo.relationship, lo.city].filter(Boolean).join(' · ') || 'Family'}</p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {lo.phone && (
-            <a href={`tel:${lo.phone}`} aria-label={`Call ${person}`} className="inline-flex items-center gap-1.5 rounded-full bg-green px-3.5 py-2 text-caption font-semibold text-ivory transition-opacity hover:opacity-90">
-              <Phone className="h-3.5 w-3.5" strokeWidth={2} /> Call
-            </a>
-          )}
-          <Link href={`/space/people/${lo.id}/edit`} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
-            <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} /> Edit
-          </Link>
+      {/* HERO — lead with her */}
+      <div className="flex items-center gap-4">
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photo} alt="" className="h-16 w-16 shrink-0 rounded-full object-cover" />
+        ) : (
+          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-accent-soft text-h3 font-semibold text-green">{Person.charAt(0)}</span>
+        )}
+        <div className="min-w-0">
+          <h1 className="truncate text-h2 text-ink">{Person}</h1>
+          {meta && <p className="mt-0.5 text-body-sm text-muted">{meta}</p>}
         </div>
       </div>
 
-      {/* Country backfill — a person added before we captured country has no region, so the
-          emergency number can't be localised. A quiet, one-time nudge (fades once it's set). */}
-      {!lo.regionCode && (
-        <Link href={`/space/people/${lo.id}/edit`} className="flex items-center gap-2.5 rounded-lg border border-dashed border-line bg-card/60 p-3.5 text-body-sm text-muted transition-colors hover:border-green/40 hover:text-ink">
-          <Globe className="h-4 w-4 shrink-0 text-green" strokeWidth={1.75} />
-          <span className="flex-1">Add {person}’s country, so Close Eye can show the right local emergency number.</span>
-          <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} />
-        </Link>
+      {/* Actions — Call · Ask · Add */}
+      <div className="flex gap-2.5">
+        {lo.phone && <Action tel={`tel:${lo.phone}`} icon={Phone} label="Call" />}
+        <Action href="/space/connect" mark label="Ask" />
+        <Action href={`/space/people/${lo.id}/add`} icon={Plus} label="Add" />
+      </div>
+
+      {/* Warm line — Close Eye's voice */}
+      <div className="flex items-center gap-2.5">
+        <Sparkles className="h-4 w-4 shrink-0 text-green" strokeWidth={1.9} />
+        <p className="text-body-sm text-ink">{firstRun ? `I’m just getting to know ${person}.` : `Here’s what I know about ${person}.`}</p>
+      </div>
+
+      {/* Gentle profile nudges (name, country) — subtle, fade once set */}
+      {(relOnly || !lo.regionCode) && (
+        <div className="flex flex-col gap-2">
+          {relOnly && (
+            <Link href={`/space/people/${lo.id}/edit`} className="flex items-center gap-2.5 rounded-lg border border-dashed border-line bg-card/60 p-3 text-caption text-muted transition-colors hover:border-green/40 hover:text-ink">
+              <Pencil className="h-3.5 w-3.5 shrink-0 text-green" strokeWidth={1.9} />
+              <span className="flex-1">What do you call {poss}? Add {poss} name so Close Eye can speak about {poss} personally.</span>
+              <ArrowRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+            </Link>
+          )}
+          {!lo.regionCode && (
+            <Link href={`/space/people/${lo.id}/edit`} className="flex items-center gap-2.5 rounded-lg border border-dashed border-line bg-card/60 p-3 text-caption text-muted transition-colors hover:border-green/40 hover:text-ink">
+              <Globe className="h-3.5 w-3.5 shrink-0 text-green" strokeWidth={1.9} />
+              <span className="flex-1">Add {person}’s country, so Close Eye shows the right local emergency number.</span>
+              <ArrowRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+            </Link>
+          )}
+        </div>
       )}
 
-      {/* First task — the guided moment right after adding someone (fades once a fact exists) */}
-      {firstRun && (
-        <section className="rounded-lg border border-line/70 bg-card p-5 shadow-sm">
-          <p className="text-caption font-semibold uppercase tracking-widest text-green">Let’s begin</p>
-          <h2 className="mt-2 text-h4 text-ink">Let’s get to know {person}.</h2>
-          <p className="mt-1.5 text-body-sm text-muted">The more Close Eye knows, the better it can look out for {person}. Start with one — it takes a minute.</p>
-          <div className="mt-4 flex flex-col gap-2.5">
-            <Link href="/space/connect" className="flex items-center gap-3 rounded-lg bg-ink p-3.5 text-ivory transition-opacity hover:opacity-90">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ivory/15"><Sparkles className="h-4 w-4" strokeWidth={1.75} /></span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-body-sm font-semibold">Ask your first question</span>
-                <span className="block truncate text-caption text-ivory/70">“How has {person} been recently?”</span>
-              </span>
-              <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} />
-            </Link>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-              {firstTasks.map((t) => (
-                <Link key={t.label} href={t.href} className="flex items-center gap-2.5 rounded-lg border border-line/70 bg-ivory p-3 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
-                  <t.icon className="h-4 w-4 shrink-0 text-green" strokeWidth={1.75} /> {t.label}
-                </Link>
-              ))}
-            </div>
+      {/* What Close Eye knows — plain facts, or a calm invitation when sparse */}
+      {firstRun ? (
+        <section>
+          <p className="mb-3 text-caption font-semibold text-muted">Help me understand {poss}</p>
+          <div className="flex flex-wrap gap-2">
+            {(chips.length ? chips.map((b) => chipLabel(b.text)) : ['Health', 'Daily routine', 'Who’s nearby']).map((c) => (
+              <Link key={c} href={`/space/people/${lo.id}/add`} className="rounded-full border border-dashed border-line px-4 py-2 text-body-sm font-semibold text-ink transition-colors hover:border-green/50 hover:text-green">
+                + {c}
+              </Link>
+            ))}
           </div>
         </section>
-      )}
-
-      {/* Everything below the first task is DEFERRED until the family has told Close Eye something.
-          A brand-new person gets ONE clear next step (the guided task above), not four competing
-          asks (Memory Integrity P5). The depth returns the moment there's a fact to build on. */}
-      {!firstRun && (
-      <>
-      {/* Snapshot — how they are */}
-      <section className="rounded-lg border border-line/70 bg-card p-5 shadow-sm">
-        <p className="text-caption font-semibold uppercase tracking-widest text-muted">{snapshot.headline}</p>
-        <p className="mt-1 text-body-sm text-ink">{snapshot.sub}</p>
-        <div className="mt-4 grid grid-cols-3 gap-3">
-          {snapshot.cells.map((c) => (
-            <div key={c.k}>
-              <p className="text-caption text-muted">{c.k}</p>
-              <p className={cn('text-body-sm font-semibold', c.dim ? 'text-muted' : 'text-ink')}>{c.v}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* What should happen next */}
-      {recommendations.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <p className="text-caption font-semibold uppercase tracking-widest text-muted">A few things to add</p>
-          {recommendations.map((r) => (
-            <div key={r.id} className="flex items-center justify-between gap-3 rounded-lg border border-line/70 bg-card p-4 shadow-sm">
-              <span className="text-body-sm text-ink"><span className="text-caption font-semibold text-muted">{r.why} · </span>{r.text}</span>
-            </div>
-          ))}
+      ) : (
+        <section>
+          <div className="overflow-hidden rounded-2xl border border-line/70 bg-card shadow-sm">
+            {facts.map((f, i) => (
+              <div key={i} className={`flex items-start gap-3 px-4 py-3 ${i < facts.length - 1 ? 'border-b border-line/50' : ''}`}>
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-green" strokeWidth={2.2} />
+                <p className="flex-1 text-body-sm leading-relaxed text-ink">{f}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 px-1 text-caption text-muted">From your words{stillLearning ? ` · still learning: ${stillLearning}` : ''}</p>
         </section>
       )}
 
-      {/* What Close Eye understands — with "tell me" */}
-      <section className="flex flex-col gap-4">
-        <p className="text-caption font-semibold uppercase tracking-widest text-muted">What Close Eye knows</p>
-        <div className="flex flex-col gap-4">
-          {sections.map((sec) => (
-            <div key={sec.category} className="rounded-lg border border-line/70 bg-card p-4 shadow-sm">
-              <p className="text-body-sm font-semibold text-ink">{sec.category}</p>
-              <div className="mt-2 flex flex-col gap-2">
-                {sec.items.map((it, i) => it.kind === 'blank' ? (
-                  <React.Fragment key={it.key}>
-                    <button onClick={() => { setActiveBlank({ key: it.key, text: it.text }); setFill(''); setSaveError('') }} className="flex items-center gap-2 text-left text-body-sm text-muted hover:text-ink">
-                      <span className="text-muted/60">○</span><span className="flex-1">{it.text}</span><span className="text-caption font-semibold text-green">tell me</span>
-                    </button>
-                    {activeBlank?.key === it.key && (
-                      <div className="flex flex-col gap-2 rounded-sm bg-ivory p-3">
-                        <textarea rows={2} value={fill} onChange={(e) => setFill(e.target.value)} placeholder="Write it as you’d tell a friend…" autoFocus className="w-full resize-none rounded-sm border border-line bg-card px-3 py-2 text-body-sm text-ink focus:border-green focus:outline-none" />
-                        {saveError && <p className="text-caption text-error">{saveError}</p>}
-                        <div className="flex gap-2">
-                          <button onClick={saveFill} className="rounded-full bg-ink px-4 py-1.5 text-caption font-semibold text-ivory">Remember this</button>
-                          <button onClick={() => setActiveBlank(null)} className="rounded-full px-4 py-1.5 text-caption font-semibold text-muted">not now</button>
-                        </div>
-                      </div>
+      {/* Her story — real memories, never app events */}
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-caption font-semibold text-muted">{Person}’s story</p>
+          {memories.length > 0 && <Link href={`/space/people/${lo.id}/memories`} className="text-caption font-semibold text-green hover:text-green/80">View all</Link>}
+        </div>
+        {memories.length > 0 ? (
+          <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+            {memories.slice(0, 8).map((m) => {
+              const isPhoto = m.cover?.url && m.cover.kind !== 'document'
+              return (
+                <Link key={m.id} href={`/space/people/${lo.id}/memories`} className="w-32 shrink-0">
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-line shadow-sm">
+                    {isPhoto ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={m.cover?.url ?? undefined} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="grid h-full w-full place-items-center bg-accent-soft/70 text-green"><FileText className="h-8 w-8" strokeWidth={1.4} /></span>
                     )}
-                  </React.Fragment>
-                ) : (
-                  <div key={i} className="flex items-start gap-2 text-body-sm text-ink">
-                    <span className="mt-0.5 text-green">✓</span><span className="flex-1">{it.body}</span>
-                    <span className="shrink-0 text-caption text-muted">{it.provenance === 'inferred' ? 'my reading' : 'from your words'}</span>
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/80 via-ink/25 to-transparent px-3 pb-2 pt-8">
+                      <p className="truncate text-caption font-semibold text-ivory">{m.title}</p>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
-          {note && <p className="text-caption text-green">{note}</p>}
-        </div>
-      </section>
-      </>
-      )}
-
-      {/* Story */}
-      <section className="flex flex-col gap-4">
-        <p className="text-caption font-semibold uppercase tracking-widest text-muted">{Person}’s story</p>
-        <div className="flex flex-col gap-3">
-          {space.timeline.map((e) => (
-            <div key={e.id} className="rounded-lg border border-line/70 bg-card p-4 shadow-sm">
-              <p className="text-caption text-muted/70">{e.when}</p>
-              <p className="mt-0.5 text-body-sm text-ink">{e.title}</p>
-              {e.sub && <p className="mt-0.5 text-caption text-muted">{e.sub}</p>}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <div className="flex flex-wrap gap-3">
-        <Link href="/space/connect" className="inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
-          <Sparkles className="h-4 w-4 text-green" strokeWidth={1.75} /> Ask Connect about {person}
-        </Link>
-        <Link href={`/space/people/${lo.id}/health`} className="inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
-          <HeartPulse className="h-4 w-4 text-green" strokeWidth={1.75} /> Health profile
-        </Link>
-      </div>
-
-      {/* Memories — capture & recollect, made a prominent one-tap action (was a buried pill) */}
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-caption font-semibold uppercase tracking-widest text-muted">Memories</p>
-          <Link href={`/space/people/${lo.id}/memories`} className="text-caption font-semibold text-green hover:text-green/80">View all</Link>
-        </div>
-        <Link href={`/space/people/${lo.id}/memories/add`} className="flex items-center justify-between gap-3 rounded-lg border border-line/70 bg-card p-4 shadow-sm transition-colors hover:border-green/40">
-          <span className="flex min-w-0 items-center gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><Camera className="h-5 w-5" strokeWidth={1.6} /></span>
-            <span className="min-w-0">
-              <span className="block text-body-sm font-semibold text-ink">Keep a memory of {person}</span>
-              <span className="block text-caption text-muted">A photo, video or document — captured or uploaded</span>
-            </span>
-          </span>
-          <Plus className="h-5 w-5 shrink-0 text-green" strokeWidth={2.2} />
-        </Link>
+                </Link>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-line/70 bg-card p-7 text-center shadow-sm">
+            <span className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-accent-soft text-green"><Camera className="h-5 w-5" strokeWidth={1.6} /></span>
+            <p className="mx-auto mt-3 max-w-xs text-body-sm text-ink">{Person}’s story begins with your first memory of {poss}.</p>
+            <Link href={`/space/people/${lo.id}/memories/add`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-body-sm font-semibold text-ivory transition-opacity hover:opacity-90">
+              <Camera className="h-4 w-4" strokeWidth={2} /> Add a memory
+            </Link>
+          </div>
+        )}
       </section>
     </div>
   )
