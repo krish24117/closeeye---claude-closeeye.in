@@ -87,7 +87,7 @@ export function ConnectHome() {
 
       <main id="main">
       {/* 1 · HERO */}
-      <section className="mx-auto max-w-5xl px-6 pt-16 pb-24 sm:pt-24 sm:pb-28">
+      <section className="mx-auto max-w-5xl px-6 pt-16 pb-12 sm:pt-20">
         <Reveal className="mx-auto max-w-[42rem]">
           <h1 style={serif} className="max-w-[15ch] text-h1 text-ink">The intelligence that knows the people you love.</h1>
           <p className="mt-7 max-w-[44ch] text-lead text-muted">Your family’s private intelligence. It remembers, understands and helps — wherever your family lives.</p>
@@ -106,7 +106,7 @@ export function ConnectHome() {
       <div className="mx-auto max-w-5xl border-t border-line" />
 
       {/* 2 · MORE THAN AI */}
-      <section className="mx-auto max-w-5xl px-6 py-24 sm:py-32">
+      <section className="mx-auto max-w-5xl px-6 py-12">
         <Reveal className="mx-auto max-w-[42rem]">
           <Eyebrow>A new category</Eyebrow>
           <h2 style={serif} className="text-h2 text-ink">More than AI.<br />Family Intelligence.</h2>
@@ -125,7 +125,7 @@ export function ConnectHome() {
 
       {/* 3 · LIVING UNDERSTANDING (dark) */}
       <section className="bg-surface-inverse text-content-inverse">
-        <div className="mx-auto max-w-5xl px-6 py-24 sm:py-32">
+        <div className="mx-auto max-w-5xl px-6 py-12">
           <Reveal className="mx-auto max-w-[42rem]">
             <Eyebrow on="dark">What makes it different</Eyebrow>
             <h2 style={serif} className="text-h2 text-content-inverse">Every answer begins<br />with understanding.</h2>
@@ -167,7 +167,7 @@ export function ConnectHome() {
 
       {/* 4 · THREE LEVELS */}
       <section id="how" className="scroll-mt-20">
-        <div className="mx-auto max-w-5xl px-6 py-24 sm:py-32">
+        <div className="mx-auto max-w-5xl px-6 py-12">
           <Reveal className="mx-auto max-w-[44rem] text-center">
             <Eyebrow>How it grows</Eyebrow>
             <h2 style={serif} className="mx-auto max-w-[20ch] text-h2 text-ink">Close Eye grows with your family’s needs.</h2>
@@ -176,7 +176,7 @@ export function ConnectHome() {
             </p>
           </Reveal>
 
-          <Reveal className="mt-14 grid gap-5 sm:grid-cols-3">
+          <Reveal className="mt-12 grid gap-5 sm:grid-cols-3">
             {/* Intelligence */}
             <div className="flex flex-col rounded-3xl border border-line bg-card p-7 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
               <span className="text-h3 leading-none">🌍</span>
@@ -224,7 +224,7 @@ export function ConnectHome() {
       <div className="mx-auto max-w-5xl border-t border-line" />
 
       {/* 5 · IN ACTION */}
-      <section className="mx-auto max-w-5xl px-6 py-24 sm:py-32">
+      <section className="mx-auto max-w-5xl px-6 py-12">
         <Reveal className="text-center">
           <Eyebrow>See it in action</Eyebrow>
           <h2 style={serif} className="text-h2 text-ink">Understanding, then action.</h2>
@@ -260,7 +260,7 @@ export function ConnectHome() {
       </section>
 
       {/* 6 · VISION */}
-      <section className="mx-auto max-w-5xl px-6 py-24 text-center sm:py-32">
+      <section className="mx-auto max-w-5xl px-6 py-12 text-center">
         <Reveal className="mx-auto max-w-[42rem]">
           <span className="mx-auto mb-9 block w-[138px]" aria-hidden>
             <svg viewBox="0 0 150 88" fill="none" className="mx-auto h-auto w-full text-green">
@@ -281,7 +281,7 @@ export function ConnectHome() {
       <div className="mx-auto max-w-5xl border-t border-line" />
 
       {/* 7 · PRIVACY */}
-      <section className="mx-auto max-w-5xl px-6 py-24 sm:py-32">
+      <section className="mx-auto max-w-5xl px-6 py-12">
         <Reveal className="mx-auto max-w-[42rem]">
           <Eyebrow>Privacy</Eyebrow>
           <h2 style={serif} className="text-h2 text-ink">Everything belongs to your family.</h2>
@@ -295,7 +295,7 @@ export function ConnectHome() {
 
       {/* 8 · FINAL CTA */}
       <section className="border-t border-line/70">
-        <div className="mx-auto max-w-3xl px-6 py-24 text-center sm:py-32">
+        <div className="mx-auto max-w-3xl px-6 py-12 text-center">
           <Reveal>
             <h2 style={serif} className="text-h2 text-ink">Start your Family Space.</h2>
             <p className="mx-auto mt-5 max-w-[42ch] text-lead text-muted">Understanding grows over time. The earlier you begin, the more helpful Close Eye becomes.</p>
