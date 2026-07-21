@@ -11,9 +11,11 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Check, Circle, ScanEye, Sparkles, ChevronRight, ArrowRight, UserPlus, FileText } from 'lucide-react'
+import { Check, Circle, ScanEye, Sparkles, ChevronRight, ArrowRight, UserPlus, FileText, HeartHandshake } from 'lucide-react'
 import { fetchHome, type HomeData } from '@/lib/db/home'
 import { fetchRecentMemories, type MemoryView } from '@/lib/db/memories'
+import { fetchFamilyTimeline } from '@/lib/db/collaboration'
+import type { CollaborationEvent } from '@/lib/collaboration/types'
 import { takeFirstPerson } from '@/lib/first-run'
 
 const initial = (s: string) => (s || '?').trim().charAt(0).toUpperCase()
@@ -27,15 +29,20 @@ export default function WorkspaceHome() {
   const [home, setHome] = React.useState<HomeData | null>(null)
   const [recent, setRecent] = React.useState<(MemoryView & { lovedOneId: string })[]>([])
   const [loading, setLoading] = React.useState(true)
+  const [latestEvent, setLatestEvent] = React.useState<CollaborationEvent | null>(null)
   const [error, setError] = React.useState(false)
 
   const load = React.useCallback(async () => {
     setLoading(true); setError(false)
     try {
-      // Recent memories are best-effort — if the table isn't there yet (migration pending), the
-      // strip simply stays hidden; the home never fails because of it.
-      const [h, r] = await Promise.all([fetchHome(), fetchRecentMemories(8).catch(() => [])])
-      setHome(h); setRecent(r)
+      // Recent memories + the latest coordination event are best-effort — if a table isn't there yet,
+      // the strip/card simply stays hidden; the home never fails because of it.
+      const [h, r, ev] = await Promise.all([
+        fetchHome(),
+        fetchRecentMemories(8).catch(() => []),
+        fetchFamilyTimeline(1).catch(() => []),
+      ])
+      setHome(h); setRecent(r); setLatestEvent(ev[0] ?? null)
     } catch { setError(true) }
     finally { setLoading(false) }
   }, [])
@@ -79,6 +86,18 @@ export default function WorkspaceHome() {
             Add {home.notice.personName}’s details <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
           </Link>
         </section>
+      )}
+
+      {/* One recent coordination event — quiet proof the family is moving things forward together */}
+      {latestEvent && (
+        <Link href="/space/activity" className="flex items-center gap-3 rounded-lg border border-edge/70 bg-surface-raised p-4 shadow-sm transition-colors hover:border-brand/40">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-accent text-brand"><HeartHandshake className="h-4 w-4" strokeWidth={1.9} /></span>
+          <div className="min-w-0 flex-1">
+            <p className="text-caption font-semibold uppercase tracking-widest text-content-muted">Recently, together</p>
+            <p className="mt-0.5 truncate text-body-sm text-content">{latestEvent.summary}</p>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-content-muted" strokeWidth={2} />
+        </Link>
       )}
 
       {/* Everyone you love — with what Close Eye knows and is learning */}

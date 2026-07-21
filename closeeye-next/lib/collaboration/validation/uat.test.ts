@@ -11,6 +11,7 @@ import { runUatSimulation } from './journey-sim'
 describe('Collaboration UAT — 1,000-persona simulation', () => {
   const personas = generatePersonas(1000)
   const report = runUatSimulation(personas)
+  const refined = runUatSimulation(personas, true) // projected, with the 5 approved refinements modeled
 
   it('runs a well-formed cohort of 1,000', () => {
     expect(personas).toHaveLength(1000)
@@ -19,7 +20,14 @@ describe('Collaboration UAT — 1,000-persona simulation', () => {
   })
 
   it('emits the report', () => {
-    if (process.env.UAT_OUT) writeFileSync(process.env.UAT_OUT, JSON.stringify(report))
+    if (process.env.UAT_OUT) writeFileSync(process.env.UAT_OUT, JSON.stringify({ baseline: report, refined }))
     expect(report.overallCompletion).toBeGreaterThan(0)
+  })
+
+  it('the refinements lift the core journey and clear the empty-network walls', () => {
+    expect(refined.coreJourneyCompletion).toBeGreaterThan(report.coreJourneyCompletion)
+    expect(refined.understandNetwork).toBeGreaterThan(report.understandNetwork)
+    const walls = refined.rankedIssues.filter((i) => i.key.includes('empty-network-wall'))
+    expect(walls).toHaveLength(0)
   })
 })

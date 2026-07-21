@@ -49,9 +49,15 @@ const NON_CARE: Scenario[] = ['business', 'legal', 'property', 'finance']
 export interface StepResult { name: StepName; attempted: boolean; completed: boolean; taps: number; timeSec: number; confusion: number; issues: string[] }
 export interface JourneyResult { persona: Persona; steps: StepResult[]; completedAll: boolean }
 
-/** Persona → completion/confusion/time/tap modifiers, applied per step. */
-function evalStep(m: StepModel, p: Persona, idx: number): StepResult {
-  const r = rng(p.id * 101 + idx * 7 + 3)
+/** Persona → completion/confusion/time/tap modifiers, applied per step. `refined` models the five
+ *  approved fixes: (1) auto-seeded network → nobody is empty; (2) inline add → no navigation wall;
+ *  (3) value-first (no upfront teaching); (4) a Home coordination card → timeline is seen; the network
+ *  is met populated (real family), which lifts comprehension. */
+function evalStep(m: StepModel, p: Persona, idx: number, refined = false): StepResult {
+  const r = rng(p.id * 101 + idx * 7 + (refined ? 11 : 3))
+  // (1) seeding: every family already has loved ones (+ often a PM), so the network is never empty.
+  const hasNetwork = refined ? true : p.hasNetwork
+  const hasFamilyInNetwork = refined ? true : p.hasFamilyInNetwork
   let complete = m.baseComplete
   let confusion = m.baseConfusion
   let timeSec = m.timeSec
@@ -70,26 +76,29 @@ function evalStep(m: StepModel, p: Persona, idx: number): StepResult {
 
   // Step-specific structural effects (the real gates + known friction).
   if (m.name === 'Trusted Network') {
-    // Not in the dock — discoverability penalty, worse first-time & low-tech.
-    complete *= p.returning ? 0.95 : 0.78
-    if (!p.returning) { confusion += 0.10; issues.push('trusted-network-discoverability') }
-    if (p.tech === 'low') confusion += 0.06
+    // Refined: met populated with real family (their mother, their PM) → far easier to grasp.
+    complete *= refined ? (p.returning ? 0.98 : 0.9) : (p.returning ? 0.95 : 0.78)
+    if (!refined && !p.returning) { confusion += 0.10; issues.push('trusted-network-discoverability') }
+    else if (refined && !p.returning) confusion += 0.03
+    if (p.tech === 'low') confusion += refined ? 0.03 : 0.06
   }
   if (m.name === 'Recommended Next Steps') {
     // On non-care scenarios the health-framed copy ("their care", sage) fits less well.
     if (NON_CARE.includes(p.scenario)) { confusion += 0.10; issues.push('care-centric-copy-on-noncare') }
-    // Empty network → Continue-yourself/Complete groups are hidden (unwired), so fewer options than the
-    // model implies — a mild expectation mismatch.
-    if (!p.hasNetwork) { confusion += 0.05; issues.push('rns-groups-hidden-when-empty') }
+    // Empty network hid groups — gone once the network is seeded.
+    if (!hasNetwork) { confusion += 0.05; issues.push('rns-groups-hidden-when-empty') }
   }
   if (m.name === 'Share') {
-    if (!p.hasFamilyInNetwork) {
-      // The empty-network wall: they must add someone first — real friction, common for first-timers.
+    if (!hasFamilyInNetwork) {
+      // The empty-network wall — REMOVED in refined (inline add + seeding).
       complete *= 0.55; confusion += 0.18; taps += 4; timeSec *= 1.8; issues.push('share-empty-network-wall')
+    } else if (refined && !p.hasFamilyInNetwork) {
+      // Seeded, so they pick from real family — smooth.
+      complete *= 1.02
     }
   }
   if (m.name === 'Assign') {
-    if (!p.hasNetwork) { complete *= 0.5; confusion += 0.18; taps += 4; timeSec *= 1.8; issues.push('assign-empty-network-wall') }
+    if (!hasNetwork) { complete *= 0.5; confusion += 0.18; taps += 4; timeSec *= 1.8; issues.push('assign-empty-network-wall') }
   }
   if (m.name === 'Invite') {
     // Required purpose builds trust but adds a field; low-tech feel it more.
@@ -97,9 +106,9 @@ function evalStep(m: StepModel, p: Persona, idx: number): StepResult {
     issues.push('invite-purpose-required-friction')
   }
   if (m.name === 'Coordination Timeline') {
-    // Lives on Activity — discovery + recognizing "Family Knowledge Updated".
-    complete *= p.returning ? 0.98 : 0.85
-    if (!p.returning) { confusion += 0.06; issues.push('timeline-discoverability') }
+    // Refined: a Home coordination card surfaces the payoff → far more people see it.
+    complete *= refined ? (p.returning ? 0.99 : 0.94) : (p.returning ? 0.98 : 0.85)
+    if (!refined && !p.returning) { confusion += 0.06; issues.push('timeline-discoverability') }
   }
 
   complete = clamp(complete, 0, 0.995)
@@ -111,8 +120,8 @@ function evalStep(m: StepModel, p: Persona, idx: number): StepResult {
   return { name: m.name, attempted, completed, taps: Math.round(taps), timeSec: Math.round(timeSec), confusion, issues: keptIssues }
 }
 
-export function simulateJourney(p: Persona): JourneyResult {
-  const steps = MODEL.map((m, i) => evalStep(m, p, i))
+export function simulateJourney(p: Persona, refined = false): JourneyResult {
+  const steps = MODEL.map((m, i) => evalStep(m, p, i, refined))
   return { persona: p, steps, completedAll: steps.every((s) => s.completed) }
 }
 
@@ -149,8 +158,8 @@ const ISSUE_META: Record<string, { label: string; severity: Issue['severity'] }>
 }
 const SEV_WEIGHT = { low: 1, medium: 2, high: 3 } as const
 
-export function runUatSimulation(personas: Persona[]): UatReport {
-  const journeys = personas.map(simulateJourney)
+export function runUatSimulation(personas: Persona[], refined = false): UatReport {
+  const journeys = personas.map((p) => simulateJourney(p, refined))
   const n = journeys.length
   const stepIdx = (name: StepName) => STEPS.indexOf(name)
 

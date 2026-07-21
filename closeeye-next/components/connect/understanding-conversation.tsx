@@ -19,7 +19,7 @@ import { ConsentPrompt } from '@/components/connect/consent-prompt'
 import { createConversation, appendMessage, fetchConversations, fetchConversation, type ConversationSummary } from '@/lib/db/conversations'
 import { MarkdownAnswer } from '@/components/family/markdown-answer'
 import { RecommendedNextSteps } from '@/components/family/recommended-next-steps'
-import { fetchTrustedNetwork } from '@/lib/db/collaboration'
+import { fetchTrustedNetworkSeeded } from '@/lib/db/collaboration'
 import type { ObjectRef, TrustedIdentity } from '@/lib/collaboration/types'
 import { EpistemicTag } from '@/components/cloza/epistemic-tag'
 import { SuggestedQuestions } from '@/components/cloza/suggested-questions'
@@ -80,7 +80,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
       setLovedOnes((data as LovedOneRef[]) ?? [])
     })()
     void refreshHistory()
-    void fetchTrustedNetwork().then((n) => setNetwork(n.groups.flatMap((g) => g.members))).catch(() => {})
+    void fetchTrustedNetworkSeeded().then((n) => setNetwork(n.groups.flatMap((g) => g.members))).catch(() => {})
   }, [refreshHistory])
 
   React.useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }) }, [turns, thinking])

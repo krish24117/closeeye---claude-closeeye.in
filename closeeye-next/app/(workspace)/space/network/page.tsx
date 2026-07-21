@@ -11,7 +11,7 @@ import * as React from 'react'
 import { UserPlus, Check, Trash2, ShieldCheck, Loader2, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Overlay } from '@/components/family/overlay'
-import { fetchTrustedNetwork, upsertTrustedIdentity, removeTrustedIdentity, setTrustedPermissions } from '@/lib/db/collaboration'
+import { fetchTrustedNetworkSeeded, upsertTrustedIdentity, removeTrustedIdentity, setTrustedPermissions } from '@/lib/db/collaboration'
 import type { CollaborationRole, TrustedIdentity, TrustedNetwork } from '@/lib/collaboration/types'
 import type { Domain } from '@/lib/understanding/types'
 
@@ -38,7 +38,7 @@ export default function TrustedNetworkPage() {
   const [manage, setManage] = React.useState<TrustedIdentity | null>(null)
 
   const refresh = React.useCallback(async () => {
-    const n = await fetchTrustedNetwork()
+    const n = await fetchTrustedNetworkSeeded()
     setNet(n)
     setLoading(false)
   }, [])

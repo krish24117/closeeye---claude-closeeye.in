@@ -12,6 +12,7 @@ import type { Domain } from '@/lib/understanding/types'
 import {
   canInvite, completeAssignment as engineComplete, groupTrustedNetwork,
 } from '@/lib/collaboration/engine'
+import { fetchMyPresenceManager } from '@/lib/db/assignments'
 import { PRIVACY_FIRST_POLICY } from '@/lib/understanding/policy'
 import type {
   Assignment, AssignmentStatus, CollaborationEvent, CollaborationEventKind, CollaborationRole,
@@ -64,6 +65,47 @@ const objCols = (o: ObjectRef) => ({ object_type: o.type, object_id: o.id, objec
 /* ── events: the single place a collaboration becomes history ────────────────────────────────── */
 async function writeEvent(userId: string, o: ObjectRef, kind: CollaborationEventKind, actor: string, summary: string, targetName?: string): Promise<void> {
   await supabase.from('collaboration_events').insert({ family_user_id: userId, ...objCols(o), kind, actor, target_name: targetName ?? null, summary })
+}
+
+/* ── Auto-seed — the network is never empty, because the family already exists ─────────────────── *
+ * The biggest adoption blocker (UAT) was an empty network forcing a "who?" wall at Share/Assign. But
+ * the family already has loved ones and, often, an assigned Presence Manager. Seed the Trusted Network
+ * from that existing data so collaboration is usable from the first answer — no concept to learn first.
+ * Idempotent: dedups by name+role, so it never duplicates and only tops up what's missing. */
+const cleanName = (full: string) => { const s = (full || '').replace(/^your\s+/i, '').trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1) : '' }
+
+export async function ensureNetworkSeeded(): Promise<void> {
+  const userId = await uid()
+  if (!userId) return
+  const { data: existing } = await supabase.from('trusted_identities').select('name, role')
+  const have = new Set((existing ?? []).map((r: { name: string; role: string }) => `${r.name.toLowerCase()}|${r.role}`))
+  const rows: Record<string, unknown>[] = []
+
+  // Family members — the loved ones the family already told us about.
+  const { data: los } = await supabase.from('loved_ones').select('full_name, relationship')
+  for (const lo of (los ?? []) as { full_name: string; relationship: string | null }[]) {
+    const name = cleanName(lo.full_name)
+    if (!name || have.has(`${name.toLowerCase()}|family_member`)) continue
+    have.add(`${name.toLowerCase()}|family_member`)
+    rows.push({ family_user_id: userId, name, role: 'family_member', relationship: lo.relationship ?? null, verification_status: 'verified', availability: 'unknown' })
+  }
+  // The assigned Presence Manager — a real, assigned role.
+  try {
+    const pm = await fetchMyPresenceManager()
+    if (pm?.firstName && !have.has(`${pm.firstName.toLowerCase()}|presence_manager`)) {
+      rows.push({ family_user_id: userId, name: pm.firstName, role: 'presence_manager', relationship: 'Your Presence Manager', verification_status: 'verified', availability: 'available' })
+    }
+  } catch { /* PM lookup is best-effort */ }
+
+  if (rows.length) await supabase.from('trusted_identities').insert(rows)
+}
+
+/** The network, seeded from existing family data on first use so it's never empty. */
+export async function fetchTrustedNetworkSeeded(): Promise<TrustedNetwork> {
+  const net = await fetchTrustedNetwork()
+  if (net.groups.length > 0) return net
+  await ensureNetworkSeeded()
+  return fetchTrustedNetwork()
 }
 
 /* ── Trusted Network ─────────────────────────────────────────────────────────────────────────── */

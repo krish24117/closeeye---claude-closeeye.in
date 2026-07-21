@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button'
 import { recommendNextSteps } from '@/lib/collaboration/engine'
 import { PRIVACY_FIRST_POLICY } from '@/lib/understanding/policy'
 import { shareObject, sendInvitation, assignTask, upsertTrustedIdentity } from '@/lib/db/collaboration'
-import type { NextStep, NextStepSection, ObjectRef, TrustedIdentity } from '@/lib/collaboration/types'
+import type { CollaborationRole, NextStep, NextStepSection, ObjectRef, TrustedIdentity } from '@/lib/collaboration/types'
 
 const SUPPORTED = new Set<NextStep['kind']>(['share', 'invite', 'assign'])
 type SheetState = { step: NextStep } | null
@@ -43,6 +43,10 @@ export function RecommendedNextSteps({
   const [share, setShare] = React.useState<SheetState>(null)
   const [invite, setInvite] = React.useState<SheetState>(null)
   const [assign, setAssign] = React.useState<SheetState>(null)
+  // Local copy so an inline "add someone" (during Share/Assign) appears immediately, no navigation.
+  const [people, setPeople] = React.useState(network)
+  React.useEffect(() => setPeople(network), [network])
+  const addPerson = (p: TrustedIdentity) => setPeople((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p]))
 
   // Keep only the groups whose steps we can actually perform.
   const visible: NextStepSection[] = sections
@@ -102,9 +106,9 @@ export function RecommendedNextSteps({
         </div>
       )}
 
-      {share && <ShareSheet object={object} network={network} onClose={() => setShare(null)} onDone={onChanged} />}
+      {share && <ShareSheet object={object} network={people} onAddPerson={addPerson} onClose={() => setShare(null)} onDone={onChanged} />}
       {invite && <InviteSheet object={object} step={invite.step} receiveItems={receiveItems} onClose={() => setInvite(null)} onDone={onChanged} />}
-      {assign && <AssignSheet object={object} step={assign.step} network={network} onClose={() => setAssign(null)} onDone={onChanged} />}
+      {assign && <AssignSheet object={object} step={assign.step} network={people} onAddPerson={addPerson} onClose={() => setAssign(null)} onDone={onChanged} />}
     </div>
   )
 }
@@ -153,8 +157,35 @@ function Busy() {
   return <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} />
 }
 
+/** Add a person right here, mid-task — never a bounce to another screen (UAT refinement 2). */
+function AddPersonInline({ defaultRole, label, onAdded }: { defaultRole: CollaborationRole; label: string; onAdded: (p: TrustedIdentity) => void }) {
+  const [open, setOpen] = React.useState(false)
+  const [name, setName] = React.useState('')
+  const [busy, setBusy] = React.useState(false)
+  async function save() {
+    if (!name.trim()) return
+    setBusy(true)
+    const r = await upsertTrustedIdentity({ name, role: defaultRole, verificationStatus: 'pending' })
+    setBusy(false)
+    if (r.id) { onAdded({ id: r.id, name: name.trim(), role: defaultRole, permissions: [], verificationStatus: 'pending', availability: 'unknown' }); setName(''); setOpen(false) }
+  }
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="flex items-center gap-2 rounded-md border border-dashed border-line px-3 py-2.5 text-body-sm font-semibold text-green transition-colors hover:border-green/60">
+        <UserPlus className="h-4 w-4" strokeWidth={2} /> {label}
+      </button>
+    )
+  }
+  return (
+    <div className="flex items-center gap-2">
+      <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void save() }} placeholder="Their name" className={inputCls} />
+      <Button size="sm" className="shrink-0" disabled={!name.trim() || busy} onClick={() => void save()}>{busy ? <Busy /> : 'Add'}</Button>
+    </div>
+  )
+}
+
 /* ── Share ───────────────────────────────────────────────────────────────────────────────────── */
-function ShareSheet({ object, network, onClose, onDone }: { object: ObjectRef; network: TrustedIdentity[]; onClose: () => void; onDone?: () => void }) {
+function ShareSheet({ object, network, onAddPerson, onClose, onDone }: { object: ObjectRef; network: TrustedIdentity[]; onAddPerson: (p: TrustedIdentity) => void; onClose: () => void; onDone?: () => void }) {
   const family = network.filter((p) => p.role === 'family_member' || p.role === 'owner')
   const [pick, setPick] = React.useState<string | null>(null)
   const [busy, setBusy] = React.useState(false)
@@ -171,20 +202,15 @@ function ShareSheet({ object, network, onClose, onDone }: { object: ObjectRef; n
   }
 
   return (
-    <SheetShell title={`Share ${object.label}`} subtitle="With someone who helps with their care — it stays private to your family." onClose={onClose}>
-      {family.length === 0 ? (
-        <EmptyNetwork message="Add a family member to your Trusted Network first." />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {family.map((p) => <PersonRow key={p.id} person={p} selected={pick === p.id} onClick={() => setPick(p.id)} />)}
-        </div>
-      )}
+    <SheetShell title={`Share ${object.label}`} subtitle="With someone who helps care for them — it stays private to your family." onClose={onClose}>
+      <div className="flex flex-col gap-2">
+        {family.map((p) => <PersonRow key={p.id} person={p} selected={pick === p.id} onClick={() => setPick(p.id)} />)}
+        <AddPersonInline defaultRole="family_member" label="Add a family member" onAdded={(p) => { onAddPerson(p); setPick(p.id) }} />
+      </div>
       {err && <p className="text-caption text-error">{err}</p>}
-      {family.length > 0 && (
-        <Button size="md" className="w-full" disabled={!chosen || busy} onClick={() => void submit()}>
-          {busy ? <Busy /> : 'Share'}
-        </Button>
-      )}
+      <Button size="md" className="w-full" disabled={!chosen || busy} onClick={() => void submit()}>
+        {busy ? <Busy /> : 'Share'}
+      </Button>
     </SheetShell>
   )
 }
@@ -239,7 +265,7 @@ const TIMES: { key: string; label: string; days: number }[] = [
   { key: 'tomorrow', label: 'Tomorrow', days: 1 },
   { key: 'week', label: 'This week', days: 7 },
 ]
-function AssignSheet({ object, step, network, onClose, onDone }: { object: ObjectRef; step: NextStep; network: TrustedIdentity[]; onClose: () => void; onDone?: () => void }) {
+function AssignSheet({ object, step, network, onAddPerson, onClose, onDone }: { object: ObjectRef; step: NextStep; network: TrustedIdentity[]; onAddPerson: (p: TrustedIdentity) => void; onClose: () => void; onDone?: () => void }) {
   const [task, setTask] = React.useState(step.label.replace(/^Assign[:\s]*/i, '') || 'Follow up')
   const [pick, setPick] = React.useState<string | null>(network[0]?.id ?? null)
   const [when, setWhen] = React.useState('tomorrow')
@@ -267,37 +293,30 @@ function AssignSheet({ object, step, network, onClose, onDone }: { object: Objec
   return (
     <SheetShell title="Assign a task" subtitle="Delegate a responsibility — it joins the timeline." onClose={onClose}>
       <Field label="Task"><input value={task} onChange={(e) => setTask(e.target.value)} className={inputCls} /></Field>
-      {network.length === 0 ? (
-        <EmptyNetwork message="Add someone to your Trusted Network to delegate to them." />
-      ) : (
-        <>
-          <Field label="To">
-            <div className="flex flex-col gap-2">
-              {network.map((p) => <PersonRow key={p.id} person={p} selected={pick === p.id} onClick={() => setPick(p.id)} />)}
-            </div>
-          </Field>
-          <Field label="Estimated completion">
-            <div className="flex gap-2">
-              {TIMES.map((t) => (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setWhen(t.key)}
-                  className={`flex-1 rounded-md border py-2.5 text-body-sm font-semibold transition-colors ${when === t.key ? 'border-green bg-accent-soft/60 text-green' : 'border-line/70 bg-surface-raised text-ink'}`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </Field>
-        </>
-      )}
+      <Field label="To">
+        <div className="flex flex-col gap-2">
+          {network.map((p) => <PersonRow key={p.id} person={p} selected={pick === p.id} onClick={() => setPick(p.id)} />)}
+          <AddPersonInline defaultRole="family_member" label="Add someone" onAdded={(p) => { onAddPerson(p); setPick(p.id) }} />
+        </div>
+      </Field>
+      <Field label="Estimated completion">
+        <div className="flex gap-2">
+          {TIMES.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setWhen(t.key)}
+              className={`flex-1 rounded-md border py-2.5 text-body-sm font-semibold transition-colors ${when === t.key ? 'border-green bg-accent-soft/60 text-green' : 'border-line/70 bg-surface-raised text-ink'}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </Field>
       {err && <p className="text-caption text-error">{err}</p>}
-      {network.length > 0 && (
-        <Button size="md" className="w-full" disabled={!chosen || !task.trim() || busy} onClick={() => void submit()}>
-          {busy ? <Busy /> : `Assign${chosen ? ` to ${chosen.name}` : ''}`}
-        </Button>
-      )}
+      <Button size="md" className="w-full" disabled={!chosen || !task.trim() || busy} onClick={() => void submit()}>
+        {busy ? <Busy /> : `Assign${chosen ? ` to ${chosen.name}` : ''}`}
+      </Button>
     </SheetShell>
   )
 }
@@ -311,14 +330,5 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="text-caption font-semibold uppercase tracking-wider text-muted">{label}</span>
       {children}
     </label>
-  )
-}
-
-function EmptyNetwork({ message }: { message: string }) {
-  return (
-    <div className="rounded-md border border-line/70 bg-surface-raised p-4 text-center">
-      <p className="text-body-sm text-muted">{message}</p>
-      <Link href="/space/network" className="mt-2 inline-block text-body-sm font-semibold text-green hover:underline">Open Trusted Network</Link>
-    </div>
   )
 }
