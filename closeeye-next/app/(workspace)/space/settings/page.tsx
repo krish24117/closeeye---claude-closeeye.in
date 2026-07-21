@@ -14,7 +14,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Loader2, LogOut, Trash2, ChevronRight, Sparkles, ShieldCheck, Lock, FileText, Bell,
-  LifeBuoy, MessageCircle, Pencil,
+  LifeBuoy, Mail, Pencil,
 } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { supabase } from '@/lib/supabase'
@@ -22,8 +22,8 @@ import { Overlay } from '@/components/family/overlay'
 import { hasActiveConsent, recordConsent } from '@/lib/db/consent'
 import { resetAnalytics } from '@/lib/analytics'
 
-// Support channel. TODO(founder): confirm this is the right public contact number.
-const HELP_WHATSAPP = 'https://wa.me/919000221261'
+// Public support inbox.
+const HELP_EMAIL = 'hello@closeeye.in'
 
 const initialsFrom = (name?: string | null, email?: string | null) => {
   const raw = (name || email?.split('@')[0] || '').trim()
@@ -279,10 +279,10 @@ export default function ProfilePage() {
         {sheet === 'help' && (
           <SheetShell title="We’re here">
             <p className="text-body-sm leading-relaxed text-content-muted">
-              Message us any time and a real person replies — usually within a day.
+              Email us any time and a real person replies — usually within a day.
             </p>
-            <a href={HELP_WHATSAPP} target="_blank" rel="noopener" className="mt-5 inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-full bg-surface-inverse text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90">
-              <MessageCircle className="h-4 w-4" strokeWidth={2} /> Message on WhatsApp
+            <a href={`mailto:${HELP_EMAIL}`} className="mt-5 inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-full bg-surface-inverse text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90">
+              <Mail className="h-4 w-4" strokeWidth={2} /> {HELP_EMAIL}
             </a>
             <button onClick={closeSheet} className="mt-2.5 min-h-[2.75rem] w-full rounded-full text-body-sm font-semibold text-content-muted transition-colors hover:text-content">Close</button>
           </SheetShell>
