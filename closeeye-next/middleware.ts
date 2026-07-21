@@ -19,53 +19,22 @@
  * closeeye.in is never a Connect front door, so India keeps every page exactly as-is.
  */
 import { NextResponse, type NextRequest } from 'next/server'
-import { isConnectHost } from '@/lib/platform/front-door'
-
-/**
- * First path segment of India-commercial marketing pages that must NOT appear on the global
- * Connect door. Deliberately a denylist: legal/technical/Connect/app routes are absent, so they
- * always pass through. (Legal — privacy, terms, refund-policy, cancellation-policy, consent,
- * cookies, medical-disclaimer — and offline are intentionally NOT here.)
- */
-const INDIA_ONLY = new Set([
-  'about',
-  'book',
-  'membership',
-  'services',
-  'become-a-guardian',
-  'become-a-companion',
-  'trust-safety',
-  'contact',
-  'help',
-  'feedback',
-  // India app onboarding carousel — "Everything starts with care" / Presence Manager. Not a
-  // Connect surface; the global door onboards through /connect → /join or /auth.
-  'welcome',
-])
+import { frontDoorRouting } from '@/lib/platform/front-door'
 
 export function middleware(req: NextRequest): NextResponse {
-  if (!isConnectHost(req.headers.get('host'))) return NextResponse.next()
+  // The pure host×path decision lives in front-door.ts (single source of truth, unit-tested there).
+  // Staff consoles (/guardian, /pm, /admin) are guaranteed pass-through on every host by that
+  // module's contract test — so this door can never accidentally 307 them to /connect.
+  const decision = frontDoorRouting(req.headers.get('host'), req.nextUrl.pathname)
+  if (decision.type === 'next') return NextResponse.next()
 
-  const { pathname } = req.nextUrl
-
-  // `/` → the Connect experience, keeping the clean bare-domain URL (rewrite, not redirect).
-  if (pathname === '/') {
-    const url = req.nextUrl.clone()
-    url.pathname = '/connect'
-    return NextResponse.rewrite(url)
-  }
-
-  // India-commercial page on the global door → bounce to Connect (307: temporary, since these
-  // may gain global versions later; not cached as permanent).
-  const seg = pathname.split('/')[1] ?? ''
-  if (INDIA_ONLY.has(seg)) {
-    const url = req.nextUrl.clone()
-    url.pathname = '/connect'
-    url.search = ''
-    return NextResponse.redirect(url, 307)
-  }
-
-  return NextResponse.next()
+  const url = req.nextUrl.clone()
+  url.pathname = decision.pathname
+  // `/` → Connect keeps the clean bare-domain URL (rewrite). India-commercial pages bounce to
+  // Connect (307 temporary, since they may gain global versions later), dropping the query.
+  if (decision.type === 'rewrite') return NextResponse.rewrite(url)
+  url.search = ''
+  return NextResponse.redirect(url, 307)
 }
 
 // Run on page navigations only — skip Next internals, the API, and any file with an extension
