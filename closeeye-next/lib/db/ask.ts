@@ -105,24 +105,27 @@ export interface AskHistoryItem {
   answer: string | null
   status: string
   createdAt: string
+  /** Which loved one the question was about, if it was scoped to one. */
+  lovedOneId?: string | null
 }
 
 /** Recent Ask questions for this user (RLS already scopes `member_queries` to user_id). */
 export async function fetchAskHistory(userId: string, limit = 6): Promise<AskHistoryItem[]> {
   const { data } = await supabase
     .from('member_queries')
-    .select('id, question, answer, ai_answer, status, created_at')
+    .select('id, question, answer, ai_answer, status, created_at, loved_one_id')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(limit)
   const rows =
-    (data as Array<{ id: string; question: string; answer: string | null; ai_answer: string | null; status: string; created_at: string }> | null) ?? []
+    (data as Array<{ id: string; question: string; answer: string | null; ai_answer: string | null; status: string; created_at: string; loved_one_id: string | null }> | null) ?? []
   return rows.map((q) => ({
     id: q.id,
     question: q.question,
     answer: q.answer || q.ai_answer,
     status: q.status,
     createdAt: q.created_at,
+    lovedOneId: q.loved_one_id,
   }))
 }
 
