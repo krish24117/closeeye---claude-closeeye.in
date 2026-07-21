@@ -55,6 +55,10 @@ export default function CompleteProfilePage() {
   const [notFound, setNotFound] = React.useState(false)
   const elderRef = React.useRef<ElderProfileForm | null>(null)
   const startedRef = React.useRef(false)
+  // The data provider starts with loading=false and only flips true once its fetch begins
+  // (a mount effect). So we must NOT declare "not found" on the first render — wait until a
+  // real fetch has happened (or the roster is already populated) before deciding.
+  const everLoadedRef = React.useRef(false)
 
   // Basics
   const [name, setName] = React.useState('')
@@ -82,8 +86,14 @@ export default function CompleteProfilePage() {
 
   // Load once the loved one is known: prefill basics from loved_ones, health from elder_profiles.
   React.useEffect(() => {
-    if (loading || startedRef.current) return
-    if (!lo) { setNotFound(true); return }
+    if (startedRef.current) return
+    if (loading) { everLoadedRef.current = true; return } // fetch in flight — wait for it
+    if (!lo) {
+      // Only "not found" once we know the roster is real (a fetch ran, or people exist) —
+      // never on the transient first render before the provider has started.
+      if (everLoadedRef.current || lovedOnes.length) setNotFound(true)
+      return
+    }
     startedRef.current = true
     setName(relOnly ? '' : lo.full_name)
     setRelationship(lo.relationship ?? '')
@@ -106,7 +116,7 @@ export default function CompleteProfilePage() {
       if (!lo.doctor_name && e.doctor_name) setDoctorName(e.doctor_name)
       setReady(true)
     }).catch(() => setReady(true))
-  }, [loading, lo, relOnly, ready])
+  }, [loading, lo, lovedOnes, relOnly])
 
   function toggleCondition(c: string) {
     haptic('light')

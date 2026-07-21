@@ -23,7 +23,10 @@ function nameFor(fullName: string, relationship: string | null, city: string | n
     const rel = titleCase(fullName.replace(/^your\s+/i, ''))
     return { name: rel, sub: city || 'Family' }
   }
-  return { name: fullName, sub: [titleCase(relationship ?? ''), city].filter(Boolean).join(' · ') || 'Family' }
+  // Never repeat the name as its own relationship line ("Mother · Mother").
+  const relLabel = titleCase(relationship ?? '')
+  const rel = relLabel.toLowerCase() === fullName.toLowerCase() ? '' : relLabel
+  return { name: fullName, sub: [rel, city].filter(Boolean).join(' · ') || 'Family' }
 }
 
 export default function PeoplePage() {
