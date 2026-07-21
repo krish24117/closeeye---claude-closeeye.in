@@ -60,6 +60,10 @@ export interface HomeData {
   alerts: HomeAlert[]
   notice: HomeNotice | null
   prompt: HomePrompt | null
+  /** True when the family has a live Close Eye Connect membership — drives the Home's calm
+   *  membership moment (an invitation when false, a quiet "Connect is active" when true).
+   *  Only a paid 'active' subscription counts; a chosen-but-unpaid 'created' is not "on Connect". */
+  connectActive: boolean
 }
 
 /** The essentials Close Eye wants to know about anyone it cares for. A person's stated facts are
@@ -88,14 +92,18 @@ export async function fetchHome(): Promise<HomeData | null> {
   const user = auth.user
   if (!user) return null
 
-  const [profRes, losRes] = await Promise.all([
+  const [profRes, losRes, subRes] = await Promise.all([
     supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
     supabase.from('loved_ones').select('id, full_name, relationship, region_code').eq('family_user_id', user.id).order('created_at', { ascending: true }).limit(20),
+    // Membership state — best-effort; a failed/absent read simply reads as "not on Connect"
+    // (an invitation), never blocks the Home.
+    supabase.from('subscriptions').select('status').eq('user_id', user.id).maybeSingle(),
   ])
   if (losRes.error) throw new Error(losRes.error.message)
   const userName = (profRes.data?.full_name || (user.user_metadata?.full_name as string) || 'there').split(' ')[0] || 'there'
+  const connectActive = ((subRes.data as { status?: string } | null)?.status ?? '') === 'active'
   const members = losRes.data ?? []
-  if (!members.length) return { userName, state: 'getting_to_know', people: [], activity: [], alerts: [], notice: null, prompt: null }
+  if (!members.length) return { userName, state: 'getting_to_know', people: [], activity: [], alerts: [], notice: null, prompt: null, connectActive }
 
   const ids = members.map((m) => m.id)
   const ledgerRes = await supabase
@@ -158,5 +166,5 @@ export async function fetchHome(): Promise<HomeData | null> {
     .filter((p) => p.state === 'getting_to_know')
     .map((p) => ({ id: `alert-${p.id}`, text: `Still getting to know ${firstName(p.name)}.`, actionLabel: 'Tell Close Eye more', href: '/space/connect' }))
 
-  return { userName, state, people, activity, alerts, notice, prompt }
+  return { userName, state, people, activity, alerts, notice, prompt, connectActive }
 }

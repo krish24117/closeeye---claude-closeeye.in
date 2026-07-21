@@ -60,6 +60,8 @@ export default function WorkspaceHome() {
   const h = new Date().getHours()
   const name = home.userName ? home.userName.charAt(0).toUpperCase() + home.userName.slice(1) : home.userName
   const greeting = `${h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}, ${name}.`
+  // Beat 3 — a warm, wellbeing-framed Connect invitation. Names the one person, else "your family".
+  const beat3Subject = home.people.length === 1 ? home.people[0]!.label : 'your family'
 
   return (
     <div className="flex flex-col gap-8">
@@ -123,6 +125,29 @@ export default function WorkspaceHome() {
         </div>
       )}
 
+      {/* Beat 2 — the calm Close Eye Connect moment (state-aware; never an upsell). Only once
+          there's a family to hold; a brand-new user is still in the get-started flow above. */}
+      {home.people.length > 0 && (
+        home.connectActive ? (
+          <section className="flex items-center gap-3 rounded-lg border border-edge/70 bg-surface-raised p-4 shadow-sm">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-content-inverse"><Check className="h-4 w-4" strokeWidth={2.6} /></span>
+            <div className="min-w-0">
+              <p className="text-body-sm font-semibold text-content">Connect is active</p>
+              <p className="text-caption text-content-muted">Close Eye is understanding your family and can bring a trusted person whenever it’s needed.</p>
+            </div>
+          </section>
+        ) : (
+          <section className="rounded-lg border border-edge/70 bg-surface-accent/25 p-5 shadow-sm">
+            <p className="text-caption font-semibold uppercase tracking-widest text-brand">Close Eye Connect</p>
+            <h2 className="mt-2 text-h4 leading-snug text-content">The intelligence that stays with your family.</h2>
+            <p className="mt-2 text-body-sm leading-relaxed text-content-muted">It understands the people you love, remembers what matters, and — when real-world presence is needed — brings a trusted person to them.</p>
+            <Link href="/family/membership" className="mt-4 inline-flex items-center gap-2 text-body-sm font-semibold text-brand hover:text-brand/80">
+              Make Connect yours <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
+            </Link>
+          </section>
+        )
+      )}
+
       {/* Recently remembered — memory "moments" as album-cover cards (title on the cover) */}
       {recent.length > 0 && (
         <section className="flex flex-col gap-4">
@@ -162,11 +187,23 @@ export default function WorkspaceHome() {
         </section>
       )}
 
-      {/* Connect — always one tap away */}
-      <Link href="/space/connect" className="flex items-center gap-3 rounded-lg border border-edge/70 bg-surface-raised p-4 shadow-sm transition-colors hover:border-brand/40">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-content-inverse"><Sparkles className="h-4 w-4" strokeWidth={1.75} /></span>
-        <span className="text-body-sm text-content-muted">Ask Close Eye about anyone you love…</span>
-      </Link>
+      {/* Beat 3 — Connect as wellbeing, warm and personal. Falls back to the generic invite when
+          there's no one added yet. */}
+      {home.people.length > 0 ? (
+        <Link href="/space/connect" className="flex items-center gap-3 rounded-lg border border-edge/70 bg-surface-raised p-4 shadow-sm transition-colors hover:border-brand/40">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-inverse"><span className="h-2 w-2 rounded-full bg-brand" aria-hidden /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-body-sm font-semibold text-content">How is {beat3Subject} — day to day?</span>
+            <span className="block text-caption text-content-muted">Ask Close Eye anything about their wellbeing</span>
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-content-muted" strokeWidth={1.75} />
+        </Link>
+      ) : (
+        <Link href="/space/connect" className="flex items-center gap-3 rounded-lg border border-edge/70 bg-surface-raised p-4 shadow-sm transition-colors hover:border-brand/40">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-content-inverse"><Sparkles className="h-4 w-4" strokeWidth={1.75} /></span>
+          <span className="text-body-sm text-content-muted">Ask Close Eye about anyone you love…</span>
+        </Link>
+      )}
     </div>
   )
 }
