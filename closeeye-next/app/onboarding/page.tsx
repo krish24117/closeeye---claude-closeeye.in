@@ -11,7 +11,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Loader2, Check } from 'lucide-react'
-import { LogoMark } from '@/components/ui/logo'
+import { Logo } from '@/components/ui/logo'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { CountryField } from '@/components/family/country-field'
@@ -160,7 +160,7 @@ export default function OnboardingPage() {
     <div className="flex min-h-dvh flex-col bg-ivory">
       <header className="mx-auto w-full max-w-md px-6 pt-6">
         {step === 'welcome' ? (
-          <LogoMark variant="mobile" />
+          <Logo lockup="horizontal" height={26} />
         ) : (
           <div className="flex items-center gap-3">
             <button type="button" onClick={back} aria-label="Back" className="grid h-9 w-9 place-items-center rounded-full text-ink transition-colors hover:bg-ink/[0.05]"><ArrowLeft className="h-5 w-5" strokeWidth={1.75} /></button>
@@ -178,7 +178,9 @@ export default function OnboardingPage() {
         <div key={step} className="ce-fade-in flex flex-1 flex-col">
           {step === 'welcome' && (
             <>
-              <div className="mb-7 grid h-14 w-14 place-items-center rounded-full bg-surface-inverse"><span className="h-3 w-3 rounded-full bg-green" /></div>
+              <div className="mb-7 grid h-14 w-14 place-items-center rounded-full bg-surface-inverse">
+                <span className="h-4 w-4 animate-pulse rounded-full" style={{ background: 'hsl(103 58% 54%)', boxShadow: '0 0 16px 3px hsl(103 62% 54% / 0.6)' }} />
+              </div>
               <h1 style={serif} className="text-h1 leading-tight text-ink">Let’s create your family’s private space.</h1>
               <p className="mt-4 text-lead text-muted">It takes about a minute. Everything you add stays private to your family.</p>
             </>
