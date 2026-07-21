@@ -19,6 +19,7 @@ import { getLocalPhoto } from '@/lib/local-photos'
 import { titleCase } from '@/lib/family/relationship-words'
 import { dialablePhone } from '@/lib/platform/locale'
 
+const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
 const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 const normKey = (s: string) => s.trim().toLowerCase().replace(/[.\s]+$/, '')
 
@@ -76,7 +77,10 @@ export default function PersonSpacePage() {
     .filter((f) => f.body && !f.quote && !subjectLike.has(normKey(f.body)))
     .map((f) => f.body)
     .filter((b) => { const k = normKey(b); if (seen.has(k)) return false; seen.add(k); return true })
-  const firstRun = facts.length === 0
+  // Arrival — the warm first-run state (sparse), shown straight after onboarding. The onboarding's
+  // one fact lands here as the first thing understood; the welcome card gives way to the plain facts
+  // list once a couple of things are known. Warm welcome only for the arrival, never after.
+  const arrival = facts.length <= 1
   // Essentials to invite (drop the "what you call them" blank — the name is handled elsewhere).
   const openEssentials = space.blanks.filter((b) => !/what you call|nickname/i.test(b.text))
   const chips = openEssentials.slice(0, 3)
@@ -103,9 +107,11 @@ export default function PersonSpacePage() {
         <Link href="/space/people" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
           <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> People
         </Link>
-        <Link href={`/space/people/${lo.id}/add`} className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
-          <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} /> Edit
-        </Link>
+        {!arrival && (
+          <Link href={`/space/people/${lo.id}/add`} className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
+            <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} /> Edit
+          </Link>
+        )}
       </div>
 
       {/* HERO — lead with her */}
@@ -117,7 +123,7 @@ export default function PersonSpacePage() {
           <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-accent-soft text-h3 font-semibold text-green">{Person.charAt(0)}</span>
         )}
         <div className="min-w-0">
-          <h1 className="truncate text-h2 text-ink">{Person}</h1>
+          <h1 style={serif} className="truncate text-h2 text-ink">{Person}</h1>
           {meta && <p className="mt-0.5 text-body-sm text-muted">{meta}</p>}
         </div>
       </div>
@@ -129,11 +135,26 @@ export default function PersonSpacePage() {
         <Action href={`/space/people/${lo.id}/add`} icon={Plus} label="Add" />
       </div>
 
-      {/* Warm line — Close Eye's voice */}
-      <div className="flex items-center gap-2.5">
-        <Sparkles className="h-4 w-4 shrink-0 text-green" strokeWidth={1.9} />
-        <p className="text-body-sm text-ink">{firstRun ? `I’m just getting to know ${person}.` : `Here’s what I know about ${person}.`}</p>
-      </div>
+      {/* Understanding — a warm arrival welcome when sparse (continues onboarding), else a quiet line */}
+      {arrival ? (
+        <div className="rounded-2xl bg-ink p-5 text-ivory shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ivory/10">
+              <span className="h-3 w-3 animate-pulse rounded-full" style={{ background: 'hsl(103 58% 54%)', boxShadow: '0 0 12px 2px hsl(103 62% 54% / 0.6)' }} />
+            </span>
+            <p style={serif} className="text-body leading-snug text-ivory">This is {Person}’s space. I’m beginning to understand {person}.</p>
+          </div>
+          {facts[0] && (
+            <p className="mt-4 flex items-start gap-2.5 text-body-sm text-ivory"><Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-soft" strokeWidth={2.4} />{facts[0]}</p>
+          )}
+          <p className="mt-3 flex items-center gap-2 text-caption text-ivory/60">Still getting to know {person}<span className="inline-block h-3.5 w-1 animate-pulse rounded-sm bg-accent-soft" /></p>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2.5">
+          <Sparkles className="h-4 w-4 shrink-0 text-green" strokeWidth={1.9} />
+          <p className="text-body-sm text-ink">Here’s what I know about {person}.</p>
+        </div>
+      )}
 
       {/* Gentle profile nudges (name, country) — subtle, fade once set */}
       {(relOnly || !lo.regionCode) && (
@@ -155,11 +176,12 @@ export default function PersonSpacePage() {
         </div>
       )}
 
-      {/* What Close Eye knows — plain facts, or a calm invitation when sparse */}
-      {firstRun ? (
+      {/* Invitations to deepen (arrival, framed as opportunity) — else the plain facts list */}
+      {arrival ? (
         <section>
-          <p className="mb-3 text-caption font-semibold text-muted">Help me understand {poss}</p>
-          <div className="flex flex-wrap gap-2">
+          <p className="text-caption font-semibold text-muted">Help me understand {poss}</p>
+          <p className="mt-1 text-caption text-muted">The more you share, the more Close Eye can help — anytime you like.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
             {(chips.length ? chips.map((b) => chipLabel(b.text)) : ['Health', 'Daily routine', 'Who’s nearby']).map((c) => (
               <Link key={c} href={`/space/people/${lo.id}/add`} className="rounded-full border border-dashed border-line px-4 py-2 text-body-sm font-semibold text-ink transition-colors hover:border-green/50 hover:text-green">
                 + {c}
