@@ -14,6 +14,7 @@ import {
   Ambulance,
   Bell,
   BellOff,
+  Sparkles,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { Overlay } from '@/components/family/overlay'
@@ -28,6 +29,7 @@ import { cn } from '@/lib/utils'
 const NAV = [
   { href: '/guardian', label: 'Today', icon: CalendarDays, match: (p: string) => p === '/guardian' || p.startsWith('/guardian/visits') },
   { href: '/guardian/check-in', label: 'Check In', icon: CircleCheckBig, match: (p: string) => p.startsWith('/guardian/check-in') },
+  { href: '/guardian/assistant', label: 'Cloza', icon: Sparkles, match: (p: string) => p.startsWith('/guardian/assistant') },
   { href: '/guardian/messages', label: 'Messages', icon: MessageCircle, match: (p: string) => p.startsWith('/guardian/messages') },
   { href: '/guardian/profile', label: 'Profile', icon: User, match: (p: string) => p.startsWith('/guardian/profile') },
 ]

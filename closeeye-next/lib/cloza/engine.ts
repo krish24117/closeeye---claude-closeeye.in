@@ -11,14 +11,16 @@ import type { ClozaAnswer, ClozaQuestion, ClozaRole, ClozaScope, ClozaIntent, Cl
 import { resolveIntent, type CapabilityKeywords } from './intent'
 import { FOUNDER_QUESTIONS, FOUNDER_KEYWORDS, founderBriefing, founderRespond, type FounderSnapshot } from './founder'
 import { PM_QUESTIONS, PM_KEYWORDS, presenceBriefing, presenceRespond, type PresenceSnapshot } from './pm'
+import { GUARDIAN_QUESTIONS, GUARDIAN_KEYWORDS, guardianBriefing, guardianRespond, type GuardianSnapshot } from './guardian'
 
-export type { FounderSnapshot, PresenceSnapshot }
+export type { FounderSnapshot, PresenceSnapshot, GuardianSnapshot }
 
 export interface ClozaContext {
   role: ClozaRole
   scope: ClozaScope
   founder?: FounderSnapshot
   presence?: PresenceSnapshot
+  guardian?: GuardianSnapshot
 }
 
 interface Bound {
@@ -37,6 +39,10 @@ function bind(ctx: ClozaContext): Bound | null {
   if (ctx.role === 'presence_manager' && ctx.presence) {
     const s = ctx.presence
     return { questions: PM_QUESTIONS, keywords: PM_KEYWORDS, briefing: () => presenceBriefing(s), respond: (i) => presenceRespond(s, ctx.scope, i) }
+  }
+  if (ctx.role === 'guardian' && ctx.guardian) {
+    const s = ctx.guardian
+    return { questions: GUARDIAN_QUESTIONS, keywords: GUARDIAN_KEYWORDS, briefing: () => guardianBriefing(s), respond: (i) => guardianRespond(s, ctx.scope, i) }
   }
   return null
 }
@@ -63,7 +69,7 @@ export function clozaAsk(ctx: ClozaContext, question: string, history: ClozaTurn
 function notReadyForRole(): ClozaAnswer {
   return {
     title: 'Cloza isn’t available here yet',
-    segments: [{ kind: 'unavailable', text: 'Cloza is live for the Founder and Presence Manager workspaces first. Admin, Guardian and Customer are coming — same copilot, their own view.' }],
+    segments: [{ kind: 'unavailable', text: 'Cloza is live for the Founder, Presence Manager and Guardian workspaces. Admin and Customer are next — the family already has Connect, its own intelligence.' }],
     source: 'Cloza',
   }
 }
