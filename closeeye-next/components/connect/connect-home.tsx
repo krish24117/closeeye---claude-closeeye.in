@@ -165,6 +165,22 @@ export function ConnectHome() {
         </div>
       </section>
 
+      {/* 3.5 · REAL PRESENCE — the emotional bridge from Family Intelligence to real human presence */}
+      <section className="mx-auto max-w-5xl px-6 py-12">
+        <Reveal className="mx-auto max-w-[42rem]">
+          <Eyebrow>Real presence</Eyebrow>
+          <h2 style={serif} className="text-h2 text-muted">When intelligence isn’t enough.</h2>
+          <p style={serif} className="mt-2 text-h2 text-ink">Close Eye can be there.</p>
+          <p className="mt-7 max-w-[42ch] text-lead text-muted">When you can’t be there, Close Eye coordinates trusted people to help with life’s important moments.</p>
+          <p style={serif} className="mt-6 max-w-[34ch] text-h4 leading-snug text-ink">Not everything needs an emergency. Sometimes it simply needs someone you trust to be there.</p>
+          <Link href="/care" className="mt-8 inline-flex items-center gap-1.5 text-body-sm font-semibold text-green transition-colors hover:text-green/80">
+            Learn about Close Eye Care <ArrowRight className="h-4 w-4" strokeWidth={2} />
+          </Link>
+        </Reveal>
+      </section>
+
+      <div className="mx-auto max-w-5xl border-t border-line" />
+
       {/* 4 · THREE LEVELS */}
       <section id="how" className="scroll-mt-20">
         <div className="mx-auto max-w-5xl px-6 py-12">
