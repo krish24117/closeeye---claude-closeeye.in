@@ -73,11 +73,13 @@ function resolveSubject(text: string, lovedOnes: { id: string; name: string }[],
 
 function inferDomainFromText(text: string): Domain {
   const t = text.toLowerCase()
-  if (/\b(lawyer|legal|court|notary|\bwill\b|agreement|contract)\b/.test(t)) return 'legal'
-  if (/\b(doctor|medicine|prescription|health|hospital|\bbp\b|sugar|diabetes)\b/.test(t)) return 'health'
-  if (/\b(tax|bank|loan|insurance|invoice|payment|finance)\b/.test(t)) return 'finance'
-  if (/\b(house|property|\bland\b|rent|flat)\b/.test(t)) return 'property'
-  if (/\b(passport|aadhaar|\bpan\b|licen[cs]e)\b/.test(t)) return 'identity'
+  // Substring-friendly (so "medicines"/"diabetic" match), with word-boundaries only where a short token
+  // would over-match. Validation caught the earlier \b(medicine)\b which missed the plural.
+  if (/lawyer|legal|court|notary|\bwill\b|agreement|contract/.test(t)) return 'legal'
+  if (/doctor|medicine|medication|prescription|\bhealth|hospital|\bbp\b|sugar|diabet/.test(t)) return 'health'
+  if (/\btax\b|\bbank|\bloan|insurance|invoice|payment|finance/.test(t)) return 'finance'
+  if (/house|property|\bland\b|\brent\b|flat\b/.test(t)) return 'property'
+  if (/passport|aadhaar|\bpan\b|licen[cs]e/.test(t)) return 'identity'
   return 'general'
 }
 

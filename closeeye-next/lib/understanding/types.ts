@@ -278,6 +278,24 @@ export interface ActionProposal {
 }
 
 /**
+ * The Internal Reasoning Trace — recorded for EVERY interaction, never shown to users. It captures the
+ * exact path the pipeline took, so when someone reports "CloseEye put my passport in Mom's profile" an
+ * engineer can see precisely where a decision went wrong. Observability is a first-class platform output.
+ */
+export interface ReasoningTrace {
+  assetId?: string
+  space: Space
+  subject: { type: SubjectType; id: string | null; displayName: string; confidence: ConfidenceBand }
+  intent: IntentKind
+  domain: Domain
+  confidence: ConfidenceBand
+  evidenceUsed: string[]
+  memoryRetrieved: string[]
+  policyApplied: { domain: Domain; reasoned: boolean; stored: boolean; sharing: Sharing }
+  actionCandidates: ActionKind[]
+}
+
+/**
  * The full result of understanding one asset. The split is the trust contract:
  *  • `verified` — high-confidence; safe to apply to memory + graph + timeline now.
  *  • `pending`  — uncertain; NOTHING here is stored until the family confirms.
