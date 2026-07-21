@@ -132,7 +132,7 @@ export default function BriefingPage() {
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
           <p className="text-caption font-semibold uppercase tracking-widest text-muted">Today’s top {top.length} — work these first</p>
-          <Link href="/admin/founder" className="inline-flex items-center gap-1 text-caption font-semibold text-green hover:underline">Open pipeline <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>
+          <Link href="/admin/pipeline" className="inline-flex items-center gap-1 text-caption font-semibold text-green hover:underline">Open pipeline <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>
         </div>
         {top.length === 0 ? (
           <EmptyState icon={Target} title="No leads to work yet" hint="Scored leads appear here as families register." />
@@ -170,7 +170,7 @@ export default function BriefingPage() {
           {needFirstContact > 0 && (
             <div className="flex items-center justify-between gap-3 rounded-md bg-warning/[0.06] px-4 py-3">
               <span className="flex items-center gap-2.5 text-body-sm text-ink"><AlertTriangle className="h-4 w-4 shrink-0 text-warning" strokeWidth={2} /><span><strong>{needFirstContact}</strong> famil{needFirstContact === 1 ? 'y' : 'ies'} still without a first contact</span></span>
-              <Link href="/admin/founder" className="shrink-0 text-caption font-semibold text-green hover:underline">Reach out</Link>
+              <Link href="/admin/pipeline" className="shrink-0 text-caption font-semibold text-green hover:underline">Reach out</Link>
             </div>
           )}
           {due.map((rem) => {
@@ -199,7 +199,7 @@ export default function BriefingPage() {
         </div>
       </section>
 
-      <p className="text-caption text-muted">Composed from live data (memberships, the founder pipeline, reminders). Open the <Link href="/admin/founder" className="font-semibold text-green hover:underline">pipeline</Link> to set stages, sources and reminders. A 7am WhatsApp/email push of this briefing is the next step.</p>
+      <p className="text-caption text-muted">Composed from live data (memberships, the founder pipeline, reminders). Open the <Link href="/admin/pipeline" className="font-semibold text-green hover:underline">pipeline</Link> to set stages, sources and reminders. A 7am WhatsApp/email push of this briefing is the next step.</p>
     </div>
   )
 }
