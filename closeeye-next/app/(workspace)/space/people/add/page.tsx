@@ -17,6 +17,7 @@ import { RelationshipSelector } from '@/components/family/relationship-selector'
 import { CountryField } from '@/components/family/country-field'
 import { CityField } from '@/components/family/city-field'
 import { PhotoPicker } from '@/components/family/photo-picker'
+import { phonePlaceholder } from '@/lib/platform/locale'
 import { setLocalPhoto } from '@/lib/local-photos'
 import { haptic } from '@/lib/haptics'
 
@@ -32,6 +33,7 @@ export default function AddPersonPage() {
   const [relationship, setRelationship] = React.useState('')
   const [country, setCountry] = React.useState('')
   const [city, setCity] = React.useState('')
+  const [phone, setPhone] = React.useState('')
   const [photo, setPhoto] = React.useState<string | null>(null)
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')
@@ -44,7 +46,7 @@ export default function AddPersonPage() {
     if (!valid) return setError('Please add a name, relationship and city.')
     setBusy(true)
     try {
-      const created = await addLovedOne({ full_name: fullName, relationship, city, region_code: country || null })
+      const created = await addLovedOne({ full_name: fullName, relationship, city, region_code: country || null, phone_number: phone.trim() || undefined })
       if (photo) setLocalPhoto(created.id, photo)
       haptic('success')
       toast(`${fullName.trim().split(/\s+/)[0]} was added to your family.`)
@@ -92,6 +94,12 @@ export default function AddPersonPage() {
             <span className={labelCls}>City</span>
             <CityField value={city} onChange={setCity} />
           </div>
+        </div>
+
+        <div>
+          <label htmlFor="fm-phone" className={labelCls}>Phone <span className="font-normal text-muted">(optional)</span></label>
+          <input id="fm-phone" value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" inputMode="tel" placeholder={phonePlaceholder(country)} autoComplete="off" className={inputCls} />
+          <p className="mt-1.5 text-caption text-muted">So you can call them with one tap from their page.</p>
         </div>
 
         {error && <p className="text-caption text-error">{error}</p>}

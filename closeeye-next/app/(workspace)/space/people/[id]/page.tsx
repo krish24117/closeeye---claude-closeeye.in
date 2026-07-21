@@ -10,7 +10,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Sparkles, Pencil, HeartPulse, Camera, Plus, FileText, Globe } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Sparkles, Pencil, HeartPulse, Camera, Plus, FileText, Globe, Phone } from 'lucide-react'
 import { fetchSpace, appendLearning, personName, type SpaceData } from '@/lib/db/space'
 import type { Blank, LedgerLine } from '@/lib/connect/ledger'
 import { deriveSnapshot, deriveRecommendations, groupUnderstanding, type UnderstandingInput } from '@/lib/space/understanding'
@@ -102,9 +102,16 @@ export default function PersonSpacePage() {
           <h1 className="text-h2 text-ink">{Person}</h1>
           <p className="mt-1 text-body-sm text-muted">{[lo.relationship, lo.city].filter(Boolean).join(' · ') || 'Family'}</p>
         </div>
-        <Link href={`/space/people/${lo.id}/edit`} className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
-          <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} /> Edit
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          {lo.phone && (
+            <a href={`tel:${lo.phone}`} aria-label={`Call ${person}`} className="inline-flex items-center gap-1.5 rounded-full bg-green px-3.5 py-2 text-caption font-semibold text-ivory transition-opacity hover:opacity-90">
+              <Phone className="h-3.5 w-3.5" strokeWidth={2} /> Call
+            </a>
+          )}
+          <Link href={`/space/people/${lo.id}/edit`} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
+            <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} /> Edit
+          </Link>
+        </div>
       </div>
 
       {/* Country backfill — a person added before we captured country has no region, so the
