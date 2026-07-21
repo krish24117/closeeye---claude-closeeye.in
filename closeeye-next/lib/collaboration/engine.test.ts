@@ -116,7 +116,7 @@ describe('Recommended Next Steps — one universal model across every domain', (
   })
 
   it('Continue yourself always works alone — save, compare, remind need no one else', () => {
-    const cont = recommendNextSteps({ domain: 'travel' }, P).sections.find((s) => s.group === 'continue_yourself')!
+    const cont = recommendNextSteps({ domain: 'general', space: 'travel' }, P).sections.find((s) => s.group === 'continue_yourself')!
     expect(cont.steps.map((s) => s.kind)).toEqual(['save', 'compare', 'reminder'])
   })
 })
@@ -131,10 +131,10 @@ describe('Trusted Network — extensible identities grouped for the human', () =
   it('groups family / trusted presence / professionals / business without hardcoding a person', () => {
     const g = groupTrustedNetwork(net)
     expect(g.groups.map((s) => s.group)).toEqual(['family', 'trusted_presence', 'professionals', 'business'])
-    expect(g.groups.find((s) => s.group === 'professionals')!.members[0].name).toBe('Dr. Rao')
+    expect(g.groups.find((s) => s.group === 'professionals')?.members[0]?.name).toBe('Dr. Rao')
   })
   it('drops empty groups — a family with only relatives shows just Family', () => {
-    const g = groupTrustedNetwork([net[0]])
+    const g = groupTrustedNetwork([net[0]!])
     expect(g.groups.map((s) => s.group)).toEqual(['family'])
   })
 })
