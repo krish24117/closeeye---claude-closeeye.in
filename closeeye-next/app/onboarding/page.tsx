@@ -18,7 +18,7 @@ import { CountryField } from '@/components/family/country-field'
 import { relationshipWord, objectPronoun } from '@/lib/family/relationship-words'
 import { saveProfileBasics, selectPlan } from '@/lib/db/onboarding'
 import { appendLearning } from '@/lib/db/space'
-import { type PlanId } from '@/lib/plans'
+import { planById, type PlanId } from '@/lib/plans'
 import { getPendingPlan, setPendingPlan } from '@/lib/membership-intent'
 import { track } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
@@ -102,6 +102,9 @@ export default function OnboardingPage() {
       if (hasIntent && plan) {
         const s = await selectPlan(user.id, plan)
         if (s.error) throw new Error(s.error)
+        // Persist the selection either way — the 'ready' close now offers "Activate now" OR
+        // "Explore first", and a deferred activation resumes from this pending plan.
+        setPendingPlan(plan)
       }
       await refreshOnboarding()
       await refresh()
@@ -109,12 +112,9 @@ export default function OnboardingPage() {
       track('onboarding_completed')
       setCreatedId(created.id)
       setBusy(false)
-      if (hasIntent && plan) {
-        setPendingPlan(plan)
-        router.replace('/family/membership?activate=1')
-      } else {
-        setStep('ready') // the warm, alive confirmation
-      }
+      // Everyone — plan-picker or not — earns the warm, alive close. A family who chose a plan
+      // gets an activation recap + CTA on it, instead of being dumped cold into the billing grid.
+      setStep('ready')
     } catch (e) {
       console.error('[onboarding] setup failed:', e)
       setBusy(false)
@@ -129,9 +129,19 @@ export default function OnboardingPage() {
     router.replace(createdId ? `/space/people/${createdId}` : '/space')
   }
 
+  function goActivate() {
+    // Hand off to the existing activation surface (pre-payment gate → Razorpay), unchanged. The plan
+    // is already selected + pending, so the membership page opens in its "complete your membership" state.
+    router.replace('/family/membership?activate=1')
+  }
+
   /* ── READY — a dark, alive close (its own full-screen layout) ── */
   if (step === 'ready') {
     const Subject = subject.charAt(0).toUpperCase() + subject.slice(1)
+    // A family who chose a plan gets an activation recap on the close (Option A) rather than a cold
+    // billing grid. Lines are the plan's own benefits, minus the "Everything in…" umbrella.
+    const activatePlan = hasIntent && plan ? planById(plan) : null
+    const planLines = activatePlan ? activatePlan.benefits.filter((b) => !b.toLowerCase().startsWith('everything')).slice(0, 2) : []
     return (
       <div className="flex min-h-dvh flex-col bg-surface-inverse px-6 pb-10 pt-14 text-content-inverse">
         <div className="ce-fade-in mx-auto flex w-full max-w-md flex-1 flex-col">
@@ -147,10 +157,34 @@ export default function OnboardingPage() {
           </div>
           <h1 style={serif} className="mt-8 text-h2 text-content-inverse">{isSelf ? 'Your' : `${Subject}’s`} space is ready.</h1>
           <p className="mt-3 text-body text-content-inverse/70">It only grows from here. Everything stays private to your family.</p>
+
+          {activatePlan && (
+            <div className="mt-6 rounded-3xl border border-accent-soft/35 bg-content-inverse/5 p-5">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-caption font-semibold uppercase tracking-widest text-accent-soft">{activatePlan.name}</p>
+                <p className="shrink-0 text-content-inverse"><span className="text-h4 font-bold">{activatePlan.price}</span><span className="text-body-sm text-content-inverse/60">{activatePlan.period}</span></p>
+              </div>
+              <ul className="mt-3 flex flex-col gap-2">
+                {planLines.map((b) => (
+                  <li key={b} className="flex items-start gap-2.5 text-body-sm text-content-inverse"><Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-soft" strokeWidth={2.4} />{b}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="flex-1" />
-          <button onClick={enterSpace} className="inline-flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-full bg-accent-soft text-body-sm font-semibold text-surface-inverse transition-opacity hover:opacity-90">
-            Enter your Family Space <ArrowRight className="h-5 w-5" strokeWidth={2} />
-          </button>
+          {activatePlan ? (
+            <>
+              <button onClick={goActivate} className="inline-flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-full bg-accent-soft text-body-sm font-semibold text-surface-inverse transition-opacity hover:opacity-90">
+                Activate {activatePlan.name} <ArrowRight className="h-5 w-5" strokeWidth={2} />
+              </button>
+              <button onClick={enterSpace} className="mt-2 min-h-[2.75rem] w-full rounded-full text-body-sm font-semibold text-content-inverse/70 transition-colors hover:text-content-inverse">Explore your space first</button>
+            </>
+          ) : (
+            <button onClick={enterSpace} className="inline-flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-full bg-accent-soft text-body-sm font-semibold text-surface-inverse transition-opacity hover:opacity-90">
+              Enter your Family Space <ArrowRight className="h-5 w-5" strokeWidth={2} />
+            </button>
+          )}
         </div>
       </div>
     )
