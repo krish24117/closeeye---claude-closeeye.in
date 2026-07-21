@@ -54,7 +54,14 @@ export default function PersonSpacePage() {
   }, [id])
   React.useEffect(() => { void load() }, [load])
 
-  if (loading) return <p className="py-20 text-center text-caption text-muted">Opening their space…</p>
+  if (loading) return (
+    <div className="flex flex-col items-center gap-3 py-24 text-center">
+      <span className="grid h-11 w-11 place-items-center rounded-full bg-ink">
+        <span className="h-3 w-3 animate-pulse rounded-full" style={{ background: 'hsl(103 58% 54%)', boxShadow: '0 0 12px 2px hsl(103 62% 54% / 0.6)' }} />
+      </span>
+      <p className="text-caption text-muted">Opening their space…</p>
+    </div>
+  )
   if (error || !space) return (
     <div className="py-20 text-center">
       <p className="text-body-sm text-ink">We couldn’t open this person’s space.</p>

@@ -20,7 +20,6 @@ import { saveProfileBasics, selectPlan } from '@/lib/db/onboarding'
 import { appendLearning } from '@/lib/db/space'
 import { type PlanId } from '@/lib/plans'
 import { getPendingPlan, setPendingPlan } from '@/lib/membership-intent'
-import { markFirstPerson } from '@/lib/first-run'
 import { track } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import { haptic } from '@/lib/haptics'
@@ -124,8 +123,10 @@ export default function OnboardingPage() {
   }
 
   function enterSpace() {
-    if (createdId) markFirstPerson(createdId)
-    router.replace('/space')
+    // Open the just-created person's Space directly (the guided first task). Routing straight here —
+    // rather than via /space, which would then redirect on — removes the intermediate hop so the
+    // cinematic close hands off to the arrival with no bare loading flash in between.
+    router.replace(createdId ? `/space/people/${createdId}` : '/space')
   }
 
   /* ── READY — a dark, alive close (its own full-screen layout) ── */
@@ -142,10 +143,10 @@ export default function OnboardingPage() {
             {fact.trim() && (
               <p className="mt-4 flex items-start gap-2.5 text-body-sm text-content-inverse"><Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-soft" strokeWidth={2.4} />{fact.trim()}</p>
             )}
-            <p className="mt-4 flex items-center gap-2 text-caption text-content-inverse/60">Beginning to understand {isSelf ? 'you' : subject}<span className="inline-block h-4 w-1.5 animate-pulse rounded-sm bg-accent-soft" /></p>
+            <p className="mt-4 flex items-center gap-2 text-caption text-content-inverse/60">{isSelf ? 'Your space is live' : `${Subject}’s space is live`}<span className="inline-block h-4 w-1.5 animate-pulse rounded-sm bg-accent-soft" /></p>
           </div>
           <h1 style={serif} className="mt-8 text-h2 text-content-inverse">{isSelf ? 'Your' : `${Subject}’s`} space is ready.</h1>
-          <p className="mt-3 text-body text-content-inverse/70">Close Eye is beginning to understand {factSubject === 'yourself' ? 'you' : subject}. From here, it only grows.</p>
+          <p className="mt-3 text-body text-content-inverse/70">It only grows from here. Everything stays private to your family.</p>
           <div className="flex-1" />
           <button onClick={enterSpace} className="inline-flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-full bg-accent-soft text-body-sm font-semibold text-surface-inverse transition-opacity hover:opacity-90">
             Enter your Family Space <ArrowRight className="h-5 w-5" strokeWidth={2} />
