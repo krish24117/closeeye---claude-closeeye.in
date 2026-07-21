@@ -39,3 +39,15 @@ verify_jwt = false
 # Cron — daily WhatsApp nurture sequence for un-converted registrants
 [functions.founder-nurture-sequences]
 verify_jwt = false
+
+# Public forms — submitted from unauthenticated marketing pages, so NO JWT. Recorded here
+# explicitly so a redeploy never flips them to jwt-required (the CLI defaults to true for any
+# function missing from this file), which would silently break the public forms.
+[functions.submit-consultation-request]
+verify_jwt = false
+
+[functions.submit-custom-care-request]
+verify_jwt = false
+
+[functions.survey-submit]
+verify_jwt = false
