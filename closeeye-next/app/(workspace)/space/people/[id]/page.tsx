@@ -102,7 +102,7 @@ export default function PersonSpacePage() {
         <Link href="/space/people" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
           <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> People
         </Link>
-        <Link href={`/space/people/${lo.id}/edit`} className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
+        <Link href={`/space/people/${lo.id}/add`} className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
           <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} /> Edit
         </Link>
       </div>
@@ -138,14 +138,14 @@ export default function PersonSpacePage() {
       {(relOnly || !lo.regionCode) && (
         <div className="flex flex-col gap-2">
           {relOnly && (
-            <Link href={`/space/people/${lo.id}/edit`} className="flex items-center gap-2.5 rounded-lg border border-dashed border-line bg-card/60 p-3 text-caption text-muted transition-colors hover:border-green/40 hover:text-ink">
+            <Link href={`/space/people/${lo.id}/add`} className="flex items-center gap-2.5 rounded-lg border border-dashed border-line bg-card/60 p-3 text-caption text-muted transition-colors hover:border-green/40 hover:text-ink">
               <Pencil className="h-3.5 w-3.5 shrink-0 text-green" strokeWidth={1.9} />
               <span className="flex-1">What do you call {poss}? Add {poss} name so Close Eye can speak about {poss} personally.</span>
               <ArrowRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
             </Link>
           )}
           {!lo.regionCode && (
-            <Link href={`/space/people/${lo.id}/edit`} className="flex items-center gap-2.5 rounded-lg border border-dashed border-line bg-card/60 p-3 text-caption text-muted transition-colors hover:border-green/40 hover:text-ink">
+            <Link href={`/space/people/${lo.id}/add`} className="flex items-center gap-2.5 rounded-lg border border-dashed border-line bg-card/60 p-3 text-caption text-muted transition-colors hover:border-green/40 hover:text-ink">
               <Globe className="h-3.5 w-3.5 shrink-0 text-green" strokeWidth={1.9} />
               <span className="flex-1">Add {person}’s country, so Close Eye shows the right local emergency number.</span>
               <ArrowRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />

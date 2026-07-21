@@ -18,10 +18,12 @@ import { useLovedOnes } from '@/components/family/family-data-provider'
 import { RelationshipSelector } from '@/components/family/relationship-selector'
 import { CountryField } from '@/components/family/country-field'
 import { CityField } from '@/components/family/city-field'
+import { PhotoPicker } from '@/components/family/photo-picker'
 import { fetchElderProfile, upsertElderProfile, type ElderProfileForm } from '@/lib/db/family'
 import { computeCompleteness, EMPTY_HEALTH } from '@/lib/db/profile'
 import { titleCase } from '@/lib/family/relationship-words'
 import { phonePlaceholder } from '@/lib/platform/locale'
+import { setLocalPhoto } from '@/lib/local-photos'
 import type { LovedOne } from '@/lib/db/types'
 import { haptic } from '@/lib/haptics'
 
@@ -68,6 +70,7 @@ export default function CompleteProfilePage() {
   const [city, setCity] = React.useState('')
   const [address, setAddress] = React.useState('')
   const [phone, setPhone] = React.useState('')
+  const [photo, setPhoto] = React.useState<string | null>(null)
   // Health
   const [conditions, setConditions] = React.useState<Set<string>>(new Set())
   const [condExtra, setCondExtra] = React.useState('')
@@ -78,6 +81,7 @@ export default function CompleteProfilePage() {
   const [ecPhone, setEcPhone] = React.useState('')
   const [doctorName, setDoctorName] = React.useState('')
   const [doctorPhone, setDoctorPhone] = React.useState('')
+  const [hospital, setHospital] = React.useState('')
 
   const [saving, setSaving] = React.useState(false)
   const [error, setError] = React.useState('')
@@ -105,6 +109,7 @@ export default function CompleteProfilePage() {
     setEcName(lo.emergency_contact_name ?? '')
     setEcPhone(lo.emergency_contact_phone ?? '')
     setDoctorName(lo.doctor_name ?? '')
+    setHospital(lo.nearest_hospital ?? '')
     void fetchElderProfile(lo.id).then((e) => {
       elderRef.current = e
       const { chips, extra } = parseConditions(e.medical_conditions)
@@ -155,7 +160,7 @@ export default function CompleteProfilePage() {
         phone_number: phone.trim(),
         address: address.trim(),
         doctor_name: doctorName.trim(),
-        nearest_hospital: lo.nearest_hospital ?? '',
+        nearest_hospital: hospital.trim(),
         emergency_contact_name: ecName.trim(),
         emergency_contact_phone: ecPhone.trim(),
         medical_notes: lo.medical_notes ?? '',
@@ -169,6 +174,7 @@ export default function CompleteProfilePage() {
         doctor_name: doctorName.trim(),
         doctor_phone: doctorPhone.trim(),
       }, { name: name.trim() || lo.full_name, age: age.trim() ? Number(age) : null })
+      if (photo) setLocalPhoto(lo.id, photo)
       haptic('success')
       toast('Profile saved.')
       router.replace(`/space/people/${lo.id}`)
@@ -212,6 +218,7 @@ export default function CompleteProfilePage() {
       {/* ① The basics */}
       <section className="flex flex-col gap-5 rounded-3xl border border-line/70 bg-card p-5 shadow-sm sm:p-6">
         <p className="text-caption font-semibold uppercase tracking-widest text-green">The basics</p>
+        <PhotoPicker onChange={setPhoto} />
         <div>
           <label htmlFor="p-name" className={labelCls}>Their name</label>
           <input id="p-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Lakshmi" autoComplete="off" className={inputCls} />
@@ -286,6 +293,10 @@ export default function CompleteProfilePage() {
             </button>
           </div>
         </div>
+        <Link href={`/space/people/${id}/health`} className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-green/40 bg-accent-soft/30 px-4 py-3.5 text-body-sm font-semibold text-green transition-colors hover:bg-accent-soft/60">
+          <span>Care &amp; preferences — routine, food, language &amp; what makes them feel known</span>
+          <span aria-hidden>→</span>
+        </Link>
       </section>
 
       {/* ③ Around her */}
@@ -305,6 +316,10 @@ export default function CompleteProfilePage() {
             <input value={doctorName} onChange={(e) => setDoctorName(e.target.value)} placeholder="Doctor’s name" autoComplete="off" className={inputCls} />
             <input value={doctorPhone} onChange={(e) => setDoctorPhone(e.target.value)} type="tel" inputMode="tel" placeholder={`Phone — ${phonePlaceholder(country)}`} autoComplete="off" className={inputCls} />
           </div>
+        </div>
+        <div>
+          <label htmlFor="p-hospital" className={labelCls}>Nearest hospital <span className="font-normal text-muted">(optional)</span></label>
+          <input id="p-hospital" value={hospital} onChange={(e) => setHospital(e.target.value)} placeholder="Hospital name" autoComplete="off" className={inputCls} />
         </div>
       </section>
 
