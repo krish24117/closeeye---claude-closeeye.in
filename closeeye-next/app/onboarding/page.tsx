@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { CountryField } from '@/components/family/country-field'
+import { relationshipWord, objectPronoun } from '@/lib/family/relationship-words'
 import { saveProfileBasics, selectPlan } from '@/lib/db/onboarding'
 import { PROTECT_OPTIONS, type PlanId } from '@/lib/plans'
 import { getPendingPlan, setPendingPlan } from '@/lib/membership-intent'
@@ -174,6 +175,11 @@ export default function OnboardingPage() {
                 <label className="ce-fade-in mt-5 block">
                   <span className="mb-1.5 block text-body-sm font-medium text-ink">Their name</span>
                   <input autoFocus value={lovedName} onChange={(e) => setLovedName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="e.g. Ramesh Rao" className={inputCls} />
+                  {relationshipWord(lovedName) && (
+                    <span className="mt-2 block rounded-xl bg-accent-soft/40 px-3.5 py-2.5 text-caption leading-relaxed text-green">
+                      That’s a relationship — what do you <b>call</b> {objectPronoun(relationshipWord(lovedName)!.gender)}? A name like “Lakshmi” lets Close Eye know {objectPronoun(relationshipWord(lovedName)!.gender)} personally.
+                    </span>
+                  )}
                 </label>
               )}
               {protect && (

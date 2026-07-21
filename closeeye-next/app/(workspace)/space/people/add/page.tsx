@@ -17,6 +17,7 @@ import { RelationshipSelector } from '@/components/family/relationship-selector'
 import { CountryField } from '@/components/family/country-field'
 import { CityField } from '@/components/family/city-field'
 import { PhotoPicker } from '@/components/family/photo-picker'
+import { relationshipWord, objectPronoun, titleCase } from '@/lib/family/relationship-words'
 import { phonePlaceholder } from '@/lib/platform/locale'
 import { setLocalPhoto } from '@/lib/local-photos'
 import { haptic } from '@/lib/haptics'
@@ -37,6 +38,13 @@ export default function AddPersonPage() {
   const [photo, setPhoto] = React.useState<string | null>(null)
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')
+
+  // If they typed a relationship as the name ("mother", "amma"), infer the relationship so they
+  // don't pick it twice — then we gently ask below for the name they actually call them.
+  const relMatch = relationshipWord(fullName)
+  React.useEffect(() => {
+    if (relMatch && !relationship.trim()) setRelationship(titleCase(relMatch.canon))
+  }, [relMatch?.canon]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const valid = fullName.trim().length >= 2 && relationship.length > 0 && city.trim().length >= 2
 
@@ -76,8 +84,13 @@ export default function AddPersonPage() {
         <PhotoPicker onChange={setPhoto} />
 
         <div>
-          <label htmlFor="fm-name" className={labelCls}>Full name</label>
+          <label htmlFor="fm-name" className={labelCls}>Their name</label>
           <input id="fm-name" value={fullName} onChange={(e) => setFullName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} placeholder="e.g. Ramesh Reddy" autoComplete="off" className={inputCls} />
+          {relMatch && (
+            <p className="mt-2 rounded-xl bg-accent-soft/40 px-3.5 py-2.5 text-caption leading-relaxed text-green">
+              That’s a relationship — what do you <b>call</b> {objectPronoun(relMatch.gender)}? A name like “Lakshmi” lets Close Eye speak about {objectPronoun(relMatch.gender)} personally. You can keep “{titleCase(relMatch.canon)}” if you’d rather.
+            </p>
+          )}
         </div>
 
         <div>

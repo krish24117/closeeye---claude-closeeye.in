@@ -12,6 +12,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Camera, ImageUp, FileText, X, Film, Loader2, Check } from 'lucide-react'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { createMemory, kindOf, type NewMemoryFile } from '@/lib/db/memories'
+import { titleCase } from '@/lib/family/relationship-words'
 import { track } from '@/lib/analytics'
 
 const MOMENTS = ['Birthday', 'A milestone', 'Everyday', 'A visit', 'A festival']
@@ -21,7 +22,10 @@ export default function AddMemoryPage() {
   const router = useRouter()
   const { lovedOnes } = useFamilyData()
   const person = lovedOnes.find((l) => l.id === id)
-  const first = (person?.full_name || 'them').trim().split(/\s+/)[0]
+  // Relationship-only people are stored as "your mother" → the first word is "Your", which reads
+  // as "Your's birthday". Use the relationship word itself ("Mother") in that case.
+  const rawName = (person?.full_name || '').trim()
+  const first = /^your\s/i.test(rawName) ? titleCase(rawName.replace(/^your\s+/i, '')) : (rawName.split(/\s+/)[0] || 'them')
 
   const [files, setFiles] = React.useState<(NewMemoryFile & { preview: string })[]>([])
   const [moment, setMoment] = React.useState('')

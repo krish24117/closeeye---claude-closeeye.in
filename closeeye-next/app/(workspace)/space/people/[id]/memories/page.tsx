@@ -11,13 +11,15 @@ import { useParams } from 'next/navigation'
 import { ArrowLeft, Search, Plus, FileText, Play, ImageOff, Trash2, Loader2 } from 'lucide-react'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchMemories, deleteMemory, deleteMemoryItem, type MemoryView, type MemoryItemView } from '@/lib/db/memories'
+import { titleCase } from '@/lib/family/relationship-words'
 import { formatDate } from '@/lib/platform/locale'
 import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 
 export default function MemoriesPage() {
   const { id } = useParams<{ id: string }>()
   const { lovedOnes } = useFamilyData()
-  const first = (lovedOnes.find((l) => l.id === id)?.full_name || 'their').trim().split(/\s+/)[0]
+  const rawName = (lovedOnes.find((l) => l.id === id)?.full_name || '').trim()
+  const first = /^your\s/i.test(rawName) ? titleCase(rawName.replace(/^your\s+/i, '')) : (rawName.split(/\s+/)[0] || 'their')
 
   const [memories, setMemories] = React.useState<MemoryView[] | null>(null)
   const [error, setError] = React.useState(false)
