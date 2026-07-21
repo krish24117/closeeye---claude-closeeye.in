@@ -8,6 +8,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { understandAsset, isStale, type PipelineContext } from './pipeline'
+import { PRIVACY_FIRST_POLICY, type FamilyPolicy } from './policy'
 import type { Asset, ConfidenceBand, Freshness } from './types'
 import type { UnderstandingProviders } from './providers'
 
@@ -69,6 +70,9 @@ describe('understandAsset — trust contract', () => {
     expect(r.understanding.assetType).toBe('prescription')
     expect(r.verified.graph.edges).toContainEqual({ from: 'person:lo1', to: 'asset:a1', type: 'has_asset' })
     expect(r.pending).toHaveLength(0)
+    expect(r.policy.domain).toBe('health')   // prescription → health domain
+    expect(r.policy.reasoned).toBe(true)
+    expect(r.policy.stored).toBe(true)
   })
 
   it('with no real providers configured, stores nothing', async () => {
@@ -126,5 +130,37 @@ describe('understandAsset — platform capabilities', () => {
     const temporary: Freshness = { permanence: 'temporary', observedAt: '2026-01-01T00:00:00Z', staleAfterDays: 180 }
     expect(isStale(permanent, '2026-07-22T00:00:00Z')).toBe(false)
     expect(isStale(temporary, '2026-07-22T00:00:00Z')).toBe(true)  // > 180 days later
+  })
+})
+
+describe('understandAsset — the Family Policy Engine runs before reasoning + storage', () => {
+  const highReading = providers({
+    classifier: { name: 't', async classify() { return { assetType: 'medical_report', confidence: hi } } },
+    document: { name: 't', async understand() { return { summary: 'A report', extractions: [] } } },
+    reasoning: { name: 't', async reason() { return {
+      subject: { lovedOneId: 'lo1', displayName: 'Amma', confidence: hi, reason: 'named' },
+      memories: [{ statement: 'Amma has high BP', memoryType: 'medical', confidence: hi }], events: [],
+    } } },
+  })
+  const overrideHealth = (o: Partial<{ allowInference: boolean; allowStore: boolean }>): FamilyPolicy => ({
+    ...PRIVACY_FIRST_POLICY,
+    domains: { ...PRIVACY_FIRST_POLICY.domains, health: { allowInference: true, allowStore: true, retentionDays: null, sharing: 'family', ...o } },
+  })
+
+  it('skips AI inference entirely when the family turned it off for that domain', async () => {
+    const r = await understandAsset(asset(), { ...ctx, providers: highReading, policy: overrideHealth({ allowInference: false }) })
+    expect(r.policy.reasoned).toBe(false)
+    expect(r.understanding.memoryCandidates).toHaveLength(0) // reasoning never ran
+    expect(r.verified.memories).toHaveLength(0)
+    expect(r.verified.subject).toBeNull()
+  })
+
+  it('reasons but stores nothing (no memory, no confirmation, no graph facts) when storage is off', async () => {
+    const r = await understandAsset(asset(), { ...ctx, providers: highReading, policy: overrideHealth({ allowStore: false }) })
+    expect(r.policy.reasoned).toBe(true)
+    expect(r.policy.stored).toBe(false)
+    expect(r.verified.memories).toHaveLength(0)
+    expect(r.pending.filter((p) => p.id.startsWith('memory'))).toHaveLength(0) // don't even ask
+    expect(r.verified.graph.edges).toHaveLength(0)                              // nothing linked
   })
 })

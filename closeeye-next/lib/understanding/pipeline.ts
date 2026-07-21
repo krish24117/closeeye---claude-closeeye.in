@@ -1,26 +1,33 @@
 /**
- * The unified understanding pipeline — every asset, one path:
+ * The unified understanding pipeline — every asset, one path, now governed by CloseEye's owned engines:
  *
- *   reduce to text → CLASSIFY → extract (specialised by type) → reason → gate the uncertain →
+ *   reduce to text → CLASSIFY → DOMAIN → POLICY GATE → extract → reason → gate uncertainty →
  *   link → timeline + events → knowledge-graph → make retrievable → recommend / notify
  *
- * It is pure ORCHESTRATION over the provider interfaces: it owns the family rules (classify before
- * reasoning, confidence-gate, confirm-before-store, evidence-stamp, memory ageing, verified-only
- * links), never a vendor. Swap any provider and this file does not change. This is the operating
- * system for a family's knowledge — transparent, privacy-preserving, under the family's control.
+ * The intelligence, privacy and family-specific behaviour are CloseEye's, not the model's: the Domain
+ * Engine says which life domain an asset belongs to; the Policy Engine decides — BEFORE any reasoning
+ * or storage — what the family permits; only then does a (replaceable) reasoning provider run. Swap any
+ * provider and this file does not change. The operating system for a family's knowledge.
  */
 import type {
-  Asset, AssetType, ConfirmationRequest, DetectedEvent, EvidenceStrength, Extraction, Freshness,
-  GraphEdge, GraphNode, KnowledgeGraphUpdate, MemoryCandidate, MemoryType, Permanence,
-  PipelineResult, ProposedMemory, TimelineEntry, Understanding,
+  Asset, AssetType, ConfidenceBand, ConfirmationRequest, DetectedEvent, EvidenceStrength, Extraction,
+  Freshness, GraphEdge, GraphNode, KnowledgeGraphUpdate, MemoryCandidate, MemoryType, Permanence,
+  PipelineResult, PolicySummary, ProposedMemory, TimelineEntry, Understanding,
 } from './types'
-import type { AssetInput, UnderstandingProviders } from './providers'
+import type { AssetInput, ReasoningResult, UnderstandingProviders } from './providers'
 import { getUnderstandingProviders } from './registry'
+import { defaultDomainEngine, type DomainEngine } from './domains'
+import { defaultPolicyEngine, PRIVACY_FIRST_POLICY, type FamilyPolicy, type FamilyPolicyEngine } from './policy'
 
 export interface PipelineContext {
   /** The family members the asset could belong to — reasoning LINKS to these, never invents a person. */
   lovedOnes: { id: string; name: string }[]
   providers?: UnderstandingProviders
+  /** CloseEye-owned engines (defaults are the platform's). */
+  domainEngine?: DomainEngine
+  policyEngine?: FamilyPolicyEngine
+  /** This family's privacy/sharing/retention rules (defaults to the privacy-first policy). */
+  policy?: FamilyPolicy
 }
 
 const isHigh = (c: { band: string }) => c.band === 'high'
@@ -47,25 +54,34 @@ export async function understandAsset(asset: Asset, ctx: PipelineContext): Promi
       const o = await P.ocr.extractText(input); text = o.text; language = o.language
     }
   }
-
-  // 1b — Translate to a canonical language for reasoning (understanding stays language-aware).
   if (P.translation && language && language !== 'en' && text) {
     const t = await P.translation.translate(text, 'en', language); text = t.text
   }
 
-  // 2 — CLASSIFY: what IS this asset? (drives specialised extraction downstream.)
+  // 2 — CLASSIFY: what IS this asset?
   const cls = await P.classifier.classify({ text, modality: asset.modality, mimeType: asset.mimeType })
   const assetType = cls.assetType
 
-  // 3 — EXTRACT: specialised for medical assets, else general document understanding.
+  // 3 — DOMAIN + POLICY: which life domain, and what does the family permit — BEFORE any reasoning.
+  const domain = (ctx.domainEngine ?? defaultDomainEngine).forAssetType(assetType)
+  const policy = ctx.policy ?? PRIVACY_FIRST_POLICY
+  const pe = ctx.policyEngine ?? defaultPolicyEngine
+  const domainPolicy = pe.policyFor(policy, domain)
+  const mayReason = pe.evaluate(policy, 'reason', domain).allow
+  const mayStore = pe.evaluate(policy, 'store', domain).allow
+
+  // 4 — EXTRACT: specialised for medical assets, else general document understanding.
   const doc = MEDICAL_TYPES.has(assetType) && P.medical
     ? await P.medical.extract({ text, assetType })
     : await P.document.understand({ text, assetType })
   const extractions: Extraction[] = doc.extractions.map((e) => ({ ...e, evidenceStrength: sourceEvidence }))
   const observedAt = extractions.find((e) => e.observedAt)?.observedAt ?? asset.uploadedAt
 
-  // 4 — REASON: propose subject link + memory candidates + events (generative — proposes only).
-  const reasoned = await P.reasoning.reason({ text, assetType, extractions, lovedOnes: ctx.lovedOnes })
+  // 5 — REASON — only if the family permits inference for this domain (proposes; never the truth).
+  const reasoned: ReasoningResult = mayReason
+    ? await P.reasoning.reason({ text, assetType, extractions, lovedOnes: ctx.lovedOnes })
+    : { subject: { lovedOneId: null, displayName: 'your family', confidence: { band: 'low' as ConfidenceBand }, reason: 'inference is off for this domain' }, memories: [], events: [] }
+
   const memoryCandidates: MemoryCandidate[] = reasoned.memories.map((m) => ({
     statement: m.statement, memoryType: m.memoryType, confidence: m.confidence,
     evidenceStrength: 'ai_inferred', freshness: freshnessFor(m, observedAt), extractions,
@@ -76,18 +92,20 @@ export async function understandAsset(asset: Asset, ctx: PipelineContext): Promi
     extractions, memoryCandidates, events: reasoned.events, subject: reasoned.subject, language,
   }
 
-  // 5 — CONFIDENCE GATE: HIGH is verified; MEDIUM/LOW must be confirmed by the family before storing.
-  const verifiedMemories = memoryCandidates.filter((m) => isHigh(m.confidence))
+  // 6 — CONFIDENCE GATE (within what policy allows to STORE): HIGH is verified; MEDIUM/LOW is confirmed.
+  const verifiedMemories = mayStore ? memoryCandidates.filter((m) => isHigh(m.confidence)) : []
   const verifiedEvents = reasoned.events.filter((e) => isHigh(e.confidence))
   const subjectVerified = !!reasoned.subject.lovedOneId && isHigh(reasoned.subject.confidence)
 
   const pending: ConfirmationRequest[] = []
-  memoryCandidates.filter((m) => !isHigh(m.confidence)).forEach((m, i) =>
-    pending.push({ id: `memory:${i}`, prompt: `Should I remember: “${m.statement}”?`, candidate: m, reason: `Confidence is ${m.confidence.band} — I'd rather ask than assume.` }))
+  if (mayStore) {
+    memoryCandidates.filter((m) => !isHigh(m.confidence)).forEach((m, i) =>
+      pending.push({ id: `memory:${i}`, prompt: `Should I remember: “${m.statement}”?`, candidate: m, reason: `Confidence is ${m.confidence.band} — I'd rather ask than assume.` }))
+  }
   if (reasoned.subject.lovedOneId && !subjectVerified)
     pending.push({ id: 'subject', prompt: `Is this about ${reasoned.subject.displayName}?`, candidate: reasoned.subject, reason: reasoned.subject.reason })
 
-  // 6 — LINK + TIMELINE: verified subject only; the strongest verified event dates & titles the entry.
+  // 7 — LINK + TIMELINE + GRAPH (graph facts stored only when policy permits).
   const lovedOneId = subjectVerified ? reasoned.subject.lovedOneId : null
   const topEvent = verifiedEvents[0]
   const timeline: TimelineEntry = {
@@ -95,14 +113,14 @@ export async function understandAsset(asset: Asset, ctx: PipelineContext): Promi
     at: topEvent?.at ?? observedAt, title: topEvent?.title ?? titleFor(assetType),
     summary: doc.summary, assetType, eventKind: topEvent?.kind,
   }
+  const graph = buildGraph(asset, understanding, verifiedMemories, mayStore ? lovedOneId : null)
 
-  // 7 — KNOWLEDGE GRAPH: verified facts/memories only, each tied back to its evidence.
-  const graph = buildGraph(asset, understanding, verifiedMemories, lovedOneId)
-
-  // 8 — RETRIEVABLE + proactive layers (recommendations / notifications never become memory).
+  // 8 — RETRIEVABLE + proactive layers.
   const embedding = P.embedding ? await P.embedding.embed(retrievalText(understanding)) : null
   const recommendations = P.recommendation ? await P.recommendation.recommend({ assetType, summary: doc.summary, extractions, events: reasoned.events }) : []
   const notifications = P.notification ? await P.notification.evaluate({ events: verifiedEvents, subject: reasoned.subject }) : []
+
+  const policySummary: PolicySummary = { domain, reasoned: mayReason, stored: mayStore, sharing: domainPolicy.sharing, retentionDays: domainPolicy.retentionDays }
 
   return {
     understanding, timeline,
@@ -111,7 +129,7 @@ export async function understandAsset(asset: Asset, ctx: PipelineContext): Promi
       memories: verifiedMemories, events: verifiedEvents, graph,
       subject: subjectVerified ? reasoned.subject : null,
     },
-    pending, recommendations, notifications, embedding,
+    pending, recommendations, notifications, embedding, policy: policySummary,
   }
 }
 

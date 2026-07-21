@@ -27,6 +27,27 @@ export type ConfidenceBand = 'high' | 'medium' | 'low'
 export interface Confidence { band: ConfidenceBand; score?: number }
 
 /**
+ * The life domains a family's knowledge organises into (Domain Engine). Reasoning, storage and
+ * retrieval are all domain-aware. This taxonomy is CloseEye-owned platform vocabulary — a model
+ * classifies into it, it does not get to redefine it.
+ */
+export type Domain =
+  | 'health' | 'legal' | 'property' | 'finance' | 'identity'
+  | 'education' | 'household' | 'memories' | 'trusted_presence' | 'general'
+
+/** Who a piece of knowledge may reach (Family Policy Engine). */
+export type Sharing = 'private' | 'family' | 'guardians'
+
+/** What the Policy Engine decided for this asset's domain — carried on every result, always visible. */
+export interface PolicySummary {
+  domain: Domain
+  reasoned: boolean
+  stored: boolean
+  sharing: Sharing
+  retentionDays: number | null
+}
+
+/**
  * HOW something is known — a separate axis from confidence. Confidence is "how sure"; evidence
  * strength is "on what basis". Together they give Connect a nuanced footing for reasoning.
  */
@@ -205,4 +226,6 @@ export interface PipelineResult {
   recommendations: Recommendation[]
   notifications: NotificationIntent[]
   embedding: number[] | null
+  /** The domain this asset belongs to + what the family's policy permitted. Always present. */
+  policy: PolicySummary
 }
