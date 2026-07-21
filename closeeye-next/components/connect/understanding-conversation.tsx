@@ -18,6 +18,9 @@ import { hasActiveConsent, recordConsent } from '@/lib/db/consent'
 import { ConsentPrompt } from '@/components/connect/consent-prompt'
 import { createConversation, appendMessage, fetchConversations, fetchConversation, type ConversationSummary } from '@/lib/db/conversations'
 import { MarkdownAnswer } from '@/components/family/markdown-answer'
+import { RecommendedNextSteps } from '@/components/family/recommended-next-steps'
+import { fetchTrustedNetwork } from '@/lib/db/collaboration'
+import type { ObjectRef, TrustedIdentity } from '@/lib/collaboration/types'
 import { EpistemicTag } from '@/components/cloza/epistemic-tag'
 import { SuggestedQuestions } from '@/components/cloza/suggested-questions'
 import type { Understanding } from '@/lib/connect/comprehension'
@@ -60,6 +63,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
   const [lovedOnes, setLovedOnes] = React.useState<LovedOneRef[]>([])
   const [history, setHistory] = React.useState<ConversationSummary[]>([])
   const [showHistory, setShowHistory] = React.useState(false)
+  const [network, setNetwork] = React.useState<TrustedIdentity[]>([]) // the family's trusted people, for next-step actions
   // Consent gate (Phase 3): null = still checking, false = must consent before we process anything.
   const [consented, setConsented] = React.useState<boolean | null>(null)
   const [showConsent, setShowConsent] = React.useState(false)
@@ -76,6 +80,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
       setLovedOnes((data as LovedOneRef[]) ?? [])
     })()
     void refreshHistory()
+    void fetchTrustedNetwork().then((n) => setNetwork(n.groups.flatMap((g) => g.members))).catch(() => {})
   }, [refreshHistory])
 
   React.useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }) }, [turns, thinking])
@@ -178,6 +183,10 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
   const subjectName = subjectLo ? dispName(subjectLo) : primaryName
   const lastTurn = turns[turns.length - 1]
   const showFollowUps = !thinking && lastTurn?.role === 'assistant' && lastTurn.kind === 'answer'
+  // The person an answer's next steps attach to (only when Connect actually resolved someone).
+  const answerObject: ObjectRef | null = subjectLo
+    ? { type: 'person', id: subjectLo.id, label: subjectName, domain: 'health', space: 'family' }
+    : null
   const followUps = subjectName
     ? [`What should I keep an eye on for ${subjectName}?`, `Who can help if ${subjectName} needs someone?`, `How can I support ${subjectName} day to day?`]
     : ['What can you help me with?', 'Who’s in my family space?']
@@ -252,6 +261,14 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
                 <HeartHandshake className="h-3.5 w-3.5" strokeWidth={2} /> Explore Close Eye Care
               </Link>
             </div>
+          )}
+          {answerObject && (
+            <RecommendedNextSteps
+              object={answerObject}
+              network={network}
+              receiveItems={['Health summary', 'Medication list', 'Recent visit summary']}
+              onChanged={() => void refreshHistory()}
+            />
           )}
           <SuggestedQuestions label="Ask a follow-up" questions={followUps} onPick={(q) => void ask(q)} />
         </div>

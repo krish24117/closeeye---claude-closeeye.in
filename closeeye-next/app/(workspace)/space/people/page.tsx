@@ -8,7 +8,7 @@
  */
 import * as React from 'react'
 import Link from 'next/link'
-import { UserPlus, ChevronRight, Check } from 'lucide-react'
+import { UserPlus, ChevronRight, Check, Network } from 'lucide-react'
 import { useLovedOnes } from '@/components/family/family-data-provider'
 import { titleCase } from '@/lib/family/relationship-words'
 import { computeCompleteness, fetchHealthLiteMap, EMPTY_HEALTH, type HealthLite } from '@/lib/db/profile'
@@ -45,9 +45,14 @@ export default function PeoplePage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-h2 text-ink">People</h1>
-        <Link href="/space/people/add" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
-          <UserPlus className="h-4 w-4" strokeWidth={1.75} /> Add someone
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/space/network" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
+            <Network className="h-4 w-4" strokeWidth={1.75} /> Trusted Network
+          </Link>
+          <Link href="/space/people/add" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
+            <UserPlus className="h-4 w-4" strokeWidth={1.75} /> Add someone
+          </Link>
+        </div>
       </div>
 
       {!loading && !error && lovedOnes.length > 0 && (
