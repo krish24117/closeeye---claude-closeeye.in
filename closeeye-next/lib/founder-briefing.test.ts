@@ -1,6 +1,7 @@
 /**
- * The Daily Founder Briefing must never invent — it states live numbers or stays silent. This freezes
- * that contract (the same slot Cloza inherits), so a future edit can't slip a fabricated clause in.
+ * The Daily Founder Briefing must always answer the same five questions from verified data, and must
+ * never invent. This freezes that contract (the same structured output Cloza inherits), so a future
+ * edit can't slip a fabricated clause or a false up-trend in.
  */
 import { describe, it, expect } from 'vitest'
 import { composeFounderBriefing, type BriefingInput } from './founder-briefing'
@@ -11,32 +12,39 @@ const today = (o: Partial<FounderToday> = {}): FounderToday => ({
   questionsToday: 0, careRequestsToday: 0, revenueToday: 0, countries: 1, ...o,
 })
 const input = (o: Partial<BriefingInput> = {}): BriefingInput => ({
-  name: 'Krishna', today: today(), foundingMembers: 0, alertCount: 0, presenceToday: 0, daysToLaunch: 25, ...o,
+  name: 'Krishna', today: today(), foundingMembers: 0, newFamiliesMonth: 0, revenueMonth: 0,
+  alerts: [], presenceToday: 0, daysToLaunch: 25, ...o,
 })
 
-describe('composeFounderBriefing — honest by construction', () => {
-  it('states the empty world plainly, never a fake number', () => {
-    const lines = composeFounderBriefing(input())
-    expect(lines[0]).toContain('No families are under Close Eye’s watch yet')
-    expect(lines[1]).toContain('quiet start')
-    expect(lines.join(' ')).not.toMatch(/\bundefined\b|\bNaN\b/)
+describe('composeFounderBriefing — the five questions, honest by construction', () => {
+  it('answers all five even on an empty, quiet day — with no fake numbers', () => {
+    const b = composeFounderBriefing(input())
+    expect(b.happened).toContain('quiet day')
+    expect(b.attention).toBe('Nothing needs your attention right now.')
+    expect(b.improved).toContain('holding steady')
+    expect(b.risk).toBe('Nothing at risk right now.')
+    expect(b.next).toContain('25 days to launch')
+    expect(Object.values(b).join(' ')).not.toMatch(/\bundefined\b|\bNaN\b/)
   })
 
-  it('reports only movements that actually happened (no zero-clauses)', () => {
-    const lines = composeFounderBriefing(input({ today: today({ peopleProtected: 41, familiesProtected: 23, newFamiliesToday: 2, questionsToday: 5, careRequestsToday: 0 }) }))
-    expect(lines[0]).toBe('Close Eye is watching over 41 people across 23 families.')
-    expect(lines[1]).toContain('2 new families joined')
-    expect(lines[1]).toContain('5 questions answered')
-    expect(lines[1]).not.toContain('care request') // zero → omitted, not "0 care requests"
+  it('“what happened” reports only movements that actually happened', () => {
+    const b = composeFounderBriefing(input({ today: today({ newFamiliesToday: 2, questionsToday: 5, careRequestsToday: 0, revenueToday: 0 }) }))
+    expect(b.happened).toContain('2 new families')
+    expect(b.happened).toContain('5 questions answered')
+    expect(b.happened).not.toContain('care request') // zero → omitted, never "0 care requests"
   })
 
-  it('surfaces multiple countries only when there truly are more than one', () => {
-    expect(composeFounderBriefing(input({ today: today({ peopleProtected: 1, familiesProtected: 1, countries: 1 }) }))[0]).not.toContain('countries')
-    expect(composeFounderBriefing(input({ today: today({ peopleProtected: 9, familiesProtected: 5, countries: 3 }) }))[0]).toContain('in 3 countries')
+  it('“what improved” never claims an up-trend that did not happen', () => {
+    expect(composeFounderBriefing(input()).improved).toContain('holding steady')
+    expect(composeFounderBriefing(input({ today: today({ newFamiliesToday: 1, familiesProtected: 10 }) })).improved).toContain('+1 family today')
+    expect(composeFounderBriefing(input({ newFamiliesMonth: 4 })).improved).toContain('+4 families this month')
   })
 
-  it('always ends on the mission clock', () => {
-    const lines = composeFounderBriefing(input({ foundingMembers: 23, daysToLaunch: 25 }))
-    expect(lines[lines.length - 1]).toBe('25 days to launch · 23 of 100 founding families.')
+  it('attention, risk and next-action are driven by real alerts', () => {
+    const b = composeFounderBriefing(input({ alerts: [{ tone: 'warning', title: '3 Guardian applications to review' }, { tone: 'info', title: '1 membership renewing this week' }] }))
+    expect(b.attention).toContain('2 items need attention')
+    expect(b.risk).toContain('3 guardian applications to review') // only the warning, lowercased
+    expect(b.risk).not.toContain('renewing') // info-tone is not "at risk"
+    expect(b.next).toBe('3 Guardian applications to review.')
   })
 })

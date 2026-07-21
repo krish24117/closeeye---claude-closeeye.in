@@ -39,7 +39,9 @@ export default function FounderTodayPage() {
   const brief = composeFounderBriefing({
     name, today,
     foundingMembers: ov.foundingMembers,
-    alertCount: ov.alerts.length,
+    newFamiliesMonth: ov.newFamiliesMonth,
+    revenueMonth: ov.revenueMonth,
+    alerts: ov.alerts,
     presenceToday: ov.presenceToday,
     daysToLaunch: daysUntilLaunch(),
   })
@@ -47,7 +49,7 @@ export default function FounderTodayPage() {
   return (
     <div className="flex flex-col gap-9">
       <FounderGreeting name={name} />
-      <Brief lines={brief} footnote="Composed from today’s live data. Cloza will write this for you automatically — next phase." />
+      <Brief briefing={brief} footnote="Composed from today’s live data. Cloza will write this for you automatically — next phase." />
       <section>
         <SectionLabel>Today at a glance</SectionLabel>
         <FigureRow>

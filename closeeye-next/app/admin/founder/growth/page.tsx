@@ -31,23 +31,23 @@ export default function FounderGrowthPage() {
   return (
     <div className="flex flex-col gap-10">
       <PageTitle title="Growth" subtitle="How Close Eye is growing — the families we protect, and the reach of the mission." />
+      {/* The four that matter — families and people protected, reach, and weekly engagement. */}
       <section>
-        <SectionLabel>The mission</SectionLabel>
+        <SectionLabel>Families &amp; reach</SectionLabel>
         <FigureRow>
-          <Figure label="Families" value={ov.families} hint={ov.newFamiliesMonth > 0 ? `+${ov.newFamiliesMonth} this month` : undefined} />
-          <Figure label="People protected" value={t.peopleProtected} />
+          <Figure label="Families protected" value={ov.families} hint={ov.newFamiliesMonth > 0 ? `+${ov.newFamiliesMonth} this month` : 'under watch'} />
+          <Figure label="People protected" value={t.peopleProtected} hint="under Close Eye’s watch" />
           <Figure label="Countries" value={t.countries} hint={t.countries === 1 ? 'India' : undefined} />
-          <Figure label="Founding families" value={`${ov.foundingMembers} / 100`} hint="Founding 100" />
+          <Figure label="Weekly active families" soon="needs family-activity tracking" />
         </FigureRow>
       </section>
+      {/* Everything else is secondary — kept quiet, not a SaaS analytics wall. */}
       <section>
-        <SectionLabel>Engagement &amp; funnel</SectionLabel>
+        <SectionLabel>Also tracking</SectionLabel>
         <FigureRow>
-          <Figure label="Weekly active families" soon="needs family-activity tracking" />
+          <Figure label="Founding families" value={`${ov.foundingMembers} / 100`} hint="Founding 100" />
           <Figure label="Monthly active families" soon="needs family-activity tracking" />
-          <Figure label="Invitations" soon="needs an invite flow" />
           <Figure label="Referrals" soon="needs referral attribution" />
-          <Figure label="Conversion" soon="needs funnel-event wiring" />
           <Figure label="Retention" soon="needs a churn definition" />
         </FigureRow>
       </section>

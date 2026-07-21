@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Sparkles, ArrowUpRight, AlertTriangle, Info, CheckCircle2 } from 'lucide-react'
 import type { AdminAlert } from '@/lib/db/admin'
+import type { FounderBriefing } from '@/lib/founder-briefing'
 import { cn } from '@/lib/utils'
 
 export const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
@@ -90,16 +91,30 @@ export function FigureRow({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">{children}</div>
 }
 
-/** The Daily Founder Briefing — rule-based today, Cloza-written later. Same card either way. */
-export function Brief({ lines, footnote }: { lines: string[]; footnote?: string }) {
+/**
+ * The Daily Founder Briefing — the signature surface. Always the same five questions, answered from
+ * live data in 30–60 seconds. Rule-based today, Cloza-written later — same card either way.
+ */
+const BRIEF_ROWS: { key: keyof FounderBriefing; q: string }[] = [
+  { key: 'happened', q: 'What happened' },
+  { key: 'attention', q: 'Needs attention' },
+  { key: 'improved', q: 'What improved' },
+  { key: 'risk', q: 'At risk' },
+  { key: 'next', q: 'Do next' },
+]
+
+export function Brief({ briefing, footnote }: { briefing: FounderBriefing; footnote?: string }) {
   return (
     <section className="rounded-2xl bg-surface-inverse p-6 text-content-inverse shadow-sm sm:p-8">
       <p className="flex items-center gap-2 text-caption font-semibold uppercase tracking-widest text-accent-soft">
         <Sparkles className="h-4 w-4" strokeWidth={1.9} /> Daily Founder Briefing
       </p>
-      <div className="mt-4 flex flex-col gap-3">
-        {lines.map((l, i) => (
-          <p key={i} style={serif} className="text-lead leading-relaxed text-content-inverse">{l}</p>
+      <div className="mt-5 flex flex-col divide-y divide-content-inverse/10">
+        {BRIEF_ROWS.map((r) => (
+          <div key={r.key} className="flex flex-col gap-1 py-3.5 first:pt-0 last:pb-0 sm:flex-row sm:gap-5">
+            <p className="shrink-0 pt-1 text-caption font-semibold uppercase tracking-wide text-content-inverse/40 sm:w-36">{r.q}</p>
+            <p style={serif} className="flex-1 text-body leading-relaxed text-content-inverse">{briefing[r.key]}</p>
+          </div>
         ))}
       </div>
       {footnote && <p className="mt-5 border-t border-content-inverse/10 pt-4 text-caption text-content-inverse/50">{footnote}</p>}
