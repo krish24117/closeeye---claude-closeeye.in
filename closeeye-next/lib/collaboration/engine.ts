@@ -10,7 +10,8 @@ import { policyFor, type FamilyPolicy } from '@/lib/understanding/policy'
 import { roleCompetentFor } from './roles'
 import type {
   Assignment, CollaborationAction, CollaborationEvent, CollaborationEventKind, CollaborationProposal,
-  CollaborationRole, Collaborator, Invitation, ObjectRef,
+  CollaborationRole, Collaborator, Invitation, NextStep, NextStepKind, ObjectRef,
+  RecommendedNextSteps, TrustedGroup, TrustedIdentity, TrustedNetwork,
 } from './types'
 
 /* ── Access (passive) — who can SEE an object without an explicit invite, under Family Policy ─────── */
@@ -133,6 +134,76 @@ export function proposeCollaboration(ctx: { domain: Domain; space?: Space }, pol
     out.push(prop('assign', 'presence_manager', 'Assign a Presence Manager', 'coordinate on the ground'))
   }
   return out
+}
+
+/* ── Recommended Next Steps — the UNIVERSAL section every answer ends with ────────────────────────────
+ * Four groups, always in this order, for EVERY domain: Continue yourself · Ask someone · Trusted help ·
+ * Complete. Only the middle two vary by context (via proposeCollaboration). The first and last are
+ * domain-agnostic, so the family learns one model whether it's an MRI or a sale deed. Empty groups are
+ * dropped, so an answer that needs no collaborator still shows Continue yourself + Complete. */
+const PROFESSIONAL = new Set<CollaborationRole>([
+  'doctor', 'lawyer', 'chartered_accountant', 'financial_advisor', 'presence_manager', 'guardian', 'business_partner',
+])
+const ACTION_KIND: Partial<Record<CollaborationAction, NextStepKind>> = {
+  share: 'share', invite: 'invite', assign: 'assign', request_info: 'request',
+}
+
+export function recommendNextSteps(ctx: { domain: Domain; space?: Space }, policy: FamilyPolicy): RecommendedNextSteps {
+  const ask: NextStep[] = []
+  const trusted: NextStep[] = []
+  for (const p of proposeCollaboration(ctx, policy)) {
+    const isTrusted = !!p.role && PROFESSIONAL.has(p.role)
+    ;(isTrusted ? trusted : ask).push({
+      group: isTrusted ? 'trusted_help' : 'ask_someone',
+      kind: ACTION_KIND[p.action] ?? 'share',
+      role: p.role, label: p.label, rationale: p.rationale,
+    })
+  }
+  const step = (group: NextStep['group'], kind: NextStepKind, label: string, rationale: string): NextStep =>
+    ({ group, kind, label, rationale })
+
+  const sections = [
+    {
+      group: 'continue_yourself' as const, title: 'Continue yourself', steps: [
+        step('continue_yourself', 'save', 'Save to Family Brain', 'keep this so future answers know it'),
+        step('continue_yourself', 'compare', 'Compare with the previous one', 'see what changed over time'),
+        step('continue_yourself', 'reminder', 'Set a reminder', 'so it isn’t forgotten'),
+      ],
+    },
+    {
+      group: 'ask_someone' as const, title: 'Ask someone',
+      steps: ask.length ? ask : [step('ask_someone', 'share', 'Share with a family member', 'someone close may want to see this')],
+    },
+    { group: 'trusted_help' as const, title: 'Trusted help', steps: trusted },
+    {
+      group: 'complete' as const, title: 'Complete the task', steps: [
+        step('complete', 'complete', 'Mark complete', 'when it’s taken care of'),
+        step('complete', 'archive', 'Archive', 'put it away — the record stays'),
+        step('complete', 'follow', 'Follow progress', 'get updates as it moves'),
+      ],
+    },
+  ]
+  return { sections: sections.filter((s) => s.steps.length > 0) }
+}
+
+/* ── Trusted Network — the extensible ecosystem, grouped for the human ────────────────────────────── */
+function roleGroup(role: CollaborationRole): TrustedGroup {
+  if (role === 'presence_manager' || role === 'guardian') return 'trusted_presence'
+  if (role === 'business_partner') return 'business'
+  if (role === 'doctor' || role === 'lawyer' || role === 'chartered_accountant' || role === 'financial_advisor') return 'professionals'
+  return 'family' // owner / family_member / guest
+}
+
+export function groupTrustedNetwork(identities: TrustedIdentity[]): TrustedNetwork {
+  const order: [TrustedGroup, string][] = [
+    ['family', 'Family'], ['trusted_presence', 'Trusted Presence'],
+    ['professionals', 'Professionals'], ['business', 'Business'],
+  ]
+  return {
+    groups: order
+      .map(([group, title]) => ({ group, title, members: identities.filter((i) => roleGroup(i.role) === group) }))
+      .filter((g) => g.members.length > 0),
+  }
 }
 
 function label(role: CollaborationRole): string {

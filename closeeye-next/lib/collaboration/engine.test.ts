@@ -7,9 +7,10 @@ import { describe, it, expect } from 'vitest'
 import {
   canInvite, canRoleAccess, createInvitation, createAssignment, completeAssignment,
   collaborationGraph, collaborationCapabilities, proposeCollaboration, respondToInvitation,
+  recommendNextSteps, groupTrustedNetwork,
 } from './engine'
 import { PRIVACY_FIRST_POLICY } from '@/lib/understanding/policy'
-import type { ObjectRef, Collaborator, Invitation } from './types'
+import type { ObjectRef, Collaborator, Invitation, TrustedIdentity } from './types'
 
 const AT = '2026-07-22T00:00:00Z'
 const P = PRIVACY_FIRST_POLICY
@@ -86,5 +87,54 @@ describe('Collaboration Engine — contextual, never generic', () => {
     const props = proposeCollaboration({ domain: 'legal' }, P)
     expect(props.some((p) => p.role === 'lawyer')).toBe(true)
     expect(props.some((p) => p.action === 'request_info')).toBe(true)
+  })
+})
+
+describe('Recommended Next Steps — one universal model across every domain', () => {
+  const groups = (domain: any, space?: any) => recommendNextSteps({ domain, space }, P).sections.map((s) => s.group)
+
+  it('always offers Continue yourself + Complete, even with no collaborator (identity is private)', () => {
+    // identity proposes nothing contextual, so ask falls back and trusted drops — the model still holds.
+    const g = groups('identity')
+    expect(g).toContain('continue_yourself')
+    expect(g).toContain('complete')
+  })
+
+  it('is IDENTICAL in structure across health, legal and business — only the steps differ', () => {
+    const health = recommendNextSteps({ domain: 'health' }, P)
+    const legal = recommendNextSteps({ domain: 'legal' }, P)
+    const business = recommendNextSteps({ domain: 'general', space: 'business' }, P)
+    // Same four-group order everywhere.
+    for (const r of [health, legal, business]) {
+      expect(r.sections.map((s) => s.group)).toEqual(['continue_yourself', 'ask_someone', 'trusted_help', 'complete'])
+    }
+    // Trusted help is domain-tailored: a doctor for health, a lawyer for legal, a partner for business.
+    const trusted = (r: typeof health) => r.sections.find((s) => s.group === 'trusted_help')!.steps.map((x) => x.role)
+    expect(trusted(health)).toContain('doctor')
+    expect(trusted(legal)).toContain('lawyer')
+    expect(trusted(business)).toContain('business_partner')
+  })
+
+  it('Continue yourself always works alone — save, compare, remind need no one else', () => {
+    const cont = recommendNextSteps({ domain: 'travel' }, P).sections.find((s) => s.group === 'continue_yourself')!
+    expect(cont.steps.map((s) => s.kind)).toEqual(['save', 'compare', 'reminder'])
+  })
+})
+
+describe('Trusted Network — extensible identities grouped for the human', () => {
+  const net: TrustedIdentity[] = [
+    { id: 'p1', name: 'Sister', role: 'family_member', permissions: [], verificationStatus: 'verified', availability: 'available' },
+    { id: 'p2', name: 'Rukmini', role: 'presence_manager', permissions: [], verificationStatus: 'verified', availability: 'available' },
+    { id: 'p3', name: 'Dr. Rao', role: 'doctor', organization: 'Apollo', permissions: [], verificationStatus: 'pending', availability: 'unknown' },
+    { id: 'p4', name: 'Partner', role: 'business_partner', permissions: [], verificationStatus: 'unverified', availability: 'busy' },
+  ]
+  it('groups family / trusted presence / professionals / business without hardcoding a person', () => {
+    const g = groupTrustedNetwork(net)
+    expect(g.groups.map((s) => s.group)).toEqual(['family', 'trusted_presence', 'professionals', 'business'])
+    expect(g.groups.find((s) => s.group === 'professionals')!.members[0].name).toBe('Dr. Rao')
+  })
+  it('drops empty groups — a family with only relatives shows just Family', () => {
+    const g = groupTrustedNetwork([net[0]])
+    expect(g.groups.map((s) => s.group)).toEqual(['family'])
   })
 })

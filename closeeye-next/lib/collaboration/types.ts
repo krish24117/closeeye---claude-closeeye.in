@@ -85,3 +85,47 @@ export interface CollaborationProposal {
   rationale: string
   requiresConfirmation: boolean
 }
+
+/**
+ * Recommended Next Steps — the SINGLE section every answer ends with, UNIVERSAL across every domain.
+ * The four groups never change; only the steps inside "Ask someone" and "Trusted help" vary by context.
+ * A family learns ONE model — whether the object is an MRI, a passport, a sale deed or a business
+ * contract, the interaction is identical; only the recommended actions change. These are moves to
+ * COMPLETE a responsibility together, not ways to broadcast information.
+ */
+export type NextStepGroup = 'continue_yourself' | 'ask_someone' | 'trusted_help' | 'complete'
+export type NextStepKind =
+  | 'save' | 'compare' | 'reminder'           // continue_yourself
+  | 'share' | 'request' | 'invite'            // ask_someone
+  | 'assign' | 'book'                         // trusted_help / delegation
+  | 'complete' | 'archive' | 'follow'         // complete
+export interface NextStep { group: NextStepGroup; kind: NextStepKind; role?: CollaborationRole; label: string; rationale: string }
+export interface NextStepSection { group: NextStepGroup; title: string; steps: NextStep[] }
+export interface RecommendedNextSteps { sections: NextStepSection[] }
+
+/**
+ * Trusted Identity — the extensible person model. Roles are DATA, never hardcoded branches: a new
+ * professional role (financial advisor, tax consultant, notary…) plugs in with no schema change.
+ * Collaboration is person-to-person, so an assignee or invitee is a Trusted Identity — family, Trusted
+ * Presence, a professional or a business role alike. Permissions are per-domain, so trust is scoped.
+ */
+export type VerificationStatus = 'unverified' | 'pending' | 'verified'
+export type Availability = 'available' | 'busy' | 'unavailable' | 'unknown'
+export interface DomainAccess { domain: Domain; view: boolean; comment: boolean; complete: boolean }
+export interface TrustedIdentity {
+  id: string
+  name: string
+  role: CollaborationRole
+  /** Human relationship, free-text: "sister", "family doctor", "corporate lawyer". */
+  relationship?: string
+  /** Optional affiliation — a clinic, a firm, a company. */
+  organization?: string
+  permissions: DomainAccess[]
+  verificationStatus: VerificationStatus
+  availability: Availability
+}
+
+/** The Trusted Network — one place all collaboration begins; grouped for the human, not the database. */
+export type TrustedGroup = 'family' | 'trusted_presence' | 'professionals' | 'business'
+export interface TrustedNetworkSection { group: TrustedGroup; title: string; members: TrustedIdentity[] }
+export interface TrustedNetwork { groups: TrustedNetworkSection[] }
