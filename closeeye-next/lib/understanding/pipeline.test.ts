@@ -73,6 +73,10 @@ describe('understandAsset — trust contract', () => {
     expect(r.policy.domain).toBe('health')   // prescription → health domain
     expect(r.policy.reasoned).toBe(true)
     expect(r.policy.stored).toBe(true)
+    // The memory's DNA: resolved context rides the result and the verified family link becomes the subject.
+    expect(r.context.domain).toBe('health')
+    expect(r.context.subject.type).toBe('person')
+    expect(r.context.subject.id).toBe('lo1')
   })
 
   it('with no real providers configured, stores nothing', async () => {

@@ -15,19 +15,22 @@ import type {
   PipelineResult, PolicySummary, ProposedMemory, TimelineEntry, Understanding,
 } from './types'
 import type { AssetInput, ReasoningResult, UnderstandingProviders } from './providers'
+import type { ConversationContext, ResolvedContext } from './types'
 import { getUnderstandingProviders } from './registry'
-import { defaultDomainEngine, type DomainEngine } from './domains'
 import { defaultPolicyEngine, PRIVACY_FIRST_POLICY, type FamilyPolicy, type FamilyPolicyEngine } from './policy'
+import { defaultContextEngine, type ContextResolutionEngine } from './context'
 
 export interface PipelineContext {
   /** The family members the asset could belong to — reasoning LINKS to these, never invents a person. */
   lovedOnes: { id: string; name: string }[]
   providers?: UnderstandingProviders
   /** CloseEye-owned engines (defaults are the platform's). */
-  domainEngine?: DomainEngine
+  contextEngine?: ContextResolutionEngine
   policyEngine?: FamilyPolicyEngine
   /** This family's privacy/sharing/retention rules (defaults to the privacy-first policy). */
   policy?: FamilyPolicy
+  /** The running conversation, so context carries across turns (continuity). */
+  conversation?: ConversationContext
 }
 
 const isHigh = (c: { band: string }) => c.band === 'high'
@@ -62,8 +65,10 @@ export async function understandAsset(asset: Asset, ctx: PipelineContext): Promi
   const cls = await P.classifier.classify({ text, modality: asset.modality, mimeType: asset.mimeType })
   const assetType = cls.assetType
 
-  // 3 — DOMAIN + POLICY: which life domain, and what does the family permit — BEFORE any reasoning.
-  const domain = (ctx.domainEngine ?? defaultDomainEngine).forAssetType(assetType)
+  // 3 — CONTEXT RESOLUTION (Space · Subject · Intent · Domain), then POLICY — BEFORE any reasoning.
+  const resolved: ResolvedContext = (ctx.contextEngine ?? defaultContextEngine)
+    .resolve({ text, assetType, lovedOnes: ctx.lovedOnes }, ctx.conversation)
+  const domain = resolved.domain
   const policy = ctx.policy ?? PRIVACY_FIRST_POLICY
   const pe = ctx.policyEngine ?? defaultPolicyEngine
   const domainPolicy = pe.policyFor(policy, domain)
@@ -120,6 +125,11 @@ export async function understandAsset(asset: Asset, ctx: PipelineContext): Promi
   const recommendations = P.recommendation ? await P.recommendation.recommend({ assetType, summary: doc.summary, extractions, events: reasoned.events }) : []
   const notifications = P.notification ? await P.notification.evaluate({ events: verifiedEvents, subject: reasoned.subject }) : []
 
+  // Reasoning refines context: a confidently-linked family member becomes the resolved subject.
+  if (subjectVerified && reasoned.subject.lovedOneId) {
+    resolved.subject = { type: 'person', id: reasoned.subject.lovedOneId, displayName: reasoned.subject.displayName, confidence: reasoned.subject.confidence }
+  }
+
   const policySummary: PolicySummary = { domain, reasoned: mayReason, stored: mayStore, sharing: domainPolicy.sharing, retentionDays: domainPolicy.retentionDays }
 
   return {
@@ -129,7 +139,7 @@ export async function understandAsset(asset: Asset, ctx: PipelineContext): Promi
       memories: verifiedMemories, events: verifiedEvents, graph,
       subject: subjectVerified ? reasoned.subject : null,
     },
-    pending, recommendations, notifications, embedding, policy: policySummary,
+    pending, recommendations, notifications, embedding, policy: policySummary, context: resolved,
   }
 }
 

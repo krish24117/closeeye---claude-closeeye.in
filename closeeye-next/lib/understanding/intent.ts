@@ -7,9 +7,7 @@
  * PROPOSE an intent, but this engine owns the decision of when to act and when to ask — so that
  * behaviour stays uniquely CloseEye's while the AI underneath evolves. Provider-independent.
  */
-import type { Asset, Confidence } from './types'
-
-export type IntentKind = 'remember' | 'answer' | 'remind' | 'organize' | 'share' | 'update' | 'unknown'
+import type { Asset, Confidence, Intent, IntentKind } from './types'
 
 export interface IntentSignal {
   /** A question or note the family typed, if any. */
@@ -18,16 +16,6 @@ export interface IntentSignal {
   asset?: Asset
   /** The family chose an action explicitly in the UI — the strongest signal. */
   explicit?: IntentKind
-}
-
-export interface ClarifyingQuestion { question: string; options?: string[] }
-
-export interface Intent {
-  kind: IntentKind
-  confidence: Confidence
-  rationale: string
-  /** Present when intent is too uncertain to act on — ASK before proceeding. */
-  clarification?: ClarifyingQuestion
 }
 
 export interface IntentEngine {

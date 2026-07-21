@@ -47,6 +47,45 @@ export interface PolicySummary {
   retentionDays: number | null
 }
 
+/* ── Intent (Intent Engine data types) ─────────────────────────────────────── */
+export type IntentKind =
+  | 'remember' | 'answer' | 'explain' | 'compare' | 'find'
+  | 'book' | 'schedule' | 'remind' | 'organize' | 'share' | 'update' | 'unknown'
+export interface ClarifyingQuestion { question: string; options?: string[] }
+export interface Intent { kind: IntentKind; confidence: Confidence; rationale: string; clarification?: ClarifyingQuestion }
+
+/* ── Context (Life Intelligence — Space + Subject) ─────────────────────────── */
+/** WHERE something belongs — CloseEye is a Life Intelligence Platform, not only Family. */
+export type Space = 'personal' | 'family' | 'business' | 'property' | 'household' | 'shared' | 'travel' | 'finance' | 'general'
+export type SubjectType = 'self' | 'person' | 'entity'
+export type EntityKind = 'company' | 'property' | 'partner' | 'vehicle' | 'account' | 'other'
+/** WHO or WHAT this is about — the self, a person (family member), or an entity (a company, a house…). */
+export interface ContextSubject {
+  type: SubjectType
+  id: string | null
+  displayName: string
+  entityKind?: EntityKind
+  confidence: Confidence
+}
+/** The four questions every interaction resolves BEFORE reasoning (Context Resolution Engine). */
+export interface ResolvedContext {
+  space: { value: Space; confidence: Confidence }
+  subject: ContextSubject
+  intent: Intent
+  domain: Domain
+  clarifications: ClarifyingQuestion[]
+  /** True when every dimension resolved confidently — safe to proceed without asking. */
+  resolved: boolean
+}
+/** The evolving, STRUCTURED memory of a conversation — so a later reference resolves ("that lawyer we discussed"). */
+export interface ConversationContext {
+  id: string
+  space?: Space
+  subject?: ContextSubject
+  domain?: Domain
+  intentKind?: IntentKind
+}
+
 /**
  * HOW something is known — a separate axis from confidence. Confidence is "how sure"; evidence
  * strength is "on what basis". Together they give Connect a nuanced footing for reasoning.
@@ -119,18 +158,27 @@ export interface MemoryCandidate {
 }
 
 /**
- * A stored, VERSIONED memory (the Memory Platform's unit — Phase 3 persists it). Families evolve, so
- * memories carry history: a new reading supersedes the old rather than overwriting it.
+ * A stored, VERSIONED memory (the Memory Platform's unit — Phase 3 persists it). Its DNA is what makes
+ * CloseEye remember CONTEXT, not just conversations: every memory carries Space · Subject · Domain ·
+ * Intent · permissions · Evidence · Confidence · Freshness · Version. Families evolve, so a new reading
+ * supersedes the old rather than overwriting it.
  */
 export interface Memory {
   id: string
-  lovedOneId: string
+  // ── DNA — the context every memory carries ──
+  space: Space
+  subject: ContextSubject
+  domain: Domain
+  intent: IntentKind
+  sharing: Sharing            // permissions
+  // ── content + evidence ──
   memoryType: MemoryType
   statement: string
   value?: string
   confidence: Confidence
-  provenance: Provenance
+  provenance: Provenance      // source + evidence strength + confirmedBy + evidence asset
   freshness: Freshness
+  // ── versioning ──
   version: number
   supersedes?: string
   supersededBy?: string
@@ -228,4 +276,6 @@ export interface PipelineResult {
   embedding: number[] | null
   /** The domain this asset belongs to + what the family's policy permitted. Always present. */
   policy: PolicySummary
+  /** The resolved Space · Subject · Intent · Domain for this interaction. Stamps every memory's DNA. */
+  context: ResolvedContext
 }
