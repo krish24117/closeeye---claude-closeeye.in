@@ -14,7 +14,7 @@ import { fetchAdminOverview, fetchGuardianOverview, fetchPresenceOverview, fetch
 import { fetchFounderToday } from '@/lib/db/founder-workspace'
 import { composeFounderBriefing } from '@/lib/founder-briefing'
 import { daysUntilLaunch } from '@/lib/launch'
-import { clozaAnswer, type ClozaContext, type FounderSnapshot } from '@/lib/cloza/engine'
+import { clozaCapability, type ClozaContext, type FounderSnapshot } from '@/lib/cloza/engine'
 import { ClozaPanel, ClozaAnswerCard } from '@/components/cloza/cloza-panel'
 import { PageTitle, SectionLabel, Brief } from '@/components/admin/founder-workspace'
 
@@ -38,7 +38,11 @@ export default function FounderIntelligencePage() {
   if (error) return <ErrorState title="Couldn’t reach Cloza" message="Please try again in a moment." onRetry={load} retryLabel="Try again" />
   if (!snap) return <div className="grid place-items-center py-24"><Loader2 className="h-6 w-6 animate-spin text-green" strokeWidth={2} /></div>
 
-  const ctx: ClozaContext = { role: 'founder', founder: snap }
+  const ctx: ClozaContext = {
+    role: 'founder',
+    scope: { role: 'founder', userName: snap.name, page: '/admin/founder/intelligence', region: 'IN', dateRange: { label: 'today' } },
+    founder: snap,
+  }
   const briefing = composeFounderBriefing({
     name: snap.name, today: snap.today,
     foundingMembers: snap.overview.foundingMembers,
@@ -66,15 +70,15 @@ export default function FounderIntelligencePage() {
       <section>
         <SectionLabel>Executive insights</SectionLabel>
         <div className="grid gap-4 lg:grid-cols-3">
-          <ClozaAnswerCard answer={clozaAnswer(ctx, 'growth')} />
-          <ClozaAnswerCard answer={clozaAnswer(ctx, 'revenue')} />
-          <ClozaAnswerCard answer={clozaAnswer(ctx, 'operations')} />
+          <ClozaAnswerCard answer={clozaCapability(ctx, 'growth')} />
+          <ClozaAnswerCard answer={clozaCapability(ctx, 'revenue')} />
+          <ClozaAnswerCard answer={clozaCapability(ctx, 'operations')} />
         </div>
       </section>
 
       <section>
         <SectionLabel>Action recommendations</SectionLabel>
-        <ClozaAnswerCard answer={clozaAnswer(ctx, 'actions')} />
+        <ClozaAnswerCard answer={clozaCapability(ctx, 'actions')} />
       </section>
     </div>
   )

@@ -1,14 +1,16 @@
 /**
- * The Founder role provider for Cloza — the first implemented "skill set". Every answer is computed
- * from a live snapshot and returned as epistemically-tagged segments (fact / recommendation /
- * unavailable). It NEVER fabricates a metric: a number Close Eye doesn't yet track is returned as an
- * honest "unavailable" segment, not a guess. This is the pattern the Admin / PM / Guardian / Customer
- * providers will follow — same engine, same UI, different snapshot + questions.
+ * The Founder role provider — the first implemented Cloza "skill set", and the template every other
+ * role follows. It is the ANALYSIS + RECOMMENDATION + ACTION layers for the founder: it computes
+ * facts from a live snapshot, adds clearly-tagged recommendations, and attaches structured actions
+ * (navigate now; tasks architected as `available:false`). It NEVER fabricates — a metric Close Eye
+ * doesn't track becomes an honest "unavailable" segment, and an uncovered city becomes "no data",
+ * never a guess. RETRIEVAL happens upstream (the snapshot); INTENT upstream (resolveIntent); this file
+ * turns a resolved intent + snapshot into an answer.
  */
 import type { FounderToday } from '@/lib/db/founder-workspace'
 import type { AdminOverview, GuardianOverview, PresenceOverview, AdminOperations } from '@/lib/db/admin'
 import { composeFounderBriefing } from '@/lib/founder-briefing'
-import type { ClozaAnswer, ClozaQuestion, ClozaSegment } from './types'
+import type { ClozaAnswer, ClozaQuestion, ClozaSegment, ClozaAction, ClozaScope, ClozaIntent } from './types'
 
 export interface FounderSnapshot {
   name: string
@@ -21,9 +23,12 @@ export interface FounderSnapshot {
 }
 
 const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`
+const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 const fact = (text: string): ClozaSegment => ({ kind: 'fact', text })
 const rec = (text: string): ClozaSegment => ({ kind: 'recommendation', text })
 const na = (text: string): ClozaSegment => ({ kind: 'unavailable', text })
+const nav = (label: string, href: string): ClozaAction => ({ kind: 'navigate', label, href, available: true })
+const task = (label: string, command: string): ClozaAction => ({ kind: 'task', label, command, available: false })
 const SOURCE = 'Live Close Eye data'
 
 export const FOUNDER_QUESTIONS: ClozaQuestion[] = [
@@ -34,6 +39,10 @@ export const FOUNDER_QUESTIONS: ClozaQuestion[] = [
   { id: 'expansion', label: 'Where should we expand next?' },
   { id: 'actions', label: 'What should I do next?' },
 ]
+
+function scopeNote(scope: ClozaScope): string {
+  return [cap(scope.role.replace(/_/g, ' ')), scope.dateRange?.label ?? 'today', scope.city ?? 'all cities'].join(' · ')
+}
 
 export function founderBriefing(s: FounderSnapshot): ClozaAnswer {
   const b = composeFounderBriefing({
@@ -49,10 +58,12 @@ export function founderBriefing(s: FounderSnapshot): ClozaAnswer {
     title: 'Today’s briefing',
     segments: [fact(b.happened), fact(b.attention), fact(b.improved), fact(b.risk), rec(b.next)],
     source: `${SOURCE} · today`,
+    capability: 'briefing',
   }
 }
 
-export function founderAnswer(s: FounderSnapshot, id: string): ClozaAnswer {
+/** ANALYSIS + RECOMMENDATION + ACTIONS for one capability (no breakdown). */
+function capabilityAnswer(s: FounderSnapshot, id: string): ClozaAnswer {
   const o = s.overview, t = s.today
   switch (id) {
     case 'briefing':
@@ -65,7 +76,7 @@ export function founderAnswer(s: FounderSnapshot, id: string): ClozaAnswer {
         na('Weekly/monthly active families and retention aren’t tracked yet — they need family-activity events.'),
       ]
       if (o.foundingMembers < 100) segs.push(rec(`Keep filling the Founding 100 — ${100 - o.foundingMembers} places left${s.daysToLaunch ? `, ${s.daysToLaunch} days to launch` : ''}.`))
-      return { title: 'Growth', segments: segs, source: SOURCE }
+      return { title: 'Growth', segments: segs, source: SOURCE, capability: id, actions: [nav('Open Growth', '/admin/founder/growth')] }
     }
 
     case 'revenue': {
@@ -75,8 +86,9 @@ export function founderAnswer(s: FounderSnapshot, id: string): ClozaAnswer {
       ]
       // ARPF — Average Revenue Per FAMILY (Close Eye is family-centred, not per-user).
       if (o.families > 0) segs.push(fact(`Average revenue per family (ARPF) is ${inr(Math.round(o.mrr / o.families))}/mo.`))
-      if (o.outstanding > 0) segs.push(rec(`${inr(o.outstanding)} is outstanding — worth chasing the pending payments.`))
-      return { title: 'Revenue', segments: segs, source: SOURCE }
+      const actions = [nav('Open Finance', '/admin/finance')]
+      if (o.outstanding > 0) { segs.push(rec(`${inr(o.outstanding)} is outstanding — worth chasing the pending payments.`)); actions.push(nav('View payments', '/admin/finance')) }
+      return { title: 'Revenue', segments: segs, source: SOURCE, capability: id, actions }
     }
 
     case 'operations': {
@@ -85,9 +97,10 @@ export function founderAnswer(s: FounderSnapshot, id: string): ClozaAnswer {
         fact(`${g.active} ${g.active === 1 ? 'Guardian is' : 'Guardians are'} active, ${g.visitsToday} ${g.visitsToday === 1 ? 'visit' : 'visits'} today, across ${s.operations.coverage.length} ${s.operations.coverage.length === 1 ? 'city' : 'cities'}.`),
         fact(`${p.openCases} open ${p.openCases === 1 ? 'case' : 'cases'} need attention, ${p.dueToday} due today.`),
       ]
-      if (g.pendingApplications > 0) segs.push(rec(`${g.pendingApplications} Guardian ${g.pendingApplications === 1 ? 'application' : 'applications'} to review.`))
+      const actions: ClozaAction[] = [nav('Open Operations', '/admin/founder/operations')]
+      if (g.pendingApplications > 0) { segs.push(rec(`${g.pendingApplications} Guardian ${g.pendingApplications === 1 ? 'application' : 'applications'} to review.`)); actions.push(nav('Review applications', '/admin/care-team')) }
       segs.push(na('SLA, response times and the emergency queue aren’t instrumented yet.'))
-      return { title: 'Operations', segments: segs, source: SOURCE }
+      return { title: 'Operations', segments: segs, source: SOURCE, capability: id, actions }
     }
 
     case 'expansion':
@@ -98,13 +111,19 @@ export function founderAnswer(s: FounderSnapshot, id: string): ClozaAnswer {
           na('There’s no expansion-readiness signal yet — demand by unserved city needs waitlist/lead geo-aggregation.'),
           rec('Deepen the cities you already serve before widening — density beats breadth pre-launch.'),
         ],
-        source: SOURCE,
+        source: SOURCE, capability: id, actions: [nav('Open Coverage', '/admin/coverage')],
       }
 
     case 'actions': {
       const alerts = o.alerts
-      if (alerts.length === 0) return { title: 'Recommended actions', segments: [rec(`Nothing urgent. Keep reaching out toward the Founding 100 (${o.foundingMembers} of 100).`)], source: SOURCE }
-      return { title: 'Recommended actions', segments: alerts.map((a) => rec(a.title)), source: `${SOURCE} · from live alerts` }
+      if (alerts.length === 0) return { title: 'Recommended actions', segments: [rec(`Nothing urgent. Keep reaching out toward the Founding 100 (${o.foundingMembers} of 100).`)], source: SOURCE, capability: id, actions: [task('Create reminder', 'create-reminder')] }
+      return {
+        title: 'Recommended actions',
+        segments: alerts.map((a) => rec(a.title)),
+        source: `${SOURCE} · from live alerts`,
+        capability: id,
+        actions: [...alerts.slice(0, 3).map((a) => nav(a.title, a.href)), task('Create reminder', 'create-reminder')],
+      }
     }
 
     default:
@@ -112,20 +131,45 @@ export function founderAnswer(s: FounderSnapshot, id: string): ClozaAnswer {
   }
 }
 
-const KEYWORDS: [RegExp, string][] = [
-  [/reven|money|mrr|paid|arpf|arpu|income|billing/i, 'revenue'],
-  [/grow|famil|people|countr|acqui|sign[- ]?up|member/i, 'growth'],
-  [/oper|guardian|visit|case|\bpm\b|presence|coverage|sla/i, 'operations'],
-  [/expan|city|cities|country|market|where.*(next|expand)/i, 'expansion'],
-  [/do next|action|priorit|focus|should i/i, 'actions'],
-  [/today|business|summar|brief|how are we|overall/i, 'briefing'],
-]
+/** A by-city breakdown / comparison — the multi-turn payoff, grounded in real city data. */
+function cityBreakdown(s: FounderSnapshot, intent: ClozaIntent): ClozaAnswer {
+  const id = intent.capability
+  let title: string
+  let rows: { city: string; text: string }[]
 
-export function founderAsk(s: FounderSnapshot, question: string): ClozaAnswer {
-  const q = question.trim()
-  if (!q) return unknownAnswer()
-  for (const [re, id] of KEYWORDS) if (re.test(q)) return founderAnswer(s, id)
-  return unknownAnswer()
+  if (id === 'revenue') {
+    title = 'Revenue by city'
+    rows = s.overview.revenueByCity.map((r) => ({ city: r.label, text: inr(r.value) }))
+  } else if (id === 'growth') {
+    title = 'Families by city'
+    rows = s.operations.coverage.map((c) => ({ city: c.city, text: `${c.families} ${c.families === 1 ? 'family' : 'families'}` }))
+  } else if (id === 'operations') {
+    title = 'Guardians & families by city'
+    rows = s.operations.coverage.map((c) => ({ city: c.city, text: `${c.guardians} ${c.guardians === 1 ? 'Guardian' : 'Guardians'}, ${c.families} ${c.families === 1 ? 'family' : 'families'}` }))
+  } else {
+    return { title: 'Can’t break that down yet', segments: [na(`A by-city breakdown isn’t available for “${id}” — Close Eye tracks city data for revenue, families and Guardians.`)], source: SOURCE, capability: id }
+  }
+
+  if (intent.compare && intent.compare.length >= 2) {
+    const segs = intent.compare.map((city) => {
+      const row = rows.find((r) => r.city.toLowerCase() === city.toLowerCase())
+      return row ? fact(`${row.city}: ${row.text}.`) : na(`No ${id === 'revenue' ? 'revenue' : 'coverage'} data for ${city} yet.`)
+    })
+    return { title: `${title} — comparison`, segments: segs, source: SOURCE, capability: id }
+  }
+
+  const segs = rows.length ? rows.map((r) => fact(`${r.city}: ${r.text}.`)) : [na('No city-level data yet.')]
+  return { title, segments: segs, source: SOURCE, capability: id }
+}
+
+/** The provider entrypoint: resolved intent + snapshot + scope → a fully-formed answer. */
+export function founderRespond(s: FounderSnapshot, scope: ClozaScope, intent: ClozaIntent): ClozaAnswer {
+  const base = intent.capability === 'unknown'
+    ? unknownAnswer()
+    : intent.breakdown === 'city'
+    ? cityBreakdown(s, intent)
+    : capabilityAnswer(s, intent.capability)
+  return { ...base, scopeNote: scopeNote({ ...scope, city: intent.city ?? scope.city }) }
 }
 
 function unknownAnswer(): ClozaAnswer {
@@ -133,5 +177,6 @@ function unknownAnswer(): ClozaAnswer {
     title: 'I can’t answer that yet',
     segments: [na('I only answer from Close Eye’s live data today. Try a suggested question — or ask about revenue, growth, operations or expansion.')],
     source: SOURCE,
+    capability: 'unknown',
   }
 }
