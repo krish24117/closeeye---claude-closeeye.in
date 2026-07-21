@@ -1,22 +1,15 @@
 /**
- * INTENT layer — the first stage, kept separate from data + analysis. It turns a question (plus scope
- * and the conversation so far) into a resolved ClozaIntent: which capability, any city, whether it's a
- * breakdown/comparison, and whether it's a follow-up that inherits the previous turn. It touches no
- * data and makes no claims — an unknown or uncovered city becomes an honest "no data" downstream,
- * never a guess.
+ * INTENT layer — the first stage, kept separate from data + analysis, and now ROLE-GENERIC: it takes
+ * the calling role's capability keyword map, so the same resolver serves Founder, PM, Guardian, etc.
+ * It turns a question (plus scope and the conversation so far) into a resolved ClozaIntent: which
+ * capability, any city, whether it's a breakdown/comparison, and whether it's a follow-up that
+ * inherits the previous turn. It touches no data and makes no claims — an unknown or uncovered city
+ * becomes an honest "no data" downstream, never a guess.
  */
 import type { ClozaScope, ClozaIntent, ClozaTurn } from './types'
 
-const CAPABILITY_KEYWORDS: [RegExp, string][] = [
-  [/forecast|predict|project(ion)?|next (month|quarter|year)/i, 'forecast'],
-  [/runway|\bcash\b|burn/i, 'runway'],
-  [/reven|money|mrr|\barr\b|paid|arpf|arpu|income|billing|invoice|unpaid|outstanding/i, 'revenue'],
-  [/grow|famil|people|countr|acqui|sign[- ]?up|member/i, 'growth'],
-  [/oper|guardian|visit|case|\bpm\b|presence|coverage|sla|staff/i, 'operations'],
-  [/expan|market|where.*(next|expand)/i, 'expansion'],
-  [/do next|action|priorit|focus|should i/i, 'actions'],
-  [/today|business|summar|brief|how are we|overall/i, 'briefing'],
-]
+/** A role provides its own capability keyword map (regex → capability id). */
+export type CapabilityKeywords = [RegExp, string][]
 
 // Cities Cloza recognises in a question. Detection only — the ANSWER always comes from live data.
 const CITY_WORDS: [RegExp, string][] = [
@@ -35,7 +28,7 @@ function detectCities(text: string): string[] {
   return found
 }
 
-export function resolveIntent(scope: ClozaScope, text: string, history: ClozaTurn[] = []): ClozaIntent {
+export function resolveIntent(scope: ClozaScope, text: string, keywords: CapabilityKeywords, history: ClozaTurn[] = []): ClozaIntent {
   const q = text.trim()
   const prior = history[history.length - 1]
 
@@ -44,7 +37,7 @@ export function resolveIntent(scope: ClozaScope, text: string, history: ClozaTur
   const compareAsked = /\bcompare\b|\bversus\b|\bvs\.?\b/i.test(q) || cities.length >= 2
 
   let capability = ''
-  for (const [re, id] of CAPABILITY_KEYWORDS) if (re.test(q)) { capability = id; break }
+  for (const [re, id] of keywords) if (re.test(q)) { capability = id; break }
 
   // A pure refinement ("break that down", "compare Hyderabad and Bangalore", "and Bangalore?") carries
   // NO capability of its own — it inherits the previous turn's. That is the conversation.

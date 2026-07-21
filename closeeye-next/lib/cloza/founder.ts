@@ -11,6 +11,7 @@ import type { FounderToday } from '@/lib/db/founder-workspace'
 import type { AdminOverview, GuardianOverview, PresenceOverview, AdminOperations } from '@/lib/db/admin'
 import { composeFounderBriefing } from '@/lib/founder-briefing'
 import type { ClozaAnswer, ClozaQuestion, ClozaSegment, ClozaAction, ClozaScope, ClozaIntent } from './types'
+import type { CapabilityKeywords } from './intent'
 
 export interface FounderSnapshot {
   name: string
@@ -38,6 +39,17 @@ export const FOUNDER_QUESTIONS: ClozaQuestion[] = [
   { id: 'operations', label: 'How are operations?' },
   { id: 'expansion', label: 'Where should we expand next?' },
   { id: 'actions', label: 'What should I do next?' },
+]
+
+export const FOUNDER_KEYWORDS: CapabilityKeywords = [
+  [/forecast|predict|project(ion)?|next (month|quarter|year)/i, 'forecast'],
+  [/runway|\bcash\b|burn/i, 'runway'],
+  [/reven|money|mrr|\barr\b|paid|arpf|arpu|income|billing|invoice|unpaid|outstanding/i, 'revenue'],
+  [/grow|famil|people|countr|acqui|sign[- ]?up|member/i, 'growth'],
+  [/oper|guardian|visit|case|\bpm\b|presence|coverage|sla|staff/i, 'operations'],
+  [/expan|market|where.*(next|expand)/i, 'expansion'],
+  [/do next|action|priorit|focus|should i/i, 'actions'],
+  [/today|business|summar|brief|how are we|overall/i, 'briefing'],
 ]
 
 function scopeNote(scope: ClozaScope): string {

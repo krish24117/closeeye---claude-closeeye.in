@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, CalendarClock, ShieldCheck, MessageCircle, MessagesSquare, TriangleAlert,
-  CalendarDays, BarChart3, Siren, Menu, X, Ambulance, Headset,
+  CalendarDays, BarChart3, Siren, Menu, X, Ambulance, Headset, Sparkles,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 
 const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) => boolean }[] = [
   { href: '/pm', label: 'Dashboard', icon: LayoutDashboard, match: (p) => p === '/pm' },
+  { href: '/pm/assistant', label: 'Cloza', icon: Sparkles, match: (p) => p.startsWith('/pm/assistant') },
   { href: '/pm/families', label: 'Families', icon: Users, match: (p) => p.startsWith('/pm/families') },
   { href: '/pm/visits', label: "Today's Visits", icon: CalendarClock, match: (p) => p.startsWith('/pm/visits') },
   { href: '/pm/guardians', label: 'Care Team', icon: ShieldCheck, match: (p) => p.startsWith('/pm/guardians') },
