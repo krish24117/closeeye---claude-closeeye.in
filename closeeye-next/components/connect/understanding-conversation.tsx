@@ -18,6 +18,8 @@ import { hasActiveConsent, recordConsent } from '@/lib/db/consent'
 import { ConsentPrompt } from '@/components/connect/consent-prompt'
 import { createConversation, appendMessage, fetchConversations, fetchConversation, type ConversationSummary } from '@/lib/db/conversations'
 import { MarkdownAnswer } from '@/components/family/markdown-answer'
+import { EpistemicTag } from '@/components/cloza/epistemic-tag'
+import { SuggestedQuestions } from '@/components/cloza/suggested-questions'
 import type { Understanding } from '@/lib/connect/comprehension'
 import type { AskTurn } from '@/lib/db/ask'
 import { cn } from '@/lib/utils'
@@ -169,6 +171,17 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
     `Who’s nearby if ${primaryName} needs someone?`,
   ] : []
 
+  // Platform capabilities in Connect (never the internal name): after a grounded answer, offer
+  // suggested follow-ups and — when there's a real person in view — a structured recommendation into
+  // Care. The subject is the one Connect actually resolved this thread to (never invented).
+  const subjectLo = subjectId ? lovedOnes.find((l) => l.id === subjectId) : null
+  const subjectName = subjectLo ? dispName(subjectLo) : primaryName
+  const lastTurn = turns[turns.length - 1]
+  const showFollowUps = !thinking && lastTurn?.role === 'assistant' && lastTurn.kind === 'answer'
+  const followUps = subjectName
+    ? [`What should I keep an eye on for ${subjectName}?`, `Who can help if ${subjectName} needs someone?`, `How can I support ${subjectName} day to day?`]
+    : ['What can you help me with?', 'Who’s in my family space?']
+
   return (
     <div className="flex flex-col gap-5">
       {/* Controls — new conversation + reopen a past one */}
@@ -226,6 +239,23 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
         {thinking && <div className="flex items-center gap-2.5 px-1 text-body-sm text-muted"><Orb size="sm" /> Understanding, then finding your answer…</div>}
         <div ref={endRef} />
       </div>
+
+      {/* After a grounded answer — a structured recommendation into Care (when a real person is in
+          view) and suggested follow-ups. Reuses the platform's UI; never shows the internal name. */}
+      {showFollowUps && (
+        <div className="ce-fade-in flex flex-col gap-3">
+          {subjectLo && (
+            <div className="rounded-2xl border border-line/70 bg-card px-4 py-3 shadow-sm">
+              <EpistemicTag kind="recommendation" />
+              <p className="mt-2 text-body-sm text-ink">When {subjectName} needs real-world presence, Close Eye can bring a trusted person to them.</p>
+              <Link href="/space/care" className="mt-2.5 inline-flex w-fit items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-caption font-semibold text-ivory transition-opacity hover:opacity-90">
+                <HeartHandshake className="h-3.5 w-3.5" strokeWidth={2} /> Explore Close Eye Care
+              </Link>
+            </div>
+          )}
+          <SuggestedQuestions label="Ask a follow-up" questions={followUps} onPick={(q) => void ask(q)} />
+        </div>
+      )}
 
       {/* Consent moment — shown in place of the input until the family agrees the trust promise. */}
       {showConsent ? (
@@ -305,7 +335,7 @@ function UnderstoodLine({ u }: { u: Understanding }) {
     <div className="rounded-2xl border border-green/20 bg-accent-soft/70 px-4 py-3">
       <p className="flex items-center gap-1.5 text-caption font-bold uppercase tracking-wide text-green"><Check className="h-3.5 w-3.5" strokeWidth={2.6} /> Understood</p>
       <p style={serif} className="mt-1.5 text-body leading-snug text-ink">{line}</p>
-      <p className="mt-1 text-caption text-muted">Grounded in what your family has shared</p>
+      <p className="mt-1.5 flex items-center gap-1.5 text-caption text-muted"><EpistemicTag kind="fact" /> Grounded in what your family has shared</p>
     </div>
   )
 }

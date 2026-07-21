@@ -11,18 +11,12 @@ import * as React from 'react'
 import Link from 'next/link'
 import { Sparkles, ArrowRight, MapPin } from 'lucide-react'
 import { clozaQuestions, clozaCapability, clozaAsk, type ClozaContext } from '@/lib/cloza/engine'
-import { EPISTEMIC_LABEL, type ClozaAnswer, type ClozaTurn, type Epistemic } from '@/lib/cloza/types'
+import { type ClozaAnswer, type ClozaTurn } from '@/lib/cloza/types'
+import { EpistemicTag } from '@/components/cloza/epistemic-tag'
 import { cn } from '@/lib/utils'
 
 const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
-
-const TAG_STYLE: Record<Epistemic, string> = {
-  fact: 'bg-accent-soft text-green',
-  recommendation: 'bg-surface-inverse text-content-inverse',
-  prediction: 'bg-warning/12 text-warning',
-  unavailable: 'bg-line text-muted',
-}
 
 export function ClozaAnswerCard({ answer }: { answer: ClozaAnswer }) {
   return (
@@ -31,7 +25,7 @@ export function ClozaAnswerCard({ answer }: { answer: ClozaAnswer }) {
       <div className="mt-4 flex flex-col gap-3">
         {answer.segments.map((seg, i) => (
           <div key={i} className="flex items-start gap-3">
-            <span className={cn('mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-caption font-bold', TAG_STYLE[seg.kind])}>{EPISTEMIC_LABEL[seg.kind]}</span>
+            <EpistemicTag kind={seg.kind} className="mt-0.5" />
             <p className="min-w-0 flex-1 text-body-sm leading-relaxed text-ink">{seg.text}</p>
           </div>
         ))}
