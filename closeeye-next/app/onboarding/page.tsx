@@ -1,104 +1,105 @@
 'use client'
 
+/**
+ * Onboarding — premium first run (founder-approved 2026-07-21), matched to the homepage's editorial
+ * language (Newsreader serif, calm, ivory/forest). Still optimised for FIRST SUCCESS: two mandatory
+ * fields (your name, your first loved one), everything else progressive. What's new is the emotional
+ * arc — a warm welcome, one SKIPPABLE "first understanding" moment where Close Eye visibly begins to
+ * understand, and a "space is ready — and alive" close — so a family FEELS the product in the first
+ * minute instead of landing on an empty screen. Membership-intent funnel is preserved untouched.
+ */
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2, Check } from 'lucide-react'
 import { LogoMark } from '@/components/ui/logo'
-import { Button } from '@/components/ui/button'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { CountryField } from '@/components/family/country-field'
 import { relationshipWord, objectPronoun } from '@/lib/family/relationship-words'
 import { saveProfileBasics, selectPlan } from '@/lib/db/onboarding'
-import { PROTECT_OPTIONS, type PlanId } from '@/lib/plans'
+import { appendLearning } from '@/lib/db/space'
+import { type PlanId } from '@/lib/plans'
 import { getPendingPlan, setPendingPlan } from '@/lib/membership-intent'
 import { markFirstPerson } from '@/lib/first-run'
 import { track } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import { haptic } from '@/lib/haptics'
 
-type StepId = 'name' | 'who'
-const STEPS: StepId[] = ['name', 'who']
+const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
 
-/**
- * Production onboarding — optimised for FIRST SUCCESS, not data collection.
- *
- * Two mandatory steps only: the user's name and their first loved one. That is the
- * minimum needed to deliver a first grounded Connect answer, so we land the user in
- * their new person's Space within a minute. Everything else is PROGRESSIVE — phone +
- * emergency contact + city are collected at the Care/booking gate (when a human service
- * makes them necessary); membership is chosen at Membership (when they choose to pay).
- *
- * The one exception: a visitor who chose a plan on /membership BEFORE signing up carries
- * that intent through — we confirm it silently and route to Activate, so the purchase
- * funnel is never broken.
- */
+type StepId = 'welcome' | 'name' | 'who' | 'fact' | 'ready'
+const DATA_STEPS: StepId[] = ['name', 'who', 'fact'] // the three progress-dotted steps
+
+const WHO = [
+  { key: 'Parent', title: 'A parent', sub: 'Mother or father' },
+  { key: 'Spouse', title: 'Partner', sub: 'Spouse or partner' },
+  { key: 'Child', title: 'A child', sub: 'Son or daughter' },
+  { key: 'Self', title: 'Myself', sub: 'Your own space' },
+] as const
+
+const inputCls =
+  'w-full rounded-2xl border border-line bg-card px-4 py-3.5 text-body text-ink placeholder:text-muted/70 transition-colors focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20'
+
 export default function OnboardingPage() {
   const router = useRouter()
   const { user, refreshOnboarding } = useAuth()
   const { addLovedOne, refresh } = useFamilyData()
 
   const metaName = ((user?.user_metadata?.full_name as string) || (user?.user_metadata?.name as string) || '').trim()
-  const [step, setStep] = React.useState(0)
+  const [step, setStep] = React.useState<StepId>('welcome')
   const [name, setName] = React.useState(metaName)
   const [protect, setProtect] = React.useState<string | null>(null)
   const [lovedName, setLovedName] = React.useState('')
   const [country, setCountry] = React.useState('')
-  // Carried membership intent only — no plan STEP; the visitor picked it on /membership.
+  const [fact, setFact] = React.useState('')
   const [plan, setPlan] = React.useState<PlanId | null>(null)
   const [hasIntent, setHasIntent] = React.useState(false)
+  const [createdId, setCreatedId] = React.useState<string | null>(null)
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')
 
-  React.useEffect(() => {
-    if (metaName && !name) setName(metaName)
-  }, [metaName]) // eslint-disable-line react-hooks/exhaustive-deps
+  React.useEffect(() => { if (metaName && !name) setName(metaName) }, [metaName]) // eslint-disable-line react-hooks/exhaustive-deps
+  React.useEffect(() => { const p = getPendingPlan(); if (p) { setPlan(p); setHasIntent(true) } }, [])
 
-  // Carried membership intent — the visitor chose a plan on /membership before signing
-  // up. We hold it (no plan step) and route to Activate at the end so the purchase
-  // funnel completes; a direct sign-up has no intent and simply lands in the Workspace.
-  React.useEffect(() => {
-    const pending = getPendingPlan()
-    if (pending) { setPlan(pending); setHasIntent(true) }
-  }, [])
-
-  const id = STEPS[step]!
   const isSelf = protect === 'Self'
-  const back = () => { setError(''); setStep((s) => Math.max(0, s - 1)) }
+  const subject = isSelf ? 'you' : (lovedName.trim().split(/\s+/)[0] || 'them')
+  const factSubject = isSelf ? 'yourself' : subject
 
+  const dataIndex = DATA_STEPS.indexOf(step as StepId) // -1 for welcome/ready
   const canAdvance = (() => {
-    switch (id) {
+    switch (step) {
       case 'name': return name.trim().length >= 2
       case 'who': return Boolean(protect) && (isSelf || lovedName.trim().length >= 2)
+      default: return true
     }
   })()
+
+  function back() {
+    setError('')
+    setStep((s) => (s === 'who' ? 'name' : s === 'fact' ? 'who' : s === 'name' ? 'welcome' : s))
+  }
 
   async function next() {
     setError('')
     if (!canAdvance) return
     haptic('light')
-    if (step < STEPS.length - 1) {
-      setStep((s) => s + 1)
-      return
-    }
-    await finish()
+    if (step === 'welcome') return setStep('name')
+    if (step === 'name') return setStep('who')
+    if (step === 'who') return setStep('fact')
+    if (step === 'fact') return createSpace() // Continue or Skip both land here
   }
 
-  async function finish() {
+  async function createSpace() {
     if (!user) return setError('You’re not signed in. Please sign in again.')
-    setBusy(true)
-    setError('')
+    setBusy(true); setError('')
     try {
       const nameOfLovedOne = isSelf ? name.trim() : lovedName.trim()
-      // 1. Profile name only, and mark onboarding complete. Phone is DEFERRED to the
-      //    Care/booking gate (progressive disclosure) — not needed for a first answer.
       const p = await saveProfileBasics(user.id, { fullName: name })
       if (p.error) throw new Error(p.error)
-      // 2. Create the first loved one (provisions the family space). City is DEFERRED
-      //    too — addLovedOne defaults it to '' and the Space prompts for it later.
       const created = await addLovedOne({ full_name: nameOfLovedOne, relationship: protect ?? 'Family', region_code: country || null })
-      // 3. Membership funnel ONLY: honour a plan chosen before sign-up. A direct sign-up
-      //    has no plan here — membership is chosen later, when the user chooses to pay.
+      // The first understanding — the family's own first words about this person. Best-effort:
+      // a failed note must never block landing in the space (the fact is a bonus, not a gate).
+      if (fact.trim()) { try { await appendLearning(created.id, 'note', fact.trim()) } catch {} }
       if (hasIntent && plan) {
         const s = await selectPlan(user.id, plan)
         if (s.error) throw new Error(s.error)
@@ -107,86 +108,133 @@ export default function OnboardingPage() {
       await refresh()
       haptic('success')
       track('onboarding_completed')
+      setCreatedId(created.id)
+      setBusy(false)
       if (hasIntent && plan) {
-        // Purchase intent → continue to Activate (payment).
         setPendingPlan(plan)
         router.replace('/family/membership?activate=1')
       } else {
-        // First success: hand off to the new person's Space (the guided first task). AuthGate
-        // sends a freshly-onboarded family user to /space; the marker lets the Workspace home
-        // open the person page from inside its own context — no redirect race.
-        markFirstPerson(created.id)
-        router.replace('/space')
+        setStep('ready') // the warm, alive confirmation
       }
     } catch (e) {
-      // Keep raw Postgres/Supabase errors out of the UI; log for debugging.
       console.error('[onboarding] setup failed:', e)
       setBusy(false)
       setError('We couldn’t finish setting up your family space. Please try again.')
     }
   }
 
-  const inputCls =
-    'w-full rounded-sm border border-line bg-ivory px-3.5 py-3 text-body text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20'
+  function enterSpace() {
+    if (createdId) markFirstPerson(createdId)
+    router.replace('/space')
+  }
 
+  /* ── READY — a dark, alive close (its own full-screen layout) ── */
+  if (step === 'ready') {
+    const Subject = subject.charAt(0).toUpperCase() + subject.slice(1)
+    return (
+      <div className="flex min-h-dvh flex-col bg-surface-inverse px-6 pb-10 pt-14 text-content-inverse">
+        <div className="ce-fade-in mx-auto flex w-full max-w-md flex-1 flex-col">
+          <div className="rounded-3xl border border-content-inverse/10 bg-content-inverse/5 p-6">
+            <div className="flex items-center gap-3">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-accent-soft text-body-sm font-bold text-surface-inverse">{Subject.charAt(0)}</span>
+              <span style={serif} className="text-h4 text-content-inverse">{Subject}</span>
+            </div>
+            {fact.trim() && (
+              <p className="mt-4 flex items-start gap-2.5 text-body-sm text-content-inverse"><Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-soft" strokeWidth={2.4} />{fact.trim()}</p>
+            )}
+            <p className="mt-4 flex items-center gap-2 text-caption text-content-inverse/60">Beginning to understand {isSelf ? 'you' : subject}<span className="inline-block h-4 w-1.5 animate-pulse rounded-sm bg-accent-soft" /></p>
+          </div>
+          <h1 style={serif} className="mt-8 text-h2 text-content-inverse">{isSelf ? 'Your' : `${Subject}’s`} space is ready.</h1>
+          <p className="mt-3 text-body text-content-inverse/70">Close Eye is beginning to understand {factSubject === 'yourself' ? 'you' : subject}. From here, it only grows.</p>
+          <div className="flex-1" />
+          <button onClick={enterSpace} className="inline-flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-full bg-accent-soft text-body-sm font-semibold text-surface-inverse transition-opacity hover:opacity-90">
+            Enter your Family Space <ArrowRight className="h-5 w-5" strokeWidth={2} />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  /* ── WELCOME + the three data steps (light) ── */
   return (
     <div className="flex min-h-dvh flex-col bg-ivory">
-      {/* Header + progress */}
-      <header className="mx-auto w-full max-w-md px-5 pt-6">
-        <div className="flex items-center gap-3">
-          {step > 0 ? (
-            <button type="button" onClick={back} aria-label="Back" className="grid h-9 w-9 place-items-center rounded-full text-ink hover:bg-ink/[0.05]"><ArrowLeft className="h-5 w-5" strokeWidth={1.75} /></button>
-          ) : (
-            <LogoMark variant="mobile" />
-          )}
-          <div className="flex flex-1 items-center gap-1.5">
-            {STEPS.map((_, n) => (
-              <span key={n} className={cn('h-1.5 flex-1 rounded-full transition-colors', n <= step ? 'bg-green' : 'bg-line')} />
-            ))}
+      <header className="mx-auto w-full max-w-md px-6 pt-6">
+        {step === 'welcome' ? (
+          <LogoMark variant="mobile" />
+        ) : (
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={back} aria-label="Back" className="grid h-9 w-9 place-items-center rounded-full text-ink transition-colors hover:bg-ink/[0.05]"><ArrowLeft className="h-5 w-5" strokeWidth={1.75} /></button>
+            <div className="flex flex-1 items-center gap-1.5">
+              {DATA_STEPS.map((_, n) => (
+                <span key={n} className={cn('h-1.5 flex-1 rounded-full transition-colors', n <= dataIndex ? 'bg-green' : 'bg-line')} />
+              ))}
+            </div>
+            <span className="text-caption font-semibold text-muted">{dataIndex + 1}/{DATA_STEPS.length}</span>
           </div>
-          <span className="text-caption font-semibold text-muted">{step + 1}/{STEPS.length}</span>
-        </div>
+        )}
       </header>
 
-      {/* Step body */}
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 py-8">
-        <div key={id} className="ce-fade-in flex flex-1 flex-col">
-          {id === 'name' && (
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-6 py-8">
+        <div key={step} className="ce-fade-in flex flex-1 flex-col">
+          {step === 'welcome' && (
             <>
-              <h1 className="text-h2 text-ink">What should we call you?</h1>
-              <p className="mt-2 text-body text-muted">So Close Eye can greet you personally.</p>
-              <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="Your full name" autoComplete="name" className={cn(inputCls, 'mt-6')} />
+              <div className="mb-7 grid h-14 w-14 place-items-center rounded-full bg-surface-inverse"><span className="h-3 w-3 rounded-full bg-green" /></div>
+              <h1 style={serif} className="text-h1 leading-tight text-ink">Let’s create your family’s private space.</h1>
+              <p className="mt-4 text-lead text-muted">It takes about a minute. Everything you add stays private to your family.</p>
             </>
           )}
 
-          {id === 'who' && (
+          {step === 'name' && (
             <>
-              <h1 className="text-h2 text-ink">Who would you like Close Eye to know first?</h1>
-              <p className="mt-2 text-body text-muted">We’ll set up their space first — you can add more later.</p>
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                {PROTECT_OPTIONS.map((o) => (
-                  <button key={o.key} type="button" onClick={() => { setProtect(o.key); setError('') }} className={cn('flex flex-col items-center gap-2 rounded-lg border-2 bg-card px-4 py-5 text-center transition-colors', protect === o.key ? 'border-green bg-accent-soft/40' : 'border-line hover:border-ink/20')}>
-                    <span className="text-2xl" aria-hidden>{o.emoji}</span>
-                    <span className="text-body-sm font-semibold text-ink">{o.label}</span>
+              <h1 style={serif} className="text-h2 text-ink">What should we call you?</h1>
+              <p className="mt-3 text-body text-muted">So Close Eye can greet you personally.</p>
+              <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="Your full name" autoComplete="name" className={cn(inputCls, 'mt-7')} />
+            </>
+          )}
+
+          {step === 'who' && (
+            <>
+              <h1 style={serif} className="text-h2 text-ink">Who should Close Eye know first?</h1>
+              <p className="mt-3 text-body text-muted">We’ll set up their space first — you can add more anytime.</p>
+              <div className="mt-7 grid grid-cols-2 gap-3">
+                {WHO.map((o) => (
+                  <button key={o.key} type="button" onClick={() => { setProtect(o.key); setError('') }}
+                    className={cn('rounded-2xl border bg-card px-4 py-4 text-start transition-colors', protect === o.key ? 'border-green bg-accent-soft/50' : 'border-line hover:border-ink/20')}>
+                    <span className="block text-body-sm font-semibold text-ink">{o.title}</span>
+                    <span className="mt-0.5 block text-caption text-muted">{o.sub}</span>
                   </button>
                 ))}
               </div>
               {protect && !isSelf && (
                 <label className="ce-fade-in mt-5 block">
-                  <span className="mb-1.5 block text-body-sm font-medium text-ink">Their name</span>
-                  <input autoFocus value={lovedName} onChange={(e) => setLovedName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="e.g. Ramesh Rao" className={inputCls} />
+                  <span className="mb-2 block text-body-sm font-semibold text-ink">Their name</span>
+                  <input autoFocus value={lovedName} onChange={(e) => setLovedName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="e.g. Mom, or a name like Lakshmi" className={inputCls} />
                   {relationshipWord(lovedName) && (
-                    <span className="mt-2 block rounded-xl bg-accent-soft/40 px-3.5 py-2.5 text-caption leading-relaxed text-green">
-                      That’s a relationship — what do you <b>call</b> {objectPronoun(relationshipWord(lovedName)!.gender)}? A name like “Lakshmi” lets Close Eye know {objectPronoun(relationshipWord(lovedName)!.gender)} personally.
+                    <span className="mt-2.5 block rounded-xl bg-accent-soft/50 px-3.5 py-2.5 text-caption leading-relaxed text-green">
+                      That’s a relationship — what do you <b>call</b> {objectPronoun(relationshipWord(lovedName)!.gender)}? A name lets Close Eye speak about {objectPronoun(relationshipWord(lovedName)!.gender)} personally.
                     </span>
                   )}
                 </label>
               )}
               {protect && (
-                <div className="ce-fade-in mt-4">
-                  <span className="mb-1.5 block text-body-sm font-medium text-ink">Country <span className="font-normal text-muted">(optional)</span></span>
+                <div className="ce-fade-in mt-5">
+                  <span className="mb-2 block text-body-sm font-semibold text-ink">Country <span className="font-normal text-muted">(optional)</span></span>
                   <CountryField value={country} onChange={setCountry} />
-                  <p className="mt-1.5 text-caption text-muted">Sets the right local emergency number if it’s ever needed.</p>
+                  <p className="mt-1.5 text-caption text-muted">Sets the right local emergency number, if it’s ever needed.</p>
+                </div>
+              )}
+            </>
+          )}
+
+          {step === 'fact' && (
+            <>
+              <h1 style={serif} className="text-h2 text-ink">Tell Close Eye one thing about {factSubject}.</h1>
+              <p className="mt-3 text-body text-muted">Anything at all — a routine, a worry, something {isSelf ? 'you love' : `${subject} loves`}.</p>
+              <input autoFocus value={fact} onChange={(e) => setFact(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder={isSelf ? 'e.g. I love my morning walks' : `e.g. ${Cap(subject)} loves her morning walks`} className={cn(inputCls, 'mt-7')} />
+              {fact.trim().length > 1 && (
+                <div className="ce-fade-in mt-4 flex items-start gap-2.5 rounded-2xl border border-line bg-card p-3.5">
+                  <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-inverse"><span className="h-1.5 w-1.5 rounded-full bg-green" /></span>
+                  <p className="text-body-sm leading-relaxed text-muted">I’ll remember that. This is how I begin to understand {factSubject === 'yourself' ? 'you' : subject}.</p>
                 </div>
               )}
             </>
@@ -194,13 +242,21 @@ export default function OnboardingPage() {
 
           <div className="flex-1" />
           {error && <p className="mt-4 text-caption text-error">{error}</p>}
-          <Button size="lg" className="mt-6 w-full" disabled={!canAdvance || busy} onClick={next}>
-            {busy ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Setting up your family space…</>
-              : step === STEPS.length - 1 ? <>Finish setup <ArrowRight className="h-5 w-5" strokeWidth={2} /></>
+
+          <button onClick={next} disabled={!canAdvance || busy}
+            className="mt-7 inline-flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-full bg-surface-inverse text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90 disabled:opacity-50">
+            {busy ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Creating {isSelf ? 'your' : `${subject}’s`} space…</>
+              : step === 'welcome' ? <>Begin <ArrowRight className="h-5 w-5" strokeWidth={2} /></>
+              : step === 'fact' ? <>Continue <ArrowRight className="h-5 w-5" strokeWidth={2} /></>
               : <>Continue <ArrowRight className="h-5 w-5" strokeWidth={2} /></>}
-          </Button>
+          </button>
+          {step === 'fact' && !busy && (
+            <button onClick={createSpace} className="mt-2 min-h-[2.75rem] w-full rounded-full text-body-sm font-semibold text-muted transition-colors hover:text-ink">Skip for now</button>
+          )}
         </div>
       </main>
     </div>
   )
 }
+
+function Cap(s: string) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s }

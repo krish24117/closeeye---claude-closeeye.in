@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
-import { Manrope, Inter } from 'next/font/google'
+import { Manrope, Inter, Newsreader } from 'next/font/google'
 import '@/styles/globals.css'
 // Design System Constitution · Ch.1 Typography — Phase 1 token layer. Declarative
 // custom properties only; consumed by nothing yet, so it changes zero pixels.
@@ -26,6 +26,15 @@ const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
+})
+// Display serif — the premium editorial voice (homepage + onboarding). Exposed app-wide so
+// `var(--font-newsreader)` resolves outside the (connect) scope too. Nothing else uses it, so
+// this loads the face but changes no existing pixel.
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  variable: '--font-newsreader',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
 })
 
 // Brand ground colours — single source so the values aren't re-typed as raw hex across metadata.
@@ -144,7 +153,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang={localeFor(DEFAULT_REGION_CODE)} className={`scroll-smooth ${manrope.variable} ${inter.variable}`}>
+    <html lang={localeFor(DEFAULT_REGION_CODE)} className={`scroll-smooth ${manrope.variable} ${inter.variable} ${newsreader.variable}`}>
       <body className="min-h-dvh bg-ivory text-body">
         <a
           href="#main"
