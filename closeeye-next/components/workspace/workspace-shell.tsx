@@ -18,10 +18,11 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Home, MessageCircle, Users, Activity, HeartHandshake, CreditCard, UserRound, Siren, UserPlus, LogOut } from 'lucide-react'
+import { Home, MessageCircle, Users, Activity, HeartHandshake, CreditCard, UserRound, Siren, UserPlus, LogOut, Bell } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { supabase } from '@/lib/supabase'
+import { fetchUnreadCount } from '@/lib/db/notifications'
 import { Logo } from '@/components/ui/logo'
 import { emergencyDial, DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 import { PRIMARY_NAV, OVERFLOW_NAV, CONNECT_HREF, isActive } from '@/lib/workspace/nav'
@@ -56,6 +57,14 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = React.useState(false)
   const [sheetOpen, setSheetOpen] = React.useState(false)
+  const [unread, setUnread] = React.useState(0)
+
+  // Unread notifications → the bell badge. Refetched on navigation, so it clears the moment the
+  // user returns from the Notifications page (which marks everything read).
+  React.useEffect(() => {
+    if (!user) return
+    void fetchUnreadCount(user.id).then(setUnread).catch(() => {})
+  }, [user, pathname])
 
   // Unified authentication entry — one guard, the app's auth provider, the canonical sign-in.
   // Also closes the deep-link hole: a signed-in user who never onboarded (direct /space link or
@@ -91,6 +100,14 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
     try { await supabase.auth.signOut() } catch {}
     router.replace('/connect')
   }
+
+  // The notifications bell — real feed at /space/notifications, with a quiet unread dot.
+  const NotifBell = ({ className }: { className?: string }) => (
+    <Link href="/space/notifications" aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'} className={cn('relative grid h-11 w-11 place-items-center rounded-full text-content-muted transition-colors hover:bg-surface-accent/60 hover:text-brand', className)}>
+      <Bell className="h-6 w-6" strokeWidth={1.5} />
+      {unread > 0 && <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-brand ring-2 ring-surface" aria-hidden />}
+    </Link>
+  )
 
   // The dock tabs are the visible primary Owners minus Connect (the orb), split evenly around it.
   const tabItems = VISIBLE_PRIMARY_NAV.filter((i) => i.href !== CONNECT_HREF)
@@ -187,13 +204,17 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
           Logo matches the Connect front-door header (horizontal lockup, 26px) for brand continuity. */}
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-edge bg-surface/90 px-5 backdrop-blur-xl lg:hidden">
         <Link href="/space" aria-label="Workspace home"><Logo lockup="horizontal" height={26} /></Link>
-        <Link href="/family/add" aria-label="Add someone" className="grid h-11 w-11 place-items-center rounded-full text-content-muted transition-colors hover:bg-surface-accent/60 hover:text-brand">
-          <UserPlus className="h-6 w-6" strokeWidth={1.5} />
-        </Link>
+        <div className="flex items-center gap-0.5">
+          <NotifBell />
+          <Link href="/space/people/add" aria-label="Add someone" className="grid h-11 w-11 place-items-center rounded-full text-content-muted transition-colors hover:bg-surface-accent/60 hover:text-brand">
+            <UserPlus className="h-6 w-6" strokeWidth={1.5} />
+          </Link>
+        </div>
       </header>
 
       {/* Desktop account button (top-right, over content) */}
-      <div className="fixed right-6 top-5 z-30 hidden lg:block">
+      <div className="fixed right-6 top-5 z-30 hidden items-center gap-1.5 lg:flex">
+        <NotifBell />
         <div className="relative">
           <button onClick={() => setMenuOpen((v) => !v)} aria-label="Account" aria-expanded={menuOpen} className="grid h-9 w-9 place-items-center rounded-full bg-brand text-body-sm font-semibold text-content-inverse focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 shadow-sm">
             {initials}

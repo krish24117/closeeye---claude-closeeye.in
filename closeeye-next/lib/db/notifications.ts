@@ -46,6 +46,17 @@ export async function fetchNotifications(userId: string, limit = 30): Promise<Ap
   return ((data as NotificationRow[] | null) ?? []).map((n) => ({ ...n, target: notificationTarget(n.type) }))
 }
 
+/** How many unread notifications the user has — for the workspace bell badge. Never throws
+ *  (a failed count reads as 0, so the shell never breaks over a badge). */
+export async function fetchUnreadCount(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('read', false)
+  return error ? 0 : (count ?? 0)
+}
+
 /** Mark every unread notification for the user as read. Best-effort. */
 export async function markAllNotificationsRead(userId: string): Promise<void> {
   const { error } = await supabase

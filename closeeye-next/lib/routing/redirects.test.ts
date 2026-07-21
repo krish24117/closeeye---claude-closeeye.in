@@ -34,6 +34,7 @@ const CONTRACT = [
   '/space/people/[id]/memories',
   '/space/people/[id]/memories/add',
   '/space/activity',
+  '/space/notifications',
   '/space/care',
   '/space/billing',
   '/space/settings',
