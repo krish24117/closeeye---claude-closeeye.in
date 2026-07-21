@@ -72,7 +72,7 @@ export function ConnectSheet({ open, onClose }: { open: boolean; onClose: () => 
   const inIndia = isIndia(city) || region === 'IN'
   const financialAvail: PresenceAvailability = inIndia ? 'available' : hasLoc ? 'unavailable' : 'unknown'
   const presenceAvail: PresenceAvailability = city ? presenceFor(city) : 'unknown'
-  const metro = (city && regionFor(city)?.name) || 'Hyderabad'
+  const metro = ((city && regionFor(city)?.name) || 'Hyderabad').replace(/\s*Metro$/i, '')
   const cityLabel = city || 'your area'
 
   const names = lovedOnes.map((l) => dispName(l.full_name, l.relationship))
