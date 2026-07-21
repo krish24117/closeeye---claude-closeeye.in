@@ -13,7 +13,7 @@ import { fetchAdminOverview, type AdminOverview } from '@/lib/db/admin'
 import { fetchFounderToday, type FounderToday } from '@/lib/db/founder-workspace'
 import { composeFounderBriefing } from '@/lib/founder-briefing'
 import { daysUntilLaunch } from '@/lib/launch'
-import { FounderGreeting, Brief, SectionLabel, Figure, FigureRow, CriticalAlerts, SystemStatus } from '@/components/admin/founder-workspace'
+import { FounderGreeting, Brief, SectionLabel, Figure, FigureRow, CriticalAlerts, SystemStatus, DeepLink } from '@/components/admin/founder-workspace'
 
 const firstName = (full: string | null | undefined) => (full || '').trim().split(/\s+/)[0] || ''
 const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`
@@ -63,6 +63,20 @@ export default function FounderTodayPage() {
       </section>
       <CriticalAlerts alerts={ov.alerts} />
       <SystemStatus alertCount={ov.alerts.length} />
+
+      {/* Finance — the executive cockpit stays light: a glance, then a door into the full workspace. */}
+      <section>
+        <SectionLabel>Finances</SectionLabel>
+        <FigureRow>
+          <Figure label="Revenue today" value={inr(today.revenueToday)} />
+          <Figure label="MRR" value={inr(ov.mrr)} />
+          <Figure label="Paid families" value={ov.activeSubs} hint="active memberships" />
+          <Figure label="ARPF" value={inr(ov.families > 0 ? Math.round(ov.mrr / ov.families) : 0)} hint="per family / mo" />
+          <Figure label="Burn rate" soon="needs an expenses source" />
+          <Figure label="Runway" soon="needs cash + burn" />
+        </FigureRow>
+        <div className="mt-5"><DeepLink href="/admin/finance" label="Open Finance Workspace" /></div>
+      </section>
     </div>
   )
 }

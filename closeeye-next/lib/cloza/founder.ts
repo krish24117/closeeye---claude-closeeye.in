@@ -79,10 +79,24 @@ function capabilityAnswer(s: FounderSnapshot, id: string): ClozaAnswer {
       return { title: 'Growth', segments: segs, source: SOURCE, capability: id, actions: [nav('Open Growth', '/admin/founder/growth')] }
     }
 
+    case 'runway':
+      return {
+        title: 'Runway',
+        segments: [na('Runway needs a cash balance and a burn rate — Close Eye doesn’t track expenses yet, so I won’t guess. It’s reserved in Finance → Executive Overview.')],
+        source: SOURCE, capability: id, actions: [nav('Open Finance', '/admin/finance')],
+      }
+
+    case 'forecast':
+      return {
+        title: 'Forecast',
+        segments: [na('Forecasting isn’t wired yet. When it is, I’ll project from Close Eye’s own history and label it a prediction — never present it as fact.')],
+        source: SOURCE, capability: id, actions: [nav('Open Finance', '/admin/finance')],
+      }
+
     case 'revenue': {
       const segs: ClozaSegment[] = [
         fact(`${inr(t.revenueToday)} came in today; ${inr(o.revenueMonth)} this month.`),
-        fact(`MRR is ${inr(o.mrr)} across ${o.activeSubs} active ${o.activeSubs === 1 ? 'membership' : 'memberships'}.`),
+        fact(`MRR is ${inr(o.mrr)} (ARR ${inr(o.mrr * 12)}) across ${o.activeSubs} active ${o.activeSubs === 1 ? 'membership' : 'memberships'}.`),
       ]
       // ARPF — Average Revenue Per FAMILY (Close Eye is family-centred, not per-user).
       if (o.families > 0) segs.push(fact(`Average revenue per family (ARPF) is ${inr(Math.round(o.mrr / o.families))}/mo.`))

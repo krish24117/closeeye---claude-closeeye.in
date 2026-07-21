@@ -8,7 +8,9 @@
 import type { ClozaScope, ClozaIntent, ClozaTurn } from './types'
 
 const CAPABILITY_KEYWORDS: [RegExp, string][] = [
-  [/reven|money|mrr|paid|arpf|arpu|income|billing/i, 'revenue'],
+  [/forecast|predict|project(ion)?|next (month|quarter|year)/i, 'forecast'],
+  [/runway|\bcash\b|burn/i, 'runway'],
+  [/reven|money|mrr|\barr\b|paid|arpf|arpu|income|billing|invoice|unpaid|outstanding/i, 'revenue'],
   [/grow|famil|people|countr|acqui|sign[- ]?up|member/i, 'growth'],
   [/oper|guardian|visit|case|\bpm\b|presence|coverage|sla|staff/i, 'operations'],
   [/expan|market|where.*(next|expand)/i, 'expansion'],
@@ -53,7 +55,9 @@ export function resolveIntent(scope: ClozaScope, text: string, history: ClozaTur
   return {
     capability,
     city: cities[0] ?? scope.city,
-    breakdown: wantsBreakdown || compareAsked ? 'city' : undefined,
+    // Only break down by city when it's actually a city question — an explicit "by city" or a
+    // two-city comparison. "Compare this month to last month" must NOT become a city chart.
+    breakdown: wantsBreakdown || (compareAsked && cities.length >= 2) ? 'city' : undefined,
     compare: compareAsked && cities.length >= 2 ? cities : undefined,
     isFollowUp: isRefinement && !!prior,
   }
