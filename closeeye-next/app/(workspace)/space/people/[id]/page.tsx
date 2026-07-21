@@ -81,7 +81,9 @@ export default function PersonSpacePage() {
   const chips = openEssentials.slice(0, 3)
   const stillLearning = openEssentials[0] ? chipLabel(openEssentials[0].text).toLowerCase() : ''
 
-  const meta = [relOnly ? '' : titleCase(lo.relationship ?? ''), lo.city].filter(Boolean).join(' · ')
+  const relLabel = titleCase(lo.relationship ?? '')
+  // Never repeat the relationship as its own line ("Mother · Mother").
+  const meta = [relOnly || normKey(Person) === normKey(relLabel) ? '' : relLabel, lo.city].filter(Boolean).join(' · ')
 
   const Action = ({ href, tel, icon: Icon, label, mark }: { href?: string; tel?: string; icon?: React.ComponentType<{ className?: string; strokeWidth?: number }>; label: string; mark?: boolean }) => {
     const inner = (
