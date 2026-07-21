@@ -1,39 +1,58 @@
 /**
  * The Family Understanding Platform — domain model.
  *
- * Every upload (document, image, voice note, PDF, visit, message, future media) becomes an Asset and
- * flows through ONE pipeline to deepen Connect's understanding of the family. This file is the shared
- * vocabulary; it names no provider and touches no database — the platform's meaning lives here,
- * independent of who does vision/OCR/reasoning and where things are stored.
+ * This is not an AI pipeline. It is the OPERATING SYSTEM FOR A FAMILY'S KNOWLEDGE: every upload becomes
+ * an Asset, is understood once, and — only when trustworthy — becomes durable, versioned, explainable
+ * memory the family owns. This file is the shared vocabulary; it names no provider and touches no
+ * database, so new AI models, new media and new capabilities absorb into it without a rewrite.
  *
- * Two invariants encoded in these types (from the ratified architecture):
- *  • The LLM/reasoning step PROPOSES; it is never the source of truth. Everything it produces is
- *    confidence-tagged and gated.
- *  • Nothing uncertain is stored silently. Low/medium-confidence inferences become ConfirmationRequests
- *    the family must approve before they become long-term memory or a graph label.
+ * Invariants (ratified, do not weaken):
+ *  • Reasoning PROPOSES; it is never the source of truth. Everything is confidence-tagged and gated.
+ *  • Nothing uncertain is stored silently — it becomes a ConfirmationRequest the family approves.
+ *  • Every memory is evidence-backed, typed, versioned and dated — so it can be traced and can age.
  */
 
 /** The raw media form of an upload. */
 export type Modality = 'image' | 'pdf' | 'document' | 'audio' | 'video' | 'text'
 
-/** What the content IS, once understood (semantic classification). Extensible — add a type, not a pipeline. */
+/** What the content IS, once classified. Extensible — add a type + its extraction, not a pipeline. */
 export type AssetType =
-  | 'medical_report'
-  | 'prescription'
-  | 'lab_report'
-  | 'insurance_document'
-  | 'photo'
-  | 'voice_note'
-  | 'video'
-  | 'visit_summary'
-  | 'message'
+  | 'medical_report' | 'prescription' | 'lab_report' | 'insurance_document'
+  | 'invoice' | 'id_proof' | 'general_document'
+  | 'photo' | 'voice_note' | 'video' | 'visit_summary' | 'message'
+  | 'email' | 'calendar_event' | 'whatsapp_export' // future sources — the model already holds them
   | 'unknown'
 
 export type ConfidenceBand = 'high' | 'medium' | 'low'
-/** A band drives the confirmation gate; the optional score is for providers that produce one. */
-export interface Confidence {
-  band: ConfidenceBand
-  score?: number
+export interface Confidence { band: ConfidenceBand; score?: number }
+
+/**
+ * HOW something is known — a separate axis from confidence. Confidence is "how sure"; evidence
+ * strength is "on what basis". Together they give Connect a nuanced footing for reasoning.
+ */
+export type EvidenceStrength = 'directly_observed' | 'user_entered' | 'ocr_extracted' | 'ai_inferred' | 'user_confirmed'
+
+/** Governance + retrieval category for a memory. */
+export type MemoryType =
+  | 'identity' | 'medical' | 'preference' | 'routine' | 'relationship'
+  | 'event' | 'milestone' | 'document' | 'observation' | 'ai_suggestion'
+
+/** How a memory ages. Some facts are forever; some go stale and should be re-checked. */
+export type Permanence = 'permanent' | 'durable' | 'temporary'
+export interface Freshness {
+  permanence: Permanence
+  observedAt: string
+  /** After this many days a temporary/durable memory is "stale" and worth reviewing (undefined = never). */
+  staleAfterDays?: number
+}
+
+/** The audit trail behind a memory — makes retrieval explainable ("from a visit summary, 2 Jun, confirmed"). */
+export interface Provenance {
+  source: AssetType | 'user_note' | 'conversation'
+  evidenceStrength: EvidenceStrength
+  observedAt: string
+  confirmedBy?: string
+  evidenceAssetId?: string
 }
 
 /** A raw uploaded asset — a provider-agnostic reference, never the bytes themselves. */
@@ -50,31 +69,69 @@ export interface Asset {
   text?: string
 }
 
-/** One structured fact drawn from the asset, with the confidence it was read at. */
+/** One structured fact drawn from the asset, with how sure AND on what basis it was read. */
 export interface Extraction {
   field: string
   value: string
   confidence: Confidence
+  evidenceStrength: EvidenceStrength
   unit?: string
-  /** When the fact is dated (e.g. the report/test date) — distinct from when it was uploaded. */
   observedAt?: string
 }
 
-/** A candidate long-term memory inferred from the asset. Uncertain ones REQUIRE confirmation. */
+/** What the reasoning provider PROPOSES as a memory — light; the pipeline enriches it. */
+export interface ProposedMemory {
+  statement: string
+  memoryType: MemoryType
+  confidence: Confidence
+  permanence?: Permanence
+}
+
+/** A pipeline-enriched memory candidate: typed, dated, evidence-backed. Uncertain ones need confirming. */
 export interface MemoryCandidate {
   statement: string
-  kind: 'fact' | 'label' | 'observation'
+  memoryType: MemoryType
   confidence: Confidence
-  /** The evidence behind the statement — so the family can see WHY, never a black box. */
+  evidenceStrength: EvidenceStrength
+  freshness: Freshness
   extractions: Extraction[]
 }
 
-/** A proposed link from the asset to a family member. */
+/**
+ * A stored, VERSIONED memory (the Memory Platform's unit — Phase 3 persists it). Families evolve, so
+ * memories carry history: a new reading supersedes the old rather than overwriting it.
+ */
+export interface Memory {
+  id: string
+  lovedOneId: string
+  memoryType: MemoryType
+  statement: string
+  value?: string
+  confidence: Confidence
+  provenance: Provenance
+  freshness: Freshness
+  version: number
+  supersedes?: string
+  supersededBy?: string
+  createdAt: string
+}
+
 export interface SubjectLink {
   lovedOneId: string | null
   displayName: string
   confidence: Confidence
   reason: string
+}
+
+/** An event an asset represents — birthdays, doctor visits, renewals — that lands on the Timeline. */
+export type EventKind = 'birthday' | 'doctor_visit' | 'renewal' | 'appointment' | 'milestone' | 'general'
+export interface DetectedEvent {
+  kind: EventKind
+  title: string
+  at: string
+  /** Renewals/expiries want a reminder ahead of time. */
+  forReminder: boolean
+  confidence: Confidence
 }
 
 /** The understanding of ONE asset — the pipeline's core reading. */
@@ -85,6 +142,7 @@ export interface Understanding {
   summary: string
   extractions: Extraction[]
   memoryCandidates: MemoryCandidate[]
+  events: DetectedEvent[]
   subject: SubjectLink
   language?: string
 }
@@ -97,7 +155,6 @@ export interface ConfirmationRequest {
   reason: string
 }
 
-/** An event on the Family Timeline. */
 export interface TimelineEntry {
   assetId: string
   familyId: string
@@ -106,16 +163,33 @@ export interface TimelineEntry {
   title: string
   summary: string
   assetType: AssetType
+  eventKind?: EventKind
 }
 
 export interface GraphNode { id: string; type: string; label: string; props?: Record<string, string> }
 export interface GraphEdge { from: string; to: string; type: string }
 export interface KnowledgeGraphUpdate { nodes: GraphNode[]; edges: GraphEdge[] }
 
+/** A proactive suggestion (Phase 5–7). Never stored as memory; surfaced for the family to act on. */
+export interface Recommendation {
+  text: string
+  kind: 'care' | 'health' | 'document' | 'reminder' | 'general'
+  confidence: Confidence
+  action?: { label: string; href?: string }
+}
+
+/** A notification the platform thinks is worth raising (e.g. an upcoming expiry). */
+export interface NotificationIntent {
+  title: string
+  body: string
+  kind: 'reminder' | 'insight' | 'alert'
+  at?: string
+}
+
 /**
  * The full result of understanding one asset. The split is the trust contract:
- *  • `verified`  — high-confidence; safe to apply to memory + graph now.
- *  • `pending`   — uncertain; NOTHING here is stored until the family confirms.
+ *  • `verified` — high-confidence; safe to apply to memory + graph + timeline now.
+ *  • `pending`  — uncertain; NOTHING here is stored until the family confirms.
  */
 export interface PipelineResult {
   understanding: Understanding
@@ -123,10 +197,12 @@ export interface PipelineResult {
   verified: {
     extractions: Extraction[]
     memories: MemoryCandidate[]
+    events: DetectedEvent[]
     graph: KnowledgeGraphUpdate
     subject: SubjectLink | null
   }
   pending: ConfirmationRequest[]
-  /** For natural-language retrieval; null when no embedding provider is configured. */
+  recommendations: Recommendation[]
+  notifications: NotificationIntent[]
   embedding: number[] | null
 }
