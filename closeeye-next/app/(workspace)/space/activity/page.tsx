@@ -8,10 +8,12 @@
  */
 import * as React from 'react'
 import Link from 'next/link'
-import { Sparkles, ArrowRight } from 'lucide-react'
+import { Sparkles, ArrowRight, Brain } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
 import { fetchAskHistory, type AskHistoryItem } from '@/lib/db/ask'
+import { fetchFamilyTimeline } from '@/lib/db/collaboration'
+import type { CollaborationEvent } from '@/lib/collaboration/types'
 import { MarkdownAnswer } from '@/components/family/markdown-answer'
 
 function relTime(iso: string): string {
@@ -32,11 +34,13 @@ export default function ActivityPage() {
   const { user } = useAuth()
   const { lovedOnes } = useFamilyData()
   const [items, setItems] = React.useState<AskHistoryItem[] | null>(null)
+  const [events, setEvents] = React.useState<CollaborationEvent[]>([])
   const [error, setError] = React.useState(false)
 
   const load = React.useCallback(async () => {
     if (!user) return
     setError(false)
+    void fetchFamilyTimeline(20).then(setEvents).catch(() => {})
     try { setItems(await fetchAskHistory(user.id, 40)) } catch { setError(true) }
   }, [user])
   React.useEffect(() => { void load() }, [load])
@@ -53,6 +57,30 @@ export default function ActivityPage() {
         <h1 className="text-h2 text-ink">Activity</h1>
         <p className="mt-1 text-body-sm text-muted">Everything you’ve asked, and what Close Eye answered.</p>
       </div>
+
+      {/* Coordination — the story writes itself: who shared, delegated and completed what. */}
+      {events.length > 0 && (
+        <section>
+          <p className="mb-3 text-caption font-semibold uppercase tracking-widest text-muted">Coordination</p>
+          <div className="rounded-lg border border-line/70 bg-card p-4 shadow-sm">
+            <ol className="flex flex-col gap-3.5">
+              {events.map((e) => (
+                <li key={e.id} className="flex items-start gap-3">
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-body-sm leading-snug text-ink">{e.summary}</p>
+                    <p className="mt-0.5 text-caption text-muted">{e.object.label} · {relTime(e.at)}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-3.5 flex items-start gap-2.5 rounded-md bg-accent-soft/60 px-3 py-2.5 text-caption text-green">
+              <Brain className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.9} />
+              <span><span className="font-semibold">Family Knowledge Updated</span> — future answers now include this.</span>
+            </div>
+          </div>
+        </section>
+      )}
 
       {items === null && !error && <p className="py-12 text-center text-caption text-muted">Loading…</p>}
       {error && <p className="py-12 text-center text-body-sm text-error">We couldn’t load your activity just now.</p>}
