@@ -10,7 +10,7 @@
  */
 import * as React from 'react'
 import Link from 'next/link'
-import { Sparkles, ShieldAlert, HeartHandshake, MessageSquarePlus, History, ArrowUp, User } from 'lucide-react'
+import { Sparkles, ShieldAlert, HeartHandshake, MessageSquarePlus, History, ArrowUp, User, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { answerFamilyQuestion, type ConnectKind, type LovedOneRef } from '@/lib/connect/answer'
 import { track } from '@/lib/analytics'
@@ -20,6 +20,29 @@ import { createConversation, appendMessage, fetchConversations, fetchConversatio
 import { MarkdownAnswer } from '@/components/family/markdown-answer'
 import type { Understanding } from '@/lib/connect/comprehension'
 import type { AskTurn } from '@/lib/db/ask'
+import { cn } from '@/lib/utils'
+import { titleCase } from '@/lib/family/relationship-words'
+
+const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
+const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
+
+/** The Close Eye orb — the voice of Connect. A dark sphere with a luminous, gently pulsing green core. */
+function Orb({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  const box = size === 'lg' ? 'h-14 w-14' : size === 'sm' ? 'h-7 w-7' : 'h-8 w-8'
+  const dot = size === 'lg' ? 'h-3 w-3' : size === 'sm' ? 'h-1.5 w-1.5' : 'h-2 w-2'
+  return (
+    <span className={cn('grid shrink-0 place-items-center rounded-full bg-ink', box)}>
+      <span className={cn('animate-pulse rounded-full', dot)} style={{ background: 'hsl(103 58% 54%)', boxShadow: '0 0 12px 2px hsl(103 62% 54% / 0.55)' }} />
+    </span>
+  )
+}
+
+/** Display name for a loved one: "your mother" → "Mother"; a real name → its first word. */
+function dispName(lo: LovedOneRef): string {
+  const f = (lo.full_name || '').trim()
+  if (/^your\s/i.test(f)) return titleCase(f.replace(/^your\s+/i, ''))
+  return f.split(/\s+/)[0] || (lo.relationship ? titleCase(lo.relationship) : 'them')
+}
 
 type Turn =
   | { role: 'user'; content: string }
@@ -137,6 +160,15 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seed, lovedOnes])
 
+  // Warm first-ask — real, family-drawn prompts about the primary loved one (never invented).
+  const primary = lovedOnes[0]
+  const primaryName = primary ? dispName(primary) : ''
+  const suggestions = primary ? [
+    `How has ${primaryName} been lately?`,
+    `What medicines is ${primaryName} taking?`,
+    `Who’s nearby if ${primaryName} needs someone?`,
+  ] : []
+
   return (
     <div className="flex flex-col gap-5">
       {/* Controls — new conversation + reopen a past one */}
@@ -163,9 +195,24 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
         </section>
       )}
 
-      {/* The thread */}
-      {turns.length === 0 && !thinking && (
-        <p className="px-1 text-body-sm text-muted">Ask about someone you love — Close Eye answers using what your family has shared.</p>
+      {/* The thread — a warm first-ask when empty */}
+      {turns.length === 0 && !thinking && !showHistory && (
+        <div className="flex flex-col items-center gap-5 py-8 text-center">
+          <Orb size="lg" />
+          <div>
+            <p style={serif} className="text-h3 text-ink">Ask me anything{primaryName ? ` about ${primaryName}` : ''}.</p>
+            <p className="mt-2 text-body-sm text-muted">I’ll answer from what your family has shared — never a guess.</p>
+          </div>
+          {suggestions.length > 0 && (
+            <div className="flex w-full flex-col gap-2">
+              {suggestions.map((s) => (
+                <button key={s} onClick={() => void ask(s)} className="flex items-center gap-2.5 rounded-xl bg-accent-soft/60 px-4 py-3 text-start text-body-sm text-ink transition-colors hover:bg-accent-soft">
+                  <Sparkles className="h-4 w-4 shrink-0 text-green" strokeWidth={2} /><span className="min-w-0">{s}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
       <div className="flex flex-col gap-4">
         {turns.map((t, i) => t.role === 'user' ? (
@@ -176,7 +223,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
         ) : (
           <AssistantTurn key={i} turn={t} />
         ))}
-        {thinking && <p className="flex items-center gap-2 px-1 text-body-sm text-muted"><Sparkles className="h-4 w-4 animate-pulse text-green" strokeWidth={1.75} /> Understanding, then finding your answer…</p>}
+        {thinking && <div className="flex items-center gap-2.5 px-1 text-body-sm text-muted"><Orb size="sm" /> Understanding, then finding your answer…</div>}
         <div ref={endRef} />
       </div>
 
@@ -223,7 +270,7 @@ function AssistantTurn({ turn }: { turn: Extract<Turn, { role: 'assistant' }> })
 
   return (
     <div className="flex items-start gap-2.5">
-      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-green text-ivory"><Sparkles className="h-4 w-4" strokeWidth={1.75} /></span>
+      <div className="mt-0.5"><Orb /></div>
       <div className="min-w-0 flex-1 flex flex-col gap-2.5">
         {understanding && <UnderstoodLine u={understanding} />}
         <div className="rounded-2xl rounded-tl-sm border border-line/70 bg-card px-4 py-3 shadow-sm">
@@ -244,17 +291,21 @@ function AssistantTurn({ turn }: { turn: Extract<Turn, { role: 'assistant' }> })
   )
 }
 
-/** The brief, visible "what I understood" — the trust step. Never dominates; never a dead end. */
+/** The visible "what I understood" — the trust step, and the differentiator. Elevated, never a
+ *  dead end, never fabricated: it reflects only the engine's Understanding of the family's words. */
 function UnderstoodLine({ u }: { u: Understanding }) {
   const known = (s: string | undefined) => !!s && s !== 'unknown' && s !== 'none_stated'
+  const who = u.subject?.who
+  const whoDisp = who && known(who) ? (/^your\s/i.test(who) ? titleCase(who.replace(/^your\s+/i, '')) : cap1(who)) : ''
   const bits: string[] = []
-  if (known(u.subject?.who)) bits.push(`about ${u.subject.who}`)
-  if (known(u.situation)) bits.push(u.situation)
-  const line = bits.length ? bits.join(' · ') : 'your family'
+  if (whoDisp) bits.push(whoDisp)
+  if (known(u.situation)) bits.push(u.situation!)
+  const line = bits.length ? bits.join(' · ') : 'Your family'
   return (
-    <p className="inline-flex items-center gap-1.5 self-start rounded-full bg-accent-soft/60 px-3 py-1 text-caption text-muted">
-      <Sparkles className="h-3 w-3 text-green" strokeWidth={2} />
-      <span>Understood: <span className="font-medium text-ink">{line}</span> — grounded in your family’s information</span>
-    </p>
+    <div className="rounded-2xl border border-green/20 bg-accent-soft/70 px-4 py-3">
+      <p className="flex items-center gap-1.5 text-caption font-bold uppercase tracking-wide text-green"><Check className="h-3.5 w-3.5" strokeWidth={2.6} /> Understood</p>
+      <p style={serif} className="mt-1.5 text-body leading-snug text-ink">{line}</p>
+      <p className="mt-1 text-caption text-muted">Grounded in what your family has shared</p>
+    </div>
   )
 }

@@ -9,6 +9,8 @@
  */
 import { UnderstandingConversation } from '@/components/connect/understanding-conversation'
 
+const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
+
 export default async function ConnectPage({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
   const { q } = await searchParams
   const seed = Array.isArray(q) ? q[0] : q
@@ -16,7 +18,7 @@ export default async function ConnectPage({ searchParams }: { searchParams: Prom
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-h2 text-ink">Connect</h1>
+        <h1 style={serif} className="text-h2 text-ink">Connect</h1>
         <p className="mt-1 text-body-sm text-muted">Your family’s intelligence — it understands before it answers.</p>
       </div>
       <UnderstandingConversation seed={seed} />
