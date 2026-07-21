@@ -8,7 +8,7 @@ import { hasFounderSessionHint } from '@/lib/founder-funnel'
 import { isGuardian, isSuperAdmin, isPresenceManager } from '@/lib/roles'
 import { isNative } from '@/lib/native'
 import { isConnectHost } from '@/lib/platform/front-door'
-import { LogoMark } from '@/components/ui/logo'
+import { SplashScreen } from '@/components/ui/splash-screen'
 
 // The unauthenticated / setup flow (allowed before the dashboard).
 const FLOW = ['/welcome', '/auth', '/permissions', '/onboarding', '/guardian/login']
@@ -38,6 +38,11 @@ export function AuthGate() {
   const native = isNative()
   const launched = useRef(false)
   const [ready, setReady] = useState(!native)
+  // A minimum graceful display so the splash never flashes-and-vanishes on a warm start — this is
+  // flash-prevention, not an artificial hold: once BOTH the app is ready AND this brief beat has
+  // passed, the splash fades to reveal the app. Tune SPLASH_MIN_MS to taste.
+  const [minShown, setMinShown] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setMinShown(true), 700); return () => clearTimeout(t) }, [])
 
   useEffect(() => {
     if (!configured) {
@@ -111,12 +116,8 @@ export function AuthGate() {
     setReady(true)
   }, [configured, loading, session, onboardingComplete, dataLoading, profile?.role, pathname, native, router])
 
-  if (native && !ready) {
-    return (
-      <div className="fixed inset-0 z-[9999] grid place-items-center bg-ivory" aria-hidden>
-        <LogoMark className="ce-pulse-soft h-20 w-20" />
-      </div>
-    )
-  }
-  return null
+  // A fade-to-reveal splash over the app while it boots. Native starts un-ready (routing must
+  // resolve) so it always shows; web is ready instantly, so the splash is only the brief graceful
+  // beat — never a hold on an app that's already ready.
+  return <SplashScreen visible={!ready || !minShown} />
 }
