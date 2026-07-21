@@ -229,24 +229,29 @@ export function ConnectHome() {
           <Eyebrow>See it in action</Eyebrow>
           <h2 style={serif} className="text-h2 text-ink">Understanding, then action.</h2>
         </Reveal>
-        <Reveal className="mx-auto mt-12 max-w-[28rem]">
-          <div className="rounded-3xl border border-line bg-card p-5 shadow-lg">
-            <div className="flex flex-col gap-3.5">
-              <div className="self-end max-w-[82%] rounded-3xl rounded-br-md bg-surface-inverse px-4 py-3 text-body-sm text-content-inverse">Dad has a hospital appointment tomorrow.</div>
-              <div className="flex gap-2.5">
-                <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface-inverse"><span className="h-2 w-2 rounded-full bg-accent-soft" /></span>
-                <div className="rounded-3xl rounded-tl-md border border-line bg-accent-soft/50 px-4 py-3.5 text-body-sm text-ink">
-                  I’ve already prepared the reports he usually carries. <span className="text-muted">His insurance card is in Documents.</span>
-                  <div className="mt-3 flex flex-col gap-2.5">
-                    <p className="text-caption text-muted">Since he lives in Hyderabad, I can also:</p>
-                    {['Arrange a hospital companion', 'Coordinate transportation', 'Share updates with you during the visit'].map((x) => (
-                      <p key={x} className="flex items-center gap-2 text-body-sm font-medium text-ink"><Check className="h-4 w-4 shrink-0 text-green" strokeWidth={2.4} />{x}</p>
-                    ))}
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2.5">
-                    <span className="rounded-full bg-surface-inverse px-4 py-2 text-caption font-bold text-content-inverse">Arrange Companion</span>
-                    <span className="rounded-full border border-line px-4 py-2 text-caption font-bold text-ink">View Appointment</span>
-                  </div>
+        <Reveal className="mx-auto mt-12 max-w-[25rem]">
+          <div className="overflow-hidden rounded-3xl border border-line bg-ivory shadow-xl">
+            {/* app header — gives the chat product context, so the bubbles need no floating avatar */}
+            <div className="flex items-center gap-2.5 border-b border-line/70 bg-card px-4 py-3">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-surface-inverse"><span className="h-1.5 w-1.5 rounded-full bg-accent-soft" /></span>
+              <span className="text-caption font-semibold text-ink">Connect</span>
+            </div>
+            {/* chat */}
+            <div className="flex flex-col gap-3 p-4">
+              <div className="max-w-[78%] self-end rounded-2xl rounded-br-sm bg-surface-inverse px-3.5 py-2.5 text-body-sm leading-snug text-content-inverse">
+                Dad has a hospital appointment tomorrow.
+              </div>
+              <div className="max-w-[88%] self-start rounded-2xl rounded-tl-sm border border-line bg-card px-3.5 py-3 text-body-sm leading-snug text-ink shadow-sm">
+                <p>I’ve already prepared the reports he usually carries. <span className="text-muted">His insurance card is in Documents.</span></p>
+                <p className="mt-2.5 text-caption text-muted">Since he lives in Hyderabad, I can also:</p>
+                <div className="mt-2 flex flex-col gap-1.5">
+                  {['Arrange a hospital companion', 'Coordinate transportation', 'Share updates with you during the visit'].map((x) => (
+                    <p key={x} className="flex items-start gap-2 font-medium text-ink"><Check className="mt-0.5 h-4 w-4 shrink-0 text-green" strokeWidth={2.4} /><span>{x}</span></p>
+                  ))}
+                </div>
+                <div className="mt-3.5 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-surface-inverse px-3.5 py-2 text-caption font-bold text-content-inverse">Arrange Companion</span>
+                  <span className="rounded-full border border-line bg-ivory px-3.5 py-2 text-caption font-bold text-ink">View Appointment</span>
                 </div>
               </div>
             </div>
