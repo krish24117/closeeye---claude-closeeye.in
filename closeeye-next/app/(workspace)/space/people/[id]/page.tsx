@@ -17,6 +17,7 @@ import { fetchSpace, personName, type SpaceData } from '@/lib/db/space'
 import { fetchMemories, type MemoryView } from '@/lib/db/memories'
 import { getLocalPhoto } from '@/lib/local-photos'
 import { titleCase } from '@/lib/family/relationship-words'
+import { dialablePhone } from '@/lib/platform/locale'
 
 const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 const normKey = (s: string) => s.trim().toLowerCase().replace(/[.\s]+$/, '')
@@ -123,7 +124,7 @@ export default function PersonSpacePage() {
 
       {/* Actions — Call · Ask · Add */}
       <div className="flex gap-2.5">
-        {lo.phone && <Action tel={`tel:${lo.phone}`} icon={Phone} label="Call" />}
+        {lo.phone && <Action tel={`tel:${dialablePhone(lo.phone, lo.regionCode)}`} icon={Phone} label="Call" />}
         <Action href="/space/connect" mark label="Ask" />
         <Action href={`/space/people/${lo.id}/add`} icon={Plus} label="Add" />
       </div>

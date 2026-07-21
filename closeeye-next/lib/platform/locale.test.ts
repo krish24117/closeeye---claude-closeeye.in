@@ -5,7 +5,7 @@
  * replaces. Other locales format the SAME instant their own way — that's the point.
  */
 import { describe, it, expect } from 'vitest'
-import { formatTime, formatDate, formatNumber, phonePlaceholder } from './locale'
+import { formatTime, formatDate, formatNumber, phonePlaceholder, dialCode, dialablePhone } from './locale'
 
 const D = new Date('2026-07-18T13:56:00+05:30')
 
@@ -45,6 +45,26 @@ describe('phonePlaceholder — India byte-identical, region-aware elsewhere', ()
   })
   it('an unknown region falls back to a neutral, never-wrong hint', () => {
     expect(phonePlaceholder('atlantis')).toBe('Phone number')
+  })
+})
+
+describe('dialCode + dialablePhone — cross-border tap-to-call', () => {
+  it('returns the E.164 calling code, or empty when unknown', () => {
+    expect(dialCode('IN')).toBe('+91')
+    expect(dialCode('GB')).toBe('+44')
+    expect(dialCode('atlantis')).toBe('')
+  })
+  it('prefixes the region code onto a bare local number (NRI calling home)', () => {
+    expect(dialablePhone('98765 43210', 'IN')).toBe('+919876543210')
+    expect(dialablePhone('07400 123456', 'GB')).toBe('+447400123456') // trunk 0 dropped
+  })
+  it('leaves an already-international number alone (just normalised)', () => {
+    expect(dialablePhone('+91 98765 43210', 'IN')).toBe('+919876543210')
+    expect(dialablePhone('+1 555 000 0000', 'US')).toBe('+15550000000')
+  })
+  it('never guesses a country code for an unknown region — dials local', () => {
+    expect(dialablePhone('98765 43210', 'atlantis')).toBe('9876543210')
+    expect(dialablePhone('', 'IN')).toBe('')
   })
 })
 

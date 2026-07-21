@@ -22,7 +22,7 @@ import { PhotoPicker } from '@/components/family/photo-picker'
 import { fetchElderProfile, upsertElderProfile, type ElderProfileForm } from '@/lib/db/family'
 import { computeCompleteness, EMPTY_HEALTH } from '@/lib/db/profile'
 import { titleCase } from '@/lib/family/relationship-words'
-import { phonePlaceholder } from '@/lib/platform/locale'
+import { phonePlaceholder, dialCode } from '@/lib/platform/locale'
 import { setLocalPhoto } from '@/lib/local-photos'
 import type { LovedOne } from '@/lib/db/types'
 import { haptic } from '@/lib/haptics'
@@ -239,7 +239,7 @@ export default function CompleteProfilePage() {
         </div>
         <div>
           <span className={labelCls}>Country</span>
-          <CountryField value={country} onChange={setCountry} />
+          <CountryField value={country} onChange={(c) => { setCountry(c); const dc = dialCode(c); if (dc && !phone.replace(/\D/g, '')) setPhone(`${dc} `) }} />
         </div>
         <div>
           <label htmlFor="p-address" className={labelCls}>Home address <span className="font-normal text-green">· enables Care</span></label>

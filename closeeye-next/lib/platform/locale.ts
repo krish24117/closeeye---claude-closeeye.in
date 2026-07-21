@@ -38,6 +38,27 @@ export function phonePlaceholder(code: string | null | undefined): string {
   return PHONE_EXAMPLE[regionFor(code).code] ?? 'Phone number'
 }
 
+/** The E.164 country calling code for a region (e.g. '+91'), or '' when unknown. */
+export function dialCode(code: string | null | undefined): string {
+  const m = PHONE_EXAMPLE[regionFor(code).code]?.match(/^\+\d+/)
+  return m ? m[0] : ''
+}
+
+/**
+ * A dialable phone for a `tel:` link. Prefixes the region's calling code when the stored number
+ * has none — so an NRI tapping "Call" actually reaches a number back home. A number already in
+ * international form (leading '+') is normalised and returned as-is; a purely local number with no
+ * known region is returned unchanged (a local dial beats guessing a wrong country code).
+ */
+export function dialablePhone(phone: string | null | undefined, code: string | null | undefined): string {
+  const raw = (phone ?? '').trim()
+  if (!raw) return ''
+  if (raw.startsWith('+')) return raw.replace(/[^\d+]/g, '')
+  const dc = dialCode(code)
+  const national = raw.replace(/[^\d]/g, '').replace(/^0+/, '') // drop the national trunk '0'
+  return dc && national ? `${dc}${national}` : raw.replace(/[^\d]/g, '')
+}
+
 /** Format a time for a region's locale. India ('en-IN') is byte-identical to before. */
 export function formatTime(date: Date | string | number, code: string | null | undefined, opts?: Intl.DateTimeFormatOptions): string {
   return new Date(date).toLocaleTimeString(localeFor(code), opts)
