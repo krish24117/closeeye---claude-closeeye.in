@@ -124,12 +124,7 @@ export function ConnectSheet({ open, onClose }: { open: boolean; onClose: () => 
               transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
               className="grid h-12 w-12 place-items-center rounded-full bg-surface-inverse shadow-md"
             >
-              <motion.span
-                aria-hidden
-                className="h-2.5 w-2.5 rounded-full bg-brand"
-                animate={reduce ? {} : { scale: [1, 1.28, 1], opacity: [0.8, 1, 0.8] }}
-                transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
-              />
+              <span aria-hidden className="ce-orb-core h-2.5 w-2.5" />
             </motion.div>
             <h2 className="mt-3 text-h4 text-content">{title}</h2>
           </div>

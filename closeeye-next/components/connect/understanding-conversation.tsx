@@ -36,7 +36,7 @@ function Orb({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const dot = size === 'lg' ? 'h-3 w-3' : size === 'sm' ? 'h-1.5 w-1.5' : 'h-2 w-2'
   return (
     <span className={cn('grid shrink-0 place-items-center rounded-full bg-ink', box)}>
-      <span className={cn('animate-pulse rounded-full', dot)} style={{ background: 'hsl(103 58% 54%)', boxShadow: '0 0 12px 2px hsl(103 62% 54% / 0.55)' }} />
+      <span className={cn('ce-orb-core', dot)} />
     </span>
   )
 }
@@ -335,11 +335,6 @@ function AssistantTurn({ turn }: { turn: Extract<Turn, { role: 'assistant' }> })
           {kind === 'pending' && <p className="text-body-sm text-ink">I couldn’t compose an answer just now. Please try again in a moment.</p>}
           {kind === 'error' && <p className="text-body-sm text-muted">{turn.notice || 'Something went wrong. Please try again in a moment.'}</p>}
         </div>
-        {kind === 'answer' && (
-          <Link href="/space/people" className="inline-flex w-fit items-center gap-1.5 text-caption font-semibold text-green hover:text-green/80">
-            <HeartHandshake className="h-3.5 w-3.5" strokeWidth={2} /> See everyone you love
-          </Link>
-        )}
       </div>
     </div>
   )

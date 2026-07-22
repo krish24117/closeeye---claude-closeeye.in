@@ -160,8 +160,19 @@
   width: 13px;
   height: 13px;
   border-radius: 50%;
-  background: #7FBF94;                 /* sage — resting, calm, never bright */
-  opacity: 0.42;
+  background: hsl(var(--orb));         /* sage — the shared orb token (was raw #7FBF94) */
+  opacity: 0.55;                       /* was 0.42 — read "alive", not "off" */
+}
+/* The luminous orb core — ONE mark across the dock, the concierge sheet, and the conversation
+   orb. Sage (calm, never bright), a gentle breath, reduced-motion-safe. Sizing comes from the
+   caller (h-/w- utilities). This is what unifies the three orbs that had drifted to 3 greens. */
+.ce-orb-core {
+  border-radius: 9999px;
+  background: hsl(var(--orb));
+  box-shadow: 0 0 12px 2px hsl(var(--orb) / 0.45);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ce-orb-core { animation: wsp-orb-breath 3.4s ease-in-out infinite; will-change: opacity, transform; }
 }
 /* Live orb (P2-9) — a gentle, calm breath (never a blink), matching the Connect sheet orb's
    3.4s cadence. Reduced-motion users keep the still 0.42 orb. The dock is always on-screen, so
@@ -184,7 +195,7 @@
 /* Desktop sidebar Connect entry — the orb scaled to a nav glyph. One source for the gradient
    (was duplicated as an inline style in workspace-shell.tsx). Sizing stays in the markup. */
 .wsp-orb-mini { background: radial-gradient(120% 120% at 50% 40%, #1C4130 0%, #0C2419 78%); }
-.wsp-orb-mini-core { background: #7FBF94; opacity: 0.6; }
+.wsp-orb-mini-core { background: hsl(var(--orb)); opacity: 0.6; }
 
 /* ── The Connect sheet content (rendered inside the shared Overlay) ─────────── */
 .wsp-askfield {

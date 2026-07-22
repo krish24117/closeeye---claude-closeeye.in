@@ -60,6 +60,8 @@ const config: Config = {
           hover: 'hsl(var(--color-brand-hover) / <alpha-value>)',
         },
         edge: 'hsl(var(--color-border) / <alpha-value>)',
+        // The Connect orb's luminous core — one token across dock/sheet/conversation.
+        orb: 'hsl(var(--orb) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],

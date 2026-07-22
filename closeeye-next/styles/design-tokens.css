@@ -147,6 +147,10 @@
   --color-decor-emerald:   148 92% 34%;  /* bright mark / dot                 */
   --color-decor-lime:       78 100% 39%; /* sprout accent / live dot          */
 
+  /* ── Orb — the Connect mark's luminous core. ONE calm sage (never bright), shared by the dock,
+        the concierge sheet, and the conversation orb so they read as a single living mark. ── */
+  --orb: 140 33% 62%;                    /* ≈ #7FBF94 sage — matches the dock's resting core */
+
   /* ── RESERVED · future themes ─────────────────────────────────────────────
      Dark / high-contrast modes are a future constitutional amendment. They
      land as an override block that redefines ONLY the role tokens above —
