@@ -274,7 +274,7 @@ export default function OnboardingPage() {
             <>
               <h1 style={serif} className="text-h2 text-ink">Tell Close Eye one thing about {factSubject}.</h1>
               <p className="mt-3 text-body text-muted">Anything at all — a routine, a worry, something {isSelf ? 'you love' : `${subject} loves`}.</p>
-              <input autoFocus value={fact} onChange={(e) => setFact(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder={isSelf ? 'e.g. I love my morning walks' : `e.g. ${Cap(subject)} loves her morning walks`} className={cn(inputCls, 'mt-7')} />
+              <input autoFocus value={fact} onChange={(e) => setFact(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && consented && next()} placeholder={isSelf ? 'e.g. I love my morning walks' : `e.g. ${Cap(subject)} loves her morning walks`} className={cn(inputCls, 'mt-7')} />
               {fact.trim().length > 1 && (
                 <div className="ce-fade-in mt-4 flex items-start gap-2.5 rounded-2xl border border-line bg-card p-3.5">
                   <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-inverse"><span className="h-1.5 w-1.5 rounded-full bg-green" /></span>

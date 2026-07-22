@@ -768,6 +768,7 @@ export function ConnectExperience() {
                   {/* Two lines became one, and it moved ABOVE nothing — it sits with the
                       act it enables rather than after it. */}
                   <p className="privacy">Private. One sentence is enough.</p>
+                  {error && <p className="privacy" style={{ color: 'hsl(var(--error))' }}>{error}</p>}
                 </div>
               </div>
             </div>
