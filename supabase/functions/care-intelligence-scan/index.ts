@@ -9,6 +9,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { SENSITIVE_TOPICS } from "../ask-health/types.ts";
 import { notifyCareTeam } from "../ask-health/notify.ts";
 import type { CareContext } from "../ask-health/types.ts";
+import { requireCronSecret } from "../_shared/cron-auth.ts";
 
 const WINDOW_DAYS       = Number(Deno.env.get("CLOSEEYE_SCAN_WINDOW_DAYS")  ?? "7");
 const CLUSTER_THRESHOLD = Number(Deno.env.get("CLOSEEYE_CLUSTER_THRESHOLD") ?? "3");
@@ -18,7 +19,8 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
-Deno.serve(async (): Promise<Response> => {
+Deno.serve(async (req: Request): Promise<Response> => {
+  const denied = requireCronSecret(req); if (denied) return denied;
   const since = new Date(Date.now() - WINDOW_DAYS * 86_400_000).toISOString();
 
   const { data: rows, error } = await supabase

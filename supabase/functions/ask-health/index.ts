@@ -6,6 +6,7 @@ import { detectSubject } from "./subject.ts";
 import { answerService } from "./service.ts";
 import { sendWhatsAppTemplate, sendWhatsAppTemplateBySid, sendWhatsAppFreeText } from "../_shared/whatsapp.ts";
 import { corsHeaders, checkOrigin } from "../_shared/cors.ts";
+import { rateLimit } from "../_shared/ratelimit.ts";
 
 // Ask Close Eye — health guidance for families caring for elderly parents.
 // Restricted to: elderly health, wellbeing, medication, elder-care topics, Close Eye services.
@@ -423,6 +424,22 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // ── Follow-up throttle — non-emergency only ───────────────────────────────
+  // Follow-up turns skip the first-turn cap above and create no member_queries row, so they were
+  // previously un-throttled: an authenticated client could send unlimited LLM calls with a fully
+  // client-supplied transcript. Throttle them on their own token bucket. FAILS OPEN (a store error
+  // allows the turn) so a real, fast conversation is never blocked. Crises are handled above and
+  // never reach here.
+  if (!crisis && isFollowUp) {
+    const rl = await rateLimit(sb, `askfollowup:${user.id}`, { limit: isExempt ? 40 : 20, windowSeconds: 60 });
+    if (!rl.allowed) {
+      return json({
+        error:   "rate_limited",
+        message: "You're going a little fast — give it a moment before the next message.",
+      }, 429);
+    }
+  }
+
   // ── Prompt injection guardrail ────────────────────────────────────────────
   if (looksLikeInjection(question)) {
     return json({
@@ -616,8 +633,10 @@ Deno.serve(async (req: Request) => {
     ? `About: ${body.subject_label}\n\nQuestion: ${question}`
     : question;
 
+  // Bound the client-supplied history: a follow-up must not ship an unbounded (or forged) transcript
+  // to the model — keep only the most recent turns and clamp each message's length.
   const claudeMessages = clientMessages
-    ? clientMessages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content }))
+    ? clientMessages.slice(-20).map((m) => ({ role: m.role as "user" | "assistant", content: String(m.content ?? "").slice(0, 4000) }))
     : [{ role: "user" as const, content: userContent }];
 
   try {
