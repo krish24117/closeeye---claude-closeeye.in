@@ -43,8 +43,8 @@ function GoogleG() {
  */
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid min-h-dvh place-items-center bg-ivory px-5 py-10">
-      <div className="ce-fade-in w-full max-w-sm">
+    <div className="flex min-h-dvh flex-col overflow-y-auto bg-ivory px-5 py-8">
+      <div className="ce-fade-in mx-auto my-auto w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center text-center">
           {/* Icon-only mark — the "Sign in to Close Eye" heading already carries the name. */}
           <Logo variant="mobile" lockup="icon" height={44} />

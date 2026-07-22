@@ -225,7 +225,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
 
       {/* Main */}
       <div className="lg:ps-64">
-        <main id="main" className="mx-auto max-w-4xl px-5 pb-32 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-10">{children}</main>
+        <main id="main" className="mx-auto max-w-4xl px-5 pb-32 pt-6 sm:px-6 lg:ps-10 lg:pe-16 xl:px-10 lg:pb-16 lg:pt-10">{children}</main>
       </div>
 
       {/* Mobile dock — four tabs around the Connect orb */}

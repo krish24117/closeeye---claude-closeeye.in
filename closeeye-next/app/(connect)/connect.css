@@ -693,7 +693,7 @@
       Close Eye is, the card says what to do and where to tap, and the fuller telling
       follows immediately for anyone who scrolls. Nothing is hidden, nothing shrinks —
       the same words in the order this screen can hold. */
-@media (max-width:1023.98px) and (max-height:900px){
+@media (max-width:1023.98px) and (max-height:740px){
   .cx .s0-ask{order:2}
   .cx .s0-hero-more{order:3}
 }
@@ -762,6 +762,11 @@
   .cx .storycards .scard{display:flex;flex-direction:column}
   .cx .storycards .scard:last-child{grid-column:1 / -1}
   .cx .hero-supp,.cx .whatis{max-width:52ch}
+  /* Tablets have taller status bars than phones; 16px isn't enough clearance.
+     env() covers notched iPads/foldables; 28px floor covers plain Android tablets
+     where the browser renders below the status bar without a non-zero safe-area. */
+  .cx .mast{padding-top:max(28px,env(safe-area-inset-top))}
+  .cx .mast-signin{top:max(28px,env(safe-area-inset-top))}
 }
 
 /* ── ≥1024 · the two-panel composition is the identity — it is not touched. Only the

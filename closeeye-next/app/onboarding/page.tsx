@@ -284,8 +284,6 @@ export default function OnboardingPage() {
             </>
           )}
 
-          <div className="flex-1" />
-
           {/* Consent — captured here, at the moment Close Eye first holds family data, so the first
               Connect answer isn't interrupted later. Explicit, informed, and durably recorded. */}
           {step === 'fact' && (
