@@ -19,7 +19,6 @@ export const metadata: Metadata = {
   alternates: { canonical: '/care' },
 }
 
-const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
 
 const Eyebrow = ({ children }: { children: React.ReactNode }) => (
   <p className="mb-4 inline-flex items-center gap-2.5 text-caption font-bold uppercase tracking-[0.16em] text-green">
@@ -54,7 +53,7 @@ export default function CarePage() {
           <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
             <div className="mx-auto max-w-[42rem]">
               <Eyebrow>Close Eye Care</Eyebrow>
-              <h1 style={serif} className="max-w-[16ch] text-h1 text-ink">When being there matters, someone trusted is.</h1>
+              <h1 className="font-display max-w-[16ch] text-h1 text-ink">When being there matters, someone trusted is.</h1>
               <p className="mt-7 max-w-[46ch] text-lead text-muted">Close Eye coordinates trusted people to help your family in the real world. Where you can’t be, we can.</p>
             </div>
           </div>
@@ -64,11 +63,11 @@ export default function CarePage() {
         <section className="mx-auto max-w-5xl px-6 py-14">
           <div className="mx-auto max-w-[42rem]">
             <Eyebrow>How Care helps</Eyebrow>
-            <h2 style={serif} className="text-h2 text-ink">Ways we can be there.</h2>
+            <h2 className="font-display text-h2 text-ink">Ways we can be there.</h2>
             <div className="mt-10 divide-y divide-line border-t border-line">
               {SERVICES.map((s) => (
                 <div key={s.name} className="flex flex-col gap-1 py-5 sm:flex-row sm:items-baseline sm:gap-6">
-                  <h3 style={serif} className="shrink-0 text-h4 text-ink sm:w-56">{s.name}</h3>
+                  <h3 className="font-display shrink-0 text-h4 text-ink sm:w-56">{s.name}</h3>
                   <p className="text-body leading-relaxed text-muted">{s.desc}</p>
                 </div>
               ))}
@@ -80,7 +79,7 @@ export default function CarePage() {
         <section className="mx-auto max-w-5xl px-6 pb-14">
           <div className="mx-auto max-w-[42rem] rounded-3xl bg-accent-soft/40 p-7 sm:p-8">
             <p className="flex items-center gap-2 text-caption font-bold uppercase tracking-[0.16em] text-green"><span className="h-1.5 w-1.5 rounded-full bg-green" />Available in Hyderabad today</p>
-            <p style={serif} className="mt-3 text-h4 leading-snug text-ink">More cities, as trust grows.</p>
+            <p className="font-display mt-3 text-h4 leading-snug text-ink">More cities, as trust grows.</p>
             <p className="mt-2 max-w-[48ch] text-body-sm leading-relaxed text-muted">Your Family Space works everywhere from day one. Care activates city by city, wherever Close Eye is present.</p>
           </div>
         </section>
@@ -88,8 +87,8 @@ export default function CarePage() {
         {/* CTA */}
         <section className="border-t border-line/70">
           <div className="mx-auto max-w-3xl px-6 py-14 text-center">
-            <h2 style={serif} className="text-h2 text-ink">Start with understanding.</h2>
-            <p style={serif} className="mx-auto mt-5 max-w-[34ch] text-lead text-ink">Add care only when you need it.</p>
+            <h2 className="font-display text-h2 text-ink">Start with understanding.</h2>
+            <p className="font-display mx-auto mt-5 max-w-[34ch] text-lead text-ink">Add care only when you need it.</p>
             <div className="mt-8 flex items-center justify-center">
               <Link href="/connect" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-full bg-surface-inverse px-7 text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90">
                 Back to Close Eye <ArrowRight className="h-4 w-4" strokeWidth={2} />

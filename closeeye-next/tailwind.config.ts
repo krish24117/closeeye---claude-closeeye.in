@@ -63,6 +63,11 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        // The display serif (Newsreader) as a first-class utility — `font-display`. This is the
+        // ONE way to apply the heading serif; it replaces the hand-copied inline
+        // `style={{ fontFamily: 'var(--font-newsreader)…' }}` const that used to drift page to page
+        // (e.g. the /join funnel shipped in sans). --font-display already carries the fallbacks.
+        display: ['var(--font-display)', 'Georgia', 'serif'],
       },
       fontSize: {
         // THE type scale — the only steps allowed.

@@ -12,7 +12,6 @@ import type { AdminAlert } from '@/lib/db/admin'
 import type { FounderBriefing } from '@/lib/founder-briefing'
 import { cn } from '@/lib/utils'
 
-export const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
 
 const TABS = [
   { href: '/admin/founder', label: 'Today' },
@@ -48,7 +47,7 @@ export function FounderGreeting({ name }: { name: string }) {
   return (
     <div>
       <p className="text-caption font-semibold uppercase tracking-widest text-muted">{date}</p>
-      <h1 style={serif} className="mt-1.5 text-h1 text-ink">{greet}{name ? `, ${name}` : ''}.</h1>
+      <h1 className="font-display mt-1.5 text-h1 text-ink">{greet}{name ? `, ${name}` : ''}.</h1>
     </div>
   )
 }
@@ -56,7 +55,7 @@ export function FounderGreeting({ name }: { name: string }) {
 export function PageTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div>
-      <h1 style={serif} className="text-h1 text-ink">{title}</h1>
+      <h1 className="font-display text-h1 text-ink">{title}</h1>
       {subtitle && <p className="mt-2 max-w-xl text-body text-muted">{subtitle}</p>}
     </div>
   )
@@ -74,12 +73,12 @@ export function Figure({ label, value, hint, soon }: { label: string; value?: st
       <p className="text-caption font-semibold uppercase tracking-wide text-muted">{label}</p>
       {isSoon ? (
         <>
-          <p style={serif} className="text-h2 leading-none text-muted/40">—</p>
+          <p className="font-display text-h2 leading-none text-muted/40">—</p>
           <p className="text-caption text-muted">Coming soon · {soon}</p>
         </>
       ) : (
         <>
-          <p style={serif} className="text-h1 leading-none text-ink">{value ?? '—'}</p>
+          <p className="font-display text-h1 leading-none text-ink">{value ?? '—'}</p>
           {hint && <p className="text-caption text-muted">{hint}</p>}
         </>
       )}
@@ -113,7 +112,7 @@ export function Brief({ briefing, footnote }: { briefing: FounderBriefing; footn
         {BRIEF_ROWS.map((r) => (
           <div key={r.key} className="flex flex-col gap-1 py-3.5 first:pt-0 last:pb-0 sm:flex-row sm:gap-5">
             <p className="shrink-0 pt-1 text-caption font-semibold uppercase tracking-wide text-content-inverse/40 sm:w-36">{r.q}</p>
-            <p style={serif} className="flex-1 text-body leading-relaxed text-content-inverse">{briefing[r.key]}</p>
+            <p className="font-display flex-1 text-body leading-relaxed text-content-inverse">{briefing[r.key]}</p>
           </div>
         ))}
       </div>

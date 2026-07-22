@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button'
 import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
 
-const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
 
 interface Slide { eyebrow: string; title: string; body: string }
 const SLIDES: Slide[] = [
@@ -82,7 +81,7 @@ export default function WelcomePage() {
             <span className="h-4 w-4 animate-pulse rounded-full" style={{ background: 'hsl(103 58% 54%)', boxShadow: '0 0 16px 3px hsl(103 62% 54% / 0.6)' }} />
           </div>
           <p className="text-caption font-semibold uppercase tracking-widest text-green">{s.eyebrow}</p>
-          <h1 style={serif} className="mt-4 text-h2 leading-tight text-ink">{s.title}</h1>
+          <h1 className="font-display mt-4 text-h2 leading-tight text-ink">{s.title}</h1>
           <p className="mt-4 max-w-sm text-lead leading-relaxed text-muted">{s.body}</p>
         </div>
       </div>

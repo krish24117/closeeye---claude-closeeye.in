@@ -20,7 +20,6 @@ import { GoogleGlyph } from '@/components/ui/google-glyph'
 import { Logo } from '@/components/ui/logo'
 import { cn } from '@/lib/utils'
 
-const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
 
 function GoogleButton({ label }: { label: string }) {
   const [busy, setBusy] = React.useState(false)
@@ -89,7 +88,7 @@ export function ConnectHome() {
       {/* 1 · HERO */}
       <section className="mx-auto max-w-5xl px-6 pt-16 pb-12 sm:pt-20">
         <Reveal className="mx-auto max-w-[42rem]">
-          <h1 style={serif} className="max-w-[15ch] text-h1 text-ink">The intelligence that knows the people you love.</h1>
+          <h1 className="font-display max-w-[15ch] text-h1 text-ink">The intelligence that knows the people you love.</h1>
           <p className="mt-7 max-w-[44ch] text-lead text-muted">Your family’s private intelligence. It remembers, understands and helps — wherever your family lives.</p>
           <div className="mt-9 flex flex-col items-start gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -109,15 +108,15 @@ export function ConnectHome() {
       <section className="mx-auto max-w-5xl px-6 py-12">
         <Reveal className="mx-auto max-w-[42rem]">
           <Eyebrow>A new category</Eyebrow>
-          <h2 style={serif} className="text-h2 text-ink">More than AI.<br />Family Intelligence.</h2>
+          <h2 className="font-display text-h2 text-ink">More than AI.<br />Family Intelligence.</h2>
           <div className="mt-9 flex flex-col gap-5 border-t border-line pt-8">
             <div className="flex items-start gap-4">
               <span className="mt-2.5 h-2.5 w-2.5 shrink-0 rounded-full border border-line" />
-              <p style={serif} className="text-h4 leading-snug text-muted">Traditional AI starts every conversation from zero.</p>
+              <p className="font-display text-h4 leading-snug text-muted">Traditional AI starts every conversation from zero.</p>
             </div>
             <div className="flex items-start gap-4">
               <span className="mt-2.5 h-2.5 w-2.5 shrink-0 rounded-full bg-green ring-4 ring-green/15" />
-              <p style={serif} className="text-h4 leading-snug text-ink">Close Eye builds understanding that grows with your family.</p>
+              <p className="font-display text-h4 leading-snug text-ink">Close Eye builds understanding that grows with your family.</p>
             </div>
           </div>
         </Reveal>
@@ -128,16 +127,16 @@ export function ConnectHome() {
         <div className="mx-auto max-w-5xl px-6 py-12">
           <Reveal className="mx-auto max-w-[42rem]">
             <Eyebrow on="dark">What makes it different</Eyebrow>
-            <h2 style={serif} className="text-h2 text-content-inverse">Every answer begins<br />with understanding.</h2>
+            <h2 className="font-display text-h2 text-content-inverse">Every answer begins<br />with understanding.</h2>
             <div className="mt-8 grid gap-1">
               <div className="py-4">
                 <p className="text-caption font-semibold uppercase tracking-[0.16em] text-content-inverse/60">Before Close Eye</p>
-                <p style={serif} className="mt-2 text-h4 leading-snug text-content-inverse/60">Every important detail lives in a different conversation.</p>
+                <p className="font-display mt-2 text-h4 leading-snug text-content-inverse/60">Every important detail lives in a different conversation.</p>
               </div>
               <div className="h-px bg-content-inverse/10" />
               <div className="py-4">
                 <p className="text-caption font-semibold uppercase tracking-[0.16em] text-content-inverse/60">With Close Eye</p>
-                <p style={serif} className="mt-2 text-h3 leading-snug text-content-inverse">Your family shares one understanding — and it grows every day.</p>
+                <p className="font-display mt-2 text-h3 leading-snug text-content-inverse">Your family shares one understanding — and it grows every day.</p>
               </div>
             </div>
           </Reveal>
@@ -146,7 +145,7 @@ export function ConnectHome() {
             <div className="rounded-3xl border border-content-inverse/10 bg-content-inverse/5 p-6 sm:p-7">
               <div className="flex items-center gap-3">
                 <span className="grid h-9 w-9 place-items-center rounded-full bg-accent-soft text-body-sm font-bold text-surface-inverse">M</span>
-                <span style={serif} className="text-h4 text-content-inverse">Mom</span>
+                <span className="font-display text-h4 text-content-inverse">Mom</span>
               </div>
               <div className="mt-5 flex flex-col gap-3">
                 {FACTS.map((f, i) => (
@@ -169,10 +168,10 @@ export function ConnectHome() {
       <section className="mx-auto max-w-5xl px-6 py-12">
         <Reveal className="mx-auto max-w-[42rem]">
           <Eyebrow>Real presence</Eyebrow>
-          <h2 style={serif} className="text-h2 text-muted">When intelligence isn’t enough.</h2>
-          <p style={serif} className="mt-2 text-h2 text-ink">Close Eye can be there.</p>
+          <h2 className="font-display text-h2 text-muted">When intelligence isn’t enough.</h2>
+          <p className="font-display mt-2 text-h2 text-ink">Close Eye can be there.</p>
           <p className="mt-7 max-w-[42ch] text-lead text-muted">When you can’t be there, Close Eye coordinates trusted people to help with life’s important moments.</p>
-          <p style={serif} className="mt-6 max-w-[34ch] text-h4 leading-snug text-ink">Not everything needs an emergency. Sometimes it simply needs someone you trust to be there.</p>
+          <p className="font-display mt-6 max-w-[34ch] text-h4 leading-snug text-ink">Not everything needs an emergency. Sometimes it simply needs someone you trust to be there.</p>
           <Link href="/care" className="mt-8 inline-flex items-center gap-1.5 text-body-sm font-semibold text-green transition-colors hover:text-green/80">
             Learn about Close Eye Care <ArrowRight className="h-4 w-4" strokeWidth={2} />
           </Link>
@@ -186,8 +185,8 @@ export function ConnectHome() {
         <div className="mx-auto max-w-5xl px-6 py-12">
           <Reveal className="mx-auto max-w-[44rem]">
             <Eyebrow>How it grows</Eyebrow>
-            <h2 style={serif} className="max-w-[20ch] text-h2 text-ink">Close Eye grows with your family’s needs.</h2>
-            <p style={serif} className="mt-6 max-w-[34ch] text-h4 leading-snug text-muted">
+            <h2 className="font-display max-w-[20ch] text-h2 text-ink">Close Eye grows with your family’s needs.</h2>
+            <p className="font-display mt-6 max-w-[34ch] text-h4 leading-snug text-muted">
               A daughter in London. A son in Toronto. A mother in Hyderabad. Close Eye begins the same for every family — then does more, where it can.
             </p>
           </Reveal>
@@ -196,20 +195,20 @@ export function ConnectHome() {
             {/* Intelligence */}
             <div className="flex flex-col rounded-3xl border border-line bg-card p-7 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
               <span className="text-h3 leading-none">🌍</span>
-              <h3 style={serif} className="mt-4 text-h3 text-ink">Intelligence</h3>
+              <h3 className="font-display mt-4 text-h3 text-ink">Intelligence</h3>
               <p className="mt-1.5 text-body-sm font-semibold text-green">Available worldwide</p>
               <div className="mt-6 flex flex-col gap-3">
-                <p style={serif} className="text-lead leading-snug text-ink">Always knows what matters.</p>
-                <p style={serif} className="text-lead leading-snug text-ink">Understanding grows every day.</p>
+                <p className="font-display text-lead leading-snug text-ink">Always knows what matters.</p>
+                <p className="font-display text-lead leading-snug text-ink">Understanding grows every day.</p>
               </div>
               <span className="mt-auto flex items-center gap-2 pt-7 text-caption font-bold text-ink"><span className="h-1.5 w-1.5 rounded-full bg-green" />Available worldwide</span>
             </div>
             {/* Care Coordination */}
             <div className="flex flex-col rounded-3xl border border-line bg-card p-7 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
               <span className="text-h3 leading-none">🇮🇳</span>
-              <h3 style={serif} className="mt-4 text-h3 text-ink">Care Coordination</h3>
+              <h3 className="font-display mt-4 text-h3 text-ink">Care Coordination</h3>
               <p className="mt-1.5 text-body-sm font-semibold text-green">Available across India</p>
-              <p style={serif} className="mt-6 text-lead leading-snug text-ink">We coordinate the help your family needs.</p>
+              <p className="font-display mt-6 text-lead leading-snug text-ink">We coordinate the help your family needs.</p>
               <ul className="mt-4 flex flex-col gap-2.5">
                 {['Hospital appointments', 'Insurance & medical paperwork', 'Government services', 'Dedicated Presence Manager'].map((x) => (
                   <li key={x} className="flex items-center gap-2.5 text-body-sm text-muted"><span className="h-1 w-1 shrink-0 rounded-full bg-green/70" />{x}</li>
@@ -220,9 +219,9 @@ export function ConnectHome() {
             {/* Real Presence */}
             <div className="flex flex-col rounded-3xl border border-line bg-card p-7 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
               <span className="text-h3 leading-none">📍</span>
-              <h3 style={serif} className="mt-4 text-h3 text-ink">Real Presence</h3>
+              <h3 className="font-display mt-4 text-h3 text-ink">Real Presence</h3>
               <p className="mt-1.5 text-body-sm font-semibold text-green">Available in Hyderabad</p>
-              <p style={serif} className="mt-6 text-lead leading-snug text-ink">When being there matters, someone trusted is.</p>
+              <p className="font-display mt-6 text-lead leading-snug text-ink">When being there matters, someone trusted is.</p>
               <ul className="mt-4 flex flex-col gap-2.5">
                 {['Hospital companion', 'Wellness visits', 'Emergency support'].map((x) => (
                   <li key={x} className="flex items-center gap-2.5 text-body-sm text-muted"><span className="h-1 w-1 shrink-0 rounded-full bg-green/70" />{x}</li>
@@ -243,7 +242,7 @@ export function ConnectHome() {
       <section className="mx-auto max-w-5xl px-6 py-12">
         <Reveal>
           <Eyebrow>See it in action</Eyebrow>
-          <h2 style={serif} className="text-h2 text-ink">Understanding, then action.</h2>
+          <h2 className="font-display text-h2 text-ink">Understanding, then action.</h2>
         </Reveal>
         <Reveal className="mx-auto mt-12 max-w-[25rem]">
           <div className="overflow-hidden rounded-3xl border border-line bg-ivory shadow-xl">
@@ -289,8 +288,8 @@ export function ConnectHome() {
               <circle cx="75" cy="44" r="8" fill="currentColor" />
             </svg>
           </span>
-          <h2 style={serif} className="max-w-[15ch] text-h2 text-ink">Every family deserves to be understood.</h2>
-          <p style={serif} className="mt-6 max-w-[34ch] text-h4 leading-snug text-muted">When you can’t be there, Close Eye helps you stay close.</p>
+          <h2 className="font-display max-w-[15ch] text-h2 text-ink">Every family deserves to be understood.</h2>
+          <p className="font-display mt-6 max-w-[34ch] text-h4 leading-snug text-muted">When you can’t be there, Close Eye helps you stay close.</p>
         </Reveal>
       </section>
 
@@ -300,7 +299,7 @@ export function ConnectHome() {
       <section className="mx-auto max-w-5xl px-6 py-12">
         <Reveal className="mx-auto max-w-[42rem]">
           <Eyebrow>Privacy</Eyebrow>
-          <h2 style={serif} className="text-h2 text-ink">Everything belongs to your family.</h2>
+          <h2 className="font-display text-h2 text-ink">Everything belongs to your family.</h2>
           <div className="mt-8 flex flex-wrap gap-3">
             <span className="inline-flex items-center gap-2.5 rounded-full border border-line bg-card px-5 py-3 text-body-sm font-semibold text-ink"><Lock className="h-4 w-4 text-green" strokeWidth={2} />Encrypted</span>
             <span className="inline-flex items-center gap-2.5 rounded-full border border-line bg-card px-5 py-3 text-body-sm font-semibold text-ink"><ShieldCheck className="h-4 w-4 text-green" strokeWidth={2} />Private</span>
@@ -313,9 +312,9 @@ export function ConnectHome() {
       <section className="border-t border-line/70">
         <div className="mx-auto max-w-3xl px-6 py-12">
           <Reveal>
-            <h2 style={serif} className="text-h2 text-ink">Start your Family Space.</h2>
+            <h2 className="font-display text-h2 text-ink">Start your Family Space.</h2>
             <p className="mt-5 max-w-[42ch] text-lead text-muted">Understanding grows over time. The earlier you begin, the more helpful Close Eye becomes.</p>
-            <p style={serif} className="mt-5 max-w-[34ch] text-lead text-ink">Start with understanding. Add care only when you need it.</p>
+            <p className="font-display mt-5 max-w-[34ch] text-lead text-ink">Start with understanding. Add care only when you need it.</p>
             <div className="mt-9 flex flex-col items-start gap-3">
               <GoogleButton label="Create Family Space" />
               <Link href="/auth" className="inline-flex items-center gap-1 text-caption font-semibold text-muted hover:text-ink">or continue with email <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>

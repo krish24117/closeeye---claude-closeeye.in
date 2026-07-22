@@ -15,13 +15,12 @@ import { type ClozaAnswer, type ClozaTurn } from '@/lib/cloza/types'
 import { EpistemicTag } from '@/components/cloza/epistemic-tag'
 import { cn } from '@/lib/utils'
 
-const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 
 export function ClozaAnswerCard({ answer }: { answer: ClozaAnswer }) {
   return (
     <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-      <p style={serif} className="text-h4 text-ink">{answer.title}</p>
+      <p className="font-display text-h4 text-ink">{answer.title}</p>
       <div className="mt-4 flex flex-col gap-3">
         {answer.segments.map((seg, i) => (
           <div key={i} className="flex items-start gap-3">

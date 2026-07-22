@@ -28,7 +28,6 @@ import type { AskTurn } from '@/lib/db/ask'
 import { cn } from '@/lib/utils'
 import { titleCase } from '@/lib/family/relationship-words'
 
-const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
 const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 
 /** The Close Eye orb — the voice of Connect. A dark sphere with a luminous, gently pulsing green core. */
@@ -230,7 +229,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
         <div className="flex flex-col items-center gap-5 py-8 text-center">
           <Orb size="lg" />
           <div>
-            <p style={serif} className="text-h3 text-ink">Ask me anything{primaryName ? ` about ${primaryName}` : ''}.</p>
+            <p className="font-display text-h3 text-ink">Ask me anything{primaryName ? ` about ${primaryName}` : ''}.</p>
             <p className="mt-2 text-body-sm text-muted">I’ll answer from what your family has shared — never a guess.</p>
           </div>
           {suggestions.length > 0 && (
@@ -359,7 +358,7 @@ function UnderstoodLine({ u }: { u: Understanding }) {
   return (
     <div className="rounded-2xl border border-green/20 bg-accent-soft/70 px-4 py-3">
       <p className="flex items-center gap-1.5 text-caption font-bold uppercase tracking-wide text-green"><Check className="h-3.5 w-3.5" strokeWidth={2.6} /> Understood</p>
-      <p style={serif} className="mt-1.5 text-body leading-snug text-ink">{line}</p>
+      <p className="font-display mt-1.5 text-body leading-snug text-ink">{line}</p>
       <p className="mt-1.5 flex items-center gap-1.5 text-caption text-muted"><EpistemicTag kind="fact" /> Grounded in what your family has shared</p>
     </div>
   )

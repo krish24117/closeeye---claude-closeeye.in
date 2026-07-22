@@ -19,7 +19,6 @@ import { getLocalPhoto } from '@/lib/local-photos'
 import { titleCase } from '@/lib/family/relationship-words'
 import { dialablePhone } from '@/lib/platform/locale'
 
-const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
 const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 const normKey = (s: string) => s.trim().toLowerCase().replace(/[.\s]+$/, '')
 
@@ -130,7 +129,7 @@ export default function PersonSpacePage() {
           <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-accent-soft text-h3 font-semibold text-green">{Person.charAt(0)}</span>
         )}
         <div className="min-w-0">
-          <h1 style={serif} className="truncate text-h2 text-ink">{Person}</h1>
+          <h1 className="font-display truncate text-h2 text-ink">{Person}</h1>
           {meta && <p className="mt-0.5 text-body-sm text-muted">{meta}</p>}
         </div>
       </div>
@@ -149,7 +148,7 @@ export default function PersonSpacePage() {
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ivory/10">
               <span className="h-3 w-3 animate-pulse rounded-full" style={{ background: 'hsl(103 58% 54%)', boxShadow: '0 0 12px 2px hsl(103 62% 54% / 0.6)' }} />
             </span>
-            <p style={serif} className="text-body leading-snug text-ivory">This is {Person}’s space. Close Eye is beginning to understand {person}.</p>
+            <p className="font-display text-body leading-snug text-ivory">This is {Person}’s space. Close Eye is beginning to understand {person}.</p>
           </div>
           {facts[0] && (
             <p className="mt-4 flex items-start gap-2.5 text-body-sm text-ivory"><Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-soft" strokeWidth={2.4} />{facts[0]}</p>

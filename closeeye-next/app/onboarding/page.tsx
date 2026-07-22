@@ -26,7 +26,6 @@ import { track } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import { haptic } from '@/lib/haptics'
 
-const serif = { fontFamily: 'var(--font-newsreader), Georgia, "Times New Roman", serif' } as const
 
 type StepId = 'welcome' | 'name' | 'who' | 'fact' | 'ready'
 const DATA_STEPS: StepId[] = ['name', 'who', 'fact'] // the three progress-dotted steps
@@ -155,14 +154,14 @@ export default function OnboardingPage() {
           <div className="rounded-3xl border border-content-inverse/10 bg-content-inverse/5 p-6">
             <div className="flex items-center gap-3">
               <span className="grid h-9 w-9 place-items-center rounded-full bg-accent-soft text-body-sm font-bold text-surface-inverse">{Subject.charAt(0)}</span>
-              <span style={serif} className="text-h4 text-content-inverse">{Subject}</span>
+              <span className="font-display text-h4 text-content-inverse">{Subject}</span>
             </div>
             {fact.trim() && (
               <p className="mt-4 flex items-start gap-2.5 text-body-sm text-content-inverse"><Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-soft" strokeWidth={2.4} />{fact.trim()}</p>
             )}
             <p className="mt-4 flex items-center gap-2 text-caption text-content-inverse/60">{isSelf ? 'Your space is live' : `${Subject}’s space is live`}<span className="inline-block h-4 w-1.5 animate-pulse rounded-sm bg-accent-soft" /></p>
           </div>
-          <h1 style={serif} className="mt-8 text-h2 text-content-inverse">{isSelf ? 'Your' : `${Subject}’s`} space is ready.</h1>
+          <h1 className="font-display mt-8 text-h2 text-content-inverse">{isSelf ? 'Your' : `${Subject}’s`} space is ready.</h1>
           <p className="mt-3 text-body text-content-inverse/70">It only grows from here. Everything stays private to your family.</p>
 
           {activatePlan && (
@@ -223,14 +222,14 @@ export default function OnboardingPage() {
               <div className="mb-7 grid h-14 w-14 place-items-center rounded-full bg-surface-inverse">
                 <span className="h-4 w-4 animate-pulse rounded-full" style={{ background: 'hsl(103 58% 54%)', boxShadow: '0 0 16px 3px hsl(103 62% 54% / 0.6)' }} />
               </div>
-              <h1 style={serif} className="text-h1 leading-tight text-ink">Let’s create your family’s private space.</h1>
+              <h1 className="font-display text-h1 leading-tight text-ink">Let’s create your family’s private space.</h1>
               <p className="mt-4 text-lead text-muted">It takes about a minute. Everything you add stays private to your family.</p>
             </>
           )}
 
           {step === 'name' && (
             <>
-              <h1 style={serif} className="text-h2 text-ink">What should we call you?</h1>
+              <h1 className="font-display text-h2 text-ink">What should we call you?</h1>
               <p className="mt-3 text-body text-muted">So the people you love are known by name, from the very first word.</p>
               <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="Your full name" autoComplete="name" className={cn(inputCls, 'mt-7')} />
             </>
@@ -238,7 +237,7 @@ export default function OnboardingPage() {
 
           {step === 'who' && (
             <>
-              <h1 style={serif} className="text-h2 text-ink">Who should Close Eye know first?</h1>
+              <h1 className="font-display text-h2 text-ink">Who should Close Eye know first?</h1>
               <p className="mt-3 text-body text-muted">We’ll set up their space first — you can add more anytime.</p>
               <div className="mt-7 grid grid-cols-2 gap-3">
                 {WHO.map((o) => (
@@ -272,7 +271,7 @@ export default function OnboardingPage() {
 
           {step === 'fact' && (
             <>
-              <h1 style={serif} className="text-h2 text-ink">Tell Close Eye one thing about {factSubject}.</h1>
+              <h1 className="font-display text-h2 text-ink">Tell Close Eye one thing about {factSubject}.</h1>
               <p className="mt-3 text-body text-muted">Anything at all — a routine, a worry, something {isSelf ? 'you love' : `${subject} loves`}.</p>
               <input autoFocus value={fact} onChange={(e) => setFact(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && consented && next()} placeholder={isSelf ? 'e.g. I love my morning walks' : `e.g. ${Cap(subject)} loves her morning walks`} className={cn(inputCls, 'mt-7')} />
               {fact.trim().length > 1 && (
