@@ -10,7 +10,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import {
-  Share2, UserPlus, ClipboardList, ChevronRight, Loader2, Check, CalendarPlus, MessageCircle, HeartHandshake,
+  Share2, UserPlus, ClipboardList, ChevronRight, Loader2, Check, CalendarPlus, MessageCircle, HeartHandshake, Users,
 } from 'lucide-react'
 import { Overlay } from '@/components/family/overlay'
 import { Button } from '@/components/ui/button'
@@ -90,21 +90,22 @@ export function RecommendedNextSteps({
         </div>
       ))}
 
-      {/* The existing, always-real actions — kept within the model. */}
-      {(bookHref || messageHref) && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {bookHref && (
-            <Link href={bookHref} className="inline-flex items-center gap-1.5 rounded-full border border-line/70 bg-surface-raised px-3.5 py-2 text-caption font-medium text-ink transition-colors hover:border-green hover:text-green">
-              <CalendarPlus className="h-3.5 w-3.5 text-green" strokeWidth={1.9} /> Book a visit
-            </Link>
-          )}
-          {messageHref && (
-            <Link href={messageHref} className="inline-flex items-center gap-1.5 rounded-full border border-line/70 bg-surface-raised px-3.5 py-2 text-caption font-medium text-ink transition-colors hover:border-green hover:text-green">
-              <MessageCircle className="h-3.5 w-3.5 text-green" strokeWidth={1.9} /> Message your Presence Manager
-            </Link>
-          )}
-        </div>
-      )}
+      {/* The existing, always-real actions + a standing door into the Trusted Network (discoverability). */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Link href="/space/network" className="inline-flex items-center gap-1.5 rounded-full border border-line/70 bg-surface-raised px-3.5 py-2 text-caption font-medium text-ink transition-colors hover:border-green hover:text-green">
+          <Users className="h-3.5 w-3.5 text-green" strokeWidth={1.9} /> Your Trusted Network
+        </Link>
+        {bookHref && (
+          <Link href={bookHref} className="inline-flex items-center gap-1.5 rounded-full border border-line/70 bg-surface-raised px-3.5 py-2 text-caption font-medium text-ink transition-colors hover:border-green hover:text-green">
+            <CalendarPlus className="h-3.5 w-3.5 text-green" strokeWidth={1.9} /> Book a visit
+          </Link>
+        )}
+        {messageHref && (
+          <Link href={messageHref} className="inline-flex items-center gap-1.5 rounded-full border border-line/70 bg-surface-raised px-3.5 py-2 text-caption font-medium text-ink transition-colors hover:border-green hover:text-green">
+            <MessageCircle className="h-3.5 w-3.5 text-green" strokeWidth={1.9} /> Message your Presence Manager
+          </Link>
+        )}
+      </div>
 
       {share && <ShareSheet object={object} network={people} onAddPerson={addPerson} onClose={() => setShare(null)} onDone={onChanged} />}
       {invite && <InviteSheet object={object} step={invite.step} receiveItems={receiveItems} onClose={() => setInvite(null)} onDone={onChanged} />}
@@ -207,6 +208,7 @@ function ShareSheet({ object, network, onAddPerson, onClose, onDone }: { object:
         {family.map((p) => <PersonRow key={p.id} person={p} selected={pick === p.id} onClick={() => setPick(p.id)} />)}
         <AddPersonInline defaultRole="family_member" label="Add a family member" onAdded={(p) => { onAddPerson(p); setPick(p.id) }} />
       </div>
+      <p className="text-caption text-muted">Saved privately to your family space{chosen ? ` — ${chosen.name} isn’t notified automatically yet` : ''}.</p>
       {err && <p className="text-caption text-error">{err}</p>}
       <Button size="md" className="w-full" disabled={!chosen || busy} onClick={() => void submit()}>
         {busy ? <Busy /> : 'Share'}
@@ -251,9 +253,10 @@ function InviteSheet({ object, step, receiveItems, onClose, onDone }: { object: 
           ))}
         </ul>
       </div>
+      <p className="text-caption text-muted">Saved to your family space. For now, share the details with {name.trim() || 'them'} yourself — automatic delivery is coming soon.</p>
       {err && <p className="text-caption text-error">{err}</p>}
       <Button size="md" className="w-full" disabled={!name.trim() || !purpose.trim() || busy} onClick={() => void submit()}>
-        {busy ? <Busy /> : 'Send invitation'}
+        {busy ? <Busy /> : 'Create invitation'}
       </Button>
     </SheetShell>
   )
@@ -313,6 +316,7 @@ function AssignSheet({ object, step, network, onAddPerson, onClose, onDone }: { 
           ))}
         </div>
       </Field>
+      <p className="text-caption text-muted">Tracked on your family timeline{chosen ? ` — let ${chosen.name} know so they can pick it up` : ''}.</p>
       {err && <p className="text-caption text-error">{err}</p>}
       <Button size="md" className="w-full" disabled={!chosen || !task.trim() || busy} onClick={() => void submit()}>
         {busy ? <Busy /> : `Assign${chosen ? ` to ${chosen.name}` : ''}`}
