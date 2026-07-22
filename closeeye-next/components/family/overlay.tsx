@@ -26,6 +26,14 @@ import { cn } from '@/lib/utils'
  * built-in `chrome`; it is opt-IN (default off) because most sheets already render
  * their own header + ✕ — passing `chrome` would double it. Turn it on for sheets that
  * have no close of their own (e.g. the Connect sheet, the network sheet).
+ *
+ * HISTORY / NAVIGATION SAFETY: the sheet's own dismiss controls call `dismiss()`, which pops
+ * OUR pushed entry via `history.back()` → popstate → onClose (keeping the back-stack clean).
+ * The close-effect cleanup does NOT call `history.back()` — it must never, because a
+ * navigate-on-close action (a caller doing `onClose(); router.push(href)`, e.g. the Connect
+ * send button) closes the sheet AND navigates in one gesture. A `history.back()` in cleanup
+ * raced `router.push` (whose history commit is deferred) and sent those actions to the previous
+ * page instead of the destination. Cleanup only detaches listeners; navigation owns the stack.
  */
 export function Overlay({
   open,
@@ -59,10 +67,24 @@ export function Overlay({
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
 
+  // User dismissed via a built-in control (backdrop, ✕, swipe, Escape). Pop OUR history entry so
+  // the back-stack stays clean — that fires popstate → onClose. If our entry isn't the current top
+  // (SSR, or a navigation already advanced it), just close directly. Never called by a
+  // navigate-on-close caller — those call the onClose prop, so router.push owns the history.
+  const dismiss = () => {
+    if (typeof window !== 'undefined' && (window.history.state as { ceOverlay?: boolean } | null)?.ceOverlay) {
+      window.history.back()
+    } else {
+      onCloseRef.current()
+    }
+  }
+  const dismissRef = useRef(dismiss)
+  dismissRef.current = dismiss
+
   // Escape + body-scroll lock.
   useEffect(() => {
     if (!open) return
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCloseRef.current()
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') dismissRef.current() }
     window.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => {
@@ -72,18 +94,14 @@ export function Overlay({
   }, [open])
 
   // Hardware / gesture Back closes the SHEET, not the app. Push a history entry when the sheet
-  // opens; a Back press pops it → popstate → we close. Closing via any UI path pops our own entry
-  // (history.back) so we never leave a dangling state — UNLESS a navigation already replaced the
-  // top (router.push), in which case history.state is no longer ours and we leave it be.
+  // opens; a Back press pops it → popstate → we close. Cleanup ONLY detaches the listener —
+  // it must not touch history (see the NAVIGATION SAFETY note above).
   useEffect(() => {
     if (!open) return
     window.history.pushState({ ceOverlay: true }, '')
     const onPop = () => onCloseRef.current()
     window.addEventListener('popstate', onPop)
-    return () => {
-      window.removeEventListener('popstate', onPop)
-      if (window.history.state?.ceOverlay) window.history.back()
-    }
+    return () => { window.removeEventListener('popstate', onPop) }
   }, [open])
 
   if (!mounted) return null
@@ -99,7 +117,7 @@ export function Overlay({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={() => onClose()}
+          onClick={() => dismiss()}
         >
           <motion.div
             className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-lg bg-surface-raised shadow-lg sm:rounded-lg"
@@ -115,7 +133,7 @@ export function Overlay({
             dragListener={false}
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.6 }}
-            onDragEnd={(_, info) => { if (info.offset.y > 120 || info.velocity.y > 600) onClose() }}
+            onDragEnd={(_, info) => { if (info.offset.y > 120 || info.velocity.y > 600) dismiss() }}
           >
             {chrome && isSheet && (
               // Grab handle — the drag surface. Owning the drag here (dragListener=false + this
@@ -131,7 +149,7 @@ export function Overlay({
             {chrome && (
               <button
                 type="button"
-                onClick={() => onClose()}
+                onClick={() => dismiss()}
                 aria-label="Close"
                 className="absolute end-2.5 top-2.5 z-10 grid h-9 w-9 place-items-center rounded-full bg-surface/80 text-content-muted backdrop-blur-sm transition-colors hover:bg-surface-accent hover:text-content"
               >
