@@ -10,11 +10,13 @@ const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 
 const CLASSIFIER_MODEL = Deno.env.get("CLOSEEYE_CLASSIFIER_MODEL") ?? "claude-haiku-4-5-20251001";
-// Sonnet 5 (smarter base than 4.6, same $/token sticker). NOTE: on Sonnet 5 an OMITTED `thinking`
-// field defaults to adaptive thinking ON — which would consume the 500-token answer budget and
-// truncate/empty the reply. So the inform call below sends `thinking: {type:"disabled"}` to keep the
-// no-thinking behaviour we had on 4.6 (better base answers, same low latency, fits the budget).
-const INFORM_MODEL     = Deno.env.get("CLOSEEYE_INFORM_MODEL")     ?? "claude-sonnet-5";
+// Opus 4.8 — the highest-quality answer model. The inform call sends `thinking:{type:"disabled"}`
+// (accepted on Opus 4.8) so the full token budget is the answer, latency stays low, and behaviour is
+// deterministic no-thinking regardless of the model's omit-default. Swappable at runtime WITHOUT a
+// redeploy via CLOSEEYE_INFORM_MODEL (e.g. "claude-sonnet-5" for lower cost) — both work with the
+// disabled-thinking + 640-token setup below. Watch: with thinking off, Opus 4.8 can occasionally
+// narrate reasoning into the reply; the INFORM_SYSTEM prompt keeps it answer-first.
+const INFORM_MODEL     = Deno.env.get("CLOSEEYE_INFORM_MODEL")     ?? "claude-opus-4-8";
 
 function apiKey(): string {
   const key = Deno.env.get("ANTHROPIC_API_KEY");
