@@ -33,7 +33,11 @@ export default function AddFamilyMemberPage() {
   async function submit() {
     if (busy) return // guard against rapid double-clicks → only one record
     setError('')
-    if (!valid) return setError('Please add a name, relationship and city.')
+    // Field-level, specific and warm (P1-6) — never a lumped "add a name, relationship and city".
+    // Mirrors the canonical add form (space/people/add) so both doors speak the same way.
+    if (fullName.trim().length < 2) return setError('Please add their name.')
+    if (!relationship) return setError('Please choose a relationship.')
+    if (city.trim().length < 2) return setError('Please add the city they live in.')
     setBusy(true)
     try {
       const created = await addLovedOne({ full_name: fullName, relationship, city })
