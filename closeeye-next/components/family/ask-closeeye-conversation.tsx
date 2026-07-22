@@ -169,12 +169,38 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
       {/* Thread */}
       <div className="flex flex-col gap-3.5">
         {empty && (
-          <AssistantBubble>
-            <p className="text-body-sm leading-relaxed text-ink">
-              Hi — I&apos;m here for the people you love. Ask me anything about how they&apos;re doing, their day, their
-              health, or arranging care. Pick who it&apos;s about above so I can be specific.
-            </p>
-          </AssistantBubble>
+          <>
+            <AssistantBubble>
+              <p className="text-body-sm leading-relaxed text-ink">
+                Close Eye knows your family. Ask anything about the people you love — their day, health, or how care works. Pick who it&apos;s about above to get specific answers.
+              </p>
+            </AssistantBubble>
+            {history.length === 0 && lovedOnes.length > 0 && (
+              <div className="ms-[2.625rem] flex flex-wrap gap-2">
+                {(subject
+                  ? [
+                      `How is ${subjectChipLabel(subject.full_name)} doing today?`,
+                      `What has Close Eye noticed recently?`,
+                      `What should I know about their health?`,
+                    ]
+                  : [
+                      'How is everyone doing?',
+                      'What should I know today?',
+                      'What can Close Eye help with?',
+                    ]
+                ).map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => void doSend(prompt)}
+                    className="rounded-full border border-line bg-card px-3.5 py-2 text-caption font-medium text-ink transition-colors hover:border-green hover:text-green"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {msgs.map((m) => {
@@ -203,6 +229,15 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
               </AssistantBubble>
               {!m.pending && !m.notice && m.id === lastAnswerId && (
                 <div className="ml-[2.625rem] flex flex-wrap gap-2">
+                  {subject && (
+                    <button
+                      type="button"
+                      onClick={() => void doSend(`What else should I know about ${subjectChipLabel(subject.full_name)}?`)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-green/30 bg-accent-soft/50 px-3.5 py-2 text-caption font-medium text-green transition-colors hover:border-green hover:bg-accent-soft"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} /> What else matters?
+                    </button>
+                  )}
                   <NextStepChip href="/family/book" icon={CalendarPlus}>Book a visit</NextStepChip>
                   <NextStepChip href={subjectId ? `/family/connect/${subjectId}` : '/family/connect'} icon={MessageCircle}>
                     Message your Presence Manager

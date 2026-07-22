@@ -149,7 +149,7 @@ export default function PersonSpacePage() {
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ivory/10">
               <span className="h-3 w-3 animate-pulse rounded-full" style={{ background: 'hsl(103 58% 54%)', boxShadow: '0 0 12px 2px hsl(103 62% 54% / 0.6)' }} />
             </span>
-            <p style={serif} className="text-body leading-snug text-ivory">This is {Person}’s space. I’m beginning to understand {person}.</p>
+            <p style={serif} className="text-body leading-snug text-ivory">This is {Person}’s space. Close Eye is beginning to understand {person}.</p>
           </div>
           {facts[0] && (
             <p className="mt-4 flex items-start gap-2.5 text-body-sm text-ivory"><Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-soft" strokeWidth={2.4} />{facts[0]}</p>
@@ -159,7 +159,7 @@ export default function PersonSpacePage() {
       ) : (
         <div className="flex items-center gap-2.5">
           <Sparkles className="h-4 w-4 shrink-0 text-green" strokeWidth={1.9} />
-          <p className="text-body-sm text-ink">Here’s what I know about {person}.</p>
+          <p className="text-body-sm text-ink">Here’s what Close Eye knows about {person}.</p>
         </div>
       )}
 
@@ -186,7 +186,7 @@ export default function PersonSpacePage() {
       {/* Invitations to deepen (arrival, framed as opportunity) — else the plain facts list */}
       {arrival ? (
         <section>
-          <p className="text-caption font-semibold text-muted">Help me understand {poss}</p>
+          <p className="text-caption font-semibold text-muted">Help Close Eye understand {poss}</p>
           <p className="mt-1 text-caption text-muted">The more you share, the more Close Eye can help — anytime you like.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {(chips.length ? chips.map((b) => chipLabel(b.text)) : ['Health', 'Daily routine', 'Who’s nearby']).map((c) => (

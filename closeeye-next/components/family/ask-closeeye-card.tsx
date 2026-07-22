@@ -166,8 +166,8 @@ export function AskCloseEyeCard({
             </span>
             <div className="max-w-[90%] rounded-[4px_16px_16px_16px] border border-line/70 bg-card px-3.5 py-2 text-body-sm leading-relaxed text-ink">
               {first
-                ? `I'm keeping an eye on ${first}. Ask me anything about their day — or just say hello.`
-                : `I'm here for your family. Ask me anything about how they're doing, or how ${SITE.name} works.`}
+                ? `Close Eye is keeping an eye on ${first}. Ask anything about their day.`
+                : `Close Eye is here for your family. Ask anything about how they're doing.`}
             </div>
           </div>
         )}
@@ -181,7 +181,7 @@ export function AskCloseEyeCard({
           className="mt-3.5 flex w-full items-center gap-2.5 rounded-xl border border-green/20 bg-card px-3.5 py-2.5 text-left text-caption text-ink transition-colors hover:border-green/40"
         >
           <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} /></span>
-          <span className="min-w-0 flex-1">Tell me a little about {first} so I can help better.</span>
+          <span className="min-w-0 flex-1">Share a little about {first} so Close Eye understands them better.</span>
           <ArrowRight className="h-4 w-4 shrink-0 text-green" strokeWidth={2} />
         </button>
       )}
