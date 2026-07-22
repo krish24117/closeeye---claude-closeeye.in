@@ -85,7 +85,7 @@ export function ConnectSheet({ open, onClose }: { open: boolean; onClose: () => 
     if (!view || reqState === 'busy') return
     setReqState('busy')
     const { error } = await recordConciergeSignal({
-      action: view.domain === 'financial' ? 'Financial help' : 'A visit',
+      action: view.domain === 'financial' ? 'Financial coordination' : 'A visit',
       city, region,
       intent,
       userName: identity.fullName,
@@ -102,7 +102,7 @@ export function ConnectSheet({ open, onClose }: { open: boolean; onClose: () => 
   }
 
   return (
-    <Overlay open={open} onClose={onClose}>
+    <Overlay open={open} onClose={onClose} chrome>
       {view ? (
         <CareDetail
           domain={view.domain}
@@ -116,8 +116,6 @@ export function ConnectSheet({ open, onClose }: { open: boolean; onClose: () => 
         />
       ) : (
         <div className="p-5 pb-7">
-          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-edge" aria-hidden />
-
           {/* Presence */}
           <div className="mb-5 flex flex-col items-center text-center">
             <motion.div
@@ -168,7 +166,7 @@ export function ConnectSheet({ open, onClose }: { open: boolean; onClose: () => 
               <p className="mb-2 mt-5 px-1 text-caption font-semibold uppercase tracking-wider text-content-muted">I can help you</p>
               <div className="flex flex-col gap-2">
                 <ActionRow icon={UserPlus} label={`Complete ${name}’s profile`} onClick={() => go(`/space/people/${lo.id}/add`)} />
-                <ActionRow icon={Landmark} label="Financial help" badge={badgeFor(financialAvail, 'India')} onClick={() => openCare('financial', financialAvail)} />
+                <ActionRow icon={Landmark} label="Financial coordination" badge={badgeFor(financialAvail, 'India')} onClick={() => openCare('financial', financialAvail)} />
                 <ActionRow icon={HeartHandshake} label={`Someone to check on ${name}`} badge={badgeFor(presenceAvail, metro)} onClick={() => openCare('presence', presenceAvail)} />
                 <ActionRow icon={Plus} label="Add a photo or document" onClick={() => go(`/space/people/${lo.id}/memories/add`)} />
               </div>
@@ -217,13 +215,13 @@ function CareDetail({ domain, avail, name, metro, cityLabel, reqState, onBack, o
   onBack: () => void; onSubmit: (intent: ConciergeIntent) => void
 }) {
   const available = avail === 'available'
-  const heading = domain === 'financial' ? 'Financial help' : `Someone to check on ${name}`
+  const heading = domain === 'financial' ? 'Financial coordination' : `Someone to check on ${name}`
   const Icon = domain === 'financial' ? Landmark : HeartHandshake
 
   const body = domain === 'financial'
     ? (available
         ? `Close Eye organises ${name}’s tax filing, audits, valuations and paperwork — and brings in the right professional. It never gives the advice itself.`
-        : `Financial help is handled remotely, right across India. ${name} is outside that today, so it isn’t something I can arrange there yet — but I’ll tell you the moment we can.`)
+        : `Financial coordination is handled remotely, right across India. ${name} is outside that today, so it isn’t something I can arrange there yet — but I’ll tell you the moment we can.`)
     : (available
         ? `A familiar face from Close Eye can visit ${name} — sit a while, share tea, and tell you honestly how ${name} is doing.`
         : `Our companions are in ${metro} today. ${name} is in ${cityLabel}, so a visit isn’t something I can arrange there yet — I’ll tell you the moment we reach ${cityLabel}.`)
@@ -238,7 +236,6 @@ function CareDetail({ domain, avail, name, metro, cityLabel, reqState, onBack, o
 
   return (
     <div className="p-5 pb-7">
-      <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-edge" aria-hidden />
       <button type="button" onClick={onBack} className="mb-4 inline-flex items-center gap-1 text-caption font-semibold text-content-muted hover:text-content">
         <ChevronLeft className="h-4 w-4" strokeWidth={2} /> Back
       </button>

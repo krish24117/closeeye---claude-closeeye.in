@@ -145,7 +145,7 @@ function PersonSheet({ onClose, onDone }: { onClose: () => void; onDone: () => v
   }
 
   return (
-    <Overlay open onClose={onClose}>
+    <Overlay open onClose={onClose} chrome>
       <div className="flex flex-col gap-4 px-6 py-6">
         <div><h2 className="text-h4 text-ink">Add to your network</h2><p className="mt-1 text-body-sm text-muted">Someone you trust to help with part of life.</p></div>
         <Field label="Name"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Their name" className={inputCls} /></Field>
@@ -189,7 +189,7 @@ function ManageSheet({ person, onClose, onDone }: { person: TrustedIdentity; onC
   }
   const perms = person.permissions.filter((p) => p.view)
   return (
-    <Overlay open onClose={onClose}>
+    <Overlay open onClose={onClose} chrome>
       <div className="flex flex-col gap-4 px-6 py-6">
         <div className="flex items-center gap-3">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-accent-soft text-h4 font-semibold text-green">{person.name.charAt(0).toUpperCase()}</span>
