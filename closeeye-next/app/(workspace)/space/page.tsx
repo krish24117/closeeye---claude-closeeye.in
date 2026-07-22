@@ -20,6 +20,16 @@ import { takeFirstPerson } from '@/lib/first-run'
 
 const initial = (s: string) => (s || '?').trim().charAt(0).toUpperCase()
 
+/** Derive a gender-aware possessive/object pronoun pair from a stored relationship string. */
+function pronouns(relationship: string | null): { poss: string; obj: string } {
+  const r = (relationship || '').toLowerCase()
+  const m = ['father', 'dad', 'grandfather', 'grandpa', 'grandad', 'son', 'brother', 'husband', 'uncle', 'nephew', 'baba', 'papa']
+  const f = ['mother', 'mom', 'grandmother', 'grandma', 'nana', 'daughter', 'sister', 'wife', 'aunt', 'niece', 'mama', 'amma']
+  if (m.some((x) => r.includes(x))) return { poss: 'his', obj: 'him' }
+  if (f.some((x) => r.includes(x))) return { poss: 'her', obj: 'her' }
+  return { poss: 'their', obj: 'them' }
+}
+
 export default function WorkspaceHome() {
   const router = useRouter()
   // First-run hand-off: a user who just finished onboarding is opened ON their new person's Space
@@ -81,15 +91,18 @@ export default function WorkspaceHome() {
             <ScanEye className="h-4 w-4" strokeWidth={1.75} /> Get started
           </p>
           <div className="no-scrollbar -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-0.5">
-            {home.people.filter((p) => p.learning).map((p) => (
-              <div key={p.id} className="w-full shrink-0 snap-start rounded-lg bg-surface-inverse p-5 text-content-inverse shadow-sm">
-                <h2 className="text-h4 leading-snug text-content-inverse">Add a few details about {p.natural}.</h2>
-                <p className="mt-2 text-body-sm text-content-inverse/75">Add their health, daily routine, and who’s around them — the more Close Eye knows, the more it can help.</p>
-                <Link href={`/space/people/${p.id}/add`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-body-sm font-semibold text-content transition-opacity hover:opacity-90">
-                  Add {p.natural}&apos;s details <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
-                </Link>
-              </div>
-            ))}
+            {home.people.filter((p) => p.learning).map((p) => {
+              const { poss, obj } = pronouns(p.relationship)
+              return (
+                <div key={p.id} className="w-full shrink-0 snap-start rounded-lg bg-surface-inverse p-5 text-content-inverse shadow-sm">
+                  <h2 className="text-h4 leading-snug text-content-inverse">Add a few details about {p.natural}.</h2>
+                  <p className="mt-2 text-body-sm text-content-inverse/75">Add {poss} health, daily routine, and who&apos;s around {obj} — the more Close Eye knows, the more it can help.</p>
+                  <Link href={`/space/people/${p.id}/add`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-body-sm font-semibold text-content transition-opacity hover:opacity-90">
+                    Add {p.natural}&apos;s details <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
+                  </Link>
+                </div>
+              )
+            })}
           </div>
           {home.people.filter((p) => p.learning).length > 1 && (
             <p className="text-center text-caption text-content-muted">Swipe to see everyone →</p>
@@ -169,7 +182,7 @@ export default function WorkspaceHome() {
             <p className="text-caption font-semibold uppercase tracking-widest text-brand">Close Eye Connect</p>
             <h2 className="mt-2 text-h4 leading-snug text-content">The intelligence that stays with your family.</h2>
             <p className="mt-2 text-body-sm leading-relaxed text-content-muted">It understands the people you love, remembers what matters, and — when real-world presence is needed — brings a trusted person to them.</p>
-            <Link href="/family/membership" className="mt-4 inline-flex items-center gap-2 text-body-sm font-semibold text-brand hover:text-brand/80">
+            <Link href="/join" className="mt-4 inline-flex items-center gap-2 text-body-sm font-semibold text-brand hover:text-brand/80">
               Make Connect yours <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
             </Link>
           </section>

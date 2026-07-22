@@ -70,7 +70,7 @@ export default function CarePage() {
           </div>
         </div>
         {PHASE_2_ENABLED ? (
-          <Link href="/family/book" className="inline-flex items-center justify-center gap-2 self-start rounded-full bg-ink px-5 py-2.5 text-body-sm font-semibold text-ivory"><CalendarPlus className="h-4 w-4" strokeWidth={2} /> Request a visit</Link>
+          <Link href="/space/connect" className="inline-flex items-center justify-center gap-2 self-start rounded-full bg-ink px-5 py-2.5 text-body-sm font-semibold text-ivory"><CalendarPlus className="h-4 w-4" strokeWidth={2} /> Request a visit</Link>
         ) : (
           <div className="inline-flex items-center gap-2 self-start rounded-full border border-line px-5 py-2.5 text-body-sm font-semibold text-muted"><Clock className="h-4 w-4" strokeWidth={1.75} /> Visits open {VISITS_OPEN_LABEL}</div>
         )}

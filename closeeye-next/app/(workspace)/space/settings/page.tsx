@@ -224,7 +224,7 @@ export default function ProfilePage() {
             <p className="text-body-sm leading-relaxed text-content-muted">
               The intelligence that stays with your family — it understands the people you love, and brings a real person whenever presence is needed.
             </p>
-            <Link href="/family/membership" onClick={closeSheet} className="mt-5 inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-full bg-surface-inverse text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90">
+            <Link href="/join" onClick={closeSheet} className="mt-5 inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-full bg-surface-inverse text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90">
               Manage plan →
             </Link>
             <button onClick={closeSheet} className="mt-2.5 min-h-[2.75rem] w-full rounded-full text-body-sm font-semibold text-content-muted transition-colors hover:text-content">Close</button>

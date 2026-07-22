@@ -124,19 +124,19 @@ export function ConnectHome() {
       </section>
 
       {/* 3 · LIVING UNDERSTANDING (dark) */}
-      <section className="bg-surface-inverse text-content-inverse">
+      <section className="bg-surface-inverse text-content-inverse antialiased" style={{ fontSynthesis: 'none' }}>
         <div className="mx-auto max-w-5xl px-6 py-12">
           <Reveal className="mx-auto max-w-[42rem]">
             <Eyebrow on="dark">What makes it different</Eyebrow>
             <h2 style={serif} className="text-h2 text-content-inverse">Every answer begins<br />with understanding.</h2>
             <div className="mt-8 grid gap-1">
               <div className="py-4">
-                <p className="text-caption font-bold uppercase tracking-[0.16em] text-content-inverse/60">Before Close Eye</p>
+                <p className="text-caption font-semibold uppercase tracking-[0.16em] text-content-inverse/60">Before Close Eye</p>
                 <p style={serif} className="mt-2 text-h4 leading-snug text-content-inverse/60">Every important detail lives in a different conversation.</p>
               </div>
               <div className="h-px bg-content-inverse/10" />
               <div className="py-4">
-                <p className="text-caption font-bold uppercase tracking-[0.16em] text-content-inverse/60">With Close Eye</p>
+                <p className="text-caption font-semibold uppercase tracking-[0.16em] text-content-inverse/60">With Close Eye</p>
                 <p style={serif} className="mt-2 text-h3 leading-snug text-content-inverse">Your family shares one understanding — and it grows every day.</p>
               </div>
             </div>
@@ -184,10 +184,10 @@ export function ConnectHome() {
       {/* 4 · THREE LEVELS */}
       <section id="how" className="scroll-mt-20">
         <div className="mx-auto max-w-5xl px-6 py-12">
-          <Reveal className="mx-auto max-w-[44rem] text-center">
+          <Reveal className="mx-auto max-w-[44rem]">
             <Eyebrow>How it grows</Eyebrow>
-            <h2 style={serif} className="mx-auto max-w-[20ch] text-h2 text-ink">Close Eye grows with your family’s needs.</h2>
-            <p style={serif} className="mx-auto mt-6 max-w-[34ch] text-h4 leading-snug text-muted">
+            <h2 style={serif} className="max-w-[20ch] text-h2 text-ink">Close Eye grows with your family’s needs.</h2>
+            <p style={serif} className="mt-6 max-w-[34ch] text-h4 leading-snug text-muted">
               A daughter in London. A son in Toronto. A mother in Hyderabad. Close Eye begins the same for every family — then does more, where it can.
             </p>
           </Reveal>
@@ -241,7 +241,7 @@ export function ConnectHome() {
 
       {/* 5 · IN ACTION */}
       <section className="mx-auto max-w-5xl px-6 py-12">
-        <Reveal className="text-center">
+        <Reveal>
           <Eyebrow>See it in action</Eyebrow>
           <h2 style={serif} className="text-h2 text-ink">Understanding, then action.</h2>
         </Reveal>
@@ -276,10 +276,10 @@ export function ConnectHome() {
       </section>
 
       {/* 6 · VISION */}
-      <section className="mx-auto max-w-5xl px-6 py-12 text-center">
+      <section className="mx-auto max-w-5xl px-6 py-12">
         <Reveal className="mx-auto max-w-[42rem]">
-          <span className="mx-auto mb-9 block w-[138px]" aria-hidden>
-            <svg viewBox="0 0 150 88" fill="none" className="mx-auto h-auto w-full text-green">
+          <span className="mb-9 block w-[138px]" aria-hidden>
+            <svg viewBox="0 0 150 88" fill="none" className="h-auto w-full text-green">
               <path d="M75 44 L22 20 M75 44 L128 18 M75 44 L38 70 M75 44 L116 66" stroke="currentColor" strokeWidth="1.4" opacity="0.28" />
               <circle cx="22" cy="20" r="4.5" fill="currentColor" opacity="0.5" />
               <circle cx="128" cy="18" r="4.5" fill="currentColor" opacity="0.5" />
@@ -289,8 +289,8 @@ export function ConnectHome() {
               <circle cx="75" cy="44" r="8" fill="currentColor" />
             </svg>
           </span>
-          <h2 style={serif} className="mx-auto max-w-[15ch] text-h2 text-ink">Every family deserves to be understood.</h2>
-          <p style={serif} className="mx-auto mt-6 max-w-[34ch] text-h4 leading-snug text-muted">When you can’t be there, Close Eye helps you stay close.</p>
+          <h2 style={serif} className="max-w-[15ch] text-h2 text-ink">Every family deserves to be understood.</h2>
+          <p style={serif} className="mt-6 max-w-[34ch] text-h4 leading-snug text-muted">When you can’t be there, Close Eye helps you stay close.</p>
         </Reveal>
       </section>
 
@@ -311,12 +311,12 @@ export function ConnectHome() {
 
       {/* 8 · FINAL CTA */}
       <section className="border-t border-line/70">
-        <div className="mx-auto max-w-3xl px-6 py-12 text-center">
+        <div className="mx-auto max-w-3xl px-6 py-12">
           <Reveal>
             <h2 style={serif} className="text-h2 text-ink">Start your Family Space.</h2>
-            <p className="mx-auto mt-5 max-w-[42ch] text-lead text-muted">Understanding grows over time. The earlier you begin, the more helpful Close Eye becomes.</p>
-            <p style={serif} className="mx-auto mt-5 max-w-[34ch] text-lead text-ink">Start with understanding. Add care only when you need it.</p>
-            <div className="mt-9 flex flex-col items-center gap-3">
+            <p className="mt-5 max-w-[42ch] text-lead text-muted">Understanding grows over time. The earlier you begin, the more helpful Close Eye becomes.</p>
+            <p style={serif} className="mt-5 max-w-[34ch] text-lead text-ink">Start with understanding. Add care only when you need it.</p>
+            <div className="mt-9 flex flex-col items-start gap-3">
               <GoogleButton label="Create Family Space" />
               <Link href="/auth" className="inline-flex items-center gap-1 text-caption font-semibold text-muted hover:text-ink">or continue with email <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} /></Link>
             </div>
