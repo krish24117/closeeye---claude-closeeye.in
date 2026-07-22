@@ -44,7 +44,7 @@ export const PLANS: Plan[] = [
     amount: 500,
     price: inr(500),
     period: '/month',
-    description: "Stay connected even when you're away.",
+    description: 'A dedicated Presence Manager handles coordination, updates, and escalation — so your family always has a real person to call on, and you always know what\'s happening.',
     benefits: [
       'Dedicated Presence Manager',
       'Phone & WhatsApp coordination',
@@ -68,7 +68,7 @@ export const PLANS: Plan[] = [
       'Everything in Close Eye Connect',
       'One monthly wellbeing visit',
       'Visit report with photos',
-      'Medication reminders',
+      'Medication check-in during every visit',
       'Priority scheduling',
     ],
     cta: 'Choose Care',

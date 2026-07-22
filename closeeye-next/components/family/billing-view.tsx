@@ -6,6 +6,7 @@
  * /space/billing. Each page supplies its own header. Uses useFamilyData/useAuth (mounted in both).
  */
 import * as React from 'react'
+import Link from 'next/link'
 import { BadgeCheck, Loader2, Receipt } from 'lucide-react'
 import { ErrorState } from '@/components/ui/states'
 import { DownloadButton } from '@/components/family/download-button'
@@ -92,6 +93,9 @@ export function BillingView() {
               <div key={s.label}><dt className="text-caption text-muted">{s.label}</dt><dd className="mt-1 text-body font-semibold text-ink">{s.value}</dd></div>
             ))}
           </dl>
+          <div className="border-t border-line/40 px-6 py-3.5">
+            <Link href="/family/membership" className="text-body-sm font-semibold text-green hover:underline">Manage plan →</Link>
+          </div>
         </section>
       )}
 

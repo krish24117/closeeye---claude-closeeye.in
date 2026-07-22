@@ -46,7 +46,7 @@ export default function PeoplePage() {
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-h2 text-ink">People</h1>
         <div className="flex items-center gap-2">
-          <Link href="/space/network" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
+          <Link href="/space/network" title="People authorised to coordinate your family's care" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">
             <Network className="h-4 w-4" strokeWidth={1.75} /> Trusted Network
           </Link>
           <Link href="/space/people/add" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-caption font-semibold text-ink transition-colors hover:border-green/40 hover:text-green">

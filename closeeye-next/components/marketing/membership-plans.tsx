@@ -65,7 +65,12 @@ export function MembershipPlans() {
                 {plan.benefits.map((b) => (
                   <li key={b} className="flex items-start gap-2.5 text-body-sm text-ink">
                     <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-success/12 text-success"><Check className="h-3 w-3" strokeWidth={3} /></span>
-                    {b}
+                    <span>
+                      {b}
+                      {b.includes('Presence Manager') && (
+                        <span className="mt-0.5 block text-caption text-muted">A named team member who knows your family and handles every request personally.</span>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>

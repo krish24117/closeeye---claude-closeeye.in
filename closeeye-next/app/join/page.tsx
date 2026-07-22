@@ -45,7 +45,7 @@ export default function FounderInterestPage() {
   async function submit() {
     if (!name.trim()) { setError('Please tell us your name.'); return }
     if (!validPhone(phone)) { setError('Please enter a valid WhatsApp number.'); return }
-    if (!inHyd && !city.trim()) { setError('Please tell us which city your parents are in.'); return }
+    if (!inHyd && !city.trim()) { setError('Please tell us which city your loved one is in.'); return }
     if (email.trim() && !validEmail(email)) { setError('That email address doesn’t look right.'); return }
     setError(''); setSaveFailed(false); setBusy(true)
     const { error: e } = await submitFounderWaitlist({ name, phone, email, city: inHyd ? 'Hyderabad' : city })
@@ -68,7 +68,7 @@ export default function FounderInterestPage() {
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 py-8">
         {mode === 'choose' && (
           <div className="ce-fade-in flex flex-1 flex-col">
-            <h1 className="text-h2 text-ink">Where are your parents?</h1>
+            <h1 className="text-h2 text-ink">Where is your loved one?</h1>
             <p className="mt-2 text-body text-muted">
               We’re opening in Hyderabad first — one city, done genuinely well. Tell us where your loved one is and we’ll take it from there.
             </p>
@@ -107,7 +107,7 @@ export default function FounderInterestPage() {
             <div className="mt-6 flex flex-col gap-3">
               <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" autoComplete="name" className={inputCls} />
               <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="WhatsApp number" type="tel" inputMode="tel" autoComplete="tel" className={inputCls} />
-              {!inHyd && <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Which city are your parents in?" autoComplete="address-level2" className={inputCls} />}
+              {!inHyd && <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Which city is your loved one in?" autoComplete="address-level2" className={inputCls} />}
               <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email (optional)" type="email" inputMode="email" autoComplete="email" className={inputCls} />
             </div>
             {error && <p className="mt-3 text-caption text-error">{error}</p>}

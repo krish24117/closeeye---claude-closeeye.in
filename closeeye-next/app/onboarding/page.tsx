@@ -231,7 +231,7 @@ export default function OnboardingPage() {
           {step === 'name' && (
             <>
               <h1 style={serif} className="text-h2 text-ink">What should we call you?</h1>
-              <p className="mt-3 text-body text-muted">So Close Eye can greet you personally.</p>
+              <p className="mt-3 text-body text-muted">So the people you love are known by name, from the very first word.</p>
               <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="Your full name" autoComplete="name" className={cn(inputCls, 'mt-7')} />
             </>
           )}
@@ -278,7 +278,7 @@ export default function OnboardingPage() {
               {fact.trim().length > 1 && (
                 <div className="ce-fade-in mt-4 flex items-start gap-2.5 rounded-2xl border border-line bg-card p-3.5">
                   <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-inverse"><span className="h-1.5 w-1.5 rounded-full bg-green" /></span>
-                  <p className="text-body-sm leading-relaxed text-muted">I’ll remember that. This is how I begin to understand {factSubject === 'yourself' ? 'you' : subject}.</p>
+                  <p className="text-body-sm leading-relaxed text-muted">Remembered. The more you share, the more Close Eye understands {factSubject === ‘yourself’ ? ‘you’ : subject}.</p>
                 </div>
               )}
             </>

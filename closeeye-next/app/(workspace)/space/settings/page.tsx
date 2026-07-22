@@ -224,7 +224,10 @@ export default function ProfilePage() {
             <p className="text-body-sm leading-relaxed text-content-muted">
               The intelligence that stays with your family — it understands the people you love, and brings a real person whenever presence is needed.
             </p>
-            <button onClick={closeSheet} className="mt-6 min-h-[2.75rem] w-full rounded-full border border-edge bg-surface-raised text-body-sm font-semibold text-content transition-colors hover:bg-surface-accent/50">Done</button>
+            <Link href="/family/membership" onClick={closeSheet} className="mt-5 inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-full bg-surface-inverse text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90">
+              Manage plan →
+            </Link>
+            <button onClick={closeSheet} className="mt-2.5 min-h-[2.75rem] w-full rounded-full text-body-sm font-semibold text-content-muted transition-colors hover:text-content">Close</button>
           </SheetShell>
         )}
 
@@ -269,10 +272,27 @@ export default function ProfilePage() {
 
         {sheet === 'notify' && (
           <SheetShell title="What Close Eye tells you">
-            <p className="text-body-sm leading-relaxed text-content-muted">
-              Close Eye reaches out only about things that matter — a change worth knowing about someone you love, or a reply to something you asked. Never noise, never marketing.
-            </p>
-            <button onClick={closeSheet} className="mt-6 min-h-[2.75rem] w-full rounded-full border border-edge bg-surface-raised text-body-sm font-semibold text-content transition-colors hover:bg-surface-accent/50">Done</button>
+            <p className="text-body-sm leading-relaxed text-content-muted">Close Eye reaches out only about things that matter. Never noise, never marketing.</p>
+            <ul className="mt-4 flex flex-col divide-y divide-edge/40">
+              {[
+                { label: 'Visit updates', note: 'Booking confirmations and visit completions', always: false },
+                { label: 'Family messages', note: 'Messages from your Presence Manager', always: false },
+                { label: 'Billing', note: 'Receipts and renewal reminders', always: false },
+                { label: 'Emergency alerts', note: 'Safety escalations — always on', always: true },
+              ].map(({ label, note, always }) => (
+                <li key={label} className="flex items-start justify-between gap-3 py-3">
+                  <span>
+                    <span className="block text-body-sm font-semibold text-content">{label}</span>
+                    <span className="block text-caption text-content-muted">{note}</span>
+                  </span>
+                  {always
+                    ? <span className="shrink-0 rounded-full bg-error/10 px-2.5 py-0.5 text-caption font-semibold text-error">Always on</span>
+                    : <span className="shrink-0 rounded-full bg-surface-accent px-2.5 py-0.5 text-caption font-semibold text-brand">On</span>}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-caption text-content-muted">Fine-grained controls coming soon. For urgent changes contact us.</p>
+            <button onClick={closeSheet} className="mt-5 min-h-[2.75rem] w-full rounded-full border border-edge bg-surface-raised text-body-sm font-semibold text-content transition-colors hover:bg-surface-accent/50">Done</button>
           </SheetShell>
         )}
 

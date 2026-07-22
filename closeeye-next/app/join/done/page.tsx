@@ -95,12 +95,12 @@ export default function FounderDonePage() {
 
             <div className="mt-8 w-full">
               <Button asChild size="lg" className="w-full">
-                <a href={whatsappLink(`Hi ${FOUNDER.name}, I just reserved my family’s place with Close Eye.`)} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-5 w-5" strokeWidth={2} /> Say hello to {FOUNDER.name}
-                </a>
+                <Link href="/family">View your Family Space</Link>
               </Button>
               <Button asChild variant="text" size="md" className="mt-2 w-full">
-                <Link href="/family">View my account</Link>
+                <a href={whatsappLink(`Hi ${FOUNDER.name}, I just reserved my family’s place with Close Eye.`)} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="h-4 w-4" strokeWidth={1.75} /> Have a question? Message {FOUNDER.name}
+                </a>
               </Button>
             </div>
           </div>
