@@ -163,6 +163,16 @@
   background: #7FBF94;                 /* sage — resting, calm, never bright */
   opacity: 0.42;
 }
+/* Live orb (P2-9) — a gentle, calm breath (never a blink), matching the Connect sheet orb's
+   3.4s cadence. Reduced-motion users keep the still 0.42 orb. The dock is always on-screen, so
+   there is no off-screen frame to pause. */
+@media (prefers-reduced-motion: no-preference) {
+  .wsp-orb-core { animation: wsp-orb-breath 3.4s ease-in-out infinite; will-change: opacity, transform; }
+}
+@keyframes wsp-orb-breath {
+  0%, 100% { opacity: 0.42; transform: scale(1); }
+  50%      { opacity: 0.72; transform: scale(1.12); }
+}
 .wsp-orb-label {
   position: absolute;
   bottom: -16px;
