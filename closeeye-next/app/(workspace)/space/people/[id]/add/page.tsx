@@ -18,11 +18,12 @@ import { useLovedOnes } from '@/components/family/family-data-provider'
 import { RelationshipSelector } from '@/components/family/relationship-selector'
 import { CountryField } from '@/components/family/country-field'
 import { CityField } from '@/components/family/city-field'
+import { PhoneField } from '@/components/family/phone-field'
 import { PhotoPicker } from '@/components/family/photo-picker'
 import { fetchElderProfile, upsertElderProfile, type ElderProfileForm } from '@/lib/db/family'
 import { computeCompleteness, EMPTY_HEALTH } from '@/lib/db/profile'
 import { titleCase } from '@/lib/family/relationship-words'
-import { phonePlaceholder, dialCode } from '@/lib/platform/locale'
+import { dialablePhone } from '@/lib/platform/locale'
 import { setLocalPhoto } from '@/lib/local-photos'
 import type { LovedOne } from '@/lib/db/types'
 import { haptic } from '@/lib/haptics'
@@ -105,9 +106,11 @@ export default function CompleteProfilePage() {
     setCountry(lo.region_code ?? '')
     setCity(lo.city ?? '')
     setAddress(lo.address ?? '')
-    setPhone(lo.phone_number ?? '')
+    // Normalise any pre-existing (possibly national-format) numbers to E.164 so the country-aware
+    // PhoneField renders them correctly. EC/doctor numbers assume the person's region.
+    setPhone(dialablePhone(lo.phone_number, lo.region_code))
     setEcName(lo.emergency_contact_name ?? '')
-    setEcPhone(lo.emergency_contact_phone ?? '')
+    setEcPhone(dialablePhone(lo.emergency_contact_phone, lo.region_code))
     setDoctorName(lo.doctor_name ?? '')
     setHospital(lo.nearest_hospital ?? '')
     void fetchElderProfile(lo.id).then((e) => {
@@ -117,7 +120,7 @@ export default function CompleteProfilePage() {
       setCondExtra(extra)
       setAllergies(e.allergies)
       setMeds(e.current_medications)
-      setDoctorPhone(e.doctor_phone)
+      setDoctorPhone(dialablePhone(e.doctor_phone, lo.region_code))
       if (!lo.doctor_name && e.doctor_name) setDoctorName(e.doctor_name)
       setReady(true)
     }).catch(() => setReady(true))
@@ -239,7 +242,7 @@ export default function CompleteProfilePage() {
         </div>
         <div>
           <span className={labelCls}>Country</span>
-          <CountryField value={country} onChange={(c) => { setCountry(c); const dc = dialCode(c); if (dc && !phone.replace(/\D/g, '')) setPhone(`${dc} `) }} />
+          <CountryField value={country} onChange={setCountry} />
         </div>
         <div>
           <label htmlFor="p-address" className={labelCls}>Home address <span className="font-normal text-green">· enables Care</span></label>
@@ -248,8 +251,8 @@ export default function CompleteProfilePage() {
         </div>
         <div>
           <label htmlFor="p-phone" className={labelCls}>Phone</label>
-          <input id="p-phone" value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" inputMode="tel" placeholder={phonePlaceholder(country)} autoComplete="off" className={inputCls} />
-          <p className="mt-1.5 text-caption text-muted">So you can call them with one tap from their page.</p>
+          <PhoneField id="p-phone" value={phone} onChange={setPhone} country={country} />
+          <p className="mt-1.5 text-caption text-muted">Stored with the country code, so you can call them with one tap from their page.</p>
         </div>
       </section>
 
@@ -307,14 +310,14 @@ export default function CompleteProfilePage() {
           <p className="-mt-1 mb-2.5 text-caption text-muted">A neighbour or relative who can reach them quickly if ever needed.</p>
           <div className="flex flex-col gap-2.5">
             <input value={ecName} onChange={(e) => setEcName(e.target.value)} placeholder="Name" autoComplete="off" className={inputCls} />
-            <input value={ecPhone} onChange={(e) => setEcPhone(e.target.value)} type="tel" inputMode="tel" placeholder={`Phone — ${phonePlaceholder(country)}`} autoComplete="off" className={inputCls} />
+            <PhoneField value={ecPhone} onChange={setEcPhone} country={country} />
           </div>
         </div>
         <div>
           <span className={labelCls}>Their doctor <span className="font-normal text-muted">(optional)</span></span>
           <div className="flex flex-col gap-2.5">
             <input value={doctorName} onChange={(e) => setDoctorName(e.target.value)} placeholder="Doctor’s name" autoComplete="off" className={inputCls} />
-            <input value={doctorPhone} onChange={(e) => setDoctorPhone(e.target.value)} type="tel" inputMode="tel" placeholder={`Phone — ${phonePlaceholder(country)}`} autoComplete="off" className={inputCls} />
+            <PhoneField value={doctorPhone} onChange={setDoctorPhone} country={country} />
           </div>
         </div>
         <div>
