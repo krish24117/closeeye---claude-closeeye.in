@@ -32,8 +32,6 @@ import { formatMoney } from '@/lib/platform/currency'
 import { CARE_ENABLED } from '@/lib/platform/capability'
 
 const WA = 'https://wa.me/919000221261'
-const SAMPLE = 'My mother lives alone and I worry about her. How do I know she’s okay?'
-const SAMPLE2 = 'My father gets stressed every year with his tax filing. Can someone help him through it?'
 /**
  * THE DEMONSTRATION.
  *
@@ -113,7 +111,7 @@ const CAP_ICON: Record<string, React.ReactElement> = {
 const STORY_CARDS: { id: string; icon: string; title: string; body: string; demo: React.ReactNode }[] = [
   { id: 'understand', icon: 'understand', title: 'Understands your family', body: 'Reads what you mean, not just what you type — so a person is never mistaken for a place.', demo: <>“my mother” → <b>a person</b>, not a city.</> },
   { id: 'remember', icon: 'remember', title: 'Remembers what matters', body: 'Holds every fact, photo and moment your family shares — for years, in one place.', demo: <>Recalls <b>Siyah’s birthday</b> next March.</> },
-  { id: 'notice', icon: 'notice', title: 'Notices what’s changed', body: 'Surfaces what’s gone quiet or shifted across everyone you love — before you have to ask.', demo: <>“It’s been 3 weeks since <b>your father’s</b> update.”</> },
+  { id: 'notice', icon: 'notice', title: 'Notices what’s changed', body: 'Surfaces what’s gone quiet or shifted across everyone you love — before you have to ask.', demo: <>“It’s been 3 weeks since <b>someone in your family</b> checked in.”</> },
   { id: 'protect', icon: 'protect', title: 'Private by design', body: 'Never invents. Your family’s life stays yours alone — only ever seen by you.', demo: <><b>Deterministic</b> safety on every message.</> },
   ...(CARE_ENABLED ? [{ id: 'support', icon: 'support', title: 'Real people, on the ground', body: 'When understanding isn’t enough, Close Eye brings trusted people and professionals to your family.', demo: <>A verified person, <b>when you need one</b>.</> }] : []),
 ]
