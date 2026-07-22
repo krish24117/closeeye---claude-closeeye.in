@@ -16,9 +16,9 @@ import { useFamilyData } from '@/components/family/family-data-provider'
 import { RelationshipSelector } from '@/components/family/relationship-selector'
 import { CountryField } from '@/components/family/country-field'
 import { CityField } from '@/components/family/city-field'
+import { PhoneField } from '@/components/family/phone-field'
 import { PhotoPicker } from '@/components/family/photo-picker'
 import { relationshipWord, objectPronoun, titleCase } from '@/lib/family/relationship-words'
-import { phonePlaceholder } from '@/lib/platform/locale'
 import { setLocalPhoto } from '@/lib/local-photos'
 import { haptic } from '@/lib/haptics'
 
@@ -114,8 +114,8 @@ export default function AddPersonPage() {
 
         <div>
           <label htmlFor="fm-phone" className={labelCls}>Phone <span className="font-normal text-muted">(optional)</span></label>
-          <input id="fm-phone" value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" inputMode="tel" placeholder={phonePlaceholder(country)} autoComplete="off" className={inputCls} />
-          <p className="mt-1.5 text-caption text-muted">So you can call them with one tap from their page.</p>
+          <PhoneField id="fm-phone" value={phone} onChange={setPhone} country={country} />
+          <p className="mt-1.5 text-caption text-muted">Stored with the country code, so you can call them with one tap from their page — wherever they are.</p>
         </div>
 
         {error && <p className="text-caption text-error">{error}</p>}
