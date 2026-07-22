@@ -25,7 +25,10 @@ const config: CapacitorConfig = {
     cleartext: false,
     androidScheme: 'https',
     iosScheme: 'https',
-    // Deep links: in.closeeye.app://… and https App Links resolve to routes.
+    // Deep links: custom scheme in.closeeye.app://… resolves to routes. NOTE: verified https
+    // App Links are NOT wired yet on either platform — iOS needs the real Team ID in the AASA
+    // (public/.well-known/apple-app-site-association) served from closeeye.app, and Android needs
+    // an autoVerify https intent-filter + /.well-known/assetlinks.json with the release SHA-256.
     allowNavigation: ['closeeye.app', 'www.closeeye.app', '*.closeeye.app', 'closeeye-next.vercel.app', 'closeeye.in', '*.closeeye.in'],
   },
   plugins: {
