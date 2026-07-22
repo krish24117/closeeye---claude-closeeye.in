@@ -3,7 +3,7 @@
    offline fallback; stale-while-revalidate for static assets. Never caches
    API or cross-origin requests. */
 
-const VERSION = 'closeeye-v134'
+const VERSION = 'closeeye-v135'
 const SHELL = `${VERSION}-shell`
 const ASSETS = `${VERSION}-assets`
 const OFFLINE_URL = '/offline'
