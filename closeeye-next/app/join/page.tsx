@@ -68,7 +68,7 @@ export default function FounderInterestPage() {
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 py-8">
         {mode === 'choose' && (
           <div className="ce-fade-in flex flex-1 flex-col">
-            <h1 className="text-h2 text-ink">Where is your loved one?</h1>
+            <h1 className="font-display text-h2 text-ink">Where is your loved one?</h1>
             <p className="mt-2 text-body text-muted">
               We’re opening in Hyderabad first — one city, done genuinely well. Tell us where your loved one is and we’ll take it from there.
             </p>
@@ -89,7 +89,7 @@ export default function FounderInterestPage() {
               </button>
             </div>
             <div className="flex-1" />
-            <p className="mt-8 text-center text-caption text-muted">Free to register. Nothing is charged before {FOUNDER_LAUNCH_LABEL}.</p>
+            <p className="mt-8 text-caption text-muted">Free to register. Nothing is charged before {FOUNDER_LAUNCH_LABEL}.</p>
           </div>
         )}
 
@@ -98,7 +98,7 @@ export default function FounderInterestPage() {
             <button type="button" onClick={() => { setMode('choose'); setError(''); setSaveFailed(false) }} className="mb-3 inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
               <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back
             </button>
-            <h1 className="text-h2 text-ink">{inHyd ? 'Leave your details' : 'We’re not in your city yet'}</h1>
+            <h1 className="font-display text-h2 text-ink">{inHyd ? 'Leave your details' : 'We’re not in your city yet'}</h1>
             <p className="mt-2 text-body text-muted">
               {inHyd
                 ? <>Just your name and WhatsApp number — {FOUNDER.name} will reach out to you personally. No account, no payment.</>
@@ -124,7 +124,7 @@ export default function FounderInterestPage() {
             <Button size="lg" className="mt-6 w-full" disabled={busy} onClick={submit}>
               {busy ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Just a moment…</> : saveFailed ? <>Try again <ArrowRight className="h-5 w-5" strokeWidth={2} /></> : <>{inHyd ? 'Count me in' : 'Join the waitlist'} <ArrowRight className="h-5 w-5" strokeWidth={2} /></>}
             </Button>
-            <p className="mt-4 text-center text-caption text-muted">No account needed. We’ll only use this to reach you personally.</p>
+            <p className="mt-4 text-caption text-muted">No account needed. We’ll only use this to reach you personally.</p>
           </div>
         )}
 
@@ -132,7 +132,7 @@ export default function FounderInterestPage() {
           <div className="ce-fade-in grid flex-1 place-items-center">
             <div className="flex flex-col items-center text-center">
               <span className="grid h-16 w-16 place-items-center rounded-full bg-success/12 text-success"><Check className="h-8 w-8" strokeWidth={2.5} /></span>
-              <h1 className="mt-6 text-h2 text-ink">{inHyd ? 'You’re in' : 'You’re on the list'}</h1>
+              <h1 className="font-display mt-6 text-h2 text-ink">{inHyd ? 'You’re in' : 'You’re on the list'}</h1>
               <p className="mt-3 max-w-sm text-body leading-relaxed text-muted">
                 {inHyd
                   ? <>Thank you, {firstName}. {FOUNDER.name} will message you personally on WhatsApp very soon — no rush, and nothing to pay.</>
