@@ -39,6 +39,10 @@ export const CATEGORIES: Category[] = [
   { key: 'color-raw-hex-tsx', chapter: 'Ch.2 Color', label: 'raw hex colour in TSX', exts: ['.tsx'], re: /#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3}(?:[0-9a-fA-F]{2})?)?\b/g, allow: ['global-error', 'design-system/page', 'auth/page'] },
   { key: 'type-arbitrary-size', chapter: 'Ch.1 Typography', label: 'text-[…] arbitrary size', exts: ['.tsx'], re: /\btext-\[/g },
   { key: 'type-inline-fontsize', chapter: 'Ch.1 Typography', label: 'inline fontSize', exts: ['.tsx'], re: /fontSize\s*:/g },
+  // Fonts are a token, never an inline string. Use the `font-display` / `font-sans` utilities, never
+  // `style={{ fontFamily: … }}` — that ad-hoc pattern is exactly how the /join funnel drifted to the
+  // wrong typeface. global-error renders before hydration (no Tailwind), so it is the one exemption.
+  { key: 'type-inline-fontfamily', chapter: 'Ch.1 Typography', label: 'inline fontFamily (use font-display / font-sans)', exts: ['.tsx'], re: /fontFamily\s*:/g, allow: ['global-error'], hardMax: 0 },
   { key: 'radius-arbitrary', chapter: 'Ch.3 Spacing & Layout', label: 'rounded-[…] arbitrary radius', exts: ['.tsx'], re: /\brounded(?:-[a-z]+)?-\[/g },
   { key: 'spacing-physical-direction', chapter: 'Ch.3 Spacing & Layout', label: 'physical direction utilities (ml/mr/pl/pr, text-left/right) — use logical ms/me/ps/pe', exts: ['.tsx'], re: /\b-?(?:ml|mr|pl|pr)-(?:\d|\[|auto)|\btext-(?:left|right)\b/g },
 ]
