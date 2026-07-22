@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 /**
  * Onboarding — premium first run (founder-approved 2026-07-21), matched to the homepage's editorial
@@ -278,7 +278,7 @@ export default function OnboardingPage() {
               {fact.trim().length > 1 && (
                 <div className="ce-fade-in mt-4 flex items-start gap-2.5 rounded-2xl border border-line bg-card p-3.5">
                   <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-inverse"><span className="h-1.5 w-1.5 rounded-full bg-green" /></span>
-                  <p className="text-body-sm leading-relaxed text-muted">Remembered. The more you share, the more Close Eye understands {factSubject === ‘yourself’ ? ‘you’ : subject}.</p>
+                  <p className="text-body-sm leading-relaxed text-muted">Remembered. The more you share, the more Close Eye understands {factSubject === 'yourself' ? 'you' : subject}.</p>
                 </div>
               )}
             </>

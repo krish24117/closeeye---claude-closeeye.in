@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 /**
  * Close Eye Connect — the staged experience. Ported from the approved design
@@ -51,7 +51,7 @@ const DEMO_SENTENCE = 'My mother lives alone and I worry about her.'
 const DEMO_KNOWS: { mark: 'know' | 'open'; label: string; body: string }[] = [
   { mark: 'know', label: 'Someone you love', body: 'Your mother.' },
   { mark: 'know', label: 'Her days', body: 'She lives alone.' },
-  { mark: 'open', label: 'Her health', body: 'I don’t know yet.' }, // ← the category, in one line
+  { mark: 'open', label: 'Her health', body: 'Still learning' }, // ← the category, in one line
 ]
 // The demo closes on the trust line ("nothing is assumed"), matching the approved artifact —
 // understanding, then the promise it's all the family's own words. No presence claim.
@@ -501,11 +501,11 @@ export function ConnectExperience() {
     const allStated = rows.every((r) => r.mark === '✓')
     return (
       <div className="uledger">
-        <p className="lh">What I understand</p>
+        <p className="lh">What Connect understands</p>
         {rows.map((r, i) => (
           <div key={i} className={`uline ${r.mark === '✓' ? 'know' : 'open'} in`}>
             <span className="mk" aria-hidden="true">{r.mark === '✓' ? CHECK : <span className="cxring" />}</span>
-            <p><span className="lbl">{r.label}</span>{r.body}<span className="from-words">{r.mark === '✓' ? 'from your words' : 'tell me'}</span></p>
+            <p><span className="lbl">{r.label}</span>{r.body}<span className="from-words">{r.mark === '✓' ? 'from your words' : 'still to know'}</span></p>
           </div>
         ))}
         {allStated && rows.length > 0 && <p className="ledger-note">Everything above comes from what you wrote — nothing else.</p>}
@@ -541,7 +541,7 @@ export function ConnectExperience() {
     if (decision.lane === 'decline') {
       return (
         <div className="counsel">
-          <p>Hello — I’m here for the people you love. Tell me about one of them, and I’ll begin to understand.</p>
+          <p>Close Eye is here for the people you love. Tell us about someone, and we’ll begin to understand.</p>
           <div className="act"><button className="btn" onClick={editWords}>Tell Connect about someone →</button></div>
         </div>
       )
@@ -748,7 +748,7 @@ export function ConnectExperience() {
                     because that order IS the product. It borrows this space and gives it
                     back: the ○ line is the two seconds that define the category. */}
                 <div className={`demo${demo >= 4 ? ' settled' : ''}`} aria-hidden="true">
-                  <p className="demo-h">What I understand</p>
+                  <p className="demo-h">What Connect understands</p>
                   <div className="demo-know">
                     {DEMO_KNOWS.map((k, i) => (
                       <div key={k.label} className={`dline ${k.mark}${demo >= 2 ? ' in' : ''}`} style={{ transitionDelay: `${i * 260}ms` }}>
@@ -841,8 +841,8 @@ export function ConnectExperience() {
               {/* The Space timeline holds what Connect understood and what the family tells it —
                   never a record we don't keep. */}
               <p className="lede">{forLoved
-                ? `Everything above is kept here — privately, for you. What I know about ${subjMid}, and what I’m still learning.`
-                : 'Everything above is kept here — privately, only for you. What I know, and what I’m still learning.'}</p>
+                ? `Everything above is kept here — privately, for you. What Close Eye knows about ${subjMid}, and what it’s still learning.`
+                : 'Everything above is kept here — privately, only for you. What Close Eye knows, and what it\'s still learning.'}</p>
               <p className="trustline">Close Eye never invents information about your family.</p>
               <div className="act">
                 <button className="btn" onClick={() => { saveDraft(); setStage('s4b') }}>{forLoved ? `Create ${subjMid}’s Family Space` : 'Create your space'}</button>

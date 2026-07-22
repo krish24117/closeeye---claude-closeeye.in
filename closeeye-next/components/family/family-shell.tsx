@@ -8,7 +8,7 @@ import {
   Users,
   CalendarDays,
   BadgeCheck,
-  MessageCircle,
+  Sparkles,
   Settings,
   HeartHandshake,
   Bell,
@@ -37,7 +37,7 @@ const DESKTOP_NAV = [
   { href: '/family/members', label: 'Family', icon: Users },
   { href: '/family/visits', label: 'Visits', icon: CalendarDays },
   { href: '/family/membership', label: 'Membership', icon: BadgeCheck },
-  { href: '/family/connect', label: 'Connect', icon: MessageCircle },
+  { href: '/family/connect', label: 'Ask', icon: Sparkles },
   { href: '/family/profile', label: 'Settings', icon: Settings },
 ]
 
@@ -46,7 +46,7 @@ const MOBILE_NAV = [
   { href: '/family/services', label: 'Services', icon: HeartHandshake },
   { href: '/family/members', label: 'Family', icon: Users },
   { href: '/family/visits', label: 'Visits', icon: CalendarDays },
-  { href: '/family/connect', label: 'Connect', icon: MessageCircle },
+  { href: '/family/connect', label: 'Ask', icon: Sparkles },
 ]
 
 function isActive(pathname: string, href: string) {
