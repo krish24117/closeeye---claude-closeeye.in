@@ -10,7 +10,11 @@ const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 
 const CLASSIFIER_MODEL = Deno.env.get("CLOSEEYE_CLASSIFIER_MODEL") ?? "claude-haiku-4-5-20251001";
-const INFORM_MODEL     = Deno.env.get("CLOSEEYE_INFORM_MODEL")     ?? "claude-sonnet-4-6";
+// Sonnet 5 (smarter base than 4.6, same $/token sticker). NOTE: on Sonnet 5 an OMITTED `thinking`
+// field defaults to adaptive thinking ON — which would consume the 500-token answer budget and
+// truncate/empty the reply. So the inform call below sends `thinking: {type:"disabled"}` to keep the
+// no-thinking behaviour we had on 4.6 (better base answers, same low latency, fits the budget).
+const INFORM_MODEL     = Deno.env.get("CLOSEEYE_INFORM_MODEL")     ?? "claude-sonnet-5";
 
 function apiKey(): string {
   const key = Deno.env.get("ANTHROPIC_API_KEY");
@@ -21,7 +25,7 @@ function apiKey(): string {
 interface AnthropicTextBlock { type: string; text?: string }
 interface AnthropicResponse  { content?: AnthropicTextBlock[] }
 
-async function callAnthropic(model: string, system: string, userText: string, maxTokens: number): Promise<string> {
+async function callAnthropic(model: string, system: string, userText: string, maxTokens: number, thinking?: { type: "disabled" }): Promise<string> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
   try {
@@ -32,7 +36,9 @@ async function callAnthropic(model: string, system: string, userText: string, ma
         "x-api-key": apiKey(),
         "anthropic-version": ANTHROPIC_VERSION,
       },
-      body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: "user", content: userText }] }),
+      // `thinking` only sent when the caller asks (inform → disabled on Sonnet 5, so the whole
+      // token budget is the answer). The classifier omits it — Haiku 4.5 doesn't think by default.
+      body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: "user", content: userText }], ...(thinking ? { thinking } : {}) }),
       signal: controller.signal,
     });
     if (!res.ok) {
@@ -79,5 +85,7 @@ export async function classify(question: string, ctx: CareContext): Promise<Clas
 }
 
 export async function generateInform(question: string, ctx: CareContext): Promise<string> {
-  return await callAnthropic(INFORM_MODEL, INFORM_SYSTEM, informUserPrompt(question, ctx), 500);
+  // thinking disabled → all the budget is the answer (see INFORM_MODEL note). 640, not 500: Sonnet 5's
+  // tokenizer runs ~30% higher than 4.6's, so this keeps the answer's word-count parity, not just token count.
+  return await callAnthropic(INFORM_MODEL, INFORM_SYSTEM, informUserPrompt(question, ctx), 640, { type: "disabled" });
 }
