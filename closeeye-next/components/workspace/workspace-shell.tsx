@@ -195,7 +195,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-edge bg-surface-raised px-4 py-6 lg:flex">
         <Link href="/space" aria-label="Workspace home" className="px-2"><Logo variant="sidebar" /></Link>
         <nav className="mt-8 flex flex-1 flex-col gap-1" aria-label="Workspace"><SidebarNav /></nav>
-        <Link href="/family/add" className="mt-4 flex items-center justify-center gap-2 rounded-sm border border-edge py-2.5 text-body-sm font-semibold text-content transition-colors hover:bg-surface-accent/50">
+        <Link href="/space/people/add" className="mt-4 flex items-center justify-center gap-2 rounded-sm border border-edge py-2.5 text-body-sm font-semibold text-content transition-colors hover:bg-surface-accent/50">
           <UserPlus className="h-4 w-4" strokeWidth={1.75} /> Add someone
         </Link>
       </aside>

@@ -11,7 +11,12 @@ import { join, extname, relative } from 'path'
 import { fileURLToPath } from 'url'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
-const workspaceDir = join(here, '../../app/(workspace)')
+// Both homes of workspace UI: the route tree AND its shared components. The shell (Add-someone
+// link, dock) lives in components/workspace — omitting it once let a /family/add link slip through.
+const workspaceDirs = [
+  join(here, '../../app/(workspace)'),
+  join(here, '../../components/workspace'),
+]
 
 function walkSync(dir: string): string[] {
   const out: string[] = []
@@ -25,7 +30,7 @@ function walkSync(dir: string): string[] {
 
 describe('workspace cross-domain link guard', () => {
   it('no workspace file navigates to /family/* or external closeeye.in links', () => {
-    const files = walkSync(workspaceDir)
+    const files = workspaceDirs.flatMap(walkSync)
     const violations: string[] = []
 
     for (const file of files) {
