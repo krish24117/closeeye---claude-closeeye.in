@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
 import { Manrope, Inter, Newsreader } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import '@/styles/globals.css'
 // Design System Constitution · Ch.1 Typography — Phase 1 token layer. Declarative
 // custom properties only; consumed by nothing yet, so it changes zero pixels.
@@ -168,6 +169,7 @@ export default function RootLayout({
         <RegisterSW />
         <NativeInit />
         <AnalyticsProvider />
+        <Analytics />
       </body>
     </html>
   )
