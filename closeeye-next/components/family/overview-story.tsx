@@ -6,12 +6,12 @@ import { getReport, reportKey, type SharedVisitReport } from '@/lib/visit-report
 
 /** Shows the latest visit's AI story on the overview — only once a Guardian has
  *  completed a visit (else the existing Latest Update carries the page). */
-export function OverviewStory({ memberName }: { memberName: string }) {
+export function OverviewStory({ memberName, fallback }: { memberName: string; fallback?: React.ReactNode }) {
   const [report, setReport] = React.useState<SharedVisitReport | null>(null)
   React.useEffect(() => {
     setReport(getReport(reportKey(memberName)))
   }, [memberName])
 
-  if (!report) return null
+  if (!report) return <>{fallback ?? null}</>
   return <AIStoryCard report={report} />
 }

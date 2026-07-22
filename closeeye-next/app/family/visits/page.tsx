@@ -169,7 +169,13 @@ export default function VisitsPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-body-sm font-semibold text-ink group-hover:text-green">{r.service_name?.trim() || 'Wellbeing visit'}</p>
                     <p className="truncate text-caption text-muted">For {name} · {fmtDate(r.scheduled_at, region)}</p>
-                    {hasReport && <p className="mt-0.5 text-caption font-semibold text-green">View the full Presence Story →</p>}
+                    {hasReport
+                      ? <p className="mt-0.5 text-caption font-semibold text-green">View the full Presence Story →</p>
+                      : (r.visit_special_instructions || r.notes || r.visit_time_window) && (
+                        <p className="mt-0.5 truncate text-caption text-muted italic">
+                          {r.visit_special_instructions || r.notes || (r.visit_time_window ? `Preferred: ${r.visit_time_window}` : '')}
+                        </p>
+                      )}
                   </div>
                   <span className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold', toneCls[m.tone])}>
                     <span className={cn('h-1.5 w-1.5 rounded-full', dotCls[m.tone])} /> {m.label}

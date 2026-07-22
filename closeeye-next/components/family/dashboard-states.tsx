@@ -26,6 +26,7 @@ import { SectionTitle } from '@/components/family/section-title'
 import { LovedOneCard, initialsOf } from '@/components/family/loved-one-card'
 import { Avatar } from '@/components/family/avatar'
 import { PresenceCheckIn } from '@/components/family/presence-check-in'
+import { OverviewStory } from '@/components/family/overview-story'
 import { useMembership } from '@/components/family/family-data-provider'
 import { Button } from '@/components/ui/button'
 import { ImageFrame } from '@/components/ui/image-frame'
@@ -415,7 +416,10 @@ export function ActiveDashboard({ data, lovedOnes }: { data: DashboardData; love
         <div className="overflow-hidden rounded-lg border border-line/70 bg-card shadow-md">
           {primary && <PhotoFrame lovedOneId={primary.id} name={primary.full_name} />}
           <div className="flex flex-col gap-4 p-6">
-            <p className="text-body text-ink">A warm story from {first}&rsquo;s latest Presence.</p>
+            <OverviewStory
+              memberName={primary?.full_name ?? ''}
+              fallback={<p className="text-body text-ink">A warm story from {first}&rsquo;s latest Presence.</p>}
+            />
             <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
               <Button asChild size="md"><Link href="/family/visits"><FileText className="h-4 w-4" strokeWidth={1.75} /> View Presence Story</Link></Button>
               <Link
