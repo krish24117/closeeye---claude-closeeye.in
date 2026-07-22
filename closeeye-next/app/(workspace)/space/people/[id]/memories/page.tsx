@@ -24,6 +24,7 @@ export default function MemoriesPage() {
   const [memories, setMemories] = React.useState<MemoryView[] | null>(null)
   const [error, setError] = React.useState(false)
   const [q, setQ] = React.useState('')
+  const [playingVideo, setPlayingVideo] = React.useState<string | null>(null)
   // A pending delete — either one item (photo/video/document) or a whole moment. A confirm sheet
   // renders from this, so nothing is ever removed on a single accidental tap.
   const [pending, setPending] = React.useState<{ kind: 'item' | 'moment'; id: string; paths: string[]; label: string; memoryId?: string } | null>(null)
@@ -101,7 +102,7 @@ export default function MemoriesPage() {
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
               {m.items.map((it) => (
-                <MediaTile key={it.id} it={it} onDelete={() => setPending({ kind: 'item', id: it.id, paths: [it.path], label: it.kind === 'document' ? 'document' : it.kind === 'video' ? 'video' : 'photo', memoryId: m.id })} />
+                <MediaTile key={it.id} it={it} onDelete={() => setPending({ kind: 'item', id: it.id, paths: [it.path], label: it.kind === 'document' ? 'document' : it.kind === 'video' ? 'video' : 'photo', memoryId: m.id })} onPlay={setPlayingVideo} />
               ))}
             </div>
           </section>
@@ -110,6 +111,20 @@ export default function MemoriesPage() {
           <p className="py-8 text-center text-caption text-muted">No moments match “{q}”.</p>
         )}
       </div>
+
+      {playingVideo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/90 p-4" onClick={() => setPlayingVideo(null)}>
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <video
+            src={playingVideo}
+            controls
+            autoPlay
+            playsInline
+            className="max-h-[80vh] max-w-full rounded-xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {pending && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center" onClick={() => !deleting && setPending(null)}>
@@ -134,24 +149,30 @@ export default function MemoriesPage() {
   )
 }
 
-function MediaTile({ it, onDelete }: { it: MemoryItemView; onDelete: () => void }) {
+function MediaTile({ it, onDelete, onPlay }: { it: MemoryItemView; onDelete: () => void; onPlay: (url: string) => void }) {
   const media = it.kind === 'document' ? (
     <a href={it.url ?? '#'} target="_blank" rel="noopener" className="flex aspect-square flex-col items-center justify-center gap-2 rounded-lg border border-line bg-card p-3 text-center shadow-sm transition-colors hover:border-green/40">
       <FileText className="h-7 w-7 text-green" strokeWidth={1.5} />
       <span className="line-clamp-2 text-caption font-semibold text-ink">{it.caption || 'Document'}</span>
     </a>
+  ) : it.kind === 'video' ? (
+    // Videos play in-app — never open an external browser link.
+    <button type="button" onClick={() => it.url && onPlay(it.url)} className="relative block w-full aspect-square overflow-hidden rounded-lg border border-line bg-card shadow-sm cursor-pointer">
+      {it.url ? (
+        <>
+          <video src={it.url} muted playsInline preload="metadata" className="h-full w-full object-cover pointer-events-none" />
+          <span className="absolute inset-0 grid place-items-center"><span className="grid h-10 w-10 place-items-center rounded-full bg-ink/55 text-ivory"><Play className="h-5 w-5" strokeWidth={2} fill="currentColor" /></span></span>
+        </>
+      ) : (
+        <span className="flex h-full w-full items-center justify-center text-muted"><ImageOff className="h-6 w-6" strokeWidth={1.5} /></span>
+      )}
+      {it.caption && <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/60 to-transparent px-2 pb-1.5 pt-5 text-caption font-medium text-ivory">{it.caption}</span>}
+    </button>
   ) : (
     <a href={it.url ?? '#'} target="_blank" rel="noopener" className="relative block aspect-square overflow-hidden rounded-lg border border-line bg-card shadow-sm">
       {it.url ? (
-        it.kind === 'video' ? (
-          <>
-            <video src={it.url} muted playsInline preload="metadata" className="h-full w-full object-cover" />
-            <span className="absolute inset-0 grid place-items-center"><span className="grid h-10 w-10 place-items-center rounded-full bg-ink/55 text-ivory"><Play className="h-5 w-5" strokeWidth={2} fill="currentColor" /></span></span>
-          </>
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={it.url} alt={it.caption || ''} loading="lazy" className="h-full w-full object-cover" />
-        )
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={it.url} alt={it.caption || ''} loading="lazy" className="h-full w-full object-cover" />
       ) : (
         <span className="flex h-full w-full items-center justify-center text-muted"><ImageOff className="h-6 w-6" strokeWidth={1.5} /></span>
       )}

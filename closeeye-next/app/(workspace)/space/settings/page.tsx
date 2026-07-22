@@ -31,7 +31,7 @@ const initialsFrom = (name?: string | null, email?: string | null) => {
   return (parts.slice(0, 2).map((s) => s[0]).join('') || '?').toUpperCase()
 }
 
-type Sheet = null | 'edit' | 'plan' | 'privacy' | 'consent' | 'notify' | 'help' | 'delete'
+type Sheet = null | 'edit' | 'plan' | 'privacy' | 'consent' | 'notify' | 'help' | 'delete' | 'legal-privacy' | 'legal-terms'
 
 /** One tappable settings row — icon tile · label · value+chevron. A Link when it navigates. */
 function Row({ icon: Icon, label, value, dot, onClick, href }: {
@@ -174,7 +174,7 @@ export default function ProfilePage() {
       <Group>
         <Row icon={ShieldCheck} label="Who can see your family" value="Only you" onClick={() => setSheet('privacy')} />
         <Row icon={Lock} label="Data & consent" value={consented === false ? 'Paused' : 'Active'} dot={consented !== false} onClick={() => setSheet('consent')} />
-        <Row icon={FileText} label="Privacy notice" href="/privacy" />
+        <Row icon={FileText} label="Privacy notice" onClick={() => setSheet('legal-privacy')} />
       </Group>
 
       <SectionHead>Notifications</SectionHead>
@@ -185,7 +185,7 @@ export default function ProfilePage() {
       <SectionHead>About</SectionHead>
       <Group>
         <Row icon={LifeBuoy} label="Help & contact" onClick={() => setSheet('help')} />
-        <Row icon={FileText} label="Terms of service" href="/terms" />
+        <Row icon={FileText} label="Terms of service" onClick={() => setSheet('legal-terms')} />
       </Group>
 
       {/* Account actions */}
@@ -305,6 +305,48 @@ export default function ProfilePage() {
               <Mail className="h-4 w-4" strokeWidth={2} /> {HELP_EMAIL}
             </a>
             <button onClick={closeSheet} className="mt-2.5 min-h-[2.75rem] w-full rounded-full text-body-sm font-semibold text-content-muted transition-colors hover:text-content">Close</button>
+          </SheetShell>
+        )}
+
+        {sheet === 'legal-privacy' && (
+          <SheetShell title="Privacy Notice">
+            <div className="flex flex-col gap-4">
+              {[
+                { h: 'What we hold', p: 'Only what you choose to share: who your loved ones are, any wellbeing or health details you add, the questions you ask, and photos or documents saved as memories. Plus your name and email.' },
+                { h: 'How we use it', p: 'To remember what matters about your family and give grounded answers over time. Questions are sent to Anthropic (our AI provider) to compose answers — they process it to respond and don\'t keep it. We never sell your data.' },
+                { h: 'Who can see it', p: 'Only you. Your family\'s information is private to your account.' },
+                { h: 'Where it\'s kept', p: 'Stored securely with our infrastructure provider (Supabase), encrypted, and isolated so only your account can reach your family\'s data.' },
+                { h: 'Your rights', p: 'See, correct, or delete your data at any time. Withdraw consent from Profile → Data & consent. Close your account to erase everything.' },
+                { h: 'Questions or complaints', p: 'Email hello@closeeye.in — a real person replies. Last updated: 20 July 2026.' },
+              ].map(({ h, p }) => (
+                <div key={h}>
+                  <p className="text-body-sm font-semibold text-content">{h}</p>
+                  <p className="mt-0.5 text-body-sm leading-relaxed text-content-muted">{p}</p>
+                </div>
+              ))}
+            </div>
+            <button onClick={closeSheet} className="mt-6 min-h-[2.75rem] w-full rounded-full border border-edge bg-surface-raised text-body-sm font-semibold text-content transition-colors hover:bg-surface-accent/50">Done</button>
+          </SheetShell>
+        )}
+
+        {sheet === 'legal-terms' && (
+          <SheetShell title="Terms of Service">
+            <p className="text-body-sm leading-relaxed text-content-muted">The plain-language version of what you can expect from us, and what we ask of you.</p>
+            <div className="mt-4 flex flex-col gap-4">
+              {[
+                { h: 'Our promise', p: 'Close Eye provides trusted human presence — wellbeing visits, companionship, coordination — for your loved ones. We\'re a care and support service, not a medical provider.' },
+                { h: 'Your account', p: 'You\'re responsible for keeping your login secure and your family\'s details accurate. Let us know if anything changes so we can care for your family well.' },
+                { h: 'Membership & visits', p: 'Visits are delivered under your chosen membership. Availability depends on your city and zone; we\'ll always tell you honestly what we can and can\'t do.' },
+                { h: 'Fair use', p: 'Emergencies always go to 108 or your physician first. Close Eye supports alongside, not instead of, emergency services.' },
+                { h: 'Changes', p: 'We may update these terms as the service grows. We\'ll tell you about anything important in advance, in language you can actually read.' },
+              ].map(({ h, p }) => (
+                <div key={h}>
+                  <p className="text-body-sm font-semibold text-content">{h}</p>
+                  <p className="mt-0.5 text-body-sm leading-relaxed text-content-muted">{p}</p>
+                </div>
+              ))}
+            </div>
+            <button onClick={closeSheet} className="mt-6 min-h-[2.75rem] w-full rounded-full border border-edge bg-surface-raised text-body-sm font-semibold text-content transition-colors hover:bg-surface-accent/50">Done</button>
           </SheetShell>
         )}
 

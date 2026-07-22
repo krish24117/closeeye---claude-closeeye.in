@@ -74,17 +74,26 @@ export default function WorkspaceHome() {
     <div className="flex flex-col gap-8">
       <h1 className="text-h2 text-content">{greeting}</h1>
 
-      {/* What I'm noticing — the synthesis (only on a real, derived gap) */}
-      {home.notice && (
-        <section className="rounded-lg bg-surface-inverse p-5 text-content-inverse shadow-sm">
-          <p className="flex items-center gap-2 text-caption font-semibold uppercase tracking-widest text-accent-soft">
+      {/* What I’m noticing — carousel across every member with open essentials (swipe to see all) */}
+      {home.people.some((p) => p.learning) && (
+        <section className="flex flex-col gap-2">
+          <p className="flex items-center gap-2 text-caption font-semibold uppercase tracking-widest text-content-muted">
             <ScanEye className="h-4 w-4" strokeWidth={1.75} /> Get started
           </p>
-          <h2 className="mt-2.5 text-h4 leading-snug text-content-inverse">{home.notice.title}</h2>
-          <p className="mt-2 text-body-sm text-content-inverse/75">{home.notice.why}</p>
-          <Link href={`/space/people/${home.notice.personId}/add`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-body-sm font-semibold text-content transition-opacity hover:opacity-90">
-            Add {home.notice.personName}’s details <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
-          </Link>
+          <div className="no-scrollbar -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-0.5">
+            {home.people.filter((p) => p.learning).map((p) => (
+              <div key={p.id} className="w-full shrink-0 snap-start rounded-lg bg-surface-inverse p-5 text-content-inverse shadow-sm">
+                <h2 className="text-h4 leading-snug text-content-inverse">Add a few details about {p.natural}.</h2>
+                <p className="mt-2 text-body-sm text-content-inverse/75">Add their health, daily routine, and who’s around them — the more Close Eye knows, the more it can help.</p>
+                <Link href={`/space/people/${p.id}/add`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-body-sm font-semibold text-content transition-opacity hover:opacity-90">
+                  Add {p.natural}&apos;s details <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
+                </Link>
+              </div>
+            ))}
+          </div>
+          {home.people.filter((p) => p.learning).length > 1 && (
+            <p className="text-center text-caption text-content-muted">Swipe to see everyone →</p>
+          )}
         </section>
       )}
 

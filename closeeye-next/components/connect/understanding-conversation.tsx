@@ -124,7 +124,15 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
         return
       }
       if (res.queryId && !askThreadId) setAskThreadId(res.queryId)
-      if (res.lovedOneId && !subjectId) setSubjectId(res.lovedOneId)
+      if (res.lovedOneId && !subjectId) {
+        setSubjectId(res.lovedOneId)
+      } else if (!res.lovedOneId && !subjectId && res.understanding?.subject?.who) {
+        // Backend identified a person by name but didn't return a lovedOneId — resolve via name match
+        // so follow-up chips reference the right member (not always lovedOnes[0]).
+        const who = res.understanding.subject.who.toLowerCase().replace(/^your\s+/i, '').trim()
+        const match = lovedOnes.find((l) => { const n = dispName(l).toLowerCase(); return n === who || who.startsWith(n) || n.startsWith(who) })
+        if (match) setSubjectId(match.id)
+      }
       setTurns((prev) => [...prev, { role: 'assistant', kind: res.kind, text: res.text, understanding: res.understanding, ambulanceNumber: res.ambulanceNumber, notice: res.notice }])
       track('answer_received', { kind: res.kind, grounded: !!(res.lovedOneId || subjectId) })
       if (convId) void appendMessage(convId, { role: 'assistant', content: res.text ?? '', kind: res.kind === 'clarify' || res.kind === 'decline' || res.kind === 'medical' ? 'answer' : (res.kind === 'error' ? 'pending' : res.kind), understanding: res.understanding, ambulanceNumber: res.ambulanceNumber })

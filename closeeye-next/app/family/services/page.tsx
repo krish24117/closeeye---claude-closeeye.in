@@ -44,15 +44,18 @@ export default function FamilyServicesPage() {
                   </li>
                 ))}
               </ul>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-line pt-5">
-                <Button asChild size="md">
-                  <Link href={`/family/book?service=${s.id}`}>
-                    Book {s.name} <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
-                  </Link>
-                </Button>
-                <span className="text-body-sm text-muted">
-                  From <span className="font-semibold text-ink">{s.priceFrom}</span>
-                </span>
+              <div className="flex flex-col gap-3 border-t border-line pt-5">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button asChild size="md">
+                    <Link href={`/family/book?service=${s.id}`}>
+                      Book {s.name} <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
+                    </Link>
+                  </Button>
+                  <span className="inline-flex items-center rounded-full bg-success/10 px-3 py-1 text-caption font-semibold text-success">
+                    Early access · Free for now
+                  </span>
+                </div>
+                <p className="text-caption text-muted">Free during early access. We'll let you know well before anything changes.</p>
               </div>
             </div>
           </section>

@@ -46,12 +46,15 @@ export default function AddPersonPage() {
     if (relMatch && !relationship.trim()) setRelationship(titleCase(relMatch.canon))
   }, [relMatch?.canon]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const valid = fullName.trim().length >= 2 && relationship.length > 0 && city.trim().length >= 2
+  const valid = fullName.trim().length >= 2 && relationship.length > 0 && country.length > 0 && city.trim().length >= 2
 
   async function submit() {
     if (busy) return // guard against rapid double-clicks → only one record
     setError('')
-    if (!valid) return setError('Please add a name, relationship and city.')
+    if (fullName.trim().length < 2) { setError('Please add their name.'); return }
+    if (!relationship) { setError('Please choose a relationship.'); return }
+    if (!country) { setError(`Please choose ${fullName.trim().split(/\s+/)[0] || 'them'}'s country — it helps Close Eye show the right emergency number.`); return }
+    if (city.trim().length < 2) { setError('Please add the city they live in.'); return }
     setBusy(true)
     try {
       const created = await addLovedOne({ full_name: fullName, relationship, city, region_code: country || null, phone_number: phone.trim() || undefined })
@@ -101,7 +104,7 @@ export default function AddPersonPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <span className={labelCls}>Country</span>
-            <CountryField value={country} onChange={setCountry} />
+            <CountryField value={country} onChange={setCountry} placeholder="Select their country" />
           </div>
           <div>
             <span className={labelCls}>City</span>
