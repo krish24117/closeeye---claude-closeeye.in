@@ -13,6 +13,7 @@
     "preflight": "node scripts/preflight.mjs",
     "verify": "npm run preflight && npm run typecheck && npm run test",
     "e2e": "playwright test",
+    "smoke:launch": "playwright test smoke.launch --project=desktop",
     "e2e:report": "playwright show-report",
     "e2e:update": "playwright test visual --update-snapshots",
     "validate": "playwright test && lhci autorun",

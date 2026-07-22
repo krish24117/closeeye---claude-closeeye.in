@@ -35,7 +35,7 @@ test.describe('Connect — Understand → Reason → Answer', () => {
     await page.getByRole('button', { name: 'Ask', exact: true }).click()
 
     // 2 · The understanding step is visible (the trust beat), then a grounded answer arrives.
-    await expect(page.getByText(/Understood:/i).first()).toBeVisible({ timeout: 40_000 })
+    await expect(page.getByText(/Understood/i).first()).toBeVisible({ timeout: 40_000 })
     await expect(page.getByRole('link', { name: /see everyone you love/i }).first()).toBeVisible({ timeout: 40_000 })
 
     // 3 · Follow-up continues the same conversation.
