@@ -22,7 +22,7 @@ export default function AskCloseEyePage() {
         <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Connect
       </Link>
       <div>
-        <h1 className="text-h3 text-ink">Ask CloseEye</h1>
+        <h1 className="text-h3 text-ink">Ask Close Eye</h1>
         <p className="mt-1 text-body-sm text-muted">The place that knows your family — ask anything about the people you love.</p>
       </div>
       <React.Suspense fallback={null}>

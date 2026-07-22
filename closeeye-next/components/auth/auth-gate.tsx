@@ -7,12 +7,15 @@ import { useFamilyData } from '@/components/family/family-data-provider'
 import { hasFounderSessionHint } from '@/lib/founder-funnel'
 import { isGuardian, isSuperAdmin, isPresenceManager } from '@/lib/roles'
 import { isNative } from '@/lib/native'
-import { LogoMark } from '@/components/ui/logo'
+import { isConnectHost } from '@/lib/platform/front-door'
+import { SplashScreen } from '@/components/ui/splash-screen'
 
 // The unauthenticated / setup flow (allowed before the dashboard).
 const FLOW = ['/welcome', '/auth', '/permissions', '/onboarding', '/guardian/login']
-// The signed-in app surfaces (require auth + completed onboarding).
-const APP = ['/family', '/guardian', '/pm', '/admin', '/settings', '/notifications', '/search']
+// The signed-in app surfaces (require auth + completed onboarding). /space is the Workspace —
+// the canonical family home (Phase 3). It self-guards in its own shell (AppShell mounts it
+// without AuthGate), so this entry documents intent and covers the native-launch path.
+const APP = ['/space', '/family', '/guardian', '/pm', '/admin', '/settings', '/notifications', '/search']
 const inList = (p: string, l: string[]) => l.some((f) => p === f || p.startsWith(`${f}/`))
 
 /**
@@ -35,6 +38,11 @@ export function AuthGate() {
   const native = isNative()
   const launched = useRef(false)
   const [ready, setReady] = useState(!native)
+  // A minimum graceful display so the splash never flashes-and-vanishes on a warm start — this is
+  // flash-prevention, not an artificial hold: once BOTH the app is ready AND this brief beat has
+  // passed, the splash fades to reveal the app. Tune SPLASH_MIN_MS to taste.
+  const [minShown, setMinShown] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setMinShown(true), 700); return () => clearTimeout(t) }, [])
 
   useEffect(() => {
     if (!configured) {
@@ -50,15 +58,20 @@ export function AuthGate() {
     let target: string | null = null
 
     if (!session) {
-      // Protect app routes. Staff (PM / Admin) go straight to the sign-in screen —
-      // no marketing carousel; families keep the /welcome onboarding intro; a
-      // signed-out guardian route sends to the Guardian login.
+      // The signed-out family entry is host-aware: on the GLOBAL Connect front doors
+      // (closeeye.app / connect.closeeye.in) it is the Connect experience (/connect) — NEVER the
+      // India /welcome carousel; on the India door it stays /welcome. This is the root fix for
+      // "closeeye.app keeps showing closeeye.in": a signed-out landing on an app route no longer
+      // routes to India onboarding on the global door.
+      const familyEntry = (typeof window !== 'undefined' && isConnectHost(window.location.host)) ? '/connect' : '/welcome'
+      // Protect app routes. Staff (PM / Admin) go straight to the sign-in screen; a signed-out
+      // guardian route sends to the Guardian login.
       if (onApp && !onFlow)
         target = pathname.startsWith('/guardian')
           ? '/guardian/login'
           : pathname.startsWith('/pm') || pathname.startsWith('/admin')
           ? '/auth'
-          : '/welcome'
+          : familyEntry
       // Native "Check on My Family" → authenticate: the guest booking flow (/book)
       // is web-only, so an unauthenticated tap in the app resolves to sign-in.
       else if (native && (pathname === '/book' || pathname.startsWith('/book/')))
@@ -82,13 +95,15 @@ export function AuthGate() {
       // Admin console, Presence Managers → Presence Console, else → Family.
       // (Previously every non-guardian landed in Family, so an admin who signed
       // in was dropped into the family dashboard instead of /admin.)
+      // Phase 3 — flip the home. A family lands in the Workspace (/space), not the legacy
+      // /family dashboard. Reversible: change this one target back. Staff homes unchanged.
       const home = isGuardian(profile)
         ? '/guardian'
         : isSuperAdmin(profile)
         ? '/admin'
         : isPresenceManager(profile)
         ? '/pm'
-        : '/family'
+        : '/space'
       if (onFlow) target = home // skip the auth flow once fully set up
       else if (firstNative && !onApp) target = home // native launch on marketing
     }
@@ -101,12 +116,8 @@ export function AuthGate() {
     setReady(true)
   }, [configured, loading, session, onboardingComplete, dataLoading, profile?.role, pathname, native, router])
 
-  if (native && !ready) {
-    return (
-      <div className="fixed inset-0 z-[9999] grid place-items-center bg-ivory" aria-hidden>
-        <LogoMark className="ce-pulse-soft h-20 w-20" />
-      </div>
-    )
-  }
-  return null
+  // A fade-to-reveal splash over the app while it boots. Native starts un-ready (routing must
+  // resolve) so it always shows; web is ready instantly, so the splash is only the brief graceful
+  // beat — never a hold on an app that's already ready.
+  return <SplashScreen visible={!ready || !minShown} />
 }

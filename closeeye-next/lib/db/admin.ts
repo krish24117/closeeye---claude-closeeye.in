@@ -9,7 +9,7 @@ import { planById, PLANS } from '@/lib/plans'
  * × plan price (from lib/plans). Zones/coupons/audit have no backing tables.
  */
 
-// Monthly price (₹) by subscriptions.plan_id (CloseEye Connect ₹500 / Care ₹1,500).
+// Monthly price (₹) by subscriptions.plan_id (Close Eye Connect ₹500 / Care ₹1,500).
 const PLAN_PRICE: Record<string, number> = { companion: 500, trust: 1500, family_os: 0 }
 
 const SERVICE_LABEL: Record<string, string> = {
@@ -360,6 +360,60 @@ export async function approveApplication(applicationId: string): Promise<void> {
 export async function rejectApplication(applicationId: string): Promise<void> {
   const { error } = await supabase.from('companion_applications').update({ status: 'rejected' }).eq('id', applicationId)
   if (error) throw error
+}
+
+/* ── Operational overviews — read-only summaries for the Operations Workspace ──────────────────
+ * Deliberately LIVE-ONLY: a field is a real number or `null`. Never estimate. `null` fields render
+ * as an honest "Coming soon" in the UI; they light up for real once the underlying signal exists.
+ * These deep-link into the existing Guardian / PM consoles — they never replace or rebuild them. */
+
+export interface GuardianOverview {
+  active: number                   // approved Guardians (REAL)
+  visitsToday: number              // visits scheduled today, not cancelled (REAL)
+  pendingApplications: number      // applications awaiting review (REAL)
+  online: number | null            // live presence — needs Guardian-app heartbeat (Coming soon)
+  emergencies: number | null       // urgent dispatch not yet instrumented (Coming soon)
+  avgResponseMin: number | null    // needs first-response timestamps (Coming soon)
+}
+
+export async function fetchGuardianOverview(): Promise<GuardianOverview> {
+  const [comp, app, bk] = await Promise.all([
+    supabase.from('companions').select('status'),
+    supabase.from('companion_applications').select('status'),
+    supabase.from('bookings').select('scheduled_at, status'),
+  ])
+  const comps = (comp.data as StatusRow[] | null) ?? []
+  const apps = (app.data as StatusRow[] | null) ?? []
+  const bookings = (bk.data as { scheduled_at: string | null; status: string | null }[] | null) ?? []
+  const today = new Date().toDateString()
+  return {
+    active: comps.filter((c) => c.status === 'approved').length,
+    visitsToday: bookings.filter((b) => b.status !== 'cancelled' && b.scheduled_at && new Date(b.scheduled_at).toDateString() === today).length,
+    pendingApplications: apps.filter((a) => a.status === 'applied' || a.status === 'pending').length,
+    online: null, emergencies: null, avgResponseMin: null,
+  }
+}
+
+export interface PresenceOverview {
+  openCases: number                // visits flagged attention_needed, still open (REAL)
+  dueToday: number                 // open visits scheduled today (REAL)
+  activePMs: number | null         // needs a Presence-Manager roster/role source (Coming soon)
+  slaAtRisk: number | null         // needs response-SLA definitions (Coming soon)
+  avgResolutionHrs: number | null  // needs case open/close timestamps (Coming soon)
+}
+
+export async function fetchPresenceOverview(): Promise<PresenceOverview> {
+  // "Open cases" reuses the exact attention_needed signal the admin dashboard already trusts —
+  // admin-readable via is_admin RLS, so no silent-zero from a table the admin can't see.
+  const { data } = await supabase.from('bookings').select('scheduled_at, status, attention_needed')
+  const bookings = (data as { scheduled_at: string | null; status: string | null; attention_needed: boolean | null }[] | null) ?? []
+  const open = (b: { status: string | null }) => b.status !== 'completed' && b.status !== 'cancelled'
+  const today = new Date().toDateString()
+  return {
+    openCases: bookings.filter((b) => b.attention_needed && open(b)).length,
+    dueToday: bookings.filter((b) => open(b) && b.scheduled_at && new Date(b.scheduled_at).toDateString() === today).length,
+    activePMs: null, slaAtRisk: null, avgResolutionHrs: null,
+  }
 }
 
 /* ── Memberships ─────────────────────────────────────────────────────────── */

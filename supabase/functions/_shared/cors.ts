@@ -26,6 +26,12 @@
 const ALLOWED_ORIGINS = new Set([
   "https://closeeye.in",
   "https://www.closeeye.in",
+  // CloseEye Connect — the product surface (Workspace + /connect experience)
+  "https://connect.closeeye.in",
+  // closeeye.app — the GLOBAL Connect front door (Workspace + /connect). Ask-health is called
+  // from here, so it MUST be allow-listed, else every answer 403s.
+  "https://closeeye.app",
+  "https://www.closeeye.app",
   // Vite dev server — uses ports 5173‑5177 when lower ports are busy
   "http://localhost:5173",
   "http://localhost:5174",

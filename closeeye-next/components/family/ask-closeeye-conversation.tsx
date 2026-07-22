@@ -11,9 +11,18 @@ import { Chip } from '@/components/ui/choice'
 import { Overlay } from '@/components/family/overlay'
 import { MarkdownAnswer } from '@/components/family/markdown-answer'
 import { askCloseEye, fetchAskHistory, type AskTurn, type AskHistoryItem } from '@/lib/db/ask'
+import { emergencyFor } from '@/lib/platform/regions'
 import { cn } from '@/lib/utils'
 
 const ACK_KEY = 'ce_ask_privacy_ack_v1'
+
+/** A short, distinct chip label. Loved ones named "Your Mother"/"Your Father" would otherwise
+ *  all collapse to "Your"; strip that prefix so the relationship shows ("Mother", "Father"). */
+function subjectChipLabel(fullName: string): string {
+  const cleaned = (fullName || '').replace(/^your\s+/i, '').trim() || fullName
+  const first = cleaned.split(/\s+/)[0] || cleaned
+  return first.charAt(0).toUpperCase() + first.slice(1)
+}
 
 interface ChatMsg {
   id: string
@@ -28,7 +37,7 @@ interface ChatMsg {
 
 export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?: string }) {
   const { user } = useAuth()
-  const { lovedOnes } = useFamilyData()
+  const { lovedOnes, region: familyRegion } = useFamilyData()
 
   const [subjectId, setSubjectId] = React.useState<string | null>(null) // loved_one id, or null = general
   const [msgs, setMsgs] = React.useState<ChatMsg[]>([])
@@ -43,6 +52,13 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
   const startedRef = React.useRef(false)
   const bottomRef = React.useRef<HTMLDivElement>(null)
   const nextId = () => `m${idRef.current++}`
+
+  // The emergency number to show is the one where this loved one actually is. India → 108
+  // (byte-identical to before); a known region → its own number; an unknown region → an
+  // honest "your local emergency number", never a wrong one (regions.ts safety invariant).
+  const subject = lovedOnes.find((l) => l.id === subjectId)
+  const emergency = emergencyFor(subject?.region_code || familyRegion)
+  const dialText = emergency.number ?? 'your local emergency number'
 
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -90,7 +106,7 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
     } else if (res.kind === 'pending') {
       setMsgs((p) => [
         ...p,
-        { id: nextId(), role: 'assistant', notice: true, text: 'Thank you — someone from Close Eye will review this and follow up shortly. For anything urgent, call 108.' },
+        { id: nextId(), role: 'assistant', notice: true, text: `Thank you — someone from Close Eye will review this and follow up shortly. For anything urgent, call ${dialText}.` },
       ])
       if (!conversationId && res.queryId) setConversationId(res.queryId)
     } else {
@@ -144,7 +160,7 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
           </Chip>
           {lovedOnes.map((lo) => (
             <Chip key={lo.id} selected={subjectId === lo.id} onClick={() => setSubjectId(lo.id)} className="px-3.5 py-2 text-caption">
-              {lo.full_name.split(/\s+/)[0]}
+              {subjectChipLabel(lo.full_name)}
             </Chip>
           ))}
         </div>
@@ -172,7 +188,7 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
             )
           }
           if (m.escalate) {
-            return <EscalationCard key={m.id} message={m.text ?? ''} ambulanceNumber={m.ambulanceNumber} />
+            return <EscalationCard key={m.id} message={m.text ?? ''} number={m.ambulanceNumber ?? emergency.number} />
           }
           return (
             <React.Fragment key={m.id}>
@@ -250,7 +266,7 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
             {thinking ? <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> : <Send className="h-5 w-5" strokeWidth={2} />}
           </Button>
         </div>
-        <p className="mt-2 text-center text-caption text-muted">General guidance only · always call 108 in an emergency.</p>
+        <p className="mt-2 text-center text-caption text-muted">General guidance only · always call {dialText} in an emergency.</p>
       </div>
 
       {/* Privacy notice — shown before the first question */}
@@ -263,7 +279,7 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
             <h2 className="text-h4 text-ink">Before you ask</h2>
             <p className="mt-2 text-body-sm leading-relaxed text-muted">
               Close Eye Connect gives general guidance to help you care for your family — it is <strong className="text-ink">not a diagnosis</strong> and
-              not a substitute for a doctor. In an emergency, always call <strong className="text-ink">108</strong>. To help us answer, your
+              not a substitute for a doctor. In an emergency, always call <strong className="text-ink">{dialText}</strong>. To help us answer, your
               question and your family member&apos;s relevant details are shared securely with our care system.
             </p>
           </div>
@@ -317,8 +333,7 @@ function TypingDots() {
   )
 }
 
-function EscalationCard({ message, ambulanceNumber }: { message: string; ambulanceNumber?: string }) {
-  const number = ambulanceNumber ?? '108'
+function EscalationCard({ message, number }: { message: string; number: string | null }) {
   return (
     <div className="rounded-lg border border-error/40 bg-error/5 p-5">
       <div className="flex items-center gap-2.5">
@@ -333,12 +348,19 @@ function EscalationCard({ message, ambulanceNumber }: { message: string; ambulan
       <div className="mt-3">
         <MarkdownAnswer text={message} className="flex flex-col gap-1.5" />
       </div>
-      <a
-        href={`tel:${number}`}
-        className="mt-4 flex items-center justify-center gap-2 rounded-sm bg-error py-3.5 text-body font-semibold text-ivory transition-opacity hover:opacity-90"
-      >
-        <Phone className="h-5 w-5" strokeWidth={1.75} /> Call {number} now
-      </a>
+      {number ? (
+        <a
+          href={`tel:${number}`}
+          className="mt-4 flex items-center justify-center gap-2 rounded-sm bg-error py-3.5 text-body font-semibold text-ivory transition-opacity hover:opacity-90"
+        >
+          <Phone className="h-5 w-5" strokeWidth={1.75} /> Call {number} now
+        </a>
+      ) : (
+        // Unknown region — we must never dial a wrong number. Tell them plainly.
+        <p className="mt-4 flex items-center justify-center gap-2 rounded-sm bg-error py-3.5 text-body font-semibold text-ivory">
+          <Phone className="h-5 w-5" strokeWidth={1.75} /> Call your local emergency number now
+        </p>
+      )}
       <p className="mt-2.5 text-center text-caption italic text-error/80">Don&apos;t wait — call now and stay on the line.</p>
     </div>
   )

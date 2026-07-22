@@ -1,0 +1,378 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Close Eye — Architecture Constitution v1.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F2E9; --page:#FBF9F2; --ink:#17281F; --forest:#0E2A1F;
+    --emerald:#06A94E; --sprout:#83C400; --pencil:#5F6B60; --faint:#98A097;
+    --hair:#E2DECE; --hair2:#D8D3BF; --alarm:#B4442E; --amber:#9A6A2E;
+    --serif:'Newsreader',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.62}
+  .wrap{max-width:820px;margin:0 auto;padding:56px 22px 100px}
+  .head{text-align:center;border-bottom:1px solid var(--hair);padding-bottom:30px;margin-bottom:12px}
+  .head .seal{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--emerald);font-weight:600}
+  .head h1{font-family:var(--serif);font-weight:600;font-size:clamp(30px,6vw,46px);line-height:1.08;letter-spacing:-.01em;color:var(--forest);margin:12px 0 6px}
+  .head .v{font-family:var(--mono);font-size:12px;color:var(--pencil)}
+  .head .date{font-size:12px;color:var(--faint);margin-top:4px}
+
+  .art{margin:46px 0 0}
+  .art > h2{font-family:var(--serif);font-weight:600;font-size:22px;color:var(--forest);margin:0 0 4px;
+    padding-top:14px;border-top:1px solid var(--hair)}
+  .art > h2 .an{font-family:var(--sans);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);display:block;font-weight:600;margin-bottom:6px}
+  h3{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--forest);margin:24px 0 6px}
+  p{margin:0 0 12px;font-size:15px;color:#2c3831}
+  .purpose p{font-family:var(--serif);font-size:17px;line-height:1.55;color:#33413A}
+  .purpose p b{color:var(--forest)}
+  b,strong{font-weight:600;color:var(--forest)}
+  code{font-family:var(--mono);font-size:12px;background:rgba(226,222,206,.5);padding:1px 5px;border-radius:4px;color:var(--forest)}
+  ul{margin:6px 0 14px;padding-left:20px} li{font-size:14.5px;margin:0 0 5px;color:#2c3831}
+
+  .prin{counter-reset:p;margin:20px 0 0;padding:0;list-style:none}
+  .prin li{position:relative;padding:12px 16px 12px 52px;border:1px solid var(--hair);border-radius:11px;margin:0 0 9px;
+    font-family:var(--serif);font-size:16.5px;color:var(--forest);background:var(--page)}
+  .prin li::before{counter-increment:p;content:counter(p);position:absolute;left:14px;top:11px;width:26px;height:26px;
+    border-radius:50%;background:var(--forest);color:#F3F6F1;font-family:var(--sans);font-size:12px;font-weight:600;
+    display:grid;place-items:center}
+
+  .flow{border:1px solid var(--hair);border-radius:12px;padding:18px;margin:16px 0 0;background:var(--page);overflow-x:auto}
+  .flow pre{font-family:var(--mono);font-size:12.5px;line-height:1.75;color:var(--forest);margin:0;white-space:pre}
+  .flow .add{color:var(--amber);font-weight:500}
+
+  .comp{border:1px solid var(--hair);border-radius:11px;padding:14px 17px;margin:12px 0 0;background:var(--page)}
+  .comp h3{margin:0 0 3px;font-size:15px;font-family:var(--serif);font-weight:600;color:var(--forest)}
+  .comp .role{font-size:12.5px;color:var(--pencil);margin:0 0 8px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0 0}
+  @media(max-width:600px){.two{grid-template-columns:1fr}}
+  .can h4,.cant h4{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin:0 0 4px}
+  .can h4{color:var(--emerald)} .cant h4{color:var(--alarm)}
+  .can ul,.cant ul{margin:0;padding-left:16px} .can li,.cant li{font-size:12.5px;margin:0 0 3px}
+
+  .det{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 0}
+  @media(max-width:600px){.det{grid-template-columns:1fr}}
+  .det .box{border:1px solid var(--hair);border-radius:10px;padding:12px 15px}
+  .det .box h4{margin:0 0 5px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--forest);font-weight:600}
+  .det .box ul{margin:0;padding-left:16px} .det .box li{font-size:12.5px;margin:0 0 3px;color:var(--pencil)}
+
+  .add-note{border-left:3px solid var(--amber);background:rgba(154,106,46,.05);border-radius:0 10px 10px 0;
+    padding:12px 16px;margin:14px 0}
+  .add-note .lb{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+  .add-note p{margin:0;font-size:13.5px;color:#4a4030}
+  .add-note p b{color:var(--amber)}
+
+  .article-x{border:1.5px solid var(--amber);border-radius:14px;padding:20px 24px;margin:20px 0 0;background:rgba(154,106,46,.04)}
+  .article-x h2{border:0;padding:0;margin:0 0 4px}
+  .article-ix{border:1.5px solid var(--forest);border-radius:14px;padding:20px 24px;margin:20px 0 0;background:rgba(14,42,31,.03)}
+  .article-ix h2{border:0;padding:0;margin:0 0 4px}
+
+  .foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--hair);font-size:12px;color:var(--faint)}
+</style>
+
+<div class="wrap">
+  <div class="head">
+    <p class="seal">Close Eye · Product Law</p>
+    <h1>Architecture Constitution</h1>
+    <p class="v">v1.1 · <span style="color:var(--forest);font-weight:600">FROZEN</span></p>
+    <p class="date">Ratified &amp; frozen 2026-07-17 · build against it, not around it</p>
+  </div>
+
+  <div class="art purpose">
+    <h2><span class="an">Preamble</span>Purpose</h2>
+    <p>Close Eye is <b>not an AI chatbot</b>. Close Eye is a <b>Family Intelligence and Execution Platform</b>.</p>
+    <p>Its purpose is to understand a family's context, make trustworthy decisions within defined policies,
+      coordinate trusted execution, and continuously build family memory.</p>
+    <p>The LLM is <b>one component</b> of this system — not the system itself.</p>
+  </div>
+
+  <div class="art">
+    <h2><span class="an">Non-negotiable</span>Constitutional Principles</h2>
+    <ol class="prin">
+      <li>The Family Graph is the source of truth.</li>
+      <li>Retrieve before Reason.</li>
+      <li>Safety before Intelligence.</li>
+      <li>The LLM understands language; Close Eye makes decisions.</li>
+      <li>Execution follows policy, not prompts.</li>
+      <li>Every interaction becomes memory.</li>
+      <li>No critical execution depends solely on an LLM.</li>
+    </ol>
+  </div>
+
+  <div class="art">
+    <h2><span class="an">Article I</span>End-to-End Request Lifecycle</h2>
+    <p>Every request follows exactly this lifecycle.</p>
+    <div class="flow"><pre>User
+  ↓
+Gateway
+  ↓
+Authentication &amp; Authorization
+  ↓
+Safety Gate  <span class="add">──(emergency)──▶ Escalate · STOP        ◆ sanctioned exit</span>
+  ↓
+Context Retrieval
+  ↓
+Context Builder
+  ↓
+LLM Language Understanding
+  ↓
+Structured Intent  <span class="add">──(intent=emergency)──▶ Safety Gate   ◆ re-entry lane</span>
+  ↓
+Capability Router  <span class="add">──(outside scope)──▶ Smooth denial · STOP  ◆ sanctioned exit</span>
+  ↓
+Decision Engine
+  ↓
+Execution Orchestrator
+  ↓
+<span class="add">Response Composer                                   ◆ restored (LLM speaks)</span>
+  ↓
+Memory Engine
+  ↓
+Family Graph Updated</pre></div>
+    <p style="margin-top:14px">No component may bypass this lifecycle without an explicit architectural decision.</p>
+    <div class="add-note">
+      <div class="lb">◆ Review addition — sanctioned exits &amp; the safety lane</div>
+      <p>Three movements are constitutional exceptions to the linear flow, named here so no one "corrects" them:
+        a <b>crisis exits at the Safety Gate</b> (an ambulance never waits on the rest of the pipeline); an
+        <b>outside-scope request terminates at the Router</b> (a denial needs no pricing or workflow); and an
+        emergency the LLM surfaces indirectly <b>re-enters the Safety Gate</b> rather than proceeding. Safety is a
+        gate <i>and</i> a destination.</p>
+    </div>
+    <div class="add-note">
+      <div class="lb">◆ Review addition — the Response Composer</div>
+      <p>The lifecycle understood the family and acted, but never <b>spoke back</b>. The LLM's second, constrained
+        role sits between Execution and Memory: it phrases the reply warmly, <b>only from what the deterministic
+        layers decided</b>. It speaks; it does not decide.</p>
+    </div>
+  </div>
+
+  <div class="art">
+    <h2><span class="an">Article II</span>Responsibilities of Every Component</h2>
+
+    <div class="comp"><h3>Gateway</h3><p class="role">Receive every request.</p>
+      <div class="two"><div class="can"><h4>Allowed</h4><ul><li>Authentication</li><li>Authorization</li><li>Request validation</li><li>Rate limiting</li></ul></div>
+        <div class="cant"><h4>Forbidden</h4><ul><li>Business logic</li><li>Medical reasoning</li><li>Family reasoning</li></ul></div></div></div>
+
+    <div class="comp"><h3>Safety Gate</h3><p class="role">Protect life and platform integrity — emergency detection, abuse detection, security validation, compliance checks. <b>Must never depend on an LLM.</b></p></div>
+
+    <div class="comp"><h3>Context Retrieval</h3><p class="role">Collect everything required before reasoning: Family Graph, Timeline, Health, Finance, Legal, Preferences, Guardians, previous interactions.</p></div>
+
+    <div class="comp"><h3>Context Builder</h3><p class="role">Transforms retrieved data into structured context. It does not reason — it organizes. <b>◆</b> It is also the trust boundary for retrieved content: injection inside an uploaded document is data the Gateway never saw, so what is built into the prompt is checked here.</p></div>
+
+    <div class="comp"><h3>LLM · Language Understanding</h3><p class="role">Exists to understand human language.</p>
+      <div class="two"><div class="can"><h4>May</h4><ul><li>Extract intent</li><li>Resolve ambiguity</li><li>Identify entities</li><li>Ask clarifying questions</li><li>Summarize · translate</li><li>Structure information</li></ul></div>
+        <div class="cant"><h4>May not</h4><ul><li>Decide policy</li><li>Execute services</li><li>Override deterministic rules</li><li>Invent family facts</li><li>Become the system of record</li></ul></div></div></div>
+
+    <div class="comp"><h3>Structured Intent</h3><p class="role">Normalized output from a <b>closed set</b> — the model chooses, it does not compose — with an explicit <code>unsure → human</code>.</p>
+      <div class="flow" style="margin-top:8px;padding:12px 15px"><pre>{ "person":"Father", "domain":"Health",
+  "intent":"Hospital Companion",
+  "priority":"High", "confidence":0.95 }</pre></div>
+      <div class="add-note" style="margin-top:10px"><div class="lb">◆ Review note — confidence must be calibrated</div>
+      <p>A model's self-reported <code>confidence</code> is not a probability — LLMs are miscalibrated. The threshold that
+        routes <code>unsure → human</code> is set against a <b>labeled eval</b>, not the raw number, or the field is theatre.</p></div></div>
+
+    <div class="comp"><h3>Capability Router</h3><p class="role">Consumes structured intent only — <b>no natural-language parsing here</b>. Determines: Execute · Coordinate · Inform · Outside Scope. <i>Inform</i> = facts and who handles it; never diagnosis, legal opinion, or investment advice.</p></div>
+
+    <div class="comp"><h3>Decision Engine</h3><p class="role"><b>Close Eye's core intellectual property.</b> Business rules · trust policies · pricing · permissions · escalation · workflow selection.</p></div>
+
+    <div class="comp"><h3>Execution Orchestrator</h3><p class="role">Coordinates execution with Guardians · Hospitals · Doctors · Chartered Accountants · Lawyers · Partners · future agents.</p></div>
+
+    <div class="comp"><h3>Response Composer <span style="color:var(--amber);font-size:11px">◆</span></h3><p class="role">The LLM phrases the reply to the family — only from what the deterministic layers decided. It speaks; it does not decide.</p></div>
+
+    <div class="comp"><h3>Memory Engine</h3><p class="role">Updates Timeline · Family Graph · Preferences · future retrieval context. Every completed interaction becomes durable memory. <b>◆</b> The <b>audit trail is a separate, immutable store</b> — see the note under Article V.</p></div>
+  </div>
+
+  <div class="art">
+    <h2><span class="an">Article III</span>Interfaces Between Components</h2>
+    <p>Each component communicates only through <b>structured contracts</b> — never through free-form prompts. Every interface has a <b>versioned schema</b>.</p>
+    <div class="flow"><pre>Gateway              → AuthenticatedRequest
+Safety Gate          → SafetyResult
+Context Retrieval    → RetrievedContext
+LLM                  → StructuredIntent
+Capability Router    → RoutingDecision
+Decision Engine      → ExecutionPlan
+Execution Orch.      → ExecutionResult
+Response Composer    → FamilyReply            ◆
+Memory Engine        → UpdatedFamilyGraph</pre></div>
+  </div>
+
+  <div class="art">
+    <h2><span class="an">Article IV</span>The LLM — Boundaries</h2>
+    <div class="two">
+      <div class="can"><h4>The LLM may</h4><ul><li>Understand natural language</li><li>Extract structured intent</li><li>Summarize conversations</li><li>Generate follow-up questions</li><li>Explain concepts · translate</li><li>Produce empathetic responses</li></ul></div>
+      <div class="cant"><h4>The LLM must not</h4><ul><li>Decide emergencies</li><li>Authorize payments</li><li>Dispatch Guardians</li><li>Override policies</li><li>Invent family information</li><li>Become the source of truth</li><li>Skip retrieval</li><li>Execute actions independently</li></ul></div>
+    </div>
+    <p style="margin-top:14px"><b>If the LLM is unavailable, deterministic safety and essential platform functions must continue operating.</b></p>
+  </div>
+
+  <div class="art">
+    <h2><span class="an">Article V</span>What Must Remain Deterministic</h2>
+    <p>These components are constitutional and must not rely solely on an LLM.</p>
+    <div class="det">
+      <div class="box"><h4>Safety</h4><ul><li>Stroke detection</li><li>Cardiac indicators</li><li>Suicide risk</li><li>Abuse indicators</li><li>Emergency escalation</li></ul></div>
+      <div class="box"><h4>Identity</h4><ul><li>User authentication</li><li>Family member resolution</li><li>Authorization</li><li>Access control</li></ul></div>
+      <div class="box"><h4>Policy</h4><ul><li>Business rules</li><li>Pricing</li><li>Membership validation</li><li>Permissions · compliance</li></ul></div>
+      <div class="box"><h4>Execution</h4><ul><li>Guardian dispatch</li><li>Appointment booking</li><li>Workflow state</li><li>Audit logging</li><li>External integrations</li></ul></div>
+      <div class="box"><h4>Memory</h4><ul><li>Timeline updates</li><li>Family Graph persistence</li><li>Event history</li><li>Audit trail</li></ul></div>
+    </div>
+    <div class="add-note"><div class="lb">◆ Review addition — how determinism is proven, and audit vs memory</div>
+      <p><b>Deterministic components are governed by regression suites; the LLM by evals.</b> That is <i>why</i> Close
+        Eye is allowed to trust its own code over the model — the trust is earned by tests, not asserted. And the
+        <b>audit trail must be immutable</b> while family memory is <b>correctable</b> (Article X) — opposite by nature,
+        so they are two stores, never one.</p></div>
+  </div>
+
+  <div class="art">
+    <h2><span class="an">Article VI</span>Architectural Invariants</h2>
+    <p>True regardless of future technology.</p>
+    <ol style="padding-left:20px">
+      <li>The Family Graph is the system of record.</li>
+      <li>The LLM is replaceable; the platform is not.</li>
+      <li>Reasoning always follows retrieval.</li>
+      <li>Execution always follows policy.</li>
+      <li>Safety never depends solely on model availability.</li>
+      <li>Every action is auditable.</li>
+      <li>Every interaction strengthens family memory.</li>
+      <li>Connect, Ask, and future products consume the same platform services.</li>
+    </ol>
+  </div>
+
+  <div class="art-wrap">
+    <div class="article-ix">
+      <h2><span class="an" style="color:var(--emerald)">Article IX</span>Platform Independence</h2>
+      <p>Close Eye shall remain independent of any single AI provider. Anthropic, OpenAI, Google, or future models
+        are <b>replaceable</b> language-understanding engines. <span style="color:var(--amber)"><b>◆</b></span> Because
+        no business logic ever lives in the model and every contract is versioned, a provider can be swapped at the
+        cost of re-validating the understanding layer against its eval — <b>never the platform</b>.</p>
+      <p>The Family Graph, Decision Engine, Execution Orchestrator, and Memory Engine constitute the enduring core.
+        As models evolve, Close Eye's advantage remains its proprietary family intelligence, trust model, execution
+        network, and accumulated memory — not dependence on a particular AI model.</p>
+      <div class="add-note" style="margin-top:12px;border-color:var(--emerald);background:rgba(6,169,78,.05)">
+        <div class="lb" style="color:var(--emerald)">◆ Refinement</div>
+        <p><i>"Replaceable," not "interchangeable."</i> Swapping a model is real work — the structured-intent schema and
+          the classifier eval are re-proven per provider. The point is that the cost is bounded to the language layer
+          and never touches the platform. That distinction is what makes the article true rather than aspirational.</p>
+      </div>
+    </div>
+
+    <div class="article-x">
+      <h2><span class="an" style="color:var(--amber)">Article X ◆</span>Memory Ownership &amp; the Right to Correct</h2>
+      <p>The family owns its graph. Memory is <b>durable, but not permanent</b>: it is <b>correctable</b> when the engine
+        misunderstood, and <b>erasable</b> on the family's request. Every stored family fact carries its provenance —
+        stated by the family, or inferred by the system — and an inference never hardens into a fact.</p>
+      <p>For a platform holding health, finance, and legal information for Indian families, this is not optional —
+        <b>DPDP compliance lives here</b>. "Every interaction becomes memory" (Principle 6) is bounded by this article:
+        the graph grows with consent and shrinks on request. The immutable audit trail (Article V) records <i>that</i> a
+        correction or erasure happened, without retaining the erased content.</p>
+      <div class="add-note" style="margin-top:12px"><div class="lb">◆ Why this is an article, not a footnote</div>
+        <p>The constitution enshrined durable memory but not the family's right over it. Durable and permanent are not
+          the same word — and for regulated PII, the difference is the law.</p></div>
+    </div>
+  </div>
+
+  <div class="art-wrap">
+    <div class="article-ix">
+      <h2><span class="an" style="color:var(--emerald)">Article XI ✦</span>Domain as Plugin</h2>
+      <p>A knowledge domain is a <b>plugin, not a product</b>. Each domain contributes only <b>schemas,
+        extraction rules, retrieval policies, reasoning policies, trust boundaries, and care bindings</b> —
+        declared as data and policy, loaded by the platform.</p>
+      <p><b>Adding a new domain must never require redesigning the platform.</b> Retrieval, reasoning, trust,
+        and orchestration are domain-parameterised; they are never forked per domain. There are no per-domain
+        chatbots — one intelligence, many domains, reasoning across them.</p>
+      <p><b>Health is the first domain, not the primary domain.</b> Legal, finance, insurance, property,
+        government, education, employment, travel, routine, and emergency planning enter the same pipeline as
+        equals.</p>
+      <div class="add-note" style="margin-top:12px;border-color:var(--emerald);background:rgba(6,169,78,.05)">
+        <div class="lb" style="color:var(--emerald)">✦ Ratified v1.1 · 2026-07-20</div>
+        <p>Extends §2f layer discipline. The domain vocabulary was already latent in <code>regions.ts</code>
+          (<code>presence|hospital|financial|insurance|property|community</code>); this article makes the
+          plugin discipline constitutional.</p>
+      </div>
+    </div>
+
+    <div class="article-x">
+      <h2><span class="an" style="color:var(--amber)">Article XII ✦</span>The Trust Contract</h2>
+      <p>Every Connect response must clearly distinguish four kinds of statement:
+        <b>(1) Verified Family Facts</b>, <b>(2) Inferred Conclusions</b>, <b>(3) General Knowledge</b>,
+        <b>(4) Professional Advice</b>. <b>Trust is enforced by architecture — provenance, confidence, and
+        per-domain professional boundaries — not by prompt wording.</b></p>
+      <p>Confidence is expressed conservatively, never overstated:</p>
+      <ul>
+        <li><b>High confidence</b> → state naturally.</li>
+        <li><b>Medium confidence</b> → &ldquo;Based on what I know&hellip;&rdquo;</li>
+        <li><b>Low confidence</b> → &ldquo;This is worth confirming before relying on it.&rdquo;</li>
+      </ul>
+      <p><b>Uncertain information is never presented as established fact.</b> Professional advice is never
+        asserted as the platform's own — it is routed to a professional (<code>handoff</code>).</p>
+      <div class="add-note" style="margin-top:12px"><div class="lb" style="color:var(--amber)">✦ Ratified v1.1 · 2026-07-20</div>
+        <p>Formalises the Executive-Context Trust Test and §2h provenance into a permanent four-class contract,
+          surfaced consistently as trust chrome.</p></div>
+    </div>
+  </div>
+
+  <div class="art-wrap">
+    <div class="article-ix">
+      <h2><span class="an" style="color:var(--emerald)">Article XIII ✦</span>Every Knowledge Item Must Be Actionable</h2>
+      <p>Knowledge does not exist only to answer questions. <b>Every verified fact must be capable of enabling a
+        future action.</b> A policy implies a renewal reminder and a nominee review; a prescription implies
+        medication reminders; a property document implies an ownership timeline; a passport implies an expiry
+        reminder; a will implies legal readiness; a pension implies benefit guidance; a discharge summary
+        implies follow-up care.</p>
+      <p><b>Close Eye is not building a digital archive — it is building an active family intelligence.</b>
+        Knowledge representation shall preserve enough structure and provenance that an action can be derived
+        from it later.</p>
+      <div class="add-note" style="margin-top:12px;border-color:var(--emerald);background:rgba(6,169,78,.05)">
+        <div class="lb" style="color:var(--emerald)">✦ Ratified v1.1 · 2026-07-20</div>
+        <p>Binds the Knowledge Architecture: the <code>structured</code> payload and validity windows on a
+          knowledge entry exist so facts can trigger actions, not merely be recalled.</p>
+      </div>
+    </div>
+
+    <div class="article-x">
+      <h2><span class="an" style="color:var(--amber)">Article XIV ✦</span>Life-Stage Awareness <span style="font-weight:400;color:var(--muted)">(directional)</span></h2>
+      <p>The Family Graph is a <b>living timeline</b>, not a flat set of facts. Beyond <i>what happened</i>,
+        Close Eye shall understand <b>where a family is in its journey</b> — birth, school, college, employment,
+        marriage, parenthood, retirement, illness, loss.</p>
+      <p>Life stage shall, in time, <b>inform retrieval and reasoning</b>: the same fact means something
+        different at different stages. Ratified as a <b>principle and design direction</b>; its implementation
+        is sequenced by the roadmap, not required today.</p>
+      <div class="add-note" style="margin-top:12px"><div class="lb" style="color:var(--amber)">✦ Ratified v1.1 · 2026-07-20 · directional</div>
+        <p>Anchored to the event-sourced temporality (Article V, validity windows). A long-horizon principle
+          that future retrieval/reasoning phases must honour.</p></div>
+    </div>
+  </div>
+
+  <div class="art">
+    <h2><span class="an">Article XV</span>Ratification &amp; Amendment</h2>
+    <p>This document was <b>frozen at v1.0</b> on 2026-07-17 and <b>extended to v1.1</b> on 2026-07-20
+      (Articles XI–XIV ratified, additive; no prior article altered except this clause's renumbering from XI).
+      From this point:</p>
+    <ul>
+      <li><b>The Constitution is immutable except through explicit architectural review.</b> Implementation
+        documents evolve freely; the Constitution does not move to fit them.</li>
+      <li><b>Build against it, not around it.</b> When code and Constitution disagree, the code is wrong until an
+        amendment says otherwise.</li>
+    </ul>
+    <p>An amendment is valid only when all four hold — anything less is drift:</p>
+    <ol style="padding-left:20px">
+      <li>A written rationale for what changes and why.</li>
+      <li>A version bump (v1.0 → v1.1 for a clarification, v2.0 for a principle change).</li>
+      <li>A commit that touches <b>only</b> this document — never bundled with implementation.</li>
+      <li>Founder sign-off.</li>
+    </ol>
+    <p>Every amendment is itself an auditable action (Invariant 6). The freeze is not "never change" — it is
+      "change deliberately, in the open, and never silently."</p>
+  </div>
+
+  <p class="foot">Close Eye Architecture Constitution v1.1 · ratified &amp; frozen 2026-07-17, extended 2026-07-20.
+    v1.1 additions marked ✦ (founder-ratified, additive): Article XI Domain as Plugin · Article XII the Trust
+    Contract (four-class + conservative confidence bands) · Article XIII Every Knowledge Item Must Be Actionable ·
+    Article XIV Life-Stage Awareness (directional). v1.0 review additions marked ◆: Response Composer restored ·
+    sanctioned exits &amp; the safety re-entry named · Context Builder as a trust boundary ·
+    confidence-must-be-calibrated · deterministic-is-test-gated &amp; audit≠memory ·
+    Article IX refined ("replaceable") · Article X added (memory ownership / DPDP). Companion to
+    <code>close_eye_execution_architecture.html</code> (the flow) and <code>close_eye_architecture_current.html</code>
+    (what is built today). This document is product law; it governs, it does not describe.</p>
+</div>

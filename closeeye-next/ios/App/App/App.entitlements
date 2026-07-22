@@ -6,8 +6,8 @@
 	<string>development</string>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:www.closeeye.in</string>
-		<string>applinks:closeeye.in</string>
+		<string>applinks:closeeye.app</string>
+		<string>applinks:www.closeeye.app</string>
 	</array>
 </dict>
 </plist>

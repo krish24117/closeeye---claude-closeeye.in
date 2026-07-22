@@ -72,31 +72,32 @@
    transformation is the hero without the primary action paying for it in pixels.
    The visual language is the real Ledger's — ✓ / ○, the same labels, the same type —
    because this is not an illustration OF the product, it is the product, running. ══ */
-.cx .demo{max-height:230px;overflow:hidden;margin-top:14px;
+.cx .demo{max-height:320px;overflow:hidden;margin-top:16px;
   transition:max-height .7s cubic-bezier(.2,.7,.2,1),opacity .5s ease,margin .7s ease}
 .cx .demo.settled{max-height:0;opacity:0;margin-top:0}
-.cx .demo .dline{display:flex;gap:9px;align-items:baseline;margin:0 0 7px;
-  font-family:var(--serif);font-size:var(--t-secondary);line-height:1.45;color:var(--forest);
+.cx .demo-h{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;
+  font-weight:600;color:var(--text-secondary);margin:0 0 13px}
+.cx .demo .dline{display:flex;gap:11px;align-items:flex-start;margin:0 0 13px;
   opacity:0;transform:translateY(5px);transition:opacity .5s ease,transform .5s cubic-bezier(.2,.7,.2,1)}
 .cx .demo .dline.in{opacity:1;transform:none}
-.cx .demo .dm{flex:none;width:15px;display:inline-flex;justify-content:center;color:var(--text-accent)}
-/* The open circle. This mark is the category: every other product would have invented
-   her age here. It is deliberately the SAME ring the real Ledger uses. */
-.cx .demo .dline.open{color:var(--text-secondary)}
+.cx .demo .dm{flex:none;width:16px;display:inline-flex;justify-content:center;color:var(--text-accent);margin-top:1px}
 .cx .demo .dline.open .dm{color:var(--pencil)}
-/* THE OPEN RING. `.cxring` is only sized under `.uline`, so inside the demo it rendered as
-   an empty span — the one mark that defines the category was invisible. It is drawn here
-   with the Ledger's exact geometry (11px, 2px, --pencil) because it must be the SAME ring
-   she meets thirty seconds later, not a lookalike. */
-.cx .demo .cxring{width:11px;height:11px;border-radius:50%;border:2px solid var(--pencil);
+/* THE OPEN RING — the mark that IS the category ("I don't know yet"); the same ring geometry
+   as the real Ledger she meets thirty seconds later, not a lookalike. */
+.cx .demo .cxring{width:12px;height:12px;border-radius:50%;border:2px solid var(--pencil);
   display:inline-block;box-sizing:border-box;position:relative;top:1px}
-.cx .demo .dl{display:block;font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.1em;
-  text-transform:uppercase;color:var(--text-secondary);margin-bottom:1px}
-.cx .demo .dline .dl{display:inline-block;margin-right:7px}
-.cx .demo-ans{margin:10px 0 0;padding-left:24px;font-family:var(--serif);font-style:italic;
-  font-size:var(--t-caption);line-height:1.5;color:var(--text-secondary);max-width:44ch;
-  opacity:0;transition:opacity .6s ease}
-.cx .demo-ans.in{opacity:1}
+.cx .demo .dbody{flex:1;min-width:0}
+/* label row — LABEL left, provenance chip right (the artifact's "from your words" / "tell me") */
+.cx .demo .drow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0}
+.cx .demo .dl{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.1em;
+  text-transform:uppercase;font-weight:600;color:var(--text-secondary)}
+/* provenance — --text-muted (4.6:1), the quietest text is allowed. NEVER --faint (fails AA). */
+.cx .demo .dprov{font-family:var(--sans);font-size:var(--t-micro);color:var(--text-muted);white-space:nowrap;flex:none}
+.cx .demo .dval{font-family:var(--serif);font-size:var(--t-secondary);line-height:1.4;color:var(--ink);margin:2px 0 0}
+.cx .demo .dline.open .dval{color:var(--text-secondary);font-style:italic}
+.cx .demo-note{font-family:var(--serif);font-style:italic;font-size:var(--t-caption);line-height:1.5;
+  color:var(--text-secondary);margin:15px 0 0;opacity:0;transition:opacity .6s ease}
+.cx .demo-note.in{opacity:1}
 /* the category line — the hero's second responsibility, not a second hero */
 .cx .hero-cat b{font-weight:600;color:var(--forest)}
 
@@ -175,24 +176,38 @@
 .cx .storycards,.cx .breadth,.cx .s0-foot{transition:opacity .8s ease .2s}
 .cx .s0-ask{transition:opacity .9s ease .5s}
 
-/* ── Sprint 2 · story cards — explained by touch, expand in place, page never moves ── */
-.cx .storycards{display:flex;flex-direction:column;gap:11px;margin:2px 0 26px}
-.cx .scard{background:var(--page);border:1px solid var(--hair);border-radius:16px;overflow:hidden;transition:border-color .3s}
-.cx .scard.open{border-color:var(--emerald)}
-.cx .scard-h{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;padding:18px 20px}
-.cx .scard-h .ld{width:8px;height:8px;border-radius:50%;background:var(--hair2);flex:none;margin-top:7px}
-.cx .scard.open .scard-h .ld{background:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}
-.cx .scard-t{flex:1;font-family:var(--serif);font-weight:500;font-size:var(--t-card);color:var(--forest);line-height:var(--lh-card)}
-.cx .scard-more{font-family:var(--sans);font-size:var(--t-label);font-weight:600;color:var(--text-accent);white-space:nowrap;flex:none;margin-top:3px}
-.cx .scard.open .scard-more{color:var(--pencil);margin-top:0}
-/* dismiss: a 16px × in a 32px tap target, sat on the first line, without growing the header */
-.cx .scard-x{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
-  margin:-8px -8px -8px 0;color:var(--pencil)}
-.cx .scard-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .34s cubic-bezier(.2,.7,.2,1)}
-.cx .scard.open .scard-b{grid-template-rows:1fr}
-.cx .scard-b>div{overflow:hidden;padding-bottom:20px}
-.cx .scard-b p{margin:0;padding:0 20px;font-family:var(--serif);font-size:16px;line-height:1.56;color:var(--ink);max-width:44ch}
-.cx .scard-b .scard-tag{margin:9px 0 0;font-size:var(--t-caption);font-style:italic;color:var(--text-accent)}
+/* ── capability cards — the four pillars (Understands · Remembers · Notices · Protects),
+   static icon-badge cards from the approved artifact: badge, title, body, then one real
+   demonstration below a hairline. Grid so they breathe two-up on wider screens. ── */
+.cx .storycards{display:grid;grid-template-columns:1fr;gap:12px;margin:2px 0 26px}
+@media (min-width:560px){.cx .storycards{grid-template-columns:1fr 1fr}}
+.cx .scard{background:var(--page);border:1px solid var(--hair);border-radius:16px;padding:18px 18px 15px;
+  display:flex;flex-direction:column;gap:9px;box-shadow:0 1px 2px rgba(14,42,31,.02)}
+.cx .scard-ic{width:36px;height:36px;border-radius:10px;background:var(--paper);border:1px solid var(--hair);
+  display:grid;place-items:center;color:var(--text-accent)}
+.cx .scard-ic svg{width:19px;height:19px}
+.cx .scard-t{font-family:var(--serif);font-weight:500;font-size:var(--t-card);color:var(--forest);line-height:var(--lh-card);margin:2px 0 0}
+.cx .scard-body{font-family:var(--sans);font-size:var(--t-secondary);line-height:1.5;color:var(--ink);margin:0}
+.cx .scard-demo{font-family:var(--sans);font-size:var(--t-caption);line-height:1.45;color:var(--text-secondary);
+  border-top:1px dashed var(--hair2);padding-top:10px;margin:3px 0 0}
+.cx .scard-demo b{color:var(--text-accent);font-weight:600}
+
+/* ── the family-graph panel — the moat, shown once (approved artifact). Forest-green so it's
+   the single bold element; light greens on dark carry AA contrast. ── */
+.cx .fgraph{background:var(--forest);border-radius:20px;padding:26px 22px;margin:2px 0 26px}
+.cx .fg-k{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.16em;text-transform:uppercase;font-weight:600;color:#8FD3A6;margin:0}
+.cx .fg-h{font-family:var(--serif);font-weight:500;font-size:var(--t-title);line-height:1.2;color:#F3F7F2;margin:8px 0 0;max-width:20ch;text-wrap:balance}
+.cx .fg-sub{font-family:var(--sans);font-size:var(--t-secondary);line-height:1.5;color:#BCCEC2;margin:10px 0 0;max-width:46ch}
+.cx .fg-nodes{display:grid;grid-template-columns:1fr;gap:11px;margin-top:20px}
+@media (min-width:560px){.cx .fg-nodes{grid-template-columns:1fr 1fr}}
+.cx .fg-node{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.13);border-radius:13px;padding:13px 15px}
+.cx .fg-nm{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-weight:600;font-size:var(--t-secondary);color:#F3F7F2}
+.cx .fg-av{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#1c9c58,#0c5e35);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700;flex:none}
+.cx .fg-facts{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.cx .fg-fct{display:flex;align-items:center;gap:8px;font-family:var(--sans);font-size:var(--t-caption);color:#CBDAD0}
+.cx .fg-fct .fg-d{width:5px;height:5px;border-radius:50%;background:#5FB585;flex:none}
+.cx .fg-fct.open{color:#9DB0A3}
+.cx .fg-fct.open .fg-d{width:7px;height:7px;background:transparent;border:1px solid #7d968a}
 
 /* ── Sprint 3 · "More than care" — life, not only healthcare (honest breadth) ── */
 .cx .breadth{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px;margin:0 0 26px}
@@ -467,9 +482,6 @@
 .cx .hero-supp{max-width:36ch}
 .cx .exp-k{margin-top:10px}
 .cx .try{margin-top:18px}
-/* the card body fades as it opens, so the reveal reads as unfolding, not popping */
-.cx .scard-b p{opacity:0;transition:opacity .3s ease}
-.cx .scard.open .scard-b p{opacity:1;transition:opacity .45s ease .12s}
 
 .cx .h-serif{font-family:var(--serif);font-weight:500;font-size:31px;line-height:1.22;
   letter-spacing:-.01em;margin:0 0 12px;color:var(--forest)}
@@ -479,38 +491,29 @@
 .cx .ask-wrap{margin-top:34px}
 /* ── the writing desk — the page's focal moment. A journal page on the desk:
    paper-white card, ruled lines that draw in, a waiting pen-point that breathes. ── */
-.cx .deskcard{background:var(--page);border:1px solid var(--hair);border-radius:18px;padding:24px 22px 20px;
-  margin:2px 0 20px;box-shadow:0 2px 3px rgba(14,42,31,.025),0 14px 30px rgba(14,42,31,.05)}
+.cx .deskcard{background:var(--page);border:1px solid var(--hair);border-radius:20px;padding:20px;
+  margin:2px 0 20px;box-shadow:0 1px 2px rgba(14,42,31,.03),0 18px 44px -22px rgba(14,42,31,.16)}
 .cx .deskcard .exp-k{margin:0 0 5px}
 .cx .desk-hint{margin:0 0 9px;text-align:center;font-family:var(--serif);font-style:italic;font-size:var(--t-caption);color:var(--text-secondary)}
 .cx .desk-lede{font-family:var(--serif);font-size:var(--t-lede);line-height:var(--lh-lede);color:var(--forest);margin:0 0 6px}
 /* The problem-first ask. Body role — this is the sentence a worried person reads to know
    they are in the right place, so it is not a caption. */
 .cx .desk-sub{font-family:var(--serif);font-size:var(--t-body);line-height:var(--lh-body);color:var(--ink);margin:0 0 12px;max-width:40ch}
-.cx .ruled{position:relative;min-height:88px}
-/* The rules are ruled-paper lines: one under each writing line, at the 32px baselines of
-   the textarea (5px padding + 32px line-height => 37 / 69 / 101). They are absolutely
-   positioned, so they do NOT shrink when the paper does — on a short phone the sheet is
-   two lines tall and the third line would otherwise be drawn BELOW the paper, straight
-   through the button. Clipping to the sheet is the invariant: a line cannot exist off the
-   page. The paper decides how many lines there are, not this list. */
-.cx .ruled .rules{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.cx .ruled .rule{position:absolute;left:0;right:0;height:1px;background:var(--hair2);transform:scaleX(0);transform-origin:left center}
-.cx .ruled .rule:nth-child(1){top:37px}
-.cx .ruled .rule:nth-child(2){top:69px}
-.cx .ruled .rule:nth-child(3){top:101px}
-.cx .deskcard.drawn .ruled .rule{transform:scaleX(1);transition:transform .5s cubic-bezier(.2,.7,.2,1)}
-.cx .deskcard.drawn .ruled .rule:nth-child(2){transition-delay:.12s}
-.cx .deskcard.drawn .ruled .rule:nth-child(3){transition-delay:.24s}
-.cx .ruled .pen{position:absolute;left:2px;top:15px;width:8px;height:8px;border-radius:50%;background:var(--hair2);z-index:1}
-.cx .deskcard.drawn .ruled .pen{background:var(--sprout);animation:cx-breathe 3s ease-in-out infinite}
-.cx .ruled textarea{position:relative;z-index:1;display:block;width:100%;background:transparent;border:none;
-  font-family:var(--serif);font-size:18px;line-height:32px;color:var(--ink);
-  padding:5px 2px 0 22px;min-height:104px;resize:none;caret-color:var(--emerald)}
+/* ── the write moment — a clean input: a pen badge + the sentence, over a hairline the
+   live understanding sits beneath. Replaces the ruled-paper skeuomorph: modern and premium,
+   and it reads correctly at ANY height (the old absolute rules could fall through the button
+   on a short phone). ── */
+.cx .ruled{position:relative;display:flex;gap:12px;align-items:flex-start;
+  padding-bottom:16px;border-bottom:1px dashed var(--hair2)}
+.cx .ruled .pen{flex:none;width:36px;height:36px;border-radius:11px;background:var(--paper);
+  border:1px solid var(--hair);display:grid;place-items:center;color:var(--text-accent);
+  margin-top:3px;transition:border-color .25s ease,color .25s ease,background .25s ease}
+.cx .ruled:focus-within .pen{border-color:var(--emerald);color:var(--emerald);background:var(--page)}
+.cx .ruled textarea{flex:1;min-width:0;background:transparent;border:none;
+  font-family:var(--serif);font-size:18px;line-height:1.5;color:var(--ink);
+  padding:5px 0 0;min-height:66px;resize:none;caret-color:var(--emerald)}
 .cx .ruled textarea::placeholder{color:var(--text-muted);font-style:italic}
 .cx .ruled textarea:focus{outline:none}
-.cx .ruled:focus-within .pen{animation:none;background:var(--emerald)}
-.cx .ruled:focus-within .rule:nth-child(1){background:var(--emerald)}
 .cx .cx-field{display:block;width:100%;background:transparent;border:none;border-bottom:1px solid var(--hair2);
   font-family:var(--serif);font-size:18px;color:var(--ink);padding:8px 2px;margin-bottom:14px;caret-color:var(--emerald)}
 .cx .cx-field::placeholder{color:var(--text-muted);font-style:italic}
@@ -581,6 +584,13 @@
 .cx .dial:active{transform:scale(.98)}
 
 .cx .act{margin-top:auto;padding-top:30px}
+/* The quiet second path under the primary button — offered when Close Eye already
+   understands enough. It must read as OPTIONAL: a text link, never a second button
+   competing with the first. Enrichment is a choice, not a step. */
+.cx .second{display:block;width:100%;margin-top:14px;background:none;border:0;cursor:pointer;
+  font-family:var(--sans);font-size:var(--t-label);color:var(--pencil);text-align:center;
+  padding:4px;transition:color .3s ease}
+.cx .second:hover{color:var(--forest)}
 .cx .btn{display:block;width:100%;background:var(--forest);color:#F7F4EC;border:1px solid transparent;border-radius:999px;
   padding:16px 22px;font-family:var(--sans);font-weight:600;font-size:var(--t-button);text-align:center;
   letter-spacing:.01em;transition:background .3s ease,color .3s ease,border-color .3s ease,transform .15s ease,opacity .2s}
@@ -672,7 +682,8 @@
 .cx .s0-hero-more{order:2}
 .cx .s0-ask{order:3}
 .cx .app .storycards{order:4}
-.cx .breadth{order:5}
+.cx .fgraph{order:5}      /* the family graph sits AFTER the capability cards — was defaulting to 0 (top) */
+.cx .breadth{order:6}
 .cx .s0-foot{order:7}
 
 /* ── SHORT PHONES (<=740px tall — iPhone SE is 375x667, and 360x740 is the most common
@@ -708,8 +719,7 @@
   /* Two lines = 5px padding + 2x32px baseline + the 1px rule itself. Sized so the second
      rule (top:69px) lands exactly on the sheet's bottom edge and the third is clipped
      away, instead of escaping onto the CTA. */
-  .cx .ruled{min-height:70px}
-  .cx .ruled textarea{min-height:0;height:69px}  /* rows={3} sets an intrinsic height; only an explicit height beats it */
+  .cx .ruled textarea{min-height:58px}
   .cx .try{margin-top:8px}
   /* The borrowed example stays visible and tappable, but takes one line instead of two —
      enough to show the SHAPE of a good first sentence, which is all it is there to do. */
@@ -737,13 +747,9 @@
   .cx .mast-signin{top:max(16px,env(safe-area-inset-top))}
 }
 
-/* ── Cards, equal by construction. Below 1024 a title may take one line or two purely
-      by where the words happen to break — at 390 that gave 104/104/81px, three cards of
-      three weights. The title reserves two lines everywhere it can wrap, so the row has
-      one height and the cards carry equal weight regardless of the copy in them. */
-@media (max-width:1023.98px){
-  .cx .storycards .scard-t{min-height:2.5em} /* 2 lines at line-height 1.25 */
-}
+/* (The old expandable cards reserved a 2-line title height to align a "Learn more →"
+   affordance; the new static icon-badge cards have no such affordance, so a single-line
+   title no longer needs to reserve a second line — that reservation was the airy gap.) */
 
 /* ── 768–1023 · Tablet — the dead zone. A 480px column left ~144px of empty paper on
       each side: a phone in a bigger frame. The measure grows so the page is composed
@@ -858,6 +864,5 @@
   .cx .beat.past{opacity:.46}
   .cx .hero-sig,.cx .hero-head,.cx .hero-supp,.cx .hero-cat,.cx .hero-accent,.cx .hero-feels .feel,
   .cx .storycards,.cx .breadth,.cx .s0-ask,.cx .s0-foot{opacity:1;transform:none}
-  .cx .ruled .rule{transform:none}
-  .cx .ruled .pen{background:var(--sprout)}
+  .cx .ruled .pen{transition:none}
 }

@@ -135,6 +135,44 @@ describe('whose city · two Indian cities means we do not know, so we ask', () =
     expect(cityOf('my father lives in New Delhi')).toBe('New Delhi'))
 })
 
+/**
+ * "INSURANCE" IS A CATEGORY — when the family names the kind, we KEEP it.
+ *
+ * The MATTER pattern used to capture "insurance claim" but not the "health" / "car" /
+ * "life" in front of it, so "his health insurance claim" was echoed as "His insurance
+ * claim." — dropping a word the family wrote, on a line labelled "from your words". An
+ * engine that must never invent must equally never discard. (The UNSTATED case — "his
+ * insurance claim", no kind — is left bare on purpose: the kind becomes the first
+ * enrichment question, spec #2-4.)
+ */
+describe('insurance subtype is kept, never dropped', () => {
+  const matter = (t: string) =>
+    readLedger(t).ledger.find((l) => l.label === 'The matter')?.body ?? null
+
+  it('health insurance → kept', () =>
+    expect(matter('My father needs help with his health insurance claim')).toBe('His health insurance claim.'))
+  it('car insurance → kept', () =>
+    expect(matter('My father needs help with his car insurance claim')).toBe('His car insurance claim.'))
+  it('life insurance → kept', () =>
+    expect(matter('My father needs help with his life insurance policy')).toBe('His life insurance policy.'))
+  it('travel insurance → kept', () =>
+    expect(matter('My father needs help with his travel insurance')).toBe('His travel insurance.'))
+  it('property insurance → kept', () =>
+    expect(matter('My mother needs help with her property insurance premium')).toBe('Her property insurance premium.'))
+  it('mediclaim is a matter on its own', () =>
+    expect(matter('My father needs help with his mediclaim')).toBe('His mediclaim.'))
+
+  it('UNSTATED kind stays bare — the engine does not invent a type', () => {
+    expect(matter('My father needs help with his insurance claim')).toBe('His insurance claim.')
+    expect(matter('My father needs help with his insurance')).toBe('His insurance.')
+  })
+  it('a non-adjacent "health" is NOT read as the insurance kind', () => {
+    // "his health is bad and he needs insurance" — health is about the man, not the cover.
+    expect(matter('my father health is bad and he needs insurance sorted'))
+      .toBe('His insurance.')
+  })
+})
+
 describe('legal / passport / visa are OUT of the India claim', () => {
   const said = (t: string) => counsel(readLedger(t)).paragraphs.join(' ')
   const claimsIndia = (t: string) => /anywhere in India/i.test(said(t))

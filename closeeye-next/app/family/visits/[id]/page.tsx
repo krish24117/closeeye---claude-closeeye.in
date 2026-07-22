@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/states'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { DEFAULT_REGION_CODE, localeFor } from '@/lib/platform/regions'
 import { isSuperAdmin } from '@/lib/roles'
 import { fetchMyBookingRequests, fetchFullVisitReport, type FullVisitReport } from '@/lib/db/family'
 import { VisitReportExperience } from '@/components/family/visit-experience'
@@ -39,10 +40,10 @@ function statusMeta(status: string): { label: string; tone: Tone } {
     default: return { label: 'Requested', tone: 'amber' }
   }
 }
-function fmtDate(iso: string | null): string {
+function fmtDate(iso: string | null, region: string = DEFAULT_REGION_CODE): string {
   if (!iso) return 'Date to be confirmed'
   try {
-    return new Date(iso).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
+    return new Date(iso).toLocaleDateString(localeFor(region), { weekday: 'long', day: 'numeric', month: 'long' })
   } catch {
     return 'Date to be confirmed'
   }
@@ -51,7 +52,7 @@ function fmtDate(iso: string | null): string {
 export default function VisitDetailPage() {
   const params = useParams<{ id: string }>()
   const { user } = useAuth()
-  const { profile, lovedOnes } = useFamilyData()
+  const { profile, lovedOnes, region } = useFamilyData()
   const admin = isSuperAdmin(profile)
   const [visit, setVisit] = React.useState<BookingRequest | null | undefined>(undefined)
   const [full, setFull] = React.useState<FullVisitReport | null>(null)
@@ -180,7 +181,7 @@ export default function VisitDetailPage() {
             <h1 className="text-h3">{visit.service_name?.trim() || 'Wellbeing visit'}</h1>
             <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold', toneCls[m.tone])}>{m.label}</span>
           </div>
-          <p className="mt-1 text-body-sm text-muted">For {name} · {fmtDate(visit.scheduled_at)}</p>
+          <p className="mt-1 text-body-sm text-muted">For {name} · {fmtDate(visit.scheduled_at, region)}</p>
         </div>
       </header>
 

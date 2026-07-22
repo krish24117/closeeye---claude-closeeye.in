@@ -10,7 +10,7 @@ import { MEMBERSHIP } from '@/lib/content'
 export const metadata: Metadata = {
   title: MEMBERSHIP.title,
   description:
-    'Two simple CloseEye memberships — Connect and Care. Trusted human presence, a dedicated Presence Manager, and clear pricing you can trust.',
+    'Two simple Close Eye memberships — Connect and Care. Trusted human presence, a dedicated Presence Manager, and clear pricing you can trust.',
 }
 
 export default function MembershipPage() {

@@ -1,6 +1,8 @@
 'use client'
 
 import * as React from 'react'
+import { formatMoney } from '@/lib/platform/currency'
+import { DEFAULT_REGION_CODE, localeFor } from '@/lib/platform/regions'
 import Link from 'next/link'
 import { CalendarClock, CalendarPlus, Loader2 } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
@@ -41,20 +43,20 @@ function statusMeta(status: string): { label: string; tone: Tone } {
   }
 }
 
-function fmtDate(iso: string | null): string {
+function fmtDate(iso: string | null, region: string = DEFAULT_REGION_CODE): string {
   if (!iso) return 'Date to be confirmed'
   try {
-    return new Date(iso).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })
+    return new Date(iso).toLocaleDateString(localeFor(region), { weekday: 'short', day: 'numeric', month: 'short' })
   } catch {
     return 'Date to be confirmed'
   }
 }
 
-const rupees = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN')}`
+const rupees = (paise: number) => formatMoney(paise / 100, DEFAULT_REGION_CODE)
 
 export default function VisitsPage() {
   const { user } = useAuth()
-  const { profile, identity } = useFamilyData()
+  const { profile, identity, region } = useFamilyData()
   const toast = useToast()
   const [requests, setRequests] = React.useState<BookingRequest[] | null>(null)
   const [reported, setReported] = React.useState<Set<string>>(new Set())
@@ -166,7 +168,7 @@ export default function VisitsPage() {
                   <Avatar initials={initialsOf(name)} size="md" tone="solid" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-body-sm font-semibold text-ink group-hover:text-green">{r.service_name?.trim() || 'Wellbeing visit'}</p>
-                    <p className="truncate text-caption text-muted">For {name} · {fmtDate(r.scheduled_at)}</p>
+                    <p className="truncate text-caption text-muted">For {name} · {fmtDate(r.scheduled_at, region)}</p>
                     {hasReport && <p className="mt-0.5 text-caption font-semibold text-green">View the full Presence Story →</p>}
                   </div>
                   <span className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold', toneCls[m.tone])}>

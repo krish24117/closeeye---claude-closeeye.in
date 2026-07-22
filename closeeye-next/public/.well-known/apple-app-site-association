@@ -2,11 +2,14 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["TEAMID.in.closeeye.app"],
+        "appIDs": ["APPLE_TEAM_ID.in.closeeye.app"],
         "components": [
           { "/": "/*" }
         ]
       }
     ]
+  },
+  "webcredentials": {
+    "apps": ["APPLE_TEAM_ID.in.closeeye.app"]
   }
 }

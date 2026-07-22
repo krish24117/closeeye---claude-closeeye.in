@@ -2,7 +2,7 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 /**
- * Form primitives — inherit the Design System (radius-sm, border-line, green
+ * Form primitives — inherit the Design System (radius-sm, border-edge, green
  * focus ring, ink text). No new styles; these complete the Component Library's
  * Forms entry. Used across the Booking flow and any future form.
  */
@@ -10,16 +10,16 @@ import { cn } from '@/lib/utils'
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cn('block text-body-sm font-semibold text-ink', className)}
+      className={cn('block text-body-sm font-semibold text-content', className)}
       {...props}
     />
   )
 }
 
 const fieldBase =
-  'w-full rounded-sm border border-line bg-card px-4 text-body text-ink placeholder:text-muted/70 ' +
-  'transition-colors duration-200 ease-premium focus:border-green focus:outline-none ' +
-  'focus:ring-2 focus:ring-green/25 disabled:cursor-not-allowed disabled:bg-muted/10 ' +
+  'w-full rounded-sm border border-edge bg-surface-raised px-4 text-body text-content placeholder:text-content-muted/70 ' +
+  'transition-colors duration-feedback ease-standard focus:border-brand focus:outline-none ' +
+  'focus:ring-2 focus:ring-brand/25 disabled:cursor-not-allowed disabled:bg-muted/10 ' +
   'aria-[invalid=true]:border-error aria-[invalid=true]:ring-error/25'
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
@@ -59,13 +59,13 @@ export function Field({
     <div className={cn('flex flex-col gap-2', className)}>
       <Label htmlFor={htmlFor}>
         {label}
-        {optional && <span className="ml-1.5 font-normal text-muted">(optional)</span>}
+        {optional && <span className="ms-1.5 font-normal text-content-muted">(optional)</span>}
       </Label>
       {children}
       {error ? (
         <p className="text-caption text-error">{error}</p>
       ) : hint ? (
-        <p className="text-caption text-muted">{hint}</p>
+        <p className="text-caption text-content-muted">{hint}</p>
       ) : null}
     </div>
   )

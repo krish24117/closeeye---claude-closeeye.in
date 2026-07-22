@@ -1,11 +1,14 @@
 'use client'
 
+import { useEffect } from 'react'
 import { RotateCw, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { whatsappLink } from '@/lib/site'
+import { reportError } from '@/lib/observability/report'
 
-/** Warm, human error boundary — never technical. */
-export default function FamilyError({ reset }: { error: Error; reset: () => void }) {
+/** Warm, human error boundary — never technical. Reports to Sentry when configured. */
+export default function FamilyError({ error, reset }: { error: Error; reset: () => void }) {
+  useEffect(() => reportError(error), [error])
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center gap-5 text-center">
       <span className="grid h-14 w-14 place-items-center rounded-full bg-accent-soft text-green">

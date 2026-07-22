@@ -11,6 +11,7 @@ import { OptionCard, Chip } from '@/components/ui/choice'
 import { Field, Textarea } from '@/components/ui/field'
 import { initialsOf } from '@/components/family/loved-one-card'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { localeFor } from '@/lib/platform/regions'
 import { BOOKING_SERVICES, BOOKING_PAYMENT_NOTE, HOSPITAL_DURATIONS, type HospitalDurationId } from '@/features/booking/schema'
 import { BookingRefused, requestVisit } from '@/features/booking/api'
 import { isFounderFunnelGated } from '@/lib/founder-funnel'
@@ -73,7 +74,7 @@ function BookingSteps({ step, custom, preset }: { step: Step; custom: boolean; p
 
 export default function FamilyBookPage() {
   const params = useSearchParams()
-  const { lovedOnes, profile, loading, subscription } = useFamilyData()
+  const { lovedOnes, profile, loading, subscription, region } = useFamilyData()
 
   const [memberId, setMemberId] = React.useState('')
   const [pickChoice, setPickChoice] = React.useState('')
@@ -210,7 +211,7 @@ export default function FamilyBookPage() {
       ['Service', service.name],
       ['Duration', isHospital ? `${duration.label} · ${duration.priceFrom}` : undefined],
       ['For', member.full_name],
-      ['When', `${new Date(details.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })} · ${slotLabel}`],
+      ['When', `${new Date(details.date).toLocaleDateString(localeFor(region), { weekday: 'short', day: 'numeric', month: 'short' })} · ${slotLabel}`],
       ['Address', details.address.trim()],
       ['Map link', details.mapLink.trim() || undefined],
       ['Landmark', details.landmark.trim() || undefined],
@@ -452,7 +453,7 @@ export default function FamilyBookPage() {
                 ['Map link', details.mapLink.trim() || undefined],
                 ['Landmark', details.landmark.trim() || undefined],
                 ['Visit contact', `${details.contactName.trim()} · ${details.contactPhone.trim()}`],
-                ['When', `${new Date(details.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })} · ${slotLabel}`],
+                ['When', `${new Date(details.date).toLocaleDateString(localeFor(region), { weekday: 'short', day: 'numeric', month: 'short' })} · ${slotLabel}`],
                 ['Access', details.accessInstructions.trim() || undefined],
                 [instructionsLabel, effectiveInstructions.trim() || undefined],
                 ['Notes for the team', details.teamNotes.trim() || undefined],

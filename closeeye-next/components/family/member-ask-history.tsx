@@ -26,7 +26,7 @@ function askedWhen(iso: string): string {
 }
 
 /**
- * The Ask CloseEye Q&A the family has asked about THIS member, surfaced inside
+ * The Ask Close Eye Q&A the family has asked about THIS member, surfaced inside
  * their conversation so the AI history and the private care thread live in one
  * place — Connect's "one conversation" pillar. Renders nothing when there's no
  * history for this member, so it never adds noise to a fresh conversation.

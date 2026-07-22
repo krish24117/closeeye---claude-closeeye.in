@@ -28,14 +28,14 @@ const OPTIONS: {
   highlights: string[]
 }[] = [
   {
-    id: 'trust', // CloseEye Care
+    id: 'trust', // Close Eye Care
     badge: 'Recommended for most families',
     recommended: true,
     line: 'Monthly Presence Visits, Presence Stories and priority coordination.',
     highlights: ['One monthly wellbeing visit', 'Visit report with photos', 'Priority scheduling'],
   },
   {
-    id: 'companion', // CloseEye Connect
+    id: 'companion', // Close Eye Connect
     badge: 'A lighter way to begin',
     recommended: false,
     line: 'Trusted coordination and ongoing family support.',

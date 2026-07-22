@@ -16,6 +16,7 @@ import { setPendingPlan } from '@/lib/membership-intent'
 import { hasFounderSessionHint, setFounderSessionHint, setFounderRef, getFounderRef } from '@/lib/founder-funnel'
 import { isNative } from '@/lib/native'
 import { haptic } from '@/lib/haptics'
+import { track } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 
 const isEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
@@ -151,6 +152,7 @@ function AuthFlow() {
       haptic('success')
       if (session) {
         // Account created and signed in — the auth gate routes on from here.
+        track('signed_up')
         router.replace('/family')
         return
       }

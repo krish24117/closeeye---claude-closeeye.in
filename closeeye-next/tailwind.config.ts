@@ -40,6 +40,26 @@ const config: Config = {
         success: 'hsl(var(--success) / <alpha-value>)',
         warning: 'hsl(var(--warning) / <alpha-value>)',
         error: 'hsl(var(--error) / <alpha-value>)',
+        // ── Ch.2 Color — semantic roles (design-tokens.css). Values are identical to the legacy
+        // tokens above (surface=ivory, content=ink, brand=green, edge=line, …) so migrating a class
+        // onto them changes nothing — EXCEPT content-inverse, the ratified warm-ivory on-dark text.
+        surface: {
+          DEFAULT: 'hsl(var(--color-surface) / <alpha-value>)',
+          raised: 'hsl(var(--color-surface-raised) / <alpha-value>)',
+          inverse: 'hsl(var(--color-surface-inverse) / <alpha-value>)',
+          accent: 'hsl(var(--color-surface-accent) / <alpha-value>)',
+        },
+        content: {
+          DEFAULT: 'hsl(var(--color-text) / <alpha-value>)',
+          muted: 'hsl(var(--color-text-secondary) / <alpha-value>)',
+          inverse: 'hsl(var(--color-text-inverse) / <alpha-value>)',
+          disabled: 'hsl(var(--color-text-disabled) / <alpha-value>)',
+        },
+        brand: {
+          DEFAULT: 'hsl(var(--color-brand) / <alpha-value>)',
+          hover: 'hsl(var(--color-brand-hover) / <alpha-value>)',
+        },
+        edge: 'hsl(var(--color-border) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
@@ -79,7 +99,16 @@ const config: Config = {
         lg: 'var(--shadow-lg)',
       },
       transitionTimingFunction: {
-        premium: 'var(--ease)',
+        premium: 'var(--ease)', // legacy alias — kept during migration; == ease-standard
+        // Ch.4 Motion tokens (design-tokens.css). One signature ease + linear for loops only.
+        standard: 'var(--ease-standard)',
+      },
+      transitionDuration: {
+        // Ch.4 Motion — durations by meaning (design-tokens.css). Identical values to the
+        // legacy 200/300/600 utilities, so consuming these changes nothing visually.
+        feedback: 'var(--duration-feedback)',
+        transition: 'var(--duration-transition)',
+        arrival: 'var(--duration-arrival)',
       },
       keyframes: {
         'accordion-down': { from: { height: '0' }, to: { height: 'var(--radix-accordion-content-height)' } },

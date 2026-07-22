@@ -6,7 +6,9 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { addLovedOne as addLovedOneDb, deleteLovedOne as deleteLovedOneDb, fetchMyLovedOnes, fetchMyProfile, updateFamilyMember as updateFamilyMemberDb } from '@/lib/db/family'
 import { fetchMySubscription, selectPlan as selectPlanDb } from '@/lib/db/onboarding'
 import type { LovedOne, NewLovedOne, Profile, Subscription } from '@/lib/db/types'
+import { track } from '@/lib/analytics'
 import type { PlanId } from '@/lib/plans'
+import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 
 /** The signed-in person's display identity, resolved from profile + auth. */
 export interface Identity {
@@ -24,6 +26,10 @@ interface FamilyData {
   lovedOnes: LovedOne[]
   subscription: Subscription | null
   identity: Identity
+  /** This family's region code (lib/platform). Resolved from the loved one they care for
+   *  (their emergency number, locale, Care availability). Default 'IN' — India-identical
+   *  today, since every loved one's region_code defaults to 'IN'. */
+  region: string
   loading: boolean
   error: string | null
   refresh: () => Promise<void>
@@ -99,6 +105,7 @@ export function FamilyDataProvider({ children }: { children: React.ReactNode }) 
       if (!userId) throw new Error('You’re not signed in.')
       const created = await addLovedOneDb(userId, input)
       setLovedOnes((prev) => [...prev, created])
+      track('loved_one_added', { relationship: input.relationship || 'unknown' })
       return created
     },
     [userId],
@@ -133,9 +140,12 @@ export function FamilyDataProvider({ children }: { children: React.ReactNode }) 
   )
 
   const identity = useMemo(() => deriveIdentity(user, profile), [user, profile])
+  // The family's region = where the person they care for is. First loved one is the primary
+  // subject; every surface that shows an emergency number, a locale or a currency reads this.
+  const region = useMemo(() => lovedOnes[0]?.region_code || DEFAULT_REGION_CODE, [lovedOnes])
   const value = useMemo<FamilyData>(
-    () => ({ profile, lovedOnes, subscription, identity, loading, error, refresh: load, addLovedOne, editFamilyMember, removeLovedOne, chooseMembership }),
-    [profile, lovedOnes, subscription, identity, loading, error, load, addLovedOne, editFamilyMember, removeLovedOne, chooseMembership],
+    () => ({ profile, lovedOnes, subscription, identity, region, loading, error, refresh: load, addLovedOne, editFamilyMember, removeLovedOne, chooseMembership }),
+    [profile, lovedOnes, subscription, identity, region, loading, error, load, addLovedOne, editFamilyMember, removeLovedOne, chooseMembership],
   )
 
   return <FamilyDataContext.Provider value={value}>{children}</FamilyDataContext.Provider>

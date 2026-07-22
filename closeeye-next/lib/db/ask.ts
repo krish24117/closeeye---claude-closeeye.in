@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 
 /**
- * Ask CloseEye — the client seam onto the LIVE `ask-health` edge function.
+ * Ask Close Eye — the client seam onto the LIVE `ask-health` edge function.
  *
  * The function owns all the intelligence and safety: red-flag emergency
  * detection (+ WhatsApp care-team alert), service routing, out-of-scope / child
@@ -16,7 +16,7 @@ export interface AskTurn {
   content: string
 }
 
-export type AskKind = 'answer' | 'escalate' | 'pending' | 'capped' | 'error'
+export type AskKind = 'answer' | 'escalate' | 'pending' | 'capped' | 'error' | 'consent'
 
 export interface AskResult {
   kind: AskKind
@@ -79,6 +79,11 @@ export async function askCloseEye(input: AskInput): Promise<AskResult> {
     }
   }
 
+  // Consent gate (server is the source of truth) — Close Eye won't process family information
+  // without a granted consent. The client surfaces the trust-promise consent card.
+  if (data?.consent_required) {
+    return { kind: 'consent', queryId: null, text: null }
+  }
   if (data?.lane === 'escalate') {
     return {
       kind: 'escalate',
@@ -100,29 +105,32 @@ export interface AskHistoryItem {
   answer: string | null
   status: string
   createdAt: string
+  /** Which loved one the question was about, if it was scoped to one. */
+  lovedOneId?: string | null
 }
 
 /** Recent Ask questions for this user (RLS already scopes `member_queries` to user_id). */
 export async function fetchAskHistory(userId: string, limit = 6): Promise<AskHistoryItem[]> {
   const { data } = await supabase
     .from('member_queries')
-    .select('id, question, answer, ai_answer, status, created_at')
+    .select('id, question, answer, ai_answer, status, created_at, loved_one_id')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(limit)
   const rows =
-    (data as Array<{ id: string; question: string; answer: string | null; ai_answer: string | null; status: string; created_at: string }> | null) ?? []
+    (data as Array<{ id: string; question: string; answer: string | null; ai_answer: string | null; status: string; created_at: string; loved_one_id: string | null }> | null) ?? []
   return rows.map((q) => ({
     id: q.id,
     question: q.question,
     answer: q.answer || q.ai_answer,
     status: q.status,
     createdAt: q.created_at,
+    lovedOneId: q.loved_one_id,
   }))
 }
 
 /**
- * Ask history for ONE family member — the Q&A the family asked CloseEye about this
+ * Ask history for ONE family member — the Q&A the family asked Close Eye about this
  * person. Scoped by `loved_one_id` so it can live inside that member's conversation
  * (unifying the AI and PM timelines). RLS still restricts to the caller's own rows.
  */

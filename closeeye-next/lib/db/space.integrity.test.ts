@@ -84,28 +84,25 @@ beforeEach(() => {
 
 describe('Family memory — integrity (code path)', () => {
   it('provisions a space, writes the ledger with provenance, and clears the draft', async () => {
-    setConnectDraft(DRAFT)
+    // Provisioning names the space from the VERIFIED understanding carried in the draft (never a
+    // re-parse of the raw text — that is the constitutional guarantee a place can't become a person).
+    const u = { name: 'Your Mother', relationship: 'mother', city: 'Hyderabad', isSelf: false, situation: 'lives alone', facts: [{ label: 'Her days', value: 'Lives alone in Hyderabad' }] }
+    setConnectDraft(DRAFT, undefined, u)
     const res = await provisionFamilySpace()
     expect(res.error).toBeNull()
     expect(H.store.loved_ones).toHaveLength(1)
     expect(H.store.loved_ones[0]!.full_name).toBe('Your Mother')
+    expect(H.store.loved_ones[0]!.relationship).toBe('mother')
     expect(H.store.family_ledger.length).toBeGreaterThan(0)
+    // Provisioning writes ONLY the family's own words as facts — never a fabricated AI reading.
+    // /space renders family_fact rows as "what Connect knows"; a guess stored there would be
+    // repeated back to the family as truth, forever.
     for (const e of H.store.family_ledger) {
-      // A stated fact is a family_fact; Connect's own reading is an ai_understanding.
-      // Nothing else may be written from this path.
-      expect(['family_fact', 'ai_understanding']).toContain(e.entry_type)
+      expect(e.entry_type).toBe('family_fact')
       expect(e.source).toBe('connect_experience')
     }
-    // The line that matters: Connect's READING must never enter family memory as a FACT.
-    // /space renders family_fact rows as "what Connect knows" — a guess stored there would
-    // be repeated back to the family as truth, forever.
-    const reading = H.store.family_ledger.find((e) => e.label === 'What I think you need')
-    expect(reading, 'the concern line must be persisted').toBeDefined()
-    expect(reading!.entry_type).toBe('ai_understanding')
-    // ...and every line that IS a family_fact must be one the visitor actually stated.
-    for (const e of H.store.family_ledger.filter((x) => x.entry_type === 'family_fact')) {
-      expect(e.label).not.toBe('What I think you need')
-    }
+    // The family's exact words are preserved verbatim as a quote.
+    expect(H.store.family_ledger.some((e) => e.label === 'In your words')).toBe(true)
     expect(getConnectDraft()).toBeNull() // cleared only after success
   })
 
@@ -120,18 +117,20 @@ describe('Family memory — integrity (code path)', () => {
   // F8 — a space created for the VISITOR is theirs. It was named "Your family", which is
   // both wrong and the one label we never had to guess: they are signed in.
   it('a request for yourself creates YOUR space, under your own name — never "Your family"', async () => {
-    setConnectDraft('This is for me. I am moving to Bangalore and need local support.')
+    const u = { name: 'You', relationship: 'self', city: null, isSelf: true, situation: 'moving to Bangalore', facts: [] }
+    setConnectDraft('This is for me. I am moving to Bangalore and need local support.', undefined, u)
     const res = await provisionFamilySpace()
     expect(res.error).toBeNull()
     expect(H.store.loved_ones).toHaveLength(1)
-    expect(H.store.loved_ones[0]!.full_name).toBe('Krishna') // the signed-in user's name
+    expect(H.store.loved_ones[0]!.full_name).toBe('Krishna') // the signed-in user's name (selfName)
     expect(H.store.loved_ones[0]!.full_name).not.toBe('Your family')
     expect(H.store.loved_ones[0]!.relationship).toBe('self')
   })
 
   it('falls back to "You" when we have no name for them — never to a name we invented', async () => {
     H.tracker.user = { id: 'u1', email: 'k@example.com', user_metadata: {} } // no full_name
-    setConnectDraft('This is for me. I am moving to Bangalore and need local support.')
+    const u = { name: 'You', relationship: 'self', city: null, isSelf: true, situation: null, facts: [] }
+    setConnectDraft('This is for me. I am moving to Bangalore and need local support.', undefined, u)
     await provisionFamilySpace()
     expect(H.store.loved_ones[0]!.full_name).toBe('You')
   })

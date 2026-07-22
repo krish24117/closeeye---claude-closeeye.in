@@ -11,7 +11,10 @@
  */
 import { supabase } from '@/lib/supabase'
 import { classify, pronoun, type Gender } from '@/lib/connect/understand'
-import { readLedger, ledgerEntriesForStorage, blanksFor, KEY_LABEL, type Blank, type LedgerLine } from '@/lib/connect/ledger'
+import { readLedger, blanksFor, KEY_LABEL, type Blank, type LedgerLine } from '@/lib/connect/ledger'
+import { UNKNOWN, type Understanding } from '@/lib/connect/comprehension'
+import { formatTime, formatDate } from '@/lib/platform/locale'
+import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 
 /** Mid-sentence display name: the name the family gave ("Amma"), else the
  *  relationship lowercased ("your mother"), else a real name as typed. */
@@ -38,11 +41,54 @@ const PROVISION_IDEMPOTENCY_MS = 60 * 60 * 1000
 /* ── the pre-sign-in draft (survives the OAuth round-trip via localStorage) ── */
 const DRAFT_KEY = 'closeeye.connect.draft'
 export interface DraftExtra { label: string; body: string }
-export interface ConnectDraft { rawText: string; at: number; extras?: DraftExtra[] }
+/** The VERIFIED understanding, carried through the OAuth round-trip so provisioning names the
+ *  Space from truth — never a re-parse (which is what used to let "Hyderabad" become a person). */
+export interface DraftUnderstanding {
+  name: string          // storable name: "your mother" | "Amma" | "You"
+  relationship: string  // "mother" | "self" | "family" | …
+  city: string | null   // residence only (locations.lives_in) — never a travel city
+  isSelf: boolean
+  situation: string | null
+  facts: { label: string; value: string }[]
+}
+export interface ConnectDraft { rawText: string; at: number; extras?: DraftExtra[]; u?: DraftUnderstanding }
 
-export function setConnectDraft(rawText: string, extras?: DraftExtra[]): void {
+export function setConnectDraft(rawText: string, extras?: DraftExtra[], u?: DraftUnderstanding): void {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rawText, at: Date.now(), extras } satisfies ConnectDraft)) } catch {}
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rawText, at: Date.now(), extras, u } satisfies ConnectDraft)) } catch {}
+}
+
+/** Map a verified Understanding → the storable draft shape. The ONLY place the "my mother" →
+ *  "your mother" (or a real name like "Amma") convention lives — shared by the UI when it saves
+ *  and by provisioning when it creates the row, so the two can never disagree. Never fabricates. */
+export function buildDraftUnderstanding(u: Understanding, selfName?: string): DraftUnderstanding {
+  const who = (u.subject.who || '').trim()
+  const rel = u.subject.relationship && u.subject.relationship !== UNKNOWN ? u.subject.relationship : ''
+  const isSelf = rel === 'self' || who.toLowerCase() === 'self'
+  const known = (s: string | undefined) => !!s && s !== UNKNOWN && s !== 'none_stated'
+  let name: string
+  if (isSelf) name = selfName?.trim() || 'You'
+  else if (/^(my|our|the|your)\s+/i.test(who)) name = rel ? `your ${rel}` : `your ${who.replace(/^(my|our|the|your)\s+/i, '').trim() || 'family'}`
+  else name = who || (rel ? `your ${rel}` : 'your family') // a name they used ("Amma"), else relational
+  return {
+    name,
+    relationship: isSelf ? 'self' : (rel || 'family'),
+    city: known(u.locations.lives_in) ? u.locations.lives_in! : null,
+    isSelf,
+    situation: known(u.situation) ? u.situation : null,
+    facts: u.facts.map((f) => ({ label: f.label, value: f.value })),
+  }
+}
+
+/** The family_ledger rows for a new Space, from the verified understanding — stated facts +
+ *  the family's exact words (rendered as a quote by fetchSpace via the 'In your words' label).
+ *  Never an inference; the ordering is stamped by the caller so the story reads top-to-bottom. */
+function connectLedgerRows(u: DraftUnderstanding, rawText: string): { entry_type: 'family_fact'; label: string; body: string; source: 'connect_experience' }[] {
+  const lines = u.facts.length
+    ? u.facts.map((f) => ({ label: f.label, body: f.value }))
+    : (u.situation ? [{ label: 'What’s happening', body: u.situation }] : [])
+  const quote = rawText.trim() ? [{ label: 'In your words', body: rawText.trim() }] : []
+  return [...lines, ...quote].map((r) => ({ entry_type: 'family_fact' as const, ...r, source: 'connect_experience' as const }))
 }
 export function getConnectDraft(): ConnectDraft | null {
   if (typeof window === 'undefined') return null
@@ -118,17 +164,17 @@ async function doProvision(): Promise<ProvisionResult> {
     const user = auth.user
     if (!user) return { lovedOneId: null, error: 'not-signed-in' }
 
-    // Completing the Connect experience IS this user's onboarding.
-    await supabase.auth.updateUser({ data: { onboarding_complete: true } }).catch(() => {})
-
-    const rl = readLedger(draft.rawText)
-
-    // F8 — a space created for the VISITOR is theirs, not "your family". By this point they
-    // are signed in, so we know their actual name; the engine can only ever say "You".
+    // F8 — a space created for the VISITOR is theirs, not "your family". By this point they are
+    // signed in, so we know their actual name. The Space is named from the VERIFIED understanding
+    // (carried in the draft), never a re-parse — so a place can never become a person.
     const selfName = (user.user_metadata?.full_name as string | undefined)?.trim()
-    const isSelf = rl.subjectKind === 'self'
-    const spaceName = isSelf ? (selfName || 'You') : rl.subjectLabel
-    const spaceRelationship = isSelf ? 'self' : rl.relationship
+    const du: DraftUnderstanding = draft.u ?? {
+      // A legacy draft with no understanding (should not occur post-migration): name honestly,
+      // never fabricated — "your family" + the raw words, and let /space ask for the rest.
+      name: 'your family', relationship: 'family', city: null, isSelf: false, situation: null, facts: [],
+    }
+    const spaceName = du.isSelf ? (selfName || 'You') : du.name
+    const spaceRelationship = du.relationship
 
     // Idempotency: reuse an existing space for the same person (double-invoke / two tabs / retry).
     //
@@ -156,7 +202,7 @@ async function doProvision(): Promise<ProvisionResult> {
       const { data: lo, error: loErr } = await supabase
         .from('loved_ones')
         .insert({
-          family_user_id: user.id, full_name: spaceName, relationship: spaceRelationship, city: rl.city,
+          family_user_id: user.id, full_name: spaceName, relationship: spaceRelationship, city: du.city,
           // the base loved_ones table has these columns NOT NULL — default to '' exactly
           // like the family "Add Loved One" flow (lib/db/family.ts); the Space treats
           // '' as "not provided yet". Without these, the insert fails a NOT NULL check.
@@ -169,6 +215,11 @@ async function doProvision(): Promise<ProvisionResult> {
       lovedOneId = lo.id
     }
 
+    // Onboarding is complete ONLY once a real person exists. Marking it before the insert
+    // (as we used to) orphaned any account whose provision failed or timed out: "onboarded"
+    // with no one to show, and no route back. Set it here, after the space is guaranteed.
+    await supabase.auth.updateUser({ data: { onboarding_complete: true } }).catch(() => {})
+
     // Ensure the Connect ledger exists (completes a partial provision without duplicating).
     const { count } = await supabase
       .from('family_ledger')
@@ -176,7 +227,7 @@ async function doProvision(): Promise<ProvisionResult> {
       .eq('loved_one_id', lovedOneId)
       .eq('source', 'connect_experience')
     if (!count) {
-      const base = ledgerEntriesForStorage(rl).map((e) => ({ loved_one_id: lovedOneId, family_user_id: user.id, ...e }))
+      const base = connectLedgerRows(du, draft.rawText).map((e) => ({ loved_one_id: lovedOneId, family_user_id: user.id, ...e }))
       // Anything the visitor told us on the "still open" lines — preserved, never lost.
       const extras = (draft.extras ?? []).filter((e) => e.body?.trim()).map((e) => ({
         loved_one_id: lovedOneId, family_user_id: user.id,
@@ -219,7 +270,7 @@ export interface SpaceData {
   userName: string
   email: string
   /** The SELECTED member. Everything below (known/learned/blanks/timeline) is theirs. */
-  lovedOne: { id: string; name: string; relationship: string | null; city: string | null; createdAt: string | null }
+  lovedOne: { id: string; name: string; relationship: string | null; city: string | null; createdAt: string | null; regionCode: string | null; phone: string | null }
   /** Everyone in the family, in the order they were added. The Space used to fetch up to
    *  20 and then use only `[0]` — so a second member was provisioned, stored, and never
    *  seen again. Adding family worked; the family just never appeared. */
@@ -231,13 +282,16 @@ export interface SpaceData {
   learned: LedgerLine[]    // lines the family told us later (most recent window, chronological)
   blanks: Blank[]          // still-open (unfilled) prompts
   timeline: TimelineEvent[]
+  observedCount: number    // guardian/visit observations — the only basis for "calm"
 }
 
 function fmtWhen(iso: string | null): string {
   if (!iso) return ''
   const d = new Date(iso), now = new Date()
-  const time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase()
-  return d.toDateString() === now.toDateString() ? `Today · ${time}` : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+  // Through the LocaleService — India ('en-IN') renders exactly as before. Pinned to
+  // DEFAULT_REGION_CODE for now; per-family locale threads through with region_code later.
+  const time = formatTime(d, DEFAULT_REGION_CODE, { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase()
+  return d.toDateString() === now.toDateString() ? `Today · ${time}` : formatDate(d, DEFAULT_REGION_CODE, { day: 'numeric', month: 'short' })
 }
 
 /** Load the Space. Returns null when there's no session/space (caller routes to
@@ -251,7 +305,7 @@ export async function fetchSpace(memberId?: string): Promise<SpaceData | null> {
 
   const [profRes, losRes] = await Promise.all([
     supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
-    supabase.from('loved_ones').select('id, full_name, relationship, city, created_at').eq('family_user_id', user.id).order('created_at', { ascending: true }).limit(20),
+    supabase.from('loved_ones').select('id, full_name, relationship, city, created_at, region_code, phone_number').eq('family_user_id', user.id).order('created_at', { ascending: true }).limit(20),
   ])
   if (losRes.error) throw new Error(losRes.error.message)
   const all = losRes.data ?? []
@@ -275,6 +329,9 @@ export async function fetchSpace(memberId?: string): Promise<SpaceData | null> {
 
   const entries = (entriesRes.data ?? []).slice().reverse() // chronological
   const facts = entries.filter((e) => e.entry_type === 'family_fact')
+  // The ONLY basis for the Snapshot to ever say "calm": a real person has observed him.
+  // Zero today for most families, and that is correct — we never fake wellbeing.
+  const observedCount = entries.filter((e) => e.entry_type === 'guardian_observation' || e.entry_type === 'visit_observation').length
   const known: LedgerLine[] = facts.filter((e) => e.source === 'connect_experience').map((e) => ({ label: e.label ?? '', body: e.body, quote: e.label === 'In your words' }))
   const spaceFacts = facts.filter((e) => e.source === 'family_space')
 
@@ -306,9 +363,9 @@ export async function fetchSpace(memberId?: string): Promise<SpaceData | null> {
 
   return {
     userName, email: user.email || '',
-    lovedOne: { id: lo.id, name: lo.full_name, relationship: lo.relationship, city: lo.city, createdAt: lo.created_at },
+    lovedOne: { id: lo.id, name: lo.full_name, relationship: lo.relationship, city: lo.city, createdAt: lo.created_at, regionCode: lo.region_code ?? null, phone: lo.phone_number ?? null },
     members, selectedId: lo.id,
-    gender, callName, known, learned, blanks, timeline,
+    gender, callName, known, learned, blanks, timeline, observedCount,
   }
 }
 

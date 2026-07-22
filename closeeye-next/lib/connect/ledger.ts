@@ -204,7 +204,7 @@ const AI_CONFIDENT: Record<NeedType, boolean> = {
 
 /** Errands that touch money, law or admin — Connect helps ORGANIZE with a trusted
     person and says a professional is needed; it never gives the advice itself. */
-const PROFESSIONAL = /\b(tax(es)?|itr|gst|financ\w*|legal|lawyer|insurance|pension|passport|visa|bank\w*|audit|accountant|paperwork|filing|compliance)\b/i
+const PROFESSIONAL = /\b(tax(es)?|itr|gst|financ\w*|legal|lawyer|insurance|mediclaim\w*|pension|passport|visa|bank\w*|audit|accountant|paperwork|filing|compliance)\b/i
 /* MONEY, specifically — the ONE domain Close Eye serves across the whole of India
    (founder, 2026-07-17: "legal, passport and visa — out of the India claim").
    Deliberately NARROWER than PROFESSIONAL, which also bundles legal, passport and visa.
@@ -220,7 +220,7 @@ const PROFESSIONAL = /\b(tax(es)?|itr|gst|financ\w*|legal|lawyer|insurance|pensi
    term PROFESSIONAL cannot see never reaches it. The first cut added provident fund, NPS
    and salary and they simply never fired; a test caught it. Widening the India claim
    means widening PROFESSIONAL first, deliberately — not smuggling words in here. */
-const FINANCIAL = /\b(tax(es)?|itr|gst|financ\w*|insurance|pension|bank\w*|audit|accountant)\b/i
+const FINANCIAL = /\b(tax(es)?|itr|gst|financ\w*|insurance|mediclaim\w*|pension|bank\w*|audit|accountant)\b/i
 /* …and an explicit veto, because one money word is not permission. "His passport and his
    pension" mentions a pension, but the passport is the part we cannot promise nationwide,
    so the safe reading wins: no India claim. Never 'claim' as a word — an INSURANCE claim
@@ -236,7 +236,22 @@ function frequencyPhrase(text: string): string | null {
 
 /** The stated matter (tax filing, pension paperwork, …) as a short possessive
     line — from the visitor's words only, with their frequency if they gave one. */
-const MATTER = /\b(tax\s+(?:filings?|returns?)|taxes?|pension\s+paperwork|pension|insurance\s+claim\w*|insurance|passport\s+renewal|passport|visa\s+\w+|visa|gst\s+\w+|gst|bank\s+(?:work|issue|account\w*)|legal\s+\w+|paperwork|filing)\b/i
+/* "insurance" is a CATEGORY, not a leaf — and when the family names the KIND, we keep it.
+   The old pattern captured "insurance claim" but not the "health"/"car"/"life" in front of
+   it, so "his health insurance claim" was echoed back as "His insurance claim." — dropping
+   a word the family actually wrote, on a line labelled "from your words". An engine whose
+   promise is never to invent must equally never discard. The subtype is optional, so a
+   bare "insurance claim" (subtype UNSTATED) still matches and is left to the enrichment
+   step to ask about. Widening the KINDS is one edit here. */
+const INSURANCE_KIND = 'health|medical|life|term|car|motor|vehicle|bike|two[-\\s]?wheeler|property|home|house|travel|crop|accident'
+const MATTER = new RegExp(
+  `\\b(tax\\s+(?:filings?|returns?)|taxes?|pension\\s+paperwork|pension|` +
+  // "mediclaim" is a whole word on its own (the common Indian term for health cover) — a
+  // standalone matter, not a prefix to "insurance".
+  `mediclaim\\w*|` +
+  `(?:(?:${INSURANCE_KIND})\\s+)?insurance(?:\\s+claim\\w*|\\s+polic\\w*|\\s+premium|\\s+renewal)?|` +
+  `passport\\s+renewal|passport|visa\\s+\\w+|visa|gst\\s+\\w+|gst|` +
+  `bank\\s+(?:work|issue|account\\w*)|legal\\s+\\w+|paperwork|filing)\\b`, 'i')
 function matterLine(text: string, gender: Gender | null): string | null {
   const m = text.match(MATTER)
   if (!m) return null
@@ -271,7 +286,7 @@ export function blanksFor(gender: Gender | null): Blank[] {
   return [
     { key: 'health', text: `${poss} health, and what ${they} ${conj('manage', gender)} day to day` },
     { key: 'mornings', text: `${poss} age, and the shape of ${pronoun.possessive(gender)} mornings` },
-    { key: 'nearby', text: `Who can reach ${them} in twenty minutes, if ever needed` },
+    { key: 'nearby', text: `Who’s nearby for ${them}, if ever needed` },
   ]
 }
 /** Short, warm display labels for the "still learning" blank keys. Used in the

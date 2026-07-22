@@ -90,7 +90,7 @@ export default function DesignSystemPage() {
         </div>
       </Row>
 
-      <Row title="Typography" note="One family (Open Sauce One). One scale. No random sizes or weights.">
+      <Row title="Typography" note="Inter for text, a serif for display. Semantic roles — meaning, not size.">
         <div className="flex flex-col gap-6">
           {TYPE.map((t) => (
             <div key={t.label} className="flex flex-col gap-1 border-b border-line pb-6 last:border-0">

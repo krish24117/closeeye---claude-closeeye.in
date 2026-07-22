@@ -15,10 +15,10 @@ import { cn } from '@/lib/utils'
  * preserved (Connect = outlined secondary, Care = filled primary); the page's job
  * is decision clarity + communicating where the customer already is in their
  * journey — not visual symmetry:
- *   • anonymous / no active plan → "Choose CloseEye {plan}"  (join funnel / activate)
+ *   • anonymous / no active plan → "Choose Close Eye {plan}"  (join funnel / activate)
  *   • the customer's active plan → "Your current plan" + Manage membership
- *   • Connect member · Care card → "Upgrade to CloseEye Care"
- *   • Care member · Connect card → "Included in your CloseEye Care plan"
+ *   • Connect member · Care card → "Upgrade to Close Eye Care"
+ *   • Care member · Connect card → "Included in your Close Eye Care plan"
  */
 export function MembershipPlans() {
   const router = useRouter()
@@ -82,11 +82,11 @@ export function MembershipPlans() {
                 </div>
               ) : isUpgradeTarget ? (
                 <Button asChild size="lg" variant="primary" className="mt-7 w-full">
-                  <Link href="/family/membership">Upgrade to CloseEye Care</Link>
+                  <Link href="/family/membership">Upgrade to Close Eye Care</Link>
                 </Button>
               ) : isIncluded ? (
                 <div className="mt-7 rounded-sm border border-line/70 px-4 py-3.5 text-center">
-                  <p className="text-caption text-muted">Included in your CloseEye Care plan.</p>
+                  <p className="text-caption text-muted">Included in your Close Eye Care plan.</p>
                 </div>
               ) : (
                 <Button

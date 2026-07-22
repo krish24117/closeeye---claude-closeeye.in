@@ -10,6 +10,7 @@ import { RelationshipSelector } from '@/components/family/relationship-selector'
 import { CityField } from '@/components/family/city-field'
 import { PhotoPicker } from '@/components/family/photo-picker'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { phonePlaceholder } from '@/lib/platform/locale'
 import { useToast } from '@/components/ui/toast'
 import { setLocalPhoto } from '@/lib/local-photos'
 import { haptic } from '@/lib/haptics'
@@ -33,7 +34,7 @@ export default function EditFamilyMemberPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const toast = useToast()
-  const { lovedOnes, loading, editFamilyMember } = useFamilyData()
+  const { lovedOnes, loading, editFamilyMember, region } = useFamilyData()
   const member = lovedOnes.find((l) => l.id === id)
 
   const [fullName, setFullName] = React.useState('')
@@ -155,7 +156,7 @@ export default function EditFamilyMemberPage() {
           </div>
           <div>
             <label htmlFor="e-phone" className={labelCls}>Phone <span className="font-normal text-muted">(optional)</span></label>
-            <input id="e-phone" value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" inputMode="tel" placeholder="+91 90000 00000" className={inputCls} />
+            <input id="e-phone" value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" inputMode="tel" placeholder={phonePlaceholder(region)} className={inputCls} />
           </div>
         </Section>
 
@@ -191,7 +192,7 @@ export default function EditFamilyMemberPage() {
             </div>
             <div>
               <label htmlFor="e-ecp" className={labelCls}>Contact phone <span className="font-normal text-muted">(optional)</span></label>
-              <input id="e-ecp" value={ecPhone} onChange={(e) => setEcPhone(e.target.value)} type="tel" inputMode="tel" placeholder="+91 90000 00000" className={inputCls} />
+              <input id="e-ecp" value={ecPhone} onChange={(e) => setEcPhone(e.target.value)} type="tel" inputMode="tel" placeholder={phonePlaceholder(region)} className={inputCls} />
             </div>
           </div>
         </Section>

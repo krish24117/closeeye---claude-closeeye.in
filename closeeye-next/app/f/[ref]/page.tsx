@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { PLANS } from '@/lib/plans'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
@@ -149,7 +150,7 @@ export default function FounderLandingPage() {
           <div className="rounded-xl border border-line/70 bg-card p-5 shadow-sm">
             <div className="flex items-baseline justify-between gap-3">
               <p className="text-body font-semibold">Close Eye Connect</p>
-              <p className="shrink-0 whitespace-nowrap text-body-sm font-semibold text-green">₹500 / month</p>
+              <p className="shrink-0 whitespace-nowrap text-body-sm font-semibold text-green">{PLANS.find((p) => p.key === 'connect')?.price} / month</p>
             </div>
             <p className="mt-0.5 text-caption text-muted">A lighter way to begin</p>
             <p className="mt-2 text-body-sm leading-relaxed text-muted">Trusted coordination and ongoing family support.</p>
@@ -160,7 +161,7 @@ export default function FounderLandingPage() {
                 <p className="text-body font-semibold">Close Eye Care</p>
                 <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-green">Recommended</span>
               </span>
-              <p className="shrink-0 whitespace-nowrap text-body-sm font-semibold text-green">₹1,500 / month</p>
+              <p className="shrink-0 whitespace-nowrap text-body-sm font-semibold text-green">{PLANS.find((p) => p.key === 'care')?.price} / month</p>
             </div>
             <p className="mt-2 text-body-sm leading-relaxed text-muted">Everything in Connect, plus monthly Presence Visits, Presence Stories and priority coordination.</p>
           </div>

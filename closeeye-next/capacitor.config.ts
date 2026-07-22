@@ -16,16 +16,20 @@ import type { CapacitorConfig } from '@capacitor/cli'
  */
 const config: CapacitorConfig = {
   appId: 'in.closeeye.app',
-  appName: 'CloseEye',
+  appName: 'Close Eye',
   webDir: 'mobile-shell',
   backgroundColor: '#F6F3EC', // Close Eye warm white (ivory)
   server: {
-    url: process.env.CAP_SERVER_URL ?? 'https://www.closeeye.in',
+    // The native app IS Close Eye Connect (the global Family-Intelligence front door).
+    url: process.env.CAP_SERVER_URL ?? 'https://www.closeeye.app',
     cleartext: false,
     androidScheme: 'https',
     iosScheme: 'https',
-    // Deep links: in.closeeye.app://… and https App Links resolve to routes.
-    allowNavigation: ['closeeye-next.vercel.app', 'closeeye.in', '*.closeeye.in'],
+    // Deep links: custom scheme in.closeeye.app://… resolves to routes. NOTE: verified https
+    // App Links are NOT wired yet on either platform — iOS needs the real Team ID in the AASA
+    // (public/.well-known/apple-app-site-association) served from closeeye.app, and Android needs
+    // an autoVerify https intent-filter + /.well-known/assetlinks.json with the release SHA-256.
+    allowNavigation: ['closeeye.app', 'www.closeeye.app', '*.closeeye.app', 'closeeye-next.vercel.app', 'closeeye.in', '*.closeeye.in'],
   },
   plugins: {
     SplashScreen: {

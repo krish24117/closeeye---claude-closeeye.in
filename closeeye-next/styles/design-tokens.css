@@ -1,0 +1,227 @@
+/* ============================================================================
+   CloseEye Design System Constitution — TOKEN LAYER
+   Chapter 1 · Typography — Phase 1 (Design Tokens)
+   ----------------------------------------------------------------------------
+   The single source of truth for typography, as declarative CSS custom
+   properties. This file DEFINES the six semantic roles and the two family
+   role-tokens. It is deliberately CONSUMED BY NOTHING yet — Phase 1 is tokens
+   only. No component reads these; importing this file changes zero pixels.
+
+   Consumption (Tailwind utilities, component migration) is Phase 3, gated by
+   the founder. Lint enforcement is Phase 2. See docs/DESIGN_SYSTEM_CONSTITUTION.md.
+
+   LAW: tokens represent MEANING, not size. Six roles only:
+     Display · Title · Heading · Body · Caption · Overline
+   ========================================================================== */
+
+:root {
+  /* ── FAMILY ROLE TOKENS (Ratification 2) ────────────────────────────────
+     Two families, referenced only through these roles — never by name in a
+     component. Interface sans = Inter (RATIFIED). Display serif = PROVISIONAL:
+     the current candidate is Newsreader, but the system is NOT hard-coded to
+     it — the final serif is set here, in one place, after the brand review. */
+  --font-display: var(--font-newsreader), Georgia, 'Times New Roman', serif;
+  --font-text: var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+
+  /* ── PER-SCRIPT FALLBACK STACKS (Law 9 — no rule assumes English) ────────
+     Scaffolding for global readiness. The editorial serif is Latin-only; for
+     non-Latin locales the Display roles fall back to the script's Noto serif
+     where it exists, else its Noto sans. Actual per-locale font LOADING (subset
+     Noto faces) and the dir / :lang() activation land in later phases; these
+     variables name the contract now. */
+  --font-fallback-latin:      Georgia, 'Times New Roman', serif;
+  --font-fallback-arabic:     'Noto Naskh Arabic', 'Noto Sans Arabic', serif;
+  --font-fallback-cjk-jp:     'Noto Sans JP', 'Hiragino Sans', sans-serif;
+  --font-fallback-cjk-kr:     'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  --font-fallback-devanagari: 'Noto Serif Devanagari', 'Noto Sans Devanagari', serif;
+  --font-fallback-telugu:     'Noto Serif Telugu', 'Noto Sans Telugu', serif;
+
+  /* ── THE SIX SEMANTIC ROLES ──────────────────────────────────────────────
+     Each role owns: font · size · line-height · letter-spacing · weight
+     (· transform for Overline). Sizes are rem — they honour Dynamic Type and
+     browser zoom. The legible floor is Caption (0.8125rem); nothing smaller.
+     Letter-spacing / line-height below are the LATIN baseline; the per-script
+     adjustments (Indic ≥1.5 line-height, letter-spacing reset for
+     ar/ja/ko/zh/hi/te) are mandated by the Constitution and applied where the
+     tokens are consumed. */
+
+  /* Display — a singular emotional statement. ≤1 per page; hero & first-run. */
+  --type-display-font:     var(--font-display);
+  --type-display-size:     clamp(2.5rem, 5.6vw, 4rem);
+  --type-display-leading:  1.05;
+  --type-display-tracking: -0.02em;
+  --type-display-weight:   500;
+
+  /* Title — "where you are". Exactly one per screen. */
+  --type-title-font:       var(--font-display);
+  --type-title-size:       clamp(1.75rem, 3.4vw, 2.25rem);
+  --type-title-leading:    1.1;
+  --type-title-tracking:   -0.02em;
+  --type-title-weight:     500;
+
+  /* Heading — a section, or the name of a thing. */
+  --type-heading-font:     var(--font-display);
+  --type-heading-size:     1.25rem;
+  --type-heading-leading:  1.3;
+  --type-heading-tracking: -0.01em;
+  --type-heading-weight:   500;
+
+  /* Body — all reading text. Secondary = Body in a muted colour, never smaller. */
+  --type-body-font:        var(--font-text);
+  --type-body-size:        1.0625rem;
+  --type-body-leading:     1.6;
+  --type-body-tracking:    0;
+  --type-body-weight:      400;
+
+  /* Caption — supporting metadata. The legible floor. */
+  --type-caption-font:     var(--font-text);
+  --type-caption-size:     0.8125rem;
+  --type-caption-leading:  1.5;
+  --type-caption-tracking: 0;
+  --type-caption-weight:   500;
+
+  /* Overline — the category kicker / eyebrow. Uppercase. */
+  --type-overline-font:      var(--font-text);
+  --type-overline-size:      0.8125rem;
+  --type-overline-leading:   1.4;
+  --type-overline-tracking:  0.12em;
+  --type-overline-weight:    700;
+  --type-overline-transform: uppercase;
+}
+
+/* ============================================================================
+   Chapter 2 · Color — Phase 1 (Semantic Design Tokens)
+   ----------------------------------------------------------------------------
+   Ratified 2026-07-19. Consumed by NOTHING yet — Phase 1 is tokens only, so
+   importing this changes zero pixels. Component migration is Phase 3.
+
+   LAW: color represents MEANING, not hue. Tokens name a role ("danger",
+   "surface-inverse"), never a colour ("red", "white").
+
+   THEME GOVERNANCE (founder, 2026-07-19): the architecture is multi-theme via
+   these semantic roles — a theme remaps role→value and adds ZERO tokens. At
+   launch, **Light Mode is the only supported theme.** A future dark (or
+   high-contrast) theme is a reserved amendment that redefines these same role
+   tokens under a `:root[data-theme="…"]` / `prefers-color-scheme` block; the
+   scaffold below marks exactly where that lands. Components consume ONLY these
+   role tokens, never a raw value — that is what makes theming a remap.
+
+   Values are HSL channels (consumed as `hsl(var(--token))`), matching the
+   existing convention so alpha works: `hsl(var(--color-border) / 0.5)`.
+   CONTRAST is constitutional: every *-text / content / brand token here meets
+   WCAG AA on its intended surface; `decor-*` colours FAIL AA and may never
+   carry text — that is by design, enforced at the lint layer (Phase 2).
+   ========================================================================== */
+
+:root {
+  /* ── Surface — where content sits ─────────────────────────────────────── */
+  --color-surface:         42 33% 95%;   /* the page ground (warm ivory)      */
+  --color-surface-raised:   0 0% 100%;   /* cards, sheets, inputs             */
+  --color-surface-inverse: 154 48% 11%;  /* dark panels — pairs w/ text-inverse; the role behind the 88 raw whites */
+  --color-surface-accent:  138 30% 91%;  /* soft brand wash — chips, marks    */
+
+  /* ── Content — text & icon (AA on their intended surface) ─────────────── */
+  --color-text:            154 48% 11%;  /* primary — headings & body (one ink; collapses ink+body) */
+  --color-text-secondary:  150 9% 40%;   /* quiet / meta — the one grey (was six)  */
+  --color-text-inverse:    42 33% 95%;   /* on surface-inverse                */
+  --color-text-disabled:   150 8% 70%;   /* inert controls only, never real content */
+
+  /* ── Brand — identity & action ────────────────────────────────────────── */
+  --color-brand:           153 44% 22%;  /* primary action, links — AA as text */
+  --color-brand-hover:     154 48% 15%;  /* pressed / hover                   */
+  --color-accent:          137 34% 74%;  /* DECORATIVE brand fill / mark — never text */
+
+  /* ── Border ───────────────────────────────────────────────────────────── */
+  --color-border:           41 24% 87%;  /* hairlines & dividers — the one border (was four) */
+
+  /* ── State — feedback. AA-safe so it may carry text; always paired with an
+        icon + words (never colour alone). Each has a soft surface. ───────── */
+  --color-success:         152 90% 22%;  /* AA-safe confirmation green        */
+  --color-success-surface: 145 38% 90%;
+  --color-warning:          35 74% 30%;  /* AA-safe caution amber (darkened from the old #BB8A2E which failed AA as text) */
+  --color-warning-surface:  40 55% 89%;
+  --color-danger:            6 54% 42%;  /* AA-safe error / destructive red — the one red (was three) */
+  --color-danger-surface:    8 52% 92%;
+
+  /* ── Decoration — enumerated, MAY NEVER CARRY TEXT (fails AA by design) ── */
+  --color-decor-emerald:   148 92% 34%;  /* bright mark / dot                 */
+  --color-decor-lime:       78 100% 39%; /* sprout accent / live dot          */
+
+  /* ── RESERVED · future themes ─────────────────────────────────────────────
+     Dark / high-contrast modes are a future constitutional amendment. They
+     land as an override block that redefines ONLY the role tokens above —
+     adding none — e.g.:
+       @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { … } }
+       :root[data-theme="dark"] { … }
+     Not shipped at launch (Light Mode only). Left here to fix the architecture. */
+}
+
+/* ============================================================================
+   Chapter 3 · Spacing & Layout — Phase 1 (Design Tokens)
+   ----------------------------------------------------------------------------
+   Ratified 2026-07-19. Consumed by NOTHING yet — zero visual change.
+   LAW: spacing is RHYTHM, not distance. Every margin/padding/gap is a step on
+   ONE scale; a page has a containment ROLE, not a bespoke width.
+   ========================================================================== */
+
+:root {
+  /* ── The space scale — 9 steps (4px base, 8pt rhythm w/ 4/12 half-steps).
+        Named by 4px units (space-N = N×4px), matching the Tailwind mental model.
+        Nothing between the steps exists; 5/7/10/14 are deliberately absent. ── */
+  --space-1:  0.25rem; /* 4px  */
+  --space-2:  0.5rem;  /* 8px  */
+  --space-3:  0.75rem; /* 12px */
+  --space-4:  1rem;    /* 16px */
+  --space-6:  1.5rem;  /* 24px */
+  --space-8:  2rem;    /* 32px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+  --space-24: 6rem;    /* 96px */
+
+  /* ── Containment roles — four widths; the app shell is ALWAYS width-app.
+        Ten ad-hoc max-widths collapse here; the two 1400px consoles → width-wide. */
+  --width-form:  28rem; /* dialogs, centred auth/forms */
+  --width-prose: 44rem; /* long-form reading, legal   */
+  --width-app:   64rem; /* THE app shell width        */
+  --width-wide:  80rem; /* dashboards / dense tables  */
+
+  /* ── Section vertical rhythm — the ONE section padding (every surface, not
+        just marketing). Fluid, 8pt-aligned. */
+  --section-y:    clamp(4rem, 8vw, 7.5rem);
+  --section-y-sm: clamp(3rem, 5vw, 4.5rem);
+
+  /* ── Radius — the concrete set + pill. (Legacy --r-xl 32 folds to radius-lg.) */
+  --radius-sm:   0.75rem; /* 12px — buttons, chips        */
+  --radius-md:   1.25rem; /* 20px — cards, inputs         */
+  --radius-lg:   1.75rem; /* 28px — panels, sheets        */
+  --radius-pill: 9999px;  /* pills, avatars, round buttons */
+
+  /* Breakpoints are NOT runtime tokens — they are the standard Tailwind stops
+     (sm 640 · md 768 · lg 1024 · xl 1280 · 2xl 1536) ONLY. Off-standard /
+     fractional / height-based media queries (the .cx set) are lint defects. */
+}
+
+/* ============================================================================
+   Chapter 4 · Motion — Phase 1 (Design Tokens)
+   ----------------------------------------------------------------------------
+   Ratified 2026-07-19. Consumed by NOTHING yet — zero visual change.
+   LAW: motion has INTENT (feedback · transition · arrival), never decoration.
+   Three durations, one signature ease (+ linear for continuous loops only).
+   ========================================================================== */
+
+:root {
+  /* ── Duration — by MEANING, not number. Three roles; nothing between. ──── */
+  --duration-feedback:   200ms; /* response to a direct act — hover, press, toggle, colour */
+  --duration-transition: 300ms; /* one thing becoming another — sheets, menus, tabs        */
+  --duration-arrival:    600ms; /* a deliberate entrance — first-view reveals; sparingly    */
+
+  /* ── Easing — one signature ease-out; linear for continuous loops ONLY. ── */
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1); /* the whole system's feel */
+  --ease-linear:   linear;                          /* spinners / loops only   */
+
+  /* AMBIENT motion (breath, pulse, live dot) is exceptional and MUST PAUSE on
+     background (visibilitychange), Low-Power / battery-saver, and reduced-motion
+     — going honestly still (Ch.4 Law 5). This makes the Dock orb guard system
+     law. Travel ceiling: ≤ 24px. Animate transform/opacity only — never layout.
+     These are behavioural rules enforced at the lint/component layer, not values. */
+}

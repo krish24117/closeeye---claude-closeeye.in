@@ -8,6 +8,7 @@ import { FunnelSteps } from '@/components/funnel/funnel-steps'
 import { Overlay } from '@/components/family/overlay'
 import { Button } from '@/components/ui/button'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { DEFAULT_REGION_CODE, localeFor } from '@/lib/platform/regions'
 import { useToast } from '@/components/ui/toast'
 import { PLANS, SERVICES, planById, type PlanId } from '@/lib/plans'
 import { getPendingPlan, clearPendingPlan } from '@/lib/membership-intent'
@@ -25,9 +26,9 @@ const STEPS = [
   'Start requesting support anytime',
 ]
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, region: string = DEFAULT_REGION_CODE): string {
   try {
-    return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    return new Date(iso).toLocaleDateString(localeFor(region), { day: '2-digit', month: 'short', year: 'numeric' })
   } catch {
     return '—'
   }
@@ -42,7 +43,7 @@ function isWellbeingThin(ep: ElderProfileForm): boolean {
 }
 
 export default function MembershipPage() {
-  const { subscription, profile, identity, refresh, lovedOnes } = useFamilyData()
+  const { subscription, profile, identity, refresh, lovedOnes, region } = useFamilyData()
   const toast = useToast()
   const [busy, setBusy] = useState<PlanId | null>(null)
   // Pre-payment collection gate — set to the plan being purchased while we gather the
@@ -98,14 +99,14 @@ export default function MembershipPage() {
   function handleOutcome(o: PayOutcome, short: string) {
     if (o.status === 'success') {
       clearPendingPlan() // join intent fulfilled — the plan is being activated
-      toast(`Payment received — activating your CloseEye ${short} membership.`)
+      toast(`Payment received — activating your Close Eye ${short} membership.`)
       // The webhook is the sole authority for activation. Re-fetch a few times so
       // the UI flips to Active as soon as the webhook lands (usually a second or
       // two) — the client never writes status itself.
       void refresh()
       for (let i = 1; i <= 4; i++) setTimeout(() => void refresh(), i * 2500)
     } else if (o.status === 'dismissed') {
-      toast(`CloseEye ${short} selected — you can complete payment anytime.`)
+      toast(`Close Eye ${short} selected — you can complete payment anytime.`)
     } else {
       toast(o.message) // failed / unavailable / error
     }
@@ -138,7 +139,7 @@ export default function MembershipPage() {
       // checkout, then re-fetch on success.
       const outcome = await payForMembership({
         planId,
-        planName: `CloseEye ${plan.short}`,
+        planName: `Close Eye ${plan.short}`,
         prefill: {
           name: identity.fullName,
           email: identity.email ?? undefined,
@@ -172,7 +173,7 @@ export default function MembershipPage() {
     try {
       const outcome = await payForMembership({
         planId: 'trust',
-        planName: 'CloseEye Care',
+        planName: 'Close Eye Care',
         prefill: {
           name: identity.fullName,
           email: identity.email ?? undefined,
@@ -184,7 +185,7 @@ export default function MembershipPage() {
         void refresh()
         for (let i = 1; i <= 6; i++) setTimeout(() => void refresh(), i * 2500)
       } else if (outcome.status === 'dismissed') {
-        toast('No problem — you can upgrade to CloseEye Care anytime.')
+        toast('No problem — you can upgrade to Close Eye Care anytime.')
       } else {
         toast(outcome.message) // failed / unavailable / error
       }
@@ -224,7 +225,7 @@ export default function MembershipPage() {
     <div className="flex flex-col">
       {showActivate && <div className="mb-6"><FunnelSteps step={4} /></div>}
       <PageHeader
-        title={showActivate ? `Complete your ${activatePlan?.name ?? 'CloseEye'} membership` : 'Membership'}
+        title={showActivate ? `Complete your ${activatePlan?.name ?? 'Close Eye'} membership` : 'Membership'}
         subtitle={showActivate ? 'One last step — activate your membership and your Presence Manager gets to work.' : 'Trusted human presence for the people you love.'}
       />
 
@@ -281,11 +282,11 @@ export default function MembershipPage() {
                     )}
                   </div>
                   {active && subscription?.current_end && (
-                    <p className="mt-2 text-caption text-muted">Renews on {formatDate(subscription.current_end)}</p>
+                    <p className="mt-2 text-caption text-muted">Renews on {formatDate(subscription.current_end, region)}</p>
                   )}
                   {!active && !activating && (
                     <Button size="sm" className="mt-3 w-full" disabled={busy !== null} onClick={() => choose(plan.id)}>
-                      {busy === plan.id ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Opening…</> : showActivate ? `Activate CloseEye ${plan.short} · ${plan.price}/mo` : 'Complete payment'}
+                      {busy === plan.id ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Opening…</> : showActivate ? `Activate Close Eye ${plan.short} · ${plan.price}/mo` : 'Complete payment'}
                     </Button>
                   )}
                 </div>
@@ -295,17 +296,17 @@ export default function MembershipPage() {
                   upgradePaid ? (
                     <div className="mt-7 flex items-center justify-center gap-2 rounded-sm bg-accent-soft/60 px-4 py-3.5 text-center">
                       <Loader2 className="h-4 w-4 animate-spin text-green" strokeWidth={2.5} />
-                      <p className="text-caption font-semibold text-green">Activating your CloseEye Care membership…</p>
+                      <p className="text-caption font-semibold text-green">Activating your Close Eye Care membership…</p>
                     </div>
                   ) : (
                     <Button size="lg" variant="primary" className="mt-7 w-full" disabled={busy !== null} onClick={() => setUpgradeOpen(true)}>
-                      <Sparkles className="h-5 w-5" strokeWidth={2} /> Upgrade to CloseEye Care
+                      <Sparkles className="h-5 w-5" strokeWidth={2} /> Upgrade to Close Eye Care
                     </Button>
                   )
                 ) : (
                   // Care member looking at Connect → Connect is already included; no downgrade offered.
                   <div className="mt-7 rounded-sm border border-line/70 px-4 py-3.5 text-center">
-                    <p className="text-caption text-muted">Included in your CloseEye Care plan.</p>
+                    <p className="text-caption text-muted">Included in your Close Eye Care plan.</p>
                   </div>
                 )
               ) : (
@@ -316,7 +317,7 @@ export default function MembershipPage() {
                   disabled={busy !== null}
                   onClick={() => choose(plan.id)}
                 >
-                  {busy === plan.id ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Opening…</> : (showActivate && plan.id === pendingPlanId) ? `Activate CloseEye ${plan.short} · ${plan.price}/mo` : plan.cta}
+                  {busy === plan.id ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Opening…</> : (showActivate && plan.id === pendingPlanId) ? `Activate Close Eye ${plan.short} · ${plan.price}/mo` : plan.cta}
                 </Button>
               )}
             </div>
@@ -392,10 +393,10 @@ export default function MembershipPage() {
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-success/12 text-success">
                 <Check className="h-5 w-5" strokeWidth={2.5} />
               </span>
-              <h2 className="text-h4 text-ink">You’re now on CloseEye Care</h2>
+              <h2 className="text-h4 text-ink">You’re now on Close Eye Care</h2>
             </div>
             <p className="text-body-sm leading-relaxed text-ink">
-              Welcome to CloseEye Care. Your Presence Manager will contact you within 24 hours to schedule your first monthly Presence Visit.
+              Welcome to Close Eye Care. Your Presence Manager will contact you within 24 hours to schedule your first monthly Presence Visit.
             </p>
             <Button className="w-full" onClick={() => setUpgradeOpen(false)}>Done</Button>
           </div>
@@ -406,7 +407,7 @@ export default function MembershipPage() {
                 <Sparkles className="h-5 w-5" strokeWidth={2} />
               </span>
               <div>
-                <h2 className="text-h4 text-ink">Upgrade to CloseEye Care</h2>
+                <h2 className="text-h4 text-ink">Upgrade to Close Eye Care</h2>
                 <p className="mt-0.5 text-caption text-muted">Everything in Connect, plus in-person monthly presence.</p>
               </div>
             </div>
@@ -428,7 +429,7 @@ export default function MembershipPage() {
               <span className="text-ink"><span className="text-h4 font-extrabold">₹1,500</span><span className="text-body-sm font-medium text-muted">/month</span></span>
             </div>
             <p className="-mt-2 text-caption text-muted">
-              This replaces your CloseEye Connect plan — you’re only ever billed for one membership.
+              This replaces your Close Eye Connect plan — you’re only ever billed for one membership.
             </p>
 
             <div className="flex gap-2.5">

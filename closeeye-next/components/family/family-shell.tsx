@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   Home,
   Users,
@@ -16,6 +16,7 @@ import {
   Phone,
   MapPin,
   Stethoscope,
+  UserPlus,
   X,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
@@ -24,6 +25,7 @@ import { Overlay } from '@/components/family/overlay'
 import { AvatarLink } from '@/components/ui/avatar-link'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { emergencyFor, DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 import { fetchNotifications, markAllNotificationsRead, type AppNotification } from '@/lib/db/notifications'
 import { SITE } from '@/lib/site'
 import type { LovedOne } from '@/lib/db/types'
@@ -86,6 +88,9 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
             <Logo variant="sidebar" />
           </Link>
           <div className="flex items-center gap-1">
+            <Link href="/family/add" aria-label="Add a family member" title="Add a family member" className="grid h-9 w-9 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft/60 hover:text-green">
+              <UserPlus className="h-5 w-5" strokeWidth={1.75} />
+            </Link>
             <BellButton count={unread} onClick={openNotif} />
             <AvatarLink href="/family/profile" initials={identity.initials} avatarUrl={identity.avatarUrl} name={identity.fullName} />
           </div>
@@ -129,6 +134,9 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
           <Logo variant="sidebar" />
         </Link>
         <div className="flex items-center gap-1">
+          <Link href="/family/add" aria-label="Add a family member" title="Add a family member" className="grid h-11 w-11 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft/60 hover:text-green">
+            <UserPlus className="h-6 w-6" strokeWidth={1.5} />
+          </Link>
           <BellButton count={unread} onClick={openNotif} />
           <button
             type="button"
@@ -238,6 +246,9 @@ function notifTime(iso: string): string {
 }
 
 function NotifPanel({ open, onClose, notifs }: { open: boolean; onClose: () => void; notifs: AppNotification[] }) {
+  const router = useRouter()
+  // Navigation Law 4 — a notification opens inside the Workspace. Close the panel, then go.
+  const openNotification = (n: AppNotification) => { onClose(); router.push(n.target) }
   return (
     <Overlay open={open} onClose={onClose}>
       <div className="flex items-center justify-between border-b border-line px-6 py-4">
@@ -256,13 +267,15 @@ function NotifPanel({ open, onClose, notifs }: { open: boolean; onClose: () => v
       ) : (
         <ul className="max-h-[70vh] overflow-y-auto">
           {notifs.map((n) => (
-            <li key={n.id} className="flex gap-3 border-b border-line px-6 py-3.5 last:border-b-0">
-              <span className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', n.read ? 'bg-transparent' : 'bg-green')} aria-hidden />
-              <div className="min-w-0 flex-1">
-                <p className="text-body-sm font-semibold text-ink">{n.title}</p>
-                {n.message && <p className="mt-0.5 text-caption leading-relaxed text-muted">{n.message}</p>}
-                <p className="mt-0.5 text-caption text-muted/70">{notifTime(n.created_at)}</p>
-              </div>
+            <li key={n.id} className="border-b border-line last:border-b-0">
+              <button type="button" onClick={() => openNotification(n)} className="flex w-full gap-3 px-6 py-3.5 text-left transition-colors hover:bg-accent-soft/40">
+                <span className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', n.read ? 'bg-transparent' : 'bg-green')} aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="text-body-sm font-semibold text-ink">{n.title}</p>
+                  {n.message && <p className="mt-0.5 text-caption leading-relaxed text-muted">{n.message}</p>}
+                  <p className="mt-0.5 text-caption text-muted/70">{notifTime(n.created_at)}</p>
+                </div>
+              </button>
             </li>
           ))}
         </ul>
@@ -281,6 +294,8 @@ function EmergencySheet({ open, onClose, lovedOnes }: { open: boolean; onClose: 
       key: lo.id,
     }))
   const careCards = lovedOnes.filter((lo) => lo.nearest_hospital?.trim() || lo.medical_notes?.trim())
+  // Emergency number of where the family member is — India → 108, unchanged.
+  const emergency = emergencyFor(lovedOnes[0]?.region_code || DEFAULT_REGION_CODE)
 
   return (
     <Overlay open={open} onClose={onClose}>
@@ -343,7 +358,7 @@ function EmergencySheet({ open, onClose, lovedOnes }: { open: boolean; onClose: 
           </div>
         ))}
 
-        <p className="text-caption text-muted">In a life-threatening emergency, always call 108 (ambulance) first.</p>
+        <p className="text-caption text-muted">In a life-threatening emergency, always call {emergency.number ? `${emergency.number} (ambulance)` : 'your local emergency number'} first.</p>
       </div>
     </Overlay>
   )

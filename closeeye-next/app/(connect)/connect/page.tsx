@@ -1,11 +1,11 @@
-import { ConnectExperience } from './experience'
+import { ConnectHome } from '@/components/connect/connect-home'
 
 /**
- * /connect — the Close Eye Connect experience (the launch product). A thin server
- * shell; the staged, deterministic experience is the client component. All logic
- * lives in the Understanding Engine (lib/connect) + the Space data layer
- * (lib/db/space). This route touches nothing outside app/(connect) + app/(space).
+ * /connect — the Close Eye Connect homepage (the global front door). Implements the founder's
+ * approved homepage content baseline (Family-Intelligence positioning). The interactive
+ * "type-a-sentence" demonstration (./experience.tsx) is preserved in the codebase but no longer
+ * the landing; retain-or-restore is a founder decision.
  */
 export default function ConnectPage() {
-  return <ConnectExperience />
+  return <ConnectHome />
 }

@@ -1,7 +1,7 @@
 import type { Profile } from '@/lib/db/types'
 
 /**
- * The four CloseEye platform roles, derived from the `profiles` row. This is the
+ * The four Close Eye platform roles, derived from the `profiles` row. This is the
  * app-side mirror of the SQL authorization helpers (is_admin / is_presence_manager
  * / can_manage_family). Row-level access is enforced by RLS in the database — these
  * helpers only decide which UI a signed-in user may open. Never hardcode role

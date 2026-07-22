@@ -1,0 +1,231 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CloseEye — Global Platform Transformation Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#F5F2E9;--page:#FBF9F2;--ink:#17281F;--forest:#0E2A1F;--emerald:#06A94E;--sprout:#83C400;
+    --pencil:#5F6B60;--faint:#98A097;--hair:#E2DECE;--hair2:#D8D3BF;--alarm:#B4442E;--amber:#9A6A2E;
+    --serif:'Newsreader',Georgia,serif;--sans:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.6}
+  .wrap{max-width:960px;margin:0 auto;padding:52px 20px 90px}
+  .kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--emerald);font-weight:600;margin:0 0 10px}
+  h1{font-family:var(--serif);font-weight:500;font-size:clamp(28px,5vw,42px);line-height:1.12;letter-spacing:-.01em;color:var(--forest);margin:0 0 12px;text-wrap:balance}
+  h1 em{font-style:italic;font-weight:400}
+  .lede{font-family:var(--serif);font-size:18px;line-height:1.55;color:var(--pencil);max-width:66ch;margin:0}
+  h2{font-family:var(--serif);font-weight:500;font-size:clamp(19px,3vw,25px);color:var(--forest);margin:54px 0 8px;padding-top:14px;border-top:1px solid var(--hair)}
+  h2 .n{font-family:var(--sans);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);display:block;font-weight:600;margin-bottom:6px}
+  h3{font-size:14px;font-weight:600;color:var(--forest);margin:22px 0 6px}
+  p{margin:0 0 12px;font-size:14.5px;color:#2c3831;max-width:74ch}
+  b,strong{font-weight:600;color:var(--forest)}
+  code{font-family:var(--mono);font-size:11.5px;background:rgba(226,222,206,.5);padding:1px 5px;border-radius:4px;color:var(--forest)}
+  ul{margin:6px 0 14px;padding-left:19px} li{font-size:14px;margin:0 0 6px;color:#2c3831}
+  pre{font-family:var(--mono);font-size:11.5px;line-height:1.65;color:var(--forest);background:var(--page);border:1px solid var(--hair);border-radius:11px;padding:14px 16px;overflow-x:auto;margin:12px 0}
+  pre .c{color:var(--faint)} pre .k{color:var(--emerald)} pre .a{color:var(--amber)}
+  .tblwrap{overflow-x:auto;border:1px solid var(--hair);border-radius:12px;margin:14px 0}
+  table{border-collapse:collapse;width:100%;min-width:620px;font-size:13px}
+  th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--hair);vertical-align:top}
+  th{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);font-weight:600;background:rgba(226,222,206,.22)}
+  tr:last-child td{border-bottom:0}
+  td.f{font-family:var(--mono);font-size:11px;color:var(--forest);white-space:nowrap}
+  .tag{font-family:var(--sans);font-size:9px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:2px 6px;border-radius:999px;white-space:nowrap}
+  .exists{background:rgba(6,169,78,.14);color:#046b34} .partial{background:rgba(154,106,46,.13);color:var(--amber)} .new{background:rgba(180,68,46,.12);color:var(--alarm)}
+  .split{border-left:2px solid var(--emerald);padding:2px 0 2px 16px;margin:20px 0}
+  .split p{font-family:var(--serif);font-size:16.5px;line-height:1.5;color:var(--forest);margin:0;max-width:60ch}
+  .hard{border:1.5px solid var(--alarm);border-radius:12px;padding:16px 20px;margin:18px 0;background:rgba(180,68,46,.04)}
+  .hard h3{color:var(--alarm);margin-top:0}
+  .phase{border:1px solid var(--hair);border-radius:12px;padding:15px 18px;margin:0 0 11px;background:var(--page)}
+  .phase .ph{font-family:var(--mono);font-size:11px;color:var(--emerald);font-weight:600}
+  .phase h3{margin:3px 0 5px;font-size:15px}
+  .phase p{margin:0;font-size:13px;color:var(--pencil)}
+  .phase .roll{font-size:12px;color:var(--amber);margin-top:6px}
+  .foot{margin-top:54px;padding-top:18px;border-top:1px solid var(--hair);font-size:12px;color:var(--faint)}
+</style>
+
+<div class="wrap">
+  <p class="kicker">Architecture transformation plan · for approval · not built</p>
+  <h1>India-first → global platform.<br><em>An extraction, not a rewrite.</em></h1>
+  <p class="lede">The honest headline: <b>~60% of the spine already exists</b> and was built to anticipate this —
+    the frozen Constitution's layering, coverage as domain × mode, emergency as a country-extensible resource
+    pack, and a deterministic engine that already needs no humans and runs on-device anywhere. What remains is
+    real work — a region-config layer, extraction of hardcoded assumptions, full i18n, an API gateway, and the
+    one genuinely hard infra problem: multi-region data residency.</p>
+
+  <div class="split">
+    <p>The clarifying principle that resolves "Connect must work without Care": <b>Connect gives emergency
+      GUIDANCE (global, a config'd local number). Care gives physical RESPONSE (regional).</b> 108 is
+      configuration, never a Care dependency — the resource-pack pattern already proves this.</p>
+  </div>
+
+  <!-- 1 -->
+  <h2><span class="n">Deliverable 1</span>Current architecture assessment</h2>
+  <p>What already supports going global — and what is hardcoded India. Grounded in the real files.</p>
+  <div class="tblwrap"><table>
+    <thead><tr><th>Capability</th><th>State</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>Deterministic understanding (no LLM, no humans, on-device)</td><td><span class="tag exists">global-ready</span></td><td><code>lib/connect/*</code> — runs anywhere, free, offline</td></tr>
+      <tr><td>Crisis floor (detection)</td><td><span class="tag exists">global-ready</span></td><td><code>_shared/crisis.ts</code> — language patterns, not geography</td></tr>
+      <tr><td>Emergency RESOURCE (the number)</td><td><span class="tag partial">pattern exists</span></td><td><code>resources.india.ts</code> — "a new country is a new ResourcePack, never a code change". Extend, don't rewrite.</td></tr>
+      <tr><td>Region / coverage model</td><td><span class="tag partial">embryonic</span></td><td><code>service-region.ts</code> — SERVICE_REGIONS + DOMAIN_MODE + coverageFor. The config layer, half-built.</td></tr>
+      <tr><td>Retrieve / Family Graph</td><td><span class="tag exists">region-agnostic</span></td><td><code>family_ledger</code> RLS by user — no geography in it</td></tr>
+      <tr><td>Consent + deletion</td><td><span class="tag partial">India-shaped</span></td><td><code>lib/db/consent.ts</code>, <code>delete-account</code> fn — exist, but single-jurisdiction</td></tr>
+      <tr><td>Emergency number 108</td><td><span class="tag new">hardcoded ×10</span></td><td><code>experience.tsx · space · marketing/*</code> — literal <code>tel:108</code></td></tr>
+      <tr><td>Currency ₹ / INR</td><td><span class="tag new">hardcoded</span></td><td><code>lib/plans · content.ts · db/types.ts</code></td></tr>
+      <tr><td>Presence = Hyderabad, financial = India</td><td><span class="tag new">hardcoded</span></td><td><code>service-region.ts</code> areas</td></tr>
+      <tr><td>Language</td><td><span class="tag new">en-IN only</span></td><td><code>app/layout.tsx lang="en-IN"</code>, all strings inline; no i18n framework</td></tr>
+      <tr><td>Data residency</td><td><span class="tag new">single region</span></td><td>one Supabase project — all data in one place</td></tr>
+      <tr><td>API surface</td><td><span class="tag new">none unified</span></td><td>direct Supabase (RLS) + ad-hoc edge fns; no versioned gateway</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- 2 -->
+  <h2><span class="n">Deliverable 2 · 3 · 5</span>Global platform + regional service + modular architecture</h2>
+  <p><b>Connect (global core)</b> — Family Intelligence, Memory, Understanding, Reports, Timeline, Document Vault,
+    Emergency <i>Guidance</i>, Knowledge Graph, Notifications, Permissions. Depends on nothing regional and no
+    human. Works in every country the day it deploys.</p>
+  <p><b>Care (regional plugin layer)</b> — Presence Manager, Guardian Visits, Hospital Companion, Local
+    Assistance, Physical Emergency Response, Financial, Insurance, Property. Each is a <b>module</b> that
+    registers itself for the regions where it's live. The platform functions with <b>zero</b> modules present.</p>
+<pre><span class="c">// lib/care/registry.ts — Care modules are plugins; Connect never imports them directly.</span>
+interface CareModule {
+  id: <span class="k">'presence'|'hospital'|'financial'|'insurance'|'property'|'community'</span>
+  availableIn(region: RegionCode): boolean
+  offer(ctx: NextAction, region: Region): CareOffer | null   <span class="c">// null = not here → Connect shows nothing</span>
+}
+<span class="c">// The Capability Router (Constitution Art. I) asks the registry, not a country if-block:</span>
+router.coordinate(intent)  →  careRegistry.forRegion(user.region).filter(m =&gt; m.offer(...))</pre>
+  <p>This is the Constitution's <b>Execution Orchestrator</b> made regional: Guardian / Hospital / CA / Partner
+    become registered Care modules. Adding a city is registering a module for a region — <b>no core change</b>,
+    exactly the success criterion.</p>
+
+  <!-- 4 -->
+  <h2><span class="n">Deliverable 4 (keystone)</span>The Region Configuration Layer</h2>
+  <p>Extend the embryo in <code>service-region.ts</code> into the single source of regional truth. Every
+    hardcoded assumption reads from the resolved <code>Region</code>. No business logic branches on country.</p>
+<pre><span class="c">// lib/platform/regions.ts</span>
+type RegionCode = <span class="k">'IN'|'GB'|'CA'|'AU'|'US'|'DE'|'JP'|'BR'|'ZA'</span> | string
+interface Region {
+  code: RegionCode
+  connect: <span class="k">true</span>                      <span class="c">// ALWAYS — Connect is global, never disabled</span>
+  care: Partial&lt;Record&lt;CareModuleId, <span class="k">boolean</span>&gt;&gt;  <span class="c">// which modules are live here</span>
+  locale: { languages: string[]; default: string; rtl: boolean;
+            currency: string; measurement: <span class="k">'metric'|'imperial'</span> }
+  emergency: { number: string; label: string }      <span class="c">// 108 | 999 | 911 | 112 …</span>
+  dataResidency: <span class="k">'in'|'eu'|'us'|'apac'</span>          <span class="c">// which cluster the family's data lives in</span>
+  phoneFormat: string; addressSchema: <span class="k">'generic'|'us'|'in'|'jp'</span>
+}
+<span class="c">// India = today's behaviour, expressed as config (zero behaviour change on day 0):</span>
+IN: { connect:<span class="k">true</span>, care:{presence:<span class="k">true</span>,financial:<span class="k">true</span>}, emergency:{number:<span class="k">'108'</span>,…}, dataResidency:<span class="k">'in'</span> }
+GB: { connect:<span class="k">true</span>, care:{}, emergency:{number:<span class="k">'999'</span>,…}, dataResidency:<span class="k">'eu'</span> }   <span class="c">// Connect only</span>
+CA: { connect:<span class="k">true</span>, care:{}, emergency:{number:<span class="k">'911'</span>,…}, dataResidency:<span class="k">'us'</span> }</pre>
+  <p>Resolution: <code>regionFor(user)</code> from the family's country (signup) → the loved-one's location for
+    Care coverage. The existing <code>coverageFor(domain, location)</code> becomes
+    <code>coverageFor(region, module, location)</code>.</p>
+
+  <!-- 6/7 -->
+  <h2><span class="n">Deliverable 6 · 7</span>Data model + database changes</h2>
+  <ul>
+    <li><b><code>profiles.region_code</code></b> + <b><code>loved_ones.region_code</code></b> — set at signup,
+      drives config resolution and residency. Migration: default <code>'IN'</code> for all existing rows (no
+      behaviour change).</li>
+    <li><b><code>family_ledger</code> is already region-agnostic</b> — no change. Good.</li>
+    <li><b>Consent records per regulation</b> — extend <code>consent.ts</code>: <code>consent(user, purpose, regulation, granted_at, region)</code> so GDPR/CCPA/DPDP each have an auditable basis.</li>
+    <li><b>Data residency = the hard one.</b> One Supabase project today. Options, cheapest → correct: (a) launch Connect-only regions on the same cluster with contractual SCCs (fast, legally thin); (b) regional Supabase projects keyed by <code>dataResidency</code> with a routing layer (correct, months). Recommend (a) for early Connect-only markets, (b) before EU volume.</li>
+    <li><b>Numbers/currency</b> stored as minor-units + ISO currency code, never a ₹ string.</li>
+  </ul>
+
+  <!-- 5 API -->
+  <h2><span class="n">Deliverable 5 (API)</span>API-first — one contract, many clients</h2>
+  <p>Today: web calls Supabase directly (RLS) + scattered edge functions. For mobile / desktop / partners /
+    marketplace to share one platform, introduce a <b>versioned API gateway</b> — the Constitution's structured
+    contracts (Art. III) become the public API:</p>
+<pre>POST /v1/understand        → StructuredIntent          <span class="c">// Connect, global</span>
+GET  /v1/family/:id/graph  → RetrievedContext           <span class="c">// Retrieve, RLS-scoped</span>
+POST /v1/care/offers       → CareOffer[]  (region-gated) <span class="c">// Care, regional</span>
+POST /v1/emergency/guidance→ { number, steps }          <span class="c">// Connect; number from region config</span></pre>
+  <p>Same auth (JWT), same RLS, same crisis floor in front. Partners consume <code>/v1/care/*</code> without
+    touching Connect — the marketplace-readiness criterion (Deliverable 9) falls out for free.</p>
+
+  <!-- 8 UI -->
+  <h2><span class="n">Deliverable 8</span>UI changes</h2>
+  <ul>
+    <li>Every <code>tel:108</code> → <code>tel:{region.emergency.number}</code> with its label.</li>
+    <li>Care surfaces (Book a visit, Presence Manager) render <b>only</b> when <code>region.care.presence</code> — a UK family simply never sees them; Connect (understanding, memory, guidance) is unchanged.</li>
+    <li>Currency, dates, numbers → <code>Intl.NumberFormat</code> / <code>Intl.DateTimeFormat</code> with the locale — never a hand-formatted string.</li>
+    <li>RTL: logical CSS properties (<code>margin-inline</code>, <code>padding-inline</code>) + <code>dir</code> from locale. The scoped-CSS system makes this a contained sweep.</li>
+  </ul>
+
+  <!-- 9 loc -->
+  <h2><span class="n">Deliverable 9 (loc)</span>Localization plan — locale-aware, not translated strings</h2>
+  <ul>
+    <li><b>Framework:</b> <code>next-intl</code> (App-Router native) + ICU message format (plurals, gender, interpolation the brand voice needs).</li>
+    <li><b>Extraction:</b> the strings are inline JSX today — a real sweep. Start with <code>/connect</code> + Family v2 (the value surfaces), defer marketing.</li>
+    <li><b>Deterministic engine caveat:</b> <code>understand.ts</code> reads English keywords. A non-English family typing Hindi/Spanish needs either per-language keyword packs (the engine already has romanised Hindi/Telugu in <code>crisis.ts</code> — the pattern exists) OR the LLM-understanding step (Constitution's target) which is language-agnostic. <b>This is the strongest argument to prioritise the LLM understanding stage for global.</b></li>
+    <li>Locale-aware: <code>Intl</code> for numbers/dates/currency; <code>libphonenumber</code> for phones; measurement from region.</li>
+  </ul>
+
+  <!-- 10/11 -->
+  <h2><span class="n">Deliverable 10 · 11</span>Security + Privacy (GDPR · CCPA · DPDP)</h2>
+  <ul>
+    <li><b>Consent management:</b> extend <code>consent.ts</code> into a per-regulation ledger; an explicit consent step before the first health interaction, regulation resolved from region.</li>
+    <li><b>Data export + deletion:</b> the machinery exists (<code>delete-account</code>) — surface a self-serve <b>export</b> (JSON of the family's graph) and <b>delete</b> in <code>/space</code> profile. Constitution Article X made this law; this builds it.</li>
+    <li><b>Audit log (immutable) ≠ memory (correctable):</b> Article V — two stores. A deletion records <i>that</i> it happened without retaining the erased content.</li>
+    <li><b>Residency:</b> per Deliverable 6 — EU data in EU before EU volume.</li>
+    <li><b>Security unchanged and strong:</b> RLS is structural, the crisis floor is shared and deterministic, Retrieve's isolation is by-construction. Global adds surface (more regions, more partners) → the API gateway is the single place to enforce it.</li>
+  </ul>
+
+  <div class="hard">
+    <h3>The three parts money and cleverness cannot shortcut</h3>
+    <p><b>1 · Data residency</b> — a real multi-region infra project (single Supabase today). <b>2 · Full i18n</b>
+      — every inline string, plus the deterministic engine's English keywords (which is why the LLM-understanding
+      stage matters for global). <b>3 · The API gateway</b> — the seam every future client depends on. Everything
+      else is extraction into the region layer.</p>
+  </div>
+
+  <!-- 12/13 -->
+  <h2><span class="n">Deliverable 12 · 13 · 14</span>Migration, rollback, roadmap</h2>
+  <p>Config-driven means every phase defaults to <b>today's India behaviour</b> — so rollback is flipping a flag,
+    not reverting code. Each phase ships to UAT, gated, before the next.</p>
+
+  <div class="phase"><span class="ph">PHASE 0 · foundation (no behaviour change)</span>
+    <h3>Region config layer + region_code columns</h3>
+    <p>Build <code>regions.ts</code>; add <code>region_code</code> (default IN); route every hardcoded 108/₹/city
+      READ through the resolved region. India behaves identically.</p>
+    <p class="roll">Rollback: the layer resolves to IN for everyone → byte-identical to today.</p></div>
+  <div class="phase"><span class="ph">PHASE 1 · Connect-only region (proof)</span>
+    <h3>Turn on ONE Connect-only market (e.g. GB)</h3>
+    <p>Care flags empty; emergency number 999; Connect (understanding, memory, guidance) works; Care surfaces
+      hidden. Proves the split end-to-end with real users.</p>
+    <p class="roll">Rollback: remove GB from the region table — no code change.</p></div>
+  <div class="phase"><span class="ph">PHASE 2 · i18n + LLM understanding</span>
+    <h3>next-intl + the language-agnostic understanding stage</h3>
+    <p>Extract strings; wire the Constitution's LLM understanding (also unblocks non-English input). Locale-aware
+      formatting everywhere.</p>
+    <p class="roll">Rollback: default locale en; the deterministic engine remains the fallback.</p></div>
+  <div class="phase"><span class="ph">PHASE 3 · API gateway + Care registry</span>
+    <h3>Versioned APIs; Care as registered plugins</h3>
+    <p>Extract contracts into <code>/v1/*</code>; move Guardian/Hospital/Financial behind the Care registry.
+      Marketplace-ready by construction.</p>
+    <p class="roll">Rollback: clients keep calling the current paths until cut over per-endpoint.</p></div>
+  <div class="phase"><span class="ph">PHASE 4 · data residency</span>
+    <h3>Regional clusters before EU/US volume</h3>
+    <p>The irreversible one — stage carefully, dual-write, verify, cut over per residency zone. Do this LAST and
+      only when a region's volume demands it.</p>
+    <p class="roll">Rollback: dual-write window means the origin cluster stays authoritative until verified.</p></div>
+
+  <h2><span class="n">Risks</span>Ranked</h2>
+  <ul>
+    <li><b>P0 · Emergency guidance correctness per country</b> — a wrong emergency number is lethal. Every region's number is a reviewed, tested config entry, pinned like the crisis floor.</li>
+    <li><b>P0 · Data residency mis-step</b> — EU data outside EU is a breach. Phase 4 is last and staged.</li>
+    <li><b>P1 · The deterministic engine is English</b> — a non-English family gets degraded understanding until the LLM stage lands. Mitigate: launch Connect-only regions where English is common first (GB/CA/AU), then i18n before DE/JP/BR.</li>
+    <li><b>P1 · Care/Connect coupling leaks</b> — any <code>if (country === 'IN')</code> that survives is a bug. Enforce with a lint rule banning country literals outside <code>regions.ts</code>.</li>
+    <li><b>P2 · Cost of LLM understanding at global scale</b> — per-call cost; the deterministic engine stays the free first pass, LLM only when it can't resolve.</li>
+  </ul>
+
+  <p class="foot">Global Platform Transformation Plan · 2026-07-17 · implementation plan (evolves freely; governed by
+    the frozen Architecture Constitution — Connect global / Care regional realises "the LLM is replaceable; the
+    platform is not"). No product code changed to produce it. Recommended first step: <b>Phase 0</b> — the region
+    layer, behaviour-identical, which makes every later phase a config flip.</p>
+</div>

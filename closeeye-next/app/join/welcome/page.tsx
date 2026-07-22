@@ -10,6 +10,8 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { saveFounderName } from '@/lib/db/founder'
 import { FOUNDER_LAUNCH_LABEL } from '@/lib/launch'
 import { cn } from '@/lib/utils'
+import { phonePlaceholder } from '@/lib/platform/locale'
+import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
 
 const inputCls =
   'w-full rounded-sm border border-line bg-ivory px-3.5 py-3 text-body text-ink placeholder:text-muted/70 focus:border-green focus:outline-none focus:ring-2 focus:ring-green/20'
@@ -90,7 +92,7 @@ export default function FounderWelcomePage() {
 
           <label className="mt-4 block">
             <span className="mb-1.5 block text-body-sm font-medium text-ink">Mobile number</span>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder="+91 90000 00000" type="tel" inputMode="tel" autoComplete="tel" className={inputCls} />
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} placeholder={phonePlaceholder(DEFAULT_REGION_CODE)} type="tel" inputMode="tel" autoComplete="tel" className={inputCls} />
             <span className="mt-1.5 block text-caption text-muted">So we can reach you about your first Presence Visit.{phone.trim() && !isValidPhone(phone) ? <span className="text-warning"> Please enter a valid mobile number.</span> : ''}</span>
           </label>
 

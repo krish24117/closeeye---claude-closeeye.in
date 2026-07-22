@@ -155,8 +155,13 @@
 .ce-pulse-soft { animation: ce-pulse-soft 2.4s ease-in-out infinite; }
 @keyframes ce-pop { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 .ce-pop { animation: ce-pop .5s cubic-bezier(.22,1,.36,1) both; }
+/* Splash — intelligence quietly becoming available: a calm breath + a slow, soft glow. */
+@keyframes ce-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+.ce-breathe { animation: ce-breathe 3.6s ease-in-out infinite; }
+@keyframes ce-glow { 0%, 100% { opacity: .34; transform: scale(1); } 50% { opacity: .66; transform: scale(1.12); } }
+.ce-glow { animation: ce-glow 3.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .ce-skeleton::after, .ce-fade-in, .ce-pulse-soft, .ce-pop { animation: none !important; }
+  .ce-skeleton::after, .ce-fade-in, .ce-pulse-soft, .ce-pop, .ce-breathe, .ce-glow { animation: none !important; }
 }
 
 /* ── §14 Accessibility (additive) ─────────────────────────────────────────── */

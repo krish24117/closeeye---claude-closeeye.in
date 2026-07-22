@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, CalendarClock, ShieldCheck, MessageCircle, MessagesSquare, TriangleAlert,
-  CalendarDays, BarChart3, Siren, Menu, X, Ambulance, Headset,
+  CalendarDays, BarChart3, Siren, Menu, X, Ambulance, Headset, Sparkles,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 
 const NAV: { href: string; label: string; icon: LucideIcon; match: (p: string) => boolean }[] = [
   { href: '/pm', label: 'Dashboard', icon: LayoutDashboard, match: (p) => p === '/pm' },
+  { href: '/pm/assistant', label: 'Cloza', icon: Sparkles, match: (p) => p.startsWith('/pm/assistant') },
   { href: '/pm/families', label: 'Families', icon: Users, match: (p) => p.startsWith('/pm/families') },
   { href: '/pm/visits', label: "Today's Visits", icon: CalendarClock, match: (p) => p.startsWith('/pm/visits') },
   { href: '/pm/guardians', label: 'Care Team', icon: ShieldCheck, match: (p) => p.startsWith('/pm/guardians') },
@@ -124,7 +125,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
         <div className="flex max-h-[70vh] flex-col overflow-y-auto py-3">{SidebarInner}</div>
       </Overlay>
 
-      {/* Emergency — real numbers only (108 + CloseEye support line). */}
+      {/* Emergency — real numbers only (108 + Close Eye support line). */}
       <Overlay open={sos} onClose={() => setSos(false)}>
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
           <div className="flex items-center gap-2.5">

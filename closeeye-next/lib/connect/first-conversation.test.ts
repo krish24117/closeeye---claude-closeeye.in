@@ -1,7 +1,7 @@
 /**
  * FIRST CONVERSATION INTEGRITY — the launch acceptance gate.
  *
- * This is CloseEye's core product promise, tested as a hard gate. It generates
+ * This is Close Eye's core product promise, tested as a hard gate. It generates
  * ≥1,000 realistic conversations — single-turn AND multi-turn clarify sequences —
  * runs each through a faithful model of the deterministic flow, and enforces four
  * invariants. Any violation fails the build.

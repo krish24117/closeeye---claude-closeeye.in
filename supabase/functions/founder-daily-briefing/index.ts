@@ -15,6 +15,7 @@
 //   SUPABASE_SERVICE_ROLE_KEY. Without RESEND_API_KEY → { skipped: 'no_provider' }.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireCronSecret } from '../_shared/cron-auth.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -84,6 +85,7 @@ const scoreFg = (s: number) => (s >= 60 ? '#ffffff' : s >= 40 ? '#0e5c47' : '#5e
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
+  const denied = requireCronSecret(req); if (denied) return denied;
 
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
   const nowMs = Date.now()

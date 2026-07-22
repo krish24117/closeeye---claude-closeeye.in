@@ -1,0 +1,221 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Close Eye — the platform architecture (agreed target)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F2E9; --page:#FBF9F2; --ink:#17281F; --forest:#0E2A1F;
+    --emerald:#06A94E; --sprout:#83C400; --pencil:#5F6B60; --faint:#98A097;
+    --hair:#E2DECE; --hair2:#D8D3BF; --alarm:#B4442E; --amber:#9A6A2E;
+    --serif:'Newsreader',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.6}
+  .wrap{max-width:1000px;margin:0 auto;padding:52px 20px 90px}
+  .kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--emerald);font-weight:600;margin:0 0 10px}
+  h1{font-family:var(--serif);font-weight:500;font-size:clamp(28px,5vw,42px);line-height:1.12;letter-spacing:-.01em;color:var(--forest);margin:0 0 12px;text-wrap:balance}
+  h1 em{font-style:italic;font-weight:400}
+  .lede{font-family:var(--serif);font-size:18px;line-height:1.55;color:var(--pencil);max-width:62ch;margin:0}
+  h2{font-family:var(--serif);font-weight:500;font-size:clamp(20px,3vw,26px);color:var(--forest);margin:58px 0 8px}
+  h2 .n{font-family:var(--sans);font-size:11px;letter-spacing:.16em;color:var(--faint);display:block;margin-bottom:7px;font-weight:600}
+  p{max-width:70ch;margin:0 0 13px;font-size:15px;color:#33413A}
+  b,strong{font-weight:600;color:var(--forest)}
+  code{font-family:var(--mono);font-size:12px;background:rgba(226,222,206,.5);padding:1px 5px;border-radius:4px;color:var(--forest)}
+  hr{height:1px;background:var(--hair);border:0;margin:52px 0 0}
+
+  .invariant{border:1.5px solid var(--forest);border-radius:14px;padding:20px 24px;margin:28px 0 0;background:rgba(14,42,31,.03)}
+  .invariant p{font-family:var(--serif);font-size:19px;line-height:1.5;color:var(--forest);margin:0;max-width:none}
+  .invariant .tag{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);font-weight:600;display:block;margin-bottom:8px}
+
+  .legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:26px 0 0;font-size:12.5px;color:var(--pencil)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .sw{width:24px;height:15px;border-radius:4px;flex:none}
+  .sw.det{background:rgba(6,169,78,.09);border:1.5px solid var(--emerald)}
+  .sw.llm{background:rgba(95,107,96,.06);border:1.5px dashed var(--pencil)}
+  .sw.stop{background:rgba(180,68,46,.07);border:1.5px solid var(--alarm)}
+
+  .pipe{margin:24px 0 0;display:flex;flex-direction:column}
+  .node{border-radius:12px;padding:12px 16px;background:var(--page)}
+  .node.det{border:1.5px solid var(--emerald);background:rgba(6,169,78,.05)}
+  .node.llm{border:1.5px dashed var(--pencil);background:rgba(95,107,96,.045)}
+  .node .t{font-size:14px;font-weight:600;color:var(--forest);display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .node .t .num{font-family:var(--mono);font-size:11px;color:var(--faint);font-weight:500}
+  .node .d{font-size:12px;color:var(--pencil);margin:4px 0 0;line-height:1.5}
+  .node .d code{font-size:11px}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:640px){.split{grid-template-columns:1fr}}
+  .tag2{font-family:var(--sans);font-size:9px;letter-spacing:.09em;text-transform:uppercase;font-weight:600;padding:2px 6px;border-radius:999px;white-space:nowrap}
+  .who-det{background:rgba(6,169,78,.14);color:#046b34}
+  .who-llm{background:rgba(95,107,96,.14);color:var(--pencil)}
+  .st-live{background:rgba(6,169,78,.14);color:#046b34}
+  .st-gap{background:rgba(180,68,46,.12);color:var(--alarm)}
+  .new{background:rgba(154,106,46,.14);color:var(--amber)}
+  .arrow{height:18px;display:grid;place-items:center;color:var(--hair2);font-size:15px}
+  .arrow small{font-size:9.5px;color:var(--amber);letter-spacing:.03em;background:rgba(154,106,46,.09);padding:1px 8px;border-radius:999px}
+  .exit{display:grid;grid-template-columns:22px 1fr;gap:0 12px;margin:6px 0 0}
+  .exit .elbow{border-left:1.5px solid var(--alarm);border-bottom:1.5px solid var(--alarm);border-bottom-left-radius:8px;margin:0 0 9px 10px}
+  .exit .box{border:1.5px solid var(--alarm);background:rgba(180,68,46,.05);border-radius:12px;padding:9px 13px}
+  .exit .box .t{font-size:12.5px;font-weight:600;color:var(--alarm)}
+  .exit .box .d{font-size:11px;color:#8a3a28;margin:2px 0 0;line-height:1.45}
+  .fan{font-family:var(--mono);font-size:11px;color:var(--pencil);text-align:center;margin:5px 0 0}
+
+  .rules{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0 0}
+  @media(max-width:760px){.rules{grid-template-columns:1fr}}
+  .rule{border:1px solid var(--hair);border-radius:11px;padding:15px 17px}
+  .rule.amber{border-color:var(--amber);background:rgba(154,106,46,.04)}
+  .rule h3{margin:0 0 5px;font-size:13px;font-weight:600;color:var(--forest)}
+  .rule p{margin:0;font-size:12.5px;color:var(--pencil);max-width:none}
+  .rule .no{font-size:10px;font-weight:600;display:block;margin-bottom:5px;letter-spacing:.1em}
+  .rule .no.g{color:var(--emerald)} .rule .no.a{color:var(--amber)}
+  .foot{margin-top:56px;font-size:12px;color:var(--faint)}
+</style>
+
+<div class="wrap">
+  <p class="kicker">Agreed target · founder-approved 2026-07-17 · platform principle</p>
+  <h1>The model understands language.<br><em>Close Eye owns trust, policy, and execution.</em></h1>
+  <p class="lede">The canonical request flow for every domain — Health, Finance, Legal, Home, and
+    whatever comes next. An LLM doing only language, bracketed by deterministic gates on both sides,
+    with two exits that never reach it and one lane it can route back into.</p>
+
+  <div class="invariant">
+    <span class="tag">The invariant</span>
+    <p>Safety and execution policies never depend solely on the LLM. The model understands nuance,
+      context and indirect requests; Close Eye decides what it can do, whether it may, carries it out,
+      and remembers.</p>
+  </div>
+
+  <div class="legend">
+    <span><i class="sw det"></i> deterministic — Close Eye owns it</span>
+    <span><i class="sw llm"></i> LLM — language only</span>
+    <span><i class="sw stop"></i> terminates</span>
+    <span style="color:var(--amber)"><b>◆</b> added in this revision</span>
+  </div>
+
+  <div class="pipe">
+    <div class="node"><div class="t"><span class="num">·</span> User</div>
+      <div class="d">Raw human language, however phrased — direct, indirect, mixed, distressed.</div></div>
+    <div class="arrow">↓</div>
+
+    <div class="node det"><div class="t"><span class="num">1</span> Close Eye Gateway API <span class="tag2 who-det">Close Eye</span></div>
+      <div class="d">The single front door. Two deterministic checks run <b>in parallel</b>, both before any model call:</div>
+      <div class="split" style="margin-top:9px">
+        <div style="border:1px solid var(--hair);border-radius:9px;padding:9px 11px;background:#fff">
+          <div style="font-size:12px;font-weight:600;color:var(--forest)">Identity &amp; Authorization</div>
+          <div style="font-size:11px;color:var(--pencil);margin-top:2px">who is this, and what may they see. <span class="tag2 st-live">live</span></div>
+        </div>
+        <div style="border:1px solid var(--alarm);border-radius:9px;padding:9px 11px;background:rgba(180,68,46,.03)">
+          <div style="font-size:12px;font-weight:600;color:var(--alarm)">Deterministic Safety</div>
+          <div style="font-size:11px;color:var(--pencil);margin-top:2px">emergency · abuse · security · compliance. <span class="tag2 st-live">live</span></div>
+        </div>
+      </div></div>
+    <div class="exit"><div class="elbow"></div><div class="box">
+      <div class="t">↳ emergency → 108 + care team · STOP</div>
+      <div class="d">A real crisis never reaches the model. An ambulance cannot depend on an API's uptime. <code>_shared/crisis.ts</code></div>
+    </div></div>
+    <div class="arrow">↓</div>
+
+    <div class="node det"><div class="t"><span class="num">2</span> Family &amp; Domain Retrieval <span class="tag2 who-det">Close Eye</span> <span class="tag2 st-gap">keystone — missing</span></div>
+      <div class="d">The Family Graph + the domain pack — Health · Finance · Legal · Home · Timeline. Fetched
+        <b>before</b> the model reasons, so it never reasons from an empty prompt and "how is <b>she</b>?" resolves.
+        Today only <code>/space</code> reads <code>family_ledger</code>.</div></div>
+    <div class="arrow">↓</div>
+
+    <div class="node det"><div class="t"><span class="num">3</span> Context / Prompt Builder <span class="tag2 who-det">Close Eye</span> <span class="tag2 new">◆ boundary</span></div>
+      <div class="d">Assembles what of the retrieved graph goes into the prompt, and in what shape. This is also the
+        <b>injection boundary for retrieved data</b> — a malicious note inside an uploaded document is content the
+        front gate never saw, so what gets built into the prompt is trust-checked here.</div></div>
+    <div class="arrow">↓</div>
+
+    <div class="node llm"><div class="t"><span class="num">4</span> LLM · Language Understanding <span class="tag2 who-llm">LLM</span></div>
+      <div class="d">Intent · entities · clarification · summarization · conversation. Reads what the person actually
+        means — nuance, indirection, mixed intent — and <b>classifies</b> it. It never decides an outcome, never
+        speaks a policy.</div></div>
+    <div class="arrow">↓</div>
+
+    <div class="node det"><div class="t"><span class="num">5</span> Structured Intent <span class="tag2 who-det">Close Eye</span></div>
+      <div class="d">A validated value from a <b>closed set</b> — the model <b>chooses</b>, it does not compose — with an
+        explicit <code>unsure → human</code>. Schema + confidence checked here, so a wrong reading is caught before
+        anything trusts it.</div></div>
+    <div class="arrow"><small>◆ intent = emergency → re-enter the Safety lane (step 1)</small></div>
+
+    <div class="node det"><div class="t"><span class="num">6</span> Capability Router <span class="tag2 who-det">Close Eye</span> <span class="tag2 st-gap">designed</span></div>
+      <div class="d">Deterministic. Does Close Eye do this <i>at all</i>? The single source of truth for what we can and
+        cannot do — supported and unsupported can never drift.</div>
+      <div class="fan">Execute · Coordinate · Inform · Outside&nbsp;Scope</div></div>
+    <div class="exit"><div class="elbow"></div><div class="box">
+      <div class="t">↳ Outside Scope → smooth denial · STOP</div>
+      <div class="d">◆ Terminates here — a denial does not need pricing or a workflow, so it never enters the Decision Engine.
+        "Inform" = facts and who handles it; never diagnosis, legal opinion or investment advice.</div>
+    </div></div>
+    <div class="arrow">↓</div>
+
+    <div class="node det"><div class="t"><span class="num">7</span> Decision / Policy Engine <span class="tag2 who-det">Close Eye</span> <span class="tag2 st-live">live</span></div>
+      <div class="d">Can we do it <i>here, for this member, now</i>? Business rules · permissions · trust · pricing ·
+        workflows · coverage (domain × mode — finance=India, presence=Hyderabad). <code>decision-policy.ts</code> ·
+        <code>service-region.ts</code> · <code>trust.ts</code></div></div>
+    <div class="arrow">↓</div>
+
+    <div class="node det"><div class="t"><span class="num">8</span> Execution Orchestrator <span class="tag2 who-det">Close Eye</span> <span class="tag2 st-gap">partial</span></div>
+      <div class="d">Coordinates the real-world actors. The human is the product; Close Eye never gives the medical,
+        legal or tax answer itself.</div>
+      <div class="fan">Guardian · Hospital · CA&nbsp;/&nbsp;Lawyer · Partner&nbsp;APIs</div></div>
+    <div class="arrow">↓</div>
+
+    <div class="node llm"><div class="t"><span class="num">9</span> Response Composer <span class="tag2 who-llm">LLM</span> <span class="tag2 new">◆ new</span></div>
+      <div class="d">The LLM's <b>second, constrained role</b>: it phrases the reply to the family warmly — but only from
+        what the deterministic layers decided. It speaks; it does not decide. Without this, the flow understood the
+        person and never answered them.</div></div>
+    <div class="arrow">↓</div>
+
+    <div class="node det"><div class="t"><span class="num">10</span> Timeline &amp; Memory Engine <span class="tag2 who-det">Close Eye</span> <span class="tag2 st-gap">partial</span></div>
+      <div class="d">Every execution updates the Family Graph &amp; history for next time. This arrow closing is what
+        compounds — and what a competitor cannot copy.</div></div>
+  </div>
+
+  <hr>
+
+  <h2><span class="n">What changed in this revision</span>Four completions</h2>
+  <div class="rules">
+    <div class="rule amber"><span class="no a">◆ 01</span><h3>A Response Composer</h3>
+      <p>The flow understood the family but never spoke back. The LLM's second role — communication — phrases
+        the reply, constrained to what the deterministic layers decided. Propose/dispose, on the way out too.</p></div>
+    <div class="rule amber"><span class="no a">◆ 02</span><h3>Outside Scope short-circuits</h3>
+      <p>A denial terminates at the router — it never flows through pricing and workflows. Same shape as the
+        crisis exit: two paths leave before the Decision Engine.</p></div>
+    <div class="rule amber"><span class="no a">◆ 03</span><h3>Safety is a gate AND a lane</h3>
+      <p>The front gate catches explicit danger. But the LLM surfaces the indirect kind ("he's taken a lot of his
+        pills") — so an intent of <code>emergency</code> re-enters the Safety lane rather than proceeding.</p></div>
+    <div class="rule amber"><span class="no a">◆ 04</span><h3>The Context Builder is a trust boundary</h3>
+      <p>The gate checks the user's input. Retrieved documents can carry injection the gate never saw, so what
+        gets built into the prompt is trust-checked at assembly.</p></div>
+  </div>
+
+  <h2><span class="n">Why it's a principle, not a fix</span>It holds as Close Eye grows</h2>
+  <p>Putting the boundary <b>after</b> structured intent — not on raw text — is what survives expansion. A new
+    domain plugs into the same spine: the LLM understands its language, the Capability Router gains a few entries,
+    the Decision Engine gains its coverage rules, the Orchestrator gains an actor. The gateway, retrieval, the
+    human-owned policy layer, and memory are unchanged. One skeleton, many domains.</p>
+
+  <div class="rules">
+    <div class="rule"><span class="no g">GUARDRAIL 01</span><h3>Classify, don't compose</h3>
+      <p>A deterministic router is only as trustworthy as its input. The LLM picks from a <b>closed set</b> with
+        an <b>unsure → human</b> value — never free-form structure. That bucket turns the model's uncertainty into
+        a safe default, not a confident wrong guess.</p></div>
+    <div class="rule"><span class="no g">GUARDRAIL 02</span><h3>The model never holds a policy</h3>
+      <p>Two LLM stages only — understanding (in) and composing (out). Between them, everything that decides
+        <i>what</i>, <i>whether</i>, and <i>to whom</i> is Close Eye's deterministic code.</p></div>
+  </div>
+
+  <h2><span class="n">Honest status</span>What of this is built, today</h2>
+  <p>Eight of ten stages are Close Eye's deterministic own; two are the LLM. Built and live: the Gateway
+    (identity + safety), the Decision Engine, coverage. The keystone gap is <b>Retrieve</b> — it unblocks
+    everything from the Context Builder onward. Near-term order: <b>Retrieve → LLM understanding + structured
+    intent → Capability Router → Response Composer</b>. Safety, decision and coverage already stand; today's
+    Connect runs a deterministic stand-in for the LLM understanding step.</p>
+
+  <p class="foot">Agreed target, founder-approved 2026-07-17 — supersedes the earlier draft order. Companion to
+    <code>close_eye_architecture_current.html</code> (what is built today). Aligns with the frozen lifecycle:
+    Family Graph → Retrieve → Understand → Decide → Execute → Remember. No product code changed to produce it.</p>
+</div>

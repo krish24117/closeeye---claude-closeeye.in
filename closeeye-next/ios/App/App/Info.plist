@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>CloseEye</string>
+        <string>Close Eye</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -55,8 +55,6 @@
 	<string>Close Eye saves visit reports, invoices and photos to your library when you download them.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Close Eye uses your location to confirm a Guardian has arrived for a visit and to match trusted care nearby.</string>
-	<key>NSFaceIDUsageDescription</key>
-	<string>Close Eye uses Face ID so you can sign in securely, without typing your password each time.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>CFBundleURLTypes</key>

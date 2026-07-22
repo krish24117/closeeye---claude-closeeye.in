@@ -7,6 +7,7 @@ import { ArrowLeft, Check, Loader2 } from 'lucide-react'
 import { PageHeader } from '@/components/family/page-header'
 import { Button } from '@/components/ui/button'
 import { useFamilyData } from '@/components/family/family-data-provider'
+import { phonePlaceholder } from '@/lib/platform/locale'
 import { useToast } from '@/components/ui/toast'
 import { fetchElderProfile, upsertElderProfile, type ElderProfileForm } from '@/lib/db/family'
 import { healthFormPhase } from '@/lib/db/elder-profile-form'
@@ -54,7 +55,7 @@ export default function HealthProfilePage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const toast = useToast()
-  const { lovedOnes } = useFamilyData()
+  const { lovedOnes, region } = useFamilyData()
   const member = lovedOnes.find((l) => l.id === id)
 
   const [form, setForm] = React.useState<ElderProfileForm | null>(null)
@@ -201,7 +202,7 @@ export default function HealthProfilePage() {
             </div>
             <div>
               <label htmlFor="h-docp" className={labelCls}>Doctor’s phone</label>
-              <input id="h-docp" value={form.doctor_phone} onChange={(e) => set('doctor_phone', e.target.value)} type="tel" inputMode="tel" placeholder="+91 90000 00000" className={inputCls} />
+              <input id="h-docp" value={form.doctor_phone} onChange={(e) => set('doctor_phone', e.target.value)} type="tel" inputMode="tel" placeholder={phonePlaceholder(region)} className={inputCls} />
             </div>
           </div>
         </Section>

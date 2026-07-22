@@ -1,0 +1,163 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retrieve v1 — implementation spec</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F2E9; --page:#FBF9F2; --ink:#17281F; --forest:#0E2A1F;
+    --emerald:#06A94E; --sprout:#83C400; --pencil:#5F6B60; --faint:#98A097;
+    --hair:#E2DECE; --hair2:#D8D3BF; --alarm:#B4442E; --amber:#9A6A2E;
+    --serif:'Newsreader',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.6}
+  .wrap{max-width:900px;margin:0 auto;padding:52px 20px 90px}
+  .kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--emerald);font-weight:600;margin:0 0 10px}
+  h1{font-family:var(--serif);font-weight:500;font-size:clamp(28px,5vw,40px);line-height:1.12;letter-spacing:-.01em;color:var(--forest);margin:0 0 12px;text-wrap:balance}
+  h1 em{font-style:italic;font-weight:400}
+  .lede{font-family:var(--serif);font-size:17px;line-height:1.55;color:var(--pencil);max-width:64ch;margin:0}
+  .status{display:inline-block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--amber);background:rgba(154,106,46,.1);padding:3px 10px;border-radius:999px;margin:16px 0 0}
+  h2{font-family:var(--serif);font-weight:500;font-size:clamp(19px,3vw,24px);color:var(--forest);margin:52px 0 8px;padding-top:14px;border-top:1px solid var(--hair)}
+  h2 .n{font-family:var(--sans);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);display:block;font-weight:600;margin-bottom:6px}
+  h3{font-size:14px;font-weight:600;color:var(--forest);margin:22px 0 6px}
+  p{margin:0 0 12px;font-size:14.5px;color:#2c3831;max-width:72ch}
+  b,strong{font-weight:600;color:var(--forest)}
+  code{font-family:var(--mono);font-size:12px;background:rgba(226,222,206,.5);padding:1px 5px;border-radius:4px;color:var(--forest)}
+  ul{margin:6px 0 14px;padding-left:19px} li{font-size:14px;margin:0 0 5px;color:#2c3831}
+  pre{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--forest);background:var(--page);border:1px solid var(--hair);border-radius:11px;padding:15px 17px;overflow-x:auto;margin:12px 0}
+  pre .c{color:var(--faint)} pre .k{color:var(--emerald)} pre .a{color:var(--amber)}
+  .tblwrap{overflow-x:auto;border:1px solid var(--hair);border-radius:12px;margin:14px 0}
+  table{border-collapse:collapse;width:100%;min-width:600px;font-size:13px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--hair);vertical-align:top}
+  th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:600;background:rgba(226,222,206,.22)}
+  tr:last-child td{border-bottom:0}
+  td.f{font-family:var(--mono);font-size:11.5px;color:var(--forest);white-space:nowrap}
+  .crit{border:1.5px solid var(--alarm);border-radius:12px;padding:16px 20px;margin:16px 0;background:rgba(180,68,46,.04)}
+  .crit h3{color:var(--alarm);margin-top:0}
+  .crit p{margin:0;font-size:13.5px;color:#4a2e28}
+  .gate{counter-reset:g;margin:14px 0 0;padding:0;list-style:none}
+  .gate li{position:relative;padding:12px 16px 12px 46px;border:1px solid var(--hair);border-radius:11px;margin:0 0 9px;font-size:13.5px;color:#2c3831}
+  .gate li::before{counter-increment:g;content:"G"counter(g);position:absolute;left:12px;top:11px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--emerald)}
+  .gate li.red{border-color:var(--alarm)} .gate li.red::before{color:var(--alarm)}
+  .gate b{color:var(--forest)}
+  .no{border-left:3px solid var(--faint);padding:2px 0 2px 16px;margin:14px 0}
+  .no p{margin:0 0 5px;font-size:13.5px;color:var(--pencil)}
+  .foot{margin-top:56px;padding-top:18px;border-top:1px solid var(--hair);font-size:12px;color:var(--faint)}
+</style>
+
+<div class="wrap">
+  <p class="kicker">Implementation spec · for approval before build</p>
+  <h1>Retrieve v1 — <em>the keystone read seam.</em></h1>
+  <p class="lede">The stage that turns Constitution Principles 1, 2 and 6 from words into behaviour:
+    the Family Graph read, RLS-scoped, versioned, feeding the understanding path — so Close Eye never
+    reasons from an empty prompt.</p>
+  <p class="status">Implementation doc · evolves freely · NOT the frozen Constitution</p>
+
+  <h2><span class="n">Scope</span>What v1 is, and is not</h2>
+  <p><b>Is:</b> a single function <code>retrieve(client, subjectId?) → RetrievedContext</code> that reads
+    <code>loved_ones</code> + <code>family_ledger</code> through the <b>caller's RLS-scoped client</b>, applies
+    provenance and correction rules, attaches coverage, and returns one versioned contract. Wired so the family
+    app — not only <code>/space</code> — reads through it. First consumer: Connect's understanding path.</p>
+  <p><b>Is not:</b> the LLM understanding step (that comes after), new domain tables (Health/Finance/Legal packs
+    are v2+), any write path (retrieve only reads), or a caching layer. One seam, done correctly.</p>
+
+  <h2><span class="n">Foundation</span>What already exists — v1 builds on it, adds no storage</h2>
+  <p>The schema is already right for this. <code>family_ledger</code> is append-only, RLS-scoped by
+    <code>family_user_id</code>, immutable (no UPDATE/DELETE policy — corrections are new rows), and carries
+    provenance. v1 reads it; it changes no table.</p>
+  <div class="tblwrap"><table>
+    <thead><tr><th>Column</th><th>Meaning for Retrieve</th></tr></thead>
+    <tbody>
+      <tr><td class="f">entry_type</td><td>family_fact · guardian_observation · ai_understanding · visit_observation · <b>correction</b> · memory</td></tr>
+      <tr><td class="f">source</td><td>connect_experience · family_space · guardian · ai_engine — the provenance tag</td></tr>
+      <tr><td class="f">label · body</td><td>the fact itself</td></tr>
+      <tr><td class="f">family_user_id</td><td>the RLS scope — <code>select using (family_user_id = auth.uid())</code></td></tr>
+      <tr><td class="f">created_at</td><td>ordering; the correction/supersede rule reads it</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2><span class="n">The contract</span>RetrievedContext v1 — a versioned schema (Article III)</h2>
+<pre><span class="c">// Provenance is preserved, never flattened — Article X: an inference is</span>
+<span class="c">// never presented as a stated fact.</span>
+type Provenance = <span class="k">'stated'</span> | <span class="k">'observed'</span> | <span class="k">'inferred'</span>
+
+interface LedgerItem { label: string; body: string; provenance: Provenance;
+                       source: string; at: string }
+
+interface RetrievedContext {
+  schemaVersion: <span class="k">'retrieve.v1'</span>
+  subject: { lovedOneId: string; name: string;
+             relationship: string | null; city: string | null } | null
+  stated:      LedgerItem[]   <span class="c">// family_fact (connect/space) — the family's words</span>
+  observed:    LedgerItem[]   <span class="c">// guardian_observation, visit_observation</span>
+  inferred:    LedgerItem[]   <span class="c">// ai_understanding — Connect's reading, flagged</span>
+  coverage: { presence: <span class="k">'available'|'unavailable'|'unknown'</span>,
+              financial: <span class="k">'available'|'unavailable'|'unknown'</span> }  <span class="c">// from service-region</span>
+  meta: { retrievedAt: string; complete: boolean }  <span class="a">// complete=false → a source failed</span>
+}</pre>
+  <p>Corrections are applied before the arrays are built: for a given <code>label</code>, the most recent row
+    wins, and <b>a correction or a stated fact always outranks an inference</b> (Article X — memory is
+    correctable, and an inference never hardens into a fact). Superseded rows are dropped from the context,
+    never shown as current.</p>
+
+  <div class="crit">
+    <h3>The one invariant that ends the company if wrong</h3>
+    <p><b>Cross-family isolation.</b> <code>retrieve()</code> reads through the <b>caller's authenticated,
+      RLS-scoped client — never the service-role key.</b> Family A's retrieve can never return family B's rows,
+      and this is enforced at the database (the <code>select using (family_user_id = auth.uid())</code> policy)
+      AND proven by test G1 below. A read seam that could be pointed at another family's graph is not shippable
+      at any quality of the rest.</p>
+  </div>
+
+  <h2><span class="n">Behaviour</span>Fail-safe, per Principle 7</h2>
+  <ul>
+    <li><b>Empty graph → empty context</b>, never a guess. A family with no ledger yet returns
+      <code>stated: [], inferred: []</code> — the understanding path then works from the message alone. Never invented.</li>
+    <li><b>A source fails → <code>complete: false</code></b>, partial data, and the pipeline degrades to
+      "understand from the message + route to a human." Retrieval never fabricates context to fill a gap.</li>
+    <li><b>No subject given</b> (general question) → <code>subject: null</code>, family-level facts only. The
+      caller decides whether to ask "who is this about?"</li>
+    <li><b>Coverage</b> is computed from the subject's city via the existing <code>service-region.ts</code> —
+      so retrieval already carries "can we act here" into the context, deterministically.</li>
+  </ul>
+
+  <h2><span class="n">Acceptance gate</span>What must pass before it ships</h2>
+  <p>The gate is the spec. Retrieve v1 is done when every one of these is a green regression test.</p>
+  <ol class="gate">
+    <li class="red"><b>G1 · Cross-family isolation.</b> Two families, two graphs. A's retrieve returns zero of B's
+      rows, under every call shape. Any path using the service-role key for a family read fails the gate outright.</li>
+    <li><b>G2 · Never invent.</b> An empty or partial graph yields empty/partial context — never a fabricated
+      fact, city, or relationship.</li>
+    <li><b>G3 · Provenance integrity.</b> A <code>family_fact</code> arrives as <code>stated</code>; an
+      <code>ai_understanding</code> arrives as <code>inferred</code>. An inference is never emitted as stated.</li>
+    <li><b>G4 · Correction supersedes.</b> A <code>correction</code> row for a label wins over the fact it
+      corrects; the old value is absent from the context (Article X).</li>
+    <li><b>G5 · Fail-safe.</b> A simulated source failure yields <code>complete: false</code> and a usable
+      partial context — never an exception that blocks the family, never fabricated filler.</li>
+    <li><b>G6 · Versioned &amp; stable.</b> <code>schemaVersion: 'retrieve.v1'</code> is always present; the shape
+      is the contract downstream builds against.</li>
+  </ol>
+
+  <h2><span class="n">Where it plugs in</span>The Constitution lifecycle</h2>
+  <p>Retrieve v1 fills the stage between the <b>Safety Gate</b> and the <b>Context Builder</b> (Article I). Its
+    output — <code>RetrievedContext</code> — is the contract the Context Builder assembles into a prompt, and the
+    thing today's deterministic Connect engine will read first instead of working from the raw sentence alone.
+    When the LLM understanding step lands later, it consumes the same contract. Nothing downstream is rebuilt;
+    Retrieve is the missing input, not a new pipeline.</p>
+
+  <div class="no">
+    <p><b>Two decisions I'd want confirmed before building:</b></p>
+    <p>1 · <b>The correction/supersede rule.</b> v1 proposes "latest row per label wins, stated/correction over
+      inferred." If corrections should instead reference the exact row they correct (a <code>corrects_id</code>
+      column), that's a small migration — worth deciding now, since it's the one place the schema might grow.</p>
+    <p>2 · <b>First consumer.</b> I propose wiring Retrieve into Connect's authed path first (where the graph and
+      a real family exist), leaving the public <code>/connect</code> stranger flow deterministic-as-today. Confirm
+      that's the right first surface.</p>
+  </div>
+
+  <p class="foot">Retrieve v1 · implementation spec · 2026-07-17. Evolves freely (not the frozen Constitution).
+    Builds on <code>migrations/20260739000000_family_ledger.sql</code> and <code>lib/db/space.ts</code>. Governed
+    by the Architecture Constitution — Principles 1, 2, 6, 7 and Articles I, III, X. No code written yet.</p>
+</div>

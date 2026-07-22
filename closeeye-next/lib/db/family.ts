@@ -6,7 +6,7 @@ import { processVisit, type VisitObservations } from '@/lib/cloza'
 const PROFILE_COLS_BASE = 'id, full_name, role, admin_role, phone, whatsapp_number, address'
 const PROFILE_COLS = `${PROFILE_COLS_BASE}, founder_prelaunch`
 const LOVED_ONE_COLS =
-  'id, family_user_id, full_name, relationship, age, city, address, phone_number, medical_notes, doctor_name, nearest_hospital, emergency_contact_name, emergency_contact_phone, created_at'
+  'id, family_user_id, full_name, relationship, age, city, address, phone_number, medical_notes, doctor_name, nearest_hospital, emergency_contact_name, emergency_contact_phone, created_at, region_code'
 
 const clean = (v?: string | null): string | null => {
   const t = (v ?? '').trim()
@@ -55,6 +55,7 @@ export async function addLovedOne(userId: string, input: NewLovedOne): Promise<L
     relationship: clean(input.relationship),
     age: input.age ?? null,
     city: clean(input.city),
+    region_code: input.region_code || null,
     address: orEmpty(input.address),
     phone_number: clean(input.phone_number),
     medical_notes: orEmpty(input.medical_notes),
@@ -81,6 +82,7 @@ export async function updateFamilyMember(id: string, input: NewLovedOne): Promis
     relationship: clean(input.relationship),
     age: input.age ?? null,
     city: clean(input.city),
+    region_code: input.region_code || null,
     address: orEmpty(input.address),
     phone_number: clean(input.phone_number),
     medical_notes: orEmpty(input.medical_notes),
