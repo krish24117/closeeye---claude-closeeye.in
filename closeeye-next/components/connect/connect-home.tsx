@@ -97,7 +97,7 @@ export function ConnectHome() {
                 See how it works <ArrowRight className="h-4 w-4" strokeWidth={2} />
               </a>
             </div>
-            <p className="text-caption text-muted">Private by design · Free to begin</p>
+            <p className="text-caption text-muted">Private by design · Free during early access</p>
           </div>
         </Reveal>
       </section>
