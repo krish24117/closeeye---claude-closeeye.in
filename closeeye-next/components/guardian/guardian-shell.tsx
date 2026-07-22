@@ -84,7 +84,7 @@ export function GuardianShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-ivory">
       {/* Console header */}
-      <header className="sticky top-0 z-30 border-b border-line bg-ivory/90 backdrop-blur-xl">
+      <header className="pt-safe sticky top-0 z-30 border-b border-line bg-ivory/90 backdrop-blur-xl">
         <div className="mx-auto flex h-[3.75rem] max-w-lg items-center justify-between gap-3 px-5">
           <Link href="/guardian" aria-label="Guardian Console" className="flex items-center gap-2.5">
             <Logo variant="sidebar" sublabel="Guardian Console" />

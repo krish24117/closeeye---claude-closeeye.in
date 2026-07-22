@@ -129,24 +129,26 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ── Mobile top bar ──────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-ivory/90 px-5 backdrop-blur-xl lg:hidden">
-        <Link href="/family" aria-label="Family Space home">
-          <Logo variant="sidebar" />
-        </Link>
-        <div className="flex items-center gap-1">
-          <Link href="/family/add" aria-label="Add a family member" title="Add a family member" className="grid h-11 w-11 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft/60 hover:text-green">
-            <UserPlus className="h-6 w-6" strokeWidth={1.5} />
+      <header className="pt-safe sticky top-0 z-30 border-b border-line bg-ivory/90 backdrop-blur-xl lg:hidden">
+        <div className="flex h-16 items-center justify-between px-5">
+          <Link href="/family" aria-label="Family Space home">
+            <Logo variant="sidebar" />
           </Link>
-          <BellButton count={unread} onClick={openNotif} />
-          <button
-            type="button"
-            onClick={() => setEmergency(true)}
-            aria-label="Emergency"
-            className="grid h-11 w-11 place-items-center rounded-full text-error transition-colors hover:bg-error/10"
-          >
-            <Siren className="h-6 w-6" strokeWidth={1.5} />
-          </button>
-          <AvatarLink href="/family/profile" initials={identity.initials} avatarUrl={identity.avatarUrl} name={identity.fullName} />
+          <div className="flex items-center gap-1">
+            <Link href="/family/add" aria-label="Add a family member" title="Add a family member" className="grid h-11 w-11 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft/60 hover:text-green">
+              <UserPlus className="h-6 w-6" strokeWidth={1.5} />
+            </Link>
+            <BellButton count={unread} onClick={openNotif} />
+            <button
+              type="button"
+              onClick={() => setEmergency(true)}
+              aria-label="Emergency"
+              className="grid h-11 w-11 place-items-center rounded-full text-error transition-colors hover:bg-error/10"
+            >
+              <Siren className="h-6 w-6" strokeWidth={1.5} />
+            </button>
+            <AvatarLink href="/family/profile" initials={identity.initials} avatarUrl={identity.avatarUrl} name={identity.fullName} />
+          </div>
         </div>
       </header>
 
