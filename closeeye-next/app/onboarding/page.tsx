@@ -9,6 +9,7 @@
  * minute instead of landing on an empty screen. Membership-intent funnel is preserved untouched.
  */
 import * as React from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Loader2, Check } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
@@ -17,6 +18,7 @@ import { useFamilyData } from '@/components/family/family-data-provider'
 import { CountryField } from '@/components/family/country-field'
 import { relationshipWord, objectPronoun } from '@/lib/family/relationship-words'
 import { saveProfileBasics, selectPlan } from '@/lib/db/onboarding'
+import { recordConsent } from '@/lib/db/consent'
 import { appendLearning } from '@/lib/db/space'
 import { planById, type PlanId } from '@/lib/plans'
 import { getPendingPlan, setPendingPlan } from '@/lib/membership-intent'
@@ -54,6 +56,7 @@ export default function OnboardingPage() {
   const [plan, setPlan] = React.useState<PlanId | null>(null)
   const [hasIntent, setHasIntent] = React.useState(false)
   const [createdId, setCreatedId] = React.useState<string | null>(null)
+  const [consented, setConsented] = React.useState(false) // DPDP consent, captured here so Connect's first answer isn't gated
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')
 
@@ -90,8 +93,12 @@ export default function OnboardingPage() {
 
   async function createSpace() {
     if (!user) return setError('You’re not signed in. Please sign in again.')
+    if (!consented) return setError('Please agree so Close Eye can hold your family’s information.')
     setBusy(true); setError('')
     try {
+      // Record DPDP consent up front — this is the moment Close Eye first stores family data. It's the
+      // durable record of the checkbox the user ticked; best-effort, and Connect re-checks as a backstop.
+      try { await recordConsent({ granted: true }) } catch { /* non-fatal — Connect's gate catches a miss */ }
       const nameOfLovedOne = isSelf ? name.trim() : lovedName.trim()
       const p = await saveProfileBasics(user.id, { fullName: name })
       if (p.error) throw new Error(p.error)
@@ -278,17 +285,29 @@ export default function OnboardingPage() {
           )}
 
           <div className="flex-1" />
+
+          {/* Consent — captured here, at the moment Close Eye first holds family data, so the first
+              Connect answer isn't interrupted later. Explicit, informed, and durably recorded. */}
+          {step === 'fact' && (
+            <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-line bg-card p-3.5">
+              <input type="checkbox" checked={consented} onChange={(e) => setConsented(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-green" />
+              <span className="text-caption leading-relaxed text-muted">
+                I understand Close Eye stores only what I share to help me care for my family — <b className="text-ink">private to me, never sold</b> — and I can withdraw or delete anytime. <Link href="/privacy" className="font-semibold text-green hover:text-green/80">Learn more</Link>
+              </span>
+            </label>
+          )}
+
           {error && <p className="mt-4 text-caption text-error">{error}</p>}
 
-          <button onClick={next} disabled={!canAdvance || busy}
-            className="mt-7 inline-flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-full bg-surface-inverse text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90 disabled:opacity-50">
+          <button onClick={next} disabled={!canAdvance || busy || (step === 'fact' && !consented)}
+            className="mt-4 inline-flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-full bg-surface-inverse text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90 disabled:opacity-50">
             {busy ? <><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} /> Creating {isSelf ? 'your' : `${subject}’s`} space…</>
               : step === 'welcome' ? <>Begin <ArrowRight className="h-5 w-5" strokeWidth={2} /></>
               : step === 'fact' ? <>Continue <ArrowRight className="h-5 w-5" strokeWidth={2} /></>
               : <>Continue <ArrowRight className="h-5 w-5" strokeWidth={2} /></>}
           </button>
           {step === 'fact' && !busy && (
-            <button onClick={createSpace} className="mt-2 min-h-[2.75rem] w-full rounded-full text-body-sm font-semibold text-muted transition-colors hover:text-ink">Skip for now</button>
+            <button onClick={createSpace} disabled={!consented} className="mt-2 min-h-[2.75rem] w-full rounded-full text-body-sm font-semibold text-muted transition-colors hover:text-ink disabled:opacity-40">Skip for now</button>
           )}
         </div>
       </main>
