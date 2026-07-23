@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import Link from 'next/link'
 import { Check, ArrowRight, ChevronDown } from 'lucide-react'
 import { Container } from '@/components/ui/container'
@@ -7,11 +8,12 @@ import { Button } from '@/components/ui/button'
 import { Reveal, Stagger, StaggerItem } from '@/components/ui/reveal'
 import { NriOrb } from '@/components/marketing/nri-orb'
 import { whatsappLink } from '@/lib/site'
+import { pricingRegion, price } from '@/lib/pricing'
 
 export const metadata: Metadata = {
   title: 'Pricing — Three simple ways to be there',
   description:
-    'Engage with Close Eye the way that fits your family: Pay as You Go for occasional support, Membership to stay prepared, or Presence for an ongoing trusted local presence. Priced in your currency.',
+    'Engage with Close Eye the way that fits your family: Pay as You Go for occasional support, Membership to stay prepared, or Presence for an ongoing trusted local presence. Priced in your local currency.',
 }
 
 const JOURNEY = [
@@ -20,27 +22,26 @@ const JOURNEY = [
   { n: '3', q: 'Do I want someone consistently looking after them?', a: 'Presence' },
 ]
 
-const PLANS = [
-  {
-    name: 'Essential', price: '$100', per: '/ month', note: 'Regular trusted visits.', ev: null,
-    lines: ['A trusted local presence your family can rely on', 'Regular, familiar time with your loved one', 'Proof of every visit — never a guess', 'You stay informed, wherever you are', 'Early awareness of what’s changing'],
-  },
-  {
-    name: 'Plus', price: '$250', per: '/ month', note: 'Coordinated care, managed for you.', ev: 'Everything in Essential, plus', emph: true,
-    lines: ['One trusted point of coordination for your family’s needs', 'Support during important medical moments', 'Your family’s care, organised for you', 'Appointments handled, so you don’t have to', 'A regular check-in on how things are going', 'First priority whenever you need us'],
-  },
-  {
-    name: 'Family Office', price: '$1,000', per: '/ month', note: 'Everything, handled — a dedicated team.', ev: 'Everything in Plus, plus',
-    lines: ['A dedicated team who know your family', 'Your family home, watched over', 'Help navigating important decisions and paperwork', 'Documents and records, handled', 'Whatever your family needs, arranged', 'Calm, coordinated help in a crisis', 'Support at the level of a family office'],
-  },
-]
-
 function Tick() {
   return <Check className="mt-0.5 h-4 w-4 shrink-0 text-green" strokeWidth={2.5} aria-hidden />
 }
 
-export default function PricingPage() {
+export default async function PricingPage() {
   const cta = whatsappLink()
+  // Region-detected currency: India → INR, everywhere else → USD. Same plans, only the price changes.
+  const country = (await headers()).get('x-vercel-ip-country')
+  const region = pricingRegion(country)
+  const inr = region === 'IN'
+
+  const PLANS = [
+    { name: 'Essential', amount: price('presence', region), note: 'Regular trusted visits.', ev: null as string | null,
+      lines: ['A trusted local presence your family can rely on', 'Regular, familiar time with your loved one', 'Proof of every visit — never a guess', 'You stay informed, wherever you are', 'Early awareness of what’s changing'] },
+    { name: 'Plus', amount: price('presencePlus', region), note: 'Coordinated care, managed for you.', ev: 'Everything in Essential, plus', emph: true,
+      lines: ['One trusted point of coordination for your family’s needs', 'Support during important medical moments', 'Your family’s care, organised for you', 'Appointments handled, so you don’t have to', 'A regular check-in on how things are going', 'First priority whenever you need us'] },
+    { name: 'Family Office', amount: price('familyOffice', region), note: 'Everything, handled — a dedicated team.', ev: 'Everything in Plus, plus',
+      lines: ['A dedicated team who know your family', 'Your family home, watched over', 'Help navigating important decisions and paperwork', 'Documents and records, handled', 'Whatever your family needs, arranged', 'Calm, coordinated help in a crisis', 'Support at the level of a family office'] },
+  ]
+
   return (
     <>
       {/* ── Hero ── */}
@@ -76,7 +77,7 @@ export default function PricingPage() {
             <p className="mt-1 text-body-sm text-muted">Best for occasional support — help from time to time.</p>
             <p className="mt-5 flex items-baseline gap-1.5">
               <span className="text-body-sm font-semibold text-muted">From</span>
-              <span className="font-display text-h2 text-ink">$29</span>
+              <span className="font-display text-h2 text-ink">{price('payg', region)}</span>
               <span className="text-body-sm text-muted">/ service</span>
             </p>
             <ul className="mt-6 flex flex-1 flex-col gap-2.5">
@@ -96,7 +97,7 @@ export default function PricingPage() {
             <p className="text-h4">Close Eye Membership</p>
             <p className="mt-1 text-body-sm text-muted">Stay prepared, before you ever need help.</p>
             <p className="mt-5 flex items-baseline gap-1.5">
-              <span className="font-display text-h2 text-ink">$20</span>
+              <span className="font-display text-h2 text-ink">{price('membership', region)}</span>
               <span className="text-body-sm text-muted">/ month</span>
             </p>
             <ul className="mt-6 flex flex-1 flex-col gap-2.5">
@@ -115,7 +116,7 @@ export default function PricingPage() {
             <p className="mt-1 text-body-sm text-muted">An ongoing, trusted local presence for your family. Our flagship.</p>
             <p className="mt-5 flex items-baseline gap-1.5">
               <span className="text-body-sm font-semibold text-muted">From</span>
-              <span className="font-display text-h2 text-ink">$100</span>
+              <span className="font-display text-h2 text-ink">{price('presence', region)}</span>
               <span className="text-body-sm text-muted">/ month</span>
             </p>
             <p className="mt-4 flex-1 text-body-sm text-ink">
@@ -143,8 +144,9 @@ export default function PricingPage() {
             {PLANS.map((pl) => (
               <div key={pl.name} className={pl.emph ? 'flex flex-col rounded-md border-2 border-accent-soft bg-card p-6' : 'flex flex-col rounded-md border border-line bg-ivory p-6'}>
                 <p className="text-h4">{pl.name}</p>
-                <p className="mt-1 flex items-baseline gap-1"><span className="font-display text-h3 text-ink">{pl.price}</span><span className="text-body-sm text-muted">{pl.per}</span></p>
+                <p className="mt-1 flex items-baseline gap-1"><span className="font-display text-h3 text-ink">{pl.amount}</span><span className="text-body-sm text-muted">/ month</span></p>
                 <p className="mt-1 text-body-sm text-muted">{pl.note}</p>
+                {pl.name === 'Family Office' && inr && <p className="mt-1 text-caption text-muted">Custom scope? Contact us.</p>}
                 {pl.ev && <p className="mt-4 text-caption font-semibold uppercase tracking-wider text-green">{pl.ev}</p>}
                 <ul className="mt-3 flex flex-col gap-2">
                   {pl.lines.map((l) => (<li key={l} className="flex items-start gap-2 text-body-sm text-ink"><Tick />{l}</li>))}
@@ -154,6 +156,10 @@ export default function PricingPage() {
           </div>
           <p className="px-6 pb-6 text-center text-caption text-muted">Kept off the main pricing view on purpose — you only choose a tier once Presence is right for you.</p>
         </details>
+
+        <Reveal className="mt-10 text-center">
+          <p className="text-caption text-muted">Prices shown in {inr ? 'Indian Rupees (₹)' : 'US Dollars ($)'}, based on your region. Same plans and care everywhere — only the currency changes.</p>
+        </Reveal>
       </Section>
 
       {/* ── Close ── */}
