@@ -55,7 +55,10 @@ export async function addLovedOne(userId: string, input: NewLovedOne): Promise<L
     relationship: clean(input.relationship),
     age: input.age ?? null,
     city: clean(input.city),
-    region_code: input.region_code || null,
+    // NOT NULL col (default 'IN' only fills an OMITTED column, not an explicit null). Onboarding's
+    // Country is optional → null → NOT NULL violation blocked signup. 'GENERIC' == what null already
+    // resolves to at runtime (regionFor(null) → GENERIC; unknown never inherits 108). No behaviour change.
+    region_code: input.region_code || 'GENERIC',
     address: orEmpty(input.address),
     phone_number: clean(input.phone_number),
     medical_notes: orEmpty(input.medical_notes),
@@ -82,7 +85,10 @@ export async function updateFamilyMember(id: string, input: NewLovedOne): Promis
     relationship: clean(input.relationship),
     age: input.age ?? null,
     city: clean(input.city),
-    region_code: input.region_code || null,
+    // NOT NULL col (default 'IN' only fills an OMITTED column, not an explicit null). Onboarding's
+    // Country is optional → null → NOT NULL violation blocked signup. 'GENERIC' == what null already
+    // resolves to at runtime (regionFor(null) → GENERIC; unknown never inherits 108). No behaviour change.
+    region_code: input.region_code || 'GENERIC',
     address: orEmpty(input.address),
     phone_number: clean(input.phone_number),
     medical_notes: orEmpty(input.medical_notes),
