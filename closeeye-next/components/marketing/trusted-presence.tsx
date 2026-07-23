@@ -59,7 +59,7 @@ export function TrustedPresenceLanding({ presencePrice }: { presencePrice: strin
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg">
-                <Link href="/book">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link>
+                <Link href="/auth?intent=join">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link>
               </Button>
               <Button asChild size="lg" variant="secondary">
                 <Link href="/how-it-works">How it works</Link>
@@ -200,7 +200,7 @@ export function TrustedPresenceLanding({ presencePrice }: { presencePrice: strin
             ))}
           </ul>
           <Button asChild size="lg" className="mt-7 w-full">
-            <Link href="/book">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link>
+            <Link href="/auth?intent=join">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link>
           </Button>
           <p className="mt-4 text-center text-caption text-muted">
             Priced in your currency · cancel anytime · <Link href="/pricing" className="font-semibold text-green hover:underline">see all plans</Link>
@@ -216,7 +216,7 @@ export function TrustedPresenceLanding({ presencePrice }: { presencePrice: strin
           <p className="mt-4 text-lead text-content-inverse/70">Start today. Their first visit can be this week.</p>
           <div className="mt-9">
             <Button asChild size="lg" variant="primary" onDark>
-              <Link href="/book">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link>
+              <Link href="/auth?intent=join">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link>
             </Button>
           </div>
         </Reveal>

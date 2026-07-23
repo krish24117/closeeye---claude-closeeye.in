@@ -75,7 +75,7 @@ export default function TrustSafetyPage() {
           </p>
         </div>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <Button asChild size="lg"><Link href="/book">Check on my family <ArrowRight className="h-5 w-5" strokeWidth={1.5} /></Link></Button>
+          <Button asChild size="lg"><Link href="/auth?intent=join">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={1.5} /></Link></Button>
           <Button asChild size="lg" variant="secondary"><a href={whatsappLink('Hi Close Eye — I’d like to understand how your Guardians are verified.')} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-5 w-5" strokeWidth={1.5} /> Talk to us</a></Button>
         </div>
       </Container>

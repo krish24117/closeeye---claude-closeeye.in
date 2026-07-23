@@ -37,7 +37,7 @@ export function Navbar() {
       ? { profileHref: '/guardian/profile', accountHref: '/guardian/profile', notificationsHref: '/guardian/profile' }
       : role === 'admin'
         ? { profileHref: '/admin/settings', accountHref: '/admin/settings', notificationsHref: '/admin/settings' }
-        : { profileHref: '/family/profile', accountHref: '/settings', notificationsHref: '/settings' }
+        : { profileHref: '/space/settings', accountHref: '/space/settings', notificationsHref: '/space/settings' }
   const menuProps = {
     name: identity.fullName,
     email: identity.email,
@@ -46,11 +46,12 @@ export function Navbar() {
     roleLabel: role === 'companion' ? 'Guardian' : role === 'admin' ? 'Admin' : profile ? 'Family' : undefined,
     ...dest,
   }
-  // Returning-customer entry — kept OUT of the browse funnel and set off by a
-  // divider in the drawer, so first-time visitors aren't nudged to a login.
+  // Returning-customer entry — one truthful authenticated action. Signed in → open the real
+  // Family Space (/space); signed out → the actual sign-in screen (/auth). Set off by a divider
+  // in the drawer so first-time visitors aren't nudged to a login.
   const accountItem: NavItem = signedIn
-    ? { label: 'Family Space', href: '/family' }
-    : { label: 'Sign in to Family Space', href: '/family' }
+    ? { label: 'Open Family Space', href: '/space' }
+    : { label: 'Sign In', href: '/auth' }
 
   // Transparent bar over a dark hero → go light so nothing disappears on dark.
   const overDark = DARK_HERO_ROUTES.has(pathname) && !scrolled && !open
@@ -103,14 +104,14 @@ export function Navbar() {
           {signedIn ? (
             <>
               <Button asChild size="sm">
-                <Link href="/book">Check on My Family</Link>
+                <Link href="/space">Open Family Space</Link>
               </Button>
               <UserMenu {...menuProps} className="ml-1" />
             </>
           ) : (
             <>
               <Link
-                href="/family"
+                href="/auth"
                 className={cn(
                   'rounded-full px-4 py-2 text-body-sm font-medium transition-colors',
                   overDark
@@ -118,10 +119,10 @@ export function Navbar() {
                     : 'text-body/80 hover:bg-accent-soft hover:text-ink',
                 )}
               >
-                Sign in
+                Sign In
               </Link>
               <Button asChild size="sm">
-                <Link href="/book">Check on My Family</Link>
+                <Link href="/auth?intent=join">Start with your Family</Link>
               </Button>
             </>
           )}
@@ -185,8 +186,8 @@ export function Navbar() {
               </ul>
               <div className="mt-8">
                 <Button asChild size="lg" className="w-full">
-                  <Link href="/book" onClick={close}>
-                    Check on My Family
+                  <Link href={signedIn ? '/space' : '/auth?intent=join'} onClick={close}>
+                    {signedIn ? 'Open Family Space' : 'Start with your Family'}
                   </Link>
                 </Button>
               </div>
