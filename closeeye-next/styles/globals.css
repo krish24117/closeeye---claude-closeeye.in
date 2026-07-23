@@ -87,6 +87,12 @@
     text-wrap: balance;
     letter-spacing: -0.02em;
   }
+  /* Universal coverage: any element carrying a heading-SIZE utility (headings rendered as
+     <p>/<span>/<div> across the app + consoles) is serif too. Font-family ONLY — never touch
+     colour/spacing, which callers set intentionally (e.g. stat numbers on dark surfaces). */
+  .text-h1, .text-h2, .text-h3, .text-h4 {
+    font-family: var(--font-display);
+  }
   p { text-wrap: pretty; }
 
   ::selection {
