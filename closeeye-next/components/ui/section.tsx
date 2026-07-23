@@ -39,6 +39,8 @@ interface HeadingProps {
   intro?: React.ReactNode
   align?: 'left' | 'center'
   tone?: 'dark' | 'light'
+  /** Render the title in the display serif (Newsreader) — for editorial surfaces. Opt-in. */
+  serif?: boolean
   className?: string
 }
 
@@ -49,6 +51,7 @@ export function SectionHeading({
   intro,
   align = 'center',
   tone = 'dark',
+  serif = false,
   className,
 }: HeadingProps) {
   return (
@@ -64,7 +67,7 @@ export function SectionHeading({
           {eyebrow}
         </span>
       )}
-      <h2 className={cn('text-h2', tone === 'light' && 'text-white')}>{title}</h2>
+      <h2 className={cn('text-h2', serif && 'font-display', tone === 'light' && 'text-white')}>{title}</h2>
       {intro && (
         <p className={cn('text-lead', tone === 'light' ? 'text-white/70' : 'text-muted')}>{intro}</p>
       )}

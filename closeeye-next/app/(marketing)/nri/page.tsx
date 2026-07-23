@@ -61,7 +61,7 @@ export default function NriPage() {
           <Reveal className="flex max-w-measure flex-col items-start">
             <span className="eyebrow">A Trusted Presence Platform</span>
             <NriOrb size="lg" className="mt-6" />
-            <h1 className="mt-6 text-h1">Your family is never&nbsp;alone.</h1>
+            <h1 className="mt-6 font-display text-h1">Your family is never&nbsp;alone.</h1>
             <p className="mt-3 font-display text-h3 text-muted">Even when you’re thousands of miles away.</p>
             <p className="mt-6 max-w-prose text-lead text-muted">
               Close Eye becomes your family’s trusted presence — a Guardian who truly knows them, and
@@ -93,7 +93,7 @@ export default function NriPage() {
           <ImageFrame src="/trust.png" ratio="landscape" gradient priority className="shadow-lg"
             alt="A Close Eye Guardian and an elderly woman sit close together at home, smiling as they look through an old family photo album over tea." />
           <span className="eyebrow is-centered mt-10">What presence really means</span>
-          <h2 className="mt-4 text-h2">Presence isn’t a checklist.</h2>
+          <h2 className="mt-4 font-display text-h2">Presence isn’t a checklist.</h2>
           <p className="mx-auto mt-4 max-w-prose text-lead text-muted">
             It’s someone who knows your family, notices what changes, and is there when you can’t be.
           </p>
@@ -102,7 +102,7 @@ export default function NriPage() {
 
       {/* ── How it works ── */}
       <Section tone="ivory" id="how">
-        <SectionHeading eyebrow="How it works" title="Trusted presence, in three steps." />
+        <SectionHeading serif eyebrow="How it works" title="Trusted presence, in three steps." />
         <Stagger className="mt-14 grid gap-5 sm:grid-cols-3">
           {[
             { n: '1', h: 'Tell us about your family', p: 'Who they are, their routine, and what to keep an eye on. It takes a minute.' },
@@ -120,7 +120,7 @@ export default function NriPage() {
 
       {/* ── What trusted presence looks like ── */}
       <Section tone="card">
-        <SectionHeading eyebrow="More than a visit" title="What trusted presence looks like." />
+        <SectionHeading serif eyebrow="More than a visit" title="What trusted presence looks like." />
         <Stagger className="mt-14 grid gap-5 sm:grid-cols-3">
           {OUTCOMES.map((o) => (
             <StaggerItem key={o.w} className="rounded-lg border border-line bg-ivory p-7 shadow-sm">
@@ -138,7 +138,7 @@ export default function NriPage() {
 
       {/* ── Why families choose ── */}
       <Section tone="ivory">
-        <SectionHeading eyebrow="Why families choose Close Eye" title="The relief, in their words." />
+        <SectionHeading serif eyebrow="Why families choose Close Eye" title="The relief, in their words." />
         <Stagger className="mt-14 grid gap-5 sm:grid-cols-3">
           {REASONS.map((r) => (
             <StaggerItem key={r} className="rounded-lg border border-accent-soft bg-accent-soft/40 p-7">
@@ -151,7 +151,7 @@ export default function NriPage() {
 
       {/* ── Trust (dark) ── */}
       <Section tone="ink">
-        <SectionHeading tone="light" eyebrow="The part that matters most"
+        <SectionHeading serif tone="light" eyebrow="The part that matters most"
           title="How we make a stranger someone you trust."
           intro="You can’t be there to vet them. So we do it for you — and we never ask you to take it on faith." />
         <Stagger className="mt-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -175,7 +175,7 @@ export default function NriPage() {
 
       {/* ── Signature: the visit report ── */}
       <Section tone="ivory">
-        <SectionHeading eyebrow="This is exactly what you receive" title="Proof, not guesses." />
+        <SectionHeading serif eyebrow="This is exactly what you receive" title="Proof, not guesses." />
         <Stagger className="mx-auto mt-14 flex max-w-md flex-col gap-4 rounded-lg border border-line bg-card p-6 shadow-lg sm:p-8">
           <StaggerItem className="flex items-center justify-between gap-3">
             <span className="flex items-center gap-3">
@@ -221,7 +221,7 @@ export default function NriPage() {
           </Reveal>
           <Reveal direction="left">
             <span className="eyebrow">Continuity</span>
-            <h2 className="mt-4 text-h2">Close Eye remembers what matters.</h2>
+            <h2 className="mt-4 font-display text-h2">Close Eye remembers what matters.</h2>
             <p className="mt-4 max-w-prose text-lead text-muted">
               Every visit teaches Close Eye a little more about your family — their routine, their
               health, who’s nearby — and keeps you connected to it all. Ask anything, anytime, and it
@@ -234,7 +234,7 @@ export default function NriPage() {
       {/* ── Bridge + pricing ── */}
       <Section tone="ivory">
         <Reveal className="mx-auto max-w-measure text-center">
-          <h2 className="text-h2">Peace of mind shouldn’t depend on distance.</h2>
+          <h2 className="font-display text-h2">Peace of mind shouldn’t depend on distance.</h2>
           <p className="mx-auto mt-4 max-w-prose text-lead text-muted">
             One membership. A trusted presence for your family, and proof for you — from wherever you are.
           </p>
@@ -266,7 +266,7 @@ export default function NriPage() {
 
       {/* ── FAQ ── */}
       <Section tone="ivory">
-        <SectionHeading eyebrow="Good questions" title="Answered plainly." />
+        <SectionHeading serif eyebrow="Good questions" title="Answered plainly." />
         <Stagger className="mx-auto mt-14 grid max-w-4xl gap-x-12 gap-y-8 sm:grid-cols-2">
           {FAQ.map((f) => (
             <StaggerItem key={f.q} className="border-b border-line pb-6">
@@ -281,7 +281,7 @@ export default function NriPage() {
       <Section tone="ink">
         <Reveal className="mx-auto flex max-w-measure flex-col items-center text-center">
           <NriOrb size="lg" />
-          <h2 className="mt-6 text-h2 text-content-inverse">Be your family’s trusted presence, from anywhere.</h2>
+          <h2 className="mt-6 font-display text-h2 text-content-inverse">Be your family’s trusted presence, from anywhere.</h2>
           <p className="mt-4 text-lead text-content-inverse/70">Start today. Their first visit can be this week.</p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg" variant="primary" onDark>
