@@ -81,7 +81,7 @@ export default function VisitDetailPage() {
 
   const back = (
     <Button asChild variant="text" className="self-start">
-      <Link href="/family/visits"><ArrowLeft className="h-4 w-4" strokeWidth={1.5} /> All visits</Link>
+      <Link href="/space/activity/visits"><ArrowLeft className="h-4 w-4" strokeWidth={1.5} /> All visits</Link>
     </Button>
   )
 
@@ -97,7 +97,7 @@ export default function VisitDetailPage() {
           icon={CalendarClock}
           title="Visit not found"
           hint="This visit may have been cancelled or belongs to another account."
-          action={<Button asChild><Link href="/family/visits">Back to visits</Link></Button>}
+          action={<Button asChild><Link href="/space/activity/visits">Back to visits</Link></Button>}
         />
       </div>
     )
@@ -237,7 +237,7 @@ export default function VisitDetailPage() {
       </section>
 
       <div className="flex flex-col gap-2.5 sm:flex-row">
-        <Button asChild size="sm"><Link href="/family/connect"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Message Presence Manager</Link></Button>
+        <Button asChild size="sm"><Link href="/space/connect"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Message Presence Manager</Link></Button>
         {visit.status !== 'cancelled' && (
           <Button asChild variant="secondary" size="sm">
             <a href={whatsappLink(`Hi Close Eye — I'd like to reschedule ${name}'s visit.`)} target="_blank" rel="noreferrer">Reschedule</a>

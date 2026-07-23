@@ -53,9 +53,15 @@ export default function ActivityPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-h2 text-ink">Activity</h1>
-        <p className="mt-1 text-body-sm text-muted">Everything you’ve asked, and what Close Eye answered.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-h2 text-ink">Activity</h1>
+          <p className="mt-1 text-body-sm text-muted">Everything you’ve asked, and what Close Eye answered.</p>
+        </div>
+        {/* Visits re-homed under Activity (IA consolidation) — the list + full reports live here. */}
+        <Link href="/space/activity/visits" className="mt-1 inline-flex shrink-0 items-center gap-1 text-body-sm font-semibold text-green hover:underline">
+          Visit history <ArrowRight className="h-4 w-4" strokeWidth={2} />
+        </Link>
       </div>
 
       {/* Coordination — the story writes itself: who shared, delegated and completed what. */}

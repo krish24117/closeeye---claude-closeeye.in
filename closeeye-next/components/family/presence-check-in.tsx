@@ -13,7 +13,7 @@ import { ArrowRight, ShieldCheck } from 'lucide-react'
 export function PresenceCheckIn({
   name,
   detail,
-  storyHref = '/family/visits',
+  storyHref = '/space/activity/visits',
 }: {
   name: string
   detail?: ReactNode

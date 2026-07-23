@@ -25,7 +25,7 @@ export default function MemberConversationPage() {
   if (!member) {
     return (
       <div className="flex flex-col gap-6">
-        <Link href="/family/connect" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
+        <Link href="/space/connect/threads" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
           <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Connect
         </Link>
         <EmptyState
@@ -34,7 +34,7 @@ export default function MemberConversationPage() {
           hint="This family member may have been removed."
           action={
             <Button asChild>
-              <Link href="/family/connect">Back to Connect</Link>
+              <Link href="/space/connect/threads">Back to Connect</Link>
             </Button>
           }
         />
@@ -44,7 +44,7 @@ export default function MemberConversationPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Link href="/family/connect" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
+      <Link href="/space/connect/threads" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> All conversations
       </Link>
       <MemberAskHistory lovedOneId={member.id} firstName={member.full_name.split(' ')[0] || 'them'} />

@@ -48,8 +48,8 @@ export function index(): SearchItem[] {
   for (const g of GUARDIANS) items.push({ id: `gd-${g.id}`, type: g.role === 'companion' ? 'Companion' : 'Guardian', title: g.name, sub: `${g.role === 'companion' ? 'Companion' : 'Guardian'} · ${g.area} · ${g.rating}★`, href: '/admin/care-team', keywords: `${g.training.join(' ')} ${g.availabilityLabel}` })
   for (const inv of INVOICES) items.push({ id: `inv-${inv.id}`, type: 'Invoice', title: inv.id, sub: `${inv.family} · ${inv.plan} · ${fmtINR(inv.amount, false)}`, href: '/admin/finance', keywords: `${inv.status} payment invoice ${inv.family}` })
   for (const v of VISITS) {
-    items.push({ id: `vis-${v.id}`, type: 'Visit', title: `${v.memberName} · ${v.dayLabel}`, sub: `${v.serviceName} · ${v.dateLabel} · ${v.guardianName}`, href: `/family/visits/${v.id}`, keywords: `${v.status} visit` })
-    if (v.status === 'completed') items.push({ id: `rep-${v.id}`, type: 'Report', title: `Report · ${v.memberName}`, sub: `${v.dateLabel} · ${v.mood ?? 'wellbeing'}`, href: `/family/visits/${v.id}`, keywords: `report story photos ${v.memberName}` })
+    items.push({ id: `vis-${v.id}`, type: 'Visit', title: `${v.memberName} · ${v.dayLabel}`, sub: `${v.serviceName} · ${v.dateLabel} · ${v.guardianName}`, href: `/space/activity/visit/${v.id}`, keywords: `${v.status} visit` })
+    if (v.status === 'completed') items.push({ id: `rep-${v.id}`, type: 'Report', title: `Report · ${v.memberName}`, sub: `${v.dateLabel} · ${v.mood ?? 'wellbeing'}`, href: `/space/activity/visit/${v.id}`, keywords: `report story photos ${v.memberName}` })
   }
   for (const p of PLANS) items.push({ id: `mem-${p.name}`, type: 'Membership', title: `${p.name} plan`, sub: `${fmtINR(p.price, false)}${p.period} · ${p.members} members`, href: '/admin/memberships', keywords: 'membership plan pricing renewal' })
   items.push(...DOCTORS, ...MEDICINES, ...TICKETS, ...OPERATIONS)

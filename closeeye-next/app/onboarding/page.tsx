@@ -148,7 +148,7 @@ export default function OnboardingPage() {
     // Same — mark complete before entering the (auth-gated) activation surface, else it bounces back
     // to /onboarding. The plan is already selected + pending.
     await refreshOnboarding()
-    router.replace('/family/membership?activate=1')
+    router.replace('/space/billing/plan?activate=1')
   }
 
   /* ── READY — a dark, alive close (its own full-screen layout) ── */

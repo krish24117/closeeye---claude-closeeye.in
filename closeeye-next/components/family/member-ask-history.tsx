@@ -48,7 +48,7 @@ export function MemberAskHistory({ lovedOneId, firstName }: { lovedOneId: string
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <SectionTitle>Questions you’ve asked about {firstName}</SectionTitle>
-        <Link href="/family/connect/ask" className="shrink-0 text-caption font-semibold text-green hover:underline">
+        <Link href="/space/connect" className="shrink-0 text-caption font-semibold text-green hover:underline">
           Ask again →
         </Link>
       </div>
@@ -56,7 +56,7 @@ export function MemberAskHistory({ lovedOneId, firstName }: { lovedOneId: string
         {items.map((q, i) => (
           <li key={q.id} className={cn(i > 0 && 'border-t border-line')}>
             <Link
-              href="/family/connect/ask"
+              href="/space/connect"
               className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-accent-soft/30"
             >
               <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent-soft text-green">

@@ -160,7 +160,7 @@ export default function WorkspaceHome() {
       {protectedStage && (
         <section className="flex flex-col gap-3">
           {home.upcomingVisit ? (
-            <Link href="/space/activity" className="flex items-center gap-3 rounded-lg border border-edge/70 bg-surface-raised p-4 shadow-sm transition-colors hover:border-brand/40">
+            <Link href="/space/activity/visits" className="flex items-center gap-3 rounded-lg border border-edge/70 bg-surface-raised p-4 shadow-sm transition-colors hover:border-brand/40">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-accent text-brand"><CalendarClock className="h-5 w-5" strokeWidth={1.75} /></span>
               <span className="min-w-0 flex-1">
                 <span className="block text-caption font-semibold uppercase tracking-widest text-content-muted">Next visit</span>
@@ -200,7 +200,7 @@ export default function WorkspaceHome() {
           reassurance that someone was truly there. Degrades gracefully if a report isn't filed yet. */}
       {activeStage && lv && (
         <section className="flex flex-col gap-3">
-          <Link href="/space/activity" className="flex flex-col gap-3 rounded-lg border border-edge/70 bg-surface-raised p-5 shadow-sm transition-colors hover:border-brand/40">
+          <Link href={`/space/activity/visit/${lv.id}`} className="flex flex-col gap-3 rounded-lg border border-edge/70 bg-surface-raised p-5 shadow-sm transition-colors hover:border-brand/40">
             <div className="flex items-center gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-accent text-brand"><FileText className="h-5 w-5" strokeWidth={1.75} /></span>
               <span className="min-w-0 flex-1">

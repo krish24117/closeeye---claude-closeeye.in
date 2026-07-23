@@ -82,7 +82,7 @@ export function AskCloseEyeCard({
     if (!primaryId) { setNeedsProfile(false); return }
     fetchElderProfile(primaryId).then((ep) => setNeedsProfile(profileIsThin(ep))).catch(() => setNeedsProfile(false))
   }, [primaryId])
-  const askHref = (q: string) => `/family/connect/ask?q=${encodeURIComponent(q)}`
+  const askHref = (q: string) => `/space/connect?q=${encodeURIComponent(q)}`
 
   /**
    * The red door. Tapping it IS the family's statement — so these words are sent as
@@ -106,7 +106,7 @@ export function AskCloseEyeCard({
   const URGENT_HELP = 'I need urgent help'
   const go = (q: string) => {
     const t = q.trim()
-    router.push(t ? askHref(t) : '/family/connect/ask')
+    router.push(t ? askHref(t) : '/space/connect')
   }
 
   const prompts: Prompt[] = first
@@ -114,15 +114,15 @@ export function AskCloseEyeCard({
         { label: `Tell me more about ${first}'s day`, href: askHref(`Tell me more about ${first}'s day`) },
         { label: `What made ${first} smile today?`, href: askHref(`What made ${first} smile today?`) },
         { label: 'Compare this week with last week', href: askHref(`How is ${first} doing this week compared with last week?`) },
-        { label: 'Talk to my Presence Manager', href: primaryId ? `/family/connect/${primaryId}` : '/family/connect' },
-        { label: 'Book another Presence', href: '/family/book' },
+        { label: 'Talk to my Presence Manager', href: primaryId ? `/space/connect/threads/${primaryId}` : '/space/connect/threads' },
+        { label: 'Book another Presence', href: '/space/book' },
         { label: URGENT_HELP, href: askHref(URGENT_HELP), urgent: true },
       ]
     : [
         { label: 'How does a Presence Visit work?', href: askHref('How does a Presence Visit work?') },
         { label: 'What can Close Eye help with?', href: askHref('What can Close Eye help with?') },
-        { label: 'Talk to my Presence Manager', href: '/family/connect' },
-        { label: 'Book a Presence', href: '/family/book' },
+        { label: 'Talk to my Presence Manager', href: '/space/connect/threads' },
+        { label: 'Book a Presence', href: '/space/book' },
       ]
   const shown = variant === 'compact' ? prompts.slice(0, 4) : prompts
 
@@ -177,7 +177,7 @@ export function AskCloseEyeCard({
       {needsProfile && primaryId && (
         <button
           type="button"
-          onClick={() => router.push(`/family/members/${primaryId}/health`)}
+          onClick={() => router.push(`/space/people/${primaryId}/health`)}
           className="mt-3.5 flex w-full items-center gap-2.5 rounded-xl border border-green/20 bg-card px-3.5 py-2.5 text-left text-caption text-ink transition-colors hover:border-green/40"
         >
           <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} /></span>

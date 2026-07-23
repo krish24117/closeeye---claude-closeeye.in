@@ -94,7 +94,7 @@ export function BillingView() {
             ))}
           </dl>
           <div className="border-t border-line/40 px-6 py-3.5">
-            <Link href="/family/membership" className="text-body-sm font-semibold text-green hover:underline">Manage plan →</Link>
+            <Link href="/space/billing/plan" className="text-body-sm font-semibold text-green hover:underline">Manage plan →</Link>
           </div>
         </section>
       )}

@@ -118,10 +118,10 @@ export function LovedOneCard({ lo }: { lo: LovedOne }) {
         </dl>
 
         <div className="flex items-center gap-1 border-t border-line px-3 py-1.5">
-          <CardAction href={`/family/book?member=${lo.id}`} icon={CalendarPlus} label="Book a visit" primary />
-          <CardAction href={`/family/members/${lo.id}`} icon={UserRound} label="Profile" />
-          <CardAction href="/family/visits" icon={CalendarClock} label="Visits" />
-          <CardAction href={`/family/connect/${lo.id}`} icon={MessageCircle} label="Message" />
+          <CardAction href={`/space/book?member=${lo.id}`} icon={CalendarPlus} label="Book a visit" primary />
+          <CardAction href={`/space/people/${lo.id}`} icon={UserRound} label="Profile" />
+          <CardAction href="/space/activity/visits" icon={CalendarClock} label="Visits" />
+          <CardAction href={`/space/connect/threads/${lo.id}`} icon={MessageCircle} label="Message" />
         </div>
       </article>
 

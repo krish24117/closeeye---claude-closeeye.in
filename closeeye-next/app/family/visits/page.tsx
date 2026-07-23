@@ -131,7 +131,7 @@ export default function VisitsPage() {
         <PageHeader title="Visits" subtitle="Every visit for the people you love." />
         {requests && requests.length > 0 && (
           <Button asChild size="md">
-            <Link href="/family/book"><CalendarPlus className="h-5 w-5" strokeWidth={2} /> Book a visit</Link>
+            <Link href="/space/book"><CalendarPlus className="h-5 w-5" strokeWidth={2} /> Book a visit</Link>
           </Button>
         )}
       </div>
@@ -152,7 +152,7 @@ export default function VisitsPage() {
           <h2 className="mt-5 text-h3 text-ink">No visits yet</h2>
           <p className="mt-2 max-w-sm text-body text-muted">When you book a wellbeing visit, it appears here — with photos and a full Presence Story after each one.</p>
           <Button asChild size="lg" className="mt-6">
-            <Link href="/family/book"><CalendarPlus className="h-5 w-5" strokeWidth={2} /> Book a visit</Link>
+            <Link href="/space/book"><CalendarPlus className="h-5 w-5" strokeWidth={2} /> Book a visit</Link>
           </Button>
         </section>
       ) : (
@@ -164,7 +164,7 @@ export default function VisitsPage() {
             const awaitingPayment = r.status === 'companion_confirmed' && r.payment_status !== 'paid' && (r.amount_paise ?? 0) > 0
             return (
               <div key={r.id} className={cn('px-5 py-4', i > 0 && 'border-t border-line')}>
-                <Link href={`/family/visits/${r.id}`} className="group flex items-center gap-4">
+                <Link href={`/space/activity/visit/${r.id}`} className="group flex items-center gap-4">
                   <Avatar initials={initialsOf(name)} size="md" tone="solid" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-body-sm font-semibold text-ink group-hover:text-green">{r.service_name?.trim() || 'Wellbeing visit'}</p>

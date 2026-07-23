@@ -10,14 +10,14 @@ import { cn } from '@/lib/utils'
 /**
  * Membership in the Services space — so every family (including a brand-new account
  * with no loved one yet) can discover the ongoing plans, not just the one-off visits
- * above. Teases the two locked plans; choosing hands off to /family/membership (the
+ * above. Teases the two locked plans; choosing hands off to /space/billing/plan (the
  * single selection + payment surface), with the plan pre-selected via membership-intent.
  */
 export function ServicesMembership() {
   const router = useRouter()
   const choose = (id: PlanId) => {
     setPendingPlan(id)
-    router.push('/family/membership?activate=1')
+    router.push('/space/billing/plan?activate=1')
   }
 
   const plans = PLANS.filter((p) => p.key === 'connect' || p.key === 'care')

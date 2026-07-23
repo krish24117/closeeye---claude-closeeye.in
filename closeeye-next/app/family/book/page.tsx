@@ -240,7 +240,7 @@ export default function FamilyBookPage() {
             ))}
           </dl>
         </section>
-        <Button asChild size="lg" className="w-full sm:w-auto sm:self-start"><Link href="/family/visits">View visits</Link></Button>
+        <Button asChild size="lg" className="w-full sm:w-auto sm:self-start"><Link href="/space/activity/visits">View visits</Link></Button>
       </div>
     )
   }
@@ -255,12 +255,12 @@ export default function FamilyBookPage() {
   if (includedButUnpaid) {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
-        <Link href="/family/membership" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to membership</Link>
+        <Link href="/space/billing/plan" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to membership</Link>
         <section className="flex flex-col items-center rounded-lg border border-line/70 bg-card px-6 py-14 text-center shadow-sm">
           <span className="grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-green"><CreditCard className="h-8 w-8" strokeWidth={1.5} /></span>
           <h2 className="mt-5 text-h3 text-ink">One step from active</h2>
           <p className="mt-2 max-w-sm text-body text-muted">Your Care plan is one step from active — complete payment to include this visit.</p>
-          <Button asChild size="lg" className="mt-6"><Link href="/family/membership">Complete payment</Link></Button>
+          <Button asChild size="lg" className="mt-6"><Link href="/space/billing/plan">Complete payment</Link></Button>
         </section>
       </div>
     )
@@ -275,7 +275,7 @@ export default function FamilyBookPage() {
           <span className="grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-green"><UserPlus className="h-8 w-8" strokeWidth={1.5} /></span>
           <h2 className="mt-5 text-h3 text-ink">Add a family member first</h2>
           <p className="mt-2 max-w-sm text-body text-muted">Visits are booked for someone in your family. Add them once and we’ll prefill their details every time.</p>
-          <Button asChild size="lg" className="mt-6"><Link href="/family/add"><UserPlus className="h-5 w-5" strokeWidth={2} /> Add a family member</Link></Button>
+          <Button asChild size="lg" className="mt-6"><Link href="/space/people/add"><UserPlus className="h-5 w-5" strokeWidth={2} /> Add a family member</Link></Button>
         </section>
       </div>
     )
@@ -285,7 +285,7 @@ export default function FamilyBookPage() {
   if (!member) {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
-        <Link href="/family/visits" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to visits</Link>
+        <Link href="/space/activity/visits" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to visits</Link>
         <PageHeader title="Book a visit" subtitle="Who is this visit for?" />
         <div className="flex flex-col gap-3">
           {lovedOnes.map((l) => {
@@ -321,7 +321,7 @@ export default function FamilyBookPage() {
         {backTo ? (
           <button type="button" onClick={() => { setError(''); setStep(backTo) }} className="mb-3 inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back</button>
         ) : (
-          <Link href="/family/visits" className="mb-3 inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to visits</Link>
+          <Link href="/space/activity/visits" className="mb-3 inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to visits</Link>
         )}
         <PageHeader title="Book a visit" subtitle={`For ${member.full_name}`} />
         {lovedOnes.length > 1 && backTo === null && (

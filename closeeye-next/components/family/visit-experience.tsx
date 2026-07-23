@@ -307,7 +307,7 @@ export function VisitReportExperience({
 
       <div className="flex flex-col gap-3 pt-2 sm:flex-row">
         <Button asChild variant="secondary" size="sm">
-          <Link href="/family/connect"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Ask about this visit</Link>
+          <Link href="/space/connect"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Ask about this visit</Link>
         </Button>
       </div>
     </div>
@@ -421,7 +421,7 @@ function StaticBody({ visit }: { visit: Visit }) {
 
       <div className="flex flex-col gap-3 pt-2 sm:flex-row">
         <DownloadButton label="Download Presence Story" filename={`close-eye-report-${visit.id}.html`} content={staticReportDoc(visit)} />
-        <Button asChild variant="secondary" size="sm"><Link href="/family/connect"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Ask about this visit</Link></Button>
+        <Button asChild variant="secondary" size="sm"><Link href="/space/connect"><MessageCircle className="h-4 w-4" strokeWidth={1.5} /> Ask about this visit</Link></Button>
       </div>
     </div>
   )

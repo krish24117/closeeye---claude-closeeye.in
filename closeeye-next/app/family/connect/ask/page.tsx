@@ -16,7 +16,7 @@ export default function AskCloseEyePage() {
   return (
     <div className="flex flex-col gap-4">
       <Link
-        href="/family/connect"
+        href="/space/connect/threads"
         className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink"
       >
         <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Connect

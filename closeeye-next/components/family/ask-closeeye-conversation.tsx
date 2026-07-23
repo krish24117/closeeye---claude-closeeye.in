@@ -238,8 +238,8 @@ export function AskCloseEyeConversation({ initialQuestion }: { initialQuestion?:
                       <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} /> What else matters?
                     </button>
                   )}
-                  <NextStepChip href="/family/book" icon={CalendarPlus}>Book a visit</NextStepChip>
-                  <NextStepChip href={subjectId ? `/family/connect/${subjectId}` : '/family/connect'} icon={MessageCircle}>
+                  <NextStepChip href="/space/book" icon={CalendarPlus}>Book a visit</NextStepChip>
+                  <NextStepChip href={subjectId ? `/space/connect/threads/${subjectId}` : '/space/connect/threads'} icon={MessageCircle}>
                     Message your Presence Manager
                   </NextStepChip>
                 </div>

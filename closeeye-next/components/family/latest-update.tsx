@@ -50,7 +50,7 @@ export function LatestUpdate({ visit }: { visit: Visit }) {
       </div>
 
       <Link
-        href={`/family/visits/${visit.id}`}
+        href={`/space/activity/visit/${visit.id}`}
         className="flex items-center justify-center gap-1.5 border-t border-line py-3.5 text-body-sm font-semibold text-green transition-colors hover:bg-accent-soft/40"
       >
         Read the full report <ArrowRight className="h-4 w-4" strokeWidth={1.5} />

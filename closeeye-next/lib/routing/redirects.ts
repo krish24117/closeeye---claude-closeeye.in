@@ -41,7 +41,19 @@ export const WORKSPACE_REDIRECTS: RouteRedirect[] = [
   { source: '/family/members/:id', destination: '/space/people/:id', permanent: true },
   { source: '/family/add', destination: '/space/people/add', permanent: true },
   //
-  // Still held (Owner not yet at parity): /family/membership (payment flow), /family/book +
-  // /family/visits + /family/services (Care doesn't own booking), /family/connect (no Q&A history),
+  // ── Re-homing wave 2 (IA consolidation 2026-07-24, founder-approved) — booking, plan
+  // activation, visits and conversations relocate under /space via RE-EXPORT pages (same
+  // component trees, zero booking/payment/messaging-logic change). Most-specific first.
+  { source: '/family/book', destination: '/space/book', permanent: true },
+  { source: '/family/membership', destination: '/space/billing/plan', permanent: true },
+  { source: '/family/visits/:id', destination: '/space/activity/visit/:id', permanent: true },
+  { source: '/family/visits', destination: '/space/activity/visits', permanent: true },
+  // Ask is superseded by the canonical /space/connect engine (?q= passes through); the human
+  // PM threads + care-updates feed relocate intact under /space/connect/threads.
+  { source: '/family/connect/ask', destination: '/space/connect', permanent: true },
+  { source: '/family/connect/:id', destination: '/space/connect/threads/:id', permanent: true },
+  { source: '/family/connect', destination: '/space/connect/threads', permanent: true },
+  //
+  // Still held (Owner not yet at parity): /family/services (in-app services list) and
   // /family/profile/edit (edit form). These re-home as their /space Owner reaches parity.
 ]

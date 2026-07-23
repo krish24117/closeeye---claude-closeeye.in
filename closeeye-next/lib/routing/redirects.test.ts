@@ -39,6 +39,13 @@ const CONTRACT = [
   '/space/care',
   '/space/billing',
   '/space/settings',
+  // Re-homing wave 2 (2026-07-24): booking, plan activation, visits, conversations under /space.
+  '/space/book',
+  '/space/billing/plan',
+  '/space/activity/visits',
+  '/space/activity/visit/[id]',
+  '/space/connect/threads',
+  '/space/connect/threads/[id]',
   // Legacy family app — must never 404 through the migration.
   '/family',
   '/family/add',

@@ -56,7 +56,7 @@ export default function ConnectHome() {
             {updates.map((u, i) => (
               <li key={u.id} className={cn(i > 0 && 'border-t border-line')}>
                 <Link
-                  href={u.related_booking_id ? `/family/visits/${u.related_booking_id}` : `/family/connect/${u.loved_one_id}`}
+                  href={u.related_booking_id ? `/space/activity/visit/${u.related_booking_id}` : `/space/connect/threads/${u.loved_one_id}`}
                   className="flex items-start gap-3.5 px-5 py-3.5 transition-colors hover:bg-accent-soft/30"
                 >
                   <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-green">
@@ -92,7 +92,7 @@ export default function ConnectHome() {
             hint="Add someone you love, and Close Eye starts holding everything that matters about them — ready the moment you ask."
             action={
               <Button asChild>
-                <Link href="/family/members">
+                <Link href="/space/people">
                   <UserPlus className="h-5 w-5" strokeWidth={1.75} /> Add a family member
                 </Link>
               </Button>
@@ -138,7 +138,7 @@ function MemberRow({ lo, summary, loading, border }: { lo: LovedOne; summary?: T
 
   return (
     <li className={cn(border && 'border-t border-line')}>
-      <Link href={`/family/connect/${lo.id}`} className="flex items-center gap-3.5 px-5 py-4 transition-colors hover:bg-accent-soft/30">
+      <Link href={`/space/connect/threads/${lo.id}`} className="flex items-center gap-3.5 px-5 py-4 transition-colors hover:bg-accent-soft/30">
         <Avatar initials={initialsOf(lo.full_name)} src={photo} alt={lo.full_name} size="md" tone="solid" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">

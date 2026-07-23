@@ -384,7 +384,7 @@ export function MessagesThread({ lovedOne }: { lovedOne: LovedOne }) {
                   )}
                   {m.sender === 'system' ? (
                     m.related_booking_id ? (
-                      <Link href={`/family/visits/${m.related_booking_id}`} className="mx-auto flex max-w-[90%] flex-col items-center px-2 text-center transition-opacity hover:opacity-80">
+                      <Link href={`/space/activity/visit/${m.related_booking_id}`} className="mx-auto flex max-w-[90%] flex-col items-center px-2 text-center transition-opacity hover:opacity-80">
                         <span className="text-caption leading-relaxed text-muted">{m.body}</span>
                         <span className="mt-0.5 text-caption font-semibold text-green">View the Presence Story →</span>
                       </Link>

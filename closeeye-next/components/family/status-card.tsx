@@ -43,7 +43,7 @@ export function StatusCard({ status }: { status: ReturnType<typeof todayStatus> 
 
       <div className="flex items-center justify-between gap-3 border-t border-line px-6 py-4 sm:px-8">
         <p className="text-body-sm text-muted">Everything looks steady. You can rest easy.</p>
-        <Link href={`/family/visits/${status.lastVisit?.id ?? ''}`} className="shrink-0 text-body-sm font-semibold text-green hover:underline">
+        <Link href={`/space/activity/visit/${status.lastVisit?.id ?? ''}`} className="shrink-0 text-body-sm font-semibold text-green hover:underline">
           Latest update →
         </Link>
       </div>
