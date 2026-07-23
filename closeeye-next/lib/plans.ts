@@ -1,11 +1,20 @@
 /**
- * Close Eye V2 membership model — LOCKED (Product Director decision).
- * Clean rounded pricing only. Do not add plans, alter prices, or introduce
- * alternatives without a new explicit product decision.
+ * Close Eye membership model (founder 2026-07-23 — retired the old ₹500 Connect /
+ * ₹1,500 Care plans). Dev-stage pricing; may change. Clean round numbers only.
  *
- * `id` matches the DB constraint on `subscriptions.plan_id`
- * ('companion' | 'trust' | 'family_os'); the user-facing names are Connect /
- * Care. Connect → companion, Care → trust (app-layer mapping, no schema change).
+ * The two subscription SLOTS are preserved (so every consumer keeps working):
+ *   · `id` still matches the DB constraint on `subscriptions.plan_id`
+ *     ('companion' | 'trust' | 'family_os')
+ *   · `key` is still 'connect' | 'care' (logic across booking/dashboard/admin keys off it)
+ * Only the customer-facing NAMES, PRICES and BENEFITS changed:
+ *   companion/connect → Close Eye Membership (₹1,000)
+ *   trust/care        → Close Eye Presence   (from ₹8,000)
+ * Full tiering (Presence Essential/Plus/Family Office + international $ pricing) lives on
+ * the marketing /pricing page (lib/pricing.ts, region-detected).
+ *
+ * ⚠️ Live payment (Razorpay) is NOT re-wired to these amounts yet — the existing Razorpay
+ * plans are the old prices, so the in-app CTA captures intent for the care team instead of
+ * charging. Wiring new Razorpay plan IDs for these amounts is a separate, deliberate step.
  */
 import { formatMoney } from '@/lib/platform/currency'
 import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
@@ -39,39 +48,39 @@ export const PLANS: Plan[] = [
   {
     id: 'companion',
     key: 'connect',
-    name: 'Close Eye Connect',
-    short: 'Connect',
-    amount: 500,
-    price: inr(500),
+    name: 'Close Eye Membership',
+    short: 'Membership',
+    amount: 1000,
+    price: inr(1000),
     period: '/month',
-    description: 'A dedicated Presence Manager handles coordination, updates, and escalation — so your family always has a real person to call on, and you always know what\'s happening.',
+    description: 'Stay prepared, before you ever need help — priority booking, your family’s details on hand, and member pricing on every service.',
     benefits: [
-      'Dedicated Presence Manager',
-      'Phone & WhatsApp coordination',
-      'Family updates',
-      'Emergency escalation (108 & family)',
-      'Dashboard access',
+      'Priority booking when you need it',
+      'Your family’s details, ready in advance',
+      'Emergency information on hand',
+      'Support a message away, on WhatsApp',
+      'Member pricing on every service',
     ],
-    cta: 'Choose Connect',
+    cta: 'Become a Member',
   },
   {
     id: 'trust',
     key: 'care',
-    name: 'Close Eye Care',
-    short: 'Care',
-    amount: 1500,
-    price: inr(1500),
+    name: 'Close Eye Presence',
+    short: 'Presence',
+    amount: 8000,
+    price: inr(8000),
     period: '/month',
     popular: true,
-    description: 'A verified Close Eye Guardian visits your loved one every month and keeps your family connected.',
+    description: 'An ongoing, trusted local presence — a dedicated Guardian who truly knows your family, with verified proof of how they’re doing after every visit.',
     benefits: [
-      'Everything in Close Eye Connect',
-      'One monthly wellbeing visit',
-      'Visit report with photos',
-      'Medication check-in during every visit',
-      'Priority scheduling',
+      'A trusted local presence your family can rely on',
+      'Regular, familiar time with your loved one',
+      'Proof of every visit — never a guess',
+      'You stay informed, wherever you are',
+      'Early awareness of what’s changing',
     ],
-    cta: 'Choose Care',
+    cta: 'Choose Presence',
   },
 ]
 
@@ -84,7 +93,7 @@ export function planById(id?: string | null): Plan | null {
 export const SERVICES = [
   { name: 'Home Wellbeing Visit', amount: 1000, price: `Starting at ${inr(1000)}`, note: 'Book an additional wellbeing visit whenever needed.', serviceId: 'home-wellbeing-visit', cta: 'Book Visit' },
   { name: 'Hospital Companion', amount: 2000, price: `Starting at ${inr(2000)}`, note: 'Accompaniment, admission support and family coordination.', serviceId: 'hospital-companion', cta: 'Book Visit' },
-  { name: 'Custom Request', amount: 500, price: `Starting at ${inr(500)}`, note: 'Groceries, medicines, document pickup, temple visits and other family requests.', serviceId: 'custom-request', cta: 'Request Service' },
+  { name: 'Custom Request', amount: 1000, price: `Starting at ${inr(1000)}`, note: 'Groceries, medicines, document pickup, temple visits and other family requests.', serviceId: 'custom-request', cta: 'Request Service' },
 ] as const
 
 /** "Who are you protecting?" → the loved one's relationship stored on the row. */

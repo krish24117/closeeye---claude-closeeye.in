@@ -14,7 +14,6 @@ import { PLANS, SERVICES, planById, type PlanId } from '@/lib/plans'
 import { getPendingPlan, clearPendingPlan } from '@/lib/membership-intent'
 import { isFounderFunnelGated } from '@/lib/founder-funnel'
 import { PRELAUNCH_MEMBERSHIP_NOTE } from '@/lib/launch'
-import { payForMembership, type PayOutcome } from '@/lib/razorpay'
 import { MembershipPrepare } from '@/components/family/membership-prepare'
 import { fetchElderProfile, type ElderProfileForm } from '@/lib/db/family'
 import { cn } from '@/lib/utils'
@@ -43,7 +42,7 @@ function isWellbeingThin(ep: ElderProfileForm): boolean {
 }
 
 export default function MembershipPage() {
-  const { subscription, profile, identity, refresh, lovedOnes, region } = useFamilyData()
+  const { subscription, profile, identity, lovedOnes, region } = useFamilyData()
   const toast = useToast()
   const [busy, setBusy] = useState<PlanId | null>(null)
   // Pre-payment collection gate — set to the plan being purchased while we gather the
@@ -96,22 +95,6 @@ export default function MembershipPage() {
     return wellbeingThin
   }
 
-  function handleOutcome(o: PayOutcome, short: string) {
-    if (o.status === 'success') {
-      clearPendingPlan() // join intent fulfilled — the plan is being activated
-      toast(`Payment received — activating your Close Eye ${short} membership.`)
-      // The webhook is the sole authority for activation. Re-fetch a few times so
-      // the UI flips to Active as soon as the webhook lands (usually a second or
-      // two) — the client never writes status itself.
-      void refresh()
-      for (let i = 1; i <= 4; i++) setTimeout(() => void refresh(), i * 2500)
-    } else if (o.status === 'dismissed') {
-      toast(`Close Eye ${short} selected — you can complete payment anytime.`)
-    } else {
-      toast(o.message) // failed / unavailable / error
-    }
-  }
-
   // Select the plan, then open Razorpay to activate it. Works for a fresh choice
   // and for completing payment on an already-selected (pending) plan.
   async function choose(planId: PlanId) {
@@ -131,28 +114,11 @@ export default function MembershipPage() {
   async function payChoose(planId: PlanId) {
     const plan = planById(planId)
     if (!plan) return
-    setBusy(planId)
-    try {
-      // Do NOT pre-write the plan/status before payment — that optimistically
-      // flips the UI to the chosen plan (inheriting the current 'active' status).
-      // create-subscription + the webhook are the source of truth; we only open
-      // checkout, then re-fetch on success.
-      const outcome = await payForMembership({
-        planId,
-        planName: `Close Eye ${plan.short}`,
-        prefill: {
-          name: identity.fullName,
-          email: identity.email ?? undefined,
-          contact: profile?.whatsapp_number || profile?.phone || undefined,
-        },
-      })
-      handleOutcome(outcome, plan.short)
-    } catch (e) {
-      console.error('[membership] payment failed:', e)
-      toast('We couldn’t start the payment. Please try again.')
-    } finally {
-      setBusy(null)
-    }
+    // Online payment for the new plans is being finalised (new Razorpay plan IDs pending —
+    // the old plans were the retired ₹500/₹1,500 amounts). Capture intent and hand to the
+    // care team rather than charging a mismatched amount.
+    clearPendingPlan()
+    toast(`Close Eye ${plan.short} noted — your Presence Manager will reach out to activate it. Online payment is being set up.`)
   }
 
   // Self-serve upgrade Connect → Care. Opens Razorpay for a NEW Care subscription;
@@ -169,32 +135,10 @@ export default function MembershipPage() {
   }
 
   async function payUpgrade() {
-    setBusy('trust')
-    try {
-      const outcome = await payForMembership({
-        planId: 'trust',
-        planName: 'Close Eye Care',
-        prefill: {
-          name: identity.fullName,
-          email: identity.email ?? undefined,
-          contact: profile?.whatsapp_number || profile?.phone || undefined,
-        },
-      })
-      if (outcome.status === 'success') {
-        setUpgradePaid(true)
-        void refresh()
-        for (let i = 1; i <= 6; i++) setTimeout(() => void refresh(), i * 2500)
-      } else if (outcome.status === 'dismissed') {
-        toast('No problem — you can upgrade to Close Eye Care anytime.')
-      } else {
-        toast(outcome.message) // failed / unavailable / error
-      }
-    } catch (e) {
-      console.error('[membership] upgrade failed:', e)
-      toast('We couldn’t start the upgrade. Please try again.')
-    } finally {
-      setBusy(null)
-    }
+    const plan = planById('trust')
+    setUpgradeOpen(false)
+    // Same as above — capture intent; live charging is re-wired when the new plans are set up.
+    toast(`Close Eye ${plan?.short ?? 'Presence'} noted — your Presence Manager will reach out to activate it. Online payment is being set up.`)
   }
 
   // Don't let the sheet close mid-payment (Razorpay is open over it).
@@ -296,17 +240,17 @@ export default function MembershipPage() {
                   upgradePaid ? (
                     <div className="mt-7 flex items-center justify-center gap-2 rounded-sm bg-accent-soft/60 px-4 py-3.5 text-center">
                       <Loader2 className="h-4 w-4 animate-spin text-green" strokeWidth={2.5} />
-                      <p className="text-caption font-semibold text-green">Activating your Close Eye Care membership…</p>
+                      <p className="text-caption font-semibold text-green">Activating your Close Eye Presence membership…</p>
                     </div>
                   ) : (
                     <Button size="lg" variant="primary" className="mt-7 w-full" disabled={busy !== null} onClick={() => setUpgradeOpen(true)}>
-                      <Sparkles className="h-5 w-5" strokeWidth={2} /> Upgrade to Close Eye Care
+                      <Sparkles className="h-5 w-5" strokeWidth={2} /> Upgrade to Close Eye Presence
                     </Button>
                   )
                 ) : (
                   // Care member looking at Connect → Connect is already included; no downgrade offered.
                   <div className="mt-7 rounded-sm border border-line/70 px-4 py-3.5 text-center">
-                    <p className="text-caption text-muted">Included in your Close Eye Care plan.</p>
+                    <p className="text-caption text-muted">Included in your Close Eye Presence plan.</p>
                   </div>
                 )
               ) : (
@@ -393,10 +337,10 @@ export default function MembershipPage() {
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-success/12 text-success">
                 <Check className="h-5 w-5" strokeWidth={2.5} />
               </span>
-              <h2 className="text-h4 text-ink">You’re now on Close Eye Care</h2>
+              <h2 className="text-h4 text-ink">You’re now on Close Eye Presence</h2>
             </div>
             <p className="text-body-sm leading-relaxed text-ink">
-              Welcome to Close Eye Care. Your Presence Manager will contact you within 24 hours to schedule your first monthly Presence Visit.
+              Welcome to Close Eye Presence. Your Presence Manager will contact you within 24 hours to schedule your first monthly Presence Visit.
             </p>
             <Button className="w-full" onClick={() => setUpgradeOpen(false)}>Done</Button>
           </div>
@@ -407,8 +351,8 @@ export default function MembershipPage() {
                 <Sparkles className="h-5 w-5" strokeWidth={2} />
               </span>
               <div>
-                <h2 className="text-h4 text-ink">Upgrade to Close Eye Care</h2>
-                <p className="mt-0.5 text-caption text-muted">Everything in Connect, plus in-person monthly presence.</p>
+                <h2 className="text-h4 text-ink">Upgrade to Close Eye Presence</h2>
+                <p className="mt-0.5 text-caption text-muted">Everything in Membership, plus an ongoing trusted local presence.</p>
               </div>
             </div>
 
@@ -426,16 +370,16 @@ export default function MembershipPage() {
 
             <div className="flex items-baseline justify-between border-t border-line/70 pt-4">
               <span className="text-body-sm text-muted">New monthly membership</span>
-              <span className="text-ink"><span className="text-h4 font-extrabold">₹1,500</span><span className="text-body-sm font-medium text-muted">/month</span></span>
+              <span className="text-ink"><span className="text-h4 font-extrabold">{planById('trust')?.price}</span><span className="text-body-sm font-medium text-muted">/month</span></span>
             </div>
             <p className="-mt-2 text-caption text-muted">
-              This replaces your Close Eye Connect plan — you’re only ever billed for one membership.
+              This replaces your Close Eye Membership plan — you’re only ever billed for one membership.
             </p>
 
             <div className="flex gap-2.5">
               <Button variant="secondary" className="flex-1" disabled={busy !== null} onClick={closeUpgrade}>Not now</Button>
               <Button className="flex-1" disabled={busy !== null} onClick={startUpgrade}>
-                {busy === 'trust' ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Opening…</> : 'Confirm · ₹1,500/mo'}
+                {busy === 'trust' ? <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> Opening…</> : `Confirm · ${planById('trust')?.price}/mo`}
               </Button>
             </div>
           </div>

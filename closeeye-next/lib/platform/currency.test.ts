@@ -24,20 +24,23 @@ describe('India renders exactly the LOCKED strings', () => {
   })
 })
 
-describe('plans.ts is byte-identical after the extraction', () => {
-  it('Connect ₹500, Care ₹1,500 — the exact LOCKED prices', () => {
-    expect(PLANS.find((p) => p.key === 'connect')?.price).toBe('₹500')
-    expect(PLANS.find((p) => p.key === 'care')?.price).toBe('₹1,500')
+describe('plans.ts reflects the current pricing (₹500/₹1,500 retired 2026-07-23)', () => {
+  it('Membership ₹1,000, Presence ₹8,000 — the current India prices', () => {
+    expect(PLANS.find((p) => p.key === 'connect')?.price).toBe('₹1,000')
+    expect(PLANS.find((p) => p.key === 'care')?.price).toBe('₹8,000')
   })
   it('the numeric amount travels alongside for per-region formatting', () => {
-    expect(PLANS.find((p) => p.key === 'connect')?.amount).toBe(500)
-    expect(PLANS.find((p) => p.key === 'care')?.amount).toBe(1500)
+    expect(PLANS.find((p) => p.key === 'connect')?.amount).toBe(1000)
+    expect(PLANS.find((p) => p.key === 'care')?.amount).toBe(8000)
+  })
+  it('no retired ₹500/₹1,500 remains in the plans', () => {
+    expect(PLANS.some((p) => p.amount === 500 || p.amount === 1500)).toBe(false)
   })
   it('services keep "Starting at ₹X" exactly', () => {
     const byName = (n: string) => SERVICES.find((s) => s.name === n)
     expect(byName('Home Wellbeing Visit')?.price).toBe('Starting at ₹1,000')
     expect(byName('Hospital Companion')?.price).toBe('Starting at ₹2,000')
-    expect(byName('Custom Request')?.price).toBe('Starting at ₹500')
+    expect(byName('Custom Request')?.price).toBe('Starting at ₹1,000')
   })
 })
 
