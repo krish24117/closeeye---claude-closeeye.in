@@ -7,7 +7,6 @@ import { watchConsole } from './helpers'
  */
 const PUBLIC = [
   { name: 'Front door (/)', path: '/' },
-  { name: 'Connect experience', path: '/connect' },
   { name: 'Sign in', path: '/auth' },
 ]
 

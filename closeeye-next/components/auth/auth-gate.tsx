@@ -63,7 +63,7 @@ export function AuthGate() {
       // India /welcome carousel; on the India door it stays /welcome. This is the root fix for
       // "closeeye.app keeps showing closeeye.in": a signed-out landing on an app route no longer
       // routes to India onboarding on the global door.
-      const familyEntry = (typeof window !== 'undefined' && isConnectHost(window.location.host)) ? '/connect' : '/welcome'
+      const familyEntry = (typeof window !== 'undefined' && isConnectHost(window.location.host)) ? '/' : '/welcome'
       // Protect app routes. Staff (PM / Admin) go straight to the sign-in screen; a signed-out
       // guardian route sends to the Guardian login.
       if (onApp && !onFlow)

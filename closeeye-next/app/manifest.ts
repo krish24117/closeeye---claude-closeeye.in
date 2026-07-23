@@ -61,7 +61,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
           {
             name: 'Ask Close Eye',
             short_name: 'Ask',
-            url: '/connect',
+            url: '/',
             icons: [{ src: '/icons/icon-192x192.png', sizes: '192x192' }],
           },
           {

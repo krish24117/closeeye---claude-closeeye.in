@@ -129,7 +129,7 @@ export default function ProfilePage() {
 
   async function signOut() {
     try { await supabase.auth.signOut() } catch {}
-    router.replace('/connect')
+    router.replace('/')
   }
 
   async function closeAccount() {
@@ -139,7 +139,7 @@ export default function ProfilePage() {
       const { data, error } = await supabase.functions.invoke('delete-account')
       if (error || !data?.ok) { setErr((data?.error as string) || 'We couldn’t close your account just now. Please try again.'); setDeleting(false); return }
       try { await supabase.auth.signOut() } catch {}
-      router.replace('/connect')
+      router.replace('/')
     } catch {
       setErr('We couldn’t close your account just now. Please try again.'); setDeleting(false)
     }

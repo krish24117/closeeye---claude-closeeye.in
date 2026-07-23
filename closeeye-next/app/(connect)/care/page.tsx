@@ -42,7 +42,7 @@ export default function CarePage() {
     <div className="bg-ivory text-ink">
       <header className="sticky top-0 z-50 border-b border-line/50 bg-ivory/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3.5">
-          <Link href="/connect" aria-label="Close Eye home"><Logo lockup="horizontal" height={26} /></Link>
+          <Link href="/" aria-label="Close Eye home"><Logo lockup="horizontal" height={26} /></Link>
           <Link href="/auth" className="text-body-sm font-semibold text-muted transition-colors hover:text-ink">Sign in</Link>
         </div>
       </header>
@@ -90,7 +90,7 @@ export default function CarePage() {
             <h2 className="font-display text-h2 text-ink">Start with understanding.</h2>
             <p className="font-display mx-auto mt-5 max-w-[34ch] text-lead text-ink">Add care only when you need it.</p>
             <div className="mt-8 flex items-center justify-center">
-              <Link href="/connect" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-full bg-surface-inverse px-7 text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90">
+              <Link href="/" className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-full bg-surface-inverse px-7 text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90">
                 Back to Close Eye <ArrowRight className="h-4 w-4" strokeWidth={2} />
               </Link>
             </div>
@@ -103,7 +103,7 @@ export default function CarePage() {
           <Logo lockup="horizontal" height={24} />
           <p className="max-w-[34ch] text-body-sm text-muted">The intelligence that knows the people you love.</p>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-caption font-semibold text-muted">
-            <Link href="/connect" className="transition-colors hover:text-ink">Home</Link>
+            <Link href="/" className="transition-colors hover:text-ink">Home</Link>
             <Link href="/privacy" className="transition-colors hover:text-ink">Privacy</Link>
             <Link href="/terms" className="transition-colors hover:text-ink">Terms</Link>
           </div>

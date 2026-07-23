@@ -6,8 +6,9 @@ import { test, expect } from '@playwright/test'
  * animations keep it stable against a live deployment; regenerate baselines with
  *   npx playwright test visual --update-snapshots
  */
-const SCREENS = [
-  { name: 'connect', path: '/connect' },
+// /connect retired (single-UI) — the home is the one public screen worth freezing.
+const SCREENS: { name: string; path: string }[] = [
+  { name: 'home', path: '/' },
 ]
 
 for (const s of SCREENS) {

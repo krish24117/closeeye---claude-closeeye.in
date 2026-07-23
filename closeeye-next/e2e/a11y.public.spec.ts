@@ -6,7 +6,6 @@ import AxeBuilder from '@axe-core/playwright'
  * the gate meaningful, not noisy); moderate/minor are reported but don't block.
  */
 const PAGES = [
-  { name: 'Connect experience', path: '/connect' },
   { name: 'Sign in', path: '/auth' },
 ]
 

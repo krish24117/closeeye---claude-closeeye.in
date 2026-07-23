@@ -23,7 +23,7 @@ export function generateMetadata(): Metadata {
     title: { absolute: 'Close Eye — The intelligence that knows the people you love' },
     description:
       'Close Eye learns about the people you love, so answers come from understanding — not guesses. It remembers what matters, privately, for years.',
-    alternates: { canonical: '/connect' },
+    alternates: { canonical: '/' },
     robots: isConnectIndexable() ? { index: true, follow: true } : { index: false, follow: false },
     /**
      * Connect's own card. Without this, every share of this link inherited the marketing
@@ -35,7 +35,7 @@ export function generateMetadata(): Metadata {
     openGraph: {
       type: 'website',
       locale: 'en_US', // Connect is the global product — a neutral default, not India-specific
-      url: '/connect',
+      url: '/',
       siteName: 'Close Eye',
       title: 'Close Eye — The intelligence that knows the people you love',
       description:

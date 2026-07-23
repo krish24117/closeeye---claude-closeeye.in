@@ -72,7 +72,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   // never redirect while onboarding status is still resolving (null), so there's no flash/loop.
   React.useEffect(() => {
     if (loading) return
-    if (!session) { router.replace('/connect'); return }
+    if (!session) { router.replace('/'); return }
     if (onboardingComplete === false) router.replace('/onboarding')
   }, [loading, session, onboardingComplete, router])
 
@@ -98,7 +98,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     try { await supabase.auth.signOut() } catch {}
-    router.replace('/connect')
+    router.replace('/')
   }
 
   // The notifications bell — real feed at /space/notifications, with a quiet unread dot.
