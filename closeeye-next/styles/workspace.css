@@ -197,6 +197,42 @@
 .wsp-orb-mini { background: radial-gradient(120% 120% at 50% 40%, #1C4130 0%, #0C2419 78%); }
 .wsp-orb-mini-core { background: hsl(var(--orb)); opacity: 0.6; }
 
+/* ── The stage orb — the home's centerpiece (orb-concierge home, founder-approved 2026-07-24).
+   The SAME mark as the dock/sheet/mini orbs (same dual radial gradient, same sage core, same
+   3.4s breath via .ce-orb-core), scaled to be the room. The halo is atmosphere, not chrome:
+   a soft sage radiance plus one hairline ring. */
+.wsp-orb-halo { position: relative; display: grid; place-items: center; }
+.wsp-orb-halo::before {
+  content: "";
+  position: absolute;
+  inset: -36px;
+  border-radius: 50%;
+  background: radial-gradient(circle, hsl(var(--orb) / 0.16) 0%, hsl(var(--orb) / 0.05) 45%, transparent 70%);
+}
+.wsp-orb-halo::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 1px solid hsl(var(--green) / 0.14);
+}
+.wsp-orb-stage {
+  position: relative;
+  width: 148px;
+  height: 148px;
+  border-radius: 50%;
+  background:
+    radial-gradient(75% 70% at 32% 24%, hsl(0 0% 100% / 0.16) 0%, hsl(0 0% 100% / 0) 46%),
+    radial-gradient(120% 120% at 50% 40%, #1C4130 0%, #0C2419 78%);
+  display: grid;
+  place-items: center;
+  box-shadow:
+    0 22px 44px hsl(147 28% 13% / 0.30),
+    0 0 56px 10px hsl(var(--orb) / 0.25),
+    inset 0 1px 1px hsl(0 0% 100% / 0.13);
+}
+.wsp-orb-stage .ce-orb-core { width: 36px; height: 36px; }
+
 /* ── The Connect sheet content (rendered inside the shared Overlay) ─────────── */
 .wsp-askfield {
   display: flex;
