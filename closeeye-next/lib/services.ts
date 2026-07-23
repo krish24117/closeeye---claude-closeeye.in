@@ -69,7 +69,7 @@ export const SERVICE_DETAILS: ServiceDetail[] = [
       'Home-maintenance coordination',
       'Bespoke, one-off requests',
     ],
-    priceFrom: '₹500',
+    priceFrom: '₹1,000',
     photoDirection:
       'A Guardian arriving at a family home with groceries and flowers for a festival — warm street light, a welcoming doorway.',
     image: '/welcoming.png',

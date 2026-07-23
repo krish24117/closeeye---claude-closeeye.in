@@ -18,10 +18,10 @@ import { cn } from '@/lib/utils'
 
 interface Slide { eyebrow: string; title: string; body: string }
 const SLIDES: Slide[] = [
-  { eyebrow: 'Welcome to Close Eye', title: 'The people you love, deeply understood.', body: 'Close Eye is your family’s private intelligence — it learns what matters, and answers from what it truly knows.' },
-  { eyebrow: 'How it works', title: 'Understanding, built together.', body: 'Add the people who matter — their routines, their health, the small things. Everything stays private to your family.' },
-  { eyebrow: 'Ask naturally', title: 'Ask the way you would family.', body: 'Grounded in what Close Eye remembers, and honest when it’s still learning. Never a guess.' },
-  { eyebrow: 'Ready when you are', title: 'Everything begins with understanding.', body: 'Build your private Family Space — and it only grows from here.' },
+  { eyebrow: 'Welcome to Close Eye', title: 'When you can’t be there, Close Eye can.', body: 'A trusted local presence for the people you love — wherever in the world you are.' },
+  { eyebrow: 'How it works', title: 'A real person, truly there.', body: 'A verified Guardian visits the people you love — a warm, in-person check-in, whenever it’s needed.' },
+  { eyebrow: 'Every visit, seen', title: 'Proof of every visit — never a guess.', body: 'Photos, a warm note, and how they truly are. You stay informed, wherever you are.' },
+  { eyebrow: 'Ready when you are', title: 'Peace of mind, from today.', body: 'Tell us about your family — Close Eye becomes their trusted presence, and it only grows from here.' },
 ]
 
 export default function WelcomePage() {

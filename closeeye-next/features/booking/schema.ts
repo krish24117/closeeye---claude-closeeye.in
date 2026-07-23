@@ -41,8 +41,8 @@ export const BOOKING_SERVICES: BookingService[] = [
     name: 'Custom Request',
     blurb: 'Groceries, medicines, a festival visit — anything your family needs.',
     duration: 'Varies with the request',
-    priceFrom: '₹500',
-    priceValue: 500,
+    priceFrom: '₹1,000',
+    priceValue: 1000,
     allowsEmergency: false,
   },
 ]
