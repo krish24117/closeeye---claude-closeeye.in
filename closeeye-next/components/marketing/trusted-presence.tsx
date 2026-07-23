@@ -57,8 +57,8 @@ export function TrustedPresenceLanding() {
       {/* ── Hero ── */}
       <header className="bg-ivory pt-32 sm:pt-36">
         <Container className="pb-10 sm:pb-14">
-          <Reveal className="flex max-w-measure flex-col items-start">
-            <span className="eyebrow">A Trusted Presence Platform</span>
+          <Reveal className="mx-auto flex max-w-measure flex-col items-center text-center">
+            <span className="eyebrow is-centered">A Trusted Presence Platform</span>
             <NriOrb size="lg" className="mt-6" />
             <h1 className="mt-6 font-display text-h1">Your family is never&nbsp;alone.</h1>
             <p className="mt-3 font-display text-h3 text-muted">Even when you’re thousands of miles away.</p>
@@ -74,12 +74,12 @@ export function TrustedPresenceLanding() {
                 <a href="#how">How it works</a>
               </Button>
             </div>
-            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-body-sm text-muted">
+            <ul className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-body-sm text-muted">
               {['Verified & background-checked Guardians', 'Verified proof, every visit', 'Cancel anytime'].map((t) => (
                 <li key={t} className="flex items-center gap-2"><Check className="h-4 w-4 text-green" strokeWidth={2.5} />{t}</li>
               ))}
             </ul>
-            <p className="mt-6 flex items-center gap-2 text-caption text-muted">
+            <p className="mt-6 flex items-center justify-center gap-2 text-caption text-muted">
               <span className="h-1.5 w-1.5 rounded-full bg-green" /> On the ground in Hyderabad today · more cities soon
             </p>
           </Reveal>
