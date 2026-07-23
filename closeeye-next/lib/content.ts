@@ -33,6 +33,8 @@ export const HERO_TRUST: TrustPoint[] = [
 ]
 
 /* ── How can we help — exactly three ───────────────────────────────────── */
+// DEPRECATED (IA consolidation 2026-07-24): no live consumer — the /services page merged into /plans
+// and homeJsonLd no longer emits an OfferCatalog. Kept only for FOUNDER-adjacent content history.
 export const SERVICES: ServiceCard[] = [
   {
     id: 'home-wellbeing-visit',
@@ -58,7 +60,7 @@ export const SERVICES: ServiceCard[] = [
     name: 'Custom Request',
     summary:
       'Groceries, medicines, a festival visit, or something only your family understands. Tell us — we arrange it.',
-    priceFrom: '₹500',
+    priceFrom: '₹1,000',
     href: '#how-we-help',
   },
 ]

@@ -43,7 +43,7 @@ export default function HowCompanionsAreVerifiedPage() {
     <main className="verify" id="main">
       {/* A quiet way back — a trust page must never be a dead end, and it stays inside
           the paper world rather than handing the reader off somewhere else. */}
-      <Link className="verify-back" href="/connect">← Close Eye Connect</Link>
+      <Link className="verify-back" href="/">← Close Eye</Link>
 
       <h1 className="verify-h">How companions are verified</h1>
 

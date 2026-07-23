@@ -4,16 +4,17 @@ import { SITE } from '@/lib/site'
 import { isConnectHost } from '@/lib/platform/front-door'
 
 /**
- * Host-aware sitemap. The global Connect door (closeeye.app) and the India door (closeeye.in)
- * share one deployment but present different products, so each lists only the pages it actually
- * serves — the India-commercial routes are gated off closeeye.app (see middleware), so listing
- * them there would point crawlers at redirects.
+ * Host-aware sitemap. Under the SINGLE-UI decision both doors serve the same front door (/) and
+ * commerce page (/plans); the Connect list keeps its Connect-narrative extras, and each host lists
+ * only pages it actually serves.
  */
 type Entry = { path: string; priority: number; changeFrequency: 'weekly' | 'monthly' | 'yearly' }
 
-// closeeye.app — the Connect experience + the legal pages that serve there.
+// closeeye.app — the shared front door + Connect-narrative pages + legal.
 const CONNECT_PAGES: Entry[] = [
-  { path: '/connect', priority: 1, changeFrequency: 'weekly' },
+  { path: '', priority: 1, changeFrequency: 'weekly' },
+  { path: '/connect', priority: 0.8, changeFrequency: 'weekly' },
+  { path: '/plans', priority: 0.9, changeFrequency: 'monthly' },
   { path: '/how-it-works', priority: 0.7, changeFrequency: 'monthly' },
   { path: '/how-companions-are-verified', priority: 0.6, changeFrequency: 'monthly' },
   { path: '/privacy', priority: 0.3, changeFrequency: 'yearly' },
@@ -37,7 +38,7 @@ const INDIA_PAGES: Entry[] = [
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date('2026-07-06')
+  const now = new Date('2026-07-24')
   const host = (await headers()).get('host')?.split(':')[0]
   const base = host ? `https://${host}` : SITE.url
   const pages = isConnectHost(host) ? CONNECT_PAGES : INDIA_PAGES

@@ -63,7 +63,7 @@ const nextConfig: NextConfig = {
       { source: '/pricing', destination: '/plans', permanent: true },
       { source: '/services', destination: '/plans', permanent: true },
       { source: '/membership', destination: '/plans', permanent: true },
-      { source: '/book', destination: '/auth?intent=join', permanent: false },
+      { source: '/book', destination: '/auth?intent=join', permanent: true },
       { source: '/founder', destination: '/about', permanent: true },
       { source: '/founder-story', destination: '/about', permanent: true },
       { source: '/founder/start', destination: '/join', permanent: true },

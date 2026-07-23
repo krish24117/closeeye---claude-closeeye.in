@@ -1,7 +1,10 @@
 import { SITE } from './site'
-import { FAQS, SERVICES } from './content'
 
-/** schema.org JSON-LD graph for the homepage. Improves rich results + SEO. */
+/** schema.org JSON-LD graph for the homepage. Improves rich results + SEO.
+ *  Deliberately LEAN (IA consolidation 2026-07-24): the homepage no longer renders an FAQ or a
+ *  service/price catalogue (FAQs live on /help, plans on /plans), and Google requires rich-result
+ *  content to be VISIBLE on the page — so no FAQPage and no per-item OfferCatalog here. The old
+ *  catalogue also leaked the retired ₹500 Custom Request price into structured data. */
 export function homeJsonLd() {
   const org = {
     '@type': 'Organization',
@@ -36,33 +39,10 @@ export function homeJsonLd() {
     serviceType: 'Wellbeing visits and companionship',
     provider: { '@id': `${SITE.url}/#organization` },
     areaServed: 'IN',
-    hasOfferCatalog: {
-      '@type': 'OfferCatalog',
-      name: 'Close Eye services',
-      itemListElement: SERVICES.map((s) => ({
-        '@type': 'Offer',
-        itemOffered: { '@type': 'Service', name: s.name, description: s.summary },
-        priceSpecification: {
-          '@type': 'PriceSpecification',
-          priceCurrency: 'INR',
-          price: s.priceFrom.replace(/[₹,]/g, ''),
-        },
-      })),
-    },
-  }
-
-  const faq = {
-    '@type': 'FAQPage',
-    '@id': `${SITE.url}/#faq`,
-    mainEntity: FAQS.map((f) => ({
-      '@type': 'Question',
-      name: f.question,
-      acceptedAnswer: { '@type': 'Answer', text: f.answer },
-    })),
   }
 
   return {
     '@context': 'https://schema.org',
-    '@graph': [org, website, service, faq],
+    '@graph': [org, website, service],
   }
 }
