@@ -631,7 +631,7 @@ export function ConnectExperience() {
     return (
       <div className="footlinks">
         <a href="/how-it-works">How it works</a>
-        {CARE_ENABLED && <a href="/how-companions-are-verified">How companions are verified</a>}
+        {CARE_ENABLED && <a href="/trust-safety">How companions are verified</a>}
         <a href="/privacy">Privacy</a>
         <a className="last" href="/terms">Terms</a>
       </div>
@@ -906,7 +906,7 @@ export function ConnectExperience() {
           <section className="stage on">
             <h1 className="h-serif" style={{ fontSize: 26 }}>{cap1(subject)}’s space is open.<br /><em>Begin with a visit.</em></h1>
             <p className="lede">A verified companion goes to {them}. You receive a written report on WhatsApp.</p>
-            <a className="qlink" href="/how-companions-are-verified">How companions are verified →</a>
+            <a className="qlink" href="/trust-safety">How companions are verified →</a>
             <div style={{ marginTop: 18 }}>
               {VISITS.map((v) => (
                 <button key={v.id} className={`plan${visit.id === v.id ? ' pick' : ''}`} onClick={() => setVisit(v)}>

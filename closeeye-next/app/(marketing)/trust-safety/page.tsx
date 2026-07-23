@@ -13,6 +13,16 @@ export const metadata: Metadata = {
     'How Close Eye earns your trust — background-verified Guardians, a dedicated Presence Manager, and the standards behind every single visit.',
 }
 
+// The founder's exact lines, in the founder's order (relocated from the retired
+// /how-companions-are-verified). Do not add, reword, or reorder without a founder decision.
+const VERIFICATION_PROMISE = [
+  'We check who they are.',
+  'We check their background before they ever visit.',
+  'We meet them in person.',
+  'We match them to your family.',
+  'We stay with them — and with you.',
+]
+
 const STANDARD: { icon: LucideIcon; h: string; p: string }[] = [
   {
     icon: UserCheck,
@@ -59,6 +69,23 @@ export default function TrustSafetyPage() {
               </div>
             )
           })}
+        </div>
+
+        {/* How every Guardian is verified — the founder's exact promise lines, relocated verbatim
+            from the retired /how-companions-are-verified page (which now redirects here). Each line
+            is a promise a family will hold us to — never add, reword, or reorder without a founder
+            decision that Close Eye genuinely does the thing. */}
+        <div id="verified" className="mt-14 max-w-measure scroll-mt-28 rounded-lg border border-accent-soft bg-accent-soft/25 p-7 sm:p-8">
+          <span className="eyebrow">How every Guardian is verified</span>
+          <ol className="mt-6 flex flex-col gap-3">
+            {VERIFICATION_PROMISE.map((s, i) => (
+              <li key={s} className="flex items-start gap-3">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-card text-caption font-semibold text-green">{i + 1}</span>
+                <p className="pt-0.5 font-display text-h4 text-ink">{s}</p>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-6 border-t border-accent-soft pt-5 text-body font-semibold text-green">If someone isn’t right, we’ll send someone else.</p>
         </div>
       </Container>
 

@@ -96,7 +96,7 @@ export default function WorkspaceHome() {
     const cards = [
       { href: '/trust-safety', label: 'Why families use Close Eye', desc: 'A trusted local presence for the people you love — wherever in the world you are.' },
       { href: '/how-it-works', label: 'How it works', desc: 'Tell us about your family, we become their trusted presence, and you see every visit.' },
-      { href: '/how-companions-are-verified', label: 'See a real visit report', desc: 'Photos, a warm note, and proof — exactly what you receive after each visit.' },
+      { href: '/trust-safety#verified', label: 'How Guardians are verified', desc: 'Identity checks, background checks, and a promise: if someone isn’t right, we’ll send someone else.' },
     ]
     return (
       <div className="flex flex-col gap-8">
