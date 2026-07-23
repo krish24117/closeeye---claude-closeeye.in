@@ -79,10 +79,48 @@ export default function WorkspaceHome() {
   const greeting = `${h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}, ${name}.`
   // Beat 3 — a warm, wellbeing-framed Connect invitation. Names the one person, else "your family".
   const beat3Subject = home.people.length === 1 ? home.people[0]!.label : 'your family'
+  // STAGE 2 signal — the family exists but there's no active presence yet. Drives the "profile is
+  // ready" framing + a very soft first-visit invitation (never a hard upsell).
+  const preparing = home.people.length > 0 && !home.connectActive
+
+  // ── STAGE 1 · Discover — no family yet. Show POSSIBILITY, never an empty dashboard. ──
+  if (home.people.length === 0) {
+    const cards = [
+      { href: '/trust-safety', label: 'Why families use Close Eye', desc: 'A trusted local presence for the people you love — wherever in the world you are.' },
+      { href: '/how-it-works', label: 'How it works', desc: 'Tell us about your family, we become their trusted presence, and you see every visit.' },
+      { href: '/how-companions-are-verified', label: 'See a real visit report', desc: 'Photos, a warm note, and proof — exactly what you receive after each visit.' },
+    ]
+    return (
+      <div className="flex flex-col gap-8">
+        <section className="flex flex-col items-start gap-6 rounded-lg border border-edge/70 bg-surface-raised p-8 shadow-sm">
+          <span aria-hidden className="grid h-14 w-14 place-items-center rounded-full bg-surface-inverse"><span className="h-4 w-4 rounded-full bg-brand" /></span>
+          <div>
+            <h1 className="text-h2 text-content">Welcome, {name}.</h1>
+            <p className="mt-3 max-w-prose text-lead text-content-muted">Let&apos;s build your family&apos;s trusted presence.</p>
+          </div>
+          <Link href="/space/people/add" className="inline-flex items-center gap-2 rounded-full bg-surface-inverse px-5 py-3 text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90">
+            <UserPlus className="h-4 w-4" strokeWidth={2} /> Add your family member or loved one
+          </Link>
+        </section>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {cards.map((c) => (
+            <Link key={c.label} href={c.href} className="group flex flex-col gap-2 rounded-lg border border-edge/70 bg-surface-raised p-6 shadow-sm transition-colors hover:border-brand/40">
+              <p className="text-h4 text-content">{c.label}</p>
+              <p className="flex-1 text-body-sm text-content-muted">{c.desc}</p>
+              <span className="inline-flex items-center gap-1 text-body-sm font-semibold text-brand">Learn more <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2} /></span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="text-h2 text-content">{greeting}</h1>
+      <div>
+        <h1 className="text-h2 text-content">{greeting}</h1>
+        {preparing && <p className="mt-1 text-body-sm text-content-muted">Your family profile is ready.</p>}
+      </div>
 
       {/* What I’m noticing — carousel across every member with open essentials (swipe to see all) */}
       {home.people.some((p) => p.learning) && (
@@ -164,6 +202,27 @@ export default function WorkspaceHome() {
           <p className="mx-auto mt-1 max-w-xs text-caption text-content-muted">Add someone you love, and Close Eye starts holding everything that matters about them.</p>
           <Link href="/space/people/add" className="mt-4 inline-flex items-center gap-2 rounded-full bg-surface-inverse px-5 py-2.5 text-body-sm font-semibold text-content-inverse"><UserPlus className="h-4 w-4" strokeWidth={2} /> Add someone</Link>
         </div>
+      )}
+
+      {/* STAGE 2 · Prepare — a very soft first-visit invitation: show the proof, then pricing. */}
+      {preparing && (
+        <section className="flex flex-col gap-4 rounded-lg border border-edge/70 bg-surface-raised p-5 shadow-sm">
+          <div>
+            <h2 className="text-h4 text-content">See what your first visit looks like</h2>
+            <p className="mt-1 text-body-sm text-content-muted">A verified Guardian visits {beat3Subject}, then you get proof of how they truly are.</p>
+          </div>
+          <div className="rounded-md border border-edge bg-surface-accent/20 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-body-sm font-semibold text-content">A visit with {beat3Subject}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-surface-accent px-2 py-0.5 text-caption font-semibold text-brand"><Check className="h-3 w-3" strokeWidth={3} /> Verified</span>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2" aria-hidden>{[0, 1, 2].map((i) => <span key={i} className="aspect-square rounded-md bg-surface-accent" />)}</div>
+            <p className="mt-3 text-body-sm text-content">&ldquo;They were cheerful today — a short walk, a good meal, a calm day. All is well.&rdquo;</p>
+          </div>
+          <Link href="/pricing" className="inline-flex items-center gap-1 self-start text-body-sm font-semibold text-brand hover:text-brand/80">
+            See pricing <ArrowRight className="h-4 w-4" strokeWidth={2} />
+          </Link>
+        </section>
       )}
 
       {/* Beat 2 — the calm Close Eye Connect moment (state-aware; never an upsell). Only once
