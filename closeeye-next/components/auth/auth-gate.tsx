@@ -109,6 +109,11 @@ export function AuthGate() {
       // onboarding flips complete raced that cinematic screen away; the page navigates itself now.
       if (onFlow && pathname !== '/onboarding') target = home
       else if (firstNative && !onApp) target = home // native launch on marketing
+      // Signed-in landing on the front door → straight into the app (founder 2026-07-24).
+      // Repairs the whole return loop: typing closeeye.in, or tapping the logo from any
+      // marketing page, brings a signed-in user home to their Space — never the brochure.
+      // Deeper marketing pages (/plans, /how-it-works, …) stay browsable while signed in.
+      else if (pathname === '/') target = home
     }
 
     launched.current = true
