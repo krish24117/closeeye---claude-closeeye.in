@@ -132,6 +132,30 @@ export default function WorkspaceHome() {
         {activeStage && <p className="mt-1 text-body-sm text-content-muted">{wellToday ? 'Your family is doing well today.' : 'Here’s the latest from your family.'}</p>}
       </div>
 
+      {/* STAGE 5 · Understood — a grounded understanding synthesis. Appears only once real observations
+          have accumulated; every line traces to a stored entry (never fabricated). */}
+      {home.understanding && (
+        <section className="flex flex-col gap-3 rounded-lg border border-edge/70 bg-surface-raised p-5 shadow-sm">
+          <p className="flex items-center gap-2 text-caption font-semibold uppercase tracking-widest text-content-muted">
+            <ScanEye className="h-4 w-4" strokeWidth={1.75} /> Understanding {home.understanding.personName}
+          </p>
+          <p className="text-body leading-relaxed text-content">{home.understanding.headline}</p>
+          {home.understanding.snippets.length > 0 && (
+            <ul className="flex flex-col gap-2 border-t border-edge/60 pt-3">
+              {home.understanding.snippets.map((s, i) => (
+                <li key={i} className="flex items-start justify-between gap-3 text-body-sm text-content">
+                  <span className="min-w-0">&ldquo;{s.text}&rdquo;</span>
+                  <span className="shrink-0 text-caption text-content-muted">{s.when}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link href={`/space/people/${home.understanding.personId}`} className="inline-flex items-center gap-1 self-start text-body-sm font-semibold text-brand hover:text-brand/80">
+            See the full story <ArrowRight className="h-4 w-4" strokeWidth={2} />
+          </Link>
+        </section>
+      )}
+
       {/* STAGE 3 · Protected — calm reassurance: next visit · Guardian · emergency contact. */}
       {protectedStage && (
         <section className="flex flex-col gap-3">

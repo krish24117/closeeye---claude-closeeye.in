@@ -55,6 +55,9 @@ export interface HomePrompt { text: string; personId: string }
 export interface HomeVisit { id: string; whenLabel: string; personName: string; guardianAssigned: boolean }
 /** STAGE 4 — the most recent completed visit and its Guardian report (summary/mood/photos), when filed. */
 export interface HomeLatestVisit { id: string; whenLabel: string; personName: string; summary: string | null; mood: number | null; hasPhotos: boolean }
+/** STAGE 5 — a grounded understanding synthesis. Deterministic, drawn only from REAL recorded
+ *  observations; every field traces to stored data. Null until genuine accumulation (never fabricated). */
+export interface HomeUnderstanding { personId: string; personName: string; headline: string; observationCount: number; weeksObserved: number; snippets: { text: string; when: string }[] }
 
 export interface HomeData {
   userName: string
@@ -75,6 +78,8 @@ export interface HomeData {
   hasCompletedVisit: boolean
   /** STAGE 4 — the latest completed visit + report; null until a visit has happened. */
   latestVisit: HomeLatestVisit | null
+  /** STAGE 5 — the grounded understanding synthesis; null until real observations accumulate. */
+  understanding: HomeUnderstanding | null
   emergency: { name: string; phone: string | null } | null
 }
 
@@ -115,7 +120,7 @@ export async function fetchHome(): Promise<HomeData | null> {
   const userName = (profRes.data?.full_name || (user.user_metadata?.full_name as string) || 'there').split(' ')[0] || 'there'
   const connectActive = ((subRes.data as { status?: string } | null)?.status ?? '') === 'active'
   const members = losRes.data ?? []
-  if (!members.length) return { userName, state: 'getting_to_know', people: [], activity: [], alerts: [], notice: null, prompt: null, connectActive, upcomingVisit: null, hasCompletedVisit: false, latestVisit: null, emergency: null }
+  if (!members.length) return { userName, state: 'getting_to_know', people: [], activity: [], alerts: [], notice: null, prompt: null, connectActive, upcomingVisit: null, hasCompletedVisit: false, latestVisit: null, understanding: null, emergency: null }
 
   const ids = members.map((m) => m.id)
   const ledgerRes = await supabase
@@ -185,6 +190,7 @@ export async function fetchHome(): Promise<HomeData | null> {
   let upcomingVisit: HomeVisit | null = null
   let hasCompletedVisit = false
   let latestVisit: HomeLatestVisit | null = null
+  let moodScoresAsc: number[] = [] // real visit mood scores, oldest→newest — feeds the Stage 5 trend
   try {
     const nowMs = Date.now()
     const visits = await fetchMyBookingRequests(user.id)
@@ -197,24 +203,72 @@ export async function fetchHome(): Promise<HomeData | null> {
     hasCompletedVisit = liveVisits.some(isDone)
     const next = liveVisits.filter((v) => !isDone(v)).sort((a, b) => (a.scheduled_at ?? '').localeCompare(b.scheduled_at ?? ''))[0]
     if (next) upcomingVisit = { id: next.id, whenLabel: whenLabel(next.scheduled_at), personName: firstName(next.recipient_name ?? '') || 'your loved one', guardianAssigned: GUARDIAN_ASSIGNED.includes(next.status) || !!next.booking_id }
-    // STAGE 4 — the most recent completed visit + its Guardian report (if one was filed).
+    // STAGE 4/5 — the completed visits, oldest→newest. Fetch their reports once: the newest feeds
+    // the Stage 4 latest-visit card; every real mood score feeds the Stage 5 trend.
     const whenKey = (v: (typeof liveVisits)[number]) => v.scheduled_at ?? v.created_at ?? ''
-    const last = liveVisits.filter(isDone).sort((a, b) => whenKey(b).localeCompare(whenKey(a)))[0]
-    if (last) {
-      const report = last.booking_id ? await fetchVisitReport(last.booking_id).catch(() => null) : null
+    const doneAsc = liveVisits.filter(isDone).sort((a, b) => whenKey(a).localeCompare(whenKey(b)))
+    if (doneAsc.length) {
+      const reports = await Promise.all(
+        doneAsc.slice(-12).map((v) => (v.booking_id ? fetchVisitReport(v.booking_id).catch(() => null) : Promise.resolve(null))),
+      )
+      moodScoresAsc = reports.map((r) => r?.mood).filter((m): m is number => typeof m === 'number')
+      const last = doneAsc[doneAsc.length - 1]!
+      const lastReport = reports[reports.length - 1] ?? null
       latestVisit = {
         id: last.id,
         whenLabel: whenLabel(whenKey(last)),
         personName: firstName(last.recipient_name ?? '') || 'your loved one',
-        summary: report?.summary ?? null,
-        mood: report?.mood ?? null,
-        hasPhotos: (report?.photoPaths.length ?? 0) > 0,
+        summary: lastReport?.summary ?? null,
+        mood: lastReport?.mood ?? null,
+        hasPhotos: (lastReport?.photoPaths.length ?? 0) > 0,
       }
     }
   } catch { /* best-effort — no visit data simply hides the calm visit cards */ }
 
+  // STAGE 5 — Understanding. A deterministic synthesis, drawn ONLY from real recorded observations;
+  // it appears solely after genuine accumulation and never states anything not backed by a stored
+  // entry (Understanding Constitution: the graph is truth, never fabricate).
+  let understanding: HomeUnderstanding | null = null
+  {
+    const OBS_MIN = 6, WEEKS_MIN = 4, WEEK_MS = 604800000
+    const obsByPerson = new Map<string, LedgerRow[]>()
+    for (const e of entries) {
+      if (!isObservation(e.entry_type)) continue
+      const arr = obsByPerson.get(e.loved_one_id) ?? []
+      arr.push(e)
+      obsByPerson.set(e.loved_one_id, arr)
+    }
+    // The most-understood person — the one with the most recorded observations.
+    let best: { id: string; obs: LedgerRow[] } | null = null
+    for (const [id, obs] of obsByPerson) if (!best || obs.length > best.obs.length) best = { id, obs }
+    if (best && best.obs.length >= OBS_MIN) {
+      const times = best.obs.map((e) => new Date(e.created_at).getTime()).sort((a, b) => a - b)
+      const weeks = Math.floor((times[times.length - 1]! - times[0]!) / WEEK_MS)
+      if (weeks >= WEEKS_MIN) {
+        const m = members.find((x) => x.id === best!.id)
+        const { label, natural } = nameParts(nameOf.get(best.id) ?? '', m?.relationship ?? null)
+        const snippets = best.obs
+          .slice()
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))
+          .slice(0, 2)
+          .map((e) => ({ text: e.body, when: whenLabel(e.created_at) }))
+        // Mood clause — added ONLY with a single loved one (so the visit scores unambiguously belong
+        // to them) and ≥3 real scores that support a clear, honest read. Otherwise the volume stands alone.
+        let mood = ''
+        if (members.length === 1 && moodScoresAsc.length >= 3) {
+          const half = Math.floor(moodScoresAsc.length / 2)
+          const avg = (a: number[]) => a.reduce((s, n) => s + n, 0) / (a.length || 1)
+          if (moodScoresAsc.every((s) => s >= 4)) mood = `, and ${natural}’s recorded spirits have stayed steady and positive`
+          else if (avg(moodScoresAsc.slice(-half)) >= avg(moodScoresAsc.slice(0, half)) + 0.5) mood = `, and ${natural}’s recorded spirits have been lifting across recent visits`
+        }
+        const headline = `Close Eye has held ${best.obs.length} observations about ${natural} over ${weeks} weeks${mood}.`
+        understanding = { personId: best.id, personName: label, headline, observationCount: best.obs.length, weeksObserved: weeks, snippets }
+      }
+    }
+  }
+
   const em = members[0] as { emergency_contact_name?: string | null; emergency_contact_phone?: string | null } | undefined
   const emergency = em?.emergency_contact_name ? { name: em.emergency_contact_name, phone: em.emergency_contact_phone ?? null } : null
 
-  return { userName, state, people, activity, alerts, notice, prompt, connectActive, upcomingVisit, hasCompletedVisit, latestVisit, emergency }
+  return { userName, state, people, activity, alerts, notice, prompt, connectActive, upcomingVisit, hasCompletedVisit, latestVisit, understanding, emergency }
 }
