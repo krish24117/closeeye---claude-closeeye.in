@@ -79,6 +79,11 @@
 
   h1, h2, h3, h4 {
     color: hsl(var(--ink));
+    /* Classical serif headings, site-wide (founder 2026-07-23: "same classical font everywhere").
+       The workspace (.wsp) already sets Newsreader on its headings; this brings the marketing +
+       all other surfaces in line, so the display serif is the single voice for every heading.
+       Eyebrows/labels are <span>/.uppercase (not h-tags), so they stay Inter/Manrope. */
+    font-family: var(--font-display);
     text-wrap: balance;
     letter-spacing: -0.02em;
   }
