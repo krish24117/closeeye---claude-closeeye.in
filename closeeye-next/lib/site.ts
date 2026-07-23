@@ -66,9 +66,9 @@ export type NavItem = { label: string; href: string }
 // story now lives in the footer + /about — the team leads, the founder supports.)
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/' },
+  { label: 'How it works', href: '/how-it-works' },
+  { label: 'Pricing', href: '/pricing' },
   { label: 'Services', href: '/services' },
-  { label: 'Trust & Safety', href: '/trust-safety' },
-  { label: 'Membership', href: '/membership' },
   { label: 'Contact', href: '/contact' },
 ]
 
