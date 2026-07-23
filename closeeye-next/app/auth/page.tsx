@@ -153,7 +153,7 @@ function AuthFlow() {
       if (session) {
         // Account created and signed in — the auth gate routes on from here.
         track('signed_up')
-        router.replace('/family')
+        router.replace('/space')
         return
       }
       // No session → Supabase "Confirm email" is ON. Ask them to confirm + sign in.
@@ -166,7 +166,7 @@ function AuthFlow() {
       setPending(null)
       if (err) return setError(err)
       haptic('success')
-      router.replace('/family')
+      router.replace('/space')
     }
   }
 

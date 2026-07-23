@@ -44,7 +44,7 @@ export function StaffGuard({ level, children }: { level: 'console' | 'admin'; ch
           )}
           <div className="mt-6 flex w-full flex-col items-center gap-3">
             <SignOutButton redirectTo="/auth" />
-            <Link href="/family" className="text-body-sm font-semibold text-green hover:text-green-hover">Go to your family space →</Link>
+            <Link href="/space" className="text-body-sm font-semibold text-green hover:text-green-hover">Go to your Family Space →</Link>
           </div>
         </div>
       </div>

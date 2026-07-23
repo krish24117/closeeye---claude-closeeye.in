@@ -25,9 +25,8 @@ const CONNECT_PAGES: Entry[] = [
 // closeeye.in — the India marketing site.
 const INDIA_PAGES: Entry[] = [
   { path: '', priority: 1, changeFrequency: 'weekly' },
-  { path: '/book', priority: 0.9, changeFrequency: 'monthly' },
-  { path: '/services', priority: 0.9, changeFrequency: 'monthly' },
-  { path: '/membership', priority: 0.7, changeFrequency: 'monthly' },
+  { path: '/how-it-works', priority: 0.9, changeFrequency: 'monthly' },
+  { path: '/plans', priority: 0.9, changeFrequency: 'monthly' },
   { path: '/trust-safety', priority: 0.8, changeFrequency: 'monthly' },
   { path: '/about', priority: 0.6, changeFrequency: 'monthly' },
   { path: '/become-a-guardian', priority: 0.6, changeFrequency: 'monthly' },

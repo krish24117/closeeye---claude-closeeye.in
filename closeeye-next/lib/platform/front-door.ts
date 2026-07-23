@@ -25,7 +25,9 @@ export function isConnectHost(host: string | null | undefined): boolean {
  * and any sitemap/guardrail agree on one source of truth.
  */
 export const INDIA_ONLY_SEGMENTS: ReadonlySet<string> = new Set([
-  'about', 'book', 'membership', 'services', 'become-a-guardian', 'become-a-companion',
+  // /pricing, /services, /membership and /book now 308 to /plans (commerce consolidation);
+  // 'plans' is the single commerce segment.
+  'about', 'plans', 'become-a-guardian', 'become-a-companion',
   'trust-safety', 'contact', 'help', 'feedback',
   // India app onboarding carousel — "Everything starts with care" / Presence Manager. The global
   // door onboards through /connect → /join or /auth.

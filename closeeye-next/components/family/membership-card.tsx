@@ -59,7 +59,7 @@ export function MembershipCard() {
           <p className="text-body-sm font-semibold text-ink">{subscription.current_end ? formatDate(subscription.current_end) : '—'}</p>
         </div>
         {isConnect ? (
-          <Button asChild size="sm"><Link href="/family/membership"><ArrowUpRight className="h-4 w-4" strokeWidth={2} /> Upgrade to Care</Link></Button>
+          <Button asChild size="sm"><Link href="/family/membership"><ArrowUpRight className="h-4 w-4" strokeWidth={2} /> Upgrade to Presence</Link></Button>
         ) : (
           <Button asChild variant="secondary" size="sm"><Link href="/family/membership">Manage plan</Link></Button>
         )}

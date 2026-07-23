@@ -38,7 +38,7 @@ const STEPS = [
 export default function HowItWorksPage() {
   return (
     <main className="verify" id="main">
-      <Link className="verify-back" href="/connect">← Close Eye Connect</Link>
+      <Link className="verify-back" href="/">← Close Eye</Link>
 
       <h1 className="verify-h">How it works</h1>
 

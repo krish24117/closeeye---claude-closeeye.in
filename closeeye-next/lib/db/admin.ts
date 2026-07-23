@@ -9,8 +9,10 @@ import { planById, PLANS } from '@/lib/plans'
  * × plan price (from lib/plans). Zones/coupons/audit have no backing tables.
  */
 
-// Monthly price (₹) by subscriptions.plan_id (Close Eye Connect ₹500 / Care ₹1,500).
-const PLAN_PRICE: Record<string, number> = { companion: 500, trust: 1500, family_os: 0 }
+// Monthly price (₹) by subscriptions.plan_id — the CURRENT decided pricing (2026-07-23):
+// Close Eye Membership ₹1,000 / Presence ₹8,000. (Was the retired ₹500/₹1,500 — that stale
+// map under-reported MRR in the Founder OS.) Keep in sync with lib/plans.ts amounts.
+const PLAN_PRICE: Record<string, number> = { companion: 1000, trust: 8000, family_os: 0 }
 
 const SERVICE_LABEL: Record<string, string> = {
   companion_visit_single: 'Companion visit',

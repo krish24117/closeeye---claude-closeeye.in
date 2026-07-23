@@ -318,8 +318,8 @@ export default function WorkspaceHome() {
             <div className="mt-3 grid grid-cols-3 gap-2" aria-hidden>{[0, 1, 2].map((i) => <span key={i} className="aspect-square rounded-md bg-surface-accent" />)}</div>
             <p className="mt-3 text-body-sm text-content">&ldquo;They were cheerful today — a short walk, a good meal, a calm day. All is well.&rdquo;</p>
           </div>
-          <Link href="/pricing" className="inline-flex items-center gap-1 self-start text-body-sm font-semibold text-brand hover:text-brand/80">
-            See pricing <ArrowRight className="h-4 w-4" strokeWidth={2} />
+          <Link href="/plans" className="inline-flex items-center gap-1 self-start text-body-sm font-semibold text-brand hover:text-brand/80">
+            See plans <ArrowRight className="h-4 w-4" strokeWidth={2} />
           </Link>
         </section>
       )}

@@ -43,7 +43,7 @@ export function GuardianGuard({ children }: { children: React.ReactNode }) {
             This app is for verified Close Eye Guardians. If you&apos;re a family member, open your Family Space instead.
           </p>
           <div className="mt-5 flex w-full flex-col gap-2.5">
-            <Button asChild><a href="/family">Go to Family Space</a></Button>
+            <Button asChild><a href="/space">Go to Family Space</a></Button>
             <SignOutButton redirectTo="/guardian/login" />
           </div>
         </div>

@@ -95,7 +95,7 @@ export default function FounderDonePage() {
 
             <div className="mt-8 w-full">
               <Button asChild size="lg" className="w-full">
-                <Link href="/family">View your Family Space</Link>
+                <Link href="/space">View your Family Space</Link>
               </Button>
               <Button asChild variant="text" size="md" className="mt-2 w-full">
                 <a href={whatsappLink(`Hi ${FOUNDER.name}, I just reserved my family’s place with Close Eye.`)} target="_blank" rel="noopener noreferrer">

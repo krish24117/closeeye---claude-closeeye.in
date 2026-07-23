@@ -58,6 +58,12 @@ const nextConfig: NextConfig = {
       { source: '/console/settings', destination: '/pm', permanent: true },
       { source: '/console', destination: '/pm', permanent: true },
       { source: '/console/:path*', destination: '/pm/:path*', permanent: true },
+      // Commerce consolidation — Pricing + Services + Membership merged into /plans (IA audit,
+      // founder-approved). Guest booking is retired; /book resolves to the one truthful start.
+      { source: '/pricing', destination: '/plans', permanent: true },
+      { source: '/services', destination: '/plans', permanent: true },
+      { source: '/membership', destination: '/plans', permanent: true },
+      { source: '/book', destination: '/auth?intent=join', permanent: false },
       { source: '/founder', destination: '/about', permanent: true },
       { source: '/founder-story', destination: '/about', permanent: true },
       { source: '/founder/start', destination: '/join', permanent: true },

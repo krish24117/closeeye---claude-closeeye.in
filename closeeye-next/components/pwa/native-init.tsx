@@ -64,7 +64,7 @@ export function NativeInit() {
               } catch {
                 /* browser already closed */
               }
-              router.replace('/family')
+              router.replace('/space')
               return
             }
 

@@ -66,34 +66,9 @@ export type NavItem = { label: string; href: string }
 // story now lives in the footer + /about — the team leads, the founder supports.)
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/' },
-  { label: 'How it works', href: '/how-it-works' },
-  { label: 'Pricing', href: '/pricing' },
-  { label: 'Services', href: '/services' },
+  { label: 'How it Works', href: '/how-it-works' },
+  { label: 'Plans', href: '/plans' },
   { label: 'Contact', href: '/contact' },
-]
-
-export const FOOTER_GROUPS: { title: string; links: NavItem[] }[] = [
-  {
-    title: 'Quick Links',
-    links: [
-      { label: 'Home', href: '/' },
-      { label: 'About', href: '/about' },
-      { label: 'Services', href: '/services' },
-      { label: 'Pricing', href: '/membership' },
-      { label: 'Become a Guardian', href: '/become-a-guardian' },
-      { label: 'Become a Companion', href: '/become-a-companion' },
-      { label: 'Contact', href: '/contact' },
-    ],
-  },
-  {
-    title: 'Support',
-    links: [
-      { label: 'Help Center', href: '/help' },
-      { label: 'Family Space', href: '/family' },
-      { label: 'Share feedback', href: '/feedback' },
-      { label: 'Emergency support', href: '/contact#emergency' },
-    ],
-  },
 ]
 
 /** Legal & policy links — rendered in the footer's bottom bar. */

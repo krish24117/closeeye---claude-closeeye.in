@@ -1,19 +1,26 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import Link from 'next/link'
-import { Check, ArrowRight, ChevronDown } from 'lucide-react'
+import { Check, ArrowRight, ChevronDown, Heart, Home, Users, FileText, ShoppingBag } from 'lucide-react'
 import { Container } from '@/components/ui/container'
 import { Section } from '@/components/ui/section'
 import { Button } from '@/components/ui/button'
 import { Reveal, Stagger, StaggerItem } from '@/components/ui/reveal'
 import { NriOrb } from '@/components/marketing/nri-orb'
-import { whatsappLink } from '@/lib/site'
 import { pricingRegion, price } from '@/lib/pricing'
 
+/**
+ * /plans — the ONE commerce destination (IA consolidation, founder-approved).
+ * Merges the former /pricing (how do I engage?) + /services (what can Close Eye do?)
+ * + /membership into a single page: offer → plans & pricing → Presence tiers →
+ * what's included → one decisive CTA. /pricing, /services and /membership 308 here.
+ * Pricing is the locked, region-detected model from lib/pricing.ts — never hardcoded.
+ */
+
 export const metadata: Metadata = {
-  title: 'Pricing — Three simple ways to be there',
+  title: 'Plans — One simple way to be there',
   description:
-    'Engage with Close Eye the way that fits your family: Pay as You Go for occasional support, Membership to stay prepared, or Presence for an ongoing trusted local presence. Priced in your local currency.',
+    'Everything Close Eye offers, in one place: what’s included, plans, pricing and comparison. Pay as You Go for occasional support, Membership to stay prepared, or Presence for an ongoing trusted local presence — priced in your local currency.',
 }
 
 const JOURNEY = [
@@ -22,18 +29,25 @@ const JOURNEY = [
   { n: '3', q: 'Do I want someone consistently looking after them?', a: 'Presence' },
 ]
 
+const CATEGORIES = [
+  { icon: Heart, name: 'Health & Wellbeing', items: ['Wellness Visit', 'Hospital Companion', 'Doctor Appointment Assistance', 'Medication Pickup', 'Recovery Support', 'Health Observation'] },
+  { icon: Home, name: 'Home & Property', items: ['Home Check', 'Property Inspection', 'Utility Verification', 'Maintenance Coordination', 'Housekeeping Coordination'] },
+  { icon: Users, name: 'Family Support', items: ['Guardian Visit', 'Companion Visit', 'Festival Visit', 'Emergency Response', 'Video Check-ins', 'Family Updates'] },
+  { icon: FileText, name: 'Administration', items: ['Banking Assistance', 'Documentation Support', 'Government Office Visits', 'Insurance Coordination', 'Legal Coordination'] },
+  { icon: ShoppingBag, name: 'Concierge', items: ['Grocery Shopping', 'Airport Pickup', 'Local Errands', 'Travel Assistance', 'Personal Requests'] },
+]
+
 function Tick() {
   return <Check className="mt-0.5 h-4 w-4 shrink-0 text-green" strokeWidth={2.5} aria-hidden />
 }
 
-export default async function PricingPage() {
-  const cta = whatsappLink()
+export default async function PlansPage() {
   // Region-detected currency: India → INR, everywhere else → USD. Same plans, only the price changes.
   const country = (await headers()).get('x-vercel-ip-country')
   const region = pricingRegion(country)
   const inr = region === 'IN'
 
-  const PLANS = [
+  const PRESENCE_TIERS = [
     { name: 'Essential', amount: price('presence', region), note: 'Regular trusted visits.', ev: null as string | null,
       lines: ['A trusted local presence your family can rely on', 'Regular, familiar time with your loved one', 'Proof of every visit — never a guess', 'You stay informed, wherever you are', 'Early awareness of what’s changing'] },
     { name: 'Plus', amount: price('presencePlus', region), note: 'Coordinated care, managed for you.', ev: 'Everything in Essential, plus', emph: true,
@@ -48,17 +62,17 @@ export default async function PricingPage() {
       <header className="bg-ivory pt-32 sm:pt-36">
         <Container className="pb-4 text-center">
           <Reveal className="mx-auto flex max-w-measure flex-col items-center">
-            <span className="eyebrow is-centered">Pricing</span>
-            <h1 className="mt-6 text-h1">Three simple ways to be there.</h1>
+            <span className="eyebrow is-centered">Plans</span>
+            <h1 className="mt-6 text-h1">One simple way to be there.</h1>
             <p className="mx-auto mt-6 max-w-prose text-lead text-muted">
-              Not a menu to compare — one calm question: <span className="text-ink">how would you like Close Eye to be there for your family?</span>
+              Everything Close Eye offers, in one place — one calm question: <span className="text-ink">how would you like Close Eye to be there for your family?</span>
             </p>
           </Reveal>
         </Container>
       </header>
 
       <Section tone="ivory">
-        {/* ── User journey ── */}
+        {/* ── Which plan am I? ── */}
         <Stagger className="grid gap-4 sm:grid-cols-3">
           {JOURNEY.map((j) => (
             <StaggerItem key={j.n} className="flex flex-col gap-2 rounded-lg border border-line bg-card p-6">
@@ -69,7 +83,7 @@ export default async function PricingPage() {
           ))}
         </Stagger>
 
-        {/* ── Three cards ── */}
+        {/* ── Three plans ── */}
         <div className="mx-auto mt-12 grid max-w-md gap-5 lg:max-w-none lg:grid-cols-3 lg:items-stretch">
           {/* Pay as You Go */}
           <Reveal className="flex flex-col rounded-lg border border-line bg-card p-8 shadow-sm">
@@ -86,8 +100,8 @@ export default async function PricingPage() {
               ))}
             </ul>
             <div className="mt-8 flex flex-col items-center gap-3">
-              <Button asChild size="lg" className="w-full"><Link href="/book">Book a Service</Link></Button>
-              <Link href="/services" className="text-body-sm font-semibold text-green hover:underline">View all services →</Link>
+              <Button asChild size="lg" className="w-full"><Link href="/auth?intent=join">Start with your family</Link></Button>
+              <a href="#included" className="text-body-sm font-semibold text-green hover:underline">See everything included →</a>
             </div>
           </Reveal>
 
@@ -106,7 +120,7 @@ export default async function PricingPage() {
               ))}
             </ul>
             <div className="mt-8">
-              <Button asChild size="lg" className="w-full"><Link href="/membership">Become a Member</Link></Button>
+              <Button asChild size="lg" className="w-full"><Link href="/auth?intent=join">Start with your family</Link></Button>
             </div>
           </Reveal>
 
@@ -123,12 +137,12 @@ export default async function PricingPage() {
               A dedicated Guardian who truly knows your family, coordinated by a Presence Manager — tailored to how much support you want.
             </p>
             <div className="mt-8">
-              <Button asChild size="lg" className="w-full"><Link href="#presence">Explore Presence Plans</Link></Button>
+              <Button asChild size="lg" className="w-full"><a href="#presence">Explore Presence Plans</a></Button>
             </div>
           </Reveal>
         </div>
 
-        {/* ── Presence plans — revealed on demand ── */}
+        {/* ── Presence tiers — revealed on demand (comparison) ── */}
         <details id="presence" className="group mt-14 scroll-mt-28 overflow-hidden rounded-lg border border-line bg-card shadow-sm">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-6 [&::-webkit-details-marker]:hidden">
             <span className="flex items-center gap-3">
@@ -141,7 +155,7 @@ export default async function PricingPage() {
             <ChevronDown className="h-5 w-5 shrink-0 text-muted transition-transform group-open:rotate-180" strokeWidth={2} aria-hidden />
           </summary>
           <div className="grid gap-4 p-6 pt-0 sm:grid-cols-3">
-            {PLANS.map((pl) => (
+            {PRESENCE_TIERS.map((pl) => (
               <div key={pl.name} className={pl.emph ? 'flex flex-col rounded-md border-2 border-accent-soft bg-card p-6' : 'flex flex-col rounded-md border border-line bg-ivory p-6'}>
                 <p className="text-h4">{pl.name}</p>
                 <p className="mt-1 flex items-baseline gap-1"><span className="font-display text-h3 text-ink">{pl.amount}</span><span className="text-body-sm text-muted">/ month</span></p>
@@ -154,7 +168,7 @@ export default async function PricingPage() {
               </div>
             ))}
           </div>
-          <p className="px-6 pb-6 text-center text-caption text-muted">Kept off the main pricing view on purpose — you only choose a tier once Presence is right for you.</p>
+          <p className="px-6 pb-6 text-center text-caption text-muted">Kept off the main view on purpose — you only choose a tier once Presence is right for you.</p>
         </details>
 
         <Reveal className="mt-10 text-center">
@@ -162,17 +176,46 @@ export default async function PricingPage() {
         </Reveal>
       </Section>
 
-      {/* ── Close ── */}
+      {/* ── What's included — the full catalogue (formerly /services) ── */}
+      <Section tone="card" id="included" className="scroll-mt-28">
+        <Reveal className="mx-auto max-w-measure text-center">
+          <span className="eyebrow is-centered">What’s included</span>
+          <h2 className="mt-4 font-display text-h2">Everything Close Eye can do.</h2>
+          <p className="mx-auto mt-4 max-w-prose text-lead text-muted">
+            The full catalogue — available on demand with Pay as You Go, or woven into a Presence plan.
+          </p>
+        </Reveal>
+        <Stagger className="mt-12 grid gap-5 sm:grid-cols-2">
+          {CATEGORIES.map((cat, i) => {
+            const Icon = cat.icon
+            return (
+              <StaggerItem key={cat.name} className={i === CATEGORIES.length - 1 && CATEGORIES.length % 2 === 1 ? 'rounded-lg border border-line bg-ivory p-7 shadow-sm sm:col-span-2' : 'rounded-lg border border-line bg-ivory p-7 shadow-sm'}>
+                <div className="flex items-center gap-3">
+                  <span className="grid h-11 w-11 place-items-center rounded-md bg-accent-soft text-green"><Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden /></span>
+                  <h3 className="text-h4">{cat.name}</h3>
+                </div>
+                <ul className="mt-5 flex flex-wrap gap-2">
+                  {cat.items.map((s) => (
+                    <li key={s} className="rounded-full border border-line bg-card px-3.5 py-1.5 text-body-sm text-ink">{s}</li>
+                  ))}
+                </ul>
+              </StaggerItem>
+            )
+          })}
+        </Stagger>
+      </Section>
+
+      {/* ── One decisive close ── */}
       <Section tone="ink">
         <Reveal className="mx-auto flex max-w-measure flex-col items-center text-center">
           <NriOrb size="lg" />
-          <h2 className="mt-6 text-h2 text-content-inverse">Not sure which fits? We’ll help you choose.</h2>
-          <p className="mt-4 text-lead text-content-inverse/70">Tell us a little about your family and we’ll point you to the right way to begin.</p>
+          <h2 className="mt-6 font-display text-h2 text-content-inverse">Not sure which fits? We’ll help you choose.</h2>
+          <p className="mt-4 text-lead text-content-inverse/70">Start with your family, or talk to a real person first.</p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg" variant="primary" onDark>
-              <a href={cta} target="_blank" rel="noopener noreferrer">Talk to us <ArrowRight className="h-5 w-5" strokeWidth={2} /></a>
+              <Link href="/auth?intent=join">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link>
             </Button>
-            <Button asChild size="lg" variant="secondary" onDark><Link href="/services">Browse services</Link></Button>
+            <Button asChild size="lg" variant="secondary" onDark><Link href="/contact">Talk to an advisor</Link></Button>
           </div>
         </Reveal>
       </Section>

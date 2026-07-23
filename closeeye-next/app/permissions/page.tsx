@@ -79,7 +79,7 @@ export default function PermissionsPage() {
     return (
       <div className="grid min-h-dvh place-items-center bg-ivory px-5">
         <div className="w-full max-w-sm">
-          <SuccessState title="You’re all set" message="Thank you. We only ever ask for what helps us care for your family — and you can change any of this later in settings." action={<Button asChild size="lg" className="w-full"><Link href="/family">Continue</Link></Button>} />
+          <SuccessState title="You’re all set" message="Thank you. We only ever ask for what helps us care for your family — and you can change any of this later in settings." action={<Button asChild size="lg" className="w-full"><Link href="/space">Continue</Link></Button>} />
         </div>
       </div>
     )

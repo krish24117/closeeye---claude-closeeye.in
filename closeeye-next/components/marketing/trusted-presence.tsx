@@ -203,7 +203,7 @@ export function TrustedPresenceLanding({ presencePrice }: { presencePrice: strin
             <Link href="/auth?intent=join">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link>
           </Button>
           <p className="mt-4 text-center text-caption text-muted">
-            Priced in your currency · cancel anytime · <Link href="/pricing" className="font-semibold text-green hover:underline">see all plans</Link>
+            Priced in your currency · cancel anytime · <Link href="/plans" className="font-semibold text-green hover:underline">see all plans</Link>
           </p>
         </Reveal>
       </Section>
