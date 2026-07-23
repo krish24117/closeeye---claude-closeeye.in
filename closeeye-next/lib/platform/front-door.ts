@@ -27,6 +27,9 @@ export function isConnectHost(host: string | null | undefined): boolean {
 export const INDIA_ONLY_SEGMENTS: ReadonlySet<string> = new Set([
   'about', 'book', 'membership', 'services', 'become-a-guardian', 'become-a-companion',
   'trust-safety', 'contact', 'help', 'feedback',
+  // NRI trusted-presence landing — an India-fulfilment surface. Keep it off the global Connect
+  // door (redirects to /connect there); it lives only on closeeye.in.
+  'nri',
   // India app onboarding carousel — "Everything starts with care" / Presence Manager. The global
   // door onboards through /connect → /join or /auth.
   'welcome',
