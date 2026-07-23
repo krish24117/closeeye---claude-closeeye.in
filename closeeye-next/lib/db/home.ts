@@ -10,6 +10,7 @@
  * complete and tested (lib/space/state); Home simply feeds it more signals over time.
  */
 import { supabase } from '@/lib/supabase'
+import { fetchMyBookingRequests, fetchReportedBookingIds } from '@/lib/db/family'
 import { derivePersonState, rollUp, type WorkspaceState, type PersonSignals } from '@/lib/space/state'
 import { formatTime, formatDate } from '@/lib/platform/locale'
 import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
@@ -50,6 +51,8 @@ export interface HomeAlert { id: string; text: string; actionLabel: string; href
 export interface HomeNotice { title: string; why: string; personId: string; personName: string }
 /** The one thing that would deepen understanding — a real open essential, phrased as a question. */
 export interface HomePrompt { text: string; personId: string }
+/** STAGE 3+ — the next scheduled Guardian visit (once a family is a member and has booked). */
+export interface HomeVisit { id: string; whenLabel: string; personName: string; guardianAssigned: boolean }
 
 export interface HomeData {
   userName: string
@@ -64,6 +67,11 @@ export interface HomeData {
    *  membership moment (an invitation when false, a quiet "Connect is active" when true).
    *  Only a paid 'active' subscription counts; a chosen-but-unpaid 'created' is not "on Connect". */
   connectActive: boolean
+  /** STAGE 3/4 signals — a scheduled visit, whether a visit has ever completed, and the family's
+   *  emergency contact. All best-effort: absent data simply hides the relevant calm card. */
+  upcomingVisit: HomeVisit | null
+  hasCompletedVisit: boolean
+  emergency: { name: string; phone: string | null } | null
 }
 
 /** The essentials Close Eye wants to know about anyone it cares for. A person's stated facts are
@@ -94,7 +102,7 @@ export async function fetchHome(): Promise<HomeData | null> {
 
   const [profRes, losRes, subRes] = await Promise.all([
     supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
-    supabase.from('loved_ones').select('id, full_name, relationship, region_code').eq('family_user_id', user.id).order('created_at', { ascending: true }).limit(20),
+    supabase.from('loved_ones').select('id, full_name, relationship, region_code, emergency_contact_name, emergency_contact_phone').eq('family_user_id', user.id).order('created_at', { ascending: true }).limit(20),
     // Membership state — best-effort; a failed/absent read simply reads as "not on Connect"
     // (an invitation), never blocks the Home.
     supabase.from('subscriptions').select('status').eq('user_id', user.id).maybeSingle(),
@@ -103,7 +111,7 @@ export async function fetchHome(): Promise<HomeData | null> {
   const userName = (profRes.data?.full_name || (user.user_metadata?.full_name as string) || 'there').split(' ')[0] || 'there'
   const connectActive = ((subRes.data as { status?: string } | null)?.status ?? '') === 'active'
   const members = losRes.data ?? []
-  if (!members.length) return { userName, state: 'getting_to_know', people: [], activity: [], alerts: [], notice: null, prompt: null, connectActive }
+  if (!members.length) return { userName, state: 'getting_to_know', people: [], activity: [], alerts: [], notice: null, prompt: null, connectActive, upcomingVisit: null, hasCompletedVisit: false, emergency: null }
 
   const ids = members.map((m) => m.id)
   const ledgerRes = await supabase
@@ -166,5 +174,28 @@ export async function fetchHome(): Promise<HomeData | null> {
     .filter((p) => p.state === 'getting_to_know')
     .map((p) => ({ id: `alert-${p.id}`, text: `Still getting to know ${firstName(p.name)}.`, actionLabel: 'Tell Close Eye more', href: '/space/connect' }))
 
-  return { userName, state, people, activity, alerts, notice, prompt, connectActive }
+  // STAGE 3/4 — the next visit + whether one has ever completed. Best-effort; a missing table or read
+  // simply hides the calm visit cards. Same completed/assigned rules as the dashboard derivation.
+  const COMPLETED = ['confirmed', 'scheduled', 'companion_confirmed', 'paid']
+  const GUARDIAN_ASSIGNED = ['companion_confirmed', 'paid']
+  let upcomingVisit: HomeVisit | null = null
+  let hasCompletedVisit = false
+  try {
+    const nowMs = Date.now()
+    const visits = await fetchMyBookingRequests(user.id)
+    const liveVisits = visits.filter((v) => v.status !== 'cancelled')
+    const bookingIds = liveVisits.map((v) => v.booking_id).filter(Boolean) as string[]
+    const reported = bookingIds.length ? await fetchReportedBookingIds(bookingIds) : new Set<string>()
+    const isDone = (v: (typeof liveVisits)[number]) =>
+      (!!v.booking_id && reported.has(v.booking_id)) ||
+      (!!v.scheduled_at && new Date(v.scheduled_at).getTime() < nowMs && COMPLETED.includes(v.status))
+    hasCompletedVisit = liveVisits.some(isDone)
+    const next = liveVisits.filter((v) => !isDone(v)).sort((a, b) => (a.scheduled_at ?? '').localeCompare(b.scheduled_at ?? ''))[0]
+    if (next) upcomingVisit = { id: next.id, whenLabel: whenLabel(next.scheduled_at), personName: firstName(next.recipient_name ?? '') || 'your loved one', guardianAssigned: GUARDIAN_ASSIGNED.includes(next.status) || !!next.booking_id }
+  } catch { /* best-effort — no visit data simply hides the calm visit cards */ }
+
+  const em = members[0] as { emergency_contact_name?: string | null; emergency_contact_phone?: string | null } | undefined
+  const emergency = em?.emergency_contact_name ? { name: em.emergency_contact_name, phone: em.emergency_contact_phone ?? null } : null
+
+  return { userName, state, people, activity, alerts, notice, prompt, connectActive, upcomingVisit, hasCompletedVisit, emergency }
 }

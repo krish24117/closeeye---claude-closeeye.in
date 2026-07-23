@@ -11,7 +11,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Check, Circle, ScanEye, Sparkles, ChevronRight, ArrowRight, UserPlus, FileText, HeartHandshake } from 'lucide-react'
+import { Check, Circle, ScanEye, Sparkles, ChevronRight, ArrowRight, UserPlus, FileText, HeartHandshake, CalendarClock, ShieldCheck, Phone } from 'lucide-react'
 import { fetchHome, type HomeData } from '@/lib/db/home'
 import { fetchRecentMemories, type MemoryView } from '@/lib/db/memories'
 import { fetchFamilyTimeline } from '@/lib/db/collaboration'
@@ -82,6 +82,9 @@ export default function WorkspaceHome() {
   // STAGE 2 signal — the family exists but there's no active presence yet. Drives the "profile is
   // ready" framing + a very soft first-visit invitation (never a hard upsell).
   const preparing = home.people.length > 0 && !home.connectActive
+  // STAGE 3 signal — a member whose Guardian visits haven't started yet: the calm "protected" home
+  // (next visit · Guardian · emergency). Stage 4 (Active) begins once a visit has completed.
+  const protectedStage = home.connectActive && !home.hasCompletedVisit
 
   // ── STAGE 1 · Discover — no family yet. Show POSSIBILITY, never an empty dashboard. ──
   if (home.people.length === 0) {
@@ -120,7 +123,48 @@ export default function WorkspaceHome() {
       <div>
         <h1 className="text-h2 text-content">{greeting}</h1>
         {preparing && <p className="mt-1 text-body-sm text-content-muted">Your family profile is ready.</p>}
+        {protectedStage && <p className="mt-1 text-body-sm text-content-muted">Your family is protected.</p>}
       </div>
+
+      {/* STAGE 3 · Protected — calm reassurance: next visit · Guardian · emergency contact. */}
+      {protectedStage && (
+        <section className="flex flex-col gap-3">
+          {home.upcomingVisit ? (
+            <Link href="/space/activity" className="flex items-center gap-3 rounded-lg border border-edge/70 bg-surface-raised p-4 shadow-sm transition-colors hover:border-brand/40">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-accent text-brand"><CalendarClock className="h-5 w-5" strokeWidth={1.75} /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-caption font-semibold uppercase tracking-widest text-content-muted">Next visit</span>
+                <span className="mt-0.5 block truncate text-body-sm font-semibold text-content">{home.upcomingVisit.whenLabel} · {home.upcomingVisit.personName}</span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-content-muted" strokeWidth={2} />
+            </Link>
+          ) : (
+            <div className="flex items-center gap-3 rounded-lg border border-edge/70 bg-surface-raised p-4 shadow-sm">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-accent text-brand"><CalendarClock className="h-5 w-5" strokeWidth={1.75} /></span>
+              <div className="min-w-0">
+                <p className="text-body-sm font-semibold text-content">Your first visit is being scheduled</p>
+                <p className="text-caption text-content-muted">Your Presence Manager will confirm the time shortly.</p>
+              </div>
+            </div>
+          )}
+          <div className="flex items-center gap-3 rounded-lg border border-edge/70 bg-surface-raised p-4 shadow-sm">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-accent text-brand"><ShieldCheck className="h-5 w-5" strokeWidth={1.75} /></span>
+            <div className="min-w-0">
+              <p className="text-body-sm font-semibold text-content">{home.upcomingVisit?.guardianAssigned ? 'A verified Guardian is assigned' : 'Your Guardian is being matched'}</p>
+              <p className="text-caption text-content-muted">A trained, background-checked person who visits in person.</p>
+            </div>
+          </div>
+          {home.emergency && (
+            <div className="flex items-center gap-3 rounded-lg border border-edge/70 bg-surface-raised p-4 shadow-sm">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-accent text-brand"><Phone className="h-5 w-5" strokeWidth={1.75} /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-caption font-semibold uppercase tracking-widest text-content-muted">Emergency contact</span>
+                <span className="mt-0.5 block truncate text-body-sm font-semibold text-content">{home.emergency.name}{home.emergency.phone ? ` · ${home.emergency.phone}` : ''}</span>
+              </span>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* What I’m noticing — carousel across every member with open essentials (swipe to see all) */}
       {home.people.some((p) => p.learning) && (
