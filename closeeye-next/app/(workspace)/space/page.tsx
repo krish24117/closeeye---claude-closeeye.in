@@ -85,6 +85,11 @@ export default function WorkspaceHome() {
   // STAGE 3 signal — a member whose Guardian visits haven't started yet: the calm "protected" home
   // (next visit · Guardian · emergency). Stage 4 (Active) begins once a visit has completed.
   const protectedStage = home.connectActive && !home.hasCompletedVisit
+  // STAGE 4 signal — visits are happening: the "active" home leads with the latest visit report.
+  const activeStage = home.connectActive && home.hasCompletedVisit
+  const lv = home.latestVisit
+  // Honest wellbeing framing — claim "doing well" only when the last report wasn't a low mood.
+  const wellToday = !lv?.mood || lv.mood >= 3
 
   // ── STAGE 1 · Discover — no family yet. Show POSSIBILITY, never an empty dashboard. ──
   if (home.people.length === 0) {
@@ -124,6 +129,7 @@ export default function WorkspaceHome() {
         <h1 className="text-h2 text-content">{greeting}</h1>
         {preparing && <p className="mt-1 text-body-sm text-content-muted">Your family profile is ready.</p>}
         {protectedStage && <p className="mt-1 text-body-sm text-content-muted">Your family is protected.</p>}
+        {activeStage && <p className="mt-1 text-body-sm text-content-muted">{wellToday ? 'Your family is doing well today.' : 'Here’s the latest from your family.'}</p>}
       </div>
 
       {/* STAGE 3 · Protected — calm reassurance: next visit · Guardian · emergency contact. */}
@@ -163,6 +169,31 @@ export default function WorkspaceHome() {
               </span>
             </div>
           )}
+        </section>
+      )}
+
+      {/* STAGE 4 · Active — visits are happening. Lead with the latest visit report: the family's
+          reassurance that someone was truly there. Degrades gracefully if a report isn't filed yet. */}
+      {activeStage && lv && (
+        <section className="flex flex-col gap-3">
+          <Link href="/space/activity" className="flex flex-col gap-3 rounded-lg border border-edge/70 bg-surface-raised p-5 shadow-sm transition-colors hover:border-brand/40">
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-accent text-brand"><FileText className="h-5 w-5" strokeWidth={1.75} /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-caption font-semibold uppercase tracking-widest text-content-muted">Latest visit</span>
+                <span className="mt-0.5 block truncate text-body-sm font-semibold text-content">{lv.whenLabel} · {lv.personName}</span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-content-muted" strokeWidth={2} />
+            </div>
+            {lv.summary ? (
+              <p className="border-t border-edge/60 pt-3 text-body-sm leading-relaxed text-content">&ldquo;{lv.summary}&rdquo;</p>
+            ) : (
+              <p className="border-t border-edge/60 pt-3 text-body-sm text-content-muted">Your Guardian visited {lv.personName}. The full report is on the way.</p>
+            )}
+            {lv.hasPhotos && (
+              <span className="inline-flex items-center gap-1.5 text-caption font-semibold text-brand">View photos and the full report <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} /></span>
+            )}
+          </Link>
         </section>
       )}
 

@@ -10,7 +10,7 @@
  * complete and tested (lib/space/state); Home simply feeds it more signals over time.
  */
 import { supabase } from '@/lib/supabase'
-import { fetchMyBookingRequests, fetchReportedBookingIds } from '@/lib/db/family'
+import { fetchMyBookingRequests, fetchReportedBookingIds, fetchVisitReport } from '@/lib/db/family'
 import { derivePersonState, rollUp, type WorkspaceState, type PersonSignals } from '@/lib/space/state'
 import { formatTime, formatDate } from '@/lib/platform/locale'
 import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
@@ -53,6 +53,8 @@ export interface HomeNotice { title: string; why: string; personId: string; pers
 export interface HomePrompt { text: string; personId: string }
 /** STAGE 3+ — the next scheduled Guardian visit (once a family is a member and has booked). */
 export interface HomeVisit { id: string; whenLabel: string; personName: string; guardianAssigned: boolean }
+/** STAGE 4 — the most recent completed visit and its Guardian report (summary/mood/photos), when filed. */
+export interface HomeLatestVisit { id: string; whenLabel: string; personName: string; summary: string | null; mood: number | null; hasPhotos: boolean }
 
 export interface HomeData {
   userName: string
@@ -71,6 +73,8 @@ export interface HomeData {
    *  emergency contact. All best-effort: absent data simply hides the relevant calm card. */
   upcomingVisit: HomeVisit | null
   hasCompletedVisit: boolean
+  /** STAGE 4 — the latest completed visit + report; null until a visit has happened. */
+  latestVisit: HomeLatestVisit | null
   emergency: { name: string; phone: string | null } | null
 }
 
@@ -111,7 +115,7 @@ export async function fetchHome(): Promise<HomeData | null> {
   const userName = (profRes.data?.full_name || (user.user_metadata?.full_name as string) || 'there').split(' ')[0] || 'there'
   const connectActive = ((subRes.data as { status?: string } | null)?.status ?? '') === 'active'
   const members = losRes.data ?? []
-  if (!members.length) return { userName, state: 'getting_to_know', people: [], activity: [], alerts: [], notice: null, prompt: null, connectActive, upcomingVisit: null, hasCompletedVisit: false, emergency: null }
+  if (!members.length) return { userName, state: 'getting_to_know', people: [], activity: [], alerts: [], notice: null, prompt: null, connectActive, upcomingVisit: null, hasCompletedVisit: false, latestVisit: null, emergency: null }
 
   const ids = members.map((m) => m.id)
   const ledgerRes = await supabase
@@ -180,6 +184,7 @@ export async function fetchHome(): Promise<HomeData | null> {
   const GUARDIAN_ASSIGNED = ['companion_confirmed', 'paid']
   let upcomingVisit: HomeVisit | null = null
   let hasCompletedVisit = false
+  let latestVisit: HomeLatestVisit | null = null
   try {
     const nowMs = Date.now()
     const visits = await fetchMyBookingRequests(user.id)
@@ -192,10 +197,24 @@ export async function fetchHome(): Promise<HomeData | null> {
     hasCompletedVisit = liveVisits.some(isDone)
     const next = liveVisits.filter((v) => !isDone(v)).sort((a, b) => (a.scheduled_at ?? '').localeCompare(b.scheduled_at ?? ''))[0]
     if (next) upcomingVisit = { id: next.id, whenLabel: whenLabel(next.scheduled_at), personName: firstName(next.recipient_name ?? '') || 'your loved one', guardianAssigned: GUARDIAN_ASSIGNED.includes(next.status) || !!next.booking_id }
+    // STAGE 4 — the most recent completed visit + its Guardian report (if one was filed).
+    const whenKey = (v: (typeof liveVisits)[number]) => v.scheduled_at ?? v.created_at ?? ''
+    const last = liveVisits.filter(isDone).sort((a, b) => whenKey(b).localeCompare(whenKey(a)))[0]
+    if (last) {
+      const report = last.booking_id ? await fetchVisitReport(last.booking_id).catch(() => null) : null
+      latestVisit = {
+        id: last.id,
+        whenLabel: whenLabel(whenKey(last)),
+        personName: firstName(last.recipient_name ?? '') || 'your loved one',
+        summary: report?.summary ?? null,
+        mood: report?.mood ?? null,
+        hasPhotos: (report?.photoPaths.length ?? 0) > 0,
+      }
+    }
   } catch { /* best-effort — no visit data simply hides the calm visit cards */ }
 
   const em = members[0] as { emergency_contact_name?: string | null; emergency_contact_phone?: string | null } | undefined
   const emergency = em?.emergency_contact_name ? { name: em.emergency_contact_name, phone: em.emergency_contact_phone ?? null } : null
 
-  return { userName, state, people, activity, alerts, notice, prompt, connectActive, upcomingVisit, hasCompletedVisit, emergency }
+  return { userName, state, people, activity, alerts, notice, prompt, connectActive, upcomingVisit, hasCompletedVisit, latestVisit, emergency }
 }
