@@ -1,56 +1,53 @@
 /**
- * Integration guardrail — the staff consoles are first-class on every front door.
+ * Contract guardrail — SINGLE UI (founder 2026-07-23: "no more two UI").
  *
- * closeeye.app (global Connect door) and closeeye.in (India door) share ONE codebase; what a path
- * means is disambiguated by Host in `frontDoorRouting`. The migration promise is that Guardian, PM
- * and Admin work on closeeye.app without being rebuilt — so this test FREEZES the invariant that a
- * staff segment can never be treated as India-only marketing and 307'd to /connect on the global
- * door. If a future edit adds 'guardian' | 'pm' | 'admin' to the denylist, or otherwise redirects a
- * staff path on a Connect host, the build goes red here before it can ship.
+ * closeeye.app and closeeye.in share ONE codebase AND now serve ONE identical experience. This test
+ * FREEZES that: `frontDoorRouting` must pass EVERY path through on EVERY host — no host-based rewrite
+ * or redirect. If a future edit re-introduces a host split (e.g. `/` → /connect on a Connect host, or
+ * an India-only segment redirect), the build goes red here before it can ship, so any such change is
+ * deliberate and reviewed. `isConnectHost` is kept meaningful (sitemap + auth gate still use it).
  */
 import { describe, it, expect } from 'vitest'
-import { frontDoorRouting, INDIA_ONLY_SEGMENTS, STAFF_SEGMENTS } from './front-door'
+import { frontDoorRouting, isConnectHost, STAFF_SEGMENTS } from './front-door'
 
-const CONNECT = 'closeeye.app' // a global Connect front door
-const INDIA = 'closeeye.in' // the India marketing door
+const HOSTS = [
+  'closeeye.app',
+  'www.closeeye.app',
+  'connect.closeeye.in',
+  'closeeye.in',
+  'www.closeeye.in',
+  null,
+  'preview-xyz.vercel.app',
+]
 
-describe('front-door routing — staff consoles reachable on every front door', () => {
-  it('staff routes pass through on the Connect host (never redirected to /connect)', () => {
-    for (const seg of STAFF_SEGMENTS) {
-      for (const path of [`/${seg}`, `/${seg}/`, `/${seg}/login`, `/${seg}/deep/nested/route`]) {
-        expect(frontDoorRouting(CONNECT, path)).toEqual({ type: 'next' })
+const PATHS = [
+  '/', '/connect', '/nri', '/book', '/services', '/membership', '/welcome',
+  '/space', '/space/connect', '/space/people/abc', '/auth', '/join',
+  '/guardian', '/guardian/login', '/pm', '/admin', '/privacy', '/terms',
+]
+
+describe('front-door routing — one experience on every host', () => {
+  it('every path passes through on every host (no rewrite, no redirect)', () => {
+    for (const host of HOSTS) {
+      for (const path of PATHS) {
+        expect(frontDoorRouting(host, path)).toEqual({ type: 'next' })
       }
     }
   })
 
-  it('no staff segment is ever in the India-only denylist', () => {
-    for (const seg of STAFF_SEGMENTS) expect(INDIA_ONLY_SEGMENTS.has(seg)).toBe(false)
-  })
-
-  it('the app + auth + join + connect routes pass through on the Connect host', () => {
-    for (const path of ['/space', '/space/connect', '/space/people/abc', '/auth', '/join', '/connect']) {
-      expect(frontDoorRouting(CONNECT, path)).toEqual({ type: 'next' })
+  it('staff consoles pass through on a Connect host (unchanged guarantee)', () => {
+    for (const seg of STAFF_SEGMENTS) {
+      for (const path of [`/${seg}`, `/${seg}/`, `/${seg}/login`, `/${seg}/deep/nested/route`]) {
+        expect(frontDoorRouting('closeeye.app', path)).toEqual({ type: 'next' })
+      }
     }
   })
 
-  it('India-commercial segments still redirect to /connect on the Connect host', () => {
-    for (const seg of INDIA_ONLY_SEGMENTS) {
-      expect(frontDoorRouting(CONNECT, `/${seg}`)).toEqual({ type: 'redirect', pathname: '/connect' })
-    }
-  })
-
-  it('root rewrites to /connect on the Connect host (clean bare-domain URL)', () => {
-    expect(frontDoorRouting(CONNECT, '/')).toEqual({ type: 'rewrite', pathname: '/connect' })
-  })
-
-  it('the India door is untouched — every path passes through (including staff + marketing)', () => {
-    for (const path of ['/', '/guardian', '/pm', '/admin', '/book', '/membership', '/welcome', '/space']) {
-      expect(frontDoorRouting(INDIA, path)).toEqual({ type: 'next' })
-    }
-  })
-
-  it('an unknown host is treated as non-Connect (pass through)', () => {
-    expect(frontDoorRouting(null, '/guardian')).toEqual({ type: 'next' })
-    expect(frontDoorRouting('preview-xyz.vercel.app', '/')).toEqual({ type: 'next' })
+  it('isConnectHost still classifies Connect hosts (sitemap + auth gate depend on it)', () => {
+    expect(isConnectHost('closeeye.app')).toBe(true)
+    expect(isConnectHost('www.closeeye.app')).toBe(true)
+    expect(isConnectHost('connect.closeeye.in')).toBe(true)
+    expect(isConnectHost('closeeye.in')).toBe(false)
+    expect(isConnectHost(null)).toBe(false)
   })
 })

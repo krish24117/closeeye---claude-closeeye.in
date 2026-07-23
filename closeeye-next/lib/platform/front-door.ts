@@ -47,17 +47,16 @@ export type FrontDoorDecision =
   | { type: 'redirect'; pathname: string }
 
 /**
- * The pure host×path front-door decision — the single brain the routing middleware runs. Extracted
- * so it is unit-testable in isolation (NextRequest-free) and so the staff-passthrough invariant can
- * be frozen by a contract test. Behaviour: on a Connect host, `/` rewrites to /connect and
- * India-commercial segments redirect to /connect; everything else — Connect pages, the app (/space,
- * /auth, /join), legal/technical pages, and the STAFF consoles — passes through. On the India door,
- * nothing is rewritten.
+ * SINGLE UI (founder 2026-07-23: "no more two UI"). closeeye.in and closeeye.app now serve ONE
+ * identical experience, so the front door NO LONGER diverges by host: every path passes through on
+ * every host. `/` is the Trusted-Presence home on both; nothing rewrites to /connect and no
+ * India-commercial segment is redirected. The exports above (isConnectHost, INDIA_ONLY_SEGMENTS,
+ * STAFF_SEGMENTS) are retained for the sitemap, the auth gate, and back-compat.
+ *
+ * Kept as a pure, unit-tested function (rather than deleted) so the "one experience everywhere"
+ * contract is frozen by a test and any future re-introduction of a host split is a deliberate,
+ * reviewed change here — never an accident scattered across the middleware.
  */
-export function frontDoorRouting(host: string | null | undefined, pathname: string): FrontDoorDecision {
-  if (!isConnectHost(host)) return { type: 'next' }
-  if (pathname === '/') return { type: 'rewrite', pathname: '/connect' }
-  const seg = pathname.split('/')[1] ?? ''
-  if (INDIA_ONLY_SEGMENTS.has(seg)) return { type: 'redirect', pathname: '/connect' }
+export function frontDoorRouting(_host: string | null | undefined, _pathname: string): FrontDoorDecision {
   return { type: 'next' }
 }
