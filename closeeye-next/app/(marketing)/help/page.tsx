@@ -17,10 +17,14 @@ const SUPPORT: { icon: LucideIcon; title: string; desc: string; href: string; to
 ]
 
 const FAQ = [
+  { q: 'Who is the Guardian who visits my parents?', a: 'A verified, trained, background-checked person who cares for elders professionally — the same trusted Guardian who spends time with your parents, whether it’s a wellbeing check-in, a hospital day, or simply warm company. A Presence Manager oversees and approves their visits.' },
+  { q: 'Which cities do you cover?', a: 'Hyderabad today, with more cities opening soon. Tell us where your family lives and we’ll let you know the moment we reach them.' },
   { q: 'How quickly can a visit be arranged?', a: 'Usually within a day in the cities we serve. Your Presence Manager will confirm the earliest slot for your zone.' },
-  { q: 'Who is the Guardian who visits my parents?', a: 'A verified, trained, background-checked person who cares for elders professionally — the same trusted Guardian who spends time with your parents, whether it’s a wellbeing check-in, a hospital day, or simply warm company.' },
   { q: 'How do I see how my parent is doing?', a: 'After every visit you receive a warm report in Family Space — a human summary, photos, mood and any readings the family asked for.' },
+  { q: 'What happens in an emergency?', a: 'Your Guardian is briefed on your family’s contacts and local emergency numbers, and escalates to your Presence Manager — and to you — immediately. In a medical emergency we support alongside 108 and your physician.' },
+  { q: 'How do I pay from abroad?', a: 'Securely in your own currency (USD, GBP, AED). No Indian bank account is needed, and you can cancel anytime.' },
   { q: 'Can I reschedule or cancel?', a: 'Any time, free of charge, from Family Space or by messaging your Presence Manager. See our Cancellation Policy.' },
+  { q: 'Is our information private?', a: 'Yes — private to your family, never sold. You can withdraw or delete it whenever you like. See our Privacy notice.' },
   { q: 'Is this a medical service?', a: 'No — Close Eye provides presence and support, not diagnosis or treatment. In emergencies we support alongside 108 and your physician. See our Medical Disclaimer.' },
 ]
 
