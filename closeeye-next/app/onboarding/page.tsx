@@ -42,7 +42,7 @@ const inputCls =
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const { user, refreshOnboarding } = useAuth()
+  const { user, refreshOnboarding, onboardingComplete } = useAuth()
   const { addLovedOne, refresh } = useFamilyData()
 
   const metaName = ((user?.user_metadata?.full_name as string) || (user?.user_metadata?.name as string) || '').trim()
@@ -61,6 +61,13 @@ export default function OnboardingPage() {
 
   React.useEffect(() => { if (metaName && !name) setName(metaName) }, [metaName]) // eslint-disable-line react-hooks/exhaustive-deps
   React.useEffect(() => { const p = getPendingPlan(); if (p) { setPlan(p); setHasIntent(true) } }, [])
+  // A returning, already-onboarded user who lands on /onboarding is sent home. The AuthGate no longer
+  // auto-redirects /onboarding (so it can't race the fresh "ready" close), so the page owns this. It
+  // only fires at the entry step — a fresh run keeps onboardingComplete=false until the close, so this
+  // never triggers mid-flow.
+  React.useEffect(() => {
+    if (onboardingComplete === true && step === 'welcome') router.replace('/space')
+  }, [onboardingComplete]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isSelf = protect === 'Self'
   const subject = isSelf ? 'you' : (lovedName.trim().split(/\s+/)[0] || 'them')
@@ -112,7 +119,8 @@ export default function OnboardingPage() {
         // "Explore first", and a deferred activation resumes from this pending plan.
         setPendingPlan(plan)
       }
-      await refreshOnboarding()
+      // NB: do NOT mark onboarding complete here — that flips the AuthGate and would race the
+      // "ready" close away. Completion is marked in enterSpace()/goActivate(), after the close.
       await refresh()
       haptic('success')
       track('onboarding_completed')
@@ -128,16 +136,18 @@ export default function OnboardingPage() {
     }
   }
 
-  function enterSpace() {
-    // Open the just-created person's Space directly (the guided first task). Routing straight here —
-    // rather than via /space, which would then redirect on — removes the intermediate hop so the
-    // cinematic close hands off to the arrival with no bare loading flash in between.
+  async function enterSpace() {
+    // Mark onboarding complete only NOW — after the "ready" close — then hand off to the just-created
+    // person's Space. Deferring completion to here is what lets the close screen show at all; setting
+    // it before navigating means the workspace opens without a bounce back to /onboarding.
+    await refreshOnboarding()
     router.replace(createdId ? `/space/people/${createdId}` : '/space')
   }
 
-  function goActivate() {
-    // Hand off to the existing activation surface (pre-payment gate → Razorpay), unchanged. The plan
-    // is already selected + pending, so the membership page opens in its "complete your membership" state.
+  async function goActivate() {
+    // Same — mark complete before entering the (auth-gated) activation surface, else it bounces back
+    // to /onboarding. The plan is already selected + pending.
+    await refreshOnboarding()
     router.replace('/family/membership?activate=1')
   }
 

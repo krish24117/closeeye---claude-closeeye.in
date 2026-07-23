@@ -104,7 +104,10 @@ export function AuthGate() {
         : isPresenceManager(profile)
         ? '/pm'
         : '/space'
-      if (onFlow) target = home // skip the auth flow once fully set up
+      // Skip the auth flow once fully set up — EXCEPT /onboarding, which owns its own post-completion
+      // hand-off (the "space is ready" close → enterSpace/goActivate). Auto-redirecting it the instant
+      // onboarding flips complete raced that cinematic screen away; the page navigates itself now.
+      if (onFlow && pathname !== '/onboarding') target = home
       else if (firstNative && !onApp) target = home // native launch on marketing
     }
 
