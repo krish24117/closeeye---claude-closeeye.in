@@ -5,7 +5,7 @@ import { ImageFrame } from '@/components/ui/image-frame'
 import { Button } from '@/components/ui/button'
 import { Reveal, Stagger, StaggerItem } from '@/components/ui/reveal'
 import { NriOrb } from '@/components/marketing/nri-orb'
-import { whatsappLink } from '@/lib/site'
+import Link from 'next/link'
 
 /**
  * The Trusted-Presence landing — Close Eye's single front door (founder 2026-07-23: one UI across
@@ -51,7 +51,6 @@ const FAQ = [
 const CHECKLIST = ['Wellbeing', 'Meals', 'Medication reminder', 'Short walk']
 
 export function TrustedPresenceLanding() {
-  const cta = whatsappLink()
   return (
     <>
       {/* ── Hero ── */}
@@ -68,10 +67,10 @@ export function TrustedPresenceLanding() {
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg">
-                <a href={cta} target="_blank" rel="noopener noreferrer">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></a>
+                <Link href="/book">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link>
               </Button>
               <Button asChild size="lg" variant="secondary">
-                <a href="#how">How it works</a>
+                <Link href="/how-it-works">How it works</Link>
               </Button>
             </div>
             <ul className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-body-sm text-muted">
@@ -79,9 +78,12 @@ export function TrustedPresenceLanding() {
                 <li key={t} className="flex items-center gap-2"><Check className="h-4 w-4 text-green" strokeWidth={2.5} />{t}</li>
               ))}
             </ul>
-            <p className="mt-6 flex items-center justify-center gap-2 text-caption text-muted">
-              <span className="h-1.5 w-1.5 rounded-full bg-green" /> On the ground in Hyderabad today · more cities soon
-            </p>
+            <div className="mt-6 flex justify-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-line bg-card px-3.5 py-1.5 text-caption text-muted">
+                <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-green" />
+                On the ground in Hyderabad · more cities soon
+              </span>
+            </div>
           </Reveal>
         </Container>
       </header>
@@ -249,7 +251,7 @@ export function TrustedPresenceLanding() {
             ))}
           </ul>
           <Button asChild size="lg" className="mt-7 w-full">
-            <a href={cta} target="_blank" rel="noopener noreferrer">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></a>
+            <Link href="/book">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link>
           </Button>
           <p className="mt-4 text-center text-caption text-muted">Priced in your currency · cancel anytime</p>
         </Reveal>
@@ -284,10 +286,10 @@ export function TrustedPresenceLanding() {
           <p className="mt-4 text-lead text-content-inverse/70">Start today. Their first visit can be this week.</p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg" variant="primary" onDark>
-              <a href={cta} target="_blank" rel="noopener noreferrer">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></a>
+              <Link href="/book">Start with your family <ArrowRight className="h-5 w-5" strokeWidth={2} /></Link>
             </Button>
             <Button asChild size="lg" variant="secondary" onDark>
-              <a href="#how">How it works</a>
+              <Link href="/how-it-works">How it works</Link>
             </Button>
           </div>
         </Reveal>
