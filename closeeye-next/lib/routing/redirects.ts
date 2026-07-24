@@ -54,6 +54,11 @@ export const WORKSPACE_REDIRECTS: RouteRedirect[] = [
   { source: '/family/connect/:id', destination: '/space/connect/threads/:id', permanent: true },
   { source: '/family/connect', destination: '/space/connect/threads', permanent: true },
   //
-  // Still held (Owner not yet at parity): /family/services (in-app services list) and
-  // /family/profile/edit (edit form). These re-home as their /space Owner reaches parity.
+  // ── Family Journey (founder-approved 2026-07-24): the services catalogue's Owner is the ORB
+  // (Connect answers "What do I need?"). The old in-app services list re-homes to /space/connect,
+  // whose sheet + conversation now carry "Everything we can arrange" with the canonical prices.
+  { source: '/family/services', destination: '/space/connect', permanent: true },
+  //
+  // Still held (Owner not yet at parity): /family/profile/edit (edit form). It re-homes as its
+  // /space Owner reaches parity.
 ]

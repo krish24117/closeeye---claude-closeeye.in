@@ -233,6 +233,13 @@
 }
 .wsp-orb-stage .ce-orb-core { width: 36px; height: 36px; }
 
+/* Family Journey sizes (founder note, 2026-07-24: the orb supports the story, not the story).
+   Stage 1 wears the mid orb (~28% down from the original stage size); Stages 2–3 the small one. */
+.wsp-orb-stage--mid { width: 84px; height: 84px; box-shadow: 0 16px 32px hsl(147 28% 13% / 0.30), 0 0 40px 8px hsl(var(--orb) / 0.22), inset 0 1px 1px hsl(0 0% 100% / 0.13); }
+.wsp-orb-stage--mid .ce-orb-core { width: 25px; height: 25px; }
+.wsp-orb-stage--sm { width: 64px; height: 64px; box-shadow: 0 12px 26px hsl(147 28% 13% / 0.30), 0 0 30px 6px hsl(var(--orb) / 0.20), inset 0 1px 1px hsl(0 0% 100% / 0.12); }
+.wsp-orb-stage--sm .ce-orb-core { width: 20px; height: 20px; }
+
 /* The YOU card (Family tab, 2026-07-24) — the user's own profile leads the family list. The
    same deep-green radial as the orb family (one gradient language across the app's dark moments). */
 .wsp-you-card { background: radial-gradient(120% 140% at 20% 0%, #1C4130 0%, #0C2419 80%); }

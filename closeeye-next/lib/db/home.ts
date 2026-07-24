@@ -11,6 +11,7 @@
  */
 import { supabase } from '@/lib/supabase'
 import { fetchMyBookingRequests, fetchReportedBookingIds, fetchVisitReport } from '@/lib/db/family'
+import { computeCompleteness, fetchHealthLiteMap, EMPTY_HEALTH } from '@/lib/db/profile'
 import { derivePersonState, rollUp, type WorkspaceState, type PersonSignals } from '@/lib/space/state'
 import { formatTime, formatDate } from '@/lib/platform/locale'
 import { DEFAULT_REGION_CODE } from '@/lib/platform/regions'
@@ -19,6 +20,7 @@ export interface HomePerson {
   id: string
   name: string
   relationship: string | null
+  city: string | null
   regionCode: string | null
   state: WorkspaceState
   /** Card title — a relationship subject reads as "Mother" (not "Your Mother"), a named one as "Amma". */
@@ -81,6 +83,9 @@ export interface HomeData {
   /** STAGE 5 — the grounded understanding synthesis; null until real observations accumulate. */
   understanding: HomeUnderstanding | null
   emergency: { name: string; phone: string | null } | null
+  /** FAMILY JOURNEY — real progress signals for the first person (the journey subject).
+   *  pct is the same ten-point completeness the profile pages show; never an invented number. */
+  journey: { pct: number; emergencyDone: boolean } | null
 }
 
 /** The essentials Close Eye wants to know about anyone it cares for. A person's stated facts are
@@ -111,7 +116,7 @@ export async function fetchHome(): Promise<HomeData | null> {
 
   const [profRes, losRes, subRes] = await Promise.all([
     supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
-    supabase.from('loved_ones').select('id, full_name, relationship, region_code, emergency_contact_name, emergency_contact_phone').eq('family_user_id', user.id).order('created_at', { ascending: true }).limit(20),
+    supabase.from('loved_ones').select('id, full_name, relationship, age, city, address, phone_number, doctor_name, region_code, emergency_contact_name, emergency_contact_phone').eq('family_user_id', user.id).order('created_at', { ascending: true }).limit(20),
     // Membership state — best-effort; a failed/absent read simply reads as "not on Connect"
     // (an invitation), never blocks the Home.
     supabase.from('subscriptions').select('status').eq('user_id', user.id).maybeSingle(),
@@ -120,7 +125,7 @@ export async function fetchHome(): Promise<HomeData | null> {
   const userName = (profRes.data?.full_name || (user.user_metadata?.full_name as string) || 'there').split(' ')[0] || 'there'
   const connectActive = ((subRes.data as { status?: string } | null)?.status ?? '') === 'active'
   const members = losRes.data ?? []
-  if (!members.length) return { userName, state: 'getting_to_know', people: [], activity: [], alerts: [], notice: null, prompt: null, connectActive, upcomingVisit: null, hasCompletedVisit: false, latestVisit: null, understanding: null, emergency: null }
+  if (!members.length) return { userName, state: 'getting_to_know', people: [], activity: [], alerts: [], notice: null, prompt: null, connectActive, upcomingVisit: null, hasCompletedVisit: false, latestVisit: null, understanding: null, emergency: null, journey: null }
 
   const ids = members.map((m) => m.id)
   const ledgerRes = await supabase
@@ -156,7 +161,7 @@ export async function fetchHome(): Promise<HomeData | null> {
     const known = factsOf(m.id).map((e) => e.body.trim()).filter((b) => b && !subjectLike.has(b.replace(/[.\s]+$/, '').toLowerCase())).slice(0, 2)
     const miss = missingEssentials(m.id)
     const learning = miss.length ? `Learning: ${miss.slice(0, 2).map((es) => es.label).join(' & ')}` : null
-    return { id: m.id, name: m.full_name, relationship: m.relationship, regionCode: m.region_code ?? null, state: derivePersonState(signals), label, natural, known, learning }
+    return { id: m.id, name: m.full_name, relationship: m.relationship, city: (m as { city?: string | null }).city ?? null, regionCode: m.region_code ?? null, state: derivePersonState(signals), label, natural, known, learning }
   })
 
   const state = rollUp(people.map((p) => p.state))
@@ -270,5 +275,16 @@ export async function fetchHome(): Promise<HomeData | null> {
   const em = members[0] as { emergency_contact_name?: string | null; emergency_contact_phone?: string | null } | undefined
   const emergency = em?.emergency_contact_name ? { name: em.emergency_contact_name, phone: em.emergency_contact_phone ?? null } : null
 
-  return { userName, state, people, activity, alerts, notice, prompt, connectActive, upcomingVisit, hasCompletedVisit, latestVisit, understanding, emergency }
+  // FAMILY JOURNEY — the first person's real completeness (same ten-point score the profile pages
+  // show) + whether an emergency contact is truly on file. Best-effort: a failed health read just
+  // scores health blanks as blanks; it never blocks the Home.
+  let journey: HomeData['journey'] = null
+  {
+    const first = members[0]!
+    const health = await fetchHealthLiteMap([first.id]).then((m) => m[first.id] ?? EMPTY_HEALTH).catch(() => EMPTY_HEALTH)
+    const c = computeCompleteness(first as Parameters<typeof computeCompleteness>[0], health)
+    journey = { pct: c.pct, emergencyDone: !!(em?.emergency_contact_name && em?.emergency_contact_phone) }
+  }
+
+  return { userName, state, people, activity, alerts, notice, prompt, connectActive, upcomingVisit, hasCompletedVisit, latestVisit, understanding, emergency, journey }
 }

@@ -17,7 +17,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, useReducedMotion } from 'framer-motion'
-import { ArrowUp, Plus, Clock, ChevronRight, ChevronLeft, UserPlus, Landmark, HeartHandshake, Sparkles, Bell, Check, Loader2 } from 'lucide-react'
+import { ArrowUp, Clock, ChevronRight, ChevronLeft, UserPlus, Landmark, HeartHandshake, Sparkles, Bell, Check, Loader2 } from 'lucide-react'
 import { Overlay } from '@/components/family/overlay'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useFamilyData } from '@/components/family/family-data-provider'
@@ -25,7 +25,14 @@ import { fetchAskHistory, type AskHistoryItem } from '@/lib/db/ask'
 import { recordConciergeSignal, type ConciergeIntent } from '@/lib/db/concierge'
 import { presenceFor, isIndia, regionFor, type PresenceAvailability } from '@/lib/platform/service-region'
 import { titleCase } from '@/lib/family/relationship-words'
+import { BOOKING_SERVICES } from '@/features/booking/schema'
 import type { LovedOne } from '@/lib/db/types'
+
+/* Canonical prices — quoted from the exact source the booking flow charges from; never re-typed. */
+const svc = (id: string) => BOOKING_SERVICES.find((s) => s.id === id)
+const VISIT_PRICE = svc('home-wellbeing-visit')?.priceFrom ?? '₹1,000'
+const HOSPITAL_PRICE = svc('hospital-companion')?.priceFrom ?? '₹2,000'
+const CUSTOM_PRICE = svc('custom-request')?.priceFrom ?? '₹1,000'
 
 /** Display name for the warm header/actions: "Your Mother" → "Mother"; a real name → its first word. */
 function dispName(fullName?: string | null, relationship?: string | null): string {
@@ -97,8 +104,21 @@ export function ConnectSheet({ open, onClose }: { open: boolean; onClose: () => 
 
   // ── Care detail view (in-sheet navigation) ──
   function openCare(domain: Domain, avail: PresenceAvailability) {
-    if (avail === 'unknown') { go(`/space/people/${lo!.id}/add`); return } // need a city first
+    if (avail === 'unknown') { go(lo ? `/space/people/${lo.id}/add` : '/space/people/add'); return } // need a city first
     setReqState('idle'); setView({ domain, avail })
+  }
+
+  /** An on-the-ground service row: covered → the real booking flow; not yet → the honest
+   *  coverage detail (request / notify-me), exactly the concierge's existing truth rules. */
+  function openGround(bookHref: string) {
+    if (presenceAvail === 'available') go(bookHref)
+    else openCare('presence', presenceAvail)
+  }
+  /** A coordination (remote, all-India) row: covered → the concierge conversation; not yet →
+   *  the honest financial coverage detail. */
+  function openCoordination(seed: string) {
+    if (financialAvail === 'available' || !lo) ask(seed)
+    else openCare('financial', financialAvail)
   }
 
   return (
@@ -155,50 +175,52 @@ export function ConnectSheet({ open, onClose }: { open: boolean; onClose: () => 
             </button>
           </div>
 
-          {lo ? (
-            <>
-              {/* Always — global, wherever you are */}
-              <p className="mb-2 mt-5 px-1 text-caption font-semibold uppercase tracking-wider text-content-muted">I can help you</p>
-              <div className="flex flex-col gap-2">
-                <ActionRow icon={UserPlus} label={`Complete ${name}’s profile`} onClick={() => go(`/space/people/${lo.id}/add`)} />
-                <ActionRow icon={Landmark} label="Financial coordination" badge={badgeFor(financialAvail, 'India')} onClick={() => openCare('financial', financialAvail)} />
-                <ActionRow icon={HeartHandshake} label={`Someone to check on ${name}`} badge={badgeFor(presenceAvail, metro)} onClick={() => openCare('presence', presenceAvail)} />
-                <ActionRow icon={Plus} label="Add a photo or document" onClick={() => go(`/space/people/${lo.id}/memories/add`)} />
-              </div>
-            </>
-          ) : (
+          {!lo && (
             <button type="button" onClick={() => go('/space/people/add')} className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-dashed border-edge p-3.5 text-start transition-colors hover:border-brand/40">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-accent text-brand"><UserPlus className="h-4 w-4" strokeWidth={2} /></span>
               <span className="min-w-0"><span className="block text-body-sm font-semibold text-content">Add someone you love</span><span className="block text-caption text-content-muted">Then Close Eye can begin</span></span>
             </button>
           )}
+
+          {/* The catalogue — moved here from Home (founder-approved Journey mockup, 2026-07-24):
+              a catalogue answers "What do I need?", which is Connect's question. Every row keeps
+              the concierge's coverage truth: covered → the real flow; not yet → the honest
+              request/notify-me detail. Prices come from the booking schema, never re-typed. */}
+          <p className="mb-2 mt-5 px-1 text-caption font-semibold uppercase tracking-wider text-content-muted">Everything we can arrange</p>
+          <div className="flex flex-col gap-2">
+            <CatRow em="🫶" title="Visits & wellbeing" sub="Check-ins, companionship" price={`From ${VISIT_PRICE}`} onClick={() => openGround('/space/book?service=home-wellbeing-visit')} />
+            <CatRow em="🩺" title="Hospital days" sub="Someone beside them" price={`From ${HOSPITAL_PRICE}`} onClick={() => openGround('/space/book?service=hospital-companion')} />
+            <CatRow em="📄" title="Paperwork & taxes" sub="Banking, documents, filing" price="Quote first" onClick={() => openCoordination('How can Close Eye help with paperwork and taxes?')} />
+            <CatRow em="⚖️" title="Lawyers & property" sub="Coordination, verification" price="Quote first" onClick={() => openCoordination('Can you help find a trusted lawyer near my family?')} />
+            <CatRow em="🛍️" title="Groceries & errands" sub="Medicines, pickups" price={`From ${CUSTOM_PRICE}`} onClick={() => openGround('/space/book?service=custom-request')} />
+            <CatRow em="✨" title="Plans & pricing" sub="Find what fits your family" dark onClick={() => go('/space/billing/plan')} />
+          </div>
         </div>
       )}
     </Overlay>
   )
 }
 
-/** Availability badge: a green tick + place when we can act there; a quiet "Coming" otherwise. */
-function badgeFor(avail: PresenceAvailability, place: string): { text: string; on: boolean } | undefined {
-  if (avail === 'available') return { text: place, on: true }
-  if (avail === 'unavailable') return { text: 'Coming', on: false }
-  return undefined // unknown → no badge; tapping asks for the city
-}
-
-function ActionRow({ icon: Icon, label, badge, onClick }: {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>
-  label: string; badge?: { text: string; on: boolean }; onClick: () => void
+/** One catalogue row — emoji · title+sub · canonical price (the rev-2 mockup's row language). */
+function CatRow({ em, title, sub, price, dark, onClick }: {
+  em: string; title: string; sub: string; price?: string; dark?: boolean; onClick: () => void
 }) {
   return (
-    <button type="button" onClick={onClick} className="flex w-full items-center gap-3 rounded-2xl border border-edge bg-surface p-3.5 text-start transition-colors hover:border-brand/40">
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-accent text-brand"><Icon className="h-4 w-4" strokeWidth={1.9} /></span>
-      <span className="min-w-0 flex-1 text-body-sm font-semibold text-content">{label}</span>
-      {badge && (
-        <span className={`inline-flex items-center gap-1 text-caption font-semibold ${badge.on ? 'text-brand' : 'text-content-muted'}`}>
-          {badge.on && <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden />}{badge.text}
-        </span>
-      )}
-      <ChevronRight className="h-4 w-4 shrink-0 text-content-muted" strokeWidth={1.75} />
+    <button
+      type="button"
+      onClick={onClick}
+      className={dark
+        ? 'flex w-full items-center gap-3 rounded-2xl bg-surface-inverse p-3.5 text-start shadow-sm transition-opacity hover:opacity-90'
+        : 'flex w-full items-center gap-3 rounded-2xl border border-edge bg-surface p-3.5 text-start transition-colors hover:border-brand/40'}
+    >
+      <span aria-hidden className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-body ${dark ? 'bg-brand/40' : 'bg-surface-accent'}`}>{em}</span>
+      <span className="min-w-0 flex-1">
+        <span className={`block text-body-sm font-semibold ${dark ? 'text-content-inverse' : 'text-content'}`}>{title}</span>
+        <span className={`block truncate text-caption ${dark ? 'text-content-inverse/70' : 'text-content-muted'}`}>{sub}</span>
+      </span>
+      {price
+        ? <span className={`shrink-0 text-caption font-bold ${dark ? 'text-content-inverse/85' : 'text-brand'}`}>{price}</span>
+        : <ChevronRight className={`h-4 w-4 shrink-0 ${dark ? 'text-content-inverse/70' : 'text-content-muted'}`} strokeWidth={1.75} />}
     </button>
   )
 }
