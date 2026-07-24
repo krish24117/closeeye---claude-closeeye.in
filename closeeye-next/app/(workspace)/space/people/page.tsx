@@ -162,11 +162,11 @@ export default function FamilyPage() {
 
       {/* ── The WHO sheet — one question: who would you like to add? ── */}
       <Overlay open={whoOpen} onClose={() => setWhoOpen(false)}>
-        <div className="flex flex-col gap-1 px-1 pb-2">
+        <div className="flex flex-col gap-1 px-5 pt-5 pb-1 sm:px-6">
           <h2 className="font-display text-h3 text-ink">Who would you like to add?</h2>
           <p className="text-body-sm text-muted">Each person gets their own space and profile.</p>
         </div>
-        <div className="mt-3 flex flex-col gap-2.5 px-1">
+        <div className="mt-3 flex flex-col gap-2.5 px-5 pb-6 sm:px-6">
           {WHO_ROWS.filter((r) => r.key !== 'self' || !me).map((r) => (
             <Link key={r.key} href={r.href} onClick={() => setWhoOpen(false)}
               className={r.dark
