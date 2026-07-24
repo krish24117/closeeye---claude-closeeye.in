@@ -56,17 +56,15 @@ export function whatsappLink(
 
 export type NavItem = { label: string; href: string }
 
-// Section links are absolute (`/#id`) so they resolve to the homepage from any
-// route — the navbar and footer render on every page.
-// Section links are absolute (`/#id`) so they resolve to the homepage from any
-// route — the navbar and footer render on every page.
 // Order is a deliberate trust-first funnel: What we do → Why trust us → What it
-// costs → Reach a human. Trust & Safety sits ABOVE Membership so trust in the people
-// who show up is earned before price in a high-anxiety care purchase. (The founder
-// story now lives in the footer + /about — the team leads, the founder supports.)
+// costs → Reach a human. Trust sits ABOVE Plans so trust in the people who show up
+// is earned before price in a high-anxiety care purchase. "Trust" is the Trust
+// Center hub (/trust, founder-approved 2026-07-24) — it absorbs the old Trust &
+// Safety nav slot; /trust-safety remains as one of its doors.
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/' },
   { label: 'How it Works', href: '/how-it-works' },
+  { label: 'Trust', href: '/trust' },
   { label: 'Plans', href: '/plans' },
   { label: 'Contact', href: '/contact' },
 ]

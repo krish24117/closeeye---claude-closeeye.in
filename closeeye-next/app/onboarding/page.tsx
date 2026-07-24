@@ -299,7 +299,7 @@ export default function OnboardingPage() {
             <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-line bg-card p-3.5">
               <input type="checkbox" checked={consented} onChange={(e) => setConsented(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-green" />
               <span className="text-caption leading-relaxed text-muted">
-                I understand Close Eye stores only what I share to help me care for my family — <b className="text-ink">private to me, never sold</b> — and I can withdraw or delete anytime. <Link href="/privacy" className="font-semibold text-green hover:text-green/80">Learn more</Link>
+                I understand Close Eye stores only what I share to help me care for my family — <b className="text-ink">private to me, never sold</b> — and I can withdraw or delete anytime. <Link href="/privacy" className="font-semibold text-green hover:text-green/80">Learn more</Link> · <Link href="/trust" className="font-semibold text-green hover:text-green/80">Trust Center</Link>
               </span>
             </label>
           )}

@@ -8,6 +8,7 @@ import { watchConsole } from './helpers'
 const PUBLIC = [
   { name: 'Front door (/)', path: '/' },
   { name: 'Sign in', path: '/auth' },
+  { name: 'Trust Center', path: '/trust' },
 ]
 
 for (const p of PUBLIC) {

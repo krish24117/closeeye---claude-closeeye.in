@@ -14,7 +14,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Loader2, LogOut, Trash2, ChevronRight, Sparkles, ShieldCheck, Lock, FileText, Bell, UserRound,
-  LifeBuoy, Mail, Pencil,
+  LifeBuoy, Mail, Pencil, BadgeCheck,
 } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { supabase } from '@/lib/supabase'
@@ -207,6 +207,8 @@ export default function ProfilePage() {
 
       <SectionHead>About</SectionHead>
       <Group>
+        {/* The Trust Center — the app's permanent door into /trust (founder-approved 2026-07-24). */}
+        <Row icon={BadgeCheck} label="Trust Center" value="The promises we keep" href="/trust" />
         <Row icon={LifeBuoy} label="Help & contact" onClick={() => setSheet('help')} />
         <Row icon={FileText} label="Terms of service" onClick={() => setSheet('legal-terms')} />
       </Group>

@@ -72,8 +72,8 @@ export default function HowItWorksPage() {
         </Stagger>
       </Section>
 
-      {/* ── The two roles, never blurred ── */}
-      <Section tone="card">
+      {/* ── The two roles, never blurred ── (#roles: deep-linked from the Trust Center hub) */}
+      <Section tone="card" id="roles" className="scroll-mt-28">
         <SectionHeading serif eyebrow="Two people, one promise" title="One coordinates. One is there."
           intro="You always know who does what — and who to talk to." />
         <Stagger className="mx-auto mt-12 grid max-w-3xl gap-5 sm:grid-cols-2">

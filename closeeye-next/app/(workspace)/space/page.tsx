@@ -21,7 +21,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   ArrowRight, CalendarClock, FileText, HeartHandshake, Plus, ScanEye, Scale,
-  ShoppingBag, Sparkles, Stethoscope, UserPlus,
+  ShieldCheck, ShoppingBag, Sparkles, Stethoscope, UserPlus,
 } from 'lucide-react'
 import { fetchHome, type HomeData } from '@/lib/db/home'
 import { takeFirstPerson } from '@/lib/first-run'
@@ -118,6 +118,13 @@ export default function WorkspaceHome() {
           ? { icon: Plus, title: home.notice?.title ?? 'Tell Close Eye a little more', sub: home.prompt.text, href: `/space/people/${home.prompt.personId}/add` }
           : null
 
+  // ── The Trust Center door — one quiet, stage-aware line (a promise, never a pitch) ──
+  const trustDoor = protectedStage
+    ? { label: 'See a real visit report — exactly what you’ll receive', href: '/trust/sample-report' }
+    : activeStage
+      ? { label: 'If something ever happens — the exact steps', href: '/trust/emergency' }
+      : { label: 'How Close Eye earns your trust', href: '/trust' }
+
   return (
     <div className="flex flex-col items-center gap-6 text-center">
       <p className="text-caption font-semibold uppercase tracking-widest text-content-muted">{greeting}</p>
@@ -188,6 +195,12 @@ export default function WorkspaceHome() {
           <ArrowRight className="h-4 w-4 shrink-0 text-content-muted" strokeWidth={2} />
         </Link>
       )}
+
+      {/* The Trust Center door — stage-aware, quiet, always one tap from the promises. */}
+      <Link href={trustDoor.href} className="inline-flex items-center gap-1.5 text-caption font-semibold text-content-muted transition-colors hover:text-brand">
+        <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} /> {trustDoor.label}
+        <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
+      </Link>
 
       {/* STAGE 5 · Understood — the grounded synthesis keeps its place (hard-gated, never fabricated). */}
       {home.understanding && (
