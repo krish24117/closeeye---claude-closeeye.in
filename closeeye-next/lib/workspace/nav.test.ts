@@ -7,8 +7,8 @@ import { describe, it, expect } from 'vitest'
 import { PRIMARY_NAV, OVERFLOW_NAV, CONNECT_HREF, isActive } from './nav'
 
 describe('primary nav = the five Owners, in dock order', () => {
-  it('is exactly Home · People · Connect · Activity · Profile · Care', () => {
-    expect(PRIMARY_NAV.map((n) => n.label)).toEqual(['Home', 'People', 'Connect', 'Activity', 'Profile', 'Care'])
+  it('is exactly Home · Family · Connect · Activity · Profile · Care', () => {
+    expect(PRIMARY_NAV.map((n) => n.label)).toEqual(['Home', 'Family', 'Connect', 'Activity', 'Profile', 'Care'])
   })
   it('routes are the registry canonical routes (Profile presents the Settings Owner)', () => {
     expect(PRIMARY_NAV.map((n) => n.href)).toEqual([
@@ -31,7 +31,7 @@ describe('Connect is the orb, not a tab', () => {
   })
   it('splits the dock into two tabs on each side (excluding the hidden Care tab)', () => {
     const tabs = PRIMARY_NAV.filter((n) => n.href !== CONNECT_HREF && n.href !== '/space/care')
-    expect(tabs.map((n) => n.label)).toEqual(['Home', 'People', 'Activity', 'Profile'])
+    expect(tabs.map((n) => n.label)).toEqual(['Home', 'Family', 'Activity', 'Profile'])
   })
 })
 

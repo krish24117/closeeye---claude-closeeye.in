@@ -233,6 +233,10 @@
 }
 .wsp-orb-stage .ce-orb-core { width: 36px; height: 36px; }
 
+/* The YOU card (Family tab, 2026-07-24) — the user's own profile leads the family list. The
+   same deep-green radial as the orb family (one gradient language across the app's dark moments). */
+.wsp-you-card { background: radial-gradient(120% 140% at 20% 0%, #1C4130 0%, #0C2419 80%); }
+
 /* ── The Connect sheet content (rendered inside the shared Overlay) ─────────── */
 .wsp-askfield {
   display: flex;

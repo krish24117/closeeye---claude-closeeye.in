@@ -19,6 +19,7 @@ import { CityField } from '@/components/family/city-field'
 import { PhoneField } from '@/components/family/phone-field'
 import { PhotoPicker } from '@/components/family/photo-picker'
 import { relationshipWord, objectPronoun, titleCase } from '@/lib/family/relationship-words'
+import { RELATIONSHIP_OPTIONS } from '@/lib/plans'
 import { setLocalPhoto } from '@/lib/local-photos'
 import { haptic } from '@/lib/haptics'
 
@@ -38,6 +39,13 @@ export default function AddPersonPage() {
   const [photo, setPhoto] = React.useState<string | null>(null)
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')
+
+  // The Family tab's WHO sheet pre-sets the relationship (?rel=Self|Spouse|Other…). Read via
+  // window.location (an effect, not useSearchParams) so no Suspense boundary is needed.
+  React.useEffect(() => {
+    const rel = new URLSearchParams(window.location.search).get('rel')
+    if (rel && RELATIONSHIP_OPTIONS.includes(rel as (typeof RELATIONSHIP_OPTIONS)[number])) setRelationship(rel)
+  }, [])
 
   // If they typed a relationship as the name ("mother", "amma"), infer the relationship so they
   // don't pick it twice — then we gently ask below for the name they actually call them.
@@ -75,7 +83,7 @@ export default function AddPersonPage() {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
       <Link href="/space/people" className="inline-flex items-center gap-1.5 text-caption font-semibold text-muted hover:text-ink">
-        <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> People
+        <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Family
       </Link>
 
       <div>

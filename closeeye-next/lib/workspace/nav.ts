@@ -3,7 +3,7 @@
  * (docs/ownership_registry.md). Primary nav is the five Owners; from the Dock redesign
  * (2026-07-19) they render as a bottom **dock**: four tabs around a central Connect **orb**.
  *
- * Dock order (left → orb → right): Home · People · ⬢ Connect · Activity · Profile.
+ * Dock order (left → orb → right): Home · Family · ⬢ Connect · Activity · Profile.
  * "Connect" is the product's conversational intelligence — NOT a generic "Ask"; talking to
  * Close Eye IS Connect. It leaves the tab row and becomes the orb (CONNECT_HREF), the primary
  * action. "Profile" is the presentation of the Settings Owner (canonical /space/settings), now a
@@ -20,7 +20,7 @@ export interface NavItem {
 
 export const PRIMARY_NAV: readonly NavItem[] = [
   { href: '/space', label: 'Home', exact: true },
-  { href: '/space/people', label: 'People' },
+  { href: '/space/people', label: 'Family' },
   { href: '/space/connect', label: 'Connect' },
   { href: '/space/activity', label: 'Activity' },
   { href: '/space/settings', label: 'Profile' },
