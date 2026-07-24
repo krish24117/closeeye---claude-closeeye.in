@@ -13,13 +13,16 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  Loader2, LogOut, Trash2, ChevronRight, Sparkles, ShieldCheck, Lock, FileText, Bell,
+  Loader2, LogOut, Trash2, ChevronRight, Sparkles, ShieldCheck, Lock, FileText, Bell, UserRound,
   LifeBuoy, Mail, Pencil,
 } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { supabase } from '@/lib/supabase'
 import { Overlay } from '@/components/family/overlay'
 import { hasActiveConsent, recordConsent } from '@/lib/db/consent'
+import { useFamilyData } from '@/components/family/family-data-provider'
+import { planById } from '@/lib/plans'
+import { computeCompleteness, fetchHealthLiteMap, EMPTY_HEALTH, type HealthLite } from '@/lib/db/profile'
 import { resetAnalytics } from '@/lib/analytics'
 
 // Public support inbox.
@@ -80,6 +83,21 @@ export default function ProfilePage() {
   const initials = initialsFrom(displayName, email)
 
   const [sheet, setSheet] = React.useState<Sheet>(null)
+
+  // Real membership + the self family-profile bridge (Profile-tab update, 2026-07-24).
+  const { subscription, lovedOnes } = useFamilyData()
+  const planName = subscription?.plan_id ? planById(subscription.plan_id)?.name ?? null : null
+  const planShort = planName ? planName.replace(/^Close Eye\s+/i, '') : null
+  const planActive = subscription?.status === 'active'
+  const me = lovedOnes.find((l) => (l.relationship ?? '').trim().toLowerCase() === 'self')
+  const [myHealth, setMyHealth] = React.useState<HealthLite>(EMPTY_HEALTH)
+  React.useEffect(() => {
+    if (!me?.id) return
+    let active = true
+    void fetchHealthLiteMap([me.id]).then((m2) => { if (active) setMyHealth(m2[me.id] ?? EMPTY_HEALTH) })
+    return () => { active = false }
+  }, [me?.id])
+  const myPct = me ? computeCompleteness(me, myHealth).pct : null
   const [err, setErr] = React.useState('')
 
   // Edit name
@@ -159,15 +177,20 @@ export default function ProfilePage() {
           <p className="truncate text-body font-semibold text-content">{displayName || 'Your account'}</p>
           {email && <p className="truncate text-body-sm text-content-muted">{email}</p>}
           <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-surface-accent px-2.5 py-0.5 text-caption font-semibold text-brand">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden /> Close Eye Connect
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden /> {planActive && planShort ? `${planShort} member` : 'Close Eye'}
           </span>
         </div>
         <Pencil className="h-4 w-4 shrink-0 text-content-muted" strokeWidth={1.75} />
       </button>
 
+      <SectionHead>Your profile</SectionHead>
+      <Group>
+        <Row icon={UserRound} label="Your family profile" value={me ? (myPct != null ? `${myPct}% complete` : 'Open') : 'Add yourself'} onClick={() => router.push(me ? `/space/people/${me.id}` : '/space/people/add?rel=Self')} />
+      </Group>
+
       <SectionHead>Membership</SectionHead>
       <Group>
-        <Row icon={Sparkles} label="Plan" value="Connect" onClick={() => setSheet('plan')} />
+        <Row icon={Sparkles} label="Plan" value={planActive && planShort ? planShort : planShort ? `${planShort} · not active` : 'No plan yet'} onClick={() => setSheet('plan')} />
       </Group>
 
       <SectionHead>Privacy &amp; data</SectionHead>
@@ -196,7 +219,7 @@ export default function ProfilePage() {
         <Trash2 className="h-4 w-4" strokeWidth={1.75} /> Close account
       </button>
 
-      <p className="mt-5 text-center text-caption text-content-muted">Close Eye Connect · v1.0</p>
+      <p className="mt-5 text-center text-caption text-content-muted">Close Eye · v1.0</p>
 
       {/* ── Detail sheets ── */}
       <Overlay open={sheet !== null} onClose={closeSheet}>
@@ -220,12 +243,14 @@ export default function ProfilePage() {
         )}
 
         {sheet === 'plan' && (
-          <SheetShell title="Close Eye Connect">
+          <SheetShell title={planActive && planShort ? `Close Eye ${planShort}` : 'Membership'}>
             <p className="text-body-sm leading-relaxed text-content-muted">
-              The intelligence that stays with your family — it understands the people you love, and brings a real person whenever presence is needed.
+              {planActive && planShort
+                ? 'Your family has an active plan — a trusted presence for the people you love, and proof for you.'
+                : 'Choose how Close Eye is there for your family — occasional help, staying prepared, or a dedicated trusted presence.'}
             </p>
-            <Link href="/join" onClick={closeSheet} className="mt-5 inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-full bg-surface-inverse text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90">
-              Manage plan →
+            <Link href="/space/billing/plan" onClick={closeSheet} className="mt-5 inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-full bg-surface-inverse text-body-sm font-semibold text-content-inverse transition-opacity hover:opacity-90">
+              {planActive ? 'Manage plan →' : 'Choose a plan →'}
             </Link>
             <button onClick={closeSheet} className="mt-2.5 min-h-[2.75rem] w-full rounded-full text-body-sm font-semibold text-content-muted transition-colors hover:text-content">Close</button>
           </SheetShell>
