@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { requestUnderstanding } from '@/lib/connect/understand-client'
+import { detectConcierge } from './concierge'
 import { retrieve, type RetrievedContext } from '@/lib/db/retrieve'
 import { askCloseEye, type AskTurn } from '@/lib/db/ask'
 import type { Understanding } from '@/lib/connect/comprehension'
@@ -25,7 +26,7 @@ export interface LovedOneRef {
   relationship: string | null
 }
 
-export type ConnectKind = 'answer' | 'escalate' | 'clarify' | 'decline' | 'medical' | 'pending' | 'error' | 'consent'
+export type ConnectKind = 'answer' | 'escalate' | 'clarify' | 'decline' | 'medical' | 'pending' | 'error' | 'consent' | 'service'
 
 export interface ConnectResult {
   understanding: Understanding | null
@@ -36,6 +37,8 @@ export interface ConnectResult {
   subjectLabel?: string | null
   queryId?: string | null
   notice?: string | null
+  /** Deterministic concierge payload (kind 'service') — catalogue facts only, never family claims. */
+  concierge?: import('./concierge').ConciergeAnswer
 }
 
 /**
@@ -198,6 +201,16 @@ export async function answerFamilyQuestion(input: {
       text: ask.kind === 'escalate' ? ask.text : decision.safety.message ?? null,
       ambulanceNumber: ask.kind === 'escalate' ? ask.ambulanceNumber : decision.safety.ambulanceNumber ?? null,
       queryId: ask.queryId,
+    }
+  }
+
+  // CONCIERGE (Phase 2, founder-approved) — a deterministic service/plan answer, strictly AFTER
+  // the crisis floor (escalate returned above) and never on the medical lane. Catalogue facts +
+  // canonical prices only; the LLM is never consulted. Precedent: medicalAdviceSought.
+  if (decision.lane !== 'medical') {
+    const concierge = detectConcierge(question)
+    if (concierge) {
+      return { understanding, kind: 'service', text: concierge.lead, concierge }
     }
   }
 

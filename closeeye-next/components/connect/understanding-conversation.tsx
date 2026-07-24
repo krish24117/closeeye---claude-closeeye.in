@@ -26,6 +26,8 @@ import { SuggestedQuestions } from '@/components/cloza/suggested-questions'
 import type { Understanding } from '@/lib/connect/comprehension'
 import type { AskTurn } from '@/lib/db/ask'
 import { cn } from '@/lib/utils'
+import type { ConciergeAnswer } from '@/lib/connect/concierge'
+import { fetchMyPresenceManager } from '@/lib/db/assignments'
 import { titleCase } from '@/lib/family/relationship-words'
 
 const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
@@ -50,7 +52,7 @@ function dispName(lo: LovedOneRef): string {
 
 type Turn =
   | { role: 'user'; content: string }
-  | { role: 'assistant'; kind: ConnectKind; text: string | null; understanding: Understanding | null; ambulanceNumber?: string | null; notice?: string | null }
+  | { role: 'assistant'; kind: ConnectKind; text: string | null; understanding: Understanding | null; ambulanceNumber?: string | null; notice?: string | null; concierge?: ConciergeAnswer }
 
 export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
   const [input, setInput] = React.useState('')
@@ -58,6 +60,10 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
   const [turns, setTurns] = React.useState<Turn[]>([])
   const [conversationId, setConversationId] = React.useState<string | null>(null) // durable UI thread
   const [askThreadId, setAskThreadId] = React.useState<string | null>(null) // ask-health's own thread
+  // The concierge hand-off names the REAL Presence Manager when one is assigned (family_assignments
+  // RPC); the honest generic otherwise. Best-effort — a failed read never blocks the conversation.
+  const [pmName, setPmName] = React.useState<string | null>(null)
+  React.useEffect(() => { void fetchMyPresenceManager().then((pm) => setPmName(pm?.firstName ?? null)).catch(() => {}) }, [])
   const [subjectId, setSubjectId] = React.useState<string | null>(null) // the resolved loved one, for follow-up grounding
   const [lovedOnes, setLovedOnes] = React.useState<LovedOneRef[]>([])
   const [history, setHistory] = React.useState<ConversationSummary[]>([])
@@ -132,7 +138,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
         const match = lovedOnes.find((l) => { const n = dispName(l).toLowerCase(); return n === who || who.startsWith(n) || n.startsWith(who) })
         if (match) setSubjectId(match.id)
       }
-      setTurns((prev) => [...prev, { role: 'assistant', kind: res.kind, text: res.text, understanding: res.understanding, ambulanceNumber: res.ambulanceNumber, notice: res.notice }])
+      setTurns((prev) => [...prev, { role: 'assistant', kind: res.kind, text: res.text, understanding: res.understanding, ambulanceNumber: res.ambulanceNumber, notice: res.notice, concierge: res.concierge }])
       track('answer_received', { kind: res.kind, grounded: !!(res.lovedOneId || subjectId) })
       if (convId) void appendMessage(convId, { role: 'assistant', content: res.text ?? '', kind: res.kind === 'clarify' || res.kind === 'decline' || res.kind === 'medical' ? 'answer' : (res.kind === 'error' ? 'pending' : res.kind), understanding: res.understanding, ambulanceNumber: res.ambulanceNumber })
       void refreshHistory()
@@ -250,7 +256,7 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
             <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-green"><User className="h-4 w-4" strokeWidth={1.75} /></span>
           </div>
         ) : (
-          <AssistantTurn key={i} turn={t} />
+          <AssistantTurn key={i} turn={t} pmName={pmName} onAsk={ask} />
         ))}
         {thinking && <div className="flex items-center gap-2.5 px-1 text-body-sm text-muted"><Orb size="sm" /> Understanding, then finding your answer…</div>}
         <div ref={endRef} />
@@ -307,8 +313,55 @@ export function UnderstandingConversation({ seed }: { seed?: string } = {}) {
   )
 }
 
-function AssistantTurn({ turn }: { turn: Extract<Turn, { role: 'assistant' }> }) {
+function AssistantTurn({ turn, pmName, onAsk }: { turn: Extract<Turn, { role: 'assistant' }>; pmName: string | null; onAsk: (q: string) => void }) {
   const { kind, text, understanding, ambulanceNumber } = turn
+
+  // CONCIERGE (Phase 2) — the deterministic service/plan card: catalogue facts, canonical
+  // prices, action pills into the real flows, and the Presence-Manager hand-off.
+  if (kind === 'service' && turn.concierge) {
+    const c = turn.concierge
+    return (
+      <div className="flex items-start gap-2.5">
+        <div className="mt-0.5"><Orb /></div>
+        <div className="min-w-0 flex-1 flex flex-col gap-2.5">
+          {understanding && <UnderstoodLine u={understanding} />}
+          <div className="rounded-2xl rounded-tl-sm border border-line/70 bg-card px-4 py-4 shadow-sm">
+            <p className="font-display text-lead leading-snug text-ink">{c.lead}</p>
+            <p className="mt-1.5 text-body-sm leading-relaxed text-ink/85">{c.body}</p>
+            {c.chips.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {c.chips.map((chip) => (
+                  <span key={chip} className="rounded-full bg-accent-soft px-2.5 py-1 text-caption font-semibold text-green">{chip}</span>
+                ))}
+              </div>
+            )}
+            <div className="mt-3.5 flex flex-wrap gap-2">
+              {c.actions.map((a) => a.href ? (
+                <Link key={a.label} href={a.href}
+                  className={a.dark ? 'rounded-full bg-ink px-4 py-2.5 text-caption font-bold text-ivory transition-opacity hover:opacity-90' : 'rounded-full bg-accent-soft px-4 py-2.5 text-caption font-bold text-green transition-opacity hover:opacity-80'}>
+                  {a.label}
+                </Link>
+              ) : (
+                <button key={a.label} type="button" onClick={() => a.ask && onAsk(a.ask)}
+                  className={a.dark ? 'rounded-full bg-ink px-4 py-2.5 text-start text-caption font-bold text-ivory transition-opacity hover:opacity-90' : 'rounded-full border border-line bg-card px-4 py-2.5 text-start text-caption font-bold text-ink transition-colors hover:border-green/40'}>
+                  {a.label}
+                </button>
+              ))}
+            </div>
+            {c.handoff && (
+              <div className="mt-3.5 flex items-center gap-2.5 border-t border-line/70 pt-3">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-caption font-bold text-green">{(pmName ?? 'P').charAt(0).toUpperCase()}</span>
+                <div className="min-w-0">
+                  <p className="truncate text-caption font-bold text-ink">{pmName ? `${pmName} · Presence Manager` : 'Your Presence Manager'}</p>
+                  <p className="text-caption text-muted">Will confirm the details with you</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (kind === 'escalate') {
     return (

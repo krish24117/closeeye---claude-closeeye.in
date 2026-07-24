@@ -17,7 +17,7 @@ export interface ConversationSummary {
   updatedAt: string
 }
 
-export type TurnKind = 'answer' | 'escalate' | 'pending' | 'out_of_scope'
+export type TurnKind = 'answer' | 'escalate' | 'pending' | 'out_of_scope' | 'service'
 
 export interface ConversationMessage {
   id: string
