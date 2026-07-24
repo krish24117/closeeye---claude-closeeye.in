@@ -30,7 +30,7 @@ const inputCls =
 export default function AddPersonPage() {
   const router = useRouter()
   const toast = useToast()
-  const { addLovedOne } = useFamilyData()
+  const { addLovedOne, identity } = useFamilyData()
   const [fullName, setFullName] = React.useState('')
   const [relationship, setRelationship] = React.useState('')
   const [country, setCountry] = React.useState('')
@@ -46,6 +46,13 @@ export default function AddPersonPage() {
     const rel = new URLSearchParams(window.location.search).get('rel')
     if (rel && RELATIONSHIP_OPTIONS.includes(rel as (typeof RELATIONSHIP_OPTIONS)[number])) setRelationship(rel)
   }, [])
+
+  // ABOUT YOU — adding yourself is not "adding someone you love": the whole form speaks to
+  // you directly, and your name arrives pre-filled from your account.
+  const selfMode = relationship === 'Self'
+  React.useEffect(() => {
+    if (selfMode && !fullName.trim() && identity.fullName) setFullName(identity.fullName)
+  }, [selfMode, identity.fullName]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // If they typed a relationship as the name ("mother", "amma"), infer the relationship so they
   // don't pick it twice — then we gently ask below for the name they actually call them.
@@ -68,7 +75,7 @@ export default function AddPersonPage() {
       const created = await addLovedOne({ full_name: fullName, relationship, city, region_code: country || null, phone_number: phone.trim() || undefined })
       if (photo) setLocalPhoto(created.id, photo)
       haptic('success')
-      toast(`${fullName.trim().split(/\s+/)[0]} was added to your family.`)
+      toast(selfMode ? 'Your profile was created.' : `${fullName.trim().split(/\s+/)[0]} was added to your family.`)
       // Land ON the new person's Space (not the generic home, which ignores ?member) — where the
       // guided first task begins understanding them. Fixes the dropped deep-link.
       router.replace(`/space/people/${created.id}`)
@@ -87,16 +94,16 @@ export default function AddPersonPage() {
       </Link>
 
       <div>
-        <h1 className="text-h2 text-ink">Add someone you love</h1>
-        <p className="mt-2 text-body text-muted">Just the essentials — you can add health details and contacts later.</p>
+        <h1 className="text-h2 text-ink">{selfMode ? 'About you' : 'Add someone you love'}</h1>
+        <p className="mt-2 text-body text-muted">{selfMode ? 'Your details help in an emergency — and help Close Eye help your family better.' : 'Just the essentials — you can add health details and contacts later.'}</p>
       </div>
 
       <div className="ce-fade-in flex flex-col gap-6 rounded-[20px] border border-line/70 bg-card p-6 shadow-sm sm:p-8">
         <PhotoPicker onChange={setPhoto} />
 
         <div>
-          <label htmlFor="fm-name" className={labelCls}>Their name</label>
-          <input id="fm-name" value={fullName} onChange={(e) => setFullName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} placeholder="e.g. Ramesh Reddy" autoComplete="off" className={inputCls} />
+          <label htmlFor="fm-name" className={labelCls}>{selfMode ? 'Your name' : 'Their name'}</label>
+          <input id="fm-name" value={fullName} onChange={(e) => setFullName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} placeholder={selfMode ? 'Your full name' : 'e.g. Ramesh Reddy'} autoComplete="off" className={inputCls} />
           {relMatch && (
             <p className="mt-2 rounded-xl bg-accent-soft/40 px-3.5 py-2.5 text-caption leading-relaxed text-green">
               That’s a relationship — what do you <b>call</b> {objectPronoun(relMatch.gender)}? A name like “Lakshmi” lets Close Eye speak about {objectPronoun(relMatch.gender)} personally. You can keep “{titleCase(relMatch.canon)}” if you’d rather.
@@ -112,7 +119,7 @@ export default function AddPersonPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <span className={labelCls}>Country</span>
-            <CountryField value={country} onChange={setCountry} placeholder="Select their country" />
+            <CountryField value={country} onChange={setCountry} placeholder={selfMode ? 'Select your country' : 'Select their country'} />
           </div>
           <div>
             <span className={labelCls}>City</span>
@@ -123,7 +130,7 @@ export default function AddPersonPage() {
         <div>
           <label htmlFor="fm-phone" className={labelCls}>Phone <span className="font-normal text-muted">(optional)</span></label>
           <PhoneField id="fm-phone" value={phone} onChange={setPhone} country={country} />
-          <p className="mt-1.5 text-caption text-muted">Stored with the country code, so you can call them with one tap from their page — wherever they are.</p>
+          <p className="mt-1.5 text-caption text-muted">{selfMode ? 'Stored with the country code — so your family and Presence Manager can reach you in one tap.' : 'Stored with the country code, so you can call them with one tap from their page — wherever they are.'}</p>
         </div>
 
         {error && <p className="text-caption text-error">{error}</p>}

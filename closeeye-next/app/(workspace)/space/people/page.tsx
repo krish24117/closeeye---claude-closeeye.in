@@ -36,11 +36,11 @@ function nameFor(fullName: string, relationship: string | null, city: string | n
 
 /** The WHO sheet rows — the same relationships as onboarding, plus Myself and Someone else. */
 const WHO_ROWS = [
-  { key: 'self', label: 'Myself', sub: 'Your own profile — helps in an emergency', href: '/space/people/add?rel=Self', dark: true },
-  { key: 'parent', label: 'A parent', sub: 'Mother or father', href: '/space/people/add', dark: false },
-  { key: 'partner', label: 'Partner', sub: 'Spouse or partner', href: '/space/people/add?rel=Spouse', dark: false },
-  { key: 'child', label: 'A child', sub: 'Son or daughter', href: '/space/people/add', dark: false },
-  { key: 'other', label: 'Someone else', sub: 'Grandparent, sibling, friend…', href: '/space/people/add?rel=Other', dark: false },
+  { key: 'self', label: 'Myself', sub: 'Your own profile — helps in an emergency', href: '/space/people/add?rel=Self', emoji: '🙋', dark: true },
+  { key: 'parent', label: 'A parent', sub: 'Mother or father', href: '/space/people/add', emoji: '🌸', dark: false },
+  { key: 'partner', label: 'Partner', sub: 'Spouse or partner', href: '/space/people/add?rel=Spouse', emoji: '💛', dark: false },
+  { key: 'child', label: 'A child', sub: 'Son or daughter', href: '/space/people/add', emoji: '🧒', dark: false },
+  { key: 'other', label: 'Someone else', sub: 'Grandparent, sibling, friend…', href: '/space/people/add?rel=Other', emoji: '🤝', dark: false },
 ] as const
 
 export default function FamilyPage() {
@@ -172,10 +172,10 @@ export default function FamilyPage() {
               className={r.dark
                 ? 'wsp-you-card flex items-center gap-3 rounded-lg p-4 transition-opacity hover:opacity-95'
                 : 'flex items-center gap-3 rounded-lg border border-line bg-card p-4 transition-colors hover:border-green/40'}>
-              <span className={r.dark
-                ? 'grid h-10 w-10 shrink-0 place-items-center rounded-full bg-content-inverse/10 text-accent-soft'
-                : 'grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-green'}>
-                <Plus className="h-4 w-4" strokeWidth={2} />
+              <span aria-hidden className={r.dark
+                ? 'grid h-10 w-10 shrink-0 place-items-center rounded-full bg-content-inverse/10 text-lead'
+                : 'grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-lead'}>
+                {r.emoji}
               </span>
               <span className="min-w-0">
                 <span className={r.dark ? 'block text-body-sm font-semibold text-content-inverse' : 'block text-body-sm font-semibold text-ink'}>{r.label}</span>

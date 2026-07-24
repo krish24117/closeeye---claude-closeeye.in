@@ -14,6 +14,8 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Phone, Sparkles, Plus, Pencil, Check, Camera, FileText, Globe } from 'lucide-react'
 import { fetchSpace, personName, type SpaceData } from '@/lib/db/space'
+import { useLovedOnes } from '@/components/family/family-data-provider'
+import { SelfProfile } from '@/components/family/self-profile'
 import { fetchMemories, type MemoryView } from '@/lib/db/memories'
 import { getLocalPhoto } from '@/lib/local-photos'
 import { titleCase } from '@/lib/family/relationship-words'
@@ -35,11 +37,17 @@ function chipLabel(text: string): string {
 export default function PersonSpacePage() {
   const params = useParams<{ id: string }>()
   const id = params?.id
+  // YOUR page speaks to you — the self person renders the grouped-list profile
+  // (Family frame 3), not the loved-one space. Everyone else: unchanged below.
+  const { lovedOnes } = useLovedOnes()
+  const selfLo = lovedOnes.find((l) => l.id === id && (l.relationship ?? '').trim().toLowerCase() === 'self')
   const [space, setSpace] = React.useState<SpaceData | null>(null)
   const [memories, setMemories] = React.useState<MemoryView[]>([])
   const [photo, setPhoto] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState(false)
+
+  if (selfLo) return <SelfProfile me={selfLo} />
 
   const load = React.useCallback(async () => {
     if (!id) return
